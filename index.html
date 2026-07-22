@@ -202,6 +202,10 @@ main{
 .ex-card .exname{font-family:'Barlow Condensed';font-size:22px;font-weight:700;letter-spacing:.02em}
 .ex-card .extarget{color:var(--mut);font-size:13px;font-weight:500;margin-top:2px}
 .ex-card .exlast{color:var(--blue2);font-size:13px;font-weight:500;margin-top:2px}
+.ex-card .exname .info.inline{display:inline-grid;vertical-align:middle;width:26px;height:26px;font-size:14px;margin-left:2px}
+.mini.info{color:var(--blue2);font-size:15px;font-weight:700}
+.prog-warn{margin-top:10px;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.4;
+  background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.32);color:var(--warn);font-weight:500}
 .ex-done-count{
   position:absolute;top:14px;right:14px;
   font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.05em;
@@ -385,7 +389,39 @@ nav.tabbar button.on::before{
 }
 .sect::after{content:"";flex:1;height:1px;background:var(--line)}
 .spacer{height:8px}
-.txt-blue{color:var(--blue2)} .txt-ok{color:var(--ok)} .txt-red{color:var(--red)} .txt-mut{color:var(--mut)}
+.txt-blue{color:var(--blue2)} .txt-ok{color:var(--ok)} .txt-red{color:var(--red)} .txt-mut{color:var(--mut)} .txt-warn{color:var(--warn)}
+
+/* ---------- perfil / macros ---------- */
+.profcard{display:flex;align-items:center;gap:12px;cursor:pointer}
+.profcard .pavatar{width:44px;height:44px;flex:none;border-radius:13px;background:var(--grad);display:grid;place-items:center;font-size:20px;box-shadow:var(--glow)}
+.profcard .pt{font-family:'Barlow Condensed';font-weight:700;font-size:18px;line-height:1.1}
+.macro3 .rng{font-size:10px;color:var(--mut2);font-weight:600;letter-spacing:.02em}
+.pbar>i.warn{background:linear-gradient(135deg,#E8A21D,#FFB454)!important}
+.pbar>i.red{background:linear-gradient(135deg,#E8455F,#FF5D73)!important}
+.feedback{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+.feedback .fdot{width:9px;height:9px;border-radius:5px;margin-top:5px;flex:none;background:var(--mut)}
+.feedback.blue .fdot{background:var(--blue2);box-shadow:0 0 10px var(--blue)}
+.feedback.ok .fdot{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.feedback.warn .fdot{background:var(--warn);box-shadow:0 0 10px var(--warn)}
+.feedback.red .fdot{background:var(--red);box-shadow:0 0 10px var(--red)}
+.feedback .ftx{font-size:13.5px;line-height:1.45;color:var(--txt)}
+.rangerow{margin:16px 0 6px}
+.rangerow .rlbl{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--mut);margin-bottom:8px}
+.rangerow .rlbl b{color:var(--blue3);font-family:'Barlow Condensed';font-size:15px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:4px;background:var(--card2);border:1px solid var(--line2);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--blue2);border:3px solid #0A101C;box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 1px var(--blue)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--blue2);border:3px solid #0A101C}
+.calcbox{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:6px}
+.calcbox .cr{display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;color:var(--mut)}
+.calcbox .cr b{color:var(--txt);font-weight:600}
+.calcbox .cr.big{font-size:15px;padding-top:9px;margin-top:5px;border-top:1px solid var(--line)}
+.calcbox .cr.big b{font-family:'Barlow Condensed';font-size:22px;color:var(--blue3)}
+.gtx{font-size:14px;line-height:1.55;color:var(--txt)}
+.pw-btn{display:flex;align-items:center;gap:10px;width:100%;padding:13px 16px;border-radius:15px;margin-bottom:12px;
+  background:linear-gradient(135deg,rgba(46,125,255,.14),rgba(12,19,34,.4));border:1px solid rgba(46,125,255,.3);text-align:left}
+.pw-btn .pwi{font-size:20px}
+.pw-btn .pwt{font-family:'Barlow Condensed';font-weight:700;font-size:17px;letter-spacing:.03em}
+.pw-btn .chev{margin-left:auto;color:var(--blue2)}
 </style>
 </head>
 <body>
@@ -508,7 +544,8 @@ const S={
   routine:{},          // weekday -> {weekday,name,exercises:[{id,name,sets,reps}]}
   sessions:[],         // desc por start
   meals:[],foods:[],body:[],
-  cfg:{unit:'kg',rest:90,goals:{kcal:2600,p:160,c:280,f:80}},
+  cfg:{unit:'kg',rest:90,goals:{kcal:2600,p:160,c:280,f:80},goalsAuto:false,
+    profile:{sex:'m',age:null,height:null,weightKg:null,activity:'moderate',goal:'deficit_mod',tdeeEmpirical:null,proteinPref:0.5,fatPref:0.5}},
   draft:null,          // sesión en curso
   tab:'hoy',
   hoyVals:{},          // exId -> {w(kg), r}
@@ -526,13 +563,55 @@ async function loadAll(){
   S.meals=ms;S.foods=fs;
   S.body=bd.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
   st.forEach(kv=>{
-    if(kv.key==='cfg')S.cfg={...S.cfg,...kv.value,goals:{...S.cfg.goals,...(kv.value.goals||{})}};
+    if(kv.key==='cfg')S.cfg={...S.cfg,...kv.value,goals:{...S.cfg.goals,...(kv.value.goals||{})},profile:{...S.cfg.profile,...(kv.value.profile||{})}};
     if(kv.key==='draft')S.draft=kv.value;
   });
   if(S.draft)S.hoyDay=S.draft.weekday;
+  applyComputedGoals();
 }
 const saveCfg=()=>idb.put('settings',{key:'cfg',value:S.cfg});
 const saveDraft=()=>S.draft?idb.put('settings',{key:'draft',value:S.draft}):idb.del('settings','draft');
+
+/* ================= motor de macros (Parte A) =================
+   Nada hardcodeado: todo se deriva del perfil del usuario. */
+const ACTF={sedentary:1.2,light:1.375,moderate:1.55,high:1.725};
+const ACT_LABEL={sedentary:'Sedentario',light:'Ligero',moderate:'Moderado',high:'Alto'};
+const ACT_HINT={sedentary:'oficina, poco movimiento',light:'1-3 entrenos/sem',moderate:'3-5 entrenos/sem',high:'6+ entrenos o trabajo físico'};
+const GOALDELTA={deficit_mod:-300,deficit_agg:-500,maintenance:0,surplus:250,recomp:-250};
+const GOAL_LABEL={deficit_mod:'Déficit moderado',deficit_agg:'Déficit agresivo',maintenance:'Mantenimiento',surplus:'Superávit',recomp:'Recomposición'};
+const GOAL_HINT={deficit_mod:'−300 kcal · ~0.25-0.3 kg/sem',deficit_agg:'−500 kcal · ~0.5 kg/sem',maintenance:'mantener peso',surplus:'+250 kcal · ganar músculo',recomp:'−250 kcal · proteína alta'};
+function profileWeight(){
+  const p=S.cfg.profile;
+  if(p&&p.weightKg)return p.weightKg;
+  const b=S.body.filter(x=>x.weight!=null);
+  return b.length?b[b.length-1].weight:null;
+}
+function computeMacros(){
+  const p=S.cfg.profile;
+  const w=profileWeight();
+  if(!p||!w||!p.age||!p.height)return null;
+  const bmr=Math.round(10*w+6.25*p.height-5*p.age+(p.sex==='f'?-161:5));
+  const tdeeCalc=Math.round(bmr*(ACTF[p.activity]||1.55));
+  const empirical=p.tdeeEmpirical&&p.tdeeEmpirical>0?p.tdeeEmpirical:null;
+  const tdee=empirical||tdeeCalc;
+  const target=Math.max(0,Math.round(tdee+(GOALDELTA[p.goal]||0)));
+  const lb=w*KG2LB;
+  const protMin=Math.round(lb*0.8), protMax=Math.round(lb*1.0);
+  const fatMin=Math.round(lb*0.3), fatMax=Math.round(lb*0.5);
+  const prot=Math.round(protMin+(protMax-protMin)*(p.proteinPref??0.5));
+  const fat=Math.round(fatMin+(fatMax-fatMin)*(p.fatPref??0.5));
+  const carbs=Math.max(0,Math.round((target-prot*4-fat*9)/4));
+  return {weight:w,bmr,tdeeCalc,empirical,tdee,target,
+    protMin,protMax,protMid:Math.round((protMin+protMax)/2),prot,
+    fatMin,fatMax,fatMid:Math.round((fatMin+fatMax)/2),fat,carbs};
+}
+/* si el perfil está completo y las metas son automáticas, deriva goals */
+function applyComputedGoals(){
+  if(!S.cfg.goalsAuto)return false;
+  const m=computeMacros();if(!m)return false;
+  S.cfg.goals={kcal:m.target,p:m.prot,c:m.carbs,f:m.fat};
+  return true;
+}
 
 /* ================= navegación ================= */
 function switchTab(tab){
@@ -610,6 +689,9 @@ function renderHoy(){
       <div class="txt-mut" style="font-size:13px;margin-top:2px">${exs.length} ejercicio${exs.length===1?'':'s'} · toca ✓ en una serie para arrancar</div></div>`;
   }
 
+  if(exs.length){
+    h+=`<button class="pw-btn" data-act="prewk-open"><span class="pwi">⚡</span><span class="pwt">Pre-workout</span><span class="txt-mut" style="font-size:12.5px;font-weight:500">fluidos · carbos · cafeína</span><span class="chev">›</span></button>`;
+  }
   if(!exs.length){
     h+=`<div class="card"><div class="empty">
       <div class="big">🏋️</div>
@@ -622,11 +704,16 @@ function renderHoy(){
       const done=S.draft?.entries[ex.id]?.sets||[];
       const last=lastDataFor(ex.name);
       const full=done.length>=ex.sets;
+      const scheme=rirScheme(ex.sets,ex.name);
+      const curSet=Math.min(done.length,ex.sets-1);
+      const curRir=scheme[curSet];
+      const pwarn=progressionWarn(ex.name,v.w);
       h+=`<div class="card ex-card">
         <div class="ex-done-count ${full?'full':''}">${done.length}/${ex.sets}</div>
-        <div class="exname">${esc(ex.name)}</div>
-        <div class="extarget">Objetivo ${ex.sets} × ${ex.reps}</div>
+        <div class="exname">${esc(ex.name)} ${exInfo(ex.name)?`<button class="mini info inline" data-act="ex-info" data-wd="${wd}" data-ex="${ex.id}">ⓘ</button>`:''}</div>
+        <div class="extarget">Objetivo ${ex.sets} × ${ex.reps} · ${full?'✓ completo':`serie ${done.length+1} → ${curRir===0?'<b class="txt-blue">al fallo</b>':'RIR '+curRir}`}</div>
         ${last?`<div class="exlast">Última vez: ${last.map(s=>`${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg</div>`:''}
+        <div class="prog-warn" id="pw-${ex.id}" style="${pwarn?'':'display:none'}">⚠ ${pwarn||''}</div>
         <div class="setgrid">
           <div>
             <div class="steplabel">Peso (${S.cfg.unit==='kg'?'kg':'lb'})</div>
@@ -678,6 +765,8 @@ function updExDisplays(exId){
   if(inp)inp.value=wDisplay(v.w);
   if(rin)rin.value=v.r;
   if(alt)alt.textContent=wAlt(v.w);
+  const ex=findEx(exId),pw=$('#pw-'+exId);
+  if(ex&&pw){const w=progressionWarn(ex.name,v.w);pw.style.display=w?'':'none';if(w)pw.innerHTML='⚠ '+w;}
 }
 function currentDayForHoy(){ return S.hoyDay??new Date().getDay(); }
 function findEx(exId){
@@ -764,16 +853,166 @@ function stopRest(){
   $('#restbar').classList.remove('show');
 }
 
+/* ================= base educativa + RIR + progresión (Parte B) ================= */
+const norm=s=>String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+/* Cada ejercicio: keywords para matchear, músculos, y por qué elegirlo (Sección 13) */
+const EXDB=[
+  {k:['press banca','press de banca','bench'],m:'Pectoral mayor · tríceps · deltoides anterior',w:'Máxima carga absoluta para el pecho = mucha tensión mecánica total. En brazos largos el tríceps a veces cede antes; si es tu caso, combínalo con aislamientos de pecho.'},
+  {k:['press inclinado','inclinado'],m:'Pecho superior (porción clavicular) · deltoides anterior · tríceps',w:'El ángulo inclinado desplaza la tensión al pecho superior, la zona que más suele faltar para un pecho completo.'},
+  {k:['aperturas','apertura','fly','flys','cruces','contractora','pec deck','peck deck'],m:'Pectoral mayor (aislado)',w:'Aíslan el pecho sin que el tríceps limite el estímulo — ideal si en los presses el tríceps falla antes que el pecho. La polea mantiene tensión en todo el recorrido.'},
+  {k:['low to high','low-to-high','de abajo hacia arriba'],m:'Pecho superior (clavicular)',w:'Enfatiza el pecho superior sin acumular fatiga de tríceps antes de un press. Buen complemento del inclinado.'},
+  {k:['fondos','dips'],m:'Pecho inferior · tríceps · deltoides anterior',w:'Gran estímulo de pecho inferior y tríceps con peso corporal; inclinándote al frente cargas más pecho, vertical más tríceps.'},
+  {k:['press militar','press hombro','overhead press','press de hombro','ohp'],m:'Deltoides anterior · deltoides lateral · tríceps',w:'El press pesado de hombro da la mayor carga total para deltoides; base para construir hombros antes de los aislamientos.'},
+  {k:['elevaciones laterales','elevacion lateral','laterales','lateral raise'],m:'Deltoides lateral (aislado)',w:'El deltoides lateral casi solo crece con laterales: los presses lo trabajan poco. Prioriza técnica y control sobre peso.'},
+  {k:['pajaros','pajaro','rear delt','deltoide posterior','reverse fly','face pull'],m:'Deltoides posterior · trapecio medio · romboides',w:'El deltoides posterior es clave para hombros 3D y postura; casi ningún press lo toca. El face pull además cuida el manguito rotador.'},
+  {k:['pushdown','extension tricep','extensiones tricep','tricep polea','jalon tricep'],m:'Tríceps (cabeza lateral y medial)',w:'Aísla el tríceps con tensión constante de polea. Ideal para rematar tras los presses sin cargar hombro.'},
+  {k:['overhead extension','extension sobre cabeza','frances','extension tricep barra','skull'],m:'Tríceps (cabeza larga)',w:'El único tríceps que estira la cabeza larga (la más grande) en máximo estiramiento — donde más crecimiento se logra. Imprescindible para brazos gruesos.'},
+  {k:['dominadas','pull up','pull-up','pullup'],m:'Dorsal ancho · bíceps · trapecio inferior',w:'Aducción de hombro = amplitud del dorsal. No es intercambiable con el remo (plano opuesto): haz ambos.'},
+  {k:['jalon','jalón','pulldown','jalon al pecho','lat pulldown'],m:'Dorsal ancho · bíceps · redondo mayor',w:'Mismo patrón vertical que la dominada pero con carga graduable; construye la amplitud/ "alas" de la espalda.'},
+  {k:['remo con barra','remo barra','barbell row','remo pendlay'],m:'Dorsal · trapecio medio · romboides · bíceps',w:'Extensión de hombro = grosor y espalda alta. Plano horizontal, opuesto al jalón: los necesitas a los dos.'},
+  {k:['remo','row','remo mancuerna','remo polea','remo maquina','seal row'],m:'Dorsal · trapecio medio · romboides · deltoides posterior',w:'Con retracción escapular marcada cargas traps/romboides/rear delt; sin retracción (llevando solo el codo al torso) aíslas el dorsal para grosor. Mismo movimiento, distinto énfasis.'},
+  {k:['curl con barra','curl barra','curl de biceps','barbell curl'],m:'Bíceps (ambas cabezas) · braquial',w:'La mayor carga para el bíceps en su función principal (flexión con supinación). Base del volumen directo de brazo.'},
+  {k:['curl martillo','hammer','martillo'],m:'Braquial · braquiorradial · bíceps',w:'El agarre neutro carga el braquial (debajo del bíceps) y el braquiorradial: empuja el bíceps hacia arriba y engrosa el antebrazo.'},
+  {k:['curl inclinado','incline curl','curl predicador','preacher'],m:'Bíceps (cabeza larga en estiramiento)',w:'El brazo detrás del cuerpo estira la cabeza larga: más estímulo en la zona donde el curl normal afloja.'},
+  {k:['sentadilla','squat','sentadilla libre'],m:'Cuádriceps · glúteo · aductores · core',w:'El ejercicio de pierna con más carga total. El cuádriceps se recupera rápido y tolera bien el volumen y la frecuencia.'},
+  {k:['prensa','leg press','prensa 45'],m:'Cuádriceps · glúteo',w:'Permite acumular volumen de cuádriceps con menos fatiga sistémica y de core que la sentadilla libre. Buen segundo movimiento.'},
+  {k:['peso muerto rumano','rumano','rdl','sldl','peso muerto piernas rigidas'],m:'Femoral (isquiotibiales) · glúteo · espalda baja',w:'Estira el femoral bajo carga = gran estímulo de una zona que suele quedar corta de volumen. ⚠ Nunca al fallo (máx RIR 1): la espalda baja es zona de riesgo.'},
+  {k:['peso muerto','deadlift','peso muerto convencional'],m:'Cadena posterior completa · dorsal · trapecio · glúteo · femoral',w:'Ejercicio de fuerza total del cuerpo. ⚠ Zona lumbar cargada: deja siempre 1-2 reps en reserva, nunca RIR 0.'},
+  {k:['extensiones de cuadriceps','extension cuadriceps','leg extension','extensiones cuadriceps'],m:'Cuádriceps (aislado, recto femoral)',w:'Aísla el cuádriceps y lo lleva al fallo sin que la espalda o el core limiten. Ideal para rematar pierna.'},
+  {k:['curl femoral','femoral','leg curl','curl de pierna'],m:'Femoral (isquiotibiales) · gemelo',w:'Trabaja la otra función del femoral (flexión de rodilla) que el rumano no cubre. El femoral suele necesitar más volumen del que se le da.'},
+  {k:['gemelos','pantorrilla','calf','elevacion de gemelos','elevacion talones'],m:'Gemelo · sóleo',w:'Recuperación muy rápida: tolera frecuencia y volumen altos. Pausa en el estiramiento máximo para máximo estímulo.'},
+  {k:['crunch','abdominales','abs','crunch polea','rueda abdominal'],m:'Recto abdominal · oblicuos',w:'Con carga progresiva (polea) el abdomen se entrena como cualquier músculo. Los abs visibles son sobre todo cuestión de % de grasa.'},
+  {k:['hip thrust','empuje de cadera'],m:'Glúteo mayor · femoral',w:'Máxima tensión del glúteo en su punto de contracción pico, con poca demanda de espalda baja. El mejor aislamiento de glúteo.'},
+  {k:['zancadas','desplantes','lunge','bulgaras','bulgara','split squat'],m:'Cuádriceps · glúteo · aductores',w:'Trabajo unilateral: corrige asimetrías y carga el glúteo en estiramiento. Alta demanda de estabilidad.'},
+  {k:['face pull'],m:'Deltoides posterior · manguito rotador · trapecio',w:'Salud de hombro y postura. Volumen "gratis" para rear delt que equilibra tanto press horizontal.'},
+];
+function exInfo(name){
+  const n=norm(name);let best=null,len=0;
+  for(const e of EXDB)for(const kw of e.k){const nk=norm(kw);if(n.includes(nk)&&nk.length>len){best=e;len=nk.length;}}
+  return best;
+}
+const LOWBACK=['rumano','rdl','sldl','peso muerto','buenos dias','good morning','hiperext','rigidas'];
+const isLowerBackLift=name=>{const n=norm(name);return LOWBACK.some(k=>n.includes(k));};
+/* Esquema RIR: solo el último set al fallo; RDL/espalda baja máx RIR 1 (Sección 16) */
+function rirScheme(nSets,name){
+  const cap=isLowerBackLift(name)?1:0;
+  return Array.from({length:Math.max(1,nSets)},(_,i)=>cap+(nSets-1-i));
+}
+/* Alerta de progresión doble: no bajar el peso tras subirlo (Sección 15) */
+function sessionMaxW(session,name){
+  const e=(session.entries||[]).find(en=>norm(en.name)===norm(name));
+  if(!e||!e.sets.length)return null;
+  return Math.max(...e.sets.map(s=>s.w));
+}
+function progressionWarn(name,w){
+  const hist=S.sessions.map(s=>sessionMaxW(s,name)).filter(x=>x!=null); // desc por fecha
+  if(hist.length<2)return null;
+  const last=hist[0],prev=hist[1];
+  if(last>prev+0.01 && w<last-0.01)
+    return `Subiste a ${fmtNum(round1(last))} kg la última vez. No vuelvas atrás: quédate en ${fmtNum(round1(last))} y reconstruye reps (caer a 5-6 es normal y esperado).`;
+  return null;
+}
+
+/* ================= plantillas de rutina (Sección 12) ================= */
+const TEMPLATES=[
+  {id:'fullbody',name:'Full Body',days:'3 días/sem',who:'principiantes o poco tiempo',freq:'cada grupo 3×/sem',
+   split:{1:['Full Body A',[['Sentadilla',3,8],['Press banca',3,8],['Remo con barra',3,10],['Press militar',3,10],['Curl femoral',3,12]]],
+          3:['Full Body B',[['Peso muerto rumano',3,10],['Jalón al pecho',3,10],['Press inclinado mancuernas',3,10],['Elevaciones laterales',3,15],['Extensiones de cuádriceps',3,15]]],
+          5:['Full Body C',[['Prensa',3,12],['Fondos',3,10],['Dominadas',3,8],['Curl con barra',3,12],['Elevación de gemelos',3,15]]]}},
+  {id:'ul',name:'Upper / Lower',days:'4 días/sem',who:'intermedios · frecuencia 2 balanceada',freq:'cada grupo 2×/sem',
+   split:{1:['Torso A',[['Press banca',4,8],['Remo con barra',4,10],['Press militar',3,10],['Jalón al pecho',3,12],['Curl con barra',3,12],['Extensión tríceps polea',3,12]]],
+          2:['Pierna A',[['Sentadilla',4,8],['Peso muerto rumano',4,10],['Prensa',3,12],['Curl femoral',3,12],['Elevación de gemelos',4,15]]],
+          4:['Torso B',[['Press inclinado mancuernas',4,10],['Dominadas',4,8],['Elevaciones laterales',4,15],['Aperturas en polea',3,12],['Curl martillo',3,12],['Overhead extension',3,12]]],
+          5:['Pierna B',[['Prensa',4,12],['Zancadas',3,10],['Extensiones de cuádriceps',4,15],['Curl femoral',4,12],['Elevación de gemelos',4,15]]]}},
+  {id:'ppl',name:'Push / Pull / Legs',days:'3 días/sem',who:'todo nivel · versión de 3 días',freq:'cada grupo 1×/sem',
+   split:{1:['Push (empuje)',[['Press banca',4,8],['Press militar',3,10],['Press inclinado mancuernas',3,10],['Elevaciones laterales',4,15],['Extensión tríceps polea',3,12]]],
+          3:['Pull (tracción)',[['Dominadas',4,8],['Remo con barra',4,10],['Jalón al pecho',3,12],['Face pull',3,15],['Curl con barra',4,12]]],
+          5:['Legs (pierna)',[['Sentadilla',4,8],['Peso muerto rumano',4,10],['Prensa',3,12],['Extensiones de cuádriceps',3,15],['Elevación de gemelos',4,15]]]}},
+  {id:'ppl6',name:'PPL ×2',days:'6 días/sem',who:'avanzados · máximo volumen',freq:'cada grupo 2×/sem',
+   split:{1:['Push A',[['Press banca',4,8],['Press militar',3,10],['Aperturas en polea',3,12],['Elevaciones laterales',4,15],['Extensión tríceps polea',3,12]]],
+          2:['Pull A',[['Dominadas',4,8],['Remo con barra',4,10],['Face pull',3,15],['Curl con barra',4,12]]],
+          3:['Legs A',[['Sentadilla',4,8],['Peso muerto rumano',4,10],['Extensiones de cuádriceps',3,15],['Elevación de gemelos',4,15]]],
+          4:['Push B',[['Press inclinado mancuernas',4,10],['Fondos',3,10],['Elevaciones laterales',4,15],['Overhead extension',3,12]]],
+          5:['Pull B',[['Jalón al pecho',4,10],['Remo',4,12],['Pájaros',3,15],['Curl martillo',4,12]]],
+          6:['Legs B',[['Prensa',4,12],['Curl femoral',4,12],['Zancadas',3,10],['Elevación de gemelos',4,15]]]}},
+  {id:'hybrid',name:'PPL + UL híbrido',days:'5 días/sem',who:'buen punto medio volumen/recuperación',freq:'grupos 2×/sem aprox',
+   split:{1:['Push',[['Press banca',4,8],['Press militar',3,10],['Elevaciones laterales',4,15],['Extensión tríceps polea',3,12]]],
+          2:['Pull',[['Dominadas',4,8],['Remo con barra',4,10],['Face pull',3,15],['Curl con barra',4,12]]],
+          3:['Legs',[['Sentadilla',4,8],['Peso muerto rumano',4,10],['Extensiones de cuádriceps',3,15],['Elevación de gemelos',4,15]]],
+          5:['Upper (torso)',[['Press inclinado mancuernas',4,10],['Jalón al pecho',4,10],['Elevaciones laterales',3,15],['Curl martillo',3,12],['Overhead extension',3,12]]],
+          6:['Lower (pierna)',[['Prensa',4,12],['Curl femoral',4,12],['Zancadas',3,10],['Elevación de gemelos',4,15]]]}},
+  {id:'antpost',name:'Anterior / Posterior',days:'4 días/sem',who:'empujadores vs traccionadores',freq:'cada grupo 2×/sem',
+   split:{1:['Anterior A',[['Press banca',4,8],['Press militar',3,10],['Sentadilla',4,8],['Elevaciones laterales',3,15],['Extensión tríceps polea',3,12]]],
+          2:['Posterior A',[['Dominadas',4,8],['Remo con barra',4,10],['Peso muerto rumano',4,10],['Curl con barra',3,12],['Face pull',3,15]]],
+          4:['Anterior B',[['Press inclinado mancuernas',4,10],['Prensa',4,12],['Fondos',3,10],['Extensiones de cuádriceps',3,15],['Overhead extension',3,12]]],
+          5:['Posterior B',[['Jalón al pecho',4,10],['Remo',4,12],['Curl femoral',4,12],['Curl martillo',3,12],['Pájaros',3,15]]]}},
+];
+async function applyTemplate(id){
+  const t=TEMPLATES.find(x=>x.id===id);if(!t)return;
+  const has=Object.values(S.routine).some(d=>d.exercises?.length);
+  if(has&&!confirm(`Esto reemplaza tu split actual por "${t.name}". ¿Continuar? (puedes editar todo después)`))return;
+  for(const st of ['routine'])await idb.clear(st);
+  S.routine={};
+  for(const wd in t.split){
+    const [name,list]=t.split[wd];
+    S.routine[wd]={weekday:+wd,name,exercises:list.map(([n,s,r])=>({id:uid(),name:n,sets:s,reps:r}))};
+    await persistDay(+wd);
+  }
+  const firstDay=Math.min(...Object.keys(t.split).map(Number));
+  S.rutOpen=firstDay;
+  closeSheet();renderRutina();vibrate([20,40,20]);
+  toast(`Plantilla "${t.name}" cargada`);
+}
+function sheetTemplates(){
+  openSheet(`<h2>Plantillas de rutina</h2>
+    <div class="txt-mut" style="margin:-8px 0 16px;font-size:13.5px">Elige una base y edítala a tu gusto. Reemplaza tu split actual.</div>
+    ${TEMPLATES.map(t=>`<div class="card tmpl" data-act="tmpl-apply" data-id="${t.id}" style="cursor:pointer;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="grow">
+          <div class="cond" style="font-size:20px;font-weight:700">${t.name}</div>
+          <div class="txt-mut" style="font-size:12.5px;margin-top:2px">${t.days} · ${t.who}</div>
+          <div class="txt-blue" style="font-size:12px;margin-top:3px;font-weight:600">${t.freq}</div>
+        </div>
+        <span class="btn sm" style="width:auto;padding:0 16px;min-height:40px">Usar</span>
+      </div></div>`).join('')}
+    <div class="card" style="border-style:dashed;border-color:var(--line2)">
+      <div class="cond" style="font-size:18px;font-weight:700;margin-bottom:4px">Personalizada</div>
+      <div class="txt-mut" style="font-size:13px;margin-bottom:12px">Empieza de cero y arma tu propio split día por día.</div>
+      <button class="btn sm ghost" data-act="tmpl-clear">Empezar en blanco</button>
+    </div>`);
+}
+
+/* ================= info educativa de ejercicio ================= */
+function sheetExInfo(name,wd,exId){
+  const info=exInfo(name);
+  let sets=null,reps=null;
+  for(const d of Object.values(S.routine)){const e=(d.exercises||[]).find(x=>x.id===exId);if(e){sets=e.sets;reps=e.reps;}}
+  const scheme=sets?rirScheme(sets,name):null;
+  openSheet(`<h2>${esc(name)}</h2>
+    ${info?`
+      <h3>Músculos</h3>
+      <div style="font-size:15px;line-height:1.5;color:var(--txt)">${esc(info.m)}</div>
+      <h3>Por qué elegirlo</h3>
+      <div style="font-size:14.5px;line-height:1.55;color:var(--txt)">${esc(info.w).replace('⚠','<span class="txt-warn">⚠</span>')}</div>
+    `:`<div class="txt-mut" style="font-size:14px;line-height:1.5;margin:8px 0">No tengo ficha educativa de este ejercicio todavía. Igual puedes registrarlo y seguir su progresión con normalidad.</div>`}
+    ${scheme?`
+      <h3>Esfuerzo por serie (RIR)</h3>
+      <div class="chips" style="margin-bottom:8px">${scheme.map((r,i)=>`<span class="chip ${r===0?'blue':''}">Serie ${i+1}: ${r===0?'al fallo':'RIR '+r}</span>`).join('')}</div>
+      <div class="txt-mut" style="font-size:13px;line-height:1.5">Solo el <b>último set</b> va al fallo (RIR 0). Los primeros dejan reps en reserva para no arruinar el volumen con fatiga.${isLowerBackLift(name)?' <span class="txt-warn">En este ejercicio nunca vayas al fallo (zona lumbar): máximo RIR 1.</span>':''}</div>
+    `:''}`);
+}
+
 /* ================= RUTINA ================= */
 function renderRutina(){
   const el=$('#view-rutina');
   const total=Object.values(S.routine).reduce((a,d)=>a+(d.exercises?.length||0),0);
   let h=`<div class="vtitle"><h1>Rutina</h1><span class="sub">tu split semanal</span></div>`;
+  h+=`<button class="btn ghost" data-act="tmpl-open" style="margin-bottom:12px">📋 Plantillas de rutina</button>`;
   if(!total){
     h+=`<div class="card"><div class="empty">
-      <div class="big">📋</div>
-      <p>Arma tu split: toca un día, ponle nombre<br>(ej. <b>Pecho / Tríceps</b>) y agrega ejercicios.</p>
-      <button class="btn sm ghost" data-act="seed" style="max-width:260px;margin:0 auto">Cargar split de ejemplo</button>
+      <div class="big">🏗️</div>
+      <p>Elige una <b>plantilla</b> lista (Full Body, PPL, Upper/Lower…) o arma tu split día por día.</p>
+      <button class="btn sm ghost" data-act="tmpl-open" style="max-width:260px;margin:0 auto">Ver plantillas</button>
     </div></div>`;
   }
   WEEK_ORDER.forEach(wd=>{
@@ -790,7 +1029,8 @@ function renderRutina(){
       </button>
       <div class="day-body">
         ${exs.map((ex,i)=>`<div class="row">
-          <div class="grow"><div class="t">${esc(ex.name)}</div><div class="s">${ex.sets} series × ${ex.reps} reps</div></div>
+          <button class="mini info" data-act="ex-info" data-wd="${wd}" data-ex="${ex.id}" ${exInfo(ex.name)?'':'style="opacity:.4"'}>ⓘ</button>
+          <div class="grow"><div class="t">${esc(ex.name)}</div><div class="s">${ex.sets}×${ex.reps} · RIR ${rirScheme(ex.sets,ex.name).join('/')}</div></div>
           <button class="mini" data-act="ex-up" data-wd="${wd}" data-ex="${ex.id}" ${i===0?'disabled':''}>↑</button>
           <button class="mini" data-act="ex-down" data-wd="${wd}" data-ex="${ex.id}" ${i===exs.length-1?'disabled':''}>↓</button>
           <button class="mini" data-act="ex-edit" data-wd="${wd}" data-ex="${ex.id}">✎</button>
@@ -848,16 +1088,138 @@ async function seedRoutine(){
 
 /* ================= NUTRICIÓN ================= */
 function mealsOf(date){ return S.meals.filter(m=>m.date===date).sort((a,b)=>a.t<b.t?-1:1); }
+/* clase de color de barra según rango (verde/ámbar/rojo) */
+function macroCls(v,kind,m){
+  if(!m)return '';
+  if(kind==='prot'){ if(v>=m.protMin)return 'ok'; if(v>=m.protMin*0.75)return 'warn'; return ''; }
+  if(kind==='fat'){ if(v>m.fatMax*1.1)return 'red'; if(v>m.fatMax)return 'warn'; if(v>=m.fatMin)return 'ok'; return ''; }
+  return '';
+}
+/* feedback honesto del día (Sección 9) */
+function nutriFeedback(kc,tp,tf,g,m){
+  if(kc===0)return `<div class="feedback"><span class="fdot"></span><div class="ftx txt-mut">Registra tu primera comida del día.</div></div>`;
+  const rem=g.kcal-kc; let dot='blue',tx='';
+  if(rem>150){
+    const pg=Math.max(0,g.p-tp);
+    tx=`Te quedan <b>${rem} kcal</b>`+(pg>0?` y <b>${pg}g de proteína</b>`:'')+`. ${pg>0?'Prioriza proteína en lo que resta.':'Buen margen: llena con carbos o grasa a gusto.'}`;
+  }else if(rem>=-150){ dot='ok'; tx=`En el objetivo del día 👌 <span class="txt-mut">(±150 kcal está perfecto — importa el promedio semanal).</span>`; }
+  else { dot='red'; tx=`Te pasaste <b>${-rem} kcal</b>. No pasa nada: compensa con comidas más ligeras el resto de la semana, lo que cuenta es el promedio.`; }
+  if(m&&tf>m.fatMax*1.1){ dot=dot==='ok'?'warn':dot; tx+=` <span class="txt-warn">Grasa alta: ${tf}g (máx ${m.fatMax}g).</span>`; }
+  else if(m&&tp<m.protMin&&rem<=150){ tx+=` <span class="txt-warn">Proteína baja: ${tp}g (mín ${m.protMin}g).</span>`; }
+  return `<div class="feedback ${dot}"><span class="fdot"></span><div class="ftx">${tx}</div></div>`;
+}
+/* ---- perfil: formulario y guardado ---- */
+function sheetProfile(){
+  const p=S.cfg.profile;
+  const bw=(!p.weightKg)?profileWeight():null; // sugerencia desde Progreso
+  const m=computeMacros();
+  openSheet(`<h2>Perfil y macros</h2>
+    <div class="txt-mut" style="margin:-8px 0 16px;font-size:13.5px">Todo se recalcula desde estos datos. Nada queda fijo.</div>
+    <h3>Sexo</h3>
+    <div class="seg">
+      <button data-act="prof-sex" data-v="m" class="${p.sex==='m'?'on':''}">Hombre</button>
+      <button data-act="prof-sex" data-v="f" class="${p.sex==='f'?'on':''}">Mujer</button>
+    </div>
+    <div class="f2" style="margin-top:14px">
+      <div class="field"><label>Edad</label><input id="f-page" type="number" inputmode="numeric" value="${p.age??''}" placeholder="24"></div>
+      <div class="field"><label>Altura (cm)</label><input id="f-pheight" type="number" inputmode="numeric" value="${p.height??''}" placeholder="179"></div>
+    </div>
+    <div class="field"><label>Peso (kg)${bw?` · <span class="txt-blue" data-act="prof-usebw" data-v="${bw}" role="button">usar último registrado (${fmtNum(round1(bw))})</span>`:''}</label>
+      <input id="f-pweight" type="number" inputmode="decimal" step="any" value="${p.weightKg??''}" placeholder="74"></div>
+    <h3>Nivel de actividad</h3>
+    <div class="field"><select id="f-pactivity">
+      ${Object.keys(ACTF).map(k=>`<option value="${k}" ${p.activity===k?'selected':''}>${ACT_LABEL[k]} — ${ACT_HINT[k]}</option>`).join('')}
+    </select></div>
+    <h3>Objetivo</h3>
+    <div class="field"><select id="f-pgoal">
+      ${Object.keys(GOALDELTA).map(k=>`<option value="${k}" ${p.goal===k?'selected':''}>${GOAL_LABEL[k]} — ${GOAL_HINT[k]}</option>`).join('')}
+    </select></div>
+    <h3>Reparto de proteína y grasa</h3>
+    <div class="rangerow">
+      <div class="rlbl"><span>Proteína</span><b id="pp-val">${m?m.prot+' g':'—'}</b></div>
+      <input type="range" min="0" max="100" value="${Math.round((p.proteinPref??0.5)*100)}" data-chg="ppref" id="f-ppref">
+    </div>
+    <div class="rangerow">
+      <div class="rlbl"><span>Grasa</span><b id="fp-val">${m?m.fat+' g':'—'}</b></div>
+      <input type="range" min="0" max="100" value="${Math.round((p.fatPref??0.5)*100)}" data-chg="fpref" id="f-fpref">
+    </div>
+    <h3>TDEE empírico <span class="txt-mut" style="font-weight:500;letter-spacing:0;text-transform:none;font-size:12px">(opcional)</span></h3>
+    <div class="field"><input id="f-ptdee" type="number" inputmode="numeric" value="${p.tdeeEmpirical??''}" placeholder="${m?('calculado: '+m.tdeeCalc):'kcal de mantenimiento real'}">
+      <div class="txt-mut" style="font-size:12px;margin-top:7px;line-height:1.4">Si tras 2-3 semanas tu peso no se mueve como predice el cálculo, pon aquí las kcal a las que realmente te mantienes. Este valor manda sobre el calculado.</div></div>
+    <div class="calcbox" id="prof-preview">${m?macroPreview(m):'<div class="cr" style="justify-content:center;color:var(--mut2)">Completa edad, altura y peso para ver tus macros.</div>'}</div>
+    <button class="btn" data-act="prof-save" style="margin-top:14px">Guardar y usar estas metas</button>`);
+  setTimeout(()=>{ if(!p.age)$('#f-page')?.focus(); },80);
+}
+function macroPreview(m){
+  return `<div class="cr"><span>BMR (Mifflin-St Jeor)</span><b>${m.bmr} kcal</b></div>
+    <div class="cr"><span>TDEE ${m.empirical?'(empírico)':'(calculado)'}</span><b>${m.tdee} kcal</b></div>
+    <div class="cr"><span>Proteína <span class="txt-mut">(${m.protMin}–${m.protMax})</span></span><b>${m.prot} g</b></div>
+    <div class="cr"><span>Grasa <span class="txt-mut">(${m.fatMin}–${m.fatMax})</span></span><b>${m.fat} g</b></div>
+    <div class="cr"><span>Carbos <span class="txt-mut">(resto)</span></span><b>${m.carbs} g</b></div>
+    <div class="cr big"><span>Target diario</span><b>${m.target} kcal</b></div>`;
+}
+/* lee los inputs del sheet a un perfil temporal para preview en vivo */
+function readProfileForm(){
+  const num=id=>{const v=parseFloat($(id)?.value);return isNaN(v)?null:v;};
+  const p={...S.cfg.profile};
+  p.age=num('#f-page'); p.height=num('#f-pheight'); p.weightKg=num('#f-pweight');
+  const a=$('#f-pactivity'); if(a)p.activity=a.value;
+  const g=$('#f-pgoal'); if(g)p.goal=g.value;
+  const pp=$('#f-ppref'); if(pp)p.proteinPref=(+pp.value)/100;
+  const fp=$('#f-fpref'); if(fp)p.fatPref=(+fp.value)/100;
+  p.tdeeEmpirical=num('#f-ptdee');
+  return p;
+}
+function refreshProfilePreview(){
+  const saved=S.cfg.profile; S.cfg.profile=readProfileForm();
+  const m=computeMacros(); S.cfg.profile=saved;
+  const box=$('#prof-preview'),pv=$('#pp-val'),fv=$('#fp-val');
+  if(box)box.innerHTML=m?macroPreview(m):'<div class="cr" style="justify-content:center;color:var(--mut2)">Completa edad, altura y peso para ver tus macros.</div>';
+  if(pv)pv.textContent=m?m.prot+' g':'—';
+  if(fv)fv.textContent=m?m.fat+' g':'—';
+}
+async function saveProfile(){
+  const p=readProfileForm();
+  if(!p.age||!p.height||!p.weightKg){toast('Faltan edad, altura o peso');return;}
+  S.cfg.profile=p; S.cfg.goalsAuto=true;
+  applyComputedGoals();
+  await saveCfg();
+  closeSheet(); renderNutri(); vibrate(15);
+  const m=computeMacros();
+  toast(`🎯 Metas: ${m.target} kcal · P ${m.prot} · C ${m.carbs} · G ${m.fat}`);
+}
 function renderNutri(){
   const el=$('#view-nutri');
   const date=S.nutriDate;
   const meals=mealsOf(date);
   const tot=meals.reduce((a,m)=>({kcal:a.kcal+m.kcal,p:a.p+m.p,c:a.c+m.c,f:a.f+m.f}),{kcal:0,p:0,c:0,f:0});
   const g=S.cfg.goals;
+  const m=(S.cfg.goalsAuto?computeMacros():null); // rangos vivos sólo si perfil activo
   const pct=(v,goal)=>goal?Math.min(100,v/goal*100):0;
   const isToday=date===dstr();
-  let h=`<div class="vtitle"><h1>Nutrición</h1></div>
-  <div class="datenav">
+  const kc=Math.round(tot.kcal),tp=Math.round(tot.p),tc=Math.round(tot.c),tf=Math.round(tot.f);
+  let h=`<div class="vtitle"><h1>Nutrición</h1></div>`;
+
+  /* --- tarjeta de perfil / CTA --- */
+  if(m){
+    h+=`<div class="card profcard" data-act="profile-open">
+      <div class="pavatar">👤</div>
+      <div class="grow">
+        <div class="pt">${GOAL_LABEL[S.cfg.profile.goal]} · ${m.target} kcal</div>
+        <div class="txt-mut" style="font-size:12.5px">${S.cfg.profile.sex==='f'?'Mujer':'Hombre'} · ${fmtNum(round1(m.weight))} kg · P ${m.protMin}-${m.protMax} · G ${m.fatMin}-${m.fatMax} · C ${m.carbs}g</div>
+      </div>
+      <span class="chev">›</span></div>`;
+  }else{
+    h+=`<div class="card profcard" data-act="profile-open" style="border-color:var(--line2)">
+      <div class="pavatar">🎯</div>
+      <div class="grow">
+        <div class="pt">Calcular mis macros</div>
+        <div class="txt-mut" style="font-size:12.5px">Perfil → TDEE → target y rangos automáticos${S.cfg.goalsAuto?'':' (usando metas manuales)'}</div>
+      </div>
+      <span class="chev">›</span></div>`;
+  }
+
+  h+=`<div class="datenav">
     <button class="mini" data-act="nutri-prev" style="width:44px;height:44px">‹</button>
     <div class="d" style="text-align:center" ${isToday?'':'data-act="nutri-today" role="button"'}>
       ${isToday?'Hoy':fmtDFull(date)}
@@ -867,15 +1229,16 @@ function renderNutri(){
   </div>
   <div class="card hero">
     <div style="display:flex;align-items:baseline;justify-content:space-between">
-      <div class="bignum">${Math.round(tot.kcal)}<small> / ${g.kcal} kcal</small></div>
-      <div class="cond txt-blue" style="font-size:17px;font-weight:700">${Math.max(0,g.kcal-Math.round(tot.kcal))} restantes</div>
+      <div class="bignum">${kc}<small> / ${g.kcal} kcal</small></div>
+      <div class="cond ${kc>g.kcal+150?'txt-red':'txt-blue'}" style="font-size:17px;font-weight:700">${kc>g.kcal?'+'+(kc-g.kcal)+' pasado':Math.max(0,g.kcal-kc)+' restantes'}</div>
     </div>
-    <div class="pbar" style="margin-top:12px"><i style="width:${pct(tot.kcal,g.kcal)}%" class="${tot.kcal>g.kcal?'over':''}"></i></div>
+    <div class="pbar" style="margin-top:12px"><i style="width:${pct(kc,g.kcal)}%" class="${kc>g.kcal+150?'red':kc>g.kcal?'warn':''}"></i></div>
     <div class="macro3">
-      <div class="m"><div class="lbl"><span>Proteína</span><span>${Math.round(tot.p)}/${g.p}g</span></div><div class="pbar"><i style="width:${pct(tot.p,g.p)}%"></i></div></div>
-      <div class="m"><div class="lbl"><span>Carbos</span><span>${Math.round(tot.c)}/${g.c}g</span></div><div class="pbar"><i style="width:${pct(tot.c,g.c)}%"></i></div></div>
-      <div class="m"><div class="lbl"><span>Grasa</span><span>${Math.round(tot.f)}/${g.f}g</span></div><div class="pbar"><i style="width:${pct(tot.f,g.f)}%"></i></div></div>
+      <div class="m"><div class="lbl"><span>Proteína</span><span>${tp}/${g.p}g</span></div><div class="pbar"><i class="${macroCls(tp,'prot',m)}" style="width:${pct(tp,g.p)}%"></i></div>${m?`<div class="rng">rango ${m.protMin}–${m.protMax}g</div>`:''}</div>
+      <div class="m"><div class="lbl"><span>Carbos</span><span>${tc}/${g.c}g</span></div><div class="pbar"><i style="width:${pct(tc,g.c)}%"></i></div>${m?`<div class="rng">resto de kcal</div>`:''}</div>
+      <div class="m"><div class="lbl"><span>Grasa</span><span>${tf}/${g.f}g</span></div><div class="pbar"><i class="${macroCls(tf,'fat',m)}" style="width:${pct(tf,g.f)}%"></i></div>${m?`<div class="rng">rango ${m.fatMin}–${m.fatMax}g</div>`:''}</div>
     </div>
+    ${nutriFeedback(kc,tp,tf,g,m)}
   </div>`;
 
   h+=`<div class="sect">Frecuentes ${S.foods.length?`<button class="mini" data-act="food-editmode" style="width:32px;height:32px;font-size:13px;${S.foodEdit?'color:var(--blue2);border-color:var(--line2)':''}">✎</button>`:''}</div>`;
@@ -941,6 +1304,78 @@ function shiftNutriDate(days){
   S.nutriDate=s;renderNutri();
 }
 
+/* ================= pre-workout por peso (Sección 11) ================= */
+const PW={meal:false,sensitive:false};
+function sheetPreworkout(){
+  const w=profileWeight();
+  if(!w){
+    openSheet(`<h2>Pre-workout</h2>
+      <div class="txt-mut" style="font-size:14px;line-height:1.5;margin:6px 0 16px">Necesito tu peso para calcular las dosis. Complétalo en tu perfil.</div>
+      <button class="btn" data-act="profile-open">Ir al perfil</button>`);
+    return;
+  }
+  const fluidMin=Math.round(5*w),fluidMax=Math.round(7*w);
+  const carbs=Math.round(w);
+  const cafLo=Math.round(3*w),cafHi=Math.round(6*w),cafMax=Math.round(9*w);
+  const CAP=400;
+  const recTop=Math.min(cafHi,CAP);
+  const overCap=cafHi>CAP;
+  const cafRec=PW.sensitive?`${Math.round(1.5*w)}–${cafLo} mg`:`${cafLo}–${recTop} mg`;
+  openSheet(`<h2>Pre-workout</h2>
+    <div class="txt-mut" style="font-size:13px;margin:-8px 0 16px">Calculado para tu peso de <b class="txt-blue">${fmtNum(round1(w))} kg</b>. Tómalo ~30-60 min antes de entrenar.</div>
+
+    <div class="calcbox">
+      <div class="cr big"><span>💧 Fluidos + electrolitos</span><b>${fluidMin}–${fluidMax} ml</b></div>
+      <div class="txt-mut" style="font-size:12.5px;line-height:1.5;margin-top:8px">Agua con sodio, potasio, magnesio y calcio (5-7 ml/kg).</div>
+    </div>
+
+    <div class="calcbox" style="margin-top:10px;${PW.meal?'opacity:.55':''}">
+      <div class="cr big"><span>🍯 Carbos rápidos</span><b>${PW.meal?'—':carbs+' g'}</b></div>
+      <div class="txt-mut" style="font-size:12.5px;line-height:1.5;margin-top:8px">${PW.meal?'Ya cubierto: comiste una comida completa 60-90 min antes, no necesitas carbo extra.':'Fructosa, glucosa o sacarosa (1 g/kg) para energía rápida.'}</div>
+    </div>
+
+    <div class="calcbox" style="margin-top:10px">
+      <div class="cr big"><span>☕ Cafeína</span><b class="${overCap||PW.sensitive?'txt-warn':''}">${cafRec}</b></div>
+      <div class="txt-mut" style="font-size:12.5px;line-height:1.5;margin-top:8px">
+        ${PW.sensitive
+          ?`<span class="txt-warn">Marcaste sensibilidad: empieza bajo (o evítala). No la tomes tarde.</span>`
+          :`Rango efectivo 3-6 mg/kg. ${overCap?`<span class="txt-warn">Tu 6 mg/kg = ${cafHi} mg supera el límite prudente de 400 mg — no pases de 400.</span>`:''}`}
+        <br>El extremo de 9 mg/kg (${cafMax} mg) es solo para gente muy adaptada.
+      </div>
+    </div>
+
+    <h3>Ajustes</h3>
+    <label class="check"><input type="checkbox" ${PW.meal?'checked':''} data-act="pw-meal"> Comí una comida completa 60-90 min antes</label>
+    <label class="check"><input type="checkbox" ${PW.sensitive?'checked':''} data-act="pw-sens"> Soy sensible a la cafeína</label>`);
+}
+
+/* ================= peso: promedio semanal (Sección 20) ================= */
+function weeklyAvg(){
+  const ws=S.body.filter(b=>b.weight!=null);
+  if(!ws.length)return null;
+  const end=new Date(ws[ws.length-1].date+'T12:00:00');
+  const daysAgo=d=>(end-new Date(d+'T12:00:00'))/86400000;
+  const cur=ws.filter(b=>{const g=daysAgo(b.date);return g>=0&&g<7;});
+  const prev=ws.filter(b=>{const g=daysAgo(b.date);return g>=7&&g<14;});
+  const avg=a=>a.length?a.reduce((s,b)=>s+b.weight,0)/a.length:null;
+  const curAvg=avg(cur),prevAvg=avg(prev);
+  return {curAvg,prevAvg,n:cur.length,delta:(curAvg!=null&&prevAvg!=null)?round1(curAvg-prevAvg):null,last:ws[ws.length-1]};
+}
+/* ================= guía educativa (Parte C) ================= */
+function sheetGuide(){
+  openSheet(`<h2>Cómo leer tu progreso</h2>
+    <h3>⚖️ El peso fluctúa</h3>
+    <div class="gtx">Variar 1-2 kg en un día es normal (agua, glucógeno, sodio, digestión). Pésate a diario en las mismas condiciones y mira el <b>promedio semanal</b>, no el número de un día suelto.</div>
+    <h3>💪 Recomposición: mira el gym, no la balanza</h3>
+    <div class="gtx">Ganar músculo en déficit es real pero lento (~0.5-1 kg en 3-4 meses) e invisible en la balanza. El mejor indicador de que estás reteniendo/ganando músculo es que <b>tus pesos en el gym se mantienen o suben</b>. Dale más peso a la fuerza que al número.</div>
+    <h3>🧪 Creatina</h3>
+    <div class="gtx">5 g/día todos los días (incluso descanso), sin fase de carga; el timing da igual, solo importa la constancia. Sube +1-2 kg en la balanza los primeros 7-10 días por <b>agua intracelular — no es grasa</b>.</div>
+    <h3>🏃 Cardio en déficit</h3>
+    <div class="gtx">El cuello de botella de perder grasa casi nunca es el cardio, es el control calórico. En días de descanso, 25-30 min moderados suman ~200-250 kcal. Evítalo justo después de sesiones largas de pesas (interfiere con la recuperación).</div>
+    <h3>🎯 Expectativas</h3>
+    <div class="gtx">Pérdida de grasa saludable: ~0.25-0.3 kg/sem con déficit de ~300 kcal. Abs visibles requieren ~10-12% de grasa — la mayoría subestima cuánto falta. El mismo peso con más músculo se ve muy distinto.</div>`);
+}
+
 /* ================= PROGRESO ================= */
 function exerciseSeries(){
   // nombre -> [{date, best(vol), maxW}] ascendente
@@ -960,8 +1395,7 @@ function renderProg(){
   const el=$('#view-prog');
   const weights=S.body.filter(b=>b.weight!=null);
   const lastW=weights[weights.length-1];
-  const prevW=weights[weights.length-2];
-  const delta=lastW&&prevW?round1(lastW.weight-prevW.weight):null;
+  const wk=weeklyAvg();
   const series=exerciseSeries();
   const exNames=Object.keys(series).sort((a,b)=>a.localeCompare(b));
   if(!S.progEx||!series[S.progEx])S.progEx=exNames[0]||null;
@@ -972,17 +1406,20 @@ function renderProg(){
   });
   const M={waist:'Cintura',arm:'Brazo',chest:'Pecho',leg:'Pierna'};
 
-  let h=`<div class="vtitle"><h1>Progreso</h1></div>
+  const headNum=wk&&wk.curAvg!=null?wk.curAvg:(lastW?lastW.weight:null);
+  const headLabel=wk&&wk.curAvg!=null?`Peso · promedio ${wk.n} día${wk.n===1?'':'s'}`:'Peso corporal';
+  let h=`<div class="vtitle"><h1>Progreso</h1><button class="icon-btn" data-act="guide-open" style="margin-left:auto" aria-label="Guía">ⓘ</button></div>
   <div class="card hero">
     <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px">
       <div>
-        <div class="steplabel">Peso corporal</div>
-        <div class="bignum">${lastW?fmtNum(round1(lastW.weight)):'—'}<small> kg</small></div>
-        ${lastW?`<div class="txt-mut" style="font-size:13px;margin-top:3px">${fmtNum(kg2lb(lastW.weight))} lb · ${fmtDFull(lastW.date)}
-          ${delta!=null?` · <b class="${delta<=0?'txt-ok':'txt-blue'}">${delta>0?'+':''}${fmtNum(delta)} kg</b>`:''}</div>`:''}
+        <div class="steplabel">${headLabel}</div>
+        <div class="bignum">${headNum!=null?fmtNum(round1(headNum)):'—'}<small> kg</small></div>
+        ${lastW?`<div class="txt-mut" style="font-size:13px;margin-top:3px">${wk&&wk.curAvg!=null?`último ${fmtNum(round1(lastW.weight))} kg · `:`${fmtNum(kg2lb(lastW.weight))} lb · `}${fmtDFull(lastW.date)}
+          ${wk&&wk.delta!=null?` · <b class="${wk.delta<=0?'txt-ok':'txt-blue'}">${wk.delta>0?'+':''}${fmtNum(wk.delta)} kg/sem</b>`:''}</div>`:''}
       </div>
       <button class="btn sm ghost" data-act="body-open" style="width:auto;padding:0 18px">+ Registro</button>
     </div>
+    ${wk&&wk.curAvg!=null?'<div class="txt-mut" style="font-size:11.5px;margin-top:8px;line-height:1.4">El peso fluctúa 1-2 kg por día; el promedio semanal es la métrica que importa.</div>':''}
     <div style="margin-top:14px"><canvas class="chart" id="chartWeight"></canvas></div>
     ${Object.keys(lastVals).length?`<div class="macro3" style="grid-template-columns:repeat(4,1fr)">
       ${Object.entries(lastVals).map(([k,v])=>`<div style="text-align:center">
@@ -1058,7 +1495,10 @@ async function saveBody(){
   if(rec.weight==null&&rec.waist==null&&rec.arm==null&&rec.chest==null&&rec.leg==null){toast('Ingresa al menos un dato');return;}
   await idb.put('body',rec);
   S.body.push(rec);S.body.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
-  closeSheet();renderProg();toast('Registro guardado');
+  // sincroniza el peso del perfil → recalcula macros (Sección 0: nada fijo)
+  if(rec.weight!=null){ S.cfg.profile.weightKg=rec.weight; if(applyComputedGoals())await saveCfg(); else await saveCfg(); }
+  closeSheet();renderProg();
+  toast(S.cfg.goalsAuto&&rec.weight!=null?'Registro guardado · macros actualizadas':'Registro guardado');
 }
 
 /* ================= gráfico canvas ================= */
@@ -1131,12 +1571,19 @@ function sheetSettings(){
       <button data-act="rest-cfg" data-d="15">+</button>
     </div>
     <h3>Metas nutricionales diarias</h3>
-    <div class="f4">
+    <div class="seg">
+      <button data-act="goalmode" data-v="auto" class="${S.cfg.goalsAuto?'on':''}">Desde perfil</button>
+      <button data-act="goalmode" data-v="manual" class="${S.cfg.goalsAuto?'':'on'}">Manual</button>
+    </div>
+    ${S.cfg.goalsAuto?`
+    <div class="calcbox" style="margin-top:12px">${computeMacros()?macroPreview(computeMacros()):'<div class="txt-mut" style="font-size:13px">Completa tu perfil para calcular las metas.</div>'}</div>
+    <button class="btn ghost sm" data-act="profile-open" style="margin-top:10px">✎ Editar perfil</button>`:`
+    <div class="f4" style="margin-top:12px">
       <div class="field"><label>Kcal</label><input type="number" inputmode="numeric" data-chg="goal" data-k="kcal" value="${g.kcal}"></div>
       <div class="field"><label>Prot</label><input type="number" inputmode="numeric" data-chg="goal" data-k="p" value="${g.p}"></div>
       <div class="field"><label>Carb</label><input type="number" inputmode="numeric" data-chg="goal" data-k="c" value="${g.c}"></div>
       <div class="field"><label>Grasa</label><input type="number" inputmode="numeric" data-chg="goal" data-k="f" value="${g.f}"></div>
-    </div>
+    </div>`}
     <h3>Respaldo</h3>
     <button class="btn ghost" data-act="export" style="margin-bottom:10px">⬇ Exportar todo a JSON</button>
     <button class="btn ghost" data-act="import-pick" style="margin-bottom:10px">⬆ Importar JSON</button>
@@ -1226,6 +1673,13 @@ const ACT={
   'rest-cfg':b=>{S.cfg.rest=Math.max(0,(S.cfg.rest||0)+ +b.dataset.d);saveCfg();$('#f-rest').value=S.cfg.rest?fmtMMSS(S.cfg.rest):'OFF';},
   /* rutina */
   'seed':()=>seedRoutine(),
+  'tmpl-open':()=>sheetTemplates(),
+  'tmpl-apply':b=>applyTemplate(b.dataset.id),
+  'tmpl-clear':async()=>{
+    if(Object.values(S.routine).some(d=>d.exercises?.length)&&!confirm('¿Vaciar tu split y empezar en blanco?'))return;
+    await idb.clear('routine');S.routine={};closeSheet();renderRutina();toast('Split vacío — arma el tuyo');
+  },
+  'ex-info':b=>{const d=S.routine[+b.dataset.wd];const ex=d?.exercises.find(e=>e.id===b.dataset.ex);if(ex)sheetExInfo(ex.name,+b.dataset.wd,ex.id);},
   'day-toggle':b=>{const wd=+b.dataset.wd;S.rutOpen=S.rutOpen===wd?null:wd;renderRutina();},
   'day-edit':b=>{
     const wd=+b.dataset.wd,d=S.routine[wd];
@@ -1258,6 +1712,15 @@ const ACT={
   'nutri-today':()=>{S.nutriDate=dstr();renderNutri();},
   'meal-add':()=>sheetMealForm(),
   'meal-save':()=>saveMeal(),
+  'profile-open':()=>sheetProfile(),
+  'prof-sex':b=>{S.cfg.profile.sex=b.dataset.v;$$('#sheet [data-act="prof-sex"]').forEach(x=>x.classList.toggle('on',x.dataset.v===b.dataset.v));refreshProfilePreview();},
+  'prof-usebw':b=>{const inp=$('#f-pweight');if(inp){inp.value=b.dataset.v;refreshProfilePreview();}},
+  'prof-save':()=>saveProfile(),
+  'goalmode':async b=>{
+    S.cfg.goalsAuto=b.dataset.v==='auto';
+    if(S.cfg.goalsAuto&&!computeMacros()){S.cfg.goalsAuto=false;closeSheet();sheetProfile();return;}
+    applyComputedGoals();await saveCfg();sheetSettings();render(true);
+  },
   'meal-del':async b=>{
     await idb.del('meals',b.dataset.id);
     S.meals=S.meals.filter(m=>m.id!==b.dataset.id);
@@ -1271,9 +1734,14 @@ const ACT={
     if(!S.foods.length)S.foodEdit=false;
     render(true);
   },
+  /* hoy: pre-workout */
+  'prewk-open':()=>sheetPreworkout(),
+  'pw-meal':()=>{PW.meal=!PW.meal;sheetPreworkout();},
+  'pw-sens':()=>{PW.sensitive=!PW.sensitive;sheetPreworkout();},
   /* progreso */
   'body-open':()=>sheetBodyForm(),
   'body-save':()=>saveBody(),
+  'guide-open':()=>sheetGuide(),
   /* ajustes */
   'unit':b=>{S.cfg.unit=b.dataset.u;saveCfg();$$('#sheet [data-act="unit"]').forEach(x=>x.classList.toggle('on',x.dataset.u===S.cfg.unit));render(true);},
   'export':()=>exportJSON(),
@@ -1306,6 +1774,11 @@ document.addEventListener('change',e=>{
   }else if(chg==='prog-ex'){
     S.progEx=t.value;renderProg();
   }
+});
+/* preview en vivo del perfil: sliders, campos numéricos y selects */
+const PROF_IDS=new Set(['f-page','f-pheight','f-pweight','f-ptdee','f-ppref','f-fpref','f-pactivity','f-pgoal']);
+document.addEventListener('input',e=>{
+  if(PROF_IDS.has(e.target.id)&&$('#f-pweight'))refreshProfilePreview();
 });
 $('#importFile').addEventListener('change',e=>{
   const f=e.target.files[0];
