@@ -795,10 +795,12 @@ function renderHoy(){
     </div>`;
     if(day?.name)h+=`<div class="card hero"><div class="day-wd">${WD[wd]}${wd===today.getDay()?' · tu día':''}</div>
       <div class="cond" style="font-size:28px;font-weight:700;font-style:italic">${esc(day.name)}</div>
-      <div class="txt-mut" style="font-size:13px;margin-top:2px">${exs.length} ejercicio${exs.length===1?'':'s'} · toca ✓ en una serie para arrancar</div></div>`;
+      <div class="txt-mut" style="font-size:13px;margin-top:2px">${exs.length} ejercicio${exs.length===1?'':'s'} · todavía no empezaste</div></div>`;
+    if(exs.length)h+=`<button class="btn" data-act="sess-start" style="margin-bottom:var(--s3)">▶ Iniciar entrenamiento</button>`;
   }
 
-  if(exs.length&&SR_CLASS){
+  /* dictar solo tiene sentido con la sesión abierta: rellena una serie para guardar */
+  if(active&&exs.length&&SR_CLASS){
     h+=`<button class="pw-btn" id="hoy-voice-btn" data-act="hoy-voice"><span class="pwi">🎤</span><span class="pwt">Registrar por voz</span><span class="txt-mut" style="font-size:12.5px;font-weight:500">decí el ejercicio y el peso</span><span class="chev">›</span></button>`;
   }
   if(exs.length){
@@ -823,8 +825,9 @@ function renderHoy(){
       h+=`<div class="card ex-card ${full?'full':''}" style="--done:${Math.min(1,done.length/ex.sets)}">
         <div class="ex-done-count ${full?'full':''}">${done.length}/${ex.sets}</div>
         <div class="exname">${esc(ex.name)} ${exInfo(ex.name)?`<button class="mini info inline" data-act="ex-info" data-wd="${wd}" data-ex="${ex.id}">ⓘ</button>`:''}</div>
-        <div class="extarget">Objetivo ${ex.sets} × ${ex.reps} · ${full?'✓ completo':`serie ${done.length+1} → ${curRir===0?'<b class="txt-blue">al fallo</b>':'RIR '+curRir}`}</div>
+        <div class="extarget">Objetivo ${ex.sets} × ${ex.reps}${active?` · ${full?'✓ completo':`serie ${done.length+1} → ${curRir===0?'<b class="txt-blue">al fallo</b>':'RIR '+curRir}`}`:''}</div>
         ${last?`<div class="exlast">Última vez: ${last.map(s=>`${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg</div>`:''}
+        ${active?`
         <div class="prog-warn" id="pw-${ex.id}" style="${pwarn?'':'display:none'}">⚠ ${pwarn||''}</div>
         <div class="setgrid">
           <div>
@@ -850,6 +853,7 @@ function renderHoy(){
         <button class="btn" data-act="set-save" data-ex="${ex.id}">✓ Guardar serie</button>
         ${done.length?`<div class="chips setchips">${done.map((s,i)=>
           `<span class="chip blue" data-act="set-del" data-ex="${ex.id}" data-i="${i}">${fmtNum(round1(s.w))}kg × ${s.r}<span class="x">✕</span></span>`).join('')}</div>`:''}
+        `:''}
       </div>`;
     });
   }
@@ -912,7 +916,7 @@ async function completeSession(){
   const entries=Object.entries(d.entries)
     .sort((a,b)=>{const ia=order.indexOf(a[0]),ib=order.indexOf(b[0]);return (ia<0?99:ia)-(ib<0?99:ib);})
     .map(([exId,e])=>({exId,name:e.name,sets:e.sets}));
-  if(!entries.length){toast('No hay series registradas');return;}
+  if(!entries.length){toast('No registraste ninguna serie. Usá "Descartar" para cerrar la sesión.');return;}
   const sess={id:d.id,date:d.date,weekday:d.weekday,dayName:d.dayName,
     start:d.start,end:Date.now(),duration:Math.max(1,Math.round((Date.now()-d.start)/60000)),entries};
   await idb.put('sessions',sess);
@@ -1589,6 +1593,9 @@ function sheetPreworkout(){
       </div>
     </div>
 
+    ${PW.meal?'':`<button class="btn ghost" data-act="pw-add-macros" data-c="${carbs}" style="margin-top:14px">＋ Sumar a Nutrición · ${carbs} g carbos (${Math.round(carbs*4)} kcal)</button>
+    <div class="txt-mut" style="font-size:12.5px;line-height:1.5;margin-top:8px">Solo si de verdad los tomás. Fluidos y cafeína no aportan calorías, así que no se cuentan.</div>`}
+
     <h3>Ajustes</h3>
     <label class="check"><input type="checkbox" ${PW.meal?'checked':''} data-act="pw-meal"> Comí una comida completa 60-90 min antes</label>
     <label class="check"><input type="checkbox" ${PW.sensitive?'checked':''} data-act="pw-sens"> Soy sensible a la cafeína</label>`);
@@ -1903,6 +1910,14 @@ const ACT={
     if(!Object.keys(S.draft.entries).length)S.draft=null;
     await saveDraft();render(true);
   },
+  'sess-start':async()=>{
+    const wd=currentDayForHoy(),day=S.routine[wd];
+    if(!day?.exercises?.length){toast('Este día no tiene ejercicios');return;}
+    S.draft={id:uid(),date:dstr(),weekday:wd,dayName:day.name||WD[wd],start:Date.now(),entries:{}};
+    await saveDraft();
+    vibrate(15);renderHoy();
+    toast(`💪 Entrenamiento iniciado · ${day.name||WD[wd]}`);
+  },
   'sess-done':()=>{if(confirm('¿Completar y guardar la sesión?'))completeSession();},
   'sess-discard':async()=>{if(!confirm('¿Descartar la sesión en curso?'))return;S.draft=null;S.hoyDay=null;await saveDraft();stopRest();renderHoy();},
   'hist-view':b=>sheetHist(b.dataset.id),
@@ -2037,6 +2052,17 @@ const ACT={
     rec.onerror=()=>toast('No se pudo escuchar. Probá de nuevo.');
     rec.onend=()=>{VOICE=null;b.classList.remove('accent');const i=b.querySelector('.pwi');if(i)i.textContent='🎤';};
     rec.start();
+  },
+  'pw-add-macros':async b=>{
+    const c=Math.max(0,parseInt(b.dataset.c)||0);
+    if(!c){toast('No hay carbos que sumar');return;}
+    /* se registra en el día de hoy, no en la fecha que estés mirando en Nutrición:
+       el pre-workout se toma ahora */
+    const meal={id:uid(),date:dstr(),name:'Pre-workout',kcal:Math.round(c*4),p:0,c,f:0,t:new Date().toTimeString().slice(0,5)};
+    await idb.put('meals',meal);S.meals.push(meal);
+    vibrate(12);closeSheet();
+    if(S.tab==='nutri')renderNutri();
+    toast(`＋ Sumado a Nutrición · ${Math.round(c*4)} kcal · ${c} g carbos`);
   },
   'pw-meal':()=>{PW.meal=!PW.meal;sheetPreworkout();},
   'pw-sens':()=>{PW.sensitive=!PW.sensitive;sheetPreworkout();},
