@@ -429,6 +429,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .pw-btn .pwi{font-size:20px}
 .pw-btn .pwt{font-family:'Barlow Condensed';font-weight:700;font-size:17px;letter-spacing:.03em}
 .pw-btn .chev{margin-left:auto;color:var(--blue2)}
+.pw-btn.accent{background:linear-gradient(135deg,rgba(255,93,115,.18),rgba(12,19,34,.4));border-color:rgba(255,93,115,.45)}
 </style>
 </head>
 <body>
@@ -695,6 +696,9 @@ function renderHoy(){
       <div class="txt-mut" style="font-size:13px;margin-top:2px">${exs.length} ejercicio${exs.length===1?'':'s'} · toca ✓ en una serie para arrancar</div></div>`;
   }
 
+  if(exs.length&&SR_CLASS){
+    h+=`<button class="pw-btn" id="hoy-voice-btn" data-act="hoy-voice"><span class="pwi">🎤</span><span class="pwt">Registrar por voz</span><span class="txt-mut" style="font-size:12.5px;font-weight:500">decí el ejercicio y el peso</span><span class="chev">›</span></button>`;
+  }
   if(exs.length){
     h+=`<button class="pw-btn" data-act="prewk-open"><span class="pwi">⚡</span><span class="pwt">Pre-workout</span><span class="txt-mut" style="font-size:12.5px;font-weight:500">fluidos · carbos · cafeína</span><span class="chev">›</span></button>`;
   }
@@ -1898,6 +1902,34 @@ const ACT={
   },
   /* hoy: pre-workout */
   'prewk-open':()=>sheetPreworkout(),
+  'hoy-voice':b=>{
+    if(!SR_CLASS)return;
+    if(VOICE){VOICE.stop();return;} // toca de nuevo para cancelar
+    const wd=currentDayForHoy();
+    const exs=S.routine[wd]?.exercises||[];
+    const rec=new SR_CLASS();
+    rec.lang='es-ES';rec.interimResults=false;rec.maxAlternatives=1;
+    VOICE=rec;b.classList.add('accent');const icon=b.querySelector('.pwi');if(icon)icon.textContent='🔴';
+    rec.onresult=e=>{
+      const txt=(e.results[0]?.[0]?.transcript||'').trim();
+      if(!txt)return;
+      const nt=norm(txt);
+      const nums=(txt.match(/\d+/g)||[]).map(Number);
+      const ex=exs.find(x=>nt.includes(norm(x.name)))
+        ||exs.find(x=>norm(x.name).split(' ').some(w=>w.length>3&&nt.includes(w)));
+      if(!ex){toast(`No identifiqué el ejercicio en "${txt}". Decí el nombre tal cual en tu rutina de hoy.`);return;}
+      const v=ensureVals(ex);
+      if(nums[0])v.w=nums[0];
+      if(nums[1])v.r=nums[1];
+      updExDisplays(ex.id);
+      const inp=$(`input[data-chg="w"][data-ex="${ex.id}"]`);
+      if(inp)inp.scrollIntoView({behavior:'smooth',block:'center'});
+      toast(`🎤 ${ex.name}: ${wBoth(v.w)} × ${v.r} — revisá y tocá "Guardar serie"`);
+    };
+    rec.onerror=()=>toast('No se pudo escuchar. Probá de nuevo.');
+    rec.onend=()=>{VOICE=null;b.classList.remove('accent');const i=b.querySelector('.pwi');if(i)i.textContent='🎤';};
+    rec.start();
+  },
   'pw-meal':()=>{PW.meal=!PW.meal;sheetPreworkout();},
   'pw-sens':()=>{PW.sensitive=!PW.sensitive;sheetPreworkout();},
   /* progreso */
