@@ -125,10 +125,10 @@ main{
 /* la pantalla entra desde el lado hacia el que vas, como en una app nativa:
    pestaña siguiente → entra por la derecha; anterior → por la izquierda.
    Corre SOLO al cambiar de pestaña (.enter), nunca en un re-render. */
-@keyframes slideR{from{opacity:0;transform:translate3d(34px,0,0)}to{opacity:1;transform:none}}
-@keyframes slideL{from{opacity:0;transform:translate3d(-34px,0,0)}to{opacity:1;transform:none}}
-.view.enter.dir-r{animation:slideR .34s var(--ease)}
-.view.enter.dir-l{animation:slideL .34s var(--ease)}
+@keyframes slideR{from{opacity:0;transform:translate3d(56px,0,0)}to{opacity:1;transform:none}}
+@keyframes slideL{from{opacity:0;transform:translate3d(-56px,0,0)}to{opacity:1;transform:none}}
+.view.enter.dir-r{animation:slideR .38s var(--ease)}
+.view.enter.dir-l{animation:slideL .38s var(--ease)}
 .view.enter>*{animation:vin .38s var(--ease) backwards}
 /* escalonado: la pantalla entra por partes en vez de un bloque único */
 .view.enter>*:nth-child(2){animation-delay:.045s}
@@ -694,10 +694,15 @@ function switchTab(tab){
   const v=$('#view-'+tab);
   v.classList.add('active');
   render();
-  /* la entrada animada es exclusiva del cambio de pestaña */
+  /* la entrada animada es exclusiva del cambio de pestaña.
+     El reflow forzado es obligatorio: quitar y volver a poner la clase en el
+     mismo bloque síncrono NO reinicia una animación CSS (el navegador agrupa
+     ambos cambios), así que sin esto la pantalla a veces entraba sin animar. */
+  v.classList.remove('enter','dir-r','dir-l');
+  void v.offsetWidth;
   v.classList.add('enter',dir);
   clearTimeout(ENTER_T);
-  ENTER_T=setTimeout(()=>v.classList.remove('enter','dir-r','dir-l'),420);
+  ENTER_T=setTimeout(()=>v.classList.remove('enter','dir-r','dir-l'),460);
   moveTabIndicator();
   scrollTo({top:0,behavior:'instant'}); // al cambiar de pestaña el salto al tope es inmediato
 }
