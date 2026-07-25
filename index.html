@@ -788,6 +788,7 @@ function renderHoy(){
             ? `Entrenando · <span id="hoy-elapsed" data-start="${S.draft.start}">${fmtMMSS(Math.floor((Date.now()-S.draft.start)/1000))}</span> · ${nsets} serie${nsets===1?'':'s'}`
             : `Sesión abierta · el reloj arranca con tu primera serie`}</div>
         </div>
+        ${SR_CLASS?`<button class="icon-btn" id="hoy-voice-btn" data-act="hoy-voice" aria-label="Registrar serie por voz" style="flex:none">🎤</button>`:''}
       </div>
       <div style="display:flex;gap:10px;margin-top:14px">
         <button class="btn sm ok" data-act="sess-done" style="flex:2">✓ Completar sesión</button>
@@ -805,11 +806,9 @@ function renderHoy(){
     if(exs.length)h+=`<button class="btn" data-act="sess-start" style="margin-bottom:var(--s3)">▶ Iniciar entrenamiento</button>`;
   }
 
-  /* dictar solo tiene sentido con la sesión abierta: rellena una serie para guardar */
-  if(active&&exs.length&&SR_CLASS){
-    h+=`<button class="pw-btn" id="hoy-voice-btn" data-act="hoy-voice"><span class="pwi">🎤</span><span class="pwt">Registrar por voz</span><span class="txt-mut" style="font-size:12.5px;font-weight:500">decí el ejercicio y el peso</span><span class="chev">›</span></button>`;
-  }
-  if(exs.length){
+  /* el pre-workout se toma 30-60 min ANTES: durante la sesión ya no sirve de nada
+     y solo compite con las tarjetas de ejercicio */
+  if(!active&&exs.length){
     h+=`<button class="pw-btn" data-act="prewk-open"><span class="pwi">⚡</span><span class="pwt">Pre-workout</span><span class="txt-mut" style="font-size:12.5px;font-weight:500">fluidos · carbos · cafeína</span><span class="chev">›</span></button>`;
   }
   if(!exs.length){
@@ -2164,7 +2163,8 @@ const ACT={
     const exs=S.routine[wd]?.exercises||[];
     const rec=new SR_CLASS();
     rec.lang='es-ES';rec.interimResults=false;rec.maxAlternatives=1;
-    VOICE=rec;b.classList.add('accent');const icon=b.querySelector('.pwi');if(icon)icon.textContent='🔴';
+    /* el botón puede ser la barra ancha o el ícono del panel: sirve para ambos */
+    VOICE=rec;b.classList.add('accent');const icon=b.querySelector('.pwi')||b;icon.textContent='🔴';
     rec.onresult=e=>{
       const txt=(e.results[0]?.[0]?.transcript||'').trim();
       if(!txt)return;
@@ -2182,7 +2182,7 @@ const ACT={
       toast(`🎤 ${ex.name}: ${wBoth(v.w)} × ${v.r} — revisá y tocá "Guardar serie"`);
     };
     rec.onerror=()=>toast('No se pudo escuchar. Probá de nuevo.');
-    rec.onend=()=>{VOICE=null;b.classList.remove('accent');const i=b.querySelector('.pwi');if(i)i.textContent='🎤';};
+    rec.onend=()=>{VOICE=null;b.classList.remove('accent');const i=b.querySelector('.pwi')||b;i.textContent='🎤';};
     rec.start();
   },
   'pw-add-macros':async b=>{
