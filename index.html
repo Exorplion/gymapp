@@ -788,7 +788,6 @@ function renderHoy(){
             ? `Entrenando · <span id="hoy-elapsed" data-start="${S.draft.start}">${fmtMMSS(Math.floor((Date.now()-S.draft.start)/1000))}</span> · ${nsets} serie${nsets===1?'':'s'}`
             : `Sesión abierta · el reloj arranca con tu primera serie`}</div>
         </div>
-        ${SR_CLASS?`<button class="icon-btn" id="hoy-voice-btn" data-act="hoy-voice" aria-label="Registrar serie por voz" style="flex:none">🎤</button>`:''}
       </div>
       <div style="display:flex;gap:10px;margin-top:14px">
         <button class="btn sm ok" data-act="sess-done" style="flex:2">✓ Completar sesión</button>
@@ -810,6 +809,10 @@ function renderHoy(){
      y solo compite con las tarjetas de ejercicio */
   if(!active&&exs.length){
     h+=`<button class="pw-btn" data-act="prewk-open"><span class="pwi">⚡</span><span class="pwt">Pre-workout</span><span class="txt-mut" style="font-size:12.5px;font-weight:500">fluidos · carbos · cafeína</span><span class="chev">›</span></button>`;
+  }
+  /* registro retroactivo: para cuando entrenaste sin ir anotando serie por serie */
+  if(!active&&SR_CLASS){
+    h+=`<button class="pw-btn" id="hoy-voice-btn" data-act="hoy-voice"><span class="pwi">🎤</span><span class="pwt">Registrar por voz</span><span class="txt-mut" style="font-size:12.5px;font-weight:500">contá qué entrenaste hoy</span><span class="chev">›</span></button>`;
   }
   if(!exs.length){
     h+=`<div class="card"><div class="empty">
@@ -1637,6 +1640,95 @@ function exerciseSeries(){
   });
   return map;
 }
+/* ================= registro retroactivo por voz (Sección 22) =================
+   El dictado devuelve los números como palabras ("cuatro por ocho"), así que
+   primero se pasan a dígitos. */
+const NUMWORDS={un:1,uno:1,una:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,
+  nueve:9,diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciseis:16,
+  diecisiete:17,dieciocho:18,diecinueve:19,veinte:20,veinticinco:25,treinta:30};
+function digitize(t){
+  let s=' '+norm(t).replace(/[.,;]/g,' ')+' ';
+  for(const [w,n] of Object.entries(NUMWORDS))s=s.split(' '+w+' ').join(' '+n+' ');
+  return s;
+}
+/* candidatos: primero los ejercicios de tu propia rutina, que son los probables */
+function voiceCandidates(){
+  const list=[];
+  Object.values(S.routine).forEach(d=>(d.exercises||[]).forEach(e=>list.push(e.name)));
+  EXCATALOG.forEach(e=>list.push(e.n));
+  return [...new Set(list.map(n=>n.trim()))];
+}
+/* coincidencia por tokens, no por texto exacto: así "press de banca" encuentra
+   "Press banca". Para nombres de varias palabras se exigen al menos dos tokens,
+   si no "press" solo coincidiría con banca, militar e inclinado a la vez. */
+function matchAt(t,name){
+  const toks=norm(name).split(/\s+/).filter(w=>w.length>2);
+  if(!toks.length)return null;
+  const first=t.indexOf(toks[0]);
+  if(first<0)return null;
+  let pos=first+toks[0].length,last=pos,score=1;
+  for(let i=1;i<toks.length;i++){
+    const p=t.indexOf(toks[i],pos);
+    if(p<0||p-pos>20)break;
+    pos=p+toks[i].length;last=pos;score++;
+  }
+  if(toks.length>1&&score<2)return null;
+  return {at:first,end:last,score};
+}
+function parseWorkoutSpeech(text){
+  const t=digitize(text),hits=[];
+  voiceCandidates().forEach(name=>{
+    const m=matchAt(t,name);
+    if(m)hits.push({name,...m});
+  });
+  /* ante solapamientos gana el nombre más específico (más tokens, más largo) */
+  hits.sort((a,b)=>a.at-b.at||b.score-a.score||(b.end-b.at)-(a.end-a.at));
+  const picked=[];
+  hits.forEach(hh=>{
+    if(picked.some(p=>hh.at<p.end&&hh.end>p.at))return;
+    picked.push(hh);
+  });
+  picked.sort((a,b)=>a.at-b.at);
+  return picked.map((p,i)=>{
+    const end=i+1<picked.length?picked[i+1].at:t.length;
+    const nums=(t.slice(p.end,end).match(/\d+/g)||[]).map(Number).filter(n=>n>0&&n<=200);
+    /* patrón hablado habitual: "<series> por / series de <reps>" */
+    return {name:p.name,sets:Math.min(12,nums[0]||3),reps:Math.min(50,nums[1]||10),
+      w:round1((lastDataFor(p.name)?.[0]?.w)||20)};
+  });
+}
+let VLOG=null;
+function sheetVoiceLog(){
+  if(!VLOG?.items.length)return;
+  const row=(it,i)=>`<div class="card sub" style="margin-bottom:var(--s2)">
+    <div style="display:flex;align-items:center;gap:var(--s2)">
+      <div class="grow" style="flex:1"><div class="cond" style="font-size:var(--t-lg);font-weight:700">${esc(it.name)}</div></div>
+      <button class="mini red" data-act="vlog-del" data-i="${i}">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s2);margin-top:var(--s2)">
+      ${[['sets','Series'],['reps','Reps'],['w','Peso kg']].map(([f,lbl])=>`<div>
+        <div class="steplabel" style="margin-bottom:var(--s1)">${lbl}</div>
+        <div class="step">
+          <button data-act="vlog-step" data-i="${i}" data-f="${f}" data-d="-1">−</button>
+          <div class="val"><input type="number" inputmode="decimal" value="${it[f]}" data-chg="vlog" data-i="${i}" data-f="${f}" style="font-size:24px"></div>
+          <button data-act="vlog-step" data-i="${i}" data-f="${f}" data-d="1">+</button>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+  openSheet(`<h2>Confirmá tu sesión</h2>
+    <div class="txt-mut" style="font-size:14px;line-height:1.55;margin:-8px 0 16px">Esto es lo que entendí. <b>Revisá los pesos</b>: el dictado casi nunca los capta bien, así que van con lo que levantaste la última vez.</div>
+    ${VLOG.items.map(row).join('')}
+    <div class="steplabel" style="margin-top:var(--s4)">Duración (min)</div>
+    <div class="step" style="margin-top:var(--s1)">
+      <button data-act="vlog-dur" data-d="-5">−</button>
+      <div class="val"><input type="number" inputmode="numeric" value="${VLOG.duration}" data-chg="vlog-dur"></div>
+      <button data-act="vlog-dur" data-d="5">+</button>
+    </div>
+    <button class="btn" data-act="vlog-save" style="margin-top:16px">Guardar sesión</button>
+    <button class="btn dim" data-act="sheet-close" style="margin-top:10px">Cancelar</button>`);
+}
+
 /* ---------- análisis de fuerza (Sección 21) ----------
    1RM estimado con Epley. La fórmula se desvía con series largas, así que las
    de más de 12 reps no entran en la tendencia. */
@@ -2155,34 +2247,67 @@ const ACT={
     render(true);
   },
   /* hoy: pre-workout */
+  /* --- confirmación del registro por voz --- */
+  'vlog-step':b=>{
+    const i=+b.dataset.i,f=b.dataset.f,d=+b.dataset.d,it=VLOG?.items[i];if(!it)return;
+    if(f==='w')it.w=Math.max(0,round1(it.w+d*wStep()));
+    else it[f]=Math.max(1,it[f]+d);
+    const inp=$(`input[data-chg="vlog"][data-i="${i}"][data-f="${f}"]`);
+    if(inp)inp.value=it[f];
+  },
+  'vlog-del':b=>{
+    const i=+b.dataset.i;if(!VLOG)return;
+    VLOG.items.splice(i,1);
+    if(!VLOG.items.length){closeSheet();VLOG=null;toast('Registro descartado');return;}
+    sheetVoiceLog();
+  },
+  'vlog-dur':b=>{
+    if(!VLOG)return;
+    VLOG.duration=Math.max(1,VLOG.duration+ +b.dataset.d);
+    const inp=$('input[data-chg="vlog-dur"]');if(inp)inp.value=VLOG.duration;
+  },
+  'vlog-save':async()=>{
+    if(!VLOG?.items.length)return;
+    const wd=new Date().getDay(),day=S.routine[wd];
+    const entries=VLOG.items.map(it=>({
+      exId:uid(),name:it.name,
+      sets:Array.from({length:it.sets},()=>({w:round1(it.w),r:it.reps}))
+    }));
+    const end=Date.now(),dur=Math.max(1,VLOG.duration|0);
+    const sess={id:uid(),date:dstr(),weekday:wd,dayName:day?.name||WD[wd],
+      start:end-dur*60000,end,duration:dur,entries};
+    await idb.put('sessions',sess);
+    S.sessions.unshift(sess);
+    const n=entries.reduce((a,e)=>a+e.sets.length,0);
+    VLOG=null;closeSheet();vibrate([30,50,30]);render(true);
+    toast(`💪 Sesión guardada · ${n} series · ${dur} min`);
+  },
   'prewk-open':()=>sheetPreworkout(),
   'hoy-voice':b=>{
     if(!SR_CLASS)return;
     if(VOICE){VOICE.stop();return;} // toca de nuevo para cancelar
-    const wd=currentDayForHoy();
-    const exs=S.routine[wd]?.exercises||[];
     const rec=new SR_CLASS();
     rec.lang='es-ES';rec.interimResults=false;rec.maxAlternatives=1;
-    /* el botón puede ser la barra ancha o el ícono del panel: sirve para ambos */
-    VOICE=rec;b.classList.add('accent');const icon=b.querySelector('.pwi')||b;icon.textContent='🔴';
+    VOICE=rec;b.classList.add('accent');
+    const icon=b.querySelector('.pwi')||b;icon.textContent='🔴';
+    const label=b.querySelector('.pwt');if(label)label.textContent='Escuchando…';
     rec.onresult=e=>{
       const txt=(e.results[0]?.[0]?.transcript||'').trim();
       if(!txt)return;
-      const nt=norm(txt);
-      const nums=(txt.match(/\d+/g)||[]).map(Number);
-      const ex=exs.find(x=>nt.includes(norm(x.name)))
-        ||exs.find(x=>norm(x.name).split(' ').some(w=>w.length>3&&nt.includes(w)));
-      if(!ex){toast(`No identifiqué el ejercicio en "${txt}". Decí el nombre tal cual en tu rutina de hoy.`);return;}
-      const v=ensureVals(ex);
-      if(nums[0])v.w=nums[0];
-      if(nums[1])v.r=nums[1];
-      updExDisplays(ex.id);
-      const inp=$(`input[data-chg="w"][data-ex="${ex.id}"]`);
-      if(inp)inp.scrollIntoView({behavior:'smooth',block:'center'});
-      toast(`🎤 ${ex.name}: ${wBoth(v.w)} × ${v.r} — revisá y tocá "Guardar serie"`);
+      const items=parseWorkoutSpeech(txt);
+      if(!items.length){
+        toast(`No reconocí ningún ejercicio en "${txt}". Nombralos como están en tu rutina.`);
+        return;
+      }
+      VLOG={items,duration:60,raw:txt};
+      sheetVoiceLog();
     };
     rec.onerror=()=>toast('No se pudo escuchar. Probá de nuevo.');
-    rec.onend=()=>{VOICE=null;b.classList.remove('accent');const i=b.querySelector('.pwi')||b;i.textContent='🎤';};
+    rec.onend=()=>{
+      VOICE=null;b.classList.remove('accent');
+      const i=b.querySelector('.pwi')||b;i.textContent='🎤';
+      const l=b.querySelector('.pwt');if(l)l.textContent='Registrar por voz';
+    };
     rec.start();
   },
   'pw-add-macros':async b=>{
@@ -2233,6 +2358,13 @@ document.addEventListener('change',e=>{
     S.cfg.goals[t.dataset.k]=num;saveCfg();
   }else if(chg==='prog-ex'){
     S.progEx=t.value;renderProg();
+  }else if(chg==='vlog'){
+    const it=VLOG?.items[+t.dataset.i];if(!it)return;
+    const num=parseFloat(t.value);
+    if(!isNaN(num)&&num>=0)it[t.dataset.f]=t.dataset.f==='w'?round1(num):Math.max(1,Math.round(num));
+  }else if(chg==='vlog-dur'){
+    const num=parseInt(t.value);
+    if(!isNaN(num)&&num>0&&VLOG)VLOG.duration=num;
   }
 });
 /* preview en vivo del perfil: sliders, campos numéricos y selects */
