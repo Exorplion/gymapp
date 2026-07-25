@@ -668,14 +668,13 @@ function renderHoy(){
   let h=`<div class="vtitle"><h1>Hoy</h1><span class="sub">${WDS[today.getDay()]} ${today.getDate()} ${MO[today.getMonth()]}</span></div>`;
 
   if(active){
-    const mins=Math.max(1,Math.round((Date.now()-S.draft.start)/60000));
     const nsets=Object.values(S.draft.entries).reduce((a,e)=>a+e.sets.length,0);
     h+=`<div class="card hero">
       <div style="display:flex;align-items:center;gap:10px">
         <span style="width:9px;height:9px;border-radius:5px;background:var(--ok);box-shadow:0 0 12px var(--ok);animation:pulse 1.5s infinite"></span>
         <div class="grow" style="flex:1">
           <div class="cond" style="font-size:20px;font-weight:700">${esc(day?.name||WD[wd])}</div>
-          <div class="txt-mut" style="font-size:13px">Sesión en curso · ${mins} min · ${nsets} serie${nsets===1?'':'s'}</div>
+          <div class="txt-mut" style="font-size:13px">Sesión en curso · <span id="hoy-elapsed" data-start="${S.draft.start}">${fmtMMSS(Math.floor((Date.now()-S.draft.start)/1000))}</span> · ${nsets} serie${nsets===1?'':'s'}</div>
         </div>
       </div>
       <div style="display:flex;gap:10px;margin-top:14px">
@@ -789,7 +788,7 @@ async function saveSet(exId){
     S.draft={id:uid(),date:dstr(),weekday:wd,dayName:S.routine[wd]?.name||WD[wd],start:Date.now(),entries:{}};
   }
   if(!S.draft.entries[exId])S.draft.entries[exId]={name:ex.name,sets:[]};
-  S.draft.entries[exId].sets.push({w:round1(v.w),r:v.r});
+  S.draft.entries[exId].sets.push({w:round1(v.w),r:v.r,t:Date.now()});
   await saveDraft();
   vibrate(15);
   renderHoy();
@@ -856,6 +855,14 @@ function stopRest(){
   clearInterval(T.int);T.int=null;
   $('#restbar').classList.remove('show');
 }
+/* cronómetro en vivo de la sesión (Sección 18): tiquea el elapsed de "Hoy" cada segundo */
+setInterval(()=>{
+  const el=$('#hoy-elapsed');
+  if(!el)return;
+  const start=+el.dataset.start;
+  if(!start)return;
+  el.textContent=fmtMMSS(Math.floor((Date.now()-start)/1000));
+},1000);
 
 /* ================= base educativa + RIR + progresión (Parte B) ================= */
 const norm=s=>String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
