@@ -39,6 +39,14 @@
   --r:18px;
   --tabs-h:64px;
   --glow:0 6px 24px -6px rgba(46,125,255,.45);
+  /* escala de espaciado: antes había márgenes sueltos (4, 6, 10, 13, 14px…)
+     sin ritmo; todo lo estructural se apoya ahora en estos seis pasos */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
+  /* escala tipográfica: la app tenía 18 tamaños distintos (12.5, 13.5, 14.5…),
+     que es deriva, no jerarquía */
+  --t-micro:11px; --t-sm:13px; --t-body:15px; --t-lg:18px; --t-xl:22px;
+  --t-display:34px; --t-hero:44px;
+  --ease:cubic-bezier(.22,.9,.28,1);
   font-synthesis:none;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -64,7 +72,14 @@ body::after{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
 }
 h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif}
+/* tercer rol tipográfico: la "cara instrumento". En un registro de fuerza el
+   contenido SON los números, y cambian todo el tiempo — sin cifras tabulares
+   el ancho baila en cada actualización (68→70 kg, 9→10 series, 1:09→1:10). */
+.cond,.num,.bignum,.pr-w,#rest-time,.step .val input{font-variant-numeric:tabular-nums}
+.num{font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.01em}
 input,select,button,textarea{font-family:inherit;color:inherit}
+/* piso de calidad: foco visible para teclado, sin afectar el toque */
+:focus-visible{outline:2px solid var(--blue2);outline-offset:2px;border-radius:8px}
 button{background:none;border:none;cursor:pointer;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
 button:active{transform:scale(.96);transition-duration:.05s}
 [data-act]:not(button){transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
@@ -107,11 +122,14 @@ main{
 .view{display:none}
 .view.active{display:block}
 @keyframes vin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-/* la animación de entrada corre SOLO al cambiar de pestaña (.enter), no en cada
-   re-render — si no, cada acción (guardar serie, +/-) refresca innerHTML y toda
-   la pantalla vuelve a hacer fade-in: eso es el "parpadeo". */
-.view.enter{animation:vin .28s cubic-bezier(.2,.8,.3,1)}
-.view.enter>*{animation:vin .35s cubic-bezier(.2,.8,.3,1) backwards}
+/* la pantalla entra desde el lado hacia el que vas, como en una app nativa:
+   pestaña siguiente → entra por la derecha; anterior → por la izquierda.
+   Corre SOLO al cambiar de pestaña (.enter), nunca en un re-render. */
+@keyframes slideR{from{opacity:0;transform:translate3d(34px,0,0)}to{opacity:1;transform:none}}
+@keyframes slideL{from{opacity:0;transform:translate3d(-34px,0,0)}to{opacity:1;transform:none}}
+.view.enter.dir-r{animation:slideR .34s var(--ease)}
+.view.enter.dir-l{animation:slideL .34s var(--ease)}
+.view.enter>*{animation:vin .38s var(--ease) backwards}
 /* escalonado: la pantalla entra por partes en vez de un bloque único */
 .view.enter>*:nth-child(2){animation-delay:.045s}
 .view.enter>*:nth-child(3){animation-delay:.09s}
@@ -121,13 +139,9 @@ main{
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
 }
-.view.active>*:nth-child(2){animation-delay:.04s}
-.view.active>*:nth-child(3){animation-delay:.08s}
-.view.active>*:nth-child(4){animation-delay:.12s}
-.view.active>*:nth-child(5){animation-delay:.16s}
 
 .vtitle{
-  display:flex;align-items:baseline;gap:10px;margin:6px 2px 14px;
+  display:flex;align-items:baseline;gap:var(--s3);margin:var(--s1) 2px var(--s4);
 }
 .vtitle h1{
   font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;line-height:1;
@@ -141,7 +155,7 @@ main{
 .card{
   background:linear-gradient(180deg,var(--card),rgba(12,19,34,.6));
   border:1px solid var(--line);border-radius:var(--r);
-  padding:16px;margin-bottom:12px;
+  padding:var(--s4);margin-bottom:var(--s3);
 }
 .card.hero{
   background:linear-gradient(140deg,#0E1730 0%,#0B1220 55%),var(--card);
@@ -220,7 +234,16 @@ main{
 .dayrow button .dot{display:block;width:4px;height:4px;border-radius:2px;background:currentColor;margin:3px auto 0;opacity:.6}
 
 /* ---------- ejercicio (Hoy) ---------- */
-.ex-card{position:relative}
+/* riel de avance: llena de arriba a abajo según las series completadas del
+   ejercicio. Se lee de reojo, jadeando, sin tener que enfocar el contador. */
+.ex-card{position:relative;overflow:hidden;--done:0}
+.ex-card::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--blue2),var(--blue));
+  transform:scaleY(var(--done));transform-origin:top;
+  transition:transform .45s var(--ease);
+}
+.ex-card.full::before{background:linear-gradient(180deg,var(--ok),#0E9F6E)}
 .ex-card .exname{font-family:'Barlow Condensed';font-size:22px;font-weight:700;letter-spacing:.02em}
 .ex-card .extarget{color:var(--mut);font-size:13px;font-weight:500;margin-top:2px}
 .ex-card .exlast{color:var(--blue2);font-size:13px;font-weight:500;margin-top:2px}
@@ -350,9 +373,13 @@ nav.tabbar button svg{width:24px;height:24px;stroke:currentColor;fill:none;strok
 nav.tabbar button span{font-family:'Barlow Condensed';font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
 nav.tabbar button.on{color:var(--blue2)}
 nav.tabbar button.on svg{filter:drop-shadow(0 0 10px rgba(62,150,255,.8))}
-nav.tabbar button.on::before{
-  content:"";position:absolute;top:-7px;left:50%;transform:translateX(-50%) skewX(-20deg);
-  width:26px;height:3px;border-radius:2px;background:var(--grad);box-shadow:var(--glow);
+/* un solo indicador que se desliza entre pestañas en vez de reaparecer en cada
+   botón: el movimiento es lo que comunica "te moviste de aquí para allá" */
+.tab-ind{
+  position:absolute;top:0;left:0;width:26px;height:3px;border-radius:2px;
+  background:var(--grad);box-shadow:var(--glow);pointer-events:none;
+  transform:translateX(-60px) skewX(-20deg);
+  transition:transform .38s var(--ease);
 }
 
 /* ---------- rest timer ---------- */
@@ -491,6 +518,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 </div>
 
 <nav class="tabbar">
+  <i class="tab-ind" aria-hidden="true"></i>
   <button data-act="tab" data-tab="hoy" class="on">
     <svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5h5L10 22l8.5-11.5h-5L13 2z"/></svg>
     <span>Hoy</span>
@@ -647,20 +675,51 @@ function applyComputedGoals(){
 }
 
 /* ================= navegación ================= */
+const TABS=['hoy','rutina','nutri','prog'];
 let ENTER_T=null;
+/* el indicador se coloca midiendo el botón activo: los botones son flexibles y
+   su ancho depende de la fuente ya cargada, así que no sirve una posición fija */
+function moveTabIndicator(){
+  const btn=$('nav.tabbar button.on'),ind=$('.tab-ind'),nav=$('nav.tabbar');
+  if(!btn||!ind||!nav)return;
+  const b=btn.getBoundingClientRect(),n=nav.getBoundingClientRect();
+  ind.style.transform=`translateX(${Math.round(b.left-n.left+b.width/2-13)}px) skewX(-20deg)`;
+}
 function switchTab(tab){
+  const from=TABS.indexOf(S.tab),to=TABS.indexOf(tab);
+  const dir=to<from?'dir-l':'dir-r';
   S.tab=tab;
   $$('nav.tabbar button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
-  $$('.view').forEach(v=>v.classList.remove('active','enter'));
+  $$('.view').forEach(v=>v.classList.remove('active','enter','dir-r','dir-l'));
   const v=$('#view-'+tab);
   v.classList.add('active');
   render();
   /* la entrada animada es exclusiva del cambio de pestaña */
-  v.classList.add('enter');
+  v.classList.add('enter',dir);
   clearTimeout(ENTER_T);
-  ENTER_T=setTimeout(()=>v.classList.remove('enter'),400);
+  ENTER_T=setTimeout(()=>v.classList.remove('enter','dir-r','dir-l'),420);
+  moveTabIndicator();
   scrollTo({top:0,behavior:'instant'}); // al cambiar de pestaña el salto al tope es inmediato
 }
+addEventListener('resize',moveTabIndicator);
+if(document.fonts?.ready)document.fonts.ready.then(moveTabIndicator);
+/* deslizar con el pulgar entre pestañas: la app se usa con una mano, de pie y
+   entre series — llegar a la barra inferior es peor que un gesto */
+let SWX=0,SWY=0,SWOK=false;
+addEventListener('touchstart',e=>{
+  if(e.touches.length!==1){SWOK=false;return;}
+  /* no secuestrar carruseles horizontales, controles ni la hoja modal */
+  if(e.target.closest('.chip-scroll,input,select,textarea,#sheet,#restbar,details')){SWOK=false;return;}
+  SWX=e.touches[0].clientX;SWY=e.touches[0].clientY;SWOK=true;
+},{passive:true});
+addEventListener('touchend',e=>{
+  if(!SWOK)return;SWOK=false;
+  const dx=e.changedTouches[0].clientX-SWX,dy=e.changedTouches[0].clientY-SWY;
+  if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.8)return; // gesto vertical = scroll
+  const i=TABS.indexOf(S.tab)+(dx<0?1:-1);
+  if(i<0||i>=TABS.length)return;
+  switchTab(TABS[i]);vibrate(8);
+},{passive:true});
 function render(keepScroll){
   const y=keepScroll?scrollY:0;
   if(S.tab==='hoy')renderHoy();
@@ -756,7 +815,7 @@ function renderHoy(){
       const curSet=Math.min(done.length,ex.sets-1);
       const curRir=scheme[curSet];
       const pwarn=progressionWarn(ex.name,v.w);
-      h+=`<div class="card ex-card">
+      h+=`<div class="card ex-card ${full?'full':''}" style="--done:${Math.min(1,done.length/ex.sets)}">
         <div class="ex-done-count ${full?'full':''}">${done.length}/${ex.sets}</div>
         <div class="exname">${esc(ex.name)} ${exInfo(ex.name)?`<button class="mini info inline" data-act="ex-info" data-wd="${wd}" data-ex="${ex.id}">ⓘ</button>`:''}</div>
         <div class="extarget">Objetivo ${ex.sets} × ${ex.reps} · ${full?'✓ completo':`serie ${done.length+1} → ${curRir===0?'<b class="txt-blue">al fallo</b>':'RIR '+curRir}`}</div>
