@@ -65,8 +65,10 @@ body::after{
 }
 h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif}
 input,select,button,textarea{font-family:inherit;color:inherit}
-button{background:none;border:none;cursor:pointer}
-button:active{transform:scale(.96)}
+button{background:none;border:none;cursor:pointer;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+button:active{transform:scale(.96);transition-duration:.05s}
+[data-act]:not(button){transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+[data-act]:not(button):active{transform:scale(.98);transition-duration:.05s}
 input[type=number]{-moz-appearance:textfield}
 input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none}
 ::placeholder{color:var(--mut2)}
