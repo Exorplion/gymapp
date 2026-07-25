@@ -112,6 +112,12 @@ main{
    la pantalla vuelve a hacer fade-in: eso es el "parpadeo". */
 .view.enter{animation:vin .28s cubic-bezier(.2,.8,.3,1)}
 .view.enter>*{animation:vin .35s cubic-bezier(.2,.8,.3,1) backwards}
+/* escalonado: la pantalla entra por partes en vez de un bloque único */
+.view.enter>*:nth-child(2){animation-delay:.045s}
+.view.enter>*:nth-child(3){animation-delay:.09s}
+.view.enter>*:nth-child(4){animation-delay:.13s}
+.view.enter>*:nth-child(5){animation-delay:.165s}
+.view.enter>*:nth-child(n+6){animation-delay:.19s}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
 }
@@ -262,8 +268,18 @@ main{
 .day-meta{margin-left:auto;color:var(--mut);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
 .chev{transition:.2s;display:inline-block;color:var(--mut2)}
 .day.open .chev{transform:rotate(90deg);color:var(--blue2)}
-.day-body{display:none;margin-top:8px}
-.day.open .day-body{display:block;animation:vin .2s}
+/* acordeón animable: grid-template-rows 0fr→1fr sí transiciona (display no).
+   Antes usaba display:none/block + animation:vin, que re-disparaba en cada
+   renderRutina() y hacía parpadear la configuración de ejercicios. */
+.day-body{
+  display:grid;grid-template-rows:0fr;margin-top:0;opacity:0;visibility:hidden;
+  transition:grid-template-rows .34s cubic-bezier(.2,.8,.3,1),margin-top .34s cubic-bezier(.2,.8,.3,1),opacity .24s ease,visibility 0s .34s;
+}
+.day-body>.dbi{overflow:hidden;min-height:0}
+.day.open .day-body{
+  grid-template-rows:1fr;margin-top:8px;opacity:1;visibility:visible;
+  transition:grid-template-rows .34s cubic-bezier(.2,.8,.3,1),margin-top .34s cubic-bezier(.2,.8,.3,1),opacity .24s ease,visibility 0s;
+}
 
 /* ---------- barras de progreso (nutrición) ---------- */
 .pbar{height:10px;border-radius:6px;background:var(--card2);border:1px solid var(--line);overflow:hidden}
@@ -643,7 +659,7 @@ function switchTab(tab){
   v.classList.add('enter');
   clearTimeout(ENTER_T);
   ENTER_T=setTimeout(()=>v.classList.remove('enter'),400);
-  scrollTo(0,0);
+  scrollTo({top:0,behavior:'instant'}); // al cambiar de pestaña el salto al tope es inmediato
 }
 function render(keepScroll){
   const y=keepScroll?scrollY:0;
@@ -653,9 +669,11 @@ function render(keepScroll){
   else if(S.tab==='prog')renderProg();
   if(keepScroll){
     /* restaurar en el mismo frame evita el salto a 0 visible; el rAF queda de
-       respaldo por si el alto del documento aún no se recalculó */
-    scrollTo(0,y);
-    requestAnimationFrame(()=>{ if(Math.abs(scrollY-y)>1)scrollTo(0,y); });
+       respaldo por si el alto del documento aún no se recalculó.
+       'instant' es obligatorio: con scroll-behavior:smooth global, restaurar
+       la posición se animaría y se vería como un desplazamiento fantasma. */
+    scrollTo({top:y,behavior:'instant'});
+    requestAnimationFrame(()=>{ if(Math.abs(scrollY-y)>1)scrollTo({top:y,behavior:'instant'}); });
   }
 }
 
@@ -1108,7 +1126,7 @@ function renderRutina(){
     const d=S.routine[wd];
     const exs=d?.exercises||[];
     const open=S.rutOpen===wd;
-    h+=`<div class="card day ${open?'open':''}">
+    h+=`<div class="card day ${open?'open':''}" data-wd="${wd}">
       <button class="day-head" data-act="day-toggle" data-wd="${wd}">
         <div>
           <span class="day-wd">${WD[wd]}</span>
@@ -1116,7 +1134,7 @@ function renderRutina(){
         </div>
         <span class="day-meta">${exs.length?exs.length+' ej.':''}<span class="chev">›</span></span>
       </button>
-      <div class="day-body">
+      <div class="day-body"><div class="dbi">
         ${exs.map((ex,i)=>`<div class="row">
           <button class="mini info" data-act="ex-info" data-wd="${wd}" data-ex="${ex.id}" ${exInfo(ex.name)?'':'style="opacity:.4"'}>ⓘ</button>
           <div class="grow"><div class="t">${esc(ex.name)}</div><div class="s">${ex.sets}×${ex.reps} · RIR ${rirScheme(ex.sets,ex.name).join('/')}</div></div>
@@ -1129,7 +1147,7 @@ function renderRutina(){
           <button class="btn sm ghost" data-act="ex-add" data-wd="${wd}" style="flex:2">+ Ejercicio</button>
           <button class="btn sm dim" data-act="day-edit" data-wd="${wd}" style="flex:1">✎ Día</button>
         </div>
-      </div>
+      </div></div>
     </div>`;
   });
   el.innerHTML=h;
@@ -1843,7 +1861,13 @@ const ACT={
     await idb.clear('routine');S.routine={};closeSheet();renderRutina();toast('Split vacío — arma el tuyo');
   },
   'ex-info':b=>{const d=S.routine[+b.dataset.wd];const ex=d?.exercises.find(e=>e.id===b.dataset.ex);if(ex)sheetExInfo(ex.name,+b.dataset.wd,ex.id);},
-  'day-toggle':b=>{const wd=+b.dataset.wd;S.rutOpen=S.rutOpen===wd?null:wd;renderRutina();},
+  'day-toggle':b=>{
+    const wd=+b.dataset.wd;
+    S.rutOpen=S.rutOpen===wd?null:wd;
+    /* se alterna la clase en lugar de re-renderizar: una transición CSS solo
+       corre si el nodo sobrevive al cambio de estado */
+    $$('#view-rutina .card.day').forEach(c=>c.classList.toggle('open',+c.dataset.wd===S.rutOpen));
+  },
   'day-edit':b=>{
     const wd=+b.dataset.wd,d=S.routine[wd];
     openSheet(`<h2>${WD[wd]}</h2>
