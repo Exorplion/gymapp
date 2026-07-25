@@ -1014,6 +1014,29 @@ function sheetExInfo(name,wd,exId){
 }
 
 /* ================= RUTINA ================= */
+/* insights derivados del historial de sesiones (Sección 19): sin esquema nuevo, se calcula todo de S.sessions */
+function daySessions(wd){
+  return S.sessions.filter(s=>s.weekday===wd).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+}
+function sessionsSince(days){
+  const cutoff=dstr(new Date(Date.now()-days*86400000));
+  return S.sessions.filter(s=>s.date>=cutoff).length;
+}
+/* ¿hace cuántas sesiones que el día no cambia de ejercicios? compara contra la config actual del día */
+function routineStability(wd){
+  const cur=new Set((S.routine[wd]?.exercises||[]).map(e=>norm(e.name)));
+  if(!cur.size)return null;
+  const sess=daySessions(wd);
+  if(!sess.length)return {sessions:0,last:null};
+  let stable=0;
+  for(const s of sess){
+    const names=new Set((s.entries||[]).map(e=>norm(e.name)));
+    const same=names.size===cur.size&&[...cur].every(n=>names.has(n));
+    if(!same)break;
+    stable++;
+  }
+  return {sessions:stable,last:sess[0].date};
+}
 function renderRutina(){
   const el=$('#view-rutina');
   const total=Object.values(S.routine).reduce((a,d)=>a+(d.exercises?.length||0),0);
@@ -1025,6 +1048,34 @@ function renderRutina(){
       <p>Elige una <b>plantilla</b> lista (Full Body, PPL, Upper/Lower…) o arma tu split día por día.</p>
       <button class="btn sm ghost" data-act="tmpl-open" style="max-width:260px;margin:0 auto">Ver plantillas</button>
     </div></div>`;
+  }
+  if(total){
+    const w7=sessionsSince(7),w30=sessionsSince(30);
+    h+=`<div class="sect">Insights de tu rutina</div>
+    <div class="card">
+      <div class="macro3" style="grid-template-columns:repeat(2,1fr)">
+        <div style="text-align:center">
+          <div class="cond" style="font-size:26px;font-weight:700">${w7}</div>
+          <div class="txt-mut" style="font-size:11px;letter-spacing:.1em;text-transform:uppercase">Sesiones · 7 días</div>
+        </div>
+        <div style="text-align:center">
+          <div class="cond" style="font-size:26px;font-weight:700">${w30}</div>
+          <div class="txt-mut" style="font-size:11px;letter-spacing:.1em;text-transform:uppercase">Sesiones · 30 días</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      ${WEEK_ORDER.filter(wd=>S.routine[wd]?.exercises?.length).map(wd=>{
+        const st=routineStability(wd);
+        const bits=[];
+        if(st?.last)bits.push(`última vez ${fmtD(st.last)}`);
+        else bits.push('sin sesiones registradas aún');
+        if(st?.sessions)bits.push(`sin cambios hace ${st.sessions} sesión${st.sessions===1?'':'es'}`);
+        return `<div class="row">
+          <div class="grow"><div class="t">${esc(S.routine[wd].name||WD[wd])}</div><div class="s">${bits.join(' · ')}</div></div>
+        </div>`;
+      }).join('')}
+    </div>`;
   }
   WEEK_ORDER.forEach(wd=>{
     const d=S.routine[wd];
