@@ -1146,6 +1146,8 @@ function recommendedExercises(wd){
   const pool=cats.size?EXCATALOG.filter(e=>cats.has(e.c)):EXCATALOG.filter(e=>['Pecho','Espalda','Pierna','Hombro'].includes(e.c));
   return pool.filter(e=>!existing.has(norm(e.n))).slice(0,8);
 }
+const SR_CLASS=window.SpeechRecognition||window.webkitSpeechRecognition||null;
+let VOICE=null;
 function sheetExForm(wd,ex){
   const suggestions=ex?[]:recommendedExercises(wd);
   const chip=n=>`<button class="chip" data-act="ex-pick" data-name="${esc(n)}">${esc(n)}</button>`;
@@ -1153,7 +1155,12 @@ function sheetExForm(wd,ex){
   const catalogHtml=cats.map(c=>`<div class="txt-mut" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:10px 0 6px">${c}</div>
     <div class="chips">${EXCATALOG.filter(e=>e.c===c).map(e=>chip(e.n)).join('')}</div>`).join('');
   openSheet(`<h2>${ex?'Editar':'Nuevo'} ejercicio</h2>
-    <div class="field"><label>Nombre</label><input id="f-exname" value="${ex?esc(ex.name):''}" placeholder="Press banca" autocomplete="off"></div>
+    <div class="field"><label>Nombre</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="f-exname" value="${ex?esc(ex.name):''}" placeholder="Press banca" autocomplete="off" style="flex:1">
+        ${!ex&&SR_CLASS?`<button class="icon-btn" id="ex-voice-btn" data-act="ex-voice" aria-label="Dictar por voz" style="flex:none">🎤</button>`:''}
+      </div>
+    </div>
     ${suggestions.length?`<div class="txt-mut" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:4px 0 6px">Sugeridos para hoy</div>
     <div class="chips">${suggestions.map(e=>chip(e.n)).join('')}</div>`:''}
     ${ex?'':`<details style="margin-top:10px">
@@ -1803,6 +1810,21 @@ const ACT={
   },
   'ex-add':b=>sheetExForm(+b.dataset.wd,null),
   'ex-pick':b=>{const inp=$('#f-exname');if(inp){inp.value=b.dataset.name;inp.focus();}},
+  'ex-voice':b=>{
+    if(!SR_CLASS)return;
+    if(VOICE){VOICE.stop();return;} // toca de nuevo para cancelar
+    const rec=new SR_CLASS();
+    rec.lang='es-ES';rec.interimResults=false;rec.maxAlternatives=1;
+    VOICE=rec;b.classList.add('accent');b.textContent='🔴';
+    rec.onresult=e=>{
+      const txt=(e.results[0]?.[0]?.transcript||'').trim();
+      const inp=$('#f-exname');
+      if(inp&&txt){inp.value=txt.charAt(0).toUpperCase()+txt.slice(1);inp.focus();}
+    };
+    rec.onerror=()=>toast('No se pudo escuchar. Probá de nuevo.');
+    rec.onend=()=>{VOICE=null;b.classList.remove('accent');b.textContent='🎤';};
+    rec.start();
+  },
   'ex-edit':b=>{const d=S.routine[+b.dataset.wd];sheetExForm(+b.dataset.wd,d.exercises.find(e=>e.id===b.dataset.ex));},
   'ex-save':b=>saveExercise(+b.dataset.wd,b.dataset.ex||null),
   'ex-del':async b=>{
