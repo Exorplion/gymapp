@@ -105,9 +105,16 @@ main{
   padding:16px 16px calc(var(--tabs-h) + env(safe-area-inset-bottom) + 110px);
 }
 .view{display:none}
-.view.active{display:block;animation:vin .28s cubic-bezier(.2,.8,.3,1)}
+.view.active{display:block}
 @keyframes vin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.view.active>*{animation:vin .35s cubic-bezier(.2,.8,.3,1) backwards}
+/* la animación de entrada corre SOLO al cambiar de pestaña (.enter), no en cada
+   re-render — si no, cada acción (guardar serie, +/-) refresca innerHTML y toda
+   la pantalla vuelve a hacer fade-in: eso es el "parpadeo". */
+.view.enter{animation:vin .28s cubic-bezier(.2,.8,.3,1)}
+.view.enter>*{animation:vin .35s cubic-bezier(.2,.8,.3,1) backwards}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+}
 .view.active>*:nth-child(2){animation-delay:.04s}
 .view.active>*:nth-child(3){animation-delay:.08s}
 .view.active>*:nth-child(4){animation-delay:.12s}
@@ -178,9 +185,11 @@ main{
   display:inline-flex;align-items:center;gap:6px;
   padding:8px 12px;border-radius:999px;font-size:14px;font-weight:600;
   background:var(--card2);border:1px solid var(--line2);color:var(--txt);
-  animation:pop .2s cubic-bezier(.2,.8,.3,1.2);
 }
 @keyframes pop{from{transform:scale(.7);opacity:0}}
+/* solo la serie recién guardada hace "pop"; antes lo hacían todos los chips en
+   cada re-render y la fila entera parpadeaba */
+.setchips .chip:last-child{animation:pop .2s cubic-bezier(.2,.8,.3,1.2)}
 .chip.blue{background:rgba(46,125,255,.14);border-color:rgba(46,125,255,.4);color:var(--blue3)}
 .chip .x{color:var(--mut);font-size:15px;padding:0 2px}
 .chip-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}
@@ -622,12 +631,18 @@ function applyComputedGoals(){
 }
 
 /* ================= navegación ================= */
+let ENTER_T=null;
 function switchTab(tab){
   S.tab=tab;
   $$('nav.tabbar button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
-  $$('.view').forEach(v=>v.classList.remove('active'));
-  $('#view-'+tab).classList.add('active');
+  $$('.view').forEach(v=>v.classList.remove('active','enter'));
+  const v=$('#view-'+tab);
+  v.classList.add('active');
   render();
+  /* la entrada animada es exclusiva del cambio de pestaña */
+  v.classList.add('enter');
+  clearTimeout(ENTER_T);
+  ENTER_T=setTimeout(()=>v.classList.remove('enter'),400);
   scrollTo(0,0);
 }
 function render(keepScroll){
@@ -636,7 +651,12 @@ function render(keepScroll){
   else if(S.tab==='rutina')renderRutina();
   else if(S.tab==='nutri')renderNutri();
   else if(S.tab==='prog')renderProg();
-  if(keepScroll)requestAnimationFrame(()=>scrollTo(0,y));
+  if(keepScroll){
+    /* restaurar en el mismo frame evita el salto a 0 visible; el rAF queda de
+       respaldo por si el alto del documento aún no se recalculó */
+    scrollTo(0,y);
+    requestAnimationFrame(()=>{ if(Math.abs(scrollY-y)>1)scrollTo(0,y); });
+  }
 }
 
 /* ================= pesos / unidades ================= */
