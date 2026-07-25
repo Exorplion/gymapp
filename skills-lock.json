@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "app-polish": {
+      "source": "matteo1222/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/app-polish/SKILL.md",
+      "computedHash": "db9d587eb18e44501fdebb2ee360262cfa227acbaf9f7f31a854f382d7f80ec4"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
