@@ -1053,14 +1053,58 @@ function ensureDay(wd){
 }
 async function persistDay(wd){ await idb.put('routine',S.routine[wd]); }
 
+/* base de ejercicios para el selector de "Nuevo ejercicio" (Sección 17) */
+const EXCATALOG=[
+  {c:'Pecho',n:'Press banca'},{c:'Pecho',n:'Press inclinado mancuernas'},{c:'Pecho',n:'Aperturas en polea'},
+  {c:'Pecho',n:'Fondos'},{c:'Pecho',n:'Press declinado'},
+  {c:'Espalda',n:'Dominadas'},{c:'Espalda',n:'Remo con barra'},{c:'Espalda',n:'Jalón al pecho'},
+  {c:'Espalda',n:'Remo en polea'},{c:'Espalda',n:'Peso muerto'},
+  {c:'Hombro',n:'Press militar'},{c:'Hombro',n:'Elevaciones laterales'},{c:'Hombro',n:'Pájaros'},{c:'Hombro',n:'Face pull'},
+  {c:'Bíceps',n:'Curl con barra'},{c:'Bíceps',n:'Curl martillo'},{c:'Bíceps',n:'Curl inclinado'},
+  {c:'Tríceps',n:'Extensión tríceps polea'},{c:'Tríceps',n:'Extensión sobre cabeza'},
+  {c:'Pierna',n:'Sentadilla'},{c:'Pierna',n:'Prensa'},{c:'Pierna',n:'Peso muerto rumano'},
+  {c:'Pierna',n:'Extensiones de cuádriceps'},{c:'Pierna',n:'Curl femoral'},{c:'Pierna',n:'Zancadas'},
+  {c:'Glúteo',n:'Hip thrust'},{c:'Gemelos',n:'Elevación de gemelos'},
+  {c:'Abs',n:'Crunch en polea'},{c:'Abs',n:'Rueda abdominal'},
+];
+/* mapea el nombre del día (ej. "Pecho / Tríceps") a categorías del catálogo */
+function dayCategories(name){
+  const n=norm(name||'');
+  const map=[['pecho','Pecho'],['espalda','Espalda'],['hombro','Hombro'],['pierna','Pierna'],
+    ['gluteo','Glúteo'],['biceps','Bíceps'],['triceps','Tríceps'],['brazo','Bíceps'],
+    ['abs','Abs'],['abdom','Abs'],['core','Abs'],['gemelo','Gemelos'],['pantorrilla','Gemelos']];
+  const cats=new Set();
+  map.forEach(([kw,cat])=>{if(n.includes(kw))cats.add(cat);});
+  if(n.includes('brazo'))cats.add('Tríceps');
+  return cats;
+}
+/* sugerencias: prioriza el/los grupo(s) muscular(es) del día, evita repetir lo ya agregado */
+function recommendedExercises(wd){
+  const d=S.routine[wd];
+  const existing=new Set((d?.exercises||[]).map(e=>norm(e.name)));
+  const cats=dayCategories(d?.name);
+  const pool=cats.size?EXCATALOG.filter(e=>cats.has(e.c)):EXCATALOG.filter(e=>['Pecho','Espalda','Pierna','Hombro'].includes(e.c));
+  return pool.filter(e=>!existing.has(norm(e.n))).slice(0,8);
+}
 function sheetExForm(wd,ex){
+  const suggestions=ex?[]:recommendedExercises(wd);
+  const chip=n=>`<button class="chip" data-act="ex-pick" data-name="${esc(n)}">${esc(n)}</button>`;
+  const cats=[...new Set(EXCATALOG.map(e=>e.c))];
+  const catalogHtml=cats.map(c=>`<div class="txt-mut" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:10px 0 6px">${c}</div>
+    <div class="chips">${EXCATALOG.filter(e=>e.c===c).map(e=>chip(e.n)).join('')}</div>`).join('');
   openSheet(`<h2>${ex?'Editar':'Nuevo'} ejercicio</h2>
     <div class="field"><label>Nombre</label><input id="f-exname" value="${ex?esc(ex.name):''}" placeholder="Press banca" autocomplete="off"></div>
-    <div class="f2">
+    ${suggestions.length?`<div class="txt-mut" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:4px 0 6px">Sugeridos para hoy</div>
+    <div class="chips">${suggestions.map(e=>chip(e.n)).join('')}</div>`:''}
+    ${ex?'':`<details style="margin-top:10px">
+      <summary class="txt-blue" style="font-size:13px;font-weight:600">📚 Explorar toda la base de ejercicios</summary>
+      <div style="margin-top:8px">${catalogHtml}</div>
+    </details>`}
+    <div class="f2" style="margin-top:14px">
       <div class="field"><label>Series objetivo</label><input id="f-exsets" type="number" inputmode="numeric" value="${ex?ex.sets:4}"></div>
       <div class="field"><label>Reps objetivo</label><input id="f-exreps" type="number" inputmode="numeric" value="${ex?ex.reps:10}"></div>
     </div>
-    <button class="btn" data-act="ex-save" data-wd="${wd}" data-ex="${ex?ex.id:''}">Guardar</button>`);
+    <button class="btn" data-act="ex-save" data-wd="${wd}" data-ex="${ex?ex.id:''}" style="margin-top:14px">Guardar</button>`);
   setTimeout(()=>$('#f-exname')?.focus(),80);
 }
 async function saveExercise(wd,exId){
@@ -1698,6 +1742,7 @@ const ACT={
     await persistDay(wd);closeSheet();renderRutina();
   },
   'ex-add':b=>sheetExForm(+b.dataset.wd,null),
+  'ex-pick':b=>{const inp=$('#f-exname');if(inp){inp.value=b.dataset.name;inp.focus();}},
   'ex-edit':b=>{const d=S.routine[+b.dataset.wd];sheetExForm(+b.dataset.wd,d.exercises.find(e=>e.id===b.dataset.ex));},
   'ex-save':b=>saveExercise(+b.dataset.wd,b.dataset.ex||null),
   'ex-del':async b=>{
