@@ -1,5 +1,5 @@
 /* FIERRO service worker — cache-first, funciona 100% offline tras la primera carga */
-const CACHE = 'fierro-v8';
+const CACHE = 'fierro-v9';
 const PRECACHE = [
   './',
   './index.html',
