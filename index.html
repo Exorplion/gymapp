@@ -186,6 +186,9 @@ main{
 .chip-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}
 .chip-scroll::-webkit-scrollbar{display:none}
 .chip-scroll .chip{flex:none;padding:10px 14px;font-size:15px}
+.ac-list{margin-top:6px;display:flex;flex-direction:column;gap:6px}
+.ac-item{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:12px;font-size:14px;font-weight:600;background:var(--card2);border:1px solid var(--line2);color:var(--txt)}
+.ac-item:active{border-color:var(--blue2);background:rgba(46,125,255,.14)}
 
 /* ---------- días selector (Hoy) ---------- */
 .dayrow{display:flex;gap:6px;margin-bottom:14px}
@@ -1148,6 +1151,15 @@ function recommendedExercises(wd){
 }
 const SR_CLASS=window.SpeechRecognition||window.webkitSpeechRecognition||null;
 let VOICE=null;
+/* lista desplegable en vivo mientras se escribe el nombre del ejercicio */
+function updateExAutocomplete(q){
+  const box=$('#ex-autocomplete');if(!box)return;
+  const nq=norm(q);
+  if(!nq){box.innerHTML='';return;}
+  const matches=EXCATALOG.filter(e=>norm(e.n).includes(nq)).slice(0,6);
+  box.innerHTML=matches.length?`<div class="ac-list">${matches.map(e=>
+    `<button class="ac-item" data-act="ex-pick" data-name="${esc(e.n)}">${esc(e.n)} <span class="txt-mut" style="font-size:11.5px">· ${esc(e.c)}</span></button>`).join('')}</div>`:'';
+}
 function sheetExForm(wd,ex){
   const suggestions=ex?[]:recommendedExercises(wd);
   const chip=n=>`<button class="chip" data-act="ex-pick" data-name="${esc(n)}">${esc(n)}</button>`;
@@ -1160,6 +1172,7 @@ function sheetExForm(wd,ex){
         <input id="f-exname" value="${ex?esc(ex.name):''}" placeholder="Press banca" autocomplete="off" style="flex:1">
         ${!ex&&SR_CLASS?`<button class="icon-btn" id="ex-voice-btn" data-act="ex-voice" aria-label="Dictar por voz" style="flex:none">🎤</button>`:''}
       </div>
+      <div id="ex-autocomplete"></div>
     </div>
     ${suggestions.length?`<div class="txt-mut" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:4px 0 6px">Sugeridos para hoy</div>
     <div class="chips">${suggestions.map(e=>chip(e.n)).join('')}</div>`:''}
@@ -1168,8 +1181,20 @@ function sheetExForm(wd,ex){
       <div style="margin-top:8px">${catalogHtml}</div>
     </details>`}
     <div class="f2" style="margin-top:14px">
-      <div class="field"><label>Series objetivo</label><input id="f-exsets" type="number" inputmode="numeric" value="${ex?ex.sets:4}"></div>
-      <div class="field"><label>Reps objetivo</label><input id="f-exreps" type="number" inputmode="numeric" value="${ex?ex.reps:10}"></div>
+      <div class="field"><label>Series objetivo</label>
+        <div class="step">
+          <button data-act="exf-step" data-f="exsets" data-d="-1">−</button>
+          <div class="val"><input id="f-exsets" type="number" inputmode="numeric" value="${ex?ex.sets:4}"></div>
+          <button data-act="exf-step" data-f="exsets" data-d="1">+</button>
+        </div>
+      </div>
+      <div class="field"><label>Reps objetivo</label>
+        <div class="step">
+          <button data-act="exf-step" data-f="exreps" data-d="-1">−</button>
+          <div class="val"><input id="f-exreps" type="number" inputmode="numeric" value="${ex?ex.reps:10}"></div>
+          <button data-act="exf-step" data-f="exreps" data-d="1">+</button>
+        </div>
+      </div>
     </div>
     <button class="btn" data-act="ex-save" data-wd="${wd}" data-ex="${ex?ex.id:''}" style="margin-top:14px">Guardar</button>`);
   setTimeout(()=>$('#f-exname')?.focus(),80);
@@ -1809,7 +1834,14 @@ const ACT={
     await persistDay(wd);closeSheet();renderRutina();
   },
   'ex-add':b=>sheetExForm(+b.dataset.wd,null),
-  'ex-pick':b=>{const inp=$('#f-exname');if(inp){inp.value=b.dataset.name;inp.focus();}},
+  'ex-pick':b=>{
+    const inp=$('#f-exname');if(inp){inp.value=b.dataset.name;inp.focus();}
+    const box=$('#ex-autocomplete');if(box)box.innerHTML='';
+  },
+  'exf-step':b=>{
+    const inp=$('#f-'+b.dataset.f);if(!inp)return;
+    inp.value=Math.max(1,(parseInt(inp.value)||0)+ +b.dataset.d);
+  },
   'ex-voice':b=>{
     if(!SR_CLASS)return;
     if(VOICE){VOICE.stop();return;} // toca de nuevo para cancelar
@@ -1909,6 +1941,7 @@ document.addEventListener('change',e=>{
 const PROF_IDS=new Set(['f-page','f-pheight','f-pweight','f-ptdee','f-ppref','f-fpref','f-pactivity','f-pgoal']);
 document.addEventListener('input',e=>{
   if(PROF_IDS.has(e.target.id)&&$('#f-pweight'))refreshProfilePreview();
+  if(e.target.id==='f-exname')updateExAutocomplete(e.target.value);
 });
 $('#importFile').addEventListener('change',e=>{
   const f=e.target.files[0];
