@@ -281,7 +281,10 @@ main{
 [data-sort]>[data-sid]{cursor:grab}
 [data-sid].shift{transition:transform .26s var(--ease)}
 [data-sid].dragging{position:relative;z-index:30;cursor:grabbing;transition:none}
-[data-sid].settling{position:relative;z-index:30;transition:transform .26s var(--ease),box-shadow .26s ease,border-color .26s ease}
+/* al soltar, la fila baja Y pierde el relieve de a poco: si el fondo y la
+   sombra se apagan de golpe se ve como un parpadeo */
+[data-sid].settling{position:relative;z-index:30;
+  transition:transform .26s var(--ease),box-shadow .3s ease,border-color .3s ease,background-color .3s ease}
 .ex-card.dragging{
   border-color:rgba(46,125,255,.5);
   box-shadow:0 26px 52px -20px rgba(0,0,0,.85),0 0 0 1px rgba(46,125,255,.35);
@@ -2120,6 +2123,129 @@ function drawChart(cv,pts){
 }
 
 /* ================= AJUSTES / respaldo ================= */
+/* ================= cargar el registro de Enzo ================= */
+/* Datos reales del registro consolidado (13-19 jul 2026):
+   · la rutina Anterior/Posterior con sus sets y RIR
+   · los pesos anotados en la ronda de 6 reps (~2 semanas antes del 25/07)
+   · las calorías de la semana de nutrición, día por día
+   El historial de 8 semanas de sesiones NO es un registro: está reconstruido
+   hacia atrás desde esos pesos aplicando la doble progresión (5→9 reps y recién
+   ahí sube el peso). Sirve para ver la app con historial, no como dato médico. */
+const KG=n=>Math.round(n/2.20462*10)/10;   // libras anotadas en máquina → kg
+const SEED_SPLIT={
+  1:['Anterior A',[
+    ['Press plano máquina',2,9,45,2.5],['Press inclinado',2,9,15,2.5],
+    ['Pec deck unilateral',1,9,KG(60),2.5],['Elevaciones laterales',3,9,15,1],
+    ['Press militar máquina',2,9,22.5,2.5],['Extensión tríceps unilateral',2,9,25,2.5],
+    ['JM press unilateral',2,9,20,2.5],['Leg press',3,9,180,5],
+    ['Leg extension',2,9,KG(165),2.5],['Abs polea',2,9,59,2.5]]],
+  2:['Posterior A',[
+    ['Jalón ancho',2,9,80,5],['Remo espalda alta',3,9,42.5,2.5],
+    ['Remo neutro',2,9,55,2.5],['Curl predicador',2,9,14,2],
+    ['Curl martillo',2,9,14,2],['SLDL',2,9,35,2.5],
+    ['Hamstring curl',3,9,70,5],['Hip thrust',2,9,55,5],
+    ['Standing calf raise',3,9,KG(147.5),2.5]]],
+  4:['Anterior B',[
+    ['Press plano máquina',1,9,45,2.5],['Pec deck unilateral',2,9,KG(60),2.5],
+    ['Press inclinado',2,9,15,2.5],['Elevaciones laterales',3,9,15,1],
+    ['Press militar máquina',2,9,22.5,2.5],['Extensión tríceps unilateral',2,9,25,2.5],
+    ['JM press unilateral',2,9,20,2.5],['Leg press',3,9,180,5],
+    ['Leg extension',2,9,KG(165),2.5],['Abs polea',2,9,59,2.5]]],
+  5:['Posterior B',[
+    ['Jalón ancho',2,9,80,5],['Remo espalda alta',3,9,42.5,2.5],
+    ['Remo neutro',2,9,55,2.5],['Curl martillo',2,9,14,2],
+    ['Curl predicador',2,9,14,2],['Hamstring curl',3,9,70,5],
+    ['Back extension 45°',2,9,75,5],['Hip thrust',3,9,55,5],
+    ['Standing calf raise',2,9,KG(147.5),2.5],['Aductor',2,9,55,5],
+    ['Abductor',2,9,55,5]]],
+};
+/* semana de nutrición tal como quedó anotada: los días "incompletos" entran
+   incompletos a propósito, esa fuga es parte del dato */
+const SEED_MEALS={
+  '2026-07-13':[['Pre-workout (5:35am)',293,0,73.3,0,'05:35']],
+  '2026-07-14':[['Desayuno',520,28,62,17,'07:30'],['Chifa combinado',1120,45,155,33,'13:00'],
+                ['Yogurt + fruta',280,18,42,4,'17:00'],['Pollo + arroz',526,44.8,58.8,16.2,'20:30']],
+  '2026-07-15':[['Desayuno',480,30,55,14,'07:30'],['Milanesa',720,42,78,26,'13:00'],
+                ['Snack proteico',240,20,30,4,'17:00'],['Pollo + arroz',542,45,62,15,'20:30']],
+  '2026-07-16':[['Hamburguesa + milanesa + leche chocolatada',1180,52,118,52,'09:00']],
+  '2026-07-17':[['Desayuno',460,28,54,13,'07:30'],['Arroz tapado',880,44,108,28,'13:00'],
+                ['Powerade (parcial)',150,0,38,0,'16:00'],['Cena',579,52,60,18,'20:30']],
+  '2026-07-18':[['Desayuno',500,30,58,15,'07:30'],['Spaghetti',820,36,118,22,'13:00'],
+                ['Tortillas',320,14,34,14,'17:00'],['Milanesa + arroz',472,44,48,14,'20:30']],
+};
+const SEED_BODY=[['2026-06-01',72.6,80,33.5],['2026-06-08',72.9],['2026-06-15',73.1],
+  ['2026-06-22',73.0],['2026-06-29',73.4],['2026-07-06',73.7],['2026-07-13',74.0],
+  ['2026-07-20',74.2,79,34]];
+const SEED_WEEKS=8, SEED_REF=2;   // los pesos anotados corresponden a hace 2 semanas
+
+function seedSessions(){
+  const out=[];
+  const today=new Date();today.setHours(0,0,0,0);
+  Object.keys(SEED_SPLIT).forEach(k=>{
+    const wd=+k,[dayName,list]=SEED_SPLIT[wd];
+    const exs=S.routine[wd].exercises;
+    /* i=0 es la sesión más vieja; iRef es la de hace ~2 semanas, donde los
+       pesos tienen que dar exactamente los anotados */
+    const iRef=SEED_WEEKS-1-SEED_REF;
+    for(let i=0;i<SEED_WEEKS;i++){
+      const back=(SEED_WEEKS-1-i)*7+((today.getDay()-wd+7)%7);
+      const d=new Date(today);d.setDate(today.getDate()-back);
+      if(d>today)continue;
+      const cyc=i%3, reps=[6,7,9][cyc];
+      const step=Math.floor(i/3)-Math.floor(iRef/3);
+      const entries=exs.map((ex,n)=>{
+        const [,,,wRec,inc]=list[n];
+        const w=Math.max(inc,Math.round((wRec+step*inc)*10)/10);
+        const sets=[];
+        for(let sN=0;sN<ex.sets;sN++)sets.push({w,r:sN?Math.max(5,reps-1):reps,t:d.getTime()});
+        return {exId:ex.id,name:ex.name,sets};
+      });
+      const nsets=entries.reduce((a,e)=>a+e.sets.length,0);
+      const dur=Math.round(nsets*2.9+8);
+      const start=new Date(d);start.setHours(6,0,0,0);
+      out.push({id:uid(),date:dstr(d),weekday:wd,dayName,seed:true,
+        start:start.getTime(),end:start.getTime()+dur*60000,duration:dur,entries});
+    }
+  });
+  return out.sort((a,b)=>b.start-a.start);
+}
+async function seedRegistro(){
+  for(const wd in SEED_SPLIT){
+    const [name,list]=SEED_SPLIT[wd];
+    S.routine[wd]={weekday:+wd,name,seed:true,
+      exercises:list.map(([n,st,r])=>({id:uid(),name:n,sets:st,reps:r}))};
+    await persistDay(+wd);
+  }
+  for(const s of seedSessions()){await idb.put('sessions',s);S.sessions.push(s);}
+  S.sessions.sort((a,b)=>b.start-a.start);
+  for(const date in SEED_MEALS)
+    for(const [name,kcal,p,c,f,t] of SEED_MEALS[date]){
+      const m={id:uid(),date,name,kcal,p,c,f,t,seed:true};
+      await idb.put('meals',m);S.meals.push(m);
+    }
+  for(const [date,weight,waist,arm] of SEED_BODY){
+    const b={id:uid(),date,weight,waist:waist??null,arm:arm??null,chest:null,leg:null,seed:true};
+    await idb.put('body',b);S.body.push(b);
+  }
+  S.body.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+  /* metas de la semana registrada: 1950 kcal, proteína y grasa marcadas ✓ */
+  S.cfg.goals={kcal:1950,p:140,c:201,f:65};
+  S.cfg.goalsAuto=false;
+  S.cfg.profile.weightKg=74;
+  S.cfg.rest=180;                  // 3 min, el descanso de compuestos
+  await saveCfg();
+}
+function seedCount(){
+  return S.sessions.filter(x=>x.seed).length+S.meals.filter(x=>x.seed).length
+        +S.body.filter(x=>x.seed).length;
+}
+async function wipeSeed(){
+  for(const st of ['sessions','meals','body']){
+    for(const r of await idb.all(st))if(r.seed)await idb.del(st,r.id);
+  }
+  for(const wd in S.routine)if(S.routine[wd].seed)await idb.del('routine',S.routine[wd].weekday);
+}
+
 function sheetSettings(){
   const g=S.cfg.goals;
   openSheet(`<h2>Ajustes</h2>
@@ -2148,6 +2274,10 @@ function sheetSettings(){
       <div class="field"><label>Carb</label><input type="number" inputmode="numeric" data-chg="goal" data-k="c" value="${g.c}"></div>
       <div class="field"><label>Grasa</label><input type="number" inputmode="numeric" data-chg="goal" data-k="f" value="${g.f}"></div>
     </div>`}
+    <h3>Datos de prueba</h3>
+    <div class="txt-mut" style="font-size:13px;line-height:1.5;margin-bottom:10px">Carga tu rutina Anterior/Posterior, la semana de nutrición del 13-19 jul y 8 semanas de sesiones reconstruidas desde tus pesos anotados. Sirve para ver la app llena; se borra aparte sin tocar lo demás.</div>
+    <button class="btn ghost" data-act="seed-load" style="margin-bottom:10px">🧪 Cargar mi registro</button>
+    ${seedCount()?`<button class="btn ghost" data-act="seed-wipe" style="margin-bottom:10px">Borrar lo cargado (${seedCount()} registros)</button>`:''}
     <h3>Respaldo</h3>
     <button class="btn ghost" data-act="export" style="margin-bottom:10px">⬇ Exportar todo a JSON</button>
     <button class="btn ghost" data-act="import-pick" style="margin-bottom:10px">⬆ Importar JSON</button>
@@ -2213,7 +2343,7 @@ function sheetHist(id){
 function flipSort(mutate){
   const first=new Map();
   $$('[data-sort] > [data-sid]').forEach(k=>first.set(k.dataset.sid,k.getBoundingClientRect().top));
-  mutate();
+  keepScroll(mutate);
   if(!first.size)return;
   $$('[data-sort] > [data-sid]').forEach(k=>{
     const f=first.get(k.dataset.sid);
@@ -2308,22 +2438,45 @@ function dragEnd(commit){
   document.body.classList.remove('dragging-on');
   DRAG.swallow=true;setTimeout(()=>{DRAG.swallow=false;},400);
   const moved=commit&&to!==from;
-  /* la fila aterriza en su hueco; recién cuando terminó de aterrizar re-dibujo,
-     así el DOM nuevo calza exacto con lo que ya se ve en pantalla */
   el.classList.remove('dragging');
   el.classList.add('settling');
   el.style.transform=moved?`translateY(${self}px)`:'';
   const clean=()=>cards.forEach(k=>{k.style.transform='';k.classList.remove('shift','settling');});
-  if(!moved){setTimeout(clean,280);return;}
+  if(!moved){setTimeout(clean,300);return;}
   const ids=cards.map(k=>k.dataset.sid);
   const [m]=ids.splice(from,1);ids.splice(to,0,m);
   vibrate(22);
   const kind=box.dataset.sort,wd=box.dataset.wd;
+  /* guardo ya, en paralelo con la animación de aterrizaje */
+  const saved=commitSort(kind,wd,ids);
   setTimeout(async()=>{
-    await commitSort(kind,wd,ids);
+    /* en vez de re-dibujar la vista entera (eso es lo que hacía parpadear y te
+       perdía de lugar), muevo los nodos en el DOM al orden nuevo y borro los
+       transforms en la misma tarea: en pantalla no cambia un pixel */
+    const by=new Map(cards.map(k=>[k.dataset.sid,k]));
+    ids.forEach(id=>{const k=by.get(id);if(k)box.appendChild(k);});
     clean();
-    if(kind==='rut')renderRutina();else renderHoy();
-  },285);
+    refreshSortArrows(box);
+    await saved;
+    /* Hoy sí necesita recalcular cuál es el próximo ejercicio; lo hace sobre un
+       DOM que ya está en el orden final, así que no se mueve nada */
+    if(kind==='hoy'&&S.draft)keepScroll(renderHoy);
+  },300);
+}
+/* deshabilita ↑ en el primero y ↓ en el último sin volver a dibujar */
+function refreshSortArrows(box){
+  const ks=[...box.children].filter(k=>k.dataset.sid);
+  ks.forEach((k,i)=>{
+    const up=k.querySelector('[data-d="-1"],[data-act="ex-up"]');
+    const dn=k.querySelector('[data-d="1"],[data-act="ex-down"]');
+    if(up)up.disabled=i===0;
+    if(dn)dn.disabled=i===ks.length-1;
+  });
+}
+function keepScroll(fn){
+  const y=scrollY;
+  fn();
+  if(Math.abs(scrollY-y)>1)scrollTo({top:y,behavior:'instant'});
 }
 async function commitSort(kind,wd,ids){
   if(kind==='hoy')return setExOrder(currentDayForHoy(),ids);
@@ -2445,6 +2598,20 @@ const ACT={
   },
   'sess-done':()=>{if(confirm('¿Completar y guardar la sesión?'))completeSession();},
   'sess-discard':async()=>{if(!confirm('¿Descartar la sesión en curso?'))return;S.draft=null;S.hoyDay=null;await saveDraft();stopRest();renderHoy();},
+  'seed-load':async()=>{
+    if(seedCount()&&!confirm('Ya hay datos cargados. ¿Cargarlos otra vez? Se van a duplicar.'))return;
+    const mine=S.sessions.filter(s=>!s.seed).length;
+    if(!confirm(`Esto reemplaza tu split por la rutina Anterior/Posterior y agrega 8 semanas de sesiones, la semana de nutrición del 13-19 jul y tus pesadas.${mine?`\n\nTus ${mine} sesiones propias no se tocan.`:''}\n\nOjo: el historial de sesiones está reconstruido desde tus pesos anotados, no es un registro real.\n\n¿Continuar?`))return;
+    toast('Cargando…');
+    await seedRegistro();
+    vibrate([30,50,30]);
+    setTimeout(()=>location.reload(),400);
+  },
+  'seed-wipe':async()=>{
+    if(!confirm(`¿Borrar los ${seedCount()} registros cargados? Lo que hayas anotado vos queda.`))return;
+    await wipeSeed();
+    setTimeout(()=>location.reload(),300);
+  },
   'hist-view':b=>sheetHist(b.dataset.id),
   'hist-del':async b=>{
     if(!confirm('¿Eliminar esta sesión del historial?'))return;
