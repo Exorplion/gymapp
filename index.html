@@ -702,6 +702,7 @@ const S={
   histOpen:false,
   progEx:null,
   progRange:'all',
+  progTab:'carga',
 };
 async function loadAll(){
   const [rt,ss,ms,fs,bd,st]=await Promise.all(STORES.map(s=>idb.all(s)));
@@ -1236,21 +1237,24 @@ const TEMPLATES=[
 async function applyTemplate(id){
   const t=TEMPLATES.find(x=>x.id===id);if(!t)return;
   const has=Object.values(S.routine).some(d=>d.exercises?.length);
-  if(has&&!confirm(`Esto reemplaza tu split actual por "${t.name}". ¿Continuar? (puedes editar todo después)`))return;
-  for(const st of ['routine'])await idb.clear(st);
-  S.routine={};
-  for(const wd in t.split){
-    const [name,list]=t.split[wd];
-    S.routine[wd]={weekday:+wd,name,exercises:list.map(([n,s,r])=>({id:uid(),name:n,sets:s,reps:r}))};
-    await persistDay(+wd);
-  }
-  const firstDay=Math.min(...Object.keys(t.split).map(Number));
-  S.rutOpen=firstDay;
-  S.cfg.routineName=t.name;
-  await saveCfg();
-  S.rutMode='view';
-  closeSheet();renderRutina();vibrate([20,40,20]);
-  toast(`Plantilla "${t.name}" cargada`);
+  const doApply=async()=>{
+    for(const st of ['routine'])await idb.clear(st);
+    S.routine={};
+    for(const wd in t.split){
+      const [name,list]=t.split[wd];
+      S.routine[wd]={weekday:+wd,name,exercises:list.map(([n,s,r])=>({id:uid(),name:n,sets:s,reps:r}))};
+      await persistDay(+wd);
+    }
+    const firstDay=Math.min(...Object.keys(t.split).map(Number));
+    S.rutOpen=firstDay;
+    S.cfg.routineName=t.name;
+    await saveCfg();
+    S.rutMode='view';
+    closeSheet();renderRutina();vibrate([20,40,20]);
+    toast(`Plantilla "${t.name}" cargada`);
+  };
+  if(has)sheetConfirm(`¿Reemplazar tu split?`,`Esto reemplaza tu split actual por "${t.name}". Podés editar todo después.`,'Reemplazar',doApply,()=>sheetLibrary());
+  else await doApply();
 }
 /* ================= info educativa de ejercicio ================= */
 function sheetExInfo(name,wd,exId){
@@ -1531,6 +1535,18 @@ function sheetLibrary(){
       <div class="txt-mut" style="font-size:13px;margin-bottom:12px">Empezá de cero y armá tu propio split día por día.</div>
       <button class="btn sm ghost" data-act="tmpl-clear">Empezar en blanco</button>
     </div>`);
+}
+function sheetLibSave(name){
+  const st=routineStats();
+  if(!st.days.length){toast('No hay rutina que guardar');return;}
+  openSheet(`<h2>Guardar rutina</h2>
+    <div class="field"><label>Nombre</label>
+    <input id="f-savename" value="${esc(name??(routineName()==='Rutina personalizada'?'':routineName()))}" placeholder="Mi rutina"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn sm ghost" data-act="sheet-close" style="flex:1">Cancelar</button>
+      <button class="btn sm" data-act="lib-save-confirm" style="flex:1">Guardar</button>
+    </div>`);
+  setTimeout(()=>$('#f-savename')?.focus(),80);
 }
 
 function ensureDay(wd){
@@ -2145,7 +2161,7 @@ function renderProg(){
       </div>`).join('')}</div>`:''}
   </div>`;
 
-  const tab=S.progTab||'carga';
+  const tab=S.progTab;
   h+=`<div class="seg" style="margin:var(--s3) 0">
     ${[['carga','Carga'],['1rm','1RM'],['volumen','Volumen']].map(([k,label])=>
       `<button data-act="prog-tab" data-t="${k}" class="${tab===k?'on':''}">${label}</button>`).join('')}
@@ -2160,7 +2176,7 @@ function renderProg(){
           ${exNames.map(n=>`<option ${n===S.progEx?'selected':''}>${esc(n)}</option>`).join('')}
         </select></div>
         <canvas class="chart" id="chartEx"></canvas>
-        <div class="txt-mut" style="font-size:12px;text-align:center;margin-top:6px">Mejor serie por sesión · peso × reps (kg)</div>
+        <div class="txt-mut" style="font-size:12px;text-align:center;margin-top:6px">Peso de tu mejor serie por sesión · tocá un punto para ver las reps</div>
       </div>`;
     }
   }
@@ -2366,7 +2382,7 @@ addEventListener('click',e=>{
    · la rutina Anterior/Posterior con sus sets y RIR
    · los pesos anotados en la ronda de 6 reps (~2 semanas antes del 25/07)
    · las calorías de la semana de nutrición, día por día
-   El historial de 8 semanas de sesiones NO es un registro: está reconstruido
+   El historial de ~5 semanas de sesiones NO es un registro: está reconstruido
    hacia atrás desde esos pesos aplicando la doble progresión (5→9 reps y recién
    ahí sube el peso). Sirve para ver la app con historial, no como dato médico. */
 const KG=n=>Math.round(n/2.20462*10)/10;   // libras anotadas en máquina → kg
@@ -2473,7 +2489,7 @@ function seedSessions(){
       const step=Math.random()<0.2?Math.max(0,stepBase-1):stepBase;
       const entries=exs.map((ex,n)=>{
         const [,,,wRec,inc]=list[n];
-        const noise=(Math.random()-0.5)*inc;
+        const noise=(Math.random()-0.5)*(inc/2);
         const w=Math.max(inc,Math.round((wRec+step*inc+noise)/(inc/2))*(inc/2));
         const sets=[];
         for(let sN=0;sN<ex.sets;sN++)sets.push({w,r:sN?Math.max(5,reps-1):reps,t:d.getTime()});
@@ -2509,7 +2525,7 @@ async function seedRegistro(){
   const windowStart=new Date();windowStart.setDate(windowStart.getDate()-SEED_WEEKS*7);
   for(let d=new Date(windowStart);d<=new Date();d.setDate(d.getDate()+1)){
     const ds=dstr(d);
-    if(SEED_MEALS[ds])continue;
+    if(SEED_MEALS[ds]||S.meals.some(m=>m.date===ds&&!m.seed))continue;
     for(const [name,kcal,p,c,f,t] of genMealsForDay(ds,S.cfg.goals)){
       const m={id:uid(),date:ds,name,kcal,p,c,f,t,seed:true};
       await idb.put('meals',m);S.meals.push(m);
@@ -2570,7 +2586,7 @@ function sheetSettings(){
       <div class="field"><label>Grasa</label><input type="number" inputmode="numeric" data-chg="goal" data-k="f" value="${g.f}"></div>
     </div>`}
     <h3>Datos de prueba</h3>
-    <div class="txt-mut" style="font-size:13px;line-height:1.5;margin-bottom:10px">Carga tu rutina Anterior/Posterior, la semana de nutrición del 13-19 jul y 8 semanas de sesiones reconstruidas desde tus pesos anotados. Sirve para ver la app llena; se borra aparte sin tocar lo demás.</div>
+    <div class="txt-mut" style="font-size:13px;line-height:1.5;margin-bottom:10px">Carga tu rutina Anterior/Posterior, ~1 mes de nutrición y ~5 semanas de sesiones reconstruidas desde tus pesos anotados. Sirve para ver la app llena; se borra aparte sin tocar lo demás.</div>
     <button class="btn ghost" data-act="seed-load" style="margin-bottom:10px">🧪 Cargar mi registro</button>
     ${seedCount()?`<button class="btn ghost" data-act="seed-wipe" style="margin-bottom:10px">Borrar lo cargado (${seedCount()} registros)</button>`:''}
     <h3>Respaldo</h3>
@@ -2614,13 +2630,14 @@ async function wipeAll(){
 /* ================= sheet ================= */
 function openSheet(html){$('#sheet-c').innerHTML=html;$('#sheet').classList.add('open');}
 function closeSheet(){$('#sheet').classList.remove('open');}
-let PENDING_CONFIRM=null;
-function sheetConfirm(title,body,confirmLabel,onConfirm){
+let PENDING_CONFIRM=null,PENDING_CANCEL=null;
+function sheetConfirm(title,body,confirmLabel,onConfirm,onCancel){
   PENDING_CONFIRM=onConfirm;
+  PENDING_CANCEL=onCancel||null;
   openSheet(`<h2>${esc(title)}</h2>
     <div class="txt-mut" style="font-size:14px;line-height:1.5;margin-bottom:18px">${esc(body)}</div>
     <div style="display:flex;gap:10px">
-      <button class="btn sm ghost" data-act="sheet-close" style="flex:1">Cancelar</button>
+      <button class="btn sm ghost" data-act="confirm-no" style="flex:1">Cancelar</button>
       <button class="btn sm danger" data-act="confirm-yes" style="flex:1">${esc(confirmLabel)}</button>
     </div>`);
 }
@@ -2839,8 +2856,9 @@ const ACT={
   'tab':b=>switchTab(b.dataset.tab),
   'goto-rutina':()=>switchTab('rutina'),
   'settings':()=>sheetSettings(),
-  'sheet-close':()=>{PENDING_CONFIRM=null;closeSheet();},
-  'confirm-yes':()=>{const fn=PENDING_CONFIRM;PENDING_CONFIRM=null;closeSheet();fn&&fn();},
+  'sheet-close':()=>{PENDING_CONFIRM=null;PENDING_CANCEL=null;closeSheet();},
+  'confirm-yes':()=>{const fn=PENDING_CONFIRM;PENDING_CONFIRM=null;PENDING_CANCEL=null;closeSheet();fn&&fn();},
+  'confirm-no':()=>{const fn=PENDING_CANCEL;PENDING_CONFIRM=null;PENDING_CANCEL=null;if(fn)fn();else closeSheet();},
   /* hoy */
   'hoy-day':b=>{S.hoyDay=+b.dataset.wd;renderHoy();},
   'w-':b=>{const v=S.hoyVals[b.dataset.ex];v.w=Math.max(0,round1(v.w-wStep()));updExDisplays(b.dataset.ex);},
@@ -2913,7 +2931,7 @@ const ACT={
   'seed-load':async()=>{
     if(seedCount()&&!confirm('Ya hay datos cargados. ¿Cargarlos otra vez? Se van a duplicar.'))return;
     const mine=S.sessions.filter(s=>!s.seed).length;
-    if(!confirm(`Esto reemplaza tu split por la rutina Anterior/Posterior y agrega 8 semanas de sesiones, la semana de nutrición del 13-19 jul y tus pesadas.${mine?`\n\nTus ${mine} sesiones propias no se tocan.`:''}\n\nOjo: el historial de sesiones está reconstruido desde tus pesos anotados, no es un registro real.\n\n¿Continuar?`))return;
+    if(!confirm(`Esto reemplaza tu split por la rutina Anterior/Posterior y agrega ~5 semanas de sesiones, ~1 mes de nutrición y tus pesadas.${mine?`\n\nTus ${mine} sesiones propias no se tocan.`:''}\n\nOjo: el historial de sesiones está reconstruido desde tus pesos anotados, no es un registro real.\n\n¿Continuar?`))return;
     toast('Cargando…');
     await seedRegistro();
     vibrate([30,50,30]);
@@ -3024,18 +3042,7 @@ const ACT={
   'rut-edit-day':b=>{S.rutMode='edit';S.rutOpen=+b.dataset.wd;closeSheet();renderRutina();scrollTo({top:0,behavior:'instant'});},
   'day-peek':b=>sheetDayPeek(+b.dataset.wd),
   'lib-open':()=>sheetLibrary(),
-  'lib-save':()=>{
-    const st=routineStats();
-    if(!st.days.length){toast('No hay rutina que guardar');return;}
-    openSheet(`<h2>Guardar rutina</h2>
-      <div class="field"><label>Nombre</label>
-      <input id="f-savename" value="${esc(routineName()==='Rutina personalizada'?'':routineName())}" placeholder="Mi rutina"></div>
-      <div style="display:flex;gap:10px">
-        <button class="btn sm ghost" data-act="sheet-close" style="flex:1">Cancelar</button>
-        <button class="btn sm" data-act="lib-save-confirm" style="flex:1">Guardar</button>
-      </div>`);
-    setTimeout(()=>$('#f-savename')?.focus(),80);
-  },
+  'lib-save':()=>sheetLibSave(),
   'lib-save-confirm':async()=>{
     const name=($('#f-savename')?.value||'').trim();
     if(!name){toast('Ingresá un nombre');return;}
@@ -3050,23 +3057,24 @@ const ACT={
       closeSheet();renderRutina();vibrate(15);
       toast(`Guardada como "${name}"`);
     };
-    if(prev)sheetConfirm(`¿Reemplazar "${prev.name}"?`,'Ya tenés una rutina guardada con este nombre.','Reemplazar',doSave);
+    if(prev)sheetConfirm(`¿Reemplazar "${prev.name}"?`,'Ya tenés una rutina guardada con este nombre.','Reemplazar',doSave,()=>sheetLibSave(name));
     else await doSave();
   },
   'lib-apply':async b=>{
     const r=S.lib.find(x=>x.id===b.dataset.id);if(!r)return;
-    if(!confirm(`Esto reemplaza tu split actual por "${r.name}". Tu historial de sesiones no se toca. ¿Continuar?`))return;
-    await applyDays(r.days,r.name);
-    S.rutMode='view';S.rutOpen=routineStats().days[0]??new Date().getDay();
-    closeSheet();renderRutina();vibrate([20,40,20]);
-    toast(`"${r.name}" en uso`);
+    sheetConfirm(`¿Reemplazar tu split?`,`Esto reemplaza tu split actual por "${r.name}". Tu historial de sesiones no se toca.`,'Reemplazar',async()=>{
+      await applyDays(r.days,r.name);
+      S.rutMode='view';S.rutOpen=routineStats().days[0]??new Date().getDay();
+      closeSheet();renderRutina();vibrate([20,40,20]);
+      toast(`"${r.name}" en uso`);
+    },()=>sheetLibrary());
   },
   'lib-del':b=>{
     const r=S.lib.find(x=>x.id===b.dataset.id);if(!r)return;
     sheetConfirm(`¿Borrar "${r.name}"?`,'Tu split actual no cambia — solo se borra de tu biblioteca.','Borrar',async()=>{
       S.lib=S.lib.filter(x=>x.id!==r.id);
       await saveLib();sheetLibrary();
-    });
+    },()=>sheetLibrary());
   },
   /* nutrición */
   'nutri-prev':()=>shiftNutriDate(-1),
