@@ -2416,6 +2416,28 @@ const SEED_BODY=[['2026-06-01',72.6,80,33.5],['2026-06-08',72.9],['2026-06-15',7
   ['2026-07-20',74.2,79,34]];
 const SEED_WEEKS=5, SEED_REF=2;   // ~1 mes; los pesos anotados corresponden a hace 2 semanas
 
+const MEAL_POOL=[
+  ['Desayuno',480,28,58,15],['Pollo + arroz',530,45,58,16],['Milanesa',720,42,78,26],
+  ['Ensalada + pollo',380,38,20,14],['Yogurt + fruta',260,18,38,4],
+  ['Arroz tapado',860,44,106,28],['Spaghetti',800,35,116,22],['Snack proteico',230,20,28,4],
+];
+function genMealsForDay(date,goals){
+  const roll=Math.random();
+  if(roll<0.08){
+    const big=MEAL_POOL[Math.floor(Math.random()*MEAL_POOL.length)];
+    return [[big[0]+' (día libre)',Math.round(goals.kcal*1.3),Math.round(goals.p*.6),Math.round(goals.c*1.4),Math.round(goals.f*1.5),'13:30']];
+  }
+  const n=roll<0.15?2:4;
+  const picks=[...MEAL_POOL].sort(()=>Math.random()-0.5).slice(0,n);
+  const times=['07:30','13:00','17:00','20:30'];
+  const scale=(goals.kcal/n)/500;
+  return picks.map((m,i)=>{
+    const jitter=0.88+Math.random()*0.24;
+    const f=scale*jitter;
+    return [m[0],Math.round(m[1]*f),Math.round(m[2]*f),Math.round(m[3]*f),Math.round(m[4]*f),times[i]||'20:00'];
+  });
+}
+
 function seedSessions(){
   const out=[];
   const today=new Date();today.setHours(0,0,0,0);
@@ -2459,19 +2481,30 @@ async function seedRegistro(){
   }
   for(const s of seedSessions()){await idb.put('sessions',s);S.sessions.push(s);}
   S.sessions.sort((a,b)=>b.start-a.start);
+
+  S.cfg.goals={kcal:1950,p:140,c:201,f:65};
+  S.cfg.goalsAuto=false;
+
   for(const date in SEED_MEALS)
     for(const [name,kcal,p,c,f,t] of SEED_MEALS[date]){
       const m={id:uid(),date,name,kcal,p,c,f,t,seed:true};
       await idb.put('meals',m);S.meals.push(m);
     }
+  const windowStart=new Date();windowStart.setDate(windowStart.getDate()-SEED_WEEKS*7);
+  for(let d=new Date(windowStart);d<=new Date();d.setDate(d.getDate()+1)){
+    const ds=dstr(d);
+    if(SEED_MEALS[ds])continue;
+    for(const [name,kcal,p,c,f,t] of genMealsForDay(ds,S.cfg.goals)){
+      const m={id:uid(),date:ds,name,kcal,p,c,f,t,seed:true};
+      await idb.put('meals',m);S.meals.push(m);
+    }
+  }
+
   for(const [date,weight,waist,arm] of SEED_BODY){
     const b={id:uid(),date,weight,waist:waist??null,arm:arm??null,chest:null,leg:null,seed:true};
     await idb.put('body',b);S.body.push(b);
   }
   S.body.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
-  /* metas de la semana registrada: 1950 kcal, proteína y grasa marcadas ✓ */
-  S.cfg.goals={kcal:1950,p:140,c:201,f:65};
-  S.cfg.goalsAuto=false;
   S.cfg.profile.weightKg=74;
   S.cfg.rest=180;                  // 3 min, el descanso de compuestos
   S.cfg.routineName='Anterior / Posterior';
