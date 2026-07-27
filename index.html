@@ -20,7 +20,7 @@
    FIERRO — dark steel & electric blue
    ============================================================ */
 :root{
-  --bg:#05070D;
+  --bg:#04070F;
   --bg2:#0A0F1A;
   --card:#0C1322;
   --card2:#111B30;
@@ -32,13 +32,18 @@
   --blue:#2E7DFF;
   --blue2:#5EA2FF;
   --blue3:#8FC2FF;
+  --cyan:#22D3EE;
   --grad:linear-gradient(135deg,#1D5CE8 0%,#3E96FF 100%);
+  --grad2:linear-gradient(112deg,var(--blue2),var(--cyan));
   --ok:#2EE6A8;
   --warn:#FFB454;
   --red:#FF5D73;
   --r:18px;
   --tabs-h:64px;
   --glow:0 6px 24px -6px rgba(46,125,255,.45);
+  --glass-blur:blur(22px) saturate(1.5);
+  --glass-border:rgba(255,255,255,.12);
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.16);
   /* escala de espaciado: antes había márgenes sueltos (4, 6, 10, 13, 14px…)
      sin ritmo; todo lo estructural se apoya ahora en estos seis pasos */
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
@@ -65,10 +70,11 @@ body::before{
   content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
   background:
     radial-gradient(90% 40% at 50% -5%, rgba(38,98,255,.16), transparent 65%),
-    radial-gradient(70% 30% at 100% 100%, rgba(30,70,180,.08), transparent 60%);
+    radial-gradient(70% 30% at 100% 100%, rgba(30,70,180,.08), transparent 60%),
+    radial-gradient(60% 34% at 100% 100%, rgba(34,211,238,.10), transparent 62%);
 }
 body::after{
-  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.05;
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.045;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
 }
 h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif}
@@ -139,6 +145,14 @@ main{
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
 }
+/* nuevas animaciones del rediseño: zoom (aparición con rebote), sweep (brillo
+   diagonal en botones primarios), rise (barras que crecen desde 0), glowring
+   (pulso de foco en el timer), flash (resalte de logro) */
+@keyframes zoom{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes sweep{0%,20%{left:-60%}80%,100%{left:130%}}
+@keyframes rise{from{width:0}}
+@keyframes glowring{0%,100%{filter:drop-shadow(0 0 6px rgba(34,211,238,.35))}50%{filter:drop-shadow(0 0 18px rgba(34,211,238,.7))}}
+@keyframes flash{0%,100%{background-color:transparent}50%{background-color:rgba(46,125,255,.14)}}
 
 .vtitle{
   display:flex;align-items:baseline;gap:var(--s3);margin:var(--s1) 2px var(--s4);
@@ -154,12 +168,14 @@ main{
 /* ---------- cards ---------- */
 .card{
   background:linear-gradient(180deg,var(--card),rgba(12,19,34,.6));
-  border:1px solid var(--line);border-radius:var(--r);
+  border:1px solid var(--glass-border);border-radius:var(--r);
   padding:var(--s4);margin-bottom:var(--s3);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:var(--glass-hi),0 14px 34px -18px rgba(0,0,0,.6);
 }
 .card.hero{
   background:linear-gradient(140deg,#0E1730 0%,#0B1220 55%),var(--card);
-  border-color:var(--line2);
+  border-color:rgba(255,255,255,.16);
   position:relative;overflow:hidden;
 }
 .card.hero::before{content:"";position:absolute;top:-40px;right:-40px;width:160px;height:160px;
@@ -174,8 +190,13 @@ main{
   width:100%;min-height:52px;border-radius:15px;
   font-family:'Barlow Condensed';font-weight:700;font-size:19px;
   letter-spacing:.09em;text-transform:uppercase;
-  background:var(--grad);color:#fff;box-shadow:var(--glow);
-  transition:.15s;
+  background:var(--grad2);color:#fff;box-shadow:var(--glow);
+  transition:.15s;position:relative;overflow:hidden;
+}
+.btn:not(.sm):not(.ghost):not(.dim):not(.danger)::after{
+  content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;
+  background:linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent);
+  animation:sweep 3.2s ease-in-out infinite;pointer-events:none;
 }
 .btn.sm{min-height:44px;font-size:16px;border-radius:12px}
 .btn.ghost{background:var(--card2);box-shadow:none;border:1px solid var(--line2);color:var(--blue2)}
@@ -438,9 +459,10 @@ nav.tabbar{
   position:fixed;bottom:0;left:0;right:0;z-index:50;
   display:flex;justify-content:space-around;
   padding:6px 8px calc(6px + env(safe-area-inset-bottom));
-  background:rgba(6,9,16,.88);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-top:1px solid var(--line);
+  background:rgba(6,9,16,.72);
+  backdrop-filter:blur(26px) saturate(1.5);-webkit-backdrop-filter:blur(26px) saturate(1.5);
+  border-top:1px solid var(--glass-border);
+  box-shadow:var(--glass-hi);
 }
 nav.tabbar button{
   flex:1;max-width:110px;display:flex;flex-direction:column;align-items:center;gap:3px;
@@ -454,7 +476,7 @@ nav.tabbar button.on svg{filter:drop-shadow(0 0 10px rgba(62,150,255,.8))}
    botón: el movimiento es lo que comunica "te moviste de aquí para allá" */
 .tab-ind{
   position:absolute;top:0;left:0;width:26px;height:3px;border-radius:2px;
-  background:var(--grad);box-shadow:var(--glow);pointer-events:none;
+  background:var(--grad2);box-shadow:0 6px 20px -4px rgba(34,211,238,.55);pointer-events:none;
   transform:translateX(-60px) skewX(-20deg);
   transition:transform .38s var(--ease);
 }
@@ -490,11 +512,13 @@ nav.tabbar button.on svg{filter:drop-shadow(0 0 10px rgba(62,150,255,.8))}
 #sheet .panel{
   position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;
   max-height:88dvh;overflow-y:auto;
-  background:linear-gradient(180deg,#0E1626,#0A101C);
-  border:1px solid var(--line2);border-bottom:none;
+  background:linear-gradient(180deg,rgba(14,22,38,.92),rgba(10,16,28,.92));
+  backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
+  border:1px solid rgba(255,255,255,.14);border-bottom:none;
   border-radius:26px 26px 0 0;
   padding:10px 20px calc(24px + env(safe-area-inset-bottom));
   animation:shup .3s cubic-bezier(.2,.8,.3,1);
+  box-shadow:var(--glass-hi),0 -20px 60px -20px rgba(0,0,0,.7);
 }
 @keyframes shup{from{transform:translateY(60%);opacity:.4}}
 #sheet .handle{width:44px;height:5px;border-radius:3px;background:var(--line2);margin:6px auto 16px}
