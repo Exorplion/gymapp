@@ -701,6 +701,7 @@ const S={
   foodEdit:false,
   histOpen:false,
   progEx:null,
+  progRange:'all',
 };
 async function loadAll(){
   const [rt,ss,ms,fs,bd,st]=await Promise.all(STORES.map(s=>idb.all(s)));
@@ -1944,6 +1945,12 @@ function exerciseSeries(){
   });
   return map;
 }
+const RANGE_DAYS={'1m':30,'3m':90,'6m':180};
+function filterByRange(pts,range){
+  if(!range||range==='all')return pts;
+  const cutoff=Date.now()-RANGE_DAYS[range]*86400000;
+  return pts.filter(p=>+new Date(p.date+'T00:00:00')>=cutoff);
+}
 /* ================= registro retroactivo por voz (Sección 22) =================
    El dictado devuelve los números como palabras ("cuatro por ocho"), así que
    primero se pasan a dígitos. */
@@ -2126,7 +2133,11 @@ function renderProg(){
       <button class="btn sm ghost" data-act="body-open" style="width:auto;padding:0 18px">+ Registro</button>
     </div>
     ${wk&&wk.curAvg!=null?'<div class="txt-mut" style="font-size:11.5px;margin-top:8px;line-height:1.4">El peso fluctúa 1-2 kg por día; el promedio semanal es la métrica que importa.</div>':''}
-    <div style="margin-top:14px"><canvas class="chart" id="chartWeight"></canvas></div>
+    <div class="seg" style="margin-top:12px">
+      ${[['1m','1M'],['3m','3M'],['6m','6M'],['all','Todo']].map(([r,label])=>
+        `<button data-act="prog-range" data-r="${r}" class="${(S.progRange||'all')===r?'on':''}">${label}</button>`).join('')}
+    </div>
+    <div style="margin-top:12px"><canvas class="chart" id="chartWeight"></canvas></div>
     ${Object.keys(lastVals).length?`<div class="macro3" style="grid-template-columns:repeat(4,1fr)">
       ${Object.entries(lastVals).map(([k,v])=>`<div style="text-align:center">
         <div class="cond" style="font-size:24px;font-weight:700">${fmtNum(v)}</div>
@@ -2232,10 +2243,10 @@ function renderProg(){
   }
 
   el.innerHTML=h;
-  const wpts=weights.map(b=>({date:b.date,y:round1(b.weight)}));
+  const wpts=filterByRange(weights.map(b=>({date:b.date,y:round1(b.weight)})),S.progRange);
   const cw=$('#chartWeight');if(cw){cw._opts={unit:'kg'};drawChart(cw,wpts,cw._opts);}
   if(S.progEx){
-    const pts=(series[S.progEx]||[]).map(p=>({date:p.date,y:Math.round(p.w),r:p.r}));
+    const pts=filterByRange((series[S.progEx]||[]).map(p=>({date:p.date,y:Math.round(p.w),r:p.r})),S.progRange);
     const ce=$('#chartEx');if(ce){ce._opts={unit:'kg'};drawChart(ce,pts,ce._opts);}
   }
 }
@@ -2861,6 +2872,8 @@ const ACT={
   'rest-add':()=>{T.end+=30000;tickRest();},
   'rest-skip':()=>stopRest(),
   'rest-cfg':b=>{S.cfg.rest=Math.max(0,(S.cfg.rest||0)+ +b.dataset.d);saveCfg();$('#f-rest').value=S.cfg.rest?fmtMMSS(S.cfg.rest):'OFF';},
+  /* progreso */
+  'prog-range':b=>{S.progRange=b.dataset.r;renderProg();},
   /* rutina */
   'tmpl-open':()=>sheetLibrary(),
   'tmpl-apply':b=>applyTemplate(b.dataset.id),
