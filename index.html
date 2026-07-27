@@ -119,6 +119,15 @@ header.top{
 .icon-btn:active{border-color:var(--line2);color:var(--blue2)}
 .icon-btn.accent{border-color:var(--blue2);color:var(--blue2);background:rgba(46,125,255,.14)}
 .icon-btn.accent:active{background:rgba(46,125,255,.24)}
+.header-actions{display:flex;gap:8px;align-items:center}
+.streak-btn{width:auto;padding:0 12px;flex-direction:row;gap:6px}
+.streak-flame{font-size:17px;line-height:1}
+.streak-n{font-family:'Barlow Condensed';font-weight:700;font-size:15px}
+.heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.heatmap .cell{aspect-ratio:1;border-radius:4px;background:var(--card2);border:1px solid var(--line)}
+.heatmap .cell.done{background:var(--grad2);border-color:transparent;animation:zoom .3s var(--ease) backwards}
+.heatmap .cell.rest{opacity:.28}
+.heatmap .cell.miss{background:rgba(255,93,115,.12);border-color:rgba(255,93,115,.3)}
 
 /* ---------- layout ---------- */
 main{
@@ -593,9 +602,14 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
     <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 10v4M6 8v8M9 6v12M15 6v12M18 8v8M21 10v4M9 12h6"/></svg>
     FIERRO
   </div>
-  <button class="icon-btn" data-act="settings" aria-label="Ajustes">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg>
-  </button>
+  <div class="header-actions">
+    <button class="icon-btn streak-btn" data-act="streak-open" id="streak-btn" aria-label="Racha">
+      <span class="streak-flame">🔥</span><span class="streak-n" id="streak-n">0</span>
+    </button>
+    <button class="icon-btn" data-act="settings" aria-label="Ajustes">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg>
+    </button>
+  </div>
 </header>
 
 <main>
@@ -844,6 +858,7 @@ function render(keepScroll){
   else if(S.tab==='rutina')renderRutina();
   else if(S.tab==='nutri')renderNutri();
   else if(S.tab==='prog')renderProg();
+  updHeaderStreak();
   if(keepScroll){
     /* restaurar en el mismo frame evita el salto a 0 visible; el rAF queda de
        respaldo por si el alto del documento aún no se recalculó.
@@ -1114,6 +1129,71 @@ async function completeSession(){
   vibrate([30,50,30]);
   renderHoy();
   toast(`💪 Sesión guardada · ${sess.duration} min`);
+}
+
+/* ================= racha ================= */
+/* un día "cumplido" necesita rutina asignada Y una sesión guardada esa fecha;
+   los días de descanso (sin rutina) no cuentan ni cortan la racha */
+function dayCompleted(dateStr){
+  const wd=new Date(dateStr+'T12:00:00').getDay();
+  if(!S.routine[wd]?.exercises?.length)return null;
+  return S.sessions.some(s=>s.date===dateStr);
+}
+function currentStreak(){
+  const todayStr=dstr();
+  let n=0,d=new Date(),first=true;
+  for(;;){
+    const ds=dstr(d);
+    const c=dayCompleted(ds);
+    if(c===null){d.setDate(d.getDate()-1);first=false;continue;}
+    if(c===false){
+      if(first&&ds===todayStr){d.setDate(d.getDate()-1);first=false;continue;}
+      break;
+    }
+    n++;d.setDate(d.getDate()-1);first=false;
+  }
+  return n;
+}
+function bestStreak(){
+  if(!S.sessions.length)return 0;
+  const dates=S.sessions.map(s=>s.date);
+  let d=new Date(dates.reduce((a,b)=>a<b?a:b)+'T12:00:00');
+  const end=new Date();
+  let cur=0,best=0;
+  while(d<=end){
+    const c=dayCompleted(dstr(d));
+    if(c===true){cur++;best=Math.max(best,cur);}
+    else if(c===false){cur=0;}
+    d.setDate(d.getDate()+1);
+  }
+  return best;
+}
+function streakHeatmap(){
+  const days=[];let done=0,total=0;
+  for(let i=55;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const ds=dstr(d);
+    const c=dayCompleted(ds);
+    if(c!==null){total++;if(c)done++;}
+    days.push({date:ds,status:c===null?'rest':c?'done':'miss'});
+  }
+  return {days,pct:total?Math.round(done/total*100):0};
+}
+function updHeaderStreak(){
+  const el=$('#streak-n');if(el)el.textContent=currentStreak();
+}
+function sheetStreak(){
+  const {days,pct}=streakHeatmap();
+  const cur=currentStreak(),best=bestStreak();
+  openSheet(`<h2>🔥 Racha</h2>
+    <div class="macro3" style="grid-template-columns:repeat(3,1fr);margin-top:-4px">
+      <div style="text-align:center"><div class="cond" style="font-size:30px;font-weight:700">${cur}</div><div class="txt-mut" style="font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase">Actual</div></div>
+      <div style="text-align:center"><div class="cond" style="font-size:30px;font-weight:700">${best}</div><div class="txt-mut" style="font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase">Mejor</div></div>
+      <div style="text-align:center"><div class="cond" style="font-size:30px;font-weight:700">${pct}%</div><div class="txt-mut" style="font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase">Cumplimiento</div></div>
+    </div>
+    <div class="heatmap" style="margin-top:20px">${days.map((d,i)=>
+      `<div class="cell ${d.status}" style="animation-delay:${i*8}ms" title="${fmtDFull(d.date)}"></div>`).join('')}</div>
+    <div class="txt-mut" style="font-size:12px;line-height:1.5;margin-top:14px">Últimos 56 días · un día cuenta si tenía rutina asignada y completaste la sesión. Los días de descanso no suman ni cortan la racha.</div>`);
 }
 
 /* ================= timer descanso ================= */
@@ -2879,6 +2959,7 @@ addEventListener('click',e=>{if(DRAG.swallow){e.preventDefault();e.stopPropagati
 const ACT={
   'tab':b=>switchTab(b.dataset.tab),
   'goto-rutina':()=>switchTab('rutina'),
+  'streak-open':()=>sheetStreak(),
   'settings':()=>sheetSettings(),
   'sheet-close':()=>{PENDING_CONFIRM=null;PENDING_CANCEL=null;closeSheet();},
   'confirm-yes':()=>{const fn=PENDING_CONFIRM;PENDING_CONFIRM=null;PENDING_CANCEL=null;closeSheet();fn&&fn();},
