@@ -2145,57 +2145,69 @@ function renderProg(){
       </div>`).join('')}</div>`:''}
   </div>`;
 
-  h+=`<div class="sect">Progresión de carga</div>`;
-  if(!exNames.length){
-    h+=`<div class="card"><div class="empty" style="padding:18px"><p style="margin:0">Completa sesiones para ver la progresión<br>de tu mejor serie (peso × reps).</p></div></div>`;
-  }else{
-    h+=`<div class="card">
-      <div class="field" style="margin-bottom:10px"><select data-chg="prog-ex">
-        ${exNames.map(n=>`<option ${n===S.progEx?'selected':''}>${esc(n)}</option>`).join('')}
-      </select></div>
-      <canvas class="chart" id="chartEx"></canvas>
-      <div class="txt-mut" style="font-size:12px;text-align:center;margin-top:6px">Mejor serie por sesión · peso × reps (kg)</div>
-    </div>`;
-  }
+  const tab=S.progTab||'carga';
+  h+=`<div class="seg" style="margin:var(--s3) 0">
+    ${[['carga','Carga'],['1rm','1RM'],['volumen','Volumen']].map(([k,label])=>
+      `<button data-act="prog-tab" data-t="${k}" class="${tab===k?'on':''}">${label}</button>`).join('')}
+  </div>`;
 
-  /* ---- fuerza: 1RM estimado, ritmo real y proyección acotada ---- */
-  const readout=strengthReadout();
-  h+=`<div class="sect">Fuerza · 1RM estimado</div>`;
-  if(!readout.length){
-    h+=`<div class="card sub"><div class="empty" style="padding:18px"><p style="margin:0">Registrá un ejercicio en dos sesiones para empezar a ver su tendencia.</p></div></div>`;
-  }else{
-    h+=`<div class="card">${readout.slice(0,10).map(x=>{
-      const pr=project(x.t,4);
-      let cls='txt-mut',tag='';
-      if(!x.t)tag=`${x.pts.length} sesion${x.pts.length===1?'':'es'} · faltan datos para calcular tendencia`;
-      else if(pr){cls='txt-ok';tag=`+${fmtNum(round1(pr.perWeek))} kg/sem · en 4 semanas ≈ ${fmtNum(round1(pr.value))} kg${pr.capped?' (ritmo acotado)':''}`;}
-      else if(x.t.slope>0)  {cls='txt-blue';tag=`subiendo pero irregular · sin señal suficiente para proyectar`;}
-      else if(x.t.slope===0){cls='txt-warn';tag=`plano en las últimas ${x.t.n} sesiones · probá variar reps, series o ejercicio`;}
-      else                  {cls='txt-warn';tag=`bajando en las últimas ${x.t.n} sesiones · revisá descanso y alimentación`;}
-      return `<div class="row">
-        <div class="grow"><div class="t">${esc(x.name)}</div><div class="s"><span class="${cls}">${tag}</span></div></div>
-        <div style="text-align:right;flex:none">
-          <div class="num" style="font-size:var(--t-xl);color:var(--blue3);line-height:1">${fmtNum(round1(x.last))}</div>
-          <div class="txt-mut" style="font-size:var(--t-micro);letter-spacing:.08em">KG 1RM</div>
-        </div>
+  if(tab==='carga'){
+    h+=`<div class="sect">Progresión de carga</div>`;
+    if(!exNames.length){
+      h+=`<div class="card"><div class="empty" style="padding:18px"><p style="margin:0">Completa sesiones para ver la progresión<br>de tu mejor serie (peso × reps).</p></div></div>`;
+    }else{
+      h+=`<div class="card">
+        <div class="field" style="margin-bottom:10px"><select data-chg="prog-ex">
+          ${exNames.map(n=>`<option ${n===S.progEx?'selected':''}>${esc(n)}</option>`).join('')}
+        </select></div>
+        <canvas class="chart" id="chartEx"></canvas>
+        <div class="txt-mut" style="font-size:12px;text-align:center;margin-top:6px">Mejor serie por sesión · peso × reps (kg)</div>
       </div>`;
-    }).join('')}
-    <div class="txt-mut" style="font-size:var(--t-sm);line-height:1.5;margin-top:var(--s3)">Calculado con la fórmula de Epley sobre tu mejor serie de cada sesión (se ignoran las de más de 12 reps, donde la fórmula se desvía). La proyección supone que mantenés el ritmo y se limita a 1 %/semana: la fuerza no sube en línea recta.</div>
-    </div>`;
+    }
   }
 
-  /* ---- volumen semanal por grupo muscular ---- */
-  const mv=muscleVolume(7),cats=Object.entries(mv).sort((a,b)=>b[1]-a[1]);
-  if(cats.length){
-    const maxv=cats[0][1];
-    h+=`<div class="sect">Volumen por grupo · 7 días</div>
-    <div class="card">
-      ${cats.map(([c,n])=>`<div style="margin-bottom:var(--s3)">
-        <div style="display:flex;justify-content:space-between;font-size:var(--t-sm);margin-bottom:var(--s1)"><span>${esc(c)}</span><span class="num">${n} series</span></div>
-        <div class="pbar"><i style="width:${Math.round(n/maxv*100)}%"></i></div>
-      </div>`).join('')}
-      <div class="txt-mut" style="font-size:var(--t-sm);line-height:1.5">Series registradas por grupo muscular. Como referencia, 10-20 series semanales por grupo es el rango habitual para ganar masa.</div>
-    </div>`;
+  if(tab==='1rm'){
+    /* ---- fuerza: 1RM estimado, ritmo real y proyección acotada ---- */
+    const readout=strengthReadout();
+    h+=`<div class="sect">Fuerza · 1RM estimado</div>`;
+    if(!readout.length){
+      h+=`<div class="card sub"><div class="empty" style="padding:18px"><p style="margin:0">Registrá un ejercicio en dos sesiones para empezar a ver su tendencia.</p></div></div>`;
+    }else{
+      h+=`<div class="card">${readout.slice(0,10).map(x=>{
+        const pr=project(x.t,4);
+        let cls='txt-mut',tag='';
+        if(!x.t)tag=`${x.pts.length} sesion${x.pts.length===1?'':'es'} · faltan datos para calcular tendencia`;
+        else if(pr){cls='txt-ok';tag=`+${fmtNum(round1(pr.perWeek))} kg/sem · en 4 semanas ≈ ${fmtNum(round1(pr.value))} kg${pr.capped?' (ritmo acotado)':''}`;}
+        else if(x.t.slope>0)  {cls='txt-blue';tag=`subiendo pero irregular · sin señal suficiente para proyectar`;}
+        else if(x.t.slope===0){cls='txt-warn';tag=`plano en las últimas ${x.t.n} sesiones · probá variar reps, series o ejercicio`;}
+        else                  {cls='txt-warn';tag=`bajando en las últimas ${x.t.n} sesiones · revisá descanso y alimentación`;}
+        return `<div class="row">
+          <div class="grow"><div class="t">${esc(x.name)}</div><div class="s"><span class="${cls}">${tag}</span></div></div>
+          <div style="text-align:right;flex:none">
+            <div class="num" style="font-size:var(--t-xl);color:var(--blue3);line-height:1">${fmtNum(round1(x.last))}</div>
+            <div class="txt-mut" style="font-size:var(--t-micro);letter-spacing:.08em">KG 1RM</div>
+          </div>
+        </div>`;
+      }).join('')}
+      <div class="txt-mut" style="font-size:var(--t-sm);line-height:1.5;margin-top:var(--s3)">Calculado con la fórmula de Epley sobre tu mejor serie de cada sesión (se ignoran las de más de 12 reps, donde la fórmula se desvía). La proyección supone que mantenés el ritmo y se limita a 1 %/semana: la fuerza no sube en línea recta.</div>
+      </div>`;
+    }
+  }
+
+  if(tab==='volumen'){
+    /* ---- volumen semanal por grupo muscular ---- */
+    const mv=muscleVolume(7),cats=Object.entries(mv).sort((a,b)=>b[1]-a[1]);
+    if(cats.length){
+      const maxv=cats[0][1];
+      h+=`<div class="sect">Volumen por grupo · 7 días</div>
+      <div class="card">
+        ${cats.map(([c,n])=>`<div style="margin-bottom:var(--s3)">
+          <div style="display:flex;justify-content:space-between;font-size:var(--t-sm);margin-bottom:var(--s1)"><span>${esc(c)}</span><span class="num">${n} series</span></div>
+          <div class="pbar"><i style="width:${Math.round(n/maxv*100)}%"></i></div>
+        </div>`).join('')}
+        <div class="txt-mut" style="font-size:var(--t-sm);line-height:1.5">Series registradas por grupo muscular. Como referencia, 10-20 series semanales por grupo es el rango habitual para ganar masa.</div>
+      </div>`;
+    }
   }
 
   /* ---- frecuencia (vivía en Rutina, que es configuración, no análisis) ---- */
@@ -2245,7 +2257,7 @@ function renderProg(){
   el.innerHTML=h;
   const wpts=filterByRange(weights.map(b=>({date:b.date,y:round1(b.weight)})),S.progRange);
   const cw=$('#chartWeight');if(cw){cw._opts={unit:'kg'};drawChart(cw,wpts,cw._opts);}
-  if(S.progEx){
+  if(tab==='carga'&&S.progEx){
     const pts=filterByRange((series[S.progEx]||[]).map(p=>({date:p.date,y:Math.round(p.w),r:p.r})),S.progRange);
     const ce=$('#chartEx');if(ce){ce._opts={unit:'kg'};drawChart(ce,pts,ce._opts);}
   }
@@ -2874,6 +2886,7 @@ const ACT={
   'rest-cfg':b=>{S.cfg.rest=Math.max(0,(S.cfg.rest||0)+ +b.dataset.d);saveCfg();$('#f-rest').value=S.cfg.rest?fmtMMSS(S.cfg.rest):'OFF';},
   /* progreso */
   'prog-range':b=>{S.progRange=b.dataset.r;renderProg();},
+  'prog-tab':b=>{S.progTab=b.dataset.t;renderProg();},
   /* rutina */
   'tmpl-open':()=>sheetLibrary(),
   'tmpl-apply':b=>applyTemplate(b.dataset.id),
