@@ -2414,7 +2414,7 @@ const SEED_MEALS={
 const SEED_BODY=[['2026-06-01',72.6,80,33.5],['2026-06-08',72.9],['2026-06-15',73.1],
   ['2026-06-22',73.0],['2026-06-29',73.4],['2026-07-06',73.7],['2026-07-13',74.0],
   ['2026-07-20',74.2,79,34]];
-const SEED_WEEKS=8, SEED_REF=2;   // los pesos anotados corresponden a hace 2 semanas
+const SEED_WEEKS=5, SEED_REF=2;   // ~1 mes; los pesos anotados corresponden a hace 2 semanas
 
 function seedSessions(){
   const out=[];
@@ -2422,18 +2422,21 @@ function seedSessions(){
   Object.keys(SEED_SPLIT).forEach(k=>{
     const wd=+k,[dayName,list]=SEED_SPLIT[wd];
     const exs=S.routine[wd].exercises;
-    /* i=0 es la sesión más vieja; iRef es la de hace ~2 semanas, donde los
-       pesos tienen que dar exactamente los anotados */
     const iRef=SEED_WEEKS-1-SEED_REF;
     for(let i=0;i<SEED_WEEKS;i++){
+      /* día salteado de tanto en tanto (ocupado/enfermo) — nunca la semana más reciente */
+      if(i<SEED_WEEKS-1&&Math.random()<0.15)continue;
       const back=(SEED_WEEKS-1-i)*7+((today.getDay()-wd+7)%7);
       const d=new Date(today);d.setDate(today.getDate()-back);
       if(d>today)continue;
       const cyc=i%3, reps=[6,7,9][cyc];
-      const step=Math.floor(i/3)-Math.floor(iRef/3);
+      /* 20% de las semanas queda "en meseta": un escalón atrás del progreso esperado */
+      const stepBase=Math.floor(i/3)-Math.floor(iRef/3);
+      const step=Math.random()<0.2?Math.max(0,stepBase-1):stepBase;
       const entries=exs.map((ex,n)=>{
         const [,,,wRec,inc]=list[n];
-        const w=Math.max(inc,Math.round((wRec+step*inc)*10)/10);
+        const noise=(Math.random()-0.5)*inc;
+        const w=Math.max(inc,Math.round((wRec+step*inc+noise)/(inc/2))*(inc/2));
         const sets=[];
         for(let sN=0;sN<ex.sets;sN++)sets.push({w,r:sN?Math.max(5,reps-1):reps,t:d.getTime()});
         return {exId:ex.id,name:ex.name,sets};
