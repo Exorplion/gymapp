@@ -2265,7 +2265,7 @@ async function saveBody(){
 }
 
 /* ================= gráfico canvas ================= */
-const CHART_SEL=new Map();
+const CHART_SEL=new WeakMap();
 function drawChart(cv,pts,opts={}){
   const dpr=devicePixelRatio||1;
   const W=cv.clientWidth||300,H=cv.clientHeight||200;
