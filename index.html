@@ -510,7 +510,8 @@ nav.tabbar button.on svg{filter:drop-shadow(0 0 10px rgba(62,150,255,.8))}
   opacity:0;pointer-events:none;transition:.25s;z-index:70;white-space:nowrap;
   box-shadow:0 8px 30px -6px rgba(0,0,0,.6);
 }
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.toast-act{background:none;border:none;color:var(--blue2);font-weight:700;font-size:13px;padding:0 0 0 4px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
 
 /* ---------- misc ---------- */
 .empty{
@@ -649,9 +650,13 @@ const kg2lb=kg=>round1(kg*KG2LB);
 const lb2kg=lb=>lb/KG2LB;
 const vibrate=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
 
-function toast(msg){
-  const t=$('#toast');t.textContent=msg;t.classList.add('show');
-  clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),1900);
+function toast(msg,opts={}){
+  const t=$('#toast');
+  t.innerHTML=opts.actionLabel
+    ?`<span>${esc(msg)}</span> <button data-act="${opts.actionAct}" class="toast-act">${esc(opts.actionLabel)}</button>`
+    :esc(msg);
+  t.classList.add('show');
+  clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),opts.actionLabel?4000:1900);
 }
 
 /* ================= IndexedDB ================= */
@@ -1338,6 +1343,31 @@ function swapDayContents(newOrderIds){
     proms.push(persistDay(wd));
   });
   return Promise.all(proms);
+}
+
+/* ---------- deshacer/rehacer del editor de rutina ---------- */
+let RUT_HISTORY=[],RUT_REDO=[];
+function pushHistory(msg){
+  RUT_HISTORY.push(structuredClone(S.routine));
+  if(RUT_HISTORY.length>20)RUT_HISTORY.shift();
+  RUT_REDO=[];
+  toast(msg,{actionLabel:'Deshacer',actionAct:'rut-undo'});
+}
+async function undoRutina(){
+  if(!RUT_HISTORY.length)return;
+  RUT_REDO.push(structuredClone(S.routine));
+  S.routine=RUT_HISTORY.pop();
+  await Promise.all(Object.keys(S.routine).map(wd=>persistDay(+wd)));
+  renderRutina();
+  toast('Deshecho',{actionLabel:'Rehacer',actionAct:'rut-redo'});
+}
+async function redoRutina(){
+  if(!RUT_REDO.length)return;
+  RUT_HISTORY.push(structuredClone(S.routine));
+  S.routine=RUT_REDO.pop();
+  await Promise.all(Object.keys(S.routine).map(wd=>persistDay(+wd)));
+  renderRutina();
+  toast('Rehecho',{actionLabel:'Deshacer',actionAct:'rut-undo'});
 }
 
 function renderRutina(){
@@ -2626,6 +2656,7 @@ function dragEnd(commit){
   vibrate(22);
   const kind=box.dataset.sort,wd=box.dataset.wd;
   if(kind==='days'){
+    pushHistory('Días intercambiados');
     setTimeout(async()=>{ await swapDayContents(ids); clean(); renderRutina(); },300);
     return;
   }
@@ -2664,6 +2695,7 @@ async function commitSort(kind,wd,ids){
   if(kind==='hoy')return setExOrder(currentDayForHoy(),ids);
   const d=S.routine[+wd];
   if(!d||!d.exercises)return;
+  pushHistory('Ejercicios reordenados');
   const by=new Map(d.exercises.map(e=>[e.id,e]));
   const out=[];
   ids.forEach(i=>{if(by.has(i)){out.push(by.get(i));by.delete(i);}});
@@ -2843,6 +2875,7 @@ const ACT={
   'day-del':async b=>{
     const wd=+b.dataset.wd,d=S.routine[wd];
     if(!d?.name&&!d?.exercises?.length)return;
+    pushHistory('Día vaciado');
     S.routine[wd]={weekday:wd,name:'',exercises:[]};
     await persistDay(wd);
     renderRutina();
@@ -2876,7 +2909,8 @@ const ACT={
   'ex-del':async b=>{
     const wd=+b.dataset.wd,d=S.routine[wd];
     const ex=d.exercises.find(e=>e.id===b.dataset.ex);
-    if(!confirm(`¿Eliminar "${ex.name}"?`))return;
+    if(!ex)return;
+    pushHistory(`"${ex.name}" eliminado`);
     d.exercises=d.exercises.filter(e=>e.id!==b.dataset.ex);
     await persistDay(wd);renderRutina();
   },
@@ -2884,7 +2918,9 @@ const ACT={
   'ex-down':async b=>{await moveEx(+b.dataset.wd,b.dataset.ex,1);},
   /* rutina: resumen ↔ editor ↔ biblioteca */
   'rut-edit':()=>{S.rutMode='edit';renderRutina();scrollTo({top:0,behavior:'instant'});},
-  'rut-view':()=>{S.rutMode='view';renderRutina();scrollTo({top:0,behavior:'instant'});},
+  'rut-view':()=>{S.rutMode='view';RUT_HISTORY=[];RUT_REDO=[];renderRutina();scrollTo({top:0,behavior:'instant'});},
+  'rut-undo':()=>undoRutina(),
+  'rut-redo':()=>redoRutina(),
   'rut-edit-day':b=>{S.rutMode='edit';S.rutOpen=+b.dataset.wd;closeSheet();renderRutina();scrollTo({top:0,behavior:'instant'});},
   'day-peek':b=>sheetDayPeek(+b.dataset.wd),
   'lib-open':()=>sheetLibrary(),
@@ -2910,6 +2946,7 @@ const ACT={
       else S.lib.unshift({id:uid(),name,days,savedAt:dstr()});
       S.cfg.routineName=name;
       await saveLib();await saveCfg();
+      RUT_HISTORY=[];RUT_REDO=[];
       closeSheet();renderRutina();vibrate(15);
       toast(`Guardada como "${name}"`);
     };
@@ -3096,6 +3133,7 @@ async function moveEx(wd,exId,dir){
   const i=d.exercises.findIndex(e=>e.id===exId);
   const j=i+dir;
   if(i<0||j<0||j>=d.exercises.length)return;
+  pushHistory('Ejercicios reordenados');
   [d.exercises[i],d.exercises[j]]=[d.exercises[j],d.exercises[i]];
   await persistDay(wd);
   flipSort(()=>renderRutina());
