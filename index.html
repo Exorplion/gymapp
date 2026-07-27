@@ -295,6 +295,12 @@ main{
   background:var(--card2);border-radius:12px;border-bottom-color:transparent;
   box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(46,125,255,.3);
 }
+.day-headrow{display:flex;align-items:center;gap:8px}
+.day-headrow .day-head{flex:1}
+.day-headrow .day-handle{cursor:grab;flex:none}
+.card.day.dragging{
+  box-shadow:0 26px 52px -20px rgba(0,0,0,.85),0 0 0 1px rgba(46,125,255,.35);
+}
 body.dragging-on{user-select:none;-webkit-user-select:none;cursor:grabbing}
 body.dragging-on [data-sid]:not(.dragging){filter:saturate(.8) brightness(.92)}
 .drag-hint{display:flex;align-items:center;gap:6px;font-size:12.5px;margin:0 0 var(--s3);padding:0 2px;color:var(--mut)}
@@ -1296,6 +1302,9 @@ function routineStats(){
   return {days,rest,ex,sets};
 }
 function routineName(){ return S.cfg.routineName||(routineStats().days.length?'Rutina personalizada':'Sin rutina'); }
+function activeDayWds(){
+  return WEEK_ORDER.filter(wd=>S.routine[wd]?.name||S.routine[wd]?.exercises?.length);
+}
 /* snapshot del split actual, sin ids: al aplicarlo se generan nuevos */
 function routineSnapshot(){
   const days={};
@@ -1317,6 +1326,18 @@ async function applyDays(days,name){
   }
   S.cfg.routineName=name;
   await saveCfg();
+}
+function swapDayContents(newOrderIds){
+  const active=activeDayWds();
+  const snapshot=active.map(wd=>S.routine[wd]);
+  const proms=[];
+  active.forEach((wd,i)=>{
+    const fromWd=+newOrderIds[i];
+    const srcIdx=active.indexOf(fromWd);
+    S.routine[wd]=srcIdx>=0?{...snapshot[srcIdx],weekday:wd}:ensureDay(wd);
+    proms.push(persistDay(wd));
+  });
+  return Promise.all(proms);
 }
 
 function renderRutina(){
@@ -1375,19 +1396,26 @@ function renderRutina(){
     <button class="btn sm ghost" data-act="rut-view" style="flex:1">&lsaquo; Listo</button>
     <button class="btn sm ghost" data-act="lib-save" style="flex:1">&#128190; Guardar como&hellip;</button>
   </div>`;
-  const rest=WEEK_ORDER.filter(wd=>!S.routine[wd]?.name&&!S.routine[wd]?.exercises?.length);
-  WEEK_ORDER.filter(wd=>!rest.includes(wd)).forEach(wd=>{
+  const active=activeDayWds();
+  const rest=WEEK_ORDER.filter(wd=>!active.includes(wd));
+  h+=active.length>1?`<div class="drag-hint tight"><span>&#8597;</span><span>Mantené presionada el asa para intercambiar dos días.</span></div>`:'';
+  h+=`<div data-sort="days">`;
+  active.forEach(wd=>{
     const d=S.routine[wd];
     const exs=d?.exercises||[];
     const open=S.rutOpen===wd;
-    h+=`<div class="card day ${open?'open':''}" data-wd="${wd}">
-      <button class="day-head" data-act="day-toggle" data-wd="${wd}">
-        <div>
-          <span class="day-wd">${WD[wd]}</span>
-          <span class="day-name ${d?.name?'':'empty'}">${d?.name?esc(d.name):'Descanso / sin asignar'}</span>
-        </div>
-        <span class="day-meta">${exs.length?exs.length+' ej.':''}<span class="chev">&rsaquo;</span></span>
-      </button>
+    h+=`<div class="card day ${open?'open':''}" data-wd="${wd}" data-sid="${wd}">
+      <div class="day-headrow">
+        <span class="mini day-handle" title="Arrastrar para intercambiar">&#10021;</span>
+        <button class="day-head" data-act="day-toggle" data-wd="${wd}">
+          <div>
+            <span class="day-wd">${WD[wd]}</span>
+            <span class="day-name ${d?.name?'':'empty'}">${d?.name?esc(d.name):'Descanso / sin asignar'}</span>
+          </div>
+          <span class="day-meta">${exs.length?exs.length+' ej.':''}<span class="chev">&rsaquo;</span></span>
+        </button>
+        <button class="mini red" data-act="day-del" data-wd="${wd}" title="Vaciar día">&#10005;</button>
+      </div>
       <div class="day-body"><div class="dbi">
         ${exs.length>1?`<div class="drag-hint tight"><span>&#8597;</span><span>Mantené presionado un ejercicio para reordenarlo.</span></div>`:''}
         <div data-sort="rut" data-wd="${wd}" style="--lift:1.015">
@@ -1407,6 +1435,7 @@ function renderRutina(){
       </div></div>
     </div>`;
   });
+  h+=`</div>`;
   if(rest.length&&rest.length<7){
     h+=`<div class="card sub">
       <div class="steplabel" style="margin-bottom:var(--s2)">Días libres</div>
@@ -2596,6 +2625,10 @@ function dragEnd(commit){
   const [m]=ids.splice(from,1);ids.splice(to,0,m);
   vibrate(22);
   const kind=box.dataset.sort,wd=box.dataset.wd;
+  if(kind==='days'){
+    setTimeout(async()=>{ await swapDayContents(ids); clean(); renderRutina(); },300);
+    return;
+  }
   /* guardo ya, en paralelo con la animación de aterrizaje */
   const saved=commitSort(kind,wd,ids);
   setTimeout(async()=>{
@@ -2806,6 +2839,13 @@ const ACT={
     const wd=+b.dataset.wd,d=ensureDay(wd);
     d.name=$('#f-dayname').value.trim();
     await persistDay(wd);closeSheet();renderRutina();
+  },
+  'day-del':async b=>{
+    const wd=+b.dataset.wd,d=S.routine[wd];
+    if(!d?.name&&!d?.exercises?.length)return;
+    S.routine[wd]={weekday:wd,name:'',exercises:[]};
+    await persistDay(wd);
+    renderRutina();
   },
   'ex-add':b=>sheetExForm(+b.dataset.wd,null),
   'ex-pick':b=>{
