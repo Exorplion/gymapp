@@ -2458,6 +2458,16 @@ async function wipeAll(){
 /* ================= sheet ================= */
 function openSheet(html){$('#sheet-c').innerHTML=html;$('#sheet').classList.add('open');}
 function closeSheet(){$('#sheet').classList.remove('open');}
+let PENDING_CONFIRM=null;
+function sheetConfirm(title,body,confirmLabel,onConfirm){
+  PENDING_CONFIRM=onConfirm;
+  openSheet(`<h2>${esc(title)}</h2>
+    <div class="txt-mut" style="font-size:14px;line-height:1.5;margin-bottom:18px">${esc(body)}</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn sm ghost" data-act="sheet-close" style="flex:1">Cancelar</button>
+      <button class="btn sm danger" data-act="confirm-yes" style="flex:1">${esc(confirmLabel)}</button>
+    </div>`);
+}
 
 /* ================= sesión: detalle historial ================= */
 function sheetHist(id){
@@ -2668,6 +2678,7 @@ const ACT={
   'goto-rutina':()=>switchTab('rutina'),
   'settings':()=>sheetSettings(),
   'sheet-close':()=>closeSheet(),
+  'confirm-yes':()=>{const fn=PENDING_CONFIRM;PENDING_CONFIRM=null;closeSheet();fn&&fn();},
   /* hoy */
   'hoy-day':b=>{S.hoyDay=+b.dataset.wd;renderHoy();},
   'w-':b=>{const v=S.hoyVals[b.dataset.ex];v.w=Math.max(0,round1(v.w-wStep()));updExDisplays(b.dataset.ex);},
@@ -2765,11 +2776,15 @@ const ACT={
   /* rutina */
   'tmpl-open':()=>sheetLibrary(),
   'tmpl-apply':b=>applyTemplate(b.dataset.id),
-  'tmpl-clear':async()=>{
-    if(Object.values(S.routine).some(d=>d.exercises?.length)&&!confirm('¿Vaciar tu split y empezar en blanco?'))return;
-    await idb.clear('routine');S.routine={};
-    S.cfg.routineName='';await saveCfg();
-    S.rutMode='edit';closeSheet();renderRutina();toast('Split vacío — armá el tuyo');
+  'tmpl-clear':()=>{
+    if(!Object.values(S.routine).some(d=>d.exercises?.length)){
+      S.rutMode='edit';closeSheet();renderRutina();return;
+    }
+    sheetConfirm('¿Vaciar tu split?','Se borran todos los días y ejercicios.','Vaciar',async()=>{
+      await idb.clear('routine');S.routine={};
+      S.cfg.routineName='';await saveCfg();
+      S.rutMode='edit';closeSheet();renderRutina();toast('Split vacío — armá el tuyo');
+    });
   },
   'ex-info':b=>{const d=S.routine[+b.dataset.wd];const ex=d?.exercises.find(e=>e.id===b.dataset.ex);if(ex)sheetExInfo(ex.name,+b.dataset.wd,ex.id);},
   'day-toggle':b=>{
@@ -2833,21 +2848,33 @@ const ACT={
   'rut-edit-day':b=>{S.rutMode='edit';S.rutOpen=+b.dataset.wd;closeSheet();renderRutina();scrollTo({top:0,behavior:'instant'});},
   'day-peek':b=>sheetDayPeek(+b.dataset.wd),
   'lib-open':()=>sheetLibrary(),
-  'lib-save':async()=>{
+  'lib-save':()=>{
     const st=routineStats();
     if(!st.days.length){toast('No hay rutina que guardar');return;}
-    const name=(prompt('¿Con qué nombre la guardo?',routineName()==='Rutina personalizada'?'':routineName())||'').trim();
-    if(!name)return;
+    openSheet(`<h2>Guardar rutina</h2>
+      <div class="field"><label>Nombre</label>
+      <input id="f-savename" value="${esc(routineName()==='Rutina personalizada'?'':routineName())}" placeholder="Mi rutina"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn sm ghost" data-act="sheet-close" style="flex:1">Cancelar</button>
+        <button class="btn sm" data-act="lib-save-confirm" style="flex:1">Guardar</button>
+      </div>`);
+    setTimeout(()=>$('#f-savename')?.focus(),80);
+  },
+  'lib-save-confirm':async()=>{
+    const name=($('#f-savename')?.value||'').trim();
+    if(!name){toast('Ingresá un nombre');return;}
     const days=routineSnapshot();
     const prev=S.lib.find(r=>norm(r.name)===norm(name));
-    if(prev){
-      if(!confirm(`Ya tenés una rutina llamada "${prev.name}". ¿La reemplazo?`))return;
-      prev.days=days;prev.savedAt=dstr();
-    }else S.lib.unshift({id:uid(),name,days,savedAt:dstr()});
-    S.cfg.routineName=name;
-    await saveLib();await saveCfg();
-    closeSheet();renderRutina();vibrate(15);
-    toast(`Guardada como "${name}"`);
+    const doSave=async()=>{
+      if(prev){prev.days=days;prev.savedAt=dstr();}
+      else S.lib.unshift({id:uid(),name,days,savedAt:dstr()});
+      S.cfg.routineName=name;
+      await saveLib();await saveCfg();
+      closeSheet();renderRutina();vibrate(15);
+      toast(`Guardada como "${name}"`);
+    };
+    if(prev)sheetConfirm(`¿Reemplazar "${prev.name}"?`,'Ya tenés una rutina guardada con este nombre.','Reemplazar',doSave);
+    else await doSave();
   },
   'lib-apply':async b=>{
     const r=S.lib.find(x=>x.id===b.dataset.id);if(!r)return;
@@ -2857,11 +2884,12 @@ const ACT={
     closeSheet();renderRutina();vibrate([20,40,20]);
     toast(`"${r.name}" en uso`);
   },
-  'lib-del':async b=>{
+  'lib-del':b=>{
     const r=S.lib.find(x=>x.id===b.dataset.id);if(!r)return;
-    if(!confirm(`¿Borrar la rutina guardada "${r.name}"? Tu split actual no cambia.`))return;
-    S.lib=S.lib.filter(x=>x.id!==r.id);
-    await saveLib();sheetLibrary();
+    sheetConfirm(`¿Borrar "${r.name}"?`,'Tu split actual no cambia — solo se borra de tu biblioteca.','Borrar',async()=>{
+      S.lib=S.lib.filter(x=>x.id!==r.id);
+      await saveLib();sheetLibrary();
+    });
   },
   /* nutrición */
   'nutri-prev':()=>shiftNutriDate(-1),
