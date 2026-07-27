@@ -2416,6 +2416,22 @@ const SEED_BODY=[['2026-06-01',72.6,80,33.5],['2026-06-08',72.9],['2026-06-15',7
   ['2026-07-20',74.2,79,34]];
 const SEED_WEEKS=5, SEED_REF=2;   // ~1 mes; los pesos anotados corresponden a hace 2 semanas
 
+function genBodyForWindow(){
+  const anchors=SEED_BODY.map(([date,weight,waist,arm])=>({t:+new Date(date+'T00:00:00'),weight,waist,arm}));
+  const out=[...SEED_BODY];
+  const start=anchors[0].t,end=anchors[anchors.length-1].t;
+  for(let t=start;t<=end;t+=2*86400000){
+    if(anchors.some(a=>Math.abs(a.t-t)<86400000))continue;
+    let lo=anchors[0],hi=anchors[anchors.length-1];
+    for(let i=0;i<anchors.length-1;i++)if(anchors[i].t<=t&&t<=anchors[i+1].t){lo=anchors[i];hi=anchors[i+1];break;}
+    const frac=hi.t===lo.t?0:(t-lo.t)/(hi.t-lo.t);
+    const base=lo.weight+(hi.weight-lo.weight)*frac;
+    const noise=(Math.random()-0.5)*0.8;
+    out.push([dstr(new Date(t)),Math.round((base+noise)*10)/10]);
+  }
+  return out.sort((a,b)=>a[0]<b[0]?-1:1);
+}
+
 const MEAL_POOL=[
   ['Desayuno',480,28,58,15],['Pollo + arroz',530,45,58,16],['Milanesa',720,42,78,26],
   ['Ensalada + pollo',380,38,20,14],['Yogurt + fruta',260,18,38,4],
@@ -2500,7 +2516,7 @@ async function seedRegistro(){
     }
   }
 
-  for(const [date,weight,waist,arm] of SEED_BODY){
+  for(const [date,weight,waist,arm] of genBodyForWindow()){
     const b={id:uid(),date,weight,waist:waist??null,arm:arm??null,chest:null,leg:null,seed:true};
     await idb.put('body',b);S.body.push(b);
   }
