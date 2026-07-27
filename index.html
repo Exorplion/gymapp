@@ -2677,7 +2677,7 @@ const ACT={
   'tab':b=>switchTab(b.dataset.tab),
   'goto-rutina':()=>switchTab('rutina'),
   'settings':()=>sheetSettings(),
-  'sheet-close':()=>closeSheet(),
+  'sheet-close':()=>{PENDING_CONFIRM=null;closeSheet();},
   'confirm-yes':()=>{const fn=PENDING_CONFIRM;PENDING_CONFIRM=null;closeSheet();fn&&fn();},
   /* hoy */
   'hoy-day':b=>{S.hoyDay=+b.dataset.wd;renderHoy();},
