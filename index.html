@@ -1140,6 +1140,7 @@ function dayCompleted(dateStr){
   return S.sessions.some(s=>s.date===dateStr);
 }
 function currentStreak(){
+  if(!Object.values(S.routine).some(d=>d.exercises?.length))return 0;
   const todayStr=dstr();
   let n=0,d=new Date(),first=true;
   for(;;){
@@ -1158,9 +1159,9 @@ function bestStreak(){
   if(!S.sessions.length)return 0;
   const dates=S.sessions.map(s=>s.date);
   let d=new Date(dates.reduce((a,b)=>a<b?a:b)+'T12:00:00');
-  const end=new Date();
+  const endStr=dstr();
   let cur=0,best=0;
-  while(d<=end){
+  while(dstr(d)<=endStr){
     const c=dayCompleted(dstr(d));
     if(c===true){cur++;best=Math.max(best,cur);}
     else if(c===false){cur=0;}
