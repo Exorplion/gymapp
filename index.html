@@ -517,6 +517,24 @@ nav.tabbar button.on svg{filter:drop-shadow(0 0 10px rgba(62,150,255,.8))}
 #rest-track{height:5px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:10px;overflow:hidden}
 #rest-fill{display:block;height:100%;border-radius:3px;background:var(--grad);width:100%;transition:width .25s linear}
 
+/* ---------- rest timer: pantalla completa ---------- */
+#rest-fs{position:fixed;inset:0;z-index:65;display:none;place-items:center;
+  background:rgba(3,5,10,.94);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);
+  animation:fdin .25s var(--ease);}
+#rest-fs.show{display:grid}
+.rfs-inner{display:flex;flex-direction:column;align-items:center;gap:22px;padding:24px;position:relative;width:100%;max-width:360px}
+.rfs-lbl{font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:var(--blue2)}
+.rfs-ring{position:relative;width:240px;height:240px;animation:glowring 2.4s ease-in-out infinite}
+.rfs-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.rfs-track{fill:none;stroke:var(--card2);stroke-width:10}
+.rfs-prog{fill:none;stroke:url(#restGrad);stroke-width:10;stroke-linecap:round;
+  stroke-dasharray:552.9;stroke-dashoffset:0;transition:stroke-dashoffset .25s linear}
+.rfs-time{position:absolute;inset:0;display:grid;place-items:center;
+  font-family:'Barlow Condensed';font-weight:700;font-size:56px;font-variant-numeric:tabular-nums}
+.rfs-btns{display:flex;gap:12px;width:100%}
+.rfs-btns .btn{flex:1}
+.rfs-min{position:absolute;top:-6px;right:-6px}
+
 /* ---------- bottom sheet ---------- */
 #sheet{position:fixed;inset:0;z-index:60;display:none}
 #sheet.open{display:block}
@@ -623,7 +641,12 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   <section id="view-prog" class="view"></section>
 </main>
 
-<div id="restbar">
+<svg width="0" height="0" style="position:absolute">
+  <defs><linearGradient id="restGrad" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#5EA2FF"/><stop offset="100%" stop-color="#22D3EE"/>
+  </linearGradient></defs>
+</svg>
+<div id="restbar" data-act="rest-expand">
   <div class="rb-top">
     <div>
       <div class="rb-lbl">Descanso</div>
@@ -635,6 +658,23 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
     </div>
   </div>
   <div id="rest-track"><i id="rest-fill"></i></div>
+</div>
+<div id="rest-fs">
+  <div class="rfs-inner">
+    <div class="rfs-lbl">Descanso</div>
+    <div class="rfs-ring">
+      <svg viewBox="0 0 200 200">
+        <circle class="rfs-track" cx="100" cy="100" r="88"/>
+        <circle class="rfs-prog" id="rfs-prog" cx="100" cy="100" r="88"/>
+      </svg>
+      <div class="rfs-time" id="rfs-time">1:30</div>
+    </div>
+    <div class="rfs-btns">
+      <button class="btn sm ghost" data-act="rest-add">+30s</button>
+      <button class="btn sm dim" data-act="rest-skip">Saltar</button>
+    </div>
+    <button class="icon-btn rfs-min" data-act="rest-min" aria-label="Minimizar">⌄</button>
+  </div>
 </div>
 
 <nav class="tabbar">
@@ -1257,7 +1297,7 @@ function sheetStreak(){
 }
 
 /* ================= timer descanso ================= */
-const T={end:0,total:0,int:null,audio:null};
+const T={end:0,total:0,int:null,audio:null,state:'hidden'};
 function audioCtx(){
   if(!T.audio){try{T.audio=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}
   if(T.audio&&T.audio.state==='suspended')T.audio.resume();
@@ -1277,23 +1317,43 @@ function ding(){
     o.start(at);o.stop(at+.2);
   });
 }
+const REST_CIRC=2*Math.PI*88;
 function startRest(){
   if(!S.cfg.rest)return;
   audioCtx(); // crear con gesto del usuario
   T.total=S.cfg.rest;T.end=Date.now()+T.total*1000;
-  $('#restbar').classList.add('show');
+  T.state='fullscreen';
+  $('#rest-fs').classList.add('show');
+  $('#restbar').classList.remove('show');
   if(!T.int)T.int=setInterval(tickRest,250);
   tickRest();
 }
+function minimizeRest(){
+  if(T.state!=='fullscreen')return;
+  T.state='minimized';
+  $('#rest-fs').classList.remove('show');
+  $('#restbar').classList.add('show');
+}
+function expandRest(){
+  if(T.state!=='minimized')return;
+  T.state='fullscreen';
+  $('#restbar').classList.remove('show');
+  $('#rest-fs').classList.add('show');
+}
 function tickRest(){
   const left=Math.max(0,Math.ceil((T.end-Date.now())/1000));
-  $('#rest-time').textContent=fmtMMSS(left);
-  $('#rest-fill').style.width=Math.max(0,(T.end-Date.now())/(T.total*1000)*100)+'%';
+  const pct=Math.max(0,(T.end-Date.now())/(T.total*1000));
+  const rt=$('#rest-time');if(rt)rt.textContent=fmtMMSS(left);
+  const rf=$('#rest-fill');if(rf)rf.style.width=pct*100+'%';
+  const fst=$('#rfs-time');if(fst)fst.textContent=fmtMMSS(left);
+  const prog=$('#rfs-prog');if(prog)prog.style.strokeDashoffset=REST_CIRC*(1-pct)+'';
   if(left<=0){stopRest();ding();toast('⏱ ¡Descanso terminado!');}
 }
 function stopRest(){
   clearInterval(T.int);T.int=null;
+  T.state='hidden';
   $('#restbar').classList.remove('show');
+  $('#rest-fs').classList.remove('show');
 }
 /* cronómetro en vivo de la sesión (Sección 18): tiquea el elapsed de "Hoy" cada segundo */
 setInterval(()=>{
@@ -3118,6 +3178,8 @@ const ACT={
   /* rest */
   'rest-add':()=>{T.end+=30000;tickRest();},
   'rest-skip':()=>stopRest(),
+  'rest-min':()=>minimizeRest(),
+  'rest-expand':()=>expandRest(),
   'rest-cfg':b=>{S.cfg.rest=Math.max(0,(S.cfg.rest||0)+ +b.dataset.d);saveCfg();$('#f-rest').value=S.cfg.rest?fmtMMSS(S.cfg.rest):'OFF';},
   /* progreso */
   'prog-range':b=>{S.progRange=b.dataset.r;renderProg();},
