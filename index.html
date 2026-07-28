@@ -884,7 +884,7 @@ let SWX=0,SWY=0,SWOK=false;
 addEventListener('touchstart',e=>{
   if(e.touches.length!==1){SWOK=false;return;}
   /* no secuestrar carruseles horizontales, controles ni la hoja modal */
-  if(e.target.closest('.chip-scroll,input,select,textarea,#sheet,#restbar,details')){SWOK=false;return;}
+  if(e.target.closest('.chip-scroll,input,select,textarea,#sheet,#restbar,details,#rest-fs')){SWOK=false;return;}
   SWX=e.touches[0].clientX;SWY=e.touches[0].clientY;SWOK=true;
 },{passive:true});
 addEventListener('touchend',e=>{
