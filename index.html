@@ -445,9 +445,13 @@ canvas.chart{width:100%;height:200px;display:block}
   background:linear-gradient(135deg,rgba(46,125,255,.12),rgba(12,19,34,.4));
   border:1px solid rgba(46,125,255,.28);
 }
-.pr-troph{width:44px;height:44px;border-radius:14px;background:var(--grad);display:grid;place-items:center;
+.pr-troph{width:44px;height:44px;border-radius:14px;background:var(--grad2);display:grid;place-items:center;
   box-shadow:var(--glow);font-size:20px;flex:none}
 .pr-w{font-family:'Barlow Condensed';font-weight:700;font-size:26px;line-height:1;color:var(--blue3)}
+.confetti-host{position:fixed;inset:0;z-index:80;pointer-events:none;overflow:hidden}
+.confetti-host i{position:absolute;top:-12px;width:8px;height:14px;border-radius:2px;
+  opacity:.95;animation:confettiFall linear forwards;transform:rotate(var(--rot))}
+@keyframes confettiFall{to{transform:translate(var(--drift),110vh) rotate(calc(var(--rot) + 360deg));opacity:0}}
 
 /* ---------- inputs formulario ---------- */
 .field{margin-bottom:14px}
@@ -1121,6 +1125,7 @@ async function completeSession(){
   const startAt=d.start||d.open||Date.now();
   const sess={id:d.id,date:d.date,weekday:d.weekday,dayName:d.dayName,
     start:startAt,end:Date.now(),duration:Math.max(1,Math.round((Date.now()-startAt)/60000)),entries};
+  const prs=calcSessionPRs(entries);
   await idb.put('sessions',sess);
   S.sessions.unshift(sess);
   S.draft=null;S.hoyDay=null;
@@ -1128,7 +1133,61 @@ async function completeSession(){
   stopRest();
   vibrate([30,50,30]);
   renderHoy();
-  toast(`💪 Sesión guardada · ${sess.duration} min`);
+  sheetSessionRecap(sess,prs);
+}
+/* compara la mejor serie de cada ejercicio de la sesión contra el máximo
+   histórico ANTES de esta sesión (S.sessions todavía no la incluye acá) */
+function calcSessionPRs(entries){
+  const prior=S.sessions;
+  const prs=[];
+  entries.forEach(e=>{
+    if(!e.sets.length)return;
+    const bestSet=e.sets.reduce((a,b)=>b.w>a.w?b:a,e.sets[0]);
+    let prevMax=0;
+    prior.forEach(s=>(s.entries||[]).forEach(pe=>{
+      if(pe.name.trim()!==e.name.trim())return;
+      pe.sets.forEach(st=>{if(st.w>prevMax)prevMax=st.w;});
+    }));
+    if(bestSet.w>prevMax)prs.push({name:e.name,w:bestSet.w,r:bestSet.r});
+  });
+  return prs;
+}
+function sheetSessionRecap(sess,prs){
+  const nsets=sess.entries.reduce((a,e)=>a+e.sets.length,0);
+  const vol=sess.entries.reduce((a,e)=>a+e.sets.reduce((b,s)=>b+s.w*s.r,0),0);
+  const hasPR=prs.length>0;
+  openSheet(`<h2>${hasPR?'🎉 ':'💪 '}Sesión guardada</h2>
+    <div class="txt-mut" style="margin:-8px 0 16px;font-size:14px">${esc(sess.dayName||WD[sess.weekday])} · ${fmtDFull(sess.date)}</div>
+    <div class="macro3" style="grid-template-columns:repeat(4,1fr)">
+      <div style="text-align:center"><div class="cond" style="font-size:26px;font-weight:700">${sess.duration}</div><div class="txt-mut" style="font-size:var(--t-micro);letter-spacing:.08em;text-transform:uppercase">Min</div></div>
+      <div style="text-align:center"><div class="cond" style="font-size:26px;font-weight:700">${nsets}</div><div class="txt-mut" style="font-size:var(--t-micro);letter-spacing:.08em;text-transform:uppercase">Series</div></div>
+      <div style="text-align:center"><div class="cond" style="font-size:26px;font-weight:700">${sess.entries.length}</div><div class="txt-mut" style="font-size:var(--t-micro);letter-spacing:.08em;text-transform:uppercase">Ejercicios</div></div>
+      <div style="text-align:center"><div class="cond" style="font-size:26px;font-weight:700">${Math.round(vol)}</div><div class="txt-mut" style="font-size:var(--t-micro);letter-spacing:.08em;text-transform:uppercase">Kg vol.</div></div>
+    </div>
+    ${hasPR?`<div class="card pr-card" style="margin-top:18px;animation:flash 1.2s ease 2">
+      <div class="pr-troph" style="animation:zoom .4s var(--ease) backwards">🏆</div>
+      <div class="grow"><div class="cond" style="font-size:17px;font-weight:700">¡Nuevo récord!</div>
+      <div class="txt-mut" style="font-size:13px">${prs.map(p=>`${esc(p.name)} · ${fmtNum(round1(p.w))} kg × ${p.r}`).join(' · ')}</div></div>
+    </div>`:''}
+    <button class="btn ${hasPR?'ok':''}" data-act="recap-close" style="margin-top:18px">Guardar y cerrar</button>`);
+  if(hasPR)fireConfetti();
+}
+function fireConfetti(){
+  const host=document.createElement('div');
+  host.className='confetti-host';
+  const colors=['#2E7DFF','#5EA2FF','#22D3EE','#2EE6A8','#FFB454'];
+  for(let i=0;i<28;i++){
+    const p=document.createElement('i');
+    p.style.left=Math.random()*100+'%';
+    p.style.background=colors[i%colors.length];
+    p.style.animationDelay=(Math.random()*.3)+'s';
+    p.style.animationDuration=(1.6+Math.random()*.9)+'s';
+    p.style.setProperty('--rot',(Math.random()*360)+'deg');
+    p.style.setProperty('--drift',(Math.random()*140-70)+'px');
+    host.appendChild(p);
+  }
+  document.body.appendChild(host);
+  setTimeout(()=>host.remove(),2700);
 }
 
 /* ================= racha ================= */
@@ -3033,6 +3092,7 @@ const ACT={
     toast('Sesión abierta · tocá "Iniciar ejercicio" cuando estés en la máquina');
   },
   'sess-done':()=>{if(confirm('¿Completar y guardar la sesión?'))completeSession();},
+  'recap-close':()=>closeSheet(),
   'sess-discard':async()=>{if(!confirm('¿Descartar la sesión en curso?'))return;S.draft=null;S.hoyDay=null;await saveDraft();stopRest();renderHoy();},
   'seed-load':async()=>{
     if(seedCount()&&!confirm('Ya hay datos cargados. ¿Cargarlos otra vez? Se van a duplicar.'))return;
