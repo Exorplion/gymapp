@@ -301,10 +301,13 @@ main{
 .ex-card.doneex{opacity:.72}
 .ex-state{margin-top:10px;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
 .ex-state.ok{color:var(--ok)}
-.ex-move{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:4px;z-index:2}
-.ex-move button{width:30px;height:26px;border-radius:8px;background:var(--card2);border:1px solid var(--line);color:var(--mut);font-size:12px;display:grid;place-items:center}
-.ex-move button:active{color:var(--blue2);border-color:var(--blue2)}
-.ex-move button:disabled{opacity:.22}
+.carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;
+  margin:0 calc(-1*var(--s4)) 0;padding:0 var(--s4) 4px;scrollbar-width:none}
+.carousel::-webkit-scrollbar{display:none}
+.carousel-slide{flex:0 0 100%;scroll-snap-align:center;min-width:0}
+.carousel-dots{display:flex;justify-content:center;gap:6px;margin:10px 0 4px}
+.carousel-dots i{width:6px;height:6px;border-radius:3px;background:var(--card2);border:1px solid var(--line2);transition:.2s}
+.carousel-dots i.on{width:18px;background:var(--grad2);border-color:transparent}
 /* ---------- reordenar arrastrando ---------- */
 /* mantené presionada una fila y arrastrala: las demás se corren solas para
    abrirle lugar, como en la lista de tareas del teléfono */
@@ -884,7 +887,7 @@ let SWX=0,SWY=0,SWOK=false;
 addEventListener('touchstart',e=>{
   if(e.touches.length!==1){SWOK=false;return;}
   /* no secuestrar carruseles horizontales, controles ni la hoja modal */
-  if(e.target.closest('.chip-scroll,input,select,textarea,#sheet,#restbar,details,#rest-fs')){SWOK=false;return;}
+  if(e.target.closest('.chip-scroll,input,select,textarea,#sheet,#restbar,details,#rest-fs,#ex-carousel')){SWOK=false;return;}
   SWX=e.touches[0].clientX;SWY=e.touches[0].clientY;SWOK=true;
 },{passive:true});
 addEventListener('touchend',e=>{
@@ -1008,6 +1011,7 @@ function renderHoy(){
   if(!active&&SR_CLASS){
     h+=`<button class="pw-btn" id="hoy-voice-btn" data-act="hoy-voice"><span class="pwi">🎤</span><span class="pwt">Registrar por voz</span><span class="txt-mut" style="font-size:12.5px;font-weight:500">contá qué entrenaste hoy</span><span class="chev">›</span></button>`;
   }
+  let openIdx=0;
   if(!exs.length){
     h+=`<div class="card"><div class="empty">
       <div class="big">🏋️</div>
@@ -1027,10 +1031,10 @@ function renderHoy(){
       m.isNext=active&&!m.open&&!curId&&nextEx&&nextEx.id===m.ex.id;
       m.waiting=active&&!m.open&&!m.isNext&&!m.full;
     });
-    const anyDrag=exs.length>1;
-    if(anyDrag)h+=`<div class="drag-hint"><span>↕</span><span>Mantené presionado un ejercicio y arrastralo para cambiar el orden.</span></div>`;
-    h+=`<div id="ex-list" data-sort="hoy">`;
-    meta.forEach((m,idx)=>{
+    openIdx=meta.findIndex(m=>m.open||m.isNext);
+    if(exs.length>1)h+=`<button class="btn sm ghost" data-act="reorder-open" style="margin-bottom:var(--s3)">↕ Reordenar</button>`;
+    h+=`<div id="ex-carousel" class="carousel">`;
+    meta.forEach(m=>{
       const ex=m.ex,done=m.done,full=m.full,open=m.open,isNext=m.isNext,waiting=m.waiting;
       const v=ensureVals(ex);
       const last=lastDataFor(ex.name);
@@ -1038,16 +1042,10 @@ function renderHoy(){
       const curSet=Math.min(done.length,ex.sets-1);
       const curRir=scheme[curSet];
       const pwarn=progressionWarn(ex.name,v.w);
-      /* el ejercicio en curso conserva su contador a la vista; los demás ceden
-         la esquina a las flechas (arrastrar funciona en todos igual) */
-      const arrows=anyDrag&&!open;
       const cls=[full?'full doneex':'',open?'cur':'',waiting?'wait':''].filter(Boolean).join(' ');
-      h+=`<div class="card ex-card ${cls}" id="exc-${ex.id}" data-sid="${ex.id}" style="--done:${Math.min(1,done.length/ex.sets)}">
-        ${arrows?`<div class="ex-move">
-          <button data-act="ex-move" data-ex="${ex.id}" data-d="-1" ${idx===0?'disabled':''} aria-label="Subir">▲</button>
-          <button data-act="ex-move" data-ex="${ex.id}" data-d="1" ${idx===exs.length-1?'disabled':''} aria-label="Bajar">▼</button>
-        </div>`:`<div class="ex-done-count ${full?'full':''}">${done.length}/${ex.sets}</div>`}
-        <div class="exname" style="${arrows?'padding-right:44px':''}">${esc(ex.name)} ${exInfo(ex.name)?`<button class="mini info inline" data-act="ex-info" data-wd="${wd}" data-ex="${ex.id}">ⓘ</button>`:''}</div>
+      h+=`<div class="carousel-slide" data-exid="${ex.id}"><div class="card ex-card ${cls}" id="exc-${ex.id}" style="--done:${Math.min(1,done.length/ex.sets)}">
+        <div class="ex-done-count ${full?'full':''}">${done.length}/${ex.sets}</div>
+        <div class="exname">${esc(ex.name)} ${exInfo(ex.name)?`<button class="mini info inline" data-act="ex-info" data-wd="${wd}" data-ex="${ex.id}">ⓘ</button>`:''}</div>
         <div class="extarget">Objetivo ${ex.sets} × ${ex.reps}${open?` · serie ${done.length+1} → ${curRir===0?'<b class="txt-blue">al fallo</b>':'RIR '+curRir}`:''}</div>
         ${last?`<div class="exlast">Última vez: ${last.map(s=>`${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg</div>`:''}
         ${full?`<div class="ex-state ok">✓ Completo · ${done.length} de ${ex.sets} series</div>`:''}
@@ -1080,9 +1078,10 @@ function renderHoy(){
         <button class="btn" data-act="set-save" data-ex="${ex.id}">✓ Terminé la serie ${done.length+1} de ${ex.sets}</button>`:''}
         ${active&&done.length?`<div class="chips setchips">${done.map((s,i)=>
           `<span class="chip blue" data-act="set-del" data-ex="${ex.id}" data-i="${i}">${fmtNum(round1(s.w))}kg × ${s.r}<span class="x">✕</span></span>`).join('')}</div>`:''}
-      </div>`;
+      </div></div>`;
     });
     h+=`</div>`;
+    if(exs.length>1)h+=`<div class="carousel-dots" id="ex-dots">${exs.map(()=>`<i></i>`).join('')}</div>`;
   }
 
   /* historial */
@@ -1098,6 +1097,23 @@ function renderHoy(){
   }).join('')}</div>`;
 
   el.innerHTML=h;
+  initCarousel(exs.length?Math.max(0,openIdx):0);
+}
+function initCarousel(idx){
+  const car=$('#ex-carousel');if(!car)return;
+  const dots=$$('#ex-dots i');
+  if(idx>0)car.scrollLeft=idx*car.clientWidth;
+  const upd=()=>{
+    const i=Math.round(car.scrollLeft/(car.clientWidth||1));
+    dots.forEach((d,j)=>d.classList.toggle('on',j===i));
+  };
+  car.addEventListener('scroll',upd,{passive:true});
+  upd();
+}
+function scrollCarouselTo(exId){
+  const car=$('#ex-carousel');if(!car)return;
+  const idx=[...car.children].findIndex(c=>c.dataset.exid===exId);
+  if(idx>=0)setTimeout(()=>car.scrollTo({left:idx*car.clientWidth,behavior:'smooth'}),60);
 }
 
 function updExDisplays(exId){
@@ -1144,8 +1160,7 @@ async function saveSet(exId){
   startRest();
   if(finished){
     toast(nxt?`✓ ${ex.name} completo · sigue ${nxt.name}`:`✓ ${ex.name} completo · terminaste el día`);
-    const card=$('#exc-'+(nxt?nxt.id:exId));
-    if(card)setTimeout(()=>card.scrollIntoView({block:'center',behavior:'smooth'}),60);
+    scrollCarouselTo(nxt?nxt.id:exId);
   }else{
     toast(`Serie ${cur.length}/${ex.sets}: ${wBoth(v.w)} × ${v.r}`);
   }
@@ -2866,6 +2881,18 @@ function sheetConfirm(title,body,confirmLabel,onConfirm,onCancel){
     </div>`);
 }
 
+function sheetReorderHoy(){
+  const wd=currentDayForHoy();
+  const exs=orderedExs(wd,S.routine[wd]?.exercises||[]);
+  openSheet(`<h2>Reordenar</h2>
+    <div class="drag-hint tight"><span>↕</span><span>Mantené presionado y arrastrá para cambiar el orden.</span></div>
+    <div data-sort="hoy">${exs.map(ex=>`
+      <div class="row" data-sid="${ex.id}">
+        <div class="grow"><div class="t">${esc(ex.name)}</div><div class="s">${ex.sets} × ${ex.reps}</div></div>
+        <span class="chev" style="cursor:grab">☰</span>
+      </div>`).join('')}</div>
+    <button class="btn dim" data-act="sheet-close" style="margin-top:16px">Listo</button>`);
+}
 /* ================= sesión: detalle historial ================= */
 function sheetHist(id){
   const s=S.sessions.find(x=>x.id===id);if(!s)return;
@@ -2912,7 +2939,7 @@ const LP={t:null,card:null,x:0,y:0};
 function dragPick(e){
   const t=e.target;
   if(!t||!t.closest)return null;
-  if(t.closest('button,input,select,textarea,.chip,#sheet,#restbar'))return null;
+  if(t.closest('button,input,select,textarea,.chip,#restbar'))return null;
   const card=t.closest('[data-sid]');
   if(!card)return null;
   const box=card.parentElement;
@@ -3108,21 +3135,10 @@ const ACT={
     const first=!S.draft.start;
     if(first)S.draft.start=Date.now();
     await saveDraft();vibrate(15);renderHoy();
-    const card=$('#exc-'+ex.id);
-    if(card)setTimeout(()=>card.scrollIntoView({block:'center',behavior:'smooth'}),60);
+    scrollCarouselTo(ex.id);
     toast(first?`⏱ Cronómetro en marcha · ${ex.name}`:`${ex.name} · serie 1 de ${ex.sets}`);
   },
-  'ex-move':async b=>{
-    const wd=currentDayForHoy();
-    const list=orderedExs(wd,S.routine[wd]?.exercises||[]);
-    const i=list.findIndex(e=>e.id===b.dataset.ex),j=i+(+b.dataset.d);
-    if(i<0||j<0||j>=list.length)return;
-    const ids=list.map(e=>e.id);
-    [ids[i],ids[j]]=[ids[j],ids[i]];
-    await setExOrder(wd,ids);
-    vibrate(8);
-    flipSort(()=>renderHoy());
-  },
+  'reorder-open':()=>sheetReorderHoy(),
   'sess-start':()=>{
     const wd=currentDayForHoy(),day=S.routine[wd];
     if(!day?.exercises?.length){toast('Este día no tiene ejercicios');return;}
