@@ -424,6 +424,11 @@ body.dragging-on [data-sid]:not(.dragging){filter:saturate(.8) brightness(.92)}
 .macro3 .m:nth-child(1) .pbar>i{background:linear-gradient(90deg,#2E7DFF,#5EA2FF)}
 .macro3 .m:nth-child(2) .pbar>i{background:linear-gradient(90deg,#0E9F6E,#2EE6A8)}
 .macro3 .m:nth-child(3) .pbar>i{background:linear-gradient(90deg,#E8A21D,#FFB454)}
+.kcal-ring{position:relative;width:92px;height:92px;flex:none}
+.kcal-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.kr-track{fill:none;stroke:var(--card2);stroke-width:9}
+.kr-prog{fill:none;stroke:url(#restGrad);stroke-width:9;stroke-linecap:round;stroke-dasharray:326.7;transition:stroke-dashoffset .5s var(--ease)}
+.kr-val{position:absolute;inset:0;display:grid;place-items:center;text-align:center;line-height:1.15}
 
 .bignum{font-family:'Barlow Condensed';font-weight:700;font-size:52px;line-height:1;font-variant-numeric:tabular-nums}
 .bignum small{font-size:20px;color:var(--mut);font-weight:600;letter-spacing:.04em}
@@ -2029,13 +2034,20 @@ function renderNutri(){
       <small>${isToday?fmtDFull(date):'toca para volver a hoy'}</small>
     </div>
     <button class="mini" data-act="nutri-next" style="width:44px;height:44px" ${isToday?'disabled':''}>›</button>
-  </div>
-  <div class="card hero">
-    <div style="display:flex;align-items:baseline;justify-content:space-between">
-      <div class="bignum">${kc}<small> / ${g.kcal} kcal</small></div>
-      <div class="cond ${kc>g.kcal+150?'txt-red':'txt-blue'}" style="font-size:17px;font-weight:700">${kc>g.kcal?'+'+(kc-g.kcal)+' pasado':Math.max(0,g.kcal-kc)+' restantes'}</div>
+  </div>`;
+
+  const kcalOff=326.7*(1-Math.min(1,g.kcal?kc/g.kcal:0));
+  h+=`<div class="card hero">
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="kcal-ring">
+        <svg viewBox="0 0 120 120"><circle class="kr-track" cx="60" cy="60" r="52"/><circle class="kr-prog" cx="60" cy="60" r="52" style="stroke-dashoffset:${kcalOff}"></circle></svg>
+        <div class="kr-val"><div class="cond" style="font-size:22px;font-weight:700">${kc}</div><div class="txt-mut" style="font-size:10px">/ ${g.kcal}</div></div>
+      </div>
+      <div class="grow">
+        <div class="cond ${kc>g.kcal+150?'txt-red':'txt-blue'}" style="font-size:17px;font-weight:700">${kc>g.kcal?'+'+(kc-g.kcal)+' pasado':Math.max(0,g.kcal-kc)+' restantes'}</div>
+        <div class="txt-mut" style="font-size:12.5px;margin-top:2px">${kc} de ${g.kcal} kcal</div>
+      </div>
     </div>
-    <div class="pbar" style="margin-top:12px"><i style="width:${pct(kc,g.kcal)}%" class="${kc>g.kcal+150?'red':kc>g.kcal?'warn':''}"></i></div>
     <div class="macro3">
       <div class="m"><div class="lbl"><span>Proteína</span><span>${tp}/${g.p}g</span></div><div class="pbar"><i class="${macroCls(tp,'prot',m)}" style="width:${pct(tp,g.p)}%"></i></div>${m?`<div class="rng">rango ${m.protMin}–${m.protMax}g</div>`:''}</div>
       <div class="m"><div class="lbl"><span>Carbos</span><span>${tc}/${g.c}g</span></div><div class="pbar"><i style="width:${pct(tc,g.c)}%"></i></div>${m?`<div class="rng">resto de kcal</div>`:''}</div>
@@ -2043,6 +2055,14 @@ function renderNutri(){
     </div>
     ${nutriFeedback(kc,tp,tf,g,m)}
   </div>`;
+
+  const freq=frequentMeals();
+  if(freq.length){
+    h+=`<div class="sect">Un toque</div>
+    <div class="chip-scroll">${freq.map((f,i)=>
+      `<span class="chip blue" data-act="quickadd-meal" data-idx="${i}">＋ ${esc(f.name)} <span class="txt-mut" style="font-weight:500">${f.kcal}</span></span>`
+    ).join('')}</div>`;
+  }
 
   h+=`<div class="sect">Frecuentes ${S.foods.length?`<button class="mini" data-act="food-editmode" style="width:32px;height:32px;font-size:13px;${S.foodEdit?'color:var(--blue2);border-color:var(--line2)':''}">✎</button>`:''}</div>`;
   if(S.foods.length){
@@ -2092,6 +2112,21 @@ async function saveMeal(){
     await idb.put('foods',food);S.foods.push(food);
   }
   closeSheet();renderNutri();toast('Comida agregada');
+}
+/* agrupa S.meals por nombre normalizado; usa los macros del registro más
+   reciente de cada nombre, ordena por frecuencia */
+function frequentMeals(limit=6){
+  const groups=new Map();
+  S.meals.forEach(m=>{
+    const key=norm(m.name);
+    if(!key)return;
+    const last=m.date+' '+m.t;
+    const g=groups.get(key);
+    if(!g){groups.set(key,{name:m.name,kcal:m.kcal,p:m.p,c:m.c,f:m.f,count:1,last});return;}
+    g.count++;
+    if(last>g.last){g.name=m.name;g.kcal=m.kcal;g.p=m.p;g.c=m.c;g.f=m.f;g.last=last;}
+  });
+  return [...groups.values()].sort((a,b)=>b.count-a.count).slice(0,limit);
 }
 async function addMealFromFood(id){
   const f=S.foods.find(x=>x.id===id);if(!f)return;
@@ -3185,6 +3220,13 @@ const ACT={
     setTimeout(()=>location.reload(),300);
   },
   'hist-view':b=>sheetHist(b.dataset.id),
+  'quickadd-meal':async b=>{
+    const f=frequentMeals()[+b.dataset.idx];if(!f)return;
+    const meal={id:uid(),date:S.nutriDate,name:f.name,kcal:f.kcal,p:f.p,c:f.c,f:f.f,t:new Date().toTimeString().slice(0,5)};
+    await idb.put('meals',meal);S.meals.push(meal);
+    vibrate(12);renderNutri();
+    toast(`＋ ${f.name}`);
+  },
   'hist-del':async b=>{
     if(!confirm('¿Eliminar esta sesión del historial?'))return;
     await idb.del('sessions',b.dataset.id);
