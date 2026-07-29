@@ -120,7 +120,7 @@ header.top{
 .icon-btn.accent{border-color:var(--blue2);color:var(--blue2);background:rgba(46,125,255,.14)}
 .icon-btn.accent:active{background:rgba(46,125,255,.24)}
 .header-actions{display:flex;gap:8px;align-items:center}
-.streak-btn{width:auto;padding:0 12px;flex-direction:row;gap:6px}
+.streak-btn{display:flex;align-items:center;width:auto;padding:0 12px;gap:6px}
 .streak-flame{font-size:17px;line-height:1}
 .streak-n{font-family:'Barlow Condensed';font-weight:700;font-size:15px}
 .heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
@@ -251,20 +251,6 @@ main{
 .ac-list{margin-top:6px;display:flex;flex-direction:column;gap:6px}
 .ac-item{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:12px;font-size:14px;font-weight:600;background:var(--card2);border:1px solid var(--line2);color:var(--txt)}
 .ac-item:active{border-color:var(--blue2);background:rgba(46,125,255,.14)}
-
-/* ---------- días selector (Hoy) ---------- */
-.dayrow{display:flex;gap:6px;margin-bottom:14px}
-.dayrow button{
-  flex:1;padding:10px 0 8px;border-radius:12px;text-align:center;
-  border:1px solid var(--line);background:var(--card);
-  font-family:'Barlow Condensed';font-weight:600;font-size:15px;letter-spacing:.06em;
-  color:var(--mut);transition:.15s;
-}
-.dayrow button.on{
-  background:var(--grad);color:#fff;border-color:transparent;box-shadow:var(--glow);
-  font-weight:700;
-}
-.dayrow button .dot{display:block;width:4px;height:4px;border-radius:2px;background:currentColor;margin:3px auto 0;opacity:.6}
 
 /* ---------- ejercicio (Hoy) ---------- */
 /* riel de avance: llena de arriba a abajo según las series completadas del
@@ -651,7 +637,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 <svg width="0" height="0" style="position:absolute">
   <defs><linearGradient id="restGrad" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#5EA2FF"/><stop offset="100%" stop-color="#22D3EE"/>
+    <stop offset="0%" stop-color="var(--blue2)"/><stop offset="100%" stop-color="var(--cyan)"/>
   </linearGradient></defs>
 </svg>
 <div id="restbar" data-act="rest-expand">
@@ -1124,10 +1110,18 @@ function renderHoy(){
 function initCarousel(idx){
   const car=$('#ex-carousel');if(!car)return;
   const dots=$$('#ex-dots i');
-  if(idx>0)car.scrollLeft=idx*car.clientWidth;
+  if(idx>0){
+    const s=car.children[idx];
+    if(s)car.scrollLeft=s.offsetLeft-car.offsetLeft-(car.clientWidth-s.offsetWidth)/2;
+  }
   const upd=()=>{
-    const i=Math.round(car.scrollLeft/(car.clientWidth||1));
-    dots.forEach((d,j)=>d.classList.toggle('on',j===i));
+    let best=0,bestDist=Infinity;
+    [...car.children].forEach((s,i)=>{
+      const center=s.offsetLeft+s.offsetWidth/2-car.scrollLeft;
+      const dist=Math.abs(center-car.clientWidth/2);
+      if(dist<bestDist){bestDist=dist;best=i;}
+    });
+    dots.forEach((d,j)=>d.classList.toggle('on',j===best));
   };
   car.addEventListener('scroll',upd,{passive:true});
   upd();
@@ -1135,7 +1129,10 @@ function initCarousel(idx){
 function scrollCarouselTo(exId){
   const car=$('#ex-carousel');if(!car)return;
   const idx=[...car.children].findIndex(c=>c.dataset.exid===exId);
-  if(idx>=0)setTimeout(()=>car.scrollTo({left:idx*car.clientWidth,behavior:'smooth'}),60);
+  if(idx>=0)setTimeout(()=>{
+    const s=car.children[idx];
+    if(s)car.scrollTo({left:s.offsetLeft-car.offsetLeft-(car.clientWidth-s.offsetWidth)/2,behavior:'smooth'});
+  },60);
 }
 
 function updExDisplays(exId){
@@ -2137,7 +2134,7 @@ function frequentMeals(limit=6){
   S.meals.forEach(m=>{
     const key=norm(m.name);
     if(!key)return;
-    const last=m.date+' '+m.t;
+    const last=m.date+' '+(m.t||'');
     const g=groups.get(key);
     if(!g){groups.set(key,{name:m.name,kcal:m.kcal,p:m.p,c:m.c,f:m.f,count:1,last});return;}
     g.count++;
@@ -3090,7 +3087,7 @@ function dragEnd(commit){
     await saved;
     /* Hoy sí necesita recalcular cuál es el próximo ejercicio; lo hace sobre un
        DOM que ya está en el orden final, así que no se mueve nada */
-    if(kind==='hoy'&&S.draft)keepScroll(renderHoy);
+    if(kind==='hoy')keepScroll(renderHoy);
   },300);
 }
 /* deshabilita ↑ en el primero y ↓ en el último sin volver a dibujar */
@@ -3200,7 +3197,7 @@ const ACT={
         <div style="font-size:14px;line-height:1.55">⏱ <b>El cronómetro arranca cuando toques "Iniciar ejercicio"</b>, no ahora. Así el tiempo mide lo que entrenaste y no lo que tardaste en cambiarte, calentar y llegar a la máquina.</div>
       </div>
       <div class="calcbox" style="margin-top:10px">
-        <div style="font-size:14px;line-height:1.55">↕ Antes de arrancar podés <b>reacomodar el orden</b> con las flechas, por si la máquina está ocupada.</div>
+        <div style="font-size:14px;line-height:1.55">↕ Antes de arrancar podés <b>reacomodar el orden</b> con el botón "Reordenar", por si la máquina está ocupada.</div>
       </div>
       <div class="calcbox" style="margin-top:10px">
         <div style="font-size:14px;line-height:1.55">✓ Vas de a un ejercicio: al llegar a las series objetivo se cierra solo y pasás al siguiente.</div>
