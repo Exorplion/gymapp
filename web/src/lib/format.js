@@ -1,4 +1,6 @@
 // Utilidades de formato/fecha/número — puerto verbatim de index.html.
+import { S } from './state.js';
+
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 export const KG2LB = 2.20462262;
@@ -21,12 +23,10 @@ export const norm = s => String(s || '').trim().toLowerCase().normalize('NFD').r
 
 // Funciones de peso — dependen de S.cfg.unit para mostrar kg o lb
 export function wDisplay(kg) {
-  const { S } = require('./state.js');
   return S.cfg.unit === 'kg' ? fmtNum(round1(kg)) : fmtNum(kg2lb(kg));
 }
 
 export function wAlt(kg) {
-  const { S } = require('./state.js');
   return S.cfg.unit === 'kg' ? `${fmtNum(kg2lb(kg))} lb` : `${fmtNum(round1(kg))} kg`;
 }
 
@@ -35,6 +35,5 @@ export function wBoth(kg) {
 }
 
 export function wStep() {
-  const { S } = require('./state.js');
   return S.cfg.unit === 'kg' ? 2.5 : 5 / KG2LB;
 }
