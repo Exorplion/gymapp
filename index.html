@@ -34,13 +34,15 @@
   --blue3:#8FC2FF;
   --cyan:#22D3EE;
   --grad:linear-gradient(135deg,#1D5CE8 0%,#3E96FF 100%);
-  --grad2:linear-gradient(112deg,var(--blue2),var(--cyan));
+  --grad2:linear-gradient(112deg,#4FA8FF,#22D3EE 58%,#7FD1FF);
+  --on-grad:#03121F;
   --ok:#2EE6A8;
   --warn:#FFB454;
   --red:#FF5D73;
   --r:18px;
-  --tabs-h:64px;
-  --glow:0 6px 24px -6px rgba(46,125,255,.45);
+  --r-lg:26px;
+  --tabs-h:91px;
+  --glow:0 16px 40px -14px rgba(34,211,238,.6);
   --glass-blur:blur(22px) saturate(1.5);
   --glass-border:rgba(255,255,255,.12);
   --glass-hi:inset 0 1px 0 rgba(255,255,255,.16);
@@ -183,8 +185,8 @@ main{
   box-shadow:var(--glass-hi),0 14px 34px -18px rgba(0,0,0,.6);
 }
 .card.hero{
-  background:linear-gradient(140deg,#0E1730 0%,#0B1220 55%),var(--card);
-  border-color:rgba(255,255,255,.16);
+  background:linear-gradient(158deg,rgba(37,64,232,.24),rgba(255,255,255,.03) 60%),var(--card);
+  border-color:rgba(120,170,255,.22);border-radius:var(--r-lg);
   position:relative;overflow:hidden;
 }
 .card.hero::before{content:"";position:absolute;top:-40px;right:-40px;width:160px;height:160px;
@@ -196,10 +198,10 @@ main{
 /* ---------- buttons ---------- */
 .btn{
   display:flex;align-items:center;justify-content:center;gap:8px;
-  width:100%;min-height:52px;border-radius:15px;
+  width:100%;min-height:52px;border-radius:18px;
   font-family:'Barlow Condensed';font-weight:700;font-size:19px;
   letter-spacing:.09em;text-transform:uppercase;
-  background:var(--grad2);color:#fff;box-shadow:var(--glow);
+  background:var(--grad2);color:var(--on-grad);box-shadow:var(--glow);
   transition:.15s;position:relative;overflow:hidden;
 }
 .btn:not(.sm):not(.ghost):not(.dim):not(.danger)::after{
@@ -207,11 +209,11 @@ main{
   background:linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent);
   animation:sweep 3.2s ease-in-out infinite;pointer-events:none;
 }
-.btn.sm{min-height:44px;font-size:16px;border-radius:12px}
+.btn.sm{min-height:44px;font-size:16px;border-radius:14px}
 .btn.ghost{background:var(--card2);box-shadow:none;border:1px solid var(--line2);color:var(--blue2)}
 .btn.dim{background:var(--card2);box-shadow:none;border:1px solid var(--line);color:var(--mut)}
 .btn.danger{background:rgba(255,93,115,.12);box-shadow:none;border:1px solid rgba(255,93,115,.35);color:var(--red)}
-.btn.ok{background:linear-gradient(135deg,#0E9F6E,#2EE6A8);box-shadow:0 6px 24px -6px rgba(46,230,168,.4)}
+.btn.ok{background:linear-gradient(135deg,#0E9F6E,#2EE6A8);box-shadow:0 6px 24px -6px rgba(46,230,168,.4);color:var(--on-grad)}
 .btn:disabled{opacity:.4;box-shadow:none}
 
 /* ---------- steppers ---------- */
@@ -283,14 +285,18 @@ main{
    para que no parezca que podés saltear el orden a dedo. */
 .ex-card.wait{opacity:.5}
 .ex-card.wait .exname{font-size:19px}
-.ex-card.cur{border-color:rgba(46,125,255,.42);box-shadow:0 0 0 1px rgba(46,125,255,.14),0 10px 30px -18px rgba(46,125,255,.8)}
+.ex-card.cur{
+  background:linear-gradient(158deg,rgba(34,211,238,.16),rgba(255,255,255,.03) 58%),var(--card);
+  border-color:rgba(34,211,238,.36);border-radius:var(--r-lg);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 26px 54px -28px rgba(34,211,238,.5);
+}
 .ex-card.doneex{opacity:.72}
 .ex-state{margin-top:10px;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
 .ex-state.ok{color:var(--ok)}
 .carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;
   margin:0 calc(-1*var(--s4)) 0;padding:0 var(--s4) 4px;scrollbar-width:none}
 .carousel::-webkit-scrollbar{display:none}
-.carousel-slide{flex:0 0 100%;scroll-snap-align:center;min-width:0}
+.carousel-slide{flex:0 0 84%;scroll-snap-align:center;min-width:0}
 .carousel-dots{display:flex;justify-content:center;gap:6px;margin:10px 0 4px}
 .carousel-dots i{width:6px;height:6px;border-radius:3px;background:var(--card2);border:1px solid var(--line2);transition:.2s}
 .carousel-dots i.on{width:18px;background:var(--grad2);border-color:transparent}
@@ -426,12 +432,12 @@ body.dragging-on [data-sid]:not(.dragging){filter:saturate(.8) brightness(.92)}
 
 /* ---------- gráficos ---------- */
 canvas.chart{width:100%;height:200px;display:block}
-.seg{display:flex;background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:4px;gap:4px}
+.seg{display:flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:15px;padding:4px;gap:5px}
 .seg button{
-  flex:1;padding:9px 0;border-radius:9px;font-family:'Barlow Condensed';
+  flex:1;padding:9px 0;border-radius:11px;font-family:'Barlow Condensed';
   font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);
 }
-.seg button.on{background:var(--grad2);color:#fff;font-weight:700;box-shadow:var(--glow)}
+.seg button.on{background:var(--grad2);color:var(--on-grad);font-weight:700;box-shadow:var(--glow)}
 
 /* ---------- PR ---------- */
 .pr-card{
@@ -462,14 +468,16 @@ canvas.chart{width:100%;height:200px;display:block}
 .check input{width:20px;height:20px;accent-color:var(--blue)}
 
 /* ---------- tabbar ---------- */
+/* píldora flotante, separada de los bordes, en vez de una barra a todo lo
+   ancho pegada al borde inferior — así se lee como un elemento propio */
 nav.tabbar{
-  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  position:fixed;left:18px;right:18px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:50;
   display:flex;justify-content:space-around;
-  padding:6px 8px calc(6px + env(safe-area-inset-bottom));
-  background:rgba(6,9,16,.72);
-  backdrop-filter:blur(26px) saturate(1.5);-webkit-backdrop-filter:blur(26px) saturate(1.5);
-  border-top:1px solid var(--glass-border);
-  box-shadow:var(--glass-hi);
+  padding:7px;border-radius:24px;
+  background:linear-gradient(158deg,rgba(255,255,255,.11),rgba(255,255,255,.043));
+  backdrop-filter:blur(26px) saturate(1.6);-webkit-backdrop-filter:blur(26px) saturate(1.6);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 22px 50px -20px rgba(0,0,0,.95);
 }
 nav.tabbar button{
   flex:1;max-width:110px;display:flex;flex-direction:column;align-items:center;gap:3px;
@@ -477,15 +485,17 @@ nav.tabbar button{
 }
 nav.tabbar button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 nav.tabbar button span{font-family:'Barlow Condensed';font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
-nav.tabbar button.on{color:var(--blue2)}
-nav.tabbar button.on svg{filter:drop-shadow(0 0 10px rgba(62,150,255,.8))}
-/* un solo indicador que se desliza entre pestañas en vez de reaparecer en cada
-   botón: el movimiento es lo que comunica "te moviste de aquí para allá" */
+nav.tabbar button.on{color:var(--on-grad)}
+/* la píldora activa se rellena de gradiente, así que el ícono pasa a oscuro
+   sobre ella en vez de brillar sobre el fondo oscuro */
+nav.tabbar button.on svg{filter:none}
+/* una sola píldora que se desliza y cubre el botón activo entero, en vez de
+   reaparecer en cada botón: el movimiento es lo que comunica "te moviste de
+   aquí para allá" */
 .tab-ind{
-  position:absolute;top:0;left:0;width:26px;height:3px;border-radius:2px;
+  position:absolute;top:7px;left:0;height:calc(100% - 14px);width:80px;border-radius:18px;
   background:var(--grad2);box-shadow:0 6px 20px -4px rgba(34,211,238,.55);pointer-events:none;
-  transform:translateX(-60px) skewX(-20deg);
-  transition:transform .38s var(--ease);
+  transition:transform .38s var(--ease),width .38s var(--ease);
 }
 
 /* ---------- rest timer ---------- */
@@ -847,7 +857,8 @@ function moveTabIndicator(){
   const btn=$('nav.tabbar button.on'),ind=$('.tab-ind'),nav=$('nav.tabbar');
   if(!btn||!ind||!nav)return;
   const b=btn.getBoundingClientRect(),n=nav.getBoundingClientRect();
-  ind.style.transform=`translateX(${Math.round(b.left-n.left+b.width/2-13)}px) skewX(-20deg)`;
+  ind.style.width=Math.round(b.width)+'px';
+  ind.style.transform=`translateX(${Math.round(b.left-n.left)}px)`;
 }
 function switchTab(tab){
   const from=TABS.indexOf(S.tab),to=TABS.indexOf(tab);
