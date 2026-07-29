@@ -355,14 +355,20 @@ body.dragging-on [data-sid]:not(.dragging){filter:saturate(.8) brightness(.92)}
 /* la semana entera en una tira de 7: se lee de un vistazo, sin scrollear */
 .wkstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:var(--s4)}
 .wkstrip .wd{border-radius:11px;padding:8px 2px 7px;text-align:center;
-  background:rgba(12,19,34,.55);border:1px solid var(--line);min-width:0}
+  background:rgba(12,19,34,.55);border:1px solid var(--line);min-width:0;transition:.15s}
 .wkstrip .wd .l{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;color:var(--mut2)}
 .wkstrip .wd .n{font-size:9px;line-height:1.2;margin-top:3px;color:var(--mut2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* un día "entrena" se ve relleno de entrada, sin necesitar estar seleccionado
+   — así la tira comunica el split completo de un vistazo, como en el mockup */
+.wkstrip .wd.has{background:var(--grad2);border-color:transparent}
+.wkstrip .wd.has .l,.wkstrip .wd.has .n{color:var(--on-grad)}
 .wkstrip .wd.on{background:rgba(46,125,255,.15);border-color:rgba(46,125,255,.42)}
 .wkstrip .wd.on .l{color:var(--blue2)}
 .wkstrip .wd.on .n{color:var(--txt)}
+.wkstrip .wd.has.on{background:var(--grad2);border-color:transparent;box-shadow:0 0 0 2px rgba(94,162,255,.55)}
 .wkstrip .wd.today{border-color:var(--blue2);box-shadow:0 0 0 1px rgba(94,162,255,.35)}
+.wkstrip .wd.has.today{box-shadow:0 0 0 2px rgba(255,255,255,.5)}
 .rt-eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:600}
 .rt-name{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;font-style:italic;line-height:1.06;margin-top:2px}
 .dayline{display:flex;align-items:center;gap:var(--s3);padding:13px 4px;width:100%;text-align:left;
@@ -999,14 +1005,27 @@ function renderHoy(){
       const dayR=S.routine[d];
       const has=dayR?.exercises?.length;
       const isToday=d===today.getDay();
-      return `<button data-act="hoy-day" data-wd="${d}" class="wd ${d===wd?'on':''} ${isToday?'today':''}">
+      return `<button data-act="hoy-day" data-wd="${d}" class="wd ${has?'has':''} ${d===wd?'on':''} ${isToday?'today':''}">
         <div class="l">${WD1[d]}</div><div class="n">${has?esc(dayR.name||'Rutina'):'Descanso'}</div>
       </button>`;
     }).join('')}</div>`;
-    if(day?.name)h+=`<div class="card hero"><div class="day-wd">${WD[wd]}${wd===today.getDay()?' · tu día':''}</div>
-      <div class="cond" style="font-size:28px;font-weight:700;font-style:italic">${esc(day.name)}</div>
-      <div class="txt-mut" style="font-size:13px;margin-top:2px">${exs.length} ejercicio${exs.length===1?'':'s'} · todavía no empezaste</div></div>`;
-    if(exs.length)h+=`<button class="btn" data-act="sess-start" style="margin-bottom:var(--s3)">▶ Iniciar entrenamiento</button>`;
+    if(day?.name){
+      const totalSets=exs.reduce((a,e)=>a+e.sets,0);
+      const estMin=Math.round(totalSets*((S.cfg.rest||90)+40)/60);
+      h+=`<div class="card hero">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:7px;height:7px;border-radius:4px;background:var(--cyan);box-shadow:0 0 8px var(--cyan)"></span>
+          <div class="txt-mut" style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase">${wd===today.getDay()?'Toca hoy':WD[wd]}</div>
+        </div>
+        <div class="cond" style="font-size:30px;font-weight:700;font-style:italic;margin-top:4px">${esc(day.name)}</div>
+        <div class="macro3" style="grid-template-columns:repeat(3,1fr);margin-top:14px">
+          <div style="text-align:center"><div class="cond" style="font-size:22px;font-weight:700">${exs.length}</div><div class="txt-mut" style="font-size:var(--t-micro);letter-spacing:.08em;text-transform:uppercase">Ejercicio${exs.length===1?'':'s'}</div></div>
+          <div style="text-align:center"><div class="cond" style="font-size:22px;font-weight:700">${totalSets}</div><div class="txt-mut" style="font-size:var(--t-micro);letter-spacing:.08em;text-transform:uppercase">Series</div></div>
+          <div style="text-align:center"><div class="cond" style="font-size:22px;font-weight:700">~${estMin}</div><div class="txt-mut" style="font-size:var(--t-micro);letter-spacing:.08em;text-transform:uppercase">Minutos</div></div>
+        </div>
+        ${exs.length?`<button class="btn" data-act="sess-start" style="margin-top:16px">▶ Iniciar entrenamiento</button>`:''}
+      </div>`;
+    }
   }
 
   const mv=muscleVolume(7),mvCats=Object.entries(mv).sort((a,b)=>b[1]-a[1]);
