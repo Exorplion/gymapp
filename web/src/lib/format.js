@@ -18,3 +18,23 @@ export const kg2lb = kg => round1(kg * KG2LB);
 export const lb2kg = lb => lb / KG2LB;
 export const vibrate = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
 export const norm = s => String(s || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+// Funciones de peso — dependen de S.cfg.unit para mostrar kg o lb
+export function wDisplay(kg) {
+  const { S } = require('./state.js');
+  return S.cfg.unit === 'kg' ? fmtNum(round1(kg)) : fmtNum(kg2lb(kg));
+}
+
+export function wAlt(kg) {
+  const { S } = require('./state.js');
+  return S.cfg.unit === 'kg' ? `${fmtNum(kg2lb(kg))} lb` : `${fmtNum(round1(kg))} kg`;
+}
+
+export function wBoth(kg) {
+  return `${fmtNum(round1(kg))} kg · ${fmtNum(kg2lb(kg))} lb`;
+}
+
+export function wStep() {
+  const { S } = require('./state.js');
+  return S.cfg.unit === 'kg' ? 2.5 : 5 / KG2LB;
+}

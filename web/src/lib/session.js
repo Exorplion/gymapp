@@ -1,6 +1,6 @@
 // Puerto de funciones de sesión desde index.html
 import { S, bump, saveDraft } from './state.js';
-import { dstr, uid, round1, fmtNum, fmtMMSS, WD, vibrate } from './format.js';
+import { dstr, uid, wBoth, WD, vibrate } from './format.js';
 import { idb } from './db.js';
 import { toast } from '../components/Toast.jsx';
 // Imports con comentarios de dependencias (serán ported en tareas posteriores):
@@ -74,8 +74,9 @@ export async function saveSet(exId) {
   // startRest(); // Task 3 dependency
   if (finished) {
     toast(nxt ? `✓ ${ex.name} completo · sigue ${nxt.name}` : `✓ ${ex.name} completo · terminaste el día`);
+    // scrollCarouselTo(nxt ? nxt.id : exId); // Task 6 dependency
   } else {
-    toast(`Serie ${cur.length}/${ex.sets}: ${fmtNum(round1(v.w))} kg × ${v.r}`);
+    toast(`Serie ${cur.length}/${ex.sets}: ${wBoth(v.w)} × ${v.r}`);
   }
 }
 
