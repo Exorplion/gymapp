@@ -2043,7 +2043,7 @@ function renderNutri(){
         <svg viewBox="0 0 120 120"><circle class="kr-track" cx="60" cy="60" r="52"/><circle class="kr-prog" cx="60" cy="60" r="52" style="stroke-dashoffset:${kcalOff}"></circle></svg>
         <div class="kr-val"><div class="cond" style="font-size:22px;font-weight:700">${kc}</div><div class="txt-mut" style="font-size:10px">/ ${g.kcal}</div></div>
       </div>
-      <div class="grow">
+      <div class="grow" style="flex:1">
         <div class="cond ${kc>g.kcal+150?'txt-red':'txt-blue'}" style="font-size:17px;font-weight:700">${kc>g.kcal?'+'+(kc-g.kcal)+' pasado':Math.max(0,g.kcal-kc)+' restantes'}</div>
         <div class="txt-mut" style="font-size:12.5px;margin-top:2px">${kc} de ${g.kcal} kcal</div>
       </div>
