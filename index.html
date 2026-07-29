@@ -998,13 +998,30 @@ function renderHoy(){
     </div>
     <style>@keyframes pulse{50%{opacity:.4}}</style>`;
   }else{
-    h+=`<div class="dayrow">${WEEK_ORDER.map(d=>`
-      <button data-act="hoy-day" data-wd="${d}" class="${d===wd?'on':''}">${WD1[d]}${(S.routine[d]?.exercises?.length)?'<span class="dot"></span>':''}</button>`).join('')}
-    </div>`;
+    h+=`<div class="wkstrip">${WEEK_ORDER.map(d=>{
+      const dayR=S.routine[d];
+      const has=dayR?.exercises?.length;
+      const isToday=d===today.getDay();
+      return `<button data-act="hoy-day" data-wd="${d}" class="wd ${d===wd?'on':''} ${isToday?'today':''}">
+        <div class="l">${WD1[d]}</div><div class="n">${has?esc(dayR.name||'Rutina'):'Descanso'}</div>
+      </button>`;
+    }).join('')}</div>`;
     if(day?.name)h+=`<div class="card hero"><div class="day-wd">${WD[wd]}${wd===today.getDay()?' · tu día':''}</div>
       <div class="cond" style="font-size:28px;font-weight:700;font-style:italic">${esc(day.name)}</div>
       <div class="txt-mut" style="font-size:13px;margin-top:2px">${exs.length} ejercicio${exs.length===1?'':'s'} · todavía no empezaste</div></div>`;
     if(exs.length)h+=`<button class="btn" data-act="sess-start" style="margin-bottom:var(--s3)">▶ Iniciar entrenamiento</button>`;
+  }
+
+  const mv=muscleVolume(7),mvCats=Object.entries(mv).sort((a,b)=>b[1]-a[1]);
+  if(mvCats.length){
+    const maxv=mvCats[0][1];
+    h+=`<div class="card sub" style="margin-top:2px">
+      <div class="steplabel" style="margin-bottom:10px">Volumen · esta semana</div>
+      ${mvCats.map(([c,n])=>`<div style="margin-bottom:var(--s2)">
+        <div style="display:flex;justify-content:space-between;font-size:var(--t-sm);margin-bottom:3px"><span>${esc(c)}</span><span class="num">${n} series</span></div>
+        <div class="pbar" style="height:7px"><i style="width:${Math.round(n/maxv*100)}%;animation:rise .5s var(--ease) backwards"></i></div>
+      </div>`).join('')}
+    </div>`;
   }
 
   /* el pre-workout se toma 30-60 min ANTES: durante la sesión ya no sirve de nada
