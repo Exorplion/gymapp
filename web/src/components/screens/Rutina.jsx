@@ -14,6 +14,19 @@ import {
   routineStats, routineName, activeDayWds,
   enterEditMode, exitEditMode, toggleDayOpen, deleteDay, deleteExercise, moveEx,
 } from '../../lib/rutina-logic.js';
+import { toast } from '../Toast.jsx';
+
+/** Puerto del guard de sheetLibSave() (index.html): "No hay rutina que
+    guardar" si S.routine no tiene ningún día con ejercicios. En el original
+    este chequeo vive DENTRO de sheetLibSave, así que es el único punto de
+    entrada al formulario de guardado — acá el editor tiene un segundo punto
+    de entrada (el botón "Guardar como…" de la barra de edición, además del
+    de Library.jsx en modo lista), así que el guard se repite acá para que
+    ningún camino hacia el sheet 'library'/{mode:'save'} se lo salte. */
+function openLibSaveSheet() {
+  if (!routineStats().days.length) { toast('No hay rutina que guardar'); return; }
+  openSheet('library', { mode: 'save' });
+}
 
 /** Envuelve moveEx (↑/↓) con la animación FLIP del original (flipSort mide
     el DOM antes/después de la mutación). moveEx() en sí NO llama bump() —
@@ -122,7 +135,7 @@ function RutinaEdit() {
           type="button"
           className="btn sm ghost"
           style={{ flex: 1 }}
-          onClick={() => openSheet('library', { mode: 'save' })}
+          onClick={openLibSaveSheet}
         >
           💾 Guardar como…
         </button>
