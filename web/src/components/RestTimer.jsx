@@ -20,8 +20,9 @@ export default function RestTimer() {
   useStore(); // se suscribe a bump(); T se lee directo (T.leftSec/T.pct/T.state) igual que S
 
   const timeStr = fmtMMSS(T.leftSec);
-  const fillPct = Math.max(0, Math.min(1, T.pct)) * 100;
-  const dashOffset = REST_CIRC * (1 - T.pct);
+  const pctClamped = Math.max(0, Math.min(1, T.pct));
+  const fillPct = pctClamped * 100;
+  const dashOffset = REST_CIRC * (1 - pctClamped);
 
   // El dispatcher original resolvía un solo data-act por click (closest()
   // se detiene en el ancestro más cercano), así que clickear +30s/Saltar no

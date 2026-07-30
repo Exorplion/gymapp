@@ -3,6 +3,7 @@ import { idbOpenOnce } from './lib/db.js';
 import { S, useStore, bump, loadAll } from './lib/state.js';
 import { applyComputedGoals } from './lib/macros.js';
 import { startRest } from './lib/rest.js';
+import { initDragListeners } from './lib/drag.js';
 import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
@@ -22,6 +23,16 @@ export default function App() {
       applyComputedGoals();
       bump();
     });
+  }, []);
+
+  // Registra los listeners globales de drag-and-drop (touchstart/mousedown/etc.,
+  // drag.js) una sola vez, tal como pide el comentario de cabecera de
+  // initDragListeners() en drag.js. No hay ningún [data-sort]/[data-sid] montado
+  // todavía (Task 5 agrega esa marcación en Rutina/Hoy), así que hoy esto no
+  // tiene nada que arrastrar — pero sin este efecto los listeners nunca se
+  // registran y el drag quedaría muerto incluso después de que exista el markup.
+  useEffect(() => {
+    initDragListeners();
   }, []);
 
   if (!store.ready) {
