@@ -2,10 +2,13 @@ import { useEffect } from 'react';
 import { idbOpenOnce } from './lib/db.js';
 import { S, useStore, bump, loadAll } from './lib/state.js';
 import { applyComputedGoals } from './lib/macros.js';
+import { startRest } from './lib/rest.js';
 import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
 import Toast from './components/Toast.jsx';
+import RestTimer from './components/RestTimer.jsx';
+import Confetti from './components/Confetti.jsx';
 
 export default function App() {
   const store = useStore();
@@ -31,10 +34,24 @@ export default function App() {
   return (
     <>
       <Header />
-      <main>{store.tab} view — not yet implemented</main>
+      <main>
+        {store.tab} view — not yet implemented
+        {/* dev-only: no hay UI de sesión todavía (Task 6) para disparar
+            startRest() de forma natural. import.meta.env.DEV hace que Vite
+            elimine esta rama en el build de producción (npm run build), así
+            que no queda alcanzable fuera de `npm run dev`. Quitar cuando la
+            vista de Hoy llame a startRest() de verdad. */}
+        {import.meta.env.DEV && (
+          <button type="button" onClick={() => startRest()} style={{ marginTop: 12 }}>
+            [dev] iniciar descanso
+          </button>
+        )}
+      </main>
       <TabBar active={store.tab} onChange={t => { S.tab = t; bump(); }} />
       <Toast />
       <Sheet />
+      <RestTimer />
+      <Confetti />
     </>
   );
 }
