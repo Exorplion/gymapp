@@ -7,6 +7,10 @@
 import { S, bump } from './state.js';
 import { vibrate } from './format.js';
 import { setExOrder } from './session.js';
+// Task 5 completa lo que Task 3 dejó en TODO (ver comentarios más abajo):
+// rutina-logic.js no importa nada de este archivo, así que este import es
+// unidireccional — no hay ciclo drag.js<->rutina-logic.js.
+import { pushHistory, swapDayContents, persistDay } from './rutina-logic.js';
 
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
@@ -127,9 +131,9 @@ export function dragEnd(commit) {
   vibrate(22);
   const kind = box.dataset.sort, wd = box.dataset.wd;
   if (kind === 'days') {
-    // pushHistory('Días intercambiados'); // rutina-logic.js (undo history) aún no portado — ver progress.md
-    setTimeout(() => {
-      // swapDayContents(ids); // rutina-logic.js aún no portado — ver progress.md
+    pushHistory('Días intercambiados');
+    setTimeout(async () => {
+      await swapDayContents(ids);
       clean();
       bump(); // originalmente renderRutina()
     }, 300);
@@ -173,13 +177,13 @@ export async function commitSort(kind, wd, ids) {
   if (kind === 'hoy') return setExOrder(S.hoyDay ?? new Date().getDay(), ids);
   const d = S.routine[+wd];
   if (!d || !d.exercises) return;
-  // pushHistory('Ejercicios reordenados'); // rutina-logic.js (undo history) aún no portado — ver progress.md
+  pushHistory('Ejercicios reordenados');
   const by = new Map(d.exercises.map(e => [e.id, e]));
   const out = [];
   ids.forEach(i => { if (by.has(i)) { out.push(by.get(i)); by.delete(i); } });
   by.forEach(e => out.push(e));   // nada se pierde si la lista quedó desfasada
   d.exercises = out;
-  // return persistDay(+wd); // rutina-logic.js (persistencia de S.routine) aún no portado — ver progress.md
+  return persistDay(+wd);
 }
 
 /** Registra los listeners globales de drag una sola vez. Se llama desde

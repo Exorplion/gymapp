@@ -31,6 +31,7 @@ export const S = {
   progRange: 'all',
   progTab: 'carga',
   ready: false,         // true una vez que loadAll() terminó
+  sheet: null,           // {type, props} | null — qué sheet está abierto (Task 1 dejó esto pendiente para quien lo necesitara primero; ver Sheet.jsx)
 };
 
 let version = 0;
@@ -82,3 +83,11 @@ export function wBoth(kg) {
 export function wStep() {
   return S.cfg.unit === 'kg' ? 2.5 : 5 / KG2LB;
 }
+
+// Reemplaza openSheet(html)/closeSheet() del original (que escribían un
+// string de HTML en #sheet-c). Acá "qué sheet mostrar" es sólo un tipo +
+// props — quien renderiza <Sheet/> (App.jsx) decide qué componente pintar
+// según S.sheet.type. Un solo campo alcanza porque, igual que en el
+// original, sólo hay un sheet abierto a la vez en toda la app.
+export function openSheet(type, props = {}) { S.sheet = { type, props }; bump(); }
+export function closeSheet() { S.sheet = null; bump(); }
