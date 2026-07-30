@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { idb, STORES } from './db.js';
-import { dstr } from './format.js';
+import { dstr, fmtNum, round1, kg2lb, KG2LB } from './format.js';
 
 // S sigue siendo el mismo objeto mutable de la app original: todo el código
 // de negocio (session.js, streak.js, drag.js, etc.) lo lee y lo muta
@@ -65,3 +65,20 @@ export async function loadAll() {
 
 export const saveCfg = () => idb.put('settings', { key: 'cfg', value: S.cfg });
 export const saveDraft = () => S.draft ? idb.put('settings', { key: 'draft', value: S.draft }) : idb.del('settings', 'draft');
+
+// Funciones de peso — dependen de S.cfg.unit para mostrar kg o lb
+export function wDisplay(kg) {
+  return S.cfg.unit === 'kg' ? fmtNum(round1(kg)) : fmtNum(kg2lb(kg));
+}
+
+export function wAlt(kg) {
+  return S.cfg.unit === 'kg' ? `${fmtNum(kg2lb(kg))} lb` : `${fmtNum(round1(kg))} kg`;
+}
+
+export function wBoth(kg) {
+  return `${fmtNum(round1(kg))} kg · ${fmtNum(kg2lb(kg))} lb`;
+}
+
+export function wStep() {
+  return S.cfg.unit === 'kg' ? 2.5 : 5 / KG2LB;
+}
