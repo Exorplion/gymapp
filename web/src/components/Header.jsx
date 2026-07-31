@@ -1,9 +1,11 @@
 // Puerto de <header class="top"> (index.html, ~línea 632) + el bloque
 // .header-actions (racha + ajustes) agregado en el rediseño visual.
-// La racha real y el sheet de ajustes se conectan en tareas posteriores
-// (Task 3 y siguientes); acá quedan como props con defaults no-op para que
-// el shell sea funcional desde ya sin acoplarse a lógica que todavía no existe.
-export default function Header({ streak = 0, onOpenSettings = () => {} }) {
+// El sheet de ajustes se conecta en una tarea posterior (Ajustes todavía no
+// existe); onOpenStreak sí se conecta desde Task 6 — App.jsx pasa
+// currentStreak() (streak.js, Task 2) y abre el sheet 'streak-detail'
+// (StreakDetail.jsx) al tocar el botón, igual que 'streak-open' en el ACT{}
+// original.
+export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenStreak = () => {} }) {
   return (
     <header className="top">
       <div className="brand">
@@ -13,7 +15,7 @@ export default function Header({ streak = 0, onOpenSettings = () => {} }) {
         FIERRO
       </div>
       <div className="header-actions">
-        <button className="icon-btn streak-btn" id="streak-btn" aria-label="Racha" onClick={() => {}}>
+        <button className="icon-btn streak-btn" id="streak-btn" aria-label="Racha" onClick={onOpenStreak}>
           <span className="streak-flame">🔥</span>
           <span className="streak-n" id="streak-n">{streak}</span>
         </button>

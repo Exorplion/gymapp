@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { idbOpenOnce } from './lib/db.js';
-import { S, useStore, bump, loadAll, closeSheet } from './lib/state.js';
+import { S, useStore, bump, loadAll, closeSheet, openSheet } from './lib/state.js';
 import { applyComputedGoals } from './lib/macros.js';
-import { startRest } from './lib/rest.js';
 import { initDragListeners } from './lib/drag.js';
+import { currentStreak } from './lib/streak.js';
 import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
@@ -11,11 +11,17 @@ import Toast from './components/Toast.jsx';
 import RestTimer from './components/RestTimer.jsx';
 import Confetti from './components/Confetti.jsx';
 import Rutina from './components/screens/Rutina.jsx';
+import Hoy, { SessStartInfo, HistDetail } from './components/screens/Hoy.jsx';
 import DayEdit from './components/sheets/DayEdit.jsx';
 import ExerciseForm from './components/sheets/ExerciseForm.jsx';
 import Library from './components/sheets/Library.jsx';
 import DayPeek from './components/sheets/DayPeek.jsx';
 import ExInfo from './components/sheets/ExInfo.jsx';
+import ReorderHoy from './components/sheets/ReorderHoy.jsx';
+import StreakDetail from './components/sheets/StreakDetail.jsx';
+import SessionRecap from './components/sheets/SessionRecap.jsx';
+import Preworkout from './components/sheets/Preworkout.jsx';
+import VoiceLog from './components/sheets/VoiceLog.jsx';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
 // globales en index.html). No es uno de los 5 sheets nombrados en el plan de
@@ -53,6 +59,13 @@ function SheetContent({ sheet }) {
     case 'day-peek': return <DayPeek {...sheet.props} />;
     case 'ex-info': return <ExInfo {...sheet.props} />;
     case 'confirm': return <ConfirmSheet {...sheet.props} />;
+    case 'reorder-hoy': return <ReorderHoy {...sheet.props} />;
+    case 'streak-detail': return <StreakDetail {...sheet.props} />;
+    case 'session-recap': return <SessionRecap {...sheet.props} />;
+    case 'preworkout': return <Preworkout {...sheet.props} />;
+    case 'voice-log': return <VoiceLog {...sheet.props} />;
+    case 'sess-start-info': return <SessStartInfo {...sheet.props} />;
+    case 'hist-detail': return <HistDetail {...sheet.props} />;
     default: return null;
   }
 }
@@ -89,20 +102,11 @@ export default function App() {
 
   return (
     <>
-      <Header />
+      <Header streak={currentStreak()} onOpenStreak={() => openSheet('streak-detail')} />
       <main>
-        {store.tab === 'rutina' ? <Rutina /> : `${store.tab} view — not yet implemented`}
-        {/* dev-only: Nutrición/Progreso todavía no tienen pantalla (Tasks 7/8),
-            y Hoy (Task 6) todavía no tiene UI propia para disparar startRest()
-            de forma natural. import.meta.env.DEV hace que Vite elimine esta
-            rama en el build de producción (npm run build), así que no queda
-            alcanzable fuera de `npm run dev`. Quitar cuando la vista de Hoy
-            llame a startRest() de verdad. */}
-        {import.meta.env.DEV && (
-          <button type="button" onClick={() => startRest()} style={{ marginTop: 12 }}>
-            [dev] iniciar descanso
-          </button>
-        )}
+        {store.tab === 'hoy' && <Hoy />}
+        {store.tab === 'rutina' && <Rutina />}
+        {store.tab !== 'hoy' && store.tab !== 'rutina' && `${store.tab} view — not yet implemented`}
       </main>
       <TabBar active={store.tab} onChange={t => { S.tab = t; bump(); }} />
       <Toast />

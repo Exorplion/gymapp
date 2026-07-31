@@ -146,6 +146,13 @@ main{
 @keyframes rise{from{width:0}}
 @keyframes glowring{0%,100%{filter:drop-shadow(0 0 6px rgba(34,211,238,.35))}50%{filter:drop-shadow(0 0 18px rgba(34,211,238,.7))}}
 @keyframes flash{0%,100%{background-color:transparent}50%{background-color:rgba(46,125,255,.14)}}
+/* punto pulsante del estado de sesión activa en el hero de Hoy — en el
+   original vivía como un <style> inyectado inline dentro de renderHoy()
+   (índice ~1002), no en el <style> global, así que el puerto estático de
+   Task 1 no lo capturó. Se agrega acá (Task 6) en vez de repetir el patrón
+   inline-<style> en Hoy.jsx: es una keyframe simple y reutilizable, igual
+   que el resto de arriba. */
+@keyframes pulse{50%{opacity:.4}}
 
 .vtitle{
   display:flex;align-items:baseline;gap:var(--s3);margin:var(--s1) 2px var(--s4);

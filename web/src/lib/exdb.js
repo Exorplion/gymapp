@@ -11,7 +11,8 @@
 // esta porción se adelantó a esta tarea. Task 6 debe *agregar* sessionMaxW/
 // progressionWarn a ESTE mismo archivo en vez de recrearlo, para no duplicar
 // EXDB/exInfo/rirScheme/isLowerBackLift en dos lugares.
-import { norm } from './format.js';
+import { norm, fmtNum, round1 } from './format.js';
+import { S } from './state.js';
 
 /** Cada ejercicio: keywords para matchear, músculos, y por qué elegirlo */
 export const EXDB = [
@@ -58,4 +59,27 @@ export const isLowerBackLift = name => { const n = norm(name); return LOWBACK.so
 export function rirScheme(nSets, name) {
   const cap = isLowerBackLift(name) ? 1 : 0;
   return Array.from({ length: Math.max(1, nSets) }, (_, i) => cap + (nSets - 1 - i));
+}
+
+// --- Task 6: sessionMaxW/progressionWarn (index.html "Alerta de progresión
+// doble") — a diferencia de todo lo de arriba, estas SÍ dependen de
+// S.sessions (historial real de entrenamiento), por eso se agregaron acá
+// recién en Task 6 en vez de junto con exInfo/rirScheme en Task 5 (Rutina no
+// necesita comparar contra el historial de sesiones; Hoy sí, para el banner
+// de progresión en la tarjeta del ejercicio activo). Importar S acá desde
+// state.js es unidireccional: state.js no importa nada de exdb.js, así que
+// no hay ciclo (ver nota de circular-imports en task-6-brief.md).
+export function sessionMaxW(session, name) {
+  const e = (session.entries || []).find(en => norm(en.name) === norm(name));
+  if (!e || !e.sets.length) return null;
+  return Math.max(...e.sets.map(s => s.w));
+}
+
+export function progressionWarn(name, w) {
+  const hist = S.sessions.map(s => sessionMaxW(s, name)).filter(x => x != null); // desc por fecha
+  if (hist.length < 2) return null;
+  const last = hist[0], prev = hist[1];
+  if (last > prev + 0.01 && w < last - 0.01)
+    return `Subiste a ${fmtNum(round1(last))} kg la última vez. No vuelvas atrás: quédate en ${fmtNum(round1(last))} y reconstruye reps (caer a 5-6 es normal y esperado).`;
+  return null;
 }

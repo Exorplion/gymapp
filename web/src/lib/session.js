@@ -1,12 +1,11 @@
 // Puerto de funciones de sesión desde index.html
-import { S, bump, saveDraft, wBoth } from './state.js';
+import { S, bump, saveDraft, wBoth, openSheet, closeSheet } from './state.js';
 import { dstr, uid, round1, WD, vibrate } from './format.js';
 import { idb } from './db.js';
 import { toast } from '../components/Toast.jsx';
-// Imports con comentarios de dependencias (serán ported en tareas posteriores):
-// import { startRest } from './rest.js'; // Task 3
-// import { sheetSessionRecap } from './components/SessionRecap.jsx'; // Task 6
-// import { fireConfetti } from './components/Confetti.jsx'; // Task 6
+import { startRest, stopRest } from './rest.js';
+import { scrollCarouselTo } from './carousel.js';
+import { fireConfetti } from '../components/Confetti.jsx';
 
 export function lastDataFor(exName) {
   const key = exName.trim().toLowerCase();
@@ -71,10 +70,10 @@ export async function saveSet(exId) {
   await saveDraft();
   vibrate(finished ? [25, 60, 25] : 15);
   bump();
-  // startRest(); // Task 3 dependency
+  startRest();
   if (finished) {
     toast(nxt ? `✓ ${ex.name} completo · sigue ${nxt.name}` : `✓ ${ex.name} completo · terminaste el día`);
-    // scrollCarouselTo(nxt ? nxt.id : exId); // Task 6 dependency
+    scrollCarouselTo(nxt ? nxt.id : exId);
   } else {
     toast(`Serie ${cur.length}/${ex.sets}: ${wBoth(v.w)} × ${v.r}`);
   }
@@ -102,11 +101,11 @@ export async function completeSession() {
   S.sessions.unshift(sess);
   S.draft = null; S.hoyDay = null;
   await saveDraft();
-  // stopRest(); // Task 3 dependency
+  stopRest();
   vibrate([30, 50, 30]);
   bump();
-  // sheetSessionRecap(sess, prs); // Task 6 dependency
-  // if (prs.length > 0) fireConfetti(); // Task 6 dependency
+  openSheet('session-recap', { sess, prs });
+  if (prs.length > 0) fireConfetti();
 }
 
 /** Compara la mejor serie de cada ejercicio de la sesión contra el máximo
@@ -127,8 +126,64 @@ export function calcSessionPRs(entries) {
   return prs;
 }
 
+/** Abre el borrador de sesión (weekday `wd`, con el orden ya reacomodado si
+    hubo drag-to-reorder antes de arrancar). El cronómetro NO arranca acá —
+    arranca en startExercise(), cuando de verdad estás en la máquina. */
+export async function startSession(wd) {
+  const day = S.routine[wd];
+  if (!day?.exercises?.length) { toast('Este día no tiene ejercicios'); return; }
+  S.draft = {
+    id: uid(), date: dstr(), weekday: wd, dayName: day.name || WD[wd], open: Date.now(), start: null, cur: null,
+    order: orderedExs(wd, day.exercises).map(e => e.id), entries: {},
+  };
+  await saveDraft();
+  closeSheet();
+  vibrate(15);
+  bump();
+  toast('Sesión abierta · tocá "Iniciar ejercicio" cuando estés en la máquina');
+}
+
+export async function discardSession() {
+  S.draft = null; S.hoyDay = null;
+  await saveDraft();
+  stopRest();
+  bump();
+}
+
+/** Marca `ex` como el ejercicio en curso; arranca el cronómetro de sesión la
+    primera vez (cuando tocás "Iniciar ejercicio" ya estás en la máquina). */
+export async function startExercise(ex) {
+  if (!S.draft) { toast('Primero iniciá el entrenamiento'); return; }
+  S.draft.cur = ex.id;
+  const first = !S.draft.start;
+  if (first) S.draft.start = Date.now();
+  await saveDraft();
+  vibrate(15);
+  bump();
+  scrollCarouselTo(ex.id);
+  toast(first ? `⏱ Cronómetro en marcha · ${ex.name}` : `${ex.name} · serie 1 de ${ex.sets}`);
+}
+
+/** Borra una serie ya registrada (chip ✕). Si el ejercicio quedaba cerrado
+    (full) vuelve a quedar abierto — vaciarle una serie lo reabre. */
+export async function deleteSet(exId, i) {
+  const e = S.draft?.entries[exId]; if (!e) return;
+  e.sets.splice(i, 1);
+  if (!e.sets.length) delete S.draft.entries[exId];
+  if (S.draft && !S.draft.cur) S.draft.cur = exId;
+  if (S.draft && !Object.keys(S.draft.entries).length && !S.draft.start) S.draft.cur = null;
+  await saveDraft();
+  bump();
+}
+
+export async function deleteHistorySession(id) {
+  await idb.del('sessions', id);
+  S.sessions = S.sessions.filter(s => s.id !== id);
+  bump();
+}
+
 // === Helper functions ===
-function currentDayForHoy() { return S.hoyDay ?? new Date().getDay(); }
+export function currentDayForHoy() { return S.hoyDay ?? new Date().getDay(); }
 
 function findEx(exId) {
   for (const d of Object.values(S.routine)) {
