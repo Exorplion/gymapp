@@ -6,15 +6,21 @@
 // (para no crear un ciclo session.js <-> ExerciseCarousel.jsx).
 //
 // Los inputs de peso/reps de la tarjeta abierta se mantienen NO controlados
-// (value inicial + refs, ver syncInputs()) y se parchean a mano en cada
-// cambio — el mismo rol que cumplía updExDisplays() en el original, que
-// tampoco disparaba un re-render completo por cada tecla. Iguales que un
-// <input value=…> controlado atado a bump() en cada tecla pelearían con el
-// cursor cuando el usuario borra el campo (parseFloat('') es NaN, la guarda
-// no actualiza v.w, pero un re-render igual pisaría lo que el usuario
-// estaba escribiendo). Los botones de stepper (w-/w+/r-/r+) sí necesitan
-// reflejar el valor nuevo en el input sin que el usuario haya tocado el
-// teclado — de ahí los refs.
+// (defaultValue inicial + refs) — el mismo rol que cumplía updExDisplays()
+// en el original, que tampoco disparaba un re-render completo por cada
+// tecla. Un <input value=…> controlado atado a bump() en cada tecla (o,
+// como se detectó en code review — ver ExerciseSlide más abajo — un input
+// no controlado que de todos modos reescribe su PROPIO .value en cada
+// tecla) pelea con lo que el usuario está escribiendo: borrar el campo para
+// tipear un número nuevo (parseFloat('') es NaN, la guarda no actualiza
+// v.w, pero si igual se reescribe el input vuelve el valor viejo) o tipear
+// un decimal como "62.5" carácter por carácter (parseFloat('62.') da 62, y
+// reescribir el input con wDisplay(62)="62" borra el "." recién tecleado).
+// Por eso el input de cada campo sólo se reescribe a mano desde los
+// steppers (w-/w+/r-/r+, que sí empujan un valor que el usuario no tecleó)
+// — nunca desde el propio onChange de ese input. Ver ExerciseSlide/
+// syncInputs() vs. syncDependents() más abajo, y task-6-report.md ("Fix
+// Round 1") para el bug real que esto corrige.
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { S, wDisplay, wAlt, wStep, openSheet } from '../lib/state.js';
 import { round1, fmtNum, lb2kg } from '../lib/format.js';
@@ -104,9 +110,23 @@ function ExerciseSlide({ m, wd, started }) {
 
   const wRef = useRef(null), rRef = useRef(null), altRef = useRef(null), pwRef = useRef(null);
 
-  function syncInputs() {
-    if (wRef.current) wRef.current.value = wDisplay(v.w);
-    if (rRef.current) rRef.current.value = v.r;
+  // FIX ROUND 1 (code review): syncInputs() used to run unconditionally from
+  // onWChange/onRChange too — i.e. on every keystroke, not just on blur like
+  // the original's native `change` listener. That reintroduced exactly the
+  // bug the header comment above says refs were meant to avoid: clearing the
+  // field to retype snapped back to the old value (parseFloat('') is NaN, so
+  // v.w was never updated, but the input's OWN value was still forced back
+  // to wDisplay(v.w)), and typing a decimal like "62.5" lost the "." the
+  // instant it was typed (parseFloat('62.') is 62, so v.w became 62 and the
+  // input got overwritten with "62"). The fix: only the input the user is
+  // NOT actively typing into gets its .value force-set. syncDependents()
+  // patches the alt-unit span and the progression banner (neither is the
+  // field being typed in), and is what onWChange/onRChange call. syncInputs()
+  // (which also rewrites wRef/rRef.value) is reserved for the stepper
+  // buttons, which — like updExDisplays() in the original — push a value the
+  // user did NOT type character-by-character, so overwriting the field is
+  // exactly what should happen there.
+  function syncDependents() {
     if (altRef.current) altRef.current.textContent = wAlt(v.w);
     if (pwRef.current) {
       const warn = progressionWarn(ex.name, v.w);
@@ -114,17 +134,24 @@ function ExerciseSlide({ m, wd, started }) {
       pwRef.current.textContent = warn ? `⚠ ${warn}` : '';
     }
   }
+  function syncInputs() {
+    if (wRef.current) wRef.current.value = wDisplay(v.w);
+    if (rRef.current) rRef.current.value = v.r;
+    syncDependents();
+  }
   function stepW(d) { v.w = Math.max(0, round1(v.w + d * wStep())); syncInputs(); }
   function stepR(d) { v.r = Math.max(1, v.r + d); syncInputs(); }
   function onWChange(e) {
     const num = parseFloat(e.target.value);
     if (!isNaN(num) && num >= 0) v.w = S.cfg.unit === 'kg' ? num : lb2kg(num);
-    syncInputs();
+    syncDependents();
   }
   function onRChange(e) {
     const num = parseInt(e.target.value, 10);
     if (!isNaN(num) && num > 0) v.r = num;
-    syncInputs();
+    // Reps no tiene ninguna UI dependiente (el banner de progresión sólo
+    // depende del peso) — nada más que refrescar acá, y sobre todo: no tocar
+    // rRef.current.value mientras el usuario está tecleando en ese mismo input.
   }
 
   const pwarnInitial = open ? progressionWarn(ex.name, v.w) : null;
