@@ -20,6 +20,7 @@ import DayPeek from './components/sheets/DayPeek.jsx';
 import ExInfo from './components/sheets/ExInfo.jsx';
 import ReorderHoy from './components/sheets/ReorderHoy.jsx';
 import History from './components/sheets/History.jsx';
+import FoodVoice from './components/sheets/FoodVoice.jsx';
 import StreakDetail from './components/sheets/StreakDetail.jsx';
 import SessionRecap from './components/sheets/SessionRecap.jsx';
 import Preworkout from './components/sheets/Preworkout.jsx';
@@ -69,6 +70,7 @@ function SheetContent({ sheet }) {
     case 'reorder-hoy': return <ReorderHoy {...sheet.props} />;
     case 'streak-detail': return <StreakDetail {...sheet.props} />;
     case 'history': return <History {...sheet.props} />;
+    case 'food-voice': return <FoodVoice {...sheet.props} />;
     case 'session-recap': return <SessionRecap {...sheet.props} />;
     case 'preworkout': return <Preworkout {...sheet.props} />;
     case 'voice-log': return <VoiceLog {...sheet.props} />;

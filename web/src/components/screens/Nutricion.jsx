@@ -25,6 +25,12 @@ import { mealsOf, macroCls, nutriFeedback, frequentMeals } from '../../lib/meals
 import { idb } from '../../lib/db.js';
 import { logMeal, addMealFromFood } from '../sheets/MealForm.jsx';
 
+// El botón de voz sólo aparece si el navegador reconoce voz — mismo criterio
+// que el registro por voz de sesiones en Hoy.jsx.
+const SR_FOOD = typeof window !== 'undefined'
+  ? (window.SpeechRecognition || window.webkitSpeechRecognition || null)
+  : null;
+
 // 2*Math.PI*52 redondeado — mismo círculo (r=52) y mismo valor que
 // .kr-prog{stroke-dasharray:326.7} en styles.css; el original también lo
 // tenía como literal "326.7", no como fórmula.
@@ -190,6 +196,13 @@ export default function Nutricion() {
 
       <div className="spacer"></div>
       <button type="button" className="btn" onClick={() => openSheet('meal-form')}>+ Agregar comida</button>
+      {SR_FOOD && (
+        <button type="button" className="pw-btn" style={{ marginTop: 'var(--s3)' }} onClick={() => openSheet('food-voice')}>
+          <span className="pwi">🎙</span><span className="pwt">Registrar por voz</span>
+          <span className="txt-mut" style={{ fontSize: 12.5, fontWeight: 500 }}>decí qué comiste</span>
+          <span className="chev">›</span>
+        </button>
+      )}
 
       <div className="sect">Comidas de hoy</div>
       {!meals.length ? (
