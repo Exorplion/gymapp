@@ -28,7 +28,7 @@ import {
   computeMacros, applyComputedGoals, profileWeight,
   ACTF, ACT_LABEL, ACT_HINT, GOALDELTA, GOAL_LABEL, GOAL_HINT,
 } from '../../lib/macros.js';
-import { toast } from '../Toast.jsx';
+import { toast } from '../../lib/toast.js';
 
 function MacroPreview({ m }) {
   return (

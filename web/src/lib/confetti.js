@@ -3,20 +3,17 @@
 // delay, drift, rotación) y lo cuelga directo de document.body — fuera del
 // árbol que dibuja el resto de la UI — para que se autodestruya con
 // setTimeout una vez terminada la animación CSS
-// (.confetti-host/@keyframes confettiFall, ya en styles.css desde Task 1).
+// (.confetti-host/@keyframes confettiFall, ya en styles.css).
 //
-// No hay ningún estado de React que describir acá (no es "mostrar/ocultar
-// según una condición", es "aparecer, animarse solo, desaparecer"), así que
-// se mantiene como función imperativa idéntica al original en vez de
-// reimplementarla como estado declarativo — eso sólo agregaría riesgo
-// (temporizadores en useEffect, cleanup, refs) sin ningún beneficio visual
-// o de mantenimiento.
+// Se mantiene como función imperativa idéntica al original en vez de
+// reimplementarla como estado declarativo: no es "mostrar/ocultar según una
+// condición", es "aparecer, animarse solo, desaparecer". Hacerlo declarativo
+// sólo agregaría riesgo (temporizadores en useEffect, cleanup, refs) sin
+// ningún beneficio visual ni de mantenimiento.
 //
-// <Confetti/> (default export) es a propósito un no-op: no necesita un nodo
-// montado por React porque fireConfetti() no apunta a ningún ref suyo. Se
-// mantiene como componente (en vez de borrarse) sólo para que App.jsx pueda
-// montarlo junto a <RestTimer/>/<Sheet/>/<Toast/> como pide el plan, sin
-// que eso implique que haga nada.
+// Vive en lib/ porque quien la llama es session.js (lógica de negocio, al
+// completar una sesión): no toca React ni ningún nodo montado por React, así
+// que no tenía por qué vivir en components/.
 const COLORS = ['#2E7DFF', '#5EA2FF', '#22D3EE', '#2EE6A8', '#FFB454'];
 
 export function fireConfetti() {
@@ -34,8 +31,4 @@ export function fireConfetti() {
   }
   document.body.appendChild(host);
   setTimeout(() => host.remove(), 2700);
-}
-
-export default function Confetti() {
-  return null;
 }

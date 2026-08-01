@@ -10,7 +10,7 @@ import { S, bump, openSheet, closeSheet, saveCfg } from './state.js';
 import { dstr, uid, norm, vibrate, WD, WEEK_ORDER } from './format.js';
 import { idb } from './db.js';
 import { EXCATALOG } from './muscle.js';
-import { toast } from '../components/Toast.jsx';
+import { toast } from './toast.js';
 
 /* ================= RUTINA ================= */
 /* insights derivados del historial de sesiones: sin esquema nuevo, se calcula

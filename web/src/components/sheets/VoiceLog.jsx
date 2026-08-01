@@ -31,7 +31,7 @@ import { useRef, useState } from 'react';
 import { S, bump, wStep, closeSheet } from '../../lib/state.js';
 import { WD, dstr, uid, round1, vibrate } from '../../lib/format.js';
 import { idb } from '../../lib/db.js';
-import { toast } from '../Toast.jsx';
+import { toast } from '../../lib/toast.js';
 
 const FIELDS = [['sets', 'Series'], ['reps', 'Reps'], ['w', 'Peso kg']];
 

@@ -18,7 +18,7 @@ import { S, bump, closeSheet, openSheet } from '../../lib/state.js';
 import { fmtNum, round1, dstr, uid, vibrate } from '../../lib/format.js';
 import { profileWeight } from '../../lib/macros.js';
 import { idb } from '../../lib/db.js';
-import { toast } from '../Toast.jsx';
+import { toast } from '../../lib/toast.js';
 
 const PW = { meal: false, sensitive: false };
 

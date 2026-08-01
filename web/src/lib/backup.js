@@ -19,7 +19,7 @@
 import { S } from './state.js';
 import { dstr } from './format.js';
 import { idb, STORES } from './db.js';
-import { toast } from '../components/Toast.jsx';
+import { toast } from './toast.js';
 
 export function exportJSON() {
   const data = {

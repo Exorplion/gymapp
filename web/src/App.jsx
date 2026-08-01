@@ -9,7 +9,6 @@ import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
 import Toast from './components/Toast.jsx';
 import RestTimer from './components/RestTimer.jsx';
-import Confetti from './components/Confetti.jsx';
 import Rutina from './components/screens/Rutina.jsx';
 import Hoy, { SessStartInfo, HistDetail } from './components/screens/Hoy.jsx';
 import Nutricion from './components/screens/Nutricion.jsx';
@@ -127,7 +126,6 @@ export default function App() {
         <SheetContent sheet={store.sheet} />
       </Sheet>
       <RestTimer />
-      <Confetti />
     </>
   );
 }

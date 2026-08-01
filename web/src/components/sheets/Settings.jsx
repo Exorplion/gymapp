@@ -37,7 +37,7 @@ import { fmtMMSS, vibrate } from '../../lib/format.js';
 import { computeMacros, applyComputedGoals } from '../../lib/macros.js';
 import { seedRegistro, seedCount, wipeSeed } from '../../lib/seed.js';
 import { exportJSON, importJSON, wipeAll } from '../../lib/backup.js';
-import { toast } from '../Toast.jsx';
+import { toast } from '../../lib/toast.js';
 
 function MacroPreview({ m }) {
   return (

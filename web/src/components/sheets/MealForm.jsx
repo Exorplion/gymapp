@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { S, bump, closeSheet } from '../../lib/state.js';
 import { uid, vibrate } from '../../lib/format.js';
 import { idb } from '../../lib/db.js';
-import { toast } from '../Toast.jsx';
+import { toast } from '../../lib/toast.js';
 
 /** Núcleo compartido de addMealFromFood()/quickadd-meal (Nutricion.jsx): dado
     algo con forma {name,kcal,p,c,f}, lo registra como comida del día

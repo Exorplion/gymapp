@@ -20,7 +20,7 @@ import { orderedExs, nextPending, setsDone, startSession, discardSession, comple
 import { muscleVolume } from '../../lib/muscle.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
-import { toast } from '../Toast.jsx';
+import { toast } from '../../lib/toast.js';
 
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
 

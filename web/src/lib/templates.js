@@ -8,7 +8,7 @@ import { S, bump, openSheet, closeSheet, saveCfg } from './state.js';
 import { uid, vibrate } from './format.js';
 import { idb } from './db.js';
 import { persistDay } from './rutina-logic.js';
-import { toast } from '../components/Toast.jsx';
+import { toast } from './toast.js';
 
 export const TEMPLATES = [
   { id: 'fullbody', name: 'Full Body', days: '3 días/sem', who: 'principiantes o poco tiempo', freq: 'cada grupo 3×/sem',

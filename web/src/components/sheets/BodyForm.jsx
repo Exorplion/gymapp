@@ -16,7 +16,7 @@ import { S, closeSheet, saveCfg } from '../../lib/state.js';
 import { uid, dstr } from '../../lib/format.js';
 import { applyComputedGoals } from '../../lib/macros.js';
 import { idb } from '../../lib/db.js';
-import { toast } from '../Toast.jsx';
+import { toast } from '../../lib/toast.js';
 
 export default function BodyForm() {
   const last = S.body[S.body.length - 1] || {};

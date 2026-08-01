@@ -2,10 +2,10 @@
 import { S, bump, saveDraft, wBoth, openSheet, closeSheet } from './state.js';
 import { dstr, uid, round1, WD, vibrate } from './format.js';
 import { idb } from './db.js';
-import { toast } from '../components/Toast.jsx';
+import { toast } from './toast.js';
 import { startRest, stopRest } from './rest.js';
 import { scrollCarouselTo } from './carousel.js';
-import { fireConfetti } from '../components/Confetti.jsx';
+import { fireConfetti } from './confetti.js';
 
 export function lastDataFor(exName) {
   const key = exName.trim().toLowerCase();

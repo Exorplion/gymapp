@@ -7,7 +7,7 @@
 // escriba a mano.
 import { S, bump } from './state.js';
 import { vibrate } from './format.js';
-import { toast } from '../components/Toast.jsx';
+import { toast } from './toast.js';
 
 export const T = { end: 0, total: 0, int: null, audio: null, state: 'hidden', leftSec: 0, pct: 0 };
 

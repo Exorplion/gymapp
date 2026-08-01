@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { norm } from '../../lib/format.js';
 import { EXCATALOG } from '../../lib/muscle.js';
 import { recommendedExercises, saveExercise } from '../../lib/rutina-logic.js';
-import { toast } from '../Toast.jsx';
+import { toast } from '../../lib/toast.js';
 
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
 const CATALOG_CATS = [...new Set(EXCATALOG.map(e => e.c))];
