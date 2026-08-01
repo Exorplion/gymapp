@@ -11,6 +11,7 @@
 // pestaña respecto del original — se prioriza fidelidad sobre el ahorro de
 // líneas.
 import { S, useStore, bump, openSheet } from '../../lib/state.js';
+import { streakHeatmap, currentStreak, bestStreak } from '../../lib/streak.js';
 import { WD, WEEK_ORDER, fmtD, fmtDFull, fmtNum, kg2lb, round1 } from '../../lib/format.js';
 import { muscleVolume } from '../../lib/muscle.js';
 import { sessionsSince, routineStability } from '../../lib/rutina-logic.js';
@@ -50,17 +51,24 @@ export default function Progreso() {
 
   const trainDays = WEEK_ORDER.filter(wd => S.routine[wd]?.exercises?.length);
 
+  // Cuántas semanas de historia hay: el mockup lo pone junto al título como
+  // contexto de todo lo que se ve abajo.
+  const heat = streakHeatmap();
+  const oldest = S.sessions.length ? S.sessions[S.sessions.length - 1].start : null;
+  const weeksTracked = oldest ? Math.max(1, Math.round((Date.now() - oldest) / 6048e5)) : 0;
+
   return (
     <>
       <div className="vtitle">
         <h1>Progreso</h1>
+        <span className="sub">{weeksTracked} semana{weeksTracked === 1 ? '' : 's'}</span>
         <button type="button" className="icon-btn" style={{ marginLeft: 'auto' }} aria-label="Guía" onClick={() => openSheet('guide')}>ⓘ</button>
       </div>
 
-      <div className="card hero">
+      <div className="card hero hero-prog">
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10 }}>
           <div>
-            <div className="steplabel">{headLabel}</div>
+            <div className="hero-eyebrow">{headLabel}</div>
             <div className="bignum">{headNum != null ? fmtNum(round1(headNum)) : '—'}<small> kg</small></div>
             {lastW && (
               <div className="txt-mut" style={{ fontSize: 13, marginTop: 3 }}>
@@ -72,7 +80,7 @@ export default function Progreso() {
               </div>
             )}
           </div>
-          <button type="button" className="btn sm ghost" style={{ width: 'auto', padding: '0 18px' }} onClick={() => openSheet('body-form')}>+ Registro</button>
+          <button type="button" className="reg-btn" onClick={() => openSheet('body-form')}>+ Registro</button>
         </div>
         {wk && wk.curAvg != null && (
           <div className="txt-mut" style={{ fontSize: 11.5, marginTop: 8, lineHeight: 1.4 }}>El peso fluctúa 1-2 kg por día; el promedio semanal es la métrica que importa.</div>
@@ -143,6 +151,20 @@ export default function Progreso() {
           </div>
         </>
       )}
+
+      {/* Constancia: en el mockup el mapa de calor vive acá, no escondido
+          detrás de la racha del header. */}
+      <div className="sect">Constancia · 8 semanas</div>
+      <div className="card">
+        <div className="heatmap const">
+          {heat.days.map(d => <div key={d.date} className={`cell ${d.status}`} title={d.date}></div>)}
+        </div>
+        <div className="const-stats">
+          <div><div className="cond">{currentStreak()}</div><span>Racha actual</span></div>
+          <div><div className="cond">{bestStreak()}</div><span>Mejor racha</span></div>
+          <div><div className="cond">{heat.pct}%</div><span>Cumplimiento</span></div>
+        </div>
+      </div>
 
       <div className="sect">PRs · Récords personales</div>
       {!exNames.length ? (

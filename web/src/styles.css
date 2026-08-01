@@ -813,3 +813,41 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   flex:0 0 auto;width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
   color:#FF6B84;background:rgba(255,107,132,.1);border:1px solid rgba(255,107,132,.24);
 }
+
+/* ============================================================
+   Rediseño — pantalla PROGRESO
+   ============================================================ */
+.card.hero.hero-prog{
+  background:linear-gradient(158deg,rgba(37,64,232,.24),rgba(255,255,255,.03) 62%),var(--card);
+  border-color:rgba(120,170,255,.2);
+}
+.hero-prog .bignum{font-size:54px}
+/* "+ Registro": botón de vidrio con texto cian, no un fantasma más */
+.reg-btn{
+  flex:0 0 auto;padding:12px 16px;border-radius:14px;
+  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--accent);
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+}
+/* El control segmentado del mockup tiene el ítem activo en Condensed 700 */
+.seg button{font-size:14.5px;font-weight:700;letter-spacing:.1em}
+
+/* Constancia: mapa de calor + tres cifras */
+/* Variante de Progreso: cada COLUMNA es una semana y cada fila un día, como
+   en el mockup — así se lee "esta semana entrené 4 veces" de un vistazo, que
+   con la orientación traspuesta no se veía. El sheet de la racha sigue
+   usando .heatmap a secas. */
+.heatmap.const{
+  grid-template-columns:none;grid-template-rows:repeat(7,1fr);
+  grid-auto-flow:column;grid-auto-columns:1fr;gap:5px;
+}
+.heatmap.const .cell{border-radius:6px;aspect-ratio:1}
+.const-stats{display:flex;gap:18px;margin-top:16px}
+.const-stats .cond{font-size:26px;font-weight:700;line-height:1}
+.const-stats span{
+  display:block;margin-top:2px;
+  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
+}
+/* Fuerza · 1RM: la cifra en cian claro y su unidad debajo, como el mockup */
+.str-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;line-height:1;color:#A9E8FF}
+.str-unit{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut2);margin-top:2px}
