@@ -172,7 +172,7 @@ export async function saveDayName(wd, name) {
 /** Firma adaptada: el original leía $('#f-exname').value etc. directo del DOM
     (ACT['ex-save']->saveExercise); acá ExerciseForm.jsx mantiene esos campos
     como estado de componente y los pasa explícitos. */
-export async function saveExercise(wd, exId, { name, sets, reps }) {
+export async function saveExercise(wd, exId, { name, sets, reps, equip, machine }) {
   name = (name || '').trim();
   const s = Math.max(1, parseInt(sets) || 4);
   const r = Math.max(1, parseInt(reps) || 10);
@@ -180,9 +180,19 @@ export async function saveExercise(wd, exId, { name, sets, reps }) {
   const d = ensureDay(wd);
   if (exId) {
     const ex = d.exercises.find(e => e.id === exId);
-    if (ex) { ex.name = name; ex.sets = s; ex.reps = r; }
+    if (ex) {
+      ex.name = name; ex.sets = s; ex.reps = r;
+      // Sin equipo elegido se borran los campos: un ejercicio sin equipo vuelve
+      // a compararse sólo por nombre, que es el comportamiento de siempre.
+      ex.equip = equip || undefined;
+      ex.machine = equip && machine ? machine.trim() : undefined;
+    }
   } else {
-    d.exercises.push({ id: uid(), name, sets: s, reps: r });
+    d.exercises.push({
+      id: uid(), name, sets: s, reps: r,
+      equip: equip || undefined,
+      machine: equip && machine ? machine.trim() : undefined,
+    });
   }
   await persistDay(wd);
   closeSheet(); bump(); toast('Guardado');

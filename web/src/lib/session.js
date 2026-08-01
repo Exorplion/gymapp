@@ -6,11 +6,15 @@ import { toast } from './toast.js';
 import { startRest, stopRest } from './rest.js';
 import { scrollCarouselTo } from './carousel.js';
 import { fireConfetti } from './confetti.js';
+import { exKey } from './equip.js';
 
-export function lastDataFor(exName) {
-  const key = exName.trim().toLowerCase();
+/** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
+    ejercicio completo; un string sigue funcionando y se compara sólo por
+    nombre, que es como se comportaba antes de existir el equipamiento. */
+export function lastDataFor(ex) {
+  const key = typeof ex === 'string' ? ex.trim().toLowerCase() : exKey(ex);
   for (const s of S.sessions) {
-    const e = (s.entries || []).find(en => en.name.trim().toLowerCase() === key);
+    const e = (s.entries || []).find(en => exKey(en) === key);
     if (e && e.sets.length) return e.sets;
   }
   return null;
@@ -18,7 +22,7 @@ export function lastDataFor(exName) {
 
 export function ensureVals(ex) {
   if (!S.hoyVals[ex.id]) {
-    const last = lastDataFor(ex.name);
+    const last = lastDataFor(ex);
     if (last) { const ls = last[last.length - 1]; S.hoyVals[ex.id] = { w: ls.w, r: ls.r }; }
     else S.hoyVals[ex.id] = { w: 20, r: ex.reps || 10 };
   }
@@ -56,7 +60,7 @@ export async function saveSet(exId) {
   if (!S.draft) {
     S.draft = { id: uid(), date: dstr(), weekday: wd, dayName: S.routine[wd]?.name || WD[wd], start: Date.now(), cur: exId, entries: {} };
   }
-  if (!S.draft.entries[exId]) S.draft.entries[exId] = { name: ex.name, sets: [] };
+  if (!S.draft.entries[exId]) S.draft.entries[exId] = { name: ex.name, equip: ex.equip, machine: ex.machine, sets: [] };
   const cur = S.draft.entries[exId].sets;
   /* el objetivo es el techo: llegado a él el ejercicio se cierra solo y pasamos
      al siguiente, en vez de dejar registrar series infinitas */
@@ -87,7 +91,7 @@ export async function completeSession() {
   const order = (d.order && d.order.length) ? d.order : (wdDay?.exercises || []).map(e => e.id);
   const entries = Object.entries(d.entries)
     .sort((a, b) => { const ia = order.indexOf(a[0]), ib = order.indexOf(b[0]); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); })
-    .map(([exId, e]) => ({ exId, name: e.name, sets: e.sets }));
+    .map(([exId, e]) => ({ exId, name: e.name, equip: e.equip, machine: e.machine, sets: e.sets }));
   if (!entries.length) { toast('No registraste ninguna serie. Usá "Descartar" para cerrar la sesión.'); return; }
   /* d.open cubre borradores viejos (formato anterior) y el caso raro de que
      falte start; la duración mide de la primera serie al cierre */
@@ -118,10 +122,10 @@ export function calcSessionPRs(entries) {
     const bestSet = e.sets.reduce((a, b) => b.w > a.w ? b : a, e.sets[0]);
     let prevMax = 0;
     prior.forEach(s => (s.entries || []).forEach(pe => {
-      if (pe.name.trim() !== e.name.trim()) return;
+      if (exKey(pe) !== exKey(e)) return;
       pe.sets.forEach(st => { if (st.w > prevMax) prevMax = st.w; });
     }));
-    if (bestSet.w > prevMax) prs.push({ name: e.name, w: bestSet.w, r: bestSet.r });
+    if (bestSet.w > prevMax) prs.push({ name: e.name, equip: e.equip, machine: e.machine, w: bestSet.w, r: bestSet.r });
   });
   return prs;
 }

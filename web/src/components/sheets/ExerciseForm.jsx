@@ -6,6 +6,7 @@
 // voz (SpeechRecognition, sólo al crear) y los steppers de series/reps
 // (antes ACT['exf-step']).
 import { useEffect, useRef, useState } from 'react';
+import { EQUIP, EQUIP_HINT, isMachineBound } from '../../lib/equip.js';
 import { norm } from '../../lib/format.js';
 import { EXCATALOG } from '../../lib/muscle.js';
 import { recommendedExercises, saveExercise } from '../../lib/rutina-logic.js';
@@ -18,6 +19,8 @@ export default function ExerciseForm({ wd, ex }) {
   const [name, setName] = useState(ex ? ex.name : '');
   const [sets, setSets] = useState(ex ? ex.sets : 4);
   const [reps, setReps] = useState(ex ? ex.reps : 10);
+  const [equip, setEquip] = useState(ex?.equip || '');
+  const [machine, setMachine] = useState(ex?.machine || '');
   const [acOpen, setAcOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const nameRef = useRef(null);
@@ -57,7 +60,7 @@ export default function ExerciseForm({ wd, ex }) {
     rec.start();
   }
 
-  function handleSave() { saveExercise(wd, ex ? ex.id : null, { name, sets, reps }); }
+  function handleSave() { saveExercise(wd, ex ? ex.id : null, { name, sets, reps, equip, machine }); }
 
   return (
     <>
@@ -144,6 +147,42 @@ export default function ExerciseForm({ wd, ex }) {
             <button type="button" onClick={() => step(setReps, 1)}>+</button>
           </div>
         </div>
+
+      {/* Con qué se hace el ejercicio. Es lo que permite que el historial no
+          mezcle números que no son comparables — ver lib/equip.js. */}
+      <label style={{ marginTop: 'var(--s4)' }}>Con qué lo hacés</label>
+      <div className="chips">
+        {EQUIP.map(e => (
+          <button
+            key={e.id}
+            type="button"
+            className={`chip ${equip === e.id ? 'on' : ''}`}
+            onClick={() => setEquip(equip === e.id ? '' : e.id)}
+          >
+            {e.label}
+          </button>
+        ))}
+      </div>
+      {equip && (
+        <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 8 }}>
+          {EQUIP_HINT[equip]}
+        </div>
+      )}
+      {isMachineBound(equip) && (
+        <div className="field" style={{ marginTop: 'var(--s3)' }}>
+          <label>Qué máquina</label>
+          <input
+            type="text"
+            placeholder="Life Fitness, Hammer, la del fondo…"
+            value={machine}
+            onChange={e => setMachine(e.target.value)}
+          />
+          <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 6 }}>
+            En este sistema el número depende de la máquina, así que el historial
+            se lleva por separado para cada una. Poné el nombre que te sirva a vos.
+          </div>
+        </div>
+      )}
       </div>
       <button type="button" className="btn" style={{ marginTop: 14 }} onClick={handleSave}>Guardar</button>
     </>

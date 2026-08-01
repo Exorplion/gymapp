@@ -868,3 +868,12 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 @keyframes heroInL{from{opacity:0;transform:translate3d(-26px,0,0) scale(.985)}to{opacity:1;transform:none}}
 .hero-swap.dir-r{animation:heroInR .34s var(--ease)}
 .hero-swap.dir-l{animation:heroInL .34s var(--ease)}
+
+/* Etiqueta de equipamiento junto al ejercicio. Discreta: es contexto, no el
+   dato principal — pero tiene que estar, porque es lo que explica por qué dos
+   números del mismo ejercicio no son comparables. */
+.eq-tag{
+  display:inline-block;margin-right:7px;padding:1px 7px;border-radius:6px;
+  font-size:11px;font-weight:600;letter-spacing:.02em;
+  color:var(--accent);background:rgba(79,168,255,.13);border:1px solid rgba(120,170,255,.24);
+}

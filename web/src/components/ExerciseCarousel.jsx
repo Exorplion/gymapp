@@ -102,7 +102,7 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
 function ExerciseSlide({ m, wd, started }) {
   const { ex, done, full, open, isNext, waiting } = m;
   const v = ensureVals(ex);
-  const last = lastDataFor(ex.name);
+  const last = lastDataFor(ex);
   const scheme = rirScheme(ex.sets, ex.name);
   const curSet = Math.min(done.length, ex.sets - 1);
   const curRir = scheme[curSet];

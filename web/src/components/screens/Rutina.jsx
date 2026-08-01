@@ -9,6 +9,7 @@ import { flushSync } from 'react-dom';
 import { S, bump, useStore, openSheet } from '../../lib/state.js';
 import { WD, WD1, WEEK_ORDER } from '../../lib/format.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
+import { equipLabel } from '../../lib/equip.js';
 import { flipSort } from '../../lib/drag.js';
 import {
   routineStats, routineName, activeDayWds,
@@ -134,7 +135,10 @@ function RutinaView() {
                       <span className="i">{i + 1}</span>
                       <span className="grow">
                         <span className="t">{e.name}</span>
-                        <span className="s">RIR {rirScheme(e.sets).join('/')}</span>
+                        <span className="s">
+                          {equipLabel(e) && <span className="eq-tag">{equipLabel(e)}</span>}
+                          RIR {rirScheme(e.sets).join('/')}
+                        </span>
                       </span>
                       <span className="x">{e.sets}×{e.reps}</span>
                     </div>
@@ -230,7 +234,10 @@ function DayCard({ wd }) {
               </button>
               <div className="grow">
                 <div className="t">{ex.name}</div>
-                <div className="s">{ex.sets}×{ex.reps} · RIR {rirScheme(ex.sets, ex.name).join('/')}</div>
+                <div className="s">
+                  {equipLabel(ex) && <span className="eq-tag">{equipLabel(ex)}</span>}
+                  {ex.sets}×{ex.reps} · RIR {rirScheme(ex.sets, ex.name).join('/')}
+                </div>
               </div>
               <button
                 type="button"
