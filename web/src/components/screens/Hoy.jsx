@@ -24,8 +24,26 @@ import { toast } from '../../lib/toast.js';
 
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
 
+
+/** Devuelve 'r' o 'l' según hacia qué lado del orden semanal se movió el día
+    elegido desde el render anterior. Se usa sólo para decidir de qué lado
+    entra la tarjeta: no participa del estado de la app. */
+function useDayDirection() {
+  const wd = S.hoyDay ?? new Date().getDay();
+  const prev = useRef(wd);
+  const dir = useRef('r');
+  if (prev.current !== wd) {
+    dir.current = WEEK_ORDER.indexOf(wd) >= WEEK_ORDER.indexOf(prev.current) ? 'r' : 'l';
+    prev.current = wd;
+  }
+  return dir.current;
+}
+
 export default function Hoy() {
   useStore();
+  // Hacia qué lado se movió el usuario en la tira semanal: la tarjeta entra
+  // desde ese lado, así el gesto y la animación coinciden.
+  const dir = useDayDirection();
   const today = new Date();
   const wd = S.hoyDay ?? today.getDay();
   const day = S.routine[wd];
@@ -35,6 +53,15 @@ export default function Hoy() {
   const curId = active ? S.draft.cur : null;
   const nextEx = active ? nextPending(exs) : null;
   const allDone = active && exs.length > 0 && !nextEx;
+
+  // Para que el plegado se pueda animar, el contenido tiene que seguir
+  // montado mientras la ranura se cierra: si se desmonta al instante no queda
+  // nada cuya altura interpolar y el colapso salta a 0. Conservamos el último
+  // día con rutina y lo seguimos pintando; cuando la ranura está cerrada
+  // queda oculto por el overflow.
+  const lastShown = useRef(null);
+  if (day?.name) lastShown.current = { day, wd, exs };
+  const shown = lastShown.current;
 
   const mv = muscleVolume(7);
   const mvCats = Object.entries(mv).sort((a, b) => b[1] - a[1]);
@@ -52,7 +79,20 @@ export default function Hoy() {
           {/* El mockup pone la tarjeta del día PRIMERO y la tira semanal
               debajo: lo primero que ves es qué te toca hoy, no el calendario.
               Antes estaba al revés. */}
-          {day?.name && <PreSessionHero day={day} wd={wd} exs={exs} today={today} />}
+          {/* Ranura con altura animada: al cambiar de día la tarjeta se
+              despliega o se pliega en vez de aparecer/desaparecer de golpe.
+              El grid-template-rows 0fr↔1fr es lo que permite animar "auto"
+              sin medir alturas a mano. La key por día hace que el contenido
+              entre de nuevo al pasar de un día de entrenamiento a otro. */}
+          <div className={`hero-slot ${day?.name ? 'open' : ''}`} aria-hidden={!day?.name}>
+            <div className="hero-slot-in">
+              {shown && (
+                <div key={shown.wd} className={`hero-swap dir-${dir}`}>
+                  <PreSessionHero day={shown.day} wd={shown.wd} exs={shown.exs} today={today} />
+                </div>
+              )}
+            </div>
+          </div>
           <div className="wkstrip">
             {WEEK_ORDER.map(d => {
               const dayR = S.routine[d];

@@ -851,3 +851,20 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* Fuerza · 1RM: la cifra en cian claro y su unidad debajo, como el mockup */
 .str-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;line-height:1;color:#A9E8FF}
 .str-unit{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut2);margin-top:2px}
+
+/* ---------- Hoy: despliegue de la tarjeta del día ---------- */
+/* 0fr→1fr es el truco que permite animar hacia "alto automático" sin medir
+   el contenido: el navegador interpola la fracción, no un píxel fijo, así
+   que sirve igual para un día de 3 ejercicios que uno de 12. */
+.hero-slot{
+  display:grid;grid-template-rows:0fr;
+  transition:grid-template-rows .34s var(--ease),opacity .22s var(--ease),margin-bottom .34s var(--ease);
+  opacity:0;margin-bottom:0;
+}
+.hero-slot.open{grid-template-rows:1fr;opacity:1}
+.hero-slot-in{overflow:hidden;min-height:0}
+/* El contenido entra desde el lado hacia el que te moviste en la tira. */
+@keyframes heroInR{from{opacity:0;transform:translate3d(26px,0,0) scale(.985)}to{opacity:1;transform:none}}
+@keyframes heroInL{from{opacity:0;transform:translate3d(-26px,0,0) scale(.985)}to{opacity:1;transform:none}}
+.hero-swap.dir-r{animation:heroInR .34s var(--ease)}
+.hero-swap.dir-l{animation:heroInL .34s var(--ease)}

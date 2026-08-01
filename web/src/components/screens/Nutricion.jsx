@@ -121,7 +121,8 @@ export default function Nutricion() {
           <div className="kcal-side">
             {/* El mockup pone el dato accionable — cuánto QUEDA — grande y
                 aparte del anillo, que muestra lo ya consumido. */}
-            <div className="hero-eyebrow">{kc > g.kcal ? 'Pasado' : 'Restantes'}</div>
+            {/* "Pasado" no se entendía. "Excedente" dice lo mismo y se lee solo. */}
+            <div className="hero-eyebrow">{kc > g.kcal ? 'Excedente' : 'Restantes'}</div>
             <div className="kcal-big">
               {kc > g.kcal ? kc - g.kcal : Math.max(0, g.kcal - kc)}<span>kcal</span>
             </div>
