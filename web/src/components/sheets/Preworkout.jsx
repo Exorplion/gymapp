@@ -9,14 +9,12 @@
 // (mismo canal que S) para volver a pintar — no hace falta que PW viva
 // dentro de S para eso.
 //
-// DEVIATION documentada: el botón "Ir al perfil" del original abre
-// sheetSettings()/sheetProfile(), que todavía no existen en el puerto (son
-// de Ajustes, una pantalla de una tarea posterior — Header.jsx ya deja
-// onOpenSettings como no-op por la misma razón). Acá, en vez de abrir un
-// sheet 'profile' que no tiene caso en el switch de App.jsx (quedaría un
-// panel vacío), se cierra el sheet con un toast explicativo. Reemplazar por
-// openSheet('profile') cuando exista esa pantalla.
-import { S, bump, closeSheet } from '../../lib/state.js';
+// El botón "Ir al perfil" abre el sheet 'profile' (Profile.jsx, Task 7) —
+// hasta Task 6 esa pantalla no existía todavía (era de Nutrición, una tarea
+// posterior), así que este botón cerraba el sheet con un toast explicativo
+// en su lugar; ahora que Profile.jsx existe y está registrado en el switch
+// de App.jsx, abre el formulario real.
+import { S, bump, closeSheet, openSheet } from '../../lib/state.js';
 import { fmtNum, round1, dstr, uid, vibrate } from '../../lib/format.js';
 import { profileWeight } from '../../lib/macros.js';
 import { idb } from '../../lib/db.js';
@@ -34,7 +32,7 @@ export default function Preworkout() {
         <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5, margin: '6px 0 16px' }}>
           Necesito tu peso para calcular las dosis. Complétalo en tu perfil.
         </div>
-        <button type="button" className="btn" onClick={() => { closeSheet(); toast('Completá tu peso en Ajustes → Perfil'); }}>
+        <button type="button" className="btn" onClick={() => openSheet('profile')}>
           Ir al perfil
         </button>
       </>

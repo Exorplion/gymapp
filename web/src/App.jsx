@@ -12,6 +12,7 @@ import RestTimer from './components/RestTimer.jsx';
 import Confetti from './components/Confetti.jsx';
 import Rutina from './components/screens/Rutina.jsx';
 import Hoy, { SessStartInfo, HistDetail } from './components/screens/Hoy.jsx';
+import Nutricion from './components/screens/Nutricion.jsx';
 import DayEdit from './components/sheets/DayEdit.jsx';
 import ExerciseForm from './components/sheets/ExerciseForm.jsx';
 import Library from './components/sheets/Library.jsx';
@@ -22,6 +23,8 @@ import StreakDetail from './components/sheets/StreakDetail.jsx';
 import SessionRecap from './components/sheets/SessionRecap.jsx';
 import Preworkout from './components/sheets/Preworkout.jsx';
 import VoiceLog from './components/sheets/VoiceLog.jsx';
+import MealForm from './components/sheets/MealForm.jsx';
+import Profile from './components/sheets/Profile.jsx';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
 // globales en index.html). No es uno de los 5 sheets nombrados en el plan de
@@ -66,6 +69,8 @@ function SheetContent({ sheet }) {
     case 'voice-log': return <VoiceLog {...sheet.props} />;
     case 'sess-start-info': return <SessStartInfo {...sheet.props} />;
     case 'hist-detail': return <HistDetail {...sheet.props} />;
+    case 'meal-form': return <MealForm {...sheet.props} />;
+    case 'profile': return <Profile {...sheet.props} />;
     default: return null;
   }
 }
@@ -106,7 +111,8 @@ export default function App() {
       <main>
         {store.tab === 'hoy' && <Hoy />}
         {store.tab === 'rutina' && <Rutina />}
-        {store.tab !== 'hoy' && store.tab !== 'rutina' && `${store.tab} view — not yet implemented`}
+        {store.tab === 'nutri' && <Nutricion />}
+        {store.tab !== 'hoy' && store.tab !== 'rutina' && store.tab !== 'nutri' && `${store.tab} view — not yet implemented`}
       </main>
       <TabBar active={store.tab} onChange={t => { S.tab = t; bump(); }} />
       <Toast />
