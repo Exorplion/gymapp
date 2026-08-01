@@ -19,7 +19,9 @@ const TABS = [
     rect: { x: 3.5, y: 5, width: 17, height: 16, rx: 3 },
   },
   {
-    id: 'nutri', label: 'Nutrición',
+    // "Comida" es la etiqueta del mockup, y además entra sin apretarse en la
+    // píldora: "Nutrición" es la más larga de las cuatro y desbalanceaba el nav.
+    id: 'nutri', label: 'Comida',
     path: 'M12 21c-4 0-7-3-7-7 0-5 4-7 7-11 3 4 7 6 7 11 0 4-3 7-7 7z',
     path2: 'M12 21c-2 0-3.5-1.6-3.5-3.5',
   },

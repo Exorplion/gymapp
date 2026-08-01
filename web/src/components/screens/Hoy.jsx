@@ -50,6 +50,10 @@ export default function Hoy() {
         <ActiveHero day={day} wd={wd} exs={exs} started={started} allDone={allDone} />
       ) : (
         <>
+          {/* El mockup pone la tarjeta del día PRIMERO y la tira semanal
+              debajo: lo primero que ves es qué te toca hoy, no el calendario.
+              Antes estaba al revés. */}
+          {day?.name && <PreSessionHero day={day} wd={wd} exs={exs} today={today} />}
           <div className="wkstrip">
             {WEEK_ORDER.map(d => {
               const dayR = S.routine[d];
@@ -68,24 +72,30 @@ export default function Hoy() {
               );
             })}
           </div>
-          {day?.name && <PreSessionHero day={day} wd={wd} exs={exs} today={today} />}
         </>
       )}
 
       {mvCats.length > 0 && (
-        <div className="card sub" style={{ marginTop: 2 }}>
-          <div className="steplabel" style={{ marginBottom: 10 }}>Volumen · esta semana</div>
+        <>
+        {/* En el mockup el encabezado va FUERA de la tarjeta, con su línea
+            hasta el borde — no como etiqueta interna. */}
+        <div className="sect">Músculos esta semana</div>
+        <div className="card">
           {mvCats.map(([c, n]) => (
             <div key={c} style={{ marginBottom: 'var(--s2)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--t-sm)', marginBottom: 3 }}>
                 <span>{c}</span><span className="num">{n} series</span>
               </div>
-              <div className="pbar" style={{ height: 7 }}>
+              <div className="pbar">
                 <i style={{ width: `${Math.round(n / maxv * 100)}%`, animation: 'rise .5s var(--ease) backwards' }}></i>
               </div>
             </div>
           ))}
+          <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 12 }}>
+            10–20 series semanales por grupo es el rango habitual para ganar masa.
+          </div>
         </div>
+        </>
       )}
 
       {/* el pre-workout se toma 30-60 min ANTES: durante la sesión ya no sirve de
@@ -224,24 +234,26 @@ function PreSessionHero({ day, wd, exs, today }) {
           {wd === today.getDay() ? 'Toca hoy' : WD[wd]}
         </div>
       </div>
-      <div className="cond" style={{ fontSize: 30, fontWeight: 700, fontStyle: 'italic', marginTop: 4 }}>{day.name}</div>
-      <div className="macro3" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginTop: 14 }}>
-        <div style={{ textAlign: 'center' }}>
-          <div className="cond" style={{ fontSize: 22, fontWeight: 700 }}>{exs.length}</div>
-          <div className="txt-mut" style={{ fontSize: 'var(--t-micro)', letterSpacing: '.08em', textTransform: 'uppercase' }}>Ejercicio{exs.length === 1 ? '' : 's'}</div>
+      {/* 46px e itálica: en el mockup el nombre del día es el elemento más
+          grande de la pantalla, por encima del propio título "HOY". */}
+      <div className="hero-day">{day.name}</div>
+      <div className="hero-stats">
+        <div>
+          <div className="cond">{exs.length}</div>
+          <span>Ejercicio{exs.length === 1 ? '' : 's'}</span>
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <div className="cond" style={{ fontSize: 22, fontWeight: 700 }}>{totalSets}</div>
-          <div className="txt-mut" style={{ fontSize: 'var(--t-micro)', letterSpacing: '.08em', textTransform: 'uppercase' }}>Series</div>
+        <div>
+          <div className="cond">{totalSets}</div>
+          <span>Series</span>
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <div className="cond" style={{ fontSize: 22, fontWeight: 700 }}>~{estMin}</div>
-          <div className="txt-mut" style={{ fontSize: 'var(--t-micro)', letterSpacing: '.08em', textTransform: 'uppercase' }}>Minutos</div>
+        <div>
+          <div className="cond">~{estMin}</div>
+          <span>Minutos</span>
         </div>
       </div>
       {exs.length > 0 && (
-        <button type="button" className="btn" style={{ marginTop: 16 }} onClick={() => openSheet('sess-start-info', { wd })}>
-          ▶ Iniciar entrenamiento
+        <button type="button" className="btn hero-cta" onClick={() => openSheet('sess-start-info', { wd })}>
+          Empezar entrenamiento
         </button>
       )}
     </div>

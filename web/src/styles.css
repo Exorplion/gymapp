@@ -8,9 +8,13 @@
   --card2:#111B30;
   --line:rgba(102,145,255,.10);
   --line2:rgba(102,145,255,.20);
-  --txt:#EAF0FC;
-  --mut:#8B97B4;
-  --mut2:#5C6885;
+  /* Grises tomados del mockup (docs/design-tokens-hoy.md). Estaban cerca
+     pero no eran los mismos, y en tipografía chica la diferencia se nota. */
+  --txt:#EEF4FF;
+  --mut:#93A4C8;
+  --mut2:#64749A;
+  --accent:#7FD1FF;      /* cian de acento: etiquetas, cifras, día activo */
+  --deep:#2540E8;        /* azul profundo: arranque de los gradientes de barra */
   --blue:#2E7DFF;
   --blue2:#5EA2FF;
   --blue3:#8FC2FF;
@@ -89,24 +93,34 @@ header.top{
 }
 .brand{
   font-family:'Barlow Condensed';font-weight:700;font-style:italic;
-  font-size:26px;letter-spacing:.14em;
-  background:linear-gradient(100deg,#EAF0FC 20%,#5EA2FF 75%);
+  font-size:23px;letter-spacing:.2em;
+  /* el gradiente del mockup llega hasta el cian; el anterior moría en azul */
+  background:linear-gradient(96deg,#EEF4FF 8%,#4FA8FF 62%,#22D3EE 96%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
   display:flex;align-items:center;gap:8px;
 }
 .brand svg{width:24px;height:24px;stroke:var(--blue2);filter:drop-shadow(0 0 8px rgba(62,150,255,.7))}
 .icon-btn{
-  width:44px;height:44px;border-radius:14px;display:grid;place-items:center;
-  border:1px solid var(--line);background:var(--card);color:var(--mut);
+  width:38px;height:38px;border-radius:13px;display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.1);color:var(--mut);
+  background:linear-gradient(150deg,rgba(255,255,255,.09),rgba(255,255,255,.02));
   transition:.15s;
 }
+.icon-btn svg{width:19px;height:19px}
 .icon-btn:active{border-color:var(--line2);color:var(--blue2)}
 .icon-btn.accent{border-color:var(--blue2);color:var(--blue2);background:rgba(46,125,255,.14)}
 .icon-btn.accent:active{background:rgba(46,125,255,.24)}
 .header-actions{display:flex;gap:8px;align-items:center}
-.streak-btn{display:flex;align-items:center;width:auto;padding:0 12px;gap:6px}
-.streak-flame{font-size:17px;line-height:1}
-.streak-n{font-family:'Barlow Condensed';font-weight:700;font-size:15px}
+/* La racha es el único acento cálido de la interfaz: en ámbar destaca sobre
+   un fondo que es todo azul y cian. En azul se perdía entre los demás. */
+.streak-btn{
+  display:flex;align-items:center;width:auto;height:35px;gap:6px;
+  padding:7px 12px 7px 9px;border-radius:999px;
+  background:linear-gradient(150deg,rgba(255,196,107,.18),rgba(255,255,255,.03));
+  border:1px solid rgba(255,196,107,.32);
+}
+.streak-flame{font-size:14px;line-height:1}
+.streak-n{font-family:'Barlow Condensed';font-weight:700;font-size:16px;letter-spacing:.04em;color:#FFC46B}
 .heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .heatmap .cell{aspect-ratio:1;border-radius:4px;background:var(--card2);border:1px solid var(--line)}
 .heatmap .cell.done{background:var(--grad2);border-color:transparent;animation:zoom .3s var(--ease) backwards}
@@ -116,7 +130,7 @@ header.top{
 /* ---------- layout ---------- */
 main{
   max-width:520px;margin:0 auto;
-  padding:16px 16px calc(var(--tabs-h) + env(safe-area-inset-bottom) + 110px);
+  padding:16px 18px calc(var(--tabs-h) + env(safe-area-inset-bottom) + 110px);
 }
 .view{display:none}
 .view.active{display:block}
@@ -157,13 +171,16 @@ main{
 .vtitle{
   display:flex;align-items:baseline;gap:var(--s3);margin:var(--s1) 2px var(--s4);
 }
+/* 40px e itálica, como el mockup. La itálica es la que le da el carácter al
+   título — sin ella la tipografía se lee genérica. El mockup tampoco lleva
+   el guion azul que había acá: el título va seguido directo de la fecha. */
 .vtitle h1{
-  font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;line-height:1;
+  font-size:40px;font-weight:700;font-style:italic;text-transform:uppercase;
+  letter-spacing:.02em;line-height:.9;
 }
-.vtitle h1::after{content:"";display:inline-block;width:26px;height:5px;margin-left:10px;
-  background:var(--grad);border-radius:3px;transform:skewX(-20deg);vertical-align:6px;
-  box-shadow:var(--glow)}
-.vtitle .sub{color:var(--mut);font-size:14px;font-weight:500}
+.vtitle .sub{
+  color:var(--mut);font-size:13px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;
+}
 
 /* ---------- cards ---------- */
 .card{
@@ -174,12 +191,14 @@ main{
   box-shadow:var(--glass-hi),0 14px 34px -18px rgba(0,0,0,.6);
 }
 .card.hero{
-  background:linear-gradient(158deg,rgba(37,64,232,.24),rgba(255,255,255,.03) 60%),var(--card);
+  background:linear-gradient(158deg,rgba(37,64,232,.3),rgba(255,255,255,.03) 58%),var(--card);
   border-color:rgba(120,170,255,.22);border-radius:var(--r-lg);
-  position:relative;overflow:hidden;
+  padding:20px;position:relative;overflow:hidden;
 }
-.card.hero::before{content:"";position:absolute;top:-40px;right:-40px;width:160px;height:160px;
-  background:radial-gradient(circle,rgba(46,125,255,.22),transparent 70%);pointer-events:none}
+/* El halo del mockup es cian y bastante más grande (210px) que el azul de
+   160px que había: es lo que le da profundidad a la tarjeta. */
+.card.hero::before{content:"";position:absolute;top:-52px;right:-52px;width:210px;height:210px;
+  background:radial-gradient(circle,rgba(34,211,238,.28),transparent 66%);pointer-events:none}
 /* tres niveles en vez de uno: destacada (hero) > normal > sutil (sub).
    Cuando todo tiene el mismo peso, nada destaca y todo se lee como ruido. */
 .card.sub{background:rgba(12,19,34,.4);border-color:rgba(102,145,255,.055);padding:var(--s3)}
@@ -342,22 +361,22 @@ body.dragging-on [data-sid]:not(.dragging){filter:saturate(.8) brightness(.92)}
 
 /* ---------- rutina: resumen de la semana ---------- */
 /* la semana entera en una tira de 7: se lee de un vistazo, sin scrollear */
-.wkstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:var(--s4)}
-.wkstrip .wd{border-radius:11px;padding:8px 2px 7px;text-align:center;
-  background:rgba(12,19,34,.55);border:1px solid var(--line);min-width:0;transition:.15s}
-.wkstrip .wd .l{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;color:var(--mut2)}
+.wkstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:var(--s4)}
+.wkstrip .wd{border-radius:14px;padding:9px 2px 8px;text-align:center;
+  background:rgba(255,255,255,.024);border:1px solid rgba(255,255,255,.06);
+  transition:background .18s var(--ease),border-color .18s var(--ease)}
+.wkstrip .wd .l{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;color:var(--mut2)}
 .wkstrip .wd .n{font-size:9px;line-height:1.2;margin-top:3px;color:var(--mut2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* un día "entrena" se ve relleno de entrada, sin necesitar estar seleccionado
-   — así la tira comunica el split completo de un vistazo, como en el mockup */
-.wkstrip .wd.has{background:var(--grad2);border-color:transparent}
-.wkstrip .wd.has .l,.wkstrip .wd.has .n{color:var(--on-grad)}
-.wkstrip .wd.on{background:rgba(46,125,255,.15);border-color:rgba(46,125,255,.42)}
-.wkstrip .wd.on .l{color:var(--blue2)}
-.wkstrip .wd.on .n{color:var(--txt)}
-.wkstrip .wd.has.on{background:var(--grad2);border-color:transparent;box-shadow:0 0 0 2px rgba(94,162,255,.55)}
-.wkstrip .wd.today{border-color:var(--blue2);box-shadow:0 0 0 1px rgba(94,162,255,.35)}
-.wkstrip .wd.has.today{box-shadow:0 0 0 2px rgba(255,255,255,.5)}
+/* Día que se entrena: azul translúcido, SIEMPRE — no depende de cuál esté
+   elegido. Es lo que deja leer la semana de un vistazo. */
+.wkstrip .wd.has{background:linear-gradient(160deg,rgba(79,168,255,.22),rgba(255,255,255,.03));
+  border-color:rgba(120,170,255,.3)}
+.wkstrip .wd.has .l{color:var(--accent)}
+.wkstrip .wd.has .n{color:var(--txt)}
+/* Elegido: se suma al estado anterior con un anillo, sin reemplazarlo. */
+.wkstrip .wd.on{border-color:rgba(140,210,255,.75);box-shadow:0 0 0 1px rgba(140,210,255,.35)}
+.wkstrip .wd.today .l{text-decoration:underline;text-underline-offset:3px}
 .rt-eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:600}
 .rt-name{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;font-style:italic;line-height:1.06;margin-top:2px}
 .dayline{display:flex;align-items:center;gap:var(--s3);padding:13px 4px;width:100%;text-align:left;
@@ -402,8 +421,10 @@ body.dragging-on [data-sid]:not(.dragging){filter:saturate(.8) brightness(.92)}
 }
 
 /* ---------- barras de progreso (nutrición) ---------- */
-.pbar{height:10px;border-radius:6px;background:var(--card2);border:1px solid var(--line);overflow:hidden}
-.pbar>i{display:block;height:100%;border-radius:6px;background:var(--grad);transition:width .5s cubic-bezier(.2,.8,.3,1)}
+.pbar{height:8px;border-radius:5px;background:rgba(255,255,255,.05);overflow:hidden}
+.pbar>i{display:block;height:100%;border-radius:5px;
+  background:linear-gradient(90deg,var(--deep),var(--blue2) 60%,var(--cyan));
+  transition:width .5s cubic-bezier(.2,.8,.3,1)}
 .pbar>i.over{background:linear-gradient(135deg,#E8A21D,#FFB454)}
 .macro3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
 .macro3 .m .lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);font-weight:600;margin-bottom:5px}
@@ -574,7 +595,7 @@ nav.tabbar button.on svg{filter:none}
 .empty .big{font-size:44px;margin-bottom:10px;filter:grayscale(.3)}
 .empty p{font-size:15px;line-height:1.5;margin-bottom:18px}
 .sect{
-  font-family:'Barlow Condensed';font-size:16px;font-weight:700;letter-spacing:.14em;
+  font-family:'Barlow Condensed';font-size:15px;font-weight:700;letter-spacing:.18em;
   text-transform:uppercase;color:var(--mut);margin:22px 2px 10px;
   display:flex;align-items:center;gap:10px;
 }
@@ -614,3 +635,30 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .pw-btn .pwt{font-family:'Barlow Condensed';font-weight:700;font-size:17px;letter-spacing:.03em}
 .pw-btn .chev{margin-left:auto;color:var(--blue2)}
 .pw-btn.accent{background:linear-gradient(135deg,rgba(255,93,115,.18),rgba(12,19,34,.4));border-color:rgba(255,93,115,.45)}
+
+/* ============================================================
+   Rediseño — tarjeta hero de HOY
+   Valores tomados del mockup (docs/design-tokens-hoy.md).
+   ============================================================ */
+.hero-day{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:46px;font-weight:700;font-style:italic;letter-spacing:.01em;
+  line-height:1;margin-top:6px;
+}
+/* La segunda mitad del nombre va en cian: "Push · empuje" se lee como dos
+   cosas, el nombre y su glosa. Lo hace hero-day-alt desde el JSX. */
+.hero-day .alt{color:var(--accent)}
+.hero-stats{
+  display:flex;gap:18px;margin-top:16px;
+}
+.hero-stats>div{text-align:left}
+.hero-stats .cond{font-size:26px;font-weight:700;line-height:1}
+.hero-stats span{
+  display:block;margin-top:2px;
+  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
+}
+.hero-cta{
+  margin-top:18px;height:58px;border-radius:18px;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:21px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+}
