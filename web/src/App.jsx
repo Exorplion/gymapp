@@ -19,6 +19,7 @@ import Library from './components/sheets/Library.jsx';
 import DayPeek from './components/sheets/DayPeek.jsx';
 import ExInfo from './components/sheets/ExInfo.jsx';
 import ReorderHoy from './components/sheets/ReorderHoy.jsx';
+import History from './components/sheets/History.jsx';
 import StreakDetail from './components/sheets/StreakDetail.jsx';
 import SessionRecap from './components/sheets/SessionRecap.jsx';
 import Preworkout from './components/sheets/Preworkout.jsx';
@@ -67,6 +68,7 @@ function SheetContent({ sheet }) {
     case 'confirm': return <ConfirmSheet {...sheet.props} />;
     case 'reorder-hoy': return <ReorderHoy {...sheet.props} />;
     case 'streak-detail': return <StreakDetail {...sheet.props} />;
+    case 'history': return <History {...sheet.props} />;
     case 'session-recap': return <SessionRecap {...sheet.props} />;
     case 'preworkout': return <Preworkout {...sheet.props} />;
     case 'voice-log': return <VoiceLog {...sheet.props} />;
@@ -113,7 +115,7 @@ export default function App() {
 
   return (
     <>
-      <Header streak={currentStreak()} onOpenStreak={() => openSheet('streak-detail')} onOpenSettings={() => openSheet('settings')} />
+      <Header streak={currentStreak()} onOpenStreak={() => openSheet('streak-detail')} onOpenSettings={() => openSheet('settings')} onOpenHistory={() => openSheet('history')} />
       <main>
         {store.tab === 'hoy' && <Hoy />}
         {store.tab === 'rutina' && <Rutina />}

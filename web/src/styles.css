@@ -573,7 +573,10 @@ nav.tabbar button.on svg{filter:none}
 }
 @keyframes shup{from{transform:translateY(60%);opacity:.4}}
 #sheet .handle{width:44px;height:5px;border-radius:3px;background:var(--line2);margin:6px auto 16px}
-#sheet h2{font-size:26px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:16px}
+/* En el mockup los títulos de sheet van en itálica y caja normal
+   ("Historial"), no en versales: es el mismo gesto del título de pantalla,
+   un escalón más abajo. */
+#sheet h2{font-size:28px;font-weight:700;font-style:italic;letter-spacing:.01em;margin-bottom:16px}
 #sheet h3{font-size:15px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blue2);margin:22px 0 10px}
 
 /* ---------- toast ---------- */
@@ -662,3 +665,23 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   font-family:'Barlow Condensed',sans-serif;
   font-size:21px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
 }
+
+/* ---------- historial (sheet del reloj del header) ---------- */
+/* Filas con insignia de día a la izquierda, como en el mockup: deja
+   reconocer el patrón de la semana sin leer cada fecha. */
+.hist-list{display:flex;flex-direction:column}
+.hist-row{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  padding:12px 2px;border-bottom:1px solid rgba(255,255,255,.07);
+}
+.hist-row:last-child{border-bottom:none}
+.hist-badge{
+  flex:0 0 auto;min-width:42px;padding:5px 8px;border-radius:11px;text-align:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;
+  color:var(--accent);
+  background:linear-gradient(160deg,rgba(79,168,255,.22),rgba(255,255,255,.03));
+  border:1px solid rgba(120,170,255,.3);
+}
+.hist-row .grow{flex:1;min-width:0}
+.hist-row .t{display:block;font-size:15px;font-weight:600}
+.hist-row .s{display:block;font-size:12.5px;color:var(--mut);margin-top:1px}

@@ -40,7 +40,6 @@ export default function Hoy() {
   const mvCats = Object.entries(mv).sort((a, b) => b[1] - a[1]);
   const maxv = mvCats.length ? mvCats[0][1] : 0;
 
-  const hist = S.sessions.slice(0, 12);
 
   return (
     <>
@@ -134,25 +133,6 @@ export default function Hoy() {
         </>
       )}
 
-      <div className="sect">Historial</div>
-      {!hist.length ? (
-        <div className="card"><div className="empty" style={{ padding: 18 }}><p style={{ margin: 0 }}>Tus sesiones completadas aparecerán aquí.</p></div></div>
-      ) : (
-        <div className="card">
-          {hist.map(s => {
-            const nsets = (s.entries || []).reduce((a, e) => a + e.sets.length, 0);
-            return (
-              <div key={s.id} className="row" style={{ cursor: 'pointer' }} onClick={() => openSheet('hist-detail', { id: s.id })}>
-                <div className="grow">
-                  <div className="t">{s.dayName || WD[s.weekday]}</div>
-                  <div className="s">{fmtDFull(s.date)} · {s.duration} min · {nsets} series</div>
-                </div>
-                <span className="chev">›</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
     </>
   );
 }
