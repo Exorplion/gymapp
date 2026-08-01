@@ -27,6 +27,7 @@ import { round1, fmtNum, lb2kg } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
 import { ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise } from '../lib/session.js';
 import { jumpToSlide, slideCenterDist } from '../lib/carousel.js';
+import { relatedHistory, equipLabel } from '../lib/equip.js';
 
 export default function ExerciseCarousel({ exs, wd, active, started, curId, nextEx }) {
   const carRef = useRef(null);
@@ -107,6 +108,9 @@ function ExerciseSlide({ m, wd, started }) {
   const curSet = Math.min(done.length, ex.sets - 1);
   const curRir = scheme[curSet];
   const info = exInfo(ex.name);
+  // Sin historial propio: primera vez en ESTE equipo. Mostramos de dónde venís
+  // en las otras variantes, sin traducir el número (ver relatedHistory).
+  const related = last ? [] : relatedHistory(ex, S.sessions);
 
   const wRef = useRef(null), rRef = useRef(null), altRef = useRef(null), pwRef = useRef(null);
 
@@ -181,6 +185,21 @@ function ExerciseSlide({ m, wd, started }) {
         </div>
         {last && (
           <div className="exlast">Última vez: {last.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg</div>
+        )}
+        {!last && equipLabel(ex) && (
+          <div className="ex-first">
+            <div className="t">Primera vez en {equipLabel(ex)}</div>
+            {related.length > 0 && (
+              <div className="s">
+                Este ejercicio lo venís haciendo en {related.map(r => `${r.label} (${fmtNum(round1(r.w))}×${r.r})`).join(' · ')}.
+              </div>
+            )}
+            <div className="s">
+              Ese número no se traslada: cada sistema mueve una carga distinta. Arrancá
+              claramente liviano y subí hasta que las {ex.reps} reps te queden con 2 en
+              reserva. Lo que anotes hoy queda como tu punto de partida acá.
+            </div>
+          </div>
         )}
         {full && <div className="ex-state ok">✓ Completo · {done.length} de {ex.sets} series</div>}
         {waiting && <div className="ex-state">En espera · {done.length ? `${done.length}/${ex.sets} series` : 'te toca después'}</div>}

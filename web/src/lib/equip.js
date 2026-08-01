@@ -58,3 +58,35 @@ export function equipLabel(ex) {
   const base = EQUIP_LABEL[ex.equip] || ex.equip;
   return ex.machine ? `${base} · ${ex.machine}` : base;
 }
+
+/**
+ * Qué sabemos del MISMO ejercicio hecho con OTRO equipo.
+ *
+ * Sirve para la primera vez que usás una máquina: no para traducir el número
+ * (no se puede — es justo lo que este módulo separa), sino para mostrarte de
+ * dónde venís y que calibres a partir de ahí.
+ *
+ * Deliberadamente NO devuelve un peso sugerido. Aplicar un factor de
+ * conversión entre sistemas de carga daría un número con aire de precisión que
+ * no tiene: depende del modelo de máquina, de cuántas poleas lleve y del
+ * contrapeso, datos que la app no tiene. Un número inventado es peor que
+ * ninguno, porque se le cree.
+ */
+export function relatedHistory(ex, sessions) {
+  const name = String(ex?.name || '').trim().toLowerCase();
+  if (!name) return [];
+  const selfKey = exKey(ex);
+  const seen = new Map();
+  for (const s of sessions || []) {
+    for (const e of s.entries || []) {
+      if (String(e.name || '').trim().toLowerCase() !== name) continue;
+      if (exKey(e) === selfKey) continue;        // eso ya es su propio historial
+      if (!e.sets?.length) continue;
+      const k = exKey(e);
+      if (seen.has(k)) continue;                  // sólo la vez más reciente de cada variante
+      const best = e.sets.reduce((a, b) => (b.w > a.w ? b : a), e.sets[0]);
+      seen.set(k, { label: equipLabel(e) || 'sin equipo', w: best.w, r: best.r, date: s.date });
+    }
+  }
+  return [...seen.values()];
+}

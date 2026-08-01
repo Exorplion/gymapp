@@ -7,6 +7,7 @@
 // (antes ACT['exf-step']).
 import { useEffect, useRef, useState } from 'react';
 import { EQUIP, EQUIP_HINT, isMachineBound } from '../../lib/equip.js';
+import { shrinkImage } from '../../lib/photo.js';
 import { norm } from '../../lib/format.js';
 import { EXCATALOG } from '../../lib/muscle.js';
 import { recommendedExercises, saveExercise } from '../../lib/rutina-logic.js';
@@ -21,6 +22,19 @@ export default function ExerciseForm({ wd, ex }) {
   const [reps, setReps] = useState(ex ? ex.reps : 10);
   const [equip, setEquip] = useState(ex?.equip || '');
   const [machine, setMachine] = useState(ex?.machine || '');
+  const [photo, setPhoto] = useState(ex?.photo || '');
+  const photoRef = useRef(null);
+
+  async function onPhoto(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';           // permite volver a elegir la misma foto
+    if (!file) return;
+    try {
+      setPhoto(await shrinkImage(file));
+    } catch (err) {
+      toast(err.message || 'No se pudo procesar la foto');
+    }
+  }
   const [acOpen, setAcOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const nameRef = useRef(null);
@@ -60,7 +74,7 @@ export default function ExerciseForm({ wd, ex }) {
     rec.start();
   }
 
-  function handleSave() { saveExercise(wd, ex ? ex.id : null, { name, sets, reps, equip, machine }); }
+  function handleSave() { saveExercise(wd, ex ? ex.id : null, { name, sets, reps, equip, machine, photo }); }
 
   return (
     <>
@@ -181,6 +195,40 @@ export default function ExerciseForm({ wd, ex }) {
             En este sistema el número depende de la máquina, así que el historial
             se lleva por separado para cada una. Poné el nombre que te sirva a vos.
           </div>
+        </div>
+      )}
+
+      {/* Foto de la máquina: sacada por vos, guardada en el ejercicio. Es más
+          útil que una ilustración genérica porque reconocés ESA máquina. */}
+      {equip && (
+        <div style={{ marginTop: 'var(--s3)' }}>
+          <label>Foto de la máquina</label>
+          <input
+            ref={photoRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: 'none' }}
+            onChange={onPhoto}
+          />
+          {photo ? (
+            <div className="mach-photo">
+              <img src={photo} alt="" />
+              <div className="mach-photo-acts">
+                <button type="button" className="btn sm ghost" onClick={() => photoRef.current?.click()}>Cambiar</button>
+                <button type="button" className="btn sm ghost" onClick={() => setPhoto('')}>Quitar</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <button type="button" className="btn ghost" onClick={() => photoRef.current?.click()}>
+                📷 Sacar o elegir foto
+              </button>
+              <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 6 }}>
+                Para reconocerla al llegar. Se guarda reducida en tu teléfono, nunca se sube a ningún lado.
+              </div>
+            </>
+          )}
         </div>
       )}
       </div>
