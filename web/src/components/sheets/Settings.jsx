@@ -13,10 +13,18 @@
 //
 // Las metas manuales (Kcal/Prot/Carb/Grasa) son inputs NO controlados
 // (defaultValue, sin value=): el original las leía con el evento nativo
-// `change` (dispara al perder foco) y nunca reescribía el propio input — acá
-// el onChange sólo empuja a S.cfg.goals/saveCfg(), igual que el original,
-// nunca el value del input que se está tecleando (mismo criterio que
-// Profile.jsx / VoiceLog.jsx).
+// `change`, que dispara UNA vez, al perder foco — no en cada tecla. Por eso
+// acá el guardado (S.cfg.goals[k]=...; saveCfg(), un idb.put real) cuelga de
+// onBlur, no de onChange: escribir a IndexedDB en cada tecla (fix round 1,
+// hallazgo de review) persistía dígitos parciales ("1","19","195","1950")
+// según cuándo se interrumpiera el tecleo, algo que el evento `change`
+// original nunca hacía. onBlur, disparado por el navegador ANTES de que
+// corra el click de otro elemento (tocar el toggle de modo, otro botón del
+// sheet, o el backdrop para cerrar), sigue capturando el valor final tecleado
+// sin perderlo en ninguno de esos casos. Nunca se reescribe el value del
+// input (ni en blur ni en ningún otro momento) — mismo criterio que
+// Profile.jsx / VoiceLog.jsx, ahora aplicado también al *momento* del guardado
+// y no sólo al valor mostrado.
 //
 // El <input id="importFile"> vivía en el original como nodo persistente
 // fuera del sheet (sibling de #sheet/#toast, único en toda la página); acá
@@ -178,10 +186,10 @@ export default function Settings() {
         </>
       ) : (
         <div className="f4" style={{ marginTop: 12 }}>
-          <div className="field"><label>Kcal</label><input type="number" inputMode="numeric" defaultValue={g.kcal} onChange={e => setGoal('kcal', e.target.value)} /></div>
-          <div className="field"><label>Prot</label><input type="number" inputMode="numeric" defaultValue={g.p} onChange={e => setGoal('p', e.target.value)} /></div>
-          <div className="field"><label>Carb</label><input type="number" inputMode="numeric" defaultValue={g.c} onChange={e => setGoal('c', e.target.value)} /></div>
-          <div className="field"><label>Grasa</label><input type="number" inputMode="numeric" defaultValue={g.f} onChange={e => setGoal('f', e.target.value)} /></div>
+          <div className="field"><label>Kcal</label><input type="number" inputMode="numeric" defaultValue={g.kcal} onBlur={e => setGoal('kcal', e.target.value)} /></div>
+          <div className="field"><label>Prot</label><input type="number" inputMode="numeric" defaultValue={g.p} onBlur={e => setGoal('p', e.target.value)} /></div>
+          <div className="field"><label>Carb</label><input type="number" inputMode="numeric" defaultValue={g.c} onBlur={e => setGoal('c', e.target.value)} /></div>
+          <div className="field"><label>Grasa</label><input type="number" inputMode="numeric" defaultValue={g.f} onBlur={e => setGoal('f', e.target.value)} /></div>
         </div>
       )}
 
