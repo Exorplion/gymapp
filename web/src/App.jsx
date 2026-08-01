@@ -28,6 +28,7 @@ import MealForm from './components/sheets/MealForm.jsx';
 import Profile from './components/sheets/Profile.jsx';
 import BodyForm from './components/sheets/BodyForm.jsx';
 import Guide from './components/sheets/Guide.jsx';
+import Settings from './components/sheets/Settings.jsx';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
 // globales en index.html). No es uno de los 5 sheets nombrados en el plan de
@@ -76,6 +77,7 @@ function SheetContent({ sheet }) {
     case 'profile': return <Profile {...sheet.props} />;
     case 'body-form': return <BodyForm {...sheet.props} />;
     case 'guide': return <Guide {...sheet.props} />;
+    case 'settings': return <Settings {...sheet.props} />;
     default: return null;
   }
 }
@@ -112,7 +114,7 @@ export default function App() {
 
   return (
     <>
-      <Header streak={currentStreak()} onOpenStreak={() => openSheet('streak-detail')} />
+      <Header streak={currentStreak()} onOpenStreak={() => openSheet('streak-detail')} onOpenSettings={() => openSheet('settings')} />
       <main>
         {store.tab === 'hoy' && <Hoy />}
         {store.tab === 'rutina' && <Rutina />}
