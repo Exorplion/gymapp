@@ -3,21 +3,37 @@
 // (sheetExInfo(name,wd,exId)) pero, igual que en el original, no se usa: el
 // esquema de sets/reps se busca recorriendo TODOS los días de S.routine por
 // exId, no sólo `wd`.
+import { illusUrl } from '../../lib/illustrations.js';
+import { equipLabel } from '../../lib/equip.js';
 import { S } from '../../lib/state.js';
 import { exInfo, rirScheme, isLowerBackLift } from '../../lib/exdb.js';
 
 export default function ExInfo({ name, exId }) {
   const info = exInfo(name);
-  let sets = null;
+  let sets = null, ex = null;
   for (const d of Object.values(S.routine)) {
-    const e = (d.exercises || []).find(x => x.id === exId);
-    if (e) sets = e.sets;
+    const found = (d.exercises || []).find(x => x.id === exId);
+    if (found) { sets = found.sets; ex = found; }
   }
   const scheme = sets ? rirScheme(sets, name) : null;
 
   return (
     <>
       <h2>{name}</h2>
+      {/* Ilustración del movimiento y, si le sacaste foto, la máquina de tu
+          gimnasio. La foto va segunda: la ilustración enseña el movimiento, la
+          foto sirve para reconocer dónde hacerlo. */}
+      {(ex?.illus || ex?.photo) && (
+        <div className="ex-media">
+          {ex.illus && <img src={illusUrl(ex.illus)} alt="" loading="lazy" />}
+          {ex.photo && <img src={ex.photo} alt="" />}
+        </div>
+      )}
+      {equipLabel(ex) && (
+        <div className="txt-mut" style={{ fontSize: 12.5, marginTop: 8 }}>
+          <span className="eq-tag">{equipLabel(ex)}</span>
+        </div>
+      )}
       {info ? (
         <>
           <h3>Músculos</h3>

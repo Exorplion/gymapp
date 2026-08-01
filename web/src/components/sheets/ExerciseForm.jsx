@@ -8,6 +8,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { EQUIP, EQUIP_HINT, isMachineBound } from '../../lib/equip.js';
 import { shrinkImage } from '../../lib/photo.js';
+import { illusUrl } from '../../lib/illustrations.js';
+import IllusPick from './IllusPick.jsx';
 import { norm } from '../../lib/format.js';
 import { EXCATALOG } from '../../lib/muscle.js';
 import { recommendedExercises, saveExercise } from '../../lib/rutina-logic.js';
@@ -23,6 +25,8 @@ export default function ExerciseForm({ wd, ex }) {
   const [equip, setEquip] = useState(ex?.equip || '');
   const [machine, setMachine] = useState(ex?.machine || '');
   const [photo, setPhoto] = useState(ex?.photo || '');
+  const [illus, setIllus] = useState(ex?.illus || '');
+  const [picking, setPicking] = useState(false);
   const photoRef = useRef(null);
 
   async function onPhoto(e) {
@@ -74,7 +78,7 @@ export default function ExerciseForm({ wd, ex }) {
     rec.start();
   }
 
-  function handleSave() { saveExercise(wd, ex ? ex.id : null, { name, sets, reps, equip, machine, photo }); }
+  function handleSave() { saveExercise(wd, ex ? ex.id : null, { name, sets, reps, equip, machine, photo, illus }); }
 
   return (
     <>
@@ -231,6 +235,34 @@ export default function ExerciseForm({ wd, ex }) {
           )}
         </div>
       )}
+      </div>
+
+      {/* Ilustración del movimiento (free-exercise-db, dominio público). Se
+          elige a mano una vez: la base es en inglés y adivinar automáticamente
+          pondría la imagen equivocada más de una vez. */}
+      <div style={{ marginTop: 'var(--s3)' }}>
+        <label>Ilustración del movimiento</label>
+        {illus ? (
+          <div className="mach-photo">
+            <img src={illusUrl(illus)} alt="" />
+            <div className="mach-photo-acts">
+              <button type="button" className="btn sm ghost" onClick={() => setPicking(true)}>Cambiar</button>
+              <button type="button" className="btn sm ghost" onClick={() => setIllus('')}>Quitar</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <button type="button" className="btn ghost" onClick={() => setPicking(true)}>
+              🖼 Buscar ilustración
+            </button>
+            <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 6 }}>
+              Para ver cómo se hace el movimiento. Se descarga la primera vez y queda guardada.
+            </div>
+          </>
+        )}
+        {picking && (
+          <IllusPick exName={name} onPick={setIllus} onClose={() => setPicking(false)} />
+        )}
       </div>
       <button type="button" className="btn" style={{ marginTop: 14 }} onClick={handleSave}>Guardar</button>
     </>

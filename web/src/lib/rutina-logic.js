@@ -172,7 +172,7 @@ export async function saveDayName(wd, name) {
 /** Firma adaptada: el original leía $('#f-exname').value etc. directo del DOM
     (ACT['ex-save']->saveExercise); acá ExerciseForm.jsx mantiene esos campos
     como estado de componente y los pasa explícitos. */
-export async function saveExercise(wd, exId, { name, sets, reps, equip, machine, photo }) {
+export async function saveExercise(wd, exId, { name, sets, reps, equip, machine, photo, illus }) {
   name = (name || '').trim();
   const s = Math.max(1, parseInt(sets) || 4);
   const r = Math.max(1, parseInt(reps) || 10);
@@ -187,6 +187,7 @@ export async function saveExercise(wd, exId, { name, sets, reps, equip, machine,
       ex.equip = equip || undefined;
       ex.machine = equip && machine ? machine.trim() : undefined;
       ex.photo = equip && photo ? photo : undefined;
+      ex.illus = illus || undefined;
     }
   } else {
     d.exercises.push({
@@ -194,6 +195,7 @@ export async function saveExercise(wd, exId, { name, sets, reps, equip, machine,
       equip: equip || undefined,
       machine: equip && machine ? machine.trim() : undefined,
       photo: equip && photo ? photo : undefined,
+      illus: illus || undefined,
     });
   }
   await persistDay(wd);
