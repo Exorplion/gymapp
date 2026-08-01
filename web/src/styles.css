@@ -760,3 +760,56 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    reserva para los días en que se entrena. */
 .day-badge.off{color:var(--mut2);background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07)}
 .day-card:has(.day-badge.off) .day-head .t{color:var(--mut)}
+
+/* ============================================================
+   Rediseño — pantalla COMIDA (Nutrición)
+   ============================================================ */
+.card.hero.hero-kcal{
+  background:linear-gradient(158deg,rgba(37,64,232,.26),rgba(255,255,255,.03) 60%),var(--card);
+  border-color:rgba(120,170,255,.2);
+}
+.kcal-top{display:flex;align-items:center;gap:18px}
+.kcal-ring{position:relative;flex:0 0 auto;width:132px;height:132px}
+.kcal-ring svg{width:132px;height:132px}
+.kr-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.kr-n{font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:700;line-height:1}
+.kr-of{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);margin-top:2px}
+.kcal-side{flex:1;min-width:0}
+/* El número grande es lo que QUEDA: es el dato sobre el que se decide si
+   comer algo más o no. */
+.kcal-big{
+  font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:700;line-height:1.05;
+  display:flex;align-items:baseline;gap:5px;
+}
+.kcal-big span{font-size:15px;font-weight:700;color:var(--mut)}
+
+/* Macros en tres columnas, no apiladas: se comparan de un vistazo. */
+.hero-kcal .macro3{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:18px}
+.hero-kcal .macro3 .lbl{
+  display:flex;justify-content:space-between;gap:6px;
+  font-size:11.5px;font-weight:600;color:var(--mut);margin-bottom:5px;
+}
+.hero-kcal .macro3 .pbar{height:7px;border-radius:5px;background:rgba(255,255,255,.06)}
+/* Un color por macro: proteína azul, carbos verde, grasa ámbar. */
+.hero-kcal .pbar.prot>i{background:linear-gradient(90deg,#2540E8,#4FA8FF)}
+.hero-kcal .pbar.carb>i{background:linear-gradient(90deg,#12A97B,#2EE6A8)}
+.hero-kcal .pbar.fat>i{background:linear-gradient(90deg,#E08A2B,#FFC46B)}
+/* El separador y el espaciado del mockup; el punto y el texto los produce
+   nutriFeedback() (meals.js), que ya trae .fdot con su color según el caso. */
+.nutri-fb{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
+.nutri-fb .feedback{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.45}
+
+/* Chips de acceso rápido: píldoras completas, con el + en cian */
+.chip-scroll .chip.blue{
+  flex:none;display:inline-flex;align-items:center;gap:8px;border-radius:999px;white-space:nowrap;
+  padding:11px 15px;font-size:14.5px;font-weight:600;color:var(--txt);
+  background:linear-gradient(150deg,rgba(79,168,255,.16),rgba(255,255,255,.03));
+  border:1px solid rgba(120,170,255,.28);
+}
+.chip-scroll .chip.blue .txt-mut{color:var(--mut2)}
+
+/* Lista de comidas + botón de borrar en rojo */
+.meal-del{
+  flex:0 0 auto;width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
+  color:#FF6B84;background:rgba(255,107,132,.1);border:1px solid rgba(255,107,132,.24);
+}

@@ -67,7 +67,7 @@ export default function Nutricion() {
 
   return (
     <>
-      <div className="vtitle"><h1>Nutrición</h1></div>
+      <div className="vtitle"><h1>Comida</h1><span className="sub">{fmtDFull(S.nutriDate)}</span></div>
 
       {m ? (
         <div className="card profcard">
@@ -98,49 +98,54 @@ export default function Nutricion() {
           role={isToday ? undefined : 'button'}
           onClick={isToday ? undefined : () => { S.nutriDate = dstr(); bump(); }}
         >
+          {/* La fecha ya está en el título de la pantalla; acá alcanza con
+              decir qué día se está mirando y cómo volver. */}
           {isToday ? 'Hoy' : fmtDFull(date)}
-          <small>{isToday ? fmtDFull(date) : 'toca para volver a hoy'}</small>
+          {!isToday && <small>toca para volver a hoy</small>}
         </div>
         <button type="button" className="mini" style={{ width: 44, height: 44 }} disabled={isToday} onClick={() => shiftNutriDate(1)}>›</button>
       </div>
 
-      <div className="card hero">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div className="card hero hero-kcal">
+        <div className="kcal-top">
           <div className="kcal-ring">
             <svg viewBox="0 0 120 120">
               <circle className="kr-track" cx="60" cy="60" r="52" />
               <circle className="kr-prog" cx="60" cy="60" r="52" style={{ strokeDashoffset: kcalOff }} />
             </svg>
             <div className="kr-val">
-              <div className="cond" style={{ fontSize: 22, fontWeight: 700 }}>{kc}</div>
-              <div className="txt-mut" style={{ fontSize: 10 }}>/ {g.kcal}</div>
+              <div className="kr-n">{kc}</div>
+              <div className="kr-of">de {g.kcal}</div>
             </div>
           </div>
-          <div className="grow" style={{ flex: 1 }}>
-            <div className={`cond ${kc > g.kcal + 150 ? 'txt-red' : 'txt-blue'}`} style={{ fontSize: 17, fontWeight: 700 }}>
-              {kc > g.kcal ? `+${kc - g.kcal} pasado` : `${Math.max(0, g.kcal - kc)} restantes`}
+          <div className="kcal-side">
+            {/* El mockup pone el dato accionable — cuánto QUEDA — grande y
+                aparte del anillo, que muestra lo ya consumido. */}
+            <div className="hero-eyebrow">{kc > g.kcal ? 'Pasado' : 'Restantes'}</div>
+            <div className="kcal-big">
+              {kc > g.kcal ? kc - g.kcal : Math.max(0, g.kcal - kc)}<span>kcal</span>
             </div>
-            <div className="txt-mut" style={{ fontSize: 12.5, marginTop: 2 }}>{kc} de {g.kcal} kcal</div>
+            <div className="txt-mut" style={{ fontSize: 12.5, marginTop: 2 }}>
+              {GOAL_LABEL[S.cfg.profile.goal]}
+              {S.cfg.profile.weightKg ? ` · ${fmtNum(round1(S.cfg.profile.weightKg))} kg` : ''}
+            </div>
           </div>
         </div>
         <div className="macro3">
           <div className="m">
-            <div className="lbl"><span>Proteína</span><span>{tp}/{g.p}g</span></div>
-            <div className="pbar"><i className={macroCls(tp, 'prot', m)} style={{ width: `${pct(tp, g.p)}%` }}></i></div>
-            {m && <div className="rng">rango {m.protMin}–{m.protMax}g</div>}
+            <div className="lbl"><span>Proteína</span><span>{tp}/{g.p}</span></div>
+            <div className="pbar prot"><i className={macroCls(tp, 'prot', m)} style={{ width: `${pct(tp, g.p)}%` }}></i></div>
           </div>
           <div className="m">
-            <div className="lbl"><span>Carbos</span><span>{tc}/{g.c}g</span></div>
-            <div className="pbar"><i style={{ width: `${pct(tc, g.c)}%` }}></i></div>
-            {m && <div className="rng">resto de kcal</div>}
+            <div className="lbl"><span>Carbos</span><span>{tc}/{g.c}</span></div>
+            <div className="pbar carb"><i style={{ width: `${pct(tc, g.c)}%` }}></i></div>
           </div>
           <div className="m">
-            <div className="lbl"><span>Grasa</span><span>{tf}/{g.f}g</span></div>
-            <div className="pbar"><i className={macroCls(tf, 'fat', m)} style={{ width: `${pct(tf, g.f)}%` }}></i></div>
-            {m && <div className="rng">rango {m.fatMin}–{m.fatMax}g</div>}
+            <div className="lbl"><span>Grasa</span><span>{tf}/{g.f}</span></div>
+            <div className="pbar fat"><i className={macroCls(tf, 'fat', m)} style={{ width: `${pct(tf, g.f)}%` }}></i></div>
           </div>
         </div>
-        <div dangerouslySetInnerHTML={{ __html: nutriFeedback(kc, tp, tf, g, m) }} />
+        <div className="nutri-fb" dangerouslySetInnerHTML={{ __html: nutriFeedback(kc, tp, tf, g, m) }} />
       </div>
 
       {freq.length > 0 && (
@@ -185,7 +190,7 @@ export default function Nutricion() {
       <div className="spacer"></div>
       <button type="button" className="btn" onClick={() => openSheet('meal-form')}>+ Agregar comida</button>
 
-      <div className="sect">Comidas del día</div>
+      <div className="sect">Comidas de hoy</div>
       {!meals.length ? (
         <div className="card"><div className="empty" style={{ padding: 16 }}><p style={{ margin: 0 }}>Nada registrado {isToday ? 'hoy' : 'este día'}.</p></div></div>
       ) : (
@@ -196,7 +201,7 @@ export default function Nutricion() {
                 <div className="t">{meal.name}</div>
                 <div className="s">{meal.kcal} kcal · P {meal.p} · C {meal.c} · G {meal.f}</div>
               </div>
-              <button type="button" className="mini red" onClick={() => deleteMeal(meal.id)}>✕</button>
+              <button type="button" className="meal-del" onClick={() => deleteMeal(meal.id)}>✕</button>
             </div>
           ))}
         </div>
