@@ -4,6 +4,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Rutas relativas en el build. El sitio se sirve desde la raíz del repo
+  // (GitHub Pages con .nojekyll), y la app vainilla ya usaba './' en todos
+  // lados: con base '/' el build sólo funcionaría en un dominio propio.
+  base: './',
   plugins: [
     react(),
     VitePWA({
@@ -29,6 +33,17 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+        // El navegador ya tiene registrado el service worker de la app
+        // vainilla (caché 'fierro-vNN', cache-first). Estas tres opciones son
+        // las que hacen que el nuevo lo reemplace sin que el usuario tenga que
+        // desinstalar la PWA: activar sin esperar a que cierre las pestañas
+        // viejas, tomar control de las que ya están abiertas, y limpiar
+        // precachés de workbox obsoletos entre despliegues.
+        // (El caché legacy 'fierro-vNN' no lo borra workbox — eso lo hace
+        // main.jsx al arrancar; ver el comentario allá.)
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
       },
     }),
   ],
