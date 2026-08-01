@@ -14,7 +14,7 @@ import {
   routineStats, routineName, activeDayWds,
   enterEditMode, exitEditMode, toggleDayOpen, deleteDay, deleteExercise, moveEx,
 } from '../../lib/rutina-logic.js';
-import { toast } from '../Toast.jsx';
+import { toast } from '../../lib/toast.js';
 
 /** Puerto del guard de sheetLibSave() (index.html): "No hay rutina que
     guardar" si S.routine no tiene ningún día con ejercicios. En el original
@@ -146,7 +146,12 @@ function RutinaEdit() {
       <div data-sort="days">
         {active.map(wd => <DayCard key={wd} wd={wd} />)}
       </div>
-      {rest.length > 0 && rest.length < 7 && (
+      {/* El original exigía además `rest.length < 7`, lo que escondía este
+          bloque justo cuando la rutina estaba 100% vacía (los 7 días libres):
+          en modo edición no quedaba forma de asignar el primer día. Se corrige
+          acá porque la app React ya es la app, así que el criterio de "puerto
+          fiel, incluidos los bugs del original" dejó de aplicar. */}
+      {rest.length > 0 && (
         <div className="card sub">
           <div className="steplabel" style={{ marginBottom: 'var(--s2)' }}>Días libres</div>
           <div className="chips">
