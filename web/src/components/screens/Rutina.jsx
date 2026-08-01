@@ -46,7 +46,7 @@ export default function Rutina() {
 
 function RutinaView() {
   const st = routineStats();
-  const today = new Date().getDay();
+  const maxSets = Math.max(1, ...WEEK_ORDER.map(d => S.routine[d]?.exercises?.reduce((a, e) => a + e.sets, 0) || 0));
 
   if (!st.days.length) {
     return (
@@ -73,48 +73,75 @@ function RutinaView() {
 
   return (
     <>
-      <div className="vtitle"><h1>Rutina</h1><span className="sub">tu semana de un vistazo</span></div>
-      <div className="card hero">
-        <div className="rt-eyebrow">Estás usando</div>
-        <div className="rt-name">{routineName()}</div>
-        <div className="txt-mut" style={{ fontSize: 13.5, marginTop: 5 }}>
-          {st.days.length} día{st.days.length === 1 ? '' : 's'} de entrenamiento · {st.rest.length} de descanso · {st.ex} ejercicios · {st.sets} series por semana
+      <div className="vtitle"><h1>Rutina</h1><span className="sub">tu semana</span></div>
+
+      {/* Tarjeta del plan. El mockup le da a cada pantalla un matiz propio:
+          Hoy es azul, Rutina es violeta. */}
+      <div className="card hero hero-plan">
+        <div className="hero-eyebrow">Plan activo</div>
+        <div className="hero-day">{routineName()}</div>
+        <div className="txt-mut" style={{ fontSize: 13, marginTop: 4 }}>
+          {st.days.length} día{st.days.length === 1 ? '' : 's'} de entrenamiento · {st.ex} ejercicios · {st.sets} series por semana
         </div>
-        <div className="wkstrip">
-          {WEEK_ORDER.map(wd => {
-            const d = S.routine[wd], on = !!d?.exercises?.length;
+        {/* Barras proporcionales a las series del día: la semana se lee de un
+            vistazo, y los días libres quedan como un guion bajo. */}
+        <div className="weekbars">
+          {WEEK_ORDER.map(d => {
+            const dd = S.routine[d];
+            const sets = dd?.exercises?.reduce((a, e) => a + e.sets, 0) || 0;
+            const h = sets ? Math.round(30 + (sets / maxSets) * 40) : 10;
             return (
-              <div key={wd} className={`wd ${on ? 'on' : ''} ${wd === today ? 'today' : ''}`}>
-                <div className="l">{WD1[wd]}</div>
-                <div className="n">{on ? (d.name || WD[wd]) : 'descanso'}</div>
+              <div key={d} className={`wbar ${sets ? 'on' : ''}`}>
+                <div className="b" style={{ height: h }}></div>
+                <span>{WD1[d]}</span>
               </div>
             );
           })}
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 'var(--s4)' }}>
-        <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={enterEditMode}>✎ Editar rutina</button>
-        <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={() => openSheet('library')}>📚 Mis rutinas</button>
+
+      <div className="btn-row">
+        <button type="button" className="btn" onClick={enterEditMode}>Editar rutina</button>
+        <button type="button" className="btn glass" onClick={() => openSheet('library')}>Mis rutinas</button>
       </div>
-      <div className="sect">La semana</div>
-      <div className="card" style={{ paddingTop: 'var(--s2)', paddingBottom: 'var(--s2)' }}>
-        {WEEK_ORDER.map(wd => {
-          const d = S.routine[wd], on = !!d?.exercises?.length;
-          const sets = on ? d.exercises.reduce((a, e) => a + e.sets, 0) : 0;
+
+      {/* Cada día es una tarjeta que se despliega en el lugar, con sus
+          ejercicios numerados — en el original abría un sheet aparte. */}
+      <div className="day-cards">
+        {WEEK_ORDER.map(d => {
+          const dd = S.routine[d];
+          const on = !!dd?.exercises?.length;
+          const sets = on ? dd.exercises.reduce((a, e) => a + e.sets, 0) : 0;
+          const open = S.rutOpen === d && on;
           return (
-            <button
-              key={wd}
-              type="button"
-              className={`dayline ${on ? '' : 'rest'}`}
-              onClick={() => openSheet(on ? 'day-peek' : 'day-edit', { wd })}
-            >
-              <span className="badge">{WD1[wd]}</span>
-              <span className="grow">
-                <span className="t">{on ? (d.name || WD[wd]) : 'Descanso'}</span>
-                <span className="s">{on ? `${d.exercises.length} ejercicios · ${sets} series` : (wd === today ? 'hoy toca descansar' : 'libre')}</span>
-              </span>
-              <span className="chev">›</span>
-            </button>
+            <div key={d} className={`day-card ${open ? 'open' : ''}`}>
+              <button
+                type="button"
+                className="day-head"
+                onClick={() => { S.rutOpen = open ? -1 : d; bump(); }}
+              >
+                <span className={`day-badge ${on ? '' : 'off'}`}>{WD1[d]}</span>
+                <span className="grow">
+                  <span className="t">{on ? (dd.name || WD[d]) : 'Descanso'}</span>
+                  <span className="s">{on ? `${dd.exercises.length} ejercicios · ${sets} series` : 'libre'}</span>
+                </span>
+                <span className="chev">{open ? '⌄' : '›'}</span>
+              </button>
+              {open && (
+                <div className="day-exs">
+                  {dd.exercises.map((e, i) => (
+                    <div key={e.id} className="day-ex">
+                      <span className="i">{i + 1}</span>
+                      <span className="grow">
+                        <span className="t">{e.name}</span>
+                        <span className="s">RIR {rirScheme(e.sets).join('/')}</span>
+                      </span>
+                      <span className="x">{e.sets}×{e.reps}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
@@ -167,7 +194,6 @@ function RutinaEdit() {
     </>
   );
 }
-
 function DayCard({ wd }) {
   const d = S.routine[wd];
   const exs = d?.exercises || [];

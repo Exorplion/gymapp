@@ -685,3 +685,78 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .hist-row .grow{flex:1;min-width:0}
 .hist-row .t{display:block;font-size:15px;font-weight:600}
 .hist-row .s{display:block;font-size:12.5px;color:var(--mut);margin-top:1px}
+
+/* ============================================================
+   Rediseño — pantalla RUTINA
+   ============================================================ */
+/* Cada pantalla tiene su matiz de hero en el mockup: Hoy azul, Rutina
+   violeta. Es lo que hace que se distingan sin leer el título. */
+.card.hero.hero-plan{
+  background:linear-gradient(158deg,rgba(108,92,255,.24),rgba(255,255,255,.03) 60%),var(--card);
+  border-color:rgba(140,150,255,.22);
+}
+.card.hero.hero-plan::before{
+  width:200px;height:200px;top:-46px;right:-46px;
+  background:radial-gradient(circle,rgba(79,168,255,.26),transparent 66%);
+}
+.hero-eyebrow{
+  font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:#A9E8FF;
+}
+.hero-plan .hero-day{font-size:38px}
+
+/* Barras de la semana: alto proporcional a las series del día. */
+.weekbars{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px;align-items:end}
+.weekbars .wbar{display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end}
+.weekbars .b{
+  width:100%;border-radius:8px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);
+}
+.weekbars .wbar.on .b{
+  background:linear-gradient(#4FA8FF,#2540E8);border-color:transparent;
+  animation:rise-y .45s var(--ease) backwards;
+}
+@keyframes rise-y{from{height:8px !important}}
+.weekbars span{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--mut2)}
+.weekbars .wbar.on span{color:var(--accent)}
+
+/* Par de botones del mockup: uno lleno y uno de vidrio, no dos fantasma. */
+.btn-row{display:flex;gap:10px;margin-top:var(--s4)}
+.btn-row .btn{
+  flex:1;height:50px;border-radius:16px;
+  font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;
+  letter-spacing:.11em;text-transform:uppercase;
+}
+.btn.glass{
+  background:linear-gradient(150deg,rgba(255,255,255,.09),rgba(255,255,255,.024));
+  border:1px solid rgba(255,255,255,.13);color:#A9E8FF;box-shadow:none;
+}
+
+/* Tarjetas de día, desplegables en el lugar */
+.day-cards{display:flex;flex-direction:column;gap:10px;margin-top:var(--s4)}
+.day-card{
+  background:linear-gradient(158deg,rgba(255,255,255,.075),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.11);border-radius:20px;overflow:hidden;
+}
+.day-head{display:flex;align-items:center;gap:13px;width:100%;padding:15px 16px;text-align:left}
+.day-badge{
+  flex:0 0 auto;min-width:40px;padding:6px 0;text-align:center;border-radius:11px;
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;
+  color:var(--accent);background:rgba(79,168,255,.14);border:1px solid rgba(120,170,255,.28);
+}
+.day-head .grow{flex:1;min-width:0}
+.day-head .t{display:block;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700}
+.day-head .s{display:block;font-size:12.5px;color:var(--mut);margin-top:1px}
+.day-head .chev{color:var(--mut2);font-size:18px}
+.day-exs{padding:0 16px 14px}
+.day-ex{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,.07)}
+.day-ex .i{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--mut2);min-width:14px}
+.day-ex .grow{flex:1;min-width:0}
+.day-ex .t{display:block;font-size:15px;font-weight:600}
+.day-ex .s{display:block;font-size:12px;color:var(--mut);margin-top:1px}
+.day-ex .x{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--accent)}
+
+/* Día libre: la insignia se apaga, igual que en el mockup — el color se
+   reserva para los días en que se entrena. */
+.day-badge.off{color:var(--mut2);background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07)}
+.day-card:has(.day-badge.off) .day-head .t{color:var(--mut)}
