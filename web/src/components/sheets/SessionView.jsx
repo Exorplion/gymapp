@@ -10,12 +10,15 @@
 //
 // Lee la sesión de S.sessions POR ID, no por prop: así una edición se refleja
 // sin cerrar y reabrir el sheet.
+import { useState } from 'react';
 import { S, useStore, openSheet, closeSheet } from '../../lib/state.js';
-import { WD, fmtDFull, fmtNum, round1 } from '../../lib/format.js';
-import { sessionPRs, deleteHistorySession } from '../../lib/session.js';
+import { WD, fmtDFull, fmtNum, round1, uid } from '../../lib/format.js';
+import { sessionPRs, deleteHistorySession, updateHistorySession } from '../../lib/session.js';
+import { toast } from '../../lib/toast.js';
 
 export default function SessionView({ id, justFinished = false }) {
   useStore();
+  const [editando, setEditando] = useState(false);
   const s = S.sessions.find(x => x.id === id);
   if (!s) return null;
 
@@ -23,6 +26,47 @@ export default function SessionView({ id, justFinished = false }) {
   const hasPR = prs.length > 0;
   const nsets = (s.entries || []).reduce((a, e) => a + e.sets.length, 0);
   const vol = (s.entries || []).reduce((a, e) => a + e.sets.reduce((b, st) => b + st.w * st.r, 0), 0);
+  const delDia = (S.routine[s.weekday]?.exercises || []).filter(ex => !(s.entries || []).some(e => e.name === ex.name));
+
+  /* Toda edición clona la sesión, la muta y la manda entera a
+     updateHistorySession — que guarda y ofrece Deshacer. start, end, duration,
+     date, weekday y dayName no se tocan en ninguna de estas funciones: el
+     tiempo que quedó registrado en el gimnasio es un hecho medido. */
+  function editar(fn, msg) {
+    const copia = structuredClone(s);
+    fn(copia);
+    copia.entries = (copia.entries || []).filter(e => e.sets.length);
+    // Una sesión sin series no es una corrección, es un borrado a medias: deja
+    // un registro fantasma con su duración pero sin nada adentro.
+    if (!copia.entries.length) {
+      toast('Una sesión no puede quedar vacía — usá "Eliminar sesión"');
+      return;
+    }
+    updateHistorySession(copia, msg);
+  }
+
+  const setSerie = (ei, si, campo, valor) => editar(c => {
+    c.entries[ei].sets[si][campo] = campo === 'w'
+      ? Math.max(0, round1(parseFloat(String(valor).replace(',', '.')) || 0))
+      : Math.max(1, parseInt(valor, 10) || 1);
+  }, 'Serie corregida');
+
+  const borrarSerie = (ei, si) => editar(c => { c.entries[ei].sets.splice(si, 1); }, 'Serie borrada');
+
+  const agregarSerie = ei => editar(c => {
+    const sets = c.entries[ei].sets;
+    const ult = sets[sets.length - 1];
+    sets.push({ w: ult ? ult.w : 20, r: ult ? ult.r : 10, t: Date.now() });
+  }, 'Serie agregada');
+
+  const borrarEjercicio = ei => editar(c => { c.entries[ei].sets = []; }, 'Ejercicio borrado');
+
+  const agregarEjercicio = ex => editar(c => {
+    c.entries.push({
+      exId: ex.id || uid(), name: ex.name, equip: ex.equip, machine: ex.machine,
+      sets: [{ w: 20, r: ex.reps || 10, t: Date.now() }],
+    });
+  }, `${ex.name} agregado`);
 
   return (
     <>
@@ -53,25 +97,71 @@ export default function SessionView({ id, justFinished = false }) {
       )}
 
       <div className="sect">Lo que hiciste</div>
-      {(s.entries || []).map((e, i) => (
-        <div key={i} className="card" style={{ padding: '12px 14px' }}>
-          <div className="cond" style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>{e.name}</div>
-          <div className="chips">
-            {e.sets.map((st, j) => (
-              <span key={j} className="chip">{fmtNum(round1(st.w))}kg × {st.r}</span>
-            ))}
+      {(s.entries || []).map((e, ei) => (
+        <div key={ei} className="card" style={{ padding: '12px 14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <div className="cond" style={{ fontSize: 18, fontWeight: 700, flex: 1 }}>{e.name}</div>
+            {editando && <button type="button" className="mini red" title="Quitar ejercicio" onClick={() => borrarEjercicio(ei)}>✕</button>}
           </div>
+          {editando ? (
+            <>
+              {e.sets.map((st, si) => (
+                // la key lleva los valores: al borrar una serie los índices se
+                // corren, y sin esto el input no controlado seguiría mostrando
+                // el defaultValue de la serie que ocupaba ese lugar antes
+                <div key={`${si}-${st.w}-${st.r}`} className="set-edit">
+                  <span className="i">{si + 1}</span>
+                  <input
+                    type="number" inputMode="decimal" step="any" defaultValue={fmtNum(round1(st.w))}
+                    onBlur={ev => setSerie(ei, si, 'w', ev.target.value)}
+                  />
+                  <span className="u">kg ×</span>
+                  <input
+                    type="number" inputMode="numeric" defaultValue={st.r}
+                    onBlur={ev => setSerie(ei, si, 'r', ev.target.value)}
+                  />
+                  <button type="button" className="mini red" onClick={() => borrarSerie(ei, si)}>✕</button>
+                </div>
+              ))}
+              <button type="button" className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => agregarSerie(ei)}>+ Serie</button>
+            </>
+          ) : (
+            <div className="chips">
+              {e.sets.map((st, si) => (
+                <span key={si} className="chip">{fmtNum(round1(st.w))}kg × {st.r}</span>
+              ))}
+            </div>
+          )}
         </div>
       ))}
+
+      {editando && delDia.length > 0 && (
+        <>
+          <div className="sect">Agregar un ejercicio que hiciste</div>
+          <div className="chips" style={{ marginBottom: 'var(--s3)' }}>
+            {delDia.map(ex => (
+              <span key={ex.id} className="chip blue" onClick={() => agregarEjercicio(ex)}>＋ {ex.name}</span>
+            ))}
+          </div>
+        </>
+      )}
 
       {justFinished ? (
         <button type="button" className={`btn ${hasPR ? 'ok' : ''}`} style={{ marginTop: 18 }} onClick={closeSheet}>
           Guardar y cerrar
         </button>
       ) : (
-        <button type="button" className="btn danger sm" style={{ marginTop: 6 }} onClick={() => confirmDel(s.id)}>
-          Eliminar sesión
-        </button>
+        <>
+          <button type="button" className="btn ghost" style={{ marginTop: 14 }} onClick={() => setEditando(v => !v)}>
+            {editando ? '✓ Listo' : '✎ Corregir lo que anoté'}
+          </button>
+          <div className="txt-mut" style={{ fontSize: 12, textAlign: 'center', marginTop: 8, lineHeight: 1.45 }}>
+            Los minutos y la fecha no cambian: sólo se corrigen los pesos y las series.
+          </div>
+          <button type="button" className="btn danger sm" style={{ marginTop: 14 }} onClick={() => confirmDel(s.id)}>
+            Eliminar sesión
+          </button>
+        </>
       )}
     </>
   );
