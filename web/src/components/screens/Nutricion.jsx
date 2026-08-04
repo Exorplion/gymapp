@@ -21,7 +21,7 @@
 import { S, useStore, bump, openSheet } from '../../lib/state.js';
 import { dstr, fmtDFull, fmtNum, round1 } from '../../lib/format.js';
 import { computeMacros, GOAL_LABEL } from '../../lib/macros.js';
-import { mealsOf, macroCls, nutriFeedback, frequentMeals } from '../../lib/meals.js';
+import { mealsOf, macroCls, nutriFeedback, frequentMeals, mealsBySlot, slotForTime } from '../../lib/meals.js';
 import { idb } from '../../lib/db.js';
 import { logMeal, addMealFromFood } from '../sheets/MealForm.jsx';
 
@@ -195,7 +195,12 @@ export default function Nutricion() {
       )}
 
       <div className="spacer"></div>
-      <button type="button" className="btn" onClick={() => openSheet('meal-form')}>+ Agregar comida</button>
+      <button
+        type="button" className="btn"
+        onClick={() => openSheet('meal-form', { slot: slotForTime(new Date().toTimeString().slice(0, 5)) })}
+      >
+        + Agregar comida
+      </button>
       {SR_FOOD && (
         <button type="button" className="pw-btn" style={{ marginTop: 'var(--s3)' }} onClick={() => openSheet('food-voice')}>
           <span className="pwi">🎙</span><span className="pwt">Registrar por voz</span>
@@ -204,21 +209,31 @@ export default function Nutricion() {
         </button>
       )}
 
-      <div className="sect">Comidas de hoy</div>
+      <div className="sect">Comidas de {isToday ? 'hoy' : 'este día'}</div>
       {!meals.length ? (
         <div className="card"><div className="empty" style={{ padding: 16 }}><p style={{ margin: 0 }}>Nada registrado {isToday ? 'hoy' : 'este día'}.</p></div></div>
       ) : (
-        <div className="card">
-          {meals.map(meal => (
-            <div className="row" key={meal.id}>
-              <div className="grow">
-                <div className="t">{meal.name}</div>
-                <div className="s">{meal.kcal} kcal · P {meal.p} · C {meal.c} · G {meal.f}</div>
-              </div>
-              <button type="button" className="meal-del" onClick={() => deleteMeal(meal.id)}>✕</button>
+        mealsBySlot(date).map(b => (
+          <div key={b.k} className="slot-block">
+            <div className="slot-head"><span>{b.label}</span><span className="num">{b.kcal} kcal</span></div>
+            <div className="card">
+              {b.meals.map(meal => (
+                <div className="row" key={meal.id}>
+                  <div className="grow">
+                    <div className="t">{meal.name}</div>
+                    <div className="s">{meal.kcal} kcal · P {meal.p} · C {meal.c} · G {meal.f}</div>
+                    {meal.items?.length > 1 && (
+                      <div className="s" style={{ color: 'var(--mut2)' }}>
+                        {meal.items.map(i => `${i.name} ${i.grams}g`).join(' · ')}
+                      </div>
+                    )}
+                  </div>
+                  <button type="button" className="meal-del" onClick={() => deleteMeal(meal.id)}>✕</button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))
       )}
     </>
   );
