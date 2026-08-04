@@ -303,7 +303,16 @@ main{
   padding:4px 10px;border-radius:999px;
 }
 .ex-done-count.full{color:#062b18;background:var(--ok);border-color:transparent}
-.setgrid{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin:14px 0 12px}
+/* Peso y reps apilados, no lado a lado. En dos columnas (1.4fr/1fr) la de reps
+   medía 105px en un teléfono de 390px y sus dos botones de 48px más el gap ya
+   ocupaban 108px: al número le quedaba espacio negativo y se perdía dentro de
+   la tarjeta. Apilados, cada número se queda con ~141px. */
+.setrows{display:flex;flex-direction:column;gap:var(--s3);margin:14px 0 12px}
+.setrows .step button{width:52px;height:52px}
+.setrows .step .val{display:flex;align-items:baseline;justify-content:center;gap:8px}
+.setrows .step .val input{font-size:44px}
+/* las libras al lado del número, no debajo: así la fila no crece de alto */
+.setrows .step .val .alt{flex:none;margin-top:0;font-size:13px;white-space:nowrap}
 .setchips{margin-top:12px}
 /* durante la sesión sólo un ejercicio está "abierto". Los que faltan se apagan
    para que no parezca que podés saltear el orden a dedo. */
@@ -321,6 +330,12 @@ main{
   margin:0 calc(-1*var(--s4)) 0;padding:0 var(--s4) 4px;scrollbar-width:none}
 .carousel::-webkit-scrollbar{display:none}
 .carousel-slide{flex:0 0 84%;scroll-snap-align:center;min-width:0}
+/* Con la sesión abierta la tarjeta ocupa todo el ancho. El peek del 84% sirve
+   para ojear qué te toca antes de arrancar; en plena serie no aporta nada y
+   cuesta 57px de ancho justo donde van los números. El cambio pasa al abrir la
+   sesión, que ya es una transición de pantalla completa, no a mitad de un
+   ejercicio. */
+.carousel.focus .carousel-slide{flex:0 0 100%}
 .carousel-dots{display:flex;justify-content:center;gap:6px;margin:10px 0 4px}
 .carousel-dots i{width:6px;height:6px;border-radius:3px;background:var(--card2);border:1px solid var(--line2);transition:.2s}
 .carousel-dots i.on{width:18px;background:var(--grad2);border-color:transparent}

@@ -86,7 +86,7 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
 
   return (
     <>
-      <div id="ex-carousel" className="carousel" ref={carRef}>
+      <div id="ex-carousel" className={`carousel${active ? ' focus' : ''}`} ref={carRef}>
         {meta.map(m => (
           <ExerciseSlide key={m.ex.id} m={m} wd={wd} started={started} />
         ))}
@@ -218,7 +218,7 @@ function ExerciseSlide({ m, wd, started }) {
             <div className="prog-warn" ref={pwRef} style={{ display: pwarnInitial ? '' : 'none' }}>
               {pwarnInitial ? `⚠ ${pwarnInitial}` : ''}
             </div>
-            <div className="setgrid">
+            <div className="setrows">
               <div>
                 <div className="steplabel">Peso ({S.cfg.unit === 'kg' ? 'kg' : 'lb'})</div>
                 <div className="step">
