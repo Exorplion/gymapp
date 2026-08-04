@@ -4,6 +4,44 @@ import { norm } from './format.js';
 
 export function mealsOf(date) { return S.meals.filter(m => m.date === date).sort((a, b) => a.t < b.t ? -1 : 1); }
 
+/** Los cuatro momentos, en el orden en que se comen. */
+export const SLOTS = [
+  { k: 'desayuno', label: 'Desayuno' },
+  { k: 'almuerzo', label: 'Almuerzo' },
+  { k: 'cena', label: 'Cena' },
+  { k: 'snack', label: 'Snack' },
+];
+
+/** Momento del día para una hora "HH:MM". Los cortes son los de una comida
+    peruana normal, no los de un libro: se almuerza tarde y se cena tarde. */
+export function slotForTime(t) {
+  const h = parseInt(String(t || '').slice(0, 2), 10);
+  if (Number.isNaN(h)) return 'snack';
+  if (h < 11) return 'desayuno';
+  if (h < 16) return 'almuerzo';
+  if (h < 21) return 'cena';
+  return 'snack';
+}
+
+/** El momento de una comida: el que quedó guardado, o el que se deduce de su
+    hora. Las comidas viejas no tienen `slot` y NO se migran — inferir al leer
+    es reversible, reescribir el historial no. */
+export function slotOf(meal) {
+  return meal?.slot || slotForTime(meal?.t);
+}
+
+/** El día partido en bloques, con el subtotal de kcal de cada uno. Sólo
+    devuelve los bloques que tienen algo. */
+export function mealsBySlot(date) {
+  const del = mealsOf(date);
+  return SLOTS
+    .map(s => {
+      const meals = del.filter(m => slotOf(m) === s.k);
+      return { k: s.k, label: s.label, meals, kcal: Math.round(meals.reduce((a, m) => a + (m.kcal || 0), 0)) };
+    })
+    .filter(b => b.meals.length);
+}
+
 /** Clase de color de barra según rango (verde/ámbar/rojo) */
 export function macroCls(v, kind, m) {
   if (!m) return '';
