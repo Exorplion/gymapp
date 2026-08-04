@@ -459,6 +459,25 @@ body.dragging-on .card.day.drop-target{filter:none}
 /* ---------- rutina: resumen de la semana ---------- */
 /* la semana entera en una tira de 7: se lee de un vistazo, sin scrollear */
 .wkstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:var(--s4)}
+/* el día de esta semana que ya entrenaste, marcado sin tener que abrirlo */
+.wkstrip .wd{position:relative}
+.wkstrip .wd.done{border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.07)}
+.wkstrip .wd .tick{position:absolute;top:3px;right:4px;font-size:9px;font-weight:700;color:var(--ok);line-height:1}
+/* el hero del día ya entrenado: la misma forma que el de empezar, en verde */
+.done-hero{
+  background:linear-gradient(158deg,rgba(16,185,129,.14),rgba(255,255,255,.03) 58%),var(--card);
+  border-color:rgba(16,185,129,.3);
+}
+.done-pr{
+  margin-top:12px;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.4;
+  background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.3);color:var(--warn);font-weight:500;
+}
+/* "Entrenar de nuevo" es una salida, no el camino principal: texto, no botón */
+.done-again{
+  display:block;width:100%;margin-top:10px;padding:6px;
+  font-size:13px;font-weight:600;color:var(--mut);background:none;border:none;
+}
+.done-again:active{color:var(--blue2)}
 .wkstrip .wd{border-radius:14px;padding:9px 2px 8px;text-align:center;
   background:rgba(255,255,255,.024);border:1px solid rgba(255,255,255,.06);
   transition:background .18s var(--ease),border-color .18s var(--ease)}

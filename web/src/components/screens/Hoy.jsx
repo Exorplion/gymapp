@@ -18,8 +18,8 @@
 // dos vistas de una sesión — la del historial y la del cierre.
 import { useEffect, useRef, useState } from 'react';
 import { S, useStore, bump, openSheet, closeSheet } from '../../lib/state.js';
-import { WD, WD1, WDS, MO, WEEK_ORDER, fmtMMSS } from '../../lib/format.js';
-import { orderedExs, nextPending, setsDone, startSession, discardSession, completeSession } from '../../lib/session.js';
+import { WD, WD1, WDS, MO, WEEK_ORDER, fmtMMSS, fmtNum, round1 } from '../../lib/format.js';
+import { orderedExs, nextPending, setsDone, startSession, discardSession, completeSession, sessionForWeekday, sessionPRs } from '../../lib/session.js';
 import { muscleVolume } from '../../lib/muscle.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
@@ -91,7 +91,7 @@ export default function Hoy() {
             <div className="hero-slot-in">
               {shown && (
                 <div key={shown.wd} className={`hero-swap dir-${dir}`}>
-                  <PreSessionHero day={shown.day} wd={shown.wd} exs={shown.exs} today={today} />
+                  <HeroForDay day={shown.day} wd={shown.wd} exs={shown.exs} today={today} />
                 </div>
               )}
             </div>
@@ -101,15 +101,17 @@ export default function Hoy() {
               const dayR = S.routine[d];
               const has = dayR?.exercises?.length;
               const isToday = d === today.getDay();
+              const hecho = !!has && !!sessionForWeekday(d);
               return (
                 <button
                   key={d}
                   type="button"
-                  className={`wd ${has ? 'has' : ''} ${d === wd ? 'on' : ''} ${isToday ? 'today' : ''}`}
+                  className={`wd ${has ? 'has' : ''} ${d === wd ? 'on' : ''} ${isToday ? 'today' : ''} ${hecho ? 'done' : ''}`}
                   onClick={() => { S.hoyDay = d; bump(); }}
                 >
                   <div className="l">{WD1[d]}</div>
                   <div className="n">{has ? (dayR.name || 'Rutina') : 'Descanso'}</div>
+                  {hecho && <div className="tick">✓</div>}
                 </button>
               );
             })}
@@ -244,6 +246,54 @@ function confirmSessDiscard() {
     confirmLabel: 'Descartar',
     onConfirm: () => discardSession(),
   });
+}
+
+/** Un día de esta semana que ya tiene sesión cerrada muestra el resumen; el
+    resto, la invitación a empezar. */
+function HeroForDay({ day, wd, exs, today }) {
+  const done = sessionForWeekday(wd);
+  return done
+    ? <DoneHero sess={done} wd={wd} today={today} />
+    : <PreSessionHero day={day} wd={wd} exs={exs} today={today} />;
+}
+
+/** El día de esta semana que ya entrenaste. Antes acá seguía apareciendo
+    "Empezar entrenamiento" como si nada: nadie miraba S.sessions para saber si
+    el día ya se había cerrado.
+
+    El botón principal pasa a ser mirar lo que hiciste. Volver a entrenar queda
+    como texto discreto — existe para la doble sesión y para el día que te
+    equivocaste, no como camino principal. */
+function DoneHero({ sess, wd, today }) {
+  const nsets = (sess.entries || []).reduce((a, e) => a + e.sets.length, 0);
+  const prs = sessionPRs(sess);
+  return (
+    <div className="card hero done-hero">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ width: 7, height: 7, borderRadius: 4, background: 'var(--ok)', boxShadow: '0 0 8px var(--ok)' }}></span>
+        <div className="txt-mut" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase' }}>
+          Completado · {wd === today.getDay() ? 'hoy' : WD[wd]}
+        </div>
+      </div>
+      <div className="hero-day">{sess.dayName || WD[wd]}</div>
+      <div className="hero-stats">
+        <div><div className="cond">{sess.duration}</div><span>Minutos</span></div>
+        <div><div className="cond">{nsets}</div><span>Series</span></div>
+        <div><div className="cond">{(sess.entries || []).length}</div><span>Ejercicios</span></div>
+      </div>
+      {prs.length > 0 && (
+        <div className="done-pr">
+          🏆 {prs.length} récord{prs.length === 1 ? '' : 's'} · {prs.map(p => `${p.name} ${fmtNum(round1(p.w))} × ${p.r}`).join(' · ')}
+        </div>
+      )}
+      <button type="button" className="btn hero-cta ok" onClick={() => openSheet('session-view', { id: sess.id })}>
+        Ver lo que hiciste
+      </button>
+      <button type="button" className="done-again" onClick={() => openSheet('sess-start-info', { wd })}>
+        Entrenar de nuevo
+      </button>
+    </div>
+  );
 }
 
 function PreSessionHero({ day, wd, exs, today }) {
