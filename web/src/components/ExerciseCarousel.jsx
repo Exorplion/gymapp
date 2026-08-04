@@ -25,7 +25,10 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { S, wDisplay, wAlt, wStep, openSheet } from '../lib/state.js';
 import { round1, fmtNum, lb2kg } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
-import { ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise } from '../lib/session.js';
+import {
+  ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
+  targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet,
+} from '../lib/session.js';
 import { jumpToSlide, slideCenterDist } from '../lib/carousel.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
 
@@ -36,13 +39,15 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
   const meta = useMemo(() => {
     const m = exs.map(ex => {
       const done = setsDone(ex.id);
-      const full = done.length >= ex.sets;
-      const open = active && curId === ex.id && !full;
-      return { ex, done, full, open };
+      const target = targetSets(ex);
+      const skipped = active && isSkipped(ex.id);
+      const full = !skipped && done.length >= target;
+      const open = active && curId === ex.id && !full && !skipped;
+      return { ex, done, target, skipped, full, open };
     });
     m.forEach(item => {
-      item.isNext = active && !item.open && !curId && nextEx && nextEx.id === item.ex.id;
-      item.waiting = active && !item.open && !item.isNext && !item.full;
+      item.isNext = active && !item.open && !item.skipped && !curId && nextEx && nextEx.id === item.ex.id;
+      item.waiting = active && !item.open && !item.isNext && !item.full && !item.skipped;
     });
     return m;
   }, [exs, active, curId, nextEx]);
@@ -100,12 +105,36 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
   );
 }
 
+/** Las tres salidas que el gimnasio real necesita y la app no daba: una serie
+    de más, cambiar de ejercicio porque la máquina está ocupada, y saltarlo
+    porque no te da el tiempo. Botones explícitos y no un menú escondido: se
+    tocan jadeando y con las manos húmedas. */
+function ExActions({ ex, wd }) {
+  function confirmarSalto() {
+    openSheet('confirm', {
+      title: `¿Saltar ${ex.name}?`,
+      body: 'Queda marcado como saltado y pasás al siguiente. Podés restablecerlo en cualquier momento y vuelve a su lugar.',
+      confirmLabel: 'Saltar',
+      onConfirm: () => skipExercise(ex.id),
+    });
+  }
+  return (
+    <div className="ex-actions">
+      <button type="button" onClick={() => addExtraSet(ex.id)}>+ Serie</button>
+      <button type="button" onClick={() => openSheet('ex-swap', { wd, exId: ex.id })}>⇄ Cambiar</button>
+      <button type="button" onClick={confirmarSalto}>↷ Saltar</button>
+    </div>
+  );
+}
+
 function ExerciseSlide({ m, wd, started }) {
-  const { ex, done, full, open, isNext, waiting } = m;
+  const { ex, done, target, skipped, full, open, isNext, waiting } = m;
   const v = ensureVals(ex);
   const last = lastDataFor(ex);
-  const scheme = rirScheme(ex.sets, ex.name);
-  const curSet = Math.min(done.length, ex.sets - 1);
+  // el esquema se arma sobre el objetivo de HOY: con una serie extra concedida
+  // hay que darle un RIR también a esa
+  const scheme = rirScheme(target, ex.name);
+  const curSet = Math.min(done.length, target - 1);
   const curRir = scheme[curSet];
   const info = exInfo(ex.name);
   // Sin historial propio: primera vez en ESTE equipo. Mostramos de dónde venís
@@ -159,12 +188,12 @@ function ExerciseSlide({ m, wd, started }) {
   }
 
   const pwarnInitial = open ? progressionWarn(ex.name, v.w) : null;
-  const cls = [full ? 'full doneex' : '', open ? 'cur' : '', waiting ? 'wait' : ''].filter(Boolean).join(' ');
+  const cls = [full ? 'full doneex' : '', open ? 'cur' : '', waiting ? 'wait' : '', skipped ? 'skipped' : ''].filter(Boolean).join(' ');
 
   return (
     <div className="carousel-slide" data-exid={ex.id}>
-      <div className={`card ex-card ${cls}`} id={`exc-${ex.id}`} style={{ '--done': Math.min(1, done.length / ex.sets) }}>
-        <div className={`ex-done-count ${full ? 'full' : ''}`}>{done.length}/{ex.sets}</div>
+      <div className={`card ex-card ${cls}`} id={`exc-${ex.id}`} style={{ '--done': Math.min(1, done.length / target) }}>
+        <div className={`ex-done-count ${full ? 'full' : ''}`}>{done.length}/{target}</div>
         <div className="exname">
           {ex.name}{' '}
           {info && (
@@ -178,7 +207,8 @@ function ExerciseSlide({ m, wd, started }) {
           )}
         </div>
         <div className="extarget">
-          Objetivo {ex.sets} × {ex.reps}
+          Objetivo {target} × {ex.reps}
+          {target > ex.sets && <span className="txt-blue"> (+{target - ex.sets} hoy)</span>}
           {open && (
             <> · serie {done.length + 1} → {curRir === 0 ? <b className="txt-blue">al fallo</b> : `RIR ${curRir}`}</>
           )}
@@ -201,8 +231,23 @@ function ExerciseSlide({ m, wd, started }) {
             </div>
           </div>
         )}
-        {full && <div className="ex-state ok">✓ Completo · {done.length} de {ex.sets} series</div>}
-        {waiting && <div className="ex-state">En espera · {done.length ? `${done.length}/${ex.sets} series` : 'te toca después'}</div>}
+        {full && <div className="ex-state ok">✓ Completo · {done.length} de {target} series</div>}
+        {waiting && <div className="ex-state">En espera · {done.length ? `${done.length}/${target} series` : 'te toca después'}</div>}
+        {/* Saltado: la tarjeta se queda donde está, apagada. Restablecer la
+            devuelve exactamente a su lugar porque saltar no toca draft.order. */}
+        {skipped && (
+          <>
+            <div className="ex-state skip">↷ Saltado{done.length ? ` · ${done.length} serie${done.length === 1 ? '' : 's'} registrada${done.length === 1 ? '' : 's'}` : ''}</div>
+            <button type="button" className="btn sm ghost" style={{ marginTop: 12 }} onClick={() => unskipExercise(ex.id)}>
+              ↺ Restablecer
+            </button>
+          </>
+        )}
+        {full && (
+          <button type="button" className="btn sm ghost" style={{ marginTop: 12 }} onClick={() => addExtraSet(ex.id)}>
+            + Una serie más
+          </button>
+        )}
         {isNext && (
           <>
             <button type="button" className="btn" style={{ marginTop: 14 }} onClick={() => startExercise(ex)}>
@@ -211,6 +256,7 @@ function ExerciseSlide({ m, wd, started }) {
             <div className="txt-mut" style={{ fontSize: 12, textAlign: 'center', marginTop: 8 }}>
               Dale cuando estés en la máquina{!started ? ' — acá arranca el cronómetro' : ''}
             </div>
+            <ExActions ex={ex} wd={wd} />
           </>
         )}
         {open && (
@@ -240,8 +286,9 @@ function ExerciseSlide({ m, wd, started }) {
               </div>
             </div>
             <button type="button" className="btn" onClick={() => saveSet(ex.id)}>
-              ✓ Terminé la serie {done.length + 1} de {ex.sets}
+              ✓ Terminé la serie {done.length + 1} de {target}
             </button>
+            <ExActions ex={ex} wd={wd} />
           </>
         )}
         {done.length > 0 && (

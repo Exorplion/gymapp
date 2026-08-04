@@ -19,7 +19,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { S, useStore, bump, openSheet, closeSheet } from '../../lib/state.js';
 import { WD, WD1, WDS, MO, WEEK_ORDER, fmtMMSS, fmtNum, round1 } from '../../lib/format.js';
-import { orderedExs, nextPending, setsDone, startSession, discardSession, completeSession, sessionForWeekday, sessionPRs } from '../../lib/session.js';
+import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession, sessionForWeekday, sessionPRs } from '../../lib/session.js';
 import { muscleVolume } from '../../lib/muscle.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
@@ -50,8 +50,10 @@ export default function Hoy() {
   const today = new Date();
   const wd = S.hoyDay ?? today.getDay();
   const day = S.routine[wd];
-  const exs = orderedExs(wd, day?.exercises || []);
   const active = !!S.draft;
+  // Con sesión abierta la lista sale del borrador: incluye lo que agregaste
+  // hoy, que no está en la rutina.
+  const exs = active && S.draft.weekday === wd ? sessionExs(wd) : orderedExs(wd, day?.exercises || []);
   const started = active && !!S.draft.start;
   const curId = active ? S.draft.cur : null;
   const nextEx = active ? nextPending(exs) : null;
@@ -175,6 +177,13 @@ export default function Hoy() {
             </button>
           )}
           <ExerciseCarousel exs={exs} wd={wd} active={active} started={started} curId={curId} nextEx={nextEx} />
+          {/* Decidiste hacer algo que no estaba en el plan. Vale sólo para hoy;
+              al cerrar la sesión se ofrece dejarlo fijo. */}
+          {active && (
+            <button type="button" className="btn sm ghost" style={{ marginTop: 'var(--s2)' }} onClick={() => openSheet('ex-swap', { wd })}>
+              + Agregar ejercicio a esta sesión
+            </button>
+          )}
         </>
       )}
 
@@ -198,7 +207,8 @@ function ElapsedTimer({ start }) {
 
 function ActiveHero({ day, wd, exs, started, allDone }) {
   const nsets = Object.values(S.draft.entries).reduce((a, e) => a + e.sets.length, 0);
-  const doneEx = exs.filter(e => setsDone(e.id).length >= e.sets).length;
+  const doneEx = exs.filter(e => !isSkipped(e.id) && setsDone(e.id).length >= targetSets(e)).length;
+  const nSkip = exs.filter(e => isSkipped(e.id)).length;
   return (
     <div className="card hero">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -212,14 +222,17 @@ function ActiveHero({ day, wd, exs, started, allDone }) {
           <div className="cond" style={{ fontSize: 20, fontWeight: 700 }}>{day?.name || WD[wd]}</div>
           <div className="txt-mut" style={{ fontSize: 13 }}>
             {started
-              ? <><ElapsedTimer start={S.draft.start} /> · {doneEx}/{exs.length} ejercicios · {nsets} serie{nsets === 1 ? '' : 's'}</>
+              ? <><ElapsedTimer start={S.draft.start} /> · {doneEx}/{exs.length - nSkip} ejercicios · {nsets} serie{nsets === 1 ? '' : 's'}{nSkip > 0 ? ` · ${nSkip} saltado${nSkip === 1 ? '' : 's'}` : ''}</>
               : 'Sesión abierta · el reloj arranca cuando inicies el primer ejercicio'}
           </div>
         </div>
       </div>
       {allDone && (
         <div className="calcbox" style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 14, lineHeight: 1.5 }}>🎉 Terminaste los {exs.length} ejercicios del día. Cerrá la sesión para guardarla.</div>
+          <div style={{ fontSize: 14, lineHeight: 1.5 }}>
+            🎉 Terminaste los {exs.length - nSkip} ejercicios que hiciste hoy.
+            {nSkip > 0 && ` Saltaste ${nSkip}.`} Cerrá la sesión para guardarla.
+          </div>
         </div>
       )}
       <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>

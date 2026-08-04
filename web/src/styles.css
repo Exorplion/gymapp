@@ -331,6 +331,27 @@ main{
 .ex-card.doneex{opacity:.72}
 .ex-state{margin-top:10px;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
 .ex-state.ok{color:var(--ok)}
+.ex-state.skip{color:var(--warn)}
+/* El saltado no desaparece: se queda en su lugar, apagado, con su botón de
+   restablecer. Saltar no toca draft.order, así que volver es volver al mismo
+   sitio y no hay ninguna posición que recordar. */
+.ex-card.skipped{opacity:.6;border-style:dashed;border-color:rgba(255,180,84,.35)}
+.ex-card.skipped::before{background:linear-gradient(180deg,var(--warn),rgba(255,180,84,.3))}
+/* Las tres salidas del gimnasio real. Botones explícitos y no un menú
+   escondido: se tocan jadeando y con las manos húmedas. */
+.ex-actions{display:flex;gap:6px;margin-top:10px}
+.ex-actions button{
+  flex:1;min-height:38px;border-radius:12px;
+  background:var(--card2);border:1px solid var(--line);
+  color:var(--mut);font-size:12.5px;font-weight:600;letter-spacing:.02em;
+}
+.ex-actions button:active{border-color:var(--line2);color:var(--blue2)}
+/* los saltados en el resumen de la sesión */
+.skip-note{
+  margin-top:14px;padding:9px 12px;border-radius:12px;
+  font-size:12.5px;line-height:1.45;font-weight:500;
+  background:rgba(255,180,84,.09);border:1px solid rgba(255,180,84,.28);color:var(--warn);
+}
 .carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;
   margin:0 calc(-1*var(--s4)) 0;padding:0 var(--s4) 4px;scrollbar-width:none}
 .carousel::-webkit-scrollbar{display:none}
@@ -722,11 +743,21 @@ nav.tabbar{
   position:fixed;left:18px;right:18px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:50;
   display:flex;justify-content:space-around;
   padding:7px;border-radius:24px;
-  background:linear-gradient(158deg,rgba(255,255,255,.11),rgba(255,255,255,.043));
+  /* El vidrio necesita cuerpo. Con sólo el degradado blanco al 11%/4% encima
+     del desenfoque, la barra era casi transparente: el contenido que pasaba
+     por detrás al scrollear se leía a través de ella y se mezclaba con las
+     etiquetas. La capa opaca de abajo le da fondo propio sin perder el efecto
+     — el degradado, el borde, el brillo interior y el blur siguen igual. */
+  background:
+    linear-gradient(158deg,rgba(255,255,255,.11),rgba(255,255,255,.043)),
+    rgba(8,13,24,.92);
   backdrop-filter:blur(26px) saturate(1.6);-webkit-backdrop-filter:blur(26px) saturate(1.6);
   border:1px solid rgba(255,255,255,.14);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 22px 50px -20px rgba(0,0,0,.95);
 }
+/* las etiquetas también estaban al límite: --mut2 sobre un fondo casi
+   transparente. Con la barra opaca, un tono más claro las despega del todo. */
+nav.tabbar button{color:var(--mut)}
 nav.tabbar button{
   flex:1;max-width:110px;display:flex;flex-direction:column;align-items:center;gap:3px;
   padding:7px 0 5px;border-radius:14px;color:var(--mut2);position:relative;transition:.15s;

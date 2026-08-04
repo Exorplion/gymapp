@@ -135,7 +135,109 @@ export async function updateHistorySession(sess, msg = 'Sesión actualizada') {
 }
 
 /** Siguiente ejercicio pendiente en el orden actual */
-export function nextPending(list) { return list.find(e => setsDone(e.id).length < e.sets) || null; }
+export function nextPending(list) {
+  return list.find(e => !isSkipped(e.id) && setsDone(e.id).length < targetSets(e)) || null;
+}
+
+/* ================= modificar la sesión mientras entrenás =================
+   Todo esto vive en S.draft y NO toca S.routine: improvisar en el gimnasio no
+   debería reescribir tu plan. Los tres campos (skipped/extraSets/extras) se
+   leen siempre con `?.` y un default, así que un borrador guardado antes de
+   este cambio sigue funcionando sin migración. */
+
+/** Series objetivo de HOY: las de la rutina más las concedidas a mano. Sin
+    esto el ejercicio se cierra solo al llegar al objetivo — que es su diseño
+    ("el objetivo es el techo"), pero deja sin salida al día que querés hacer
+    una serie más. */
+export function targetSets(ex) {
+  return (ex?.sets || 0) + (S.draft?.extraSets?.[ex?.id] || 0);
+}
+
+export function isSkipped(exId) { return !!S.draft?.skipped?.includes(exId); }
+
+/** Los ejercicios de la sesión: los del día más los agregados hoy, en el orden
+    del borrador. Reemplaza a orderedExs() mientras hay sesión abierta. */
+export function sessionExs(wd) {
+  const todos = [...(S.routine[wd]?.exercises || []), ...(S.draft?.extras || [])];
+  const ord = S.draft?.order;
+  if (!ord?.length) return todos;
+  const by = new Map(todos.map(e => [e.id, e]));
+  const out = [];
+  ord.forEach(id => { if (by.has(id)) { out.push(by.get(id)); by.delete(id); } });
+  by.forEach(e => out.push(e));   // ejercicios que no estaban en el orden
+  return out;
+}
+
+/** Saltar no toca el orden — sólo marca. Por eso restablecer devuelve el
+    ejercicio exactamente a donde estaba, sin recordar ninguna posición. */
+export async function skipExercise(exId) {
+  if (!S.draft) return;
+  if (!S.draft.skipped) S.draft.skipped = [];
+  if (!S.draft.skipped.includes(exId)) S.draft.skipped.push(exId);
+  if (S.draft.cur === exId) S.draft.cur = null;
+  await saveDraft();
+  vibrate(15);
+  bump();
+}
+
+export async function unskipExercise(exId) {
+  if (!S.draft?.skipped) return;
+  S.draft.skipped = S.draft.skipped.filter(id => id !== exId);
+  await saveDraft();
+  vibrate(15);
+  bump();
+}
+
+/** Una serie más sobre el objetivo, sólo por hoy. */
+export async function addExtraSet(exId) {
+  if (!S.draft) return 0;
+  if (!S.draft.extraSets) S.draft.extraSets = {};
+  S.draft.extraSets[exId] = (S.draft.extraSets[exId] || 0) + 1;
+  // si estaba cerrado por haber llegado al objetivo, vuelve a ser el actual
+  if (!S.draft.cur) S.draft.cur = exId;
+  await saveDraft();
+  vibrate(15);
+  bump();
+  return S.draft.extraSets[exId];
+}
+
+/** Un ejercicio que decidiste hacer hoy y no estaba en el plan. Vive sólo en
+    el borrador; al cerrar la sesión se ofrece dejarlo fijo en la rutina. */
+export async function addSessionExercise({ name, sets, reps, equip, machine } = {}, afterExId = null) {
+  if (!S.draft) return null;
+  const ex = {
+    id: uid(),
+    name: String(name || '').trim(),
+    sets: Math.max(1, parseInt(sets, 10) || 3),
+    reps: Math.max(1, parseInt(reps, 10) || 10),
+    equip: equip || undefined,
+    machine: equip && machine ? machine : undefined,
+  };
+  if (!ex.name) return null;
+  if (!S.draft.extras) S.draft.extras = [];
+  S.draft.extras.push(ex);
+  if (!S.draft.order) S.draft.order = [];
+  const i = afterExId ? S.draft.order.indexOf(afterExId) : -1;
+  if (i >= 0) S.draft.order.splice(i + 1, 0, ex.id);
+  else S.draft.order.push(ex.id);
+  await saveDraft();
+  vibrate(15);
+  bump();
+  return ex;
+}
+
+/** Cambiar un ejercicio por otro: la máquina ocupada es la regla, no la
+    excepción. Es saltar el original y meter el reemplazo justo detrás, así el
+    lugar en el orden del día no se altera. */
+export async function replaceSessionExercise(exId, datos) {
+  const nuevo = await addSessionExercise(datos, exId);
+  if (!nuevo) return null;
+  await skipExercise(exId);
+  S.draft.cur = nuevo.id;
+  await saveDraft();
+  bump();
+  return nuevo;
+}
 
 export async function saveSet(exId) {
   const ex = findEx(exId); if (!ex) return;
@@ -148,12 +250,15 @@ export async function saveSet(exId) {
   if (!S.draft.entries[exId]) S.draft.entries[exId] = { name: ex.name, equip: ex.equip, machine: ex.machine, sets: [] };
   const cur = S.draft.entries[exId].sets;
   /* el objetivo es el techo: llegado a él el ejercicio se cierra solo y pasamos
-     al siguiente, en vez de dejar registrar series infinitas */
-  if (cur.length >= ex.sets) { toast(`${ex.name} ya está completo (${ex.sets} series)`); return; }
+     al siguiente, en vez de dejar registrar series infinitas. El techo de HOY
+     incluye las series extra concedidas a mano (targetSets) — sin eso "+ Serie"
+     no tendría efecto. */
+  const techo = targetSets(ex);
+  if (cur.length >= techo) { toast(`${ex.name} ya está completo (${techo} series)`); return; }
   cur.push({ w: round1(v.w), r: v.r, t: Date.now() });
   if (!S.draft.start) S.draft.start = Date.now();
-  const finished = cur.length >= ex.sets;
-  const exs = orderedExs(S.draft.weekday, S.routine[S.draft.weekday]?.exercises || []);
+  const finished = cur.length >= techo;
+  const exs = sessionExs(S.draft.weekday);
   const nxt = finished ? nextPending(exs) : null;
   if (finished) S.draft.cur = null;
   await saveDraft();
@@ -181,9 +286,26 @@ export async function completeSession() {
   /* d.open cubre borradores viejos (formato anterior) y el caso raro de que
      falte start; la duración mide de la primera serie al cierre */
   const startAt = d.start || d.open || Date.now();
+  /* Los salteados no tienen series, así que nunca entraron en d.entries: no
+     suman volumen, no compiten por PRs, no tocan el gráfico de carga. Se
+     guardan aparte para que dentro de un mes sepas si ese día no tocaba peso
+     muerto o si lo dejaste pasar. */
+  const todos = sessionExs(d.weekday);
+  const skipped = (d.skipped || [])
+    .map(id => todos.find(e => e.id === id))
+    .filter(Boolean)
+    .map(e => ({ name: e.name, equip: e.equip, machine: e.machine }));
+  /* Los agregados que de verdad hiciste (los que tienen series). Uno que
+     agregaste y después salteaste no tiene por qué ofrecerse para el plan. */
+  const added = (d.extras || [])
+    .filter(e => d.entries[e.id]?.sets?.length)
+    .map(e => ({ name: e.name, sets: e.sets, reps: e.reps, equip: e.equip, machine: e.machine }));
+
   const sess = {
     id: d.id, date: d.date, weekday: d.weekday, dayName: d.dayName,
-    start: startAt, end: Date.now(), duration: Math.max(1, Math.round((Date.now() - startAt) / 60000)), entries
+    start: startAt, end: Date.now(), duration: Math.max(1, Math.round((Date.now() - startAt) / 60000)), entries,
+    ...(skipped.length ? { skipped } : {}),
+    ...(added.length ? { added } : {}),
   };
   await idb.put('sessions', sess);
   S.sessions.unshift(sess);
@@ -208,6 +330,9 @@ export async function startSession(wd) {
   S.draft = {
     id: uid(), date: dstr(), weekday: wd, dayName: day.name || WD[wd], open: Date.now(), start: null, cur: null,
     order: orderedExs(wd, day.exercises).map(e => e.id), entries: {},
+    // lo que se puede cambiar sin tocar el plan: ver "modificar la sesión
+    // mientras entrenás" más arriba
+    skipped: [], extraSets: {}, extras: [],
   };
   await saveDraft();
   closeSheet();
@@ -259,6 +384,9 @@ export async function deleteHistorySession(id) {
 export function currentDayForHoy() { return S.hoyDay ?? new Date().getDay(); }
 
 function findEx(exId) {
+  // los agregados durante la sesión viven en el borrador, no en la rutina
+  const extra = (S.draft?.extras || []).find(x => x.id === exId);
+  if (extra) return extra;
   for (const d of Object.values(S.routine)) {
     const e = (d.exercises || []).find(x => x.id === exId);
     if (e) return e;

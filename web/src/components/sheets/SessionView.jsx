@@ -14,11 +14,14 @@ import { useState } from 'react';
 import { S, useStore, openSheet, closeSheet } from '../../lib/state.js';
 import { WD, fmtDFull, fmtNum, round1, uid } from '../../lib/format.js';
 import { sessionPRs, deleteHistorySession, updateHistorySession } from '../../lib/session.js';
+import { pinAddedToRoutine } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
 
 export default function SessionView({ id, justFinished = false }) {
   useStore();
   const [editando, setEditando] = useState(false);
+  // La pregunta de fijar lo agregado se responde una vez y no vuelve
+  const [pinResuelto, setPinResuelto] = useState(false);
   const s = S.sessions.find(x => x.id === id);
   if (!s) return null;
 
@@ -93,6 +96,40 @@ export default function SessionView({ id, justFinished = false }) {
               {prs.map(p => `${p.name} · ${fmtNum(round1(p.w))} kg × ${p.r}`).join(' · ')}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Agregaste algo fuera del plan: se pregunta una vez si queda fijo.
+          Improvisar en el gimnasio no debería reescribir tu rutina solo. */}
+      {justFinished && !pinResuelto && s.added?.length > 0 && (
+        <div className="calcbox" style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 12 }}>
+            Agregaste <b className="txt-blue">{s.added.map(a => a.name).join(', ')}</b> hoy.
+            ¿Lo dejo en tu rutina del {WD[s.weekday].toLowerCase()}?
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              type="button" className="btn sm ghost" style={{ flex: 1 }}
+              onClick={() => { setPinResuelto(true); toast('Queda sólo en esta sesión'); }}
+            >
+              No, sólo fue hoy
+            </button>
+            <button
+              type="button" className="btn sm" style={{ flex: 1 }}
+              onClick={async () => { setPinResuelto(true); await pinAddedToRoutine(s.weekday, s.added); }}
+            >
+              Sí, agregarlo
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Los saltados no tienen series, así que no entran en entries: cero
+          volumen, cero PRs. Se muestran aparte para que dentro de un mes sepas
+          si ese día no tocaba o si lo dejaste pasar. */}
+      {s.skipped?.length > 0 && (
+        <div className="skip-note">
+          ↷ {s.skipped.length} saltado{s.skipped.length === 1 ? '' : 's'} · {s.skipped.map(x => x.name).join(' · ')}
         </div>
       )}
 

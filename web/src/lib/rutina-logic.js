@@ -212,6 +212,29 @@ export async function moveDayTo(fromWd, toWd) {
   await Promise.all([persistDay(from), persistDay(to)]);
 }
 
+/** Deja fijos en la rutina del día los ejercicios que agregaste durante una
+    sesión. Se ofrece una vez, al cerrarla (SessionView): improvisar en el
+    gimnasio no debería reescribir el plan solo, pero repetir a mano lo que ya
+    hiciste tampoco tiene sentido.
+
+    Salta los que el día ya tiene (por exKey), así responder que sí dos veces
+    no duplica nada. */
+export async function pinAddedToRoutine(wd, added) {
+  const d = ensureDay(+wd);
+  const yaHay = new Set((d.exercises || []).map(exKey));
+  const nuevos = (added || [])
+    .filter(a => !yaHay.has(exKey(a)))
+    .map(a => ({
+      id: uid(), name: a.name, sets: a.sets, reps: a.reps,
+      equip: a.equip || undefined, machine: a.machine || undefined,
+    }));
+  if (!nuevos.length) { toast('Ya estaban en tu rutina'); return; }
+  pushHistory(`${nuevos.length} ejercicio${nuevos.length === 1 ? '' : 's'} agregado${nuevos.length === 1 ? '' : 's'} al ${WD[+wd].toLowerCase()}`);
+  d.exercises = [...(d.exercises || []), ...nuevos];
+  await persistDay(+wd);
+  bump();
+}
+
 export function dayIsFree(wd) {
   const d = S.routine[+wd];
   return !d?.name && !d?.exercises?.length;
