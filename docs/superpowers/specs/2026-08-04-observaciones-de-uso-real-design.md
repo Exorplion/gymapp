@@ -6,9 +6,13 @@ Seis bloques independientes, cada uno con su commit y su build publicado. Un
 séptimo (el reflejo al inclinar) queda diseñado y **en standby** a pedido de
 Enzo — ver la sección al final.
 
-Orden: tarjeta → día completado → sesiones → editar sesión → drag → nutrición.
-La tarjeta primero porque es la que molesta entrenando; nutrición al final
+La tarjeta va primero porque es la que molesta entrenando; nutrición al final
 porque es el único bloque que toca el esquema de datos.
+
+**Orden de construcción: 1 → 3 → 2 → 4 → 5 → 6.** El bloque 2 se apoya en dos
+cosas que nacen en el 3 (el componente `SessionView` y el helper `sessionPRs`),
+así que el 3 tiene que existir antes aunque en la lectura vaya después. Los
+demás son independientes entre sí.
 
 ---
 
@@ -100,7 +104,9 @@ Pecho / Tríceps
      Entrenar de nuevo
 ```
 
-- "Ver lo que hiciste" abre `session-view` con el id de la sesión (bloque 3).
+- "Ver lo que hiciste" abre `session-view` con el id de la sesión. Ese
+  componente y el `sessionPRs` que alimenta la línea del récord se construyen
+  en el bloque 3, que por eso va antes que éste.
 - "Entrenar de nuevo" es texto discreto, no botón: abre `sess-start-info`, el
   flujo de siempre. Existe para la doble sesión y para el día que te
   equivocaste, no como camino principal.
