@@ -124,8 +124,7 @@ Todo entra en los ~660 px útiles de un teléfono de 844, sin scroll:
 6. Leyenda de color, cuatro pasos
 7. La línea ámbar del grupo más viejo
 8. Botón grande: `EMPEZAR · 9 ej · ~52 min`
-9. Línea de récord: `A 2,5 kg de tu récord en Jalón ancho`
-10. Tira de la semana con ✓ en los días entrenados
+9. Tira de la semana con ✓ en los días entrenados
 
 ### Los cuatro estados
 
@@ -142,15 +141,20 @@ Sin rutina cargada, el título dice `Sin rutina` y el botón lleva a la pestaña
 Rutina. Las siluetas se muestran igual, todas neutras: son la promesa de lo que
 la pantalla va a ser.
 
-## La línea de récord
+## La línea de récord: descartada
 
-`nextPR()` busca, entre los ejercicios de la rutina del día, aquel donde tu
-última serie estuvo más cerca de tu máximo histórico sin superarlo, y devuelve
-la diferencia.
+Se consideró una línea del tipo "A 2,5 kg de tu récord en Jalón ancho" y se
+descartó antes de escribir código.
 
-Sale de datos que ya existen. Es más concreto que cualquier frase motivacional y
-cambia solo a medida que entrenás. Si no hay ninguno cerca —o no hay historial—
-la línea no aparece: **nunca se inventa una meta**.
+El motivo es de composición, no de datos: **competía con la línea ámbar** por ser
+el motivo del día. Dos llamados a la acción en la misma pantalla se anulan — el
+ojo no sabe cuál mirar y termina sin mirar ninguno.
+
+La línea ámbar gana porque dice algo que la app sabe con certeza y que no
+depende de tener historial suficiente. Los récords siguen viviendo en Progreso,
+donde son el contenido y no un accesorio.
+
+Los ~40 px que libera van a las siluetas, que es el héroe.
 
 ## Navegación
 
@@ -174,18 +178,11 @@ que hace que la pantalla valga.
 - **Ilustraciones de ejercicio.** Van en Hoy y en el editor, no acá: Inicio es tu
   cuerpo, Hoy es el trabajo.
 
-## Riesgo asumido
-
-**El bloque de récord y la línea ámbar compiten** por ser el motivo del día. Se
-implementan los dos y se mira en el teléfono; si la pantalla se siente cargada,
-el récord es el primero que sale. Queda anotado para no discutirlo dos veces.
-
 ## Archivos
 
 - `components/screens/Inicio.jsx` (nuevo) — la pantalla
 - `components/Silhouette.jsx` (nuevo) — las dos siluetas, con las zonas por grupo
 - `lib/muscle.js` — `daysSinceGroup(cat)` y `stalestGroups()`
-- `lib/session.js` — `nextPR(wd)`
 - `components/TabBar.jsx` — Inicio en lugar de Hoy
 - `components/screens/Hoy.jsx` — botón de volver a Inicio
 - `lib/state.js` — `S.tab` arranca en `'inicio'`
