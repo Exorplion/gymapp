@@ -441,6 +441,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 @media (prefers-reduced-motion:reduce){
   [data-sid].shift,[data-sid].settling{transition:none}
   .card.day.fx-arrive,.card.day.fx-bumped,.card.day.fx-left{animation:none}
+  .dcard.entry::before{animation:none}
   .card.day.drop-target{transform:none}
 }
 
@@ -494,28 +495,63 @@ body.dragging-on .card.day.drop-target{filter:none}
 .entry-name-edit .pen{font-size:12px;color:var(--blue2);margin-left:4px}
 .entry-name-edit:active{border-color:var(--blue2)}
 
-/* Series numeradas en vez de chips sueltos: se leen como una lista de lo que
-   pasó, en orden, y las cifras quedan alineadas por ser tabulares. */
-.set-list{display:flex;flex-direction:column;gap:1px}
-.set-line{
-  display:flex;align-items:baseline;gap:var(--s2);
-  padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);
+/* ---------- el riel de veredicto ----------
+   Lo que le da vida a la lista. Su color dice cómo te fue en ESE ejercicio, y
+   apilados los rieles forman una columna que se lee de arriba abajo y cuenta
+   la sesión entera de un vistazo.
+
+   Antes las once tarjetas pesaban visualmente lo mismo porque codificaban qué
+   ejercicio (categórico, todos iguales) y no cuánto moviste, que es lo que
+   varía. Es el mismo lenguaje del ::before de .ex-card, puesto a decir otra
+   cosa. */
+.dcard.entry{position:relative;overflow:hidden;padding-left:22px}
+.dcard.entry::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:var(--rail,var(--line2));
+  transform-origin:top;
 }
-.set-line:last-child{border-bottom:none}
-.set-line .i{
-  width:20px;flex:none;font-family:'Barlow Condensed',sans-serif;
-  font-size:12px;font-weight:700;color:var(--mut2);
+.dcard.entry.v-sube{--rail:linear-gradient(180deg,var(--ok),#0E9F6E)}
+.dcard.entry.v-baja{--rail:linear-gradient(180deg,var(--warn),#E8A21D)}
+.dcard.entry.v-igual{--rail:linear-gradient(180deg,var(--blue2),var(--blue))}
+.dcard.entry.v-nuevo{--rail:linear-gradient(180deg,var(--line2),transparent)}
+/* el récord es el único que se permite brillar */
+.dcard.entry.v-pr{
+  --rail:var(--grad2);
+  border-color:rgba(34,211,238,.3);
+  box-shadow:0 0 0 1px rgba(34,211,238,.12),0 18px 40px -26px rgba(34,211,238,.5);
 }
-.set-line .w{
-  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;
-  font-variant-numeric:tabular-nums;min-width:62px;
-}
-.set-line .w small{font-size:11px;font-weight:600;color:var(--mut)}
-.set-line .x{color:var(--mut2);font-size:12px}
-.set-line .r{
-  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;
+.entry-pr{font-size:15px;flex:none;filter:drop-shadow(0 0 6px rgba(255,180,84,.5))}
+
+/* Una entrada a escena, no efectos sueltos: los rieles se llenan en cascada al
+   abrir el resumen. Es el único momento animado de la vista. */
+.dcard.entry::before{animation:railIn .5s var(--ease) backwards;animation-delay:calc(var(--i,0) * 45ms)}
+@keyframes railIn{from{transform:scaleY(0)}}
+
+/* ---------- el peso como el evento ----------
+   En el gimnasio no se dice "85×7, 85×6": se dice "85 por 7 y 6". El peso va
+   una sola vez y grande — en un registro de fuerza el contenido son los
+   números, y ésta es la voz que la app ya usa en sus portadas. */
+.loads{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.load{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.load .kg{
+  font-family:'Barlow Condensed',sans-serif;font-style:italic;
+  font-size:38px;font-weight:700;line-height:.95;letter-spacing:-.01em;
   font-variant-numeric:tabular-nums;
 }
+.load .kg small{
+  font-size:13px;font-style:normal;font-weight:600;color:var(--mut);
+  margin-left:3px;letter-spacing:.04em;
+}
+.load .reps{display:flex;gap:5px;align-items:baseline}
+.load .reps b{
+  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;
+  color:var(--blue3);background:rgba(46,125,255,.12);
+  border:1px solid rgba(102,145,255,.18);border-radius:8px;
+  padding:1px 8px;font-variant-numeric:tabular-nums;
+}
+/* con un solo peso la fila respira; con varios se compacta para que la tarjeta
+   no se vuelva una torre */
+.load:not(:only-child) .kg{font-size:28px}
 
 /* fila de serie en modo corrección: los inputs guardan en blur, no en cada
    tecla — mismo criterio que las metas de Ajustes (escribir a IndexedDB por

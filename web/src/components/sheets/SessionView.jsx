@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { S, useStore, openSheet, closeSheet } from '../../lib/state.js';
 import { WD, fmtDFull, fmtNum, round1, uid } from '../../lib/format.js';
-import { sessionPRs, deleteHistorySession, updateHistorySession, entryDelta } from '../../lib/session.js';
+import { sessionPRs, deleteHistorySession, updateHistorySession, entryDelta, groupSets } from '../../lib/session.js';
 import { pinAddedToRoutine } from '../../lib/rutina-logic.js';
 import { catOf } from '../../lib/muscle.js';
 import { equipLabel, exKey } from '../../lib/equip.js';
@@ -173,18 +173,32 @@ export default function SessionView({ id, justFinished = false }) {
   );
 }
 
-/** Un ejercicio de la sesión. En lectura cuenta cómo te fue; en corrección,
-    cada serie es editable y el nombre se puede cambiar. */
+/** Un ejercicio de la sesión.
+ *
+ * El riel de la izquierda es el que le da vida a la lista: su color dice cómo
+ * te fue en ESE ejercicio — subiste, igual, bajaste, récord. Apilados, los
+ * rieles forman una columna que se lee de arriba abajo y cuenta la sesión
+ * entera de un vistazo. Antes las once tarjetas pesaban visualmente lo mismo,
+ * porque codificaban qué ejercicio (categórico, todos iguales) y no cuánto
+ * moviste (que es lo que varía).
+ *
+ * Y el peso va grande, agrupado: en el gimnasio no se dice "85×7, 85×6", se
+ * dice "85 por 7 y 6". El número es el contenido de un registro de fuerza.
+ */
 function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie, onAgregarSerie, onBorrarEjercicio }) {
   const grupo = catOf(entry);
   const vol = entry.sets.reduce((a, st) => a + st.w * st.r, 0);
   const d = entryDelta(sess, entry);
+  const grupos = groupSets(entry.sets);
+
+  const veredicto = esPR ? 'pr' : !d ? 'nuevo' : d.delta > 0 ? 'sube' : d.delta < 0 ? 'baja' : 'igual';
 
   return (
-    <div className="dcard">
+    <div className={`dcard entry v-${veredicto}`} style={{ '--i': idx }}>
       <div className="entry-top">
         <span className={`eyebrow ${grupo ? '' : 'warn'}`}>{grupo || 'sin grupo'}</span>
         {equipLabel(entry) && <span className="eq-tag">{equipLabel(entry)}</span>}
+        {esPR && <span className="entry-pr" title="Récord en esta sesión">🏆</span>}
       </div>
       <div className="dcard-head">
         {editando ? (
@@ -194,7 +208,6 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
         ) : (
           <span className="dcard-title">{entry.name}</span>
         )}
-        {esPR && <span className="entry-pr" title="Récord en esta sesión">🏆</span>}
         {editando && <button type="button" className="mini red" title="Quitar ejercicio" onClick={() => onBorrarEjercicio(idx)}>✕</button>}
       </div>
 
@@ -221,13 +234,13 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
           <button type="button" className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => onAgregarSerie(idx)}>+ Serie</button>
         </>
       ) : (
-        <div className="set-list">
-          {entry.sets.map((st, si) => (
-            <div key={si} className="set-line">
-              <span className="i">{si + 1}</span>
-              <span className="w">{fmtNum(round1(st.w))}<small> kg</small></span>
-              <span className="x">×</span>
-              <span className="r">{st.r}</span>
+        <div className="loads">
+          {grupos.map((g, i) => (
+            <div key={i} className="load">
+              <span className="kg">{fmtNum(round1(g.w))}<small>kg</small></span>
+              <span className="reps">
+                {g.reps.map((r, j) => <b key={j}>{r}</b>)}
+              </span>
             </div>
           ))}
         </div>
@@ -237,10 +250,11 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
         <span>{entry.sets.length} serie{entry.sets.length === 1 ? '' : 's'} · {Math.round(vol).toLocaleString('es')} kg</span>
         {d && d.delta !== 0 && (
           <span className={d.delta > 0 ? 'txt-ok' : 'txt-warn'}>
-            {d.delta > 0 ? '↗ +' : '↘ '}{fmtNum(d.delta)} kg vs. la anterior
+            {d.delta > 0 ? '↗ +' : '↘ '}{fmtNum(d.delta)} kg
           </span>
         )}
-        {d && d.delta === 0 && <span className="txt-mut">= igual que la anterior</span>}
+        {d && d.delta === 0 && <span className="txt-mut">= igual</span>}
+        {!d && <span className="txt-mut">primera vez</span>}
       </div>
     </div>
   );

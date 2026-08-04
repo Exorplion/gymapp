@@ -178,3 +178,28 @@ describe('entryDelta', () => {
     expect(entryDelta(nueva, nueva.entries[0]).delta).toBe(-5);
   });
 });
+
+describe('groupSets', () => {
+  it('agrupa series consecutivas del mismo peso: "85 por 7 y 6"', async () => {
+    const { groupSets } = await import('../session.js');
+    expect(groupSets([{ w: 85, r: 7 }, { w: 85, r: 6 }])).toEqual([{ w: 85, reps: [7, 6] }]);
+  });
+
+  it('un cambio de peso abre un grupo nuevo', async () => {
+    const { groupSets } = await import('../session.js');
+    expect(groupSets([{ w: 60, r: 10 }, { w: 65, r: 8 }, { w: 65, r: 7 }]))
+      .toEqual([{ w: 60, reps: [10] }, { w: 65, reps: [8, 7] }]);
+  });
+
+  it('volver al mismo peso más tarde no se fusiona con el grupo anterior', async () => {
+    const { groupSets } = await import('../session.js');
+    expect(groupSets([{ w: 60, r: 10 }, { w: 65, r: 8 }, { w: 60, r: 9 }]))
+      .toEqual([{ w: 60, reps: [10] }, { w: 65, reps: [8] }, { w: 60, reps: [9] }]);
+  });
+
+  it('sin series devuelve lista vacía', async () => {
+    const { groupSets } = await import('../session.js');
+    expect(groupSets([])).toEqual([]);
+    expect(groupSets(undefined)).toEqual([]);
+  });
+});

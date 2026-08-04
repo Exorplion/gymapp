@@ -91,6 +91,24 @@ export function sessionPRs(sess) {
   return prs;
 }
 
+/** Agrupa series CONSECUTIVAS del mismo peso.
+
+    Es como se habla en el gimnasio: no "85×7, 85×6" sino "85 por 7 y 6". Deja
+    que el peso —que es el dato— se muestre una vez y grande, con las reps al
+    lado, en vez de repetirlo en cada línea.
+
+    Consecutivas y no por valor: si subiste y volviste a bajar, esos son dos
+    momentos distintos de la sesión y fusionarlos borraría el orden real. */
+export function groupSets(sets) {
+  const out = [];
+  (sets || []).forEach(s => {
+    const ult = out[out.length - 1];
+    if (ult && ult.w === s.w) ult.reps.push(s.r);
+    else out.push({ w: s.w, reps: [s.r] });
+  });
+  return out;
+}
+
 /** Cuánto cambió la mejor serie de este ejercicio respecto de la última vez
     que lo hiciste antes de esta sesión.
 
