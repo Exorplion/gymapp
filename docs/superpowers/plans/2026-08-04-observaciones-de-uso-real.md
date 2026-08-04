@@ -12,7 +12,8 @@
 
 - **Directorio de trabajo:** todos los comandos se corren desde `web/`.
 - **Rama:** `feat/observaciones-uso-real`. No commitear a `main`.
-- **Verificación de cada tarea:** `npm run test` (0 fallos) + `npm run lint` (0 errores; **6 warnings preexistentes** en `MealForm.jsx`, `charts.js`, `backup.js` y `rest.js` son el baseline aceptado) + `npm run build:only` (tiene que compilar).
+- **Verificación de cada tarea:** `npm run test` (0 fallos) + `npm run lint` (0 errores; **10 warnings preexistentes** son el baseline aceptado: `streak.js`, `FoodVoice.jsx`, `MealForm.jsx` ×2, `backup.js`, `charts.js` ×2, `rest.js`, `format.js` ×2) + `npm run build:only` (tiene que compilar).
+- **Contar los warnings con `npm run lint 2>&1 | grep -cE "warning|error"`**, no con `tail`: el resumen de oxlint no imprime el total y `tail -N` corta la lista.
 - **`npm install` requiere `--legacy-peer-deps`** — `vite-plugin-pwa@1.2.0` declara peer `vite ^3||^4||^5||^6||^7` y el proyecto usa `vite ^8`. Conflicto preexistente; no intentar arreglarlo en este plan.
 - **No usar `npm run build`** durante el desarrollo: ese script copia el build a la raíz del repo (`scripts/publish-root.mjs`). Se corre sólo al publicar, con autorización de Enzo.
 - **Tests sólo para `lib/`.** No hay jsdom ni testing-library. Los componentes se verifican con `npm run dev` y el ojo.
@@ -137,7 +138,7 @@ Expected: sin resultados.
 - [ ] **Step 6: Lint y build**
 
 Run: `npm run lint && npm run build:only`
-Expected: 6 warnings preexistentes, 0 errores, build OK.
+Expected: 10 warnings preexistentes, 0 errores, build OK.
 
 - [ ] **Step 7: Verificación visual**
 
@@ -391,7 +392,7 @@ Expected: PASS — todos.
 - [ ] **Step 7: Lint y build**
 
 Run: `npm run lint && npm run build:only`
-Expected: 6 warnings preexistentes, 0 errores, build OK.
+Expected: 10 warnings preexistentes, 0 errores, build OK.
 
 - [ ] **Step 8: Commit**
 
@@ -1939,7 +1940,7 @@ Expected: PASS — todos.
 - [ ] **Step 5: Lint y build**
 
 Run: `npm run lint && npm run build:only`
-Expected: 6 warnings preexistentes, 0 errores, build OK.
+Expected: 10 warnings preexistentes, 0 errores, build OK.
 
 - [ ] **Step 6: Commit**
 
@@ -2081,7 +2082,7 @@ Expected: PASS — todos.
 - [ ] **Step 5: Lint y build**
 
 Run: `npm run lint && npm run build:only`
-Expected: 6 warnings preexistentes, 0 errores, build OK.
+Expected: 10 warnings preexistentes, 0 errores, build OK.
 
 - [ ] **Step 6: Commit**
 

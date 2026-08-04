@@ -1,6 +1,6 @@
 // Puerto de funciones de sesión desde index.html
 import { S, bump, saveDraft, wBoth, openSheet, closeSheet } from './state.js';
-import { dstr, uid, round1, WD, vibrate } from './format.js';
+import { dstr, uid, round1, WD, fmtD, vibrate } from './format.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
 import { startRest, stopRest } from './rest.js';
@@ -48,6 +48,91 @@ export async function setExOrder(wd, ids) {
 }
 
 export function setsDone(exId) { return S.draft?.entries[exId]?.sets || []; }
+
+/** El lunes de la semana de `d`, en YYYY-MM-DD. La semana arranca el lunes
+    porque es el orden en que la app muestra los días (WEEK_ORDER). */
+export function weekStart(d = new Date()) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));   // domingo (0) cae 6 días atrás
+  return dstr(x);
+}
+
+/** La sesión de ese día de la semana dentro de la semana en curso, o null.
+
+    La ventana es "esta semana" y no "hoy" a propósito: cubre tanto "ya entrené
+    hoy" como "miro el lunes que ya hice". Un día futuro de esta semana todavía
+    no tiene sesión, así que sigue ofreciendo entrenar — adelantar el jueves a
+    un martes es legítimo y no hay que bloquearlo.
+
+    S.sessions está ordenado descendente por start, así que find() da la más
+    reciente. */
+export function sessionForWeekday(wd) {
+  const ws = weekStart();
+  return S.sessions.find(s => s.weekday === +wd && s.date >= ws) || null;
+}
+
+/** Récords de `sess`: la mejor serie de cada ejercicio contra el máximo de las
+    sesiones ANTERIORES a ella. Sirve para cualquier sesión, esté o no todavía
+    en S.sessions — reemplaza a calcSessionPRs(), que asumía que la sesión no
+    estaba en la lista y por eso sólo servía en el momento de cerrarla. */
+export function sessionPRs(sess) {
+  const prior = S.sessions.filter(s => s.id !== sess.id && s.start < sess.start);
+  const prs = [];
+  (sess.entries || []).forEach(e => {
+    if (!e.sets?.length) return;
+    const bestSet = e.sets.reduce((a, b) => (b.w > a.w ? b : a), e.sets[0]);
+    let prevMax = 0;
+    prior.forEach(s => (s.entries || []).forEach(pe => {
+      if (exKey(pe) !== exKey(e)) return;
+      pe.sets.forEach(st => { if (st.w > prevMax) prevMax = st.w; });
+    }));
+    if (bestSet.w > prevMax) prs.push({ name: e.name, equip: e.equip, machine: e.machine, w: bestSet.w, r: bestSet.r });
+  });
+  return prs;
+}
+
+/** Agrupa sesiones por semana calendario, conservando el orden de entrada. */
+export function groupSessionsByWeek(list) {
+  const ws = weekStart();
+  const prevWs = weekStart(new Date(new Date(ws + 'T12:00:00').getTime() - 7 * 86400000));
+  const groups = [];
+  const byKey = new Map();
+  (list || []).forEach(s => {
+    const k = weekStart(new Date(s.date + 'T12:00:00'));
+    let g = byKey.get(k);
+    if (!g) {
+      const label = k === ws ? 'Esta semana' : k === prevWs ? 'Semana pasada' : `Semana del ${fmtD(k)}`;
+      g = { key: k, label, sessions: [] };
+      byKey.set(k, g);
+      groups.push(g);
+    }
+    g.sessions.push(s);
+  });
+  return groups;
+}
+
+/** Guarda una sesión del historial ya editada.
+
+    `start`, `end`, `duration`, `date`, `weekday` y `dayName` no se tocan nunca:
+    el tiempo que quedó registrado en el gimnasio es un hecho medido, corregir
+    un peso no lo cambia. El toast de Deshacer restaura el snapshot previo. */
+export async function updateHistorySession(sess, msg = 'Sesión actualizada') {
+  const i = S.sessions.findIndex(s => s.id === sess.id);
+  const snapshot = i >= 0 ? structuredClone(S.sessions[i]) : null;
+  if (i >= 0) S.sessions[i] = sess;
+  await idb.put('sessions', sess);
+  bump();
+  toast(msg, {
+    actionLabel: 'Deshacer',
+    onAction: async () => {
+      if (!snapshot) return;
+      const j = S.sessions.findIndex(s => s.id === snapshot.id);
+      if (j >= 0) S.sessions[j] = snapshot;
+      await idb.put('sessions', snapshot);
+      bump();
+    },
+  });
+}
 
 /** Siguiente ejercicio pendiente en el orden actual */
 export function nextPending(list) { return list.find(e => setsDone(e.id).length < e.sets) || null; }
@@ -100,9 +185,11 @@ export async function completeSession() {
     id: d.id, date: d.date, weekday: d.weekday, dayName: d.dayName,
     start: startAt, end: Date.now(), duration: Math.max(1, Math.round((Date.now() - startAt) / 60000)), entries
   };
-  const prs = calcSessionPRs(entries);
   await idb.put('sessions', sess);
   S.sessions.unshift(sess);
+  // sessionPRs filtra por start < sess.start, así que la sesión recién
+  // insertada se excluye sola: da lo mismo calcular antes o después de guardar.
+  const prs = sessionPRs(sess);
   S.draft = null; S.hoyDay = null;
   await saveDraft();
   stopRest();
@@ -110,24 +197,6 @@ export async function completeSession() {
   bump();
   openSheet('session-recap', { sess, prs });
   if (prs.length > 0) fireConfetti();
-}
-
-/** Compara la mejor serie de cada ejercicio de la sesión contra el máximo
-    histórico ANTES de esta sesión (S.sessions todavía no la incluye acá) */
-export function calcSessionPRs(entries) {
-  const prior = S.sessions;
-  const prs = [];
-  entries.forEach(e => {
-    if (!e.sets.length) return;
-    const bestSet = e.sets.reduce((a, b) => b.w > a.w ? b : a, e.sets[0]);
-    let prevMax = 0;
-    prior.forEach(s => (s.entries || []).forEach(pe => {
-      if (exKey(pe) !== exKey(e)) return;
-      pe.sets.forEach(st => { if (st.w > prevMax) prevMax = st.w; });
-    }));
-    if (bestSet.w > prevMax) prs.push({ name: e.name, equip: e.equip, machine: e.machine, w: bestSet.w, r: bestSet.r });
-  });
-  return prs;
 }
 
 /** Abre el borrador de sesión (weekday `wd`, con el orden ya reacomodado si
