@@ -147,7 +147,7 @@ export default function Progreso() {
               const st = routineStability(wd);
               const bits = [];
               bits.push(st?.last ? `última vez ${fmtD(st.last)}` : 'sin sesiones registradas aún');
-              if (st?.sessions) bits.push(`mismos ejercicios hace ${st.sessions} sesión${st.sessions === 1 ? '' : 'es'}`);
+              if (st?.sessions) bits.push(`mismos ejercicios hace ${st.sessions} ${st.sessions === 1 ? 'sesión' : 'sesiones'}`);
               return (
                 <div key={wd} className="row"><div className="grow"><div className="t">{S.routine[wd].name || WD[wd]}</div><div className="s">{bits.join(' · ')}</div></div></div>
               );
@@ -208,7 +208,7 @@ function SesionesSection() {
       ) : (
         groupSessionsByWeek(recientes).map(g => (
           <div key={g.key}>
-            <div className="sess-week">{g.label} · {g.sessions.length} sesión{g.sessions.length === 1 ? '' : 'es'}</div>
+            <div className="sess-week">{g.label} · {g.sessions.length} {g.sessions.length === 1 ? 'sesión' : 'sesiones'}</div>
             <div className="sess-list">
               {g.sessions.map(s => <SessionCard key={s.id} sess={s} />)}
             </div>

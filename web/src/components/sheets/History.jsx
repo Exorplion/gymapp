@@ -17,7 +17,7 @@ export default function History() {
     <>
       <h2 className="sheet-title">Todas tus sesiones</h2>
       <div className="txt-mut" style={{ fontSize: 13, marginTop: 2, marginBottom: 14 }}>
-        {n ? `${n} sesión${n === 1 ? '' : 'es'} cerrada${n === 1 ? '' : 's'}` : 'Todavía no cerraste ninguna sesión'}
+        {n ? `${n} ${n === 1 ? 'sesión cerrada' : 'sesiones cerradas'}` : 'Todavía no cerraste ninguna sesión'}
       </div>
 
       {!n ? (
@@ -27,7 +27,7 @@ export default function History() {
       ) : (
         grupos.map(g => (
           <div key={g.key}>
-            <div className="sess-week">{g.label} · {g.sessions.length} sesión{g.sessions.length === 1 ? '' : 'es'}</div>
+            <div className="sess-week">{g.label} · {g.sessions.length} {g.sessions.length === 1 ? 'sesión' : 'sesiones'}</div>
             <div className="sess-list">
               {g.sessions.map(s => <SessionCard key={s.id} sess={s} />)}
             </div>

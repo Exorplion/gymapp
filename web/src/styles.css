@@ -309,10 +309,15 @@ main{
    la tarjeta. Apilados, cada número se queda con ~141px. */
 .setrows{display:flex;flex-direction:column;gap:var(--s3);margin:14px 0 12px}
 .setrows .step button{width:52px;height:52px}
-.setrows .step .val{display:flex;align-items:baseline;justify-content:center;gap:8px}
-.setrows .step .val input{font-size:44px}
-/* las libras al lado del número, no debajo: así la fila no crece de alto */
-.setrows .step .val .alt{flex:none;margin-top:0;font-size:13px;white-space:nowrap}
+.setrows .step .val{position:relative}
+.setrows .step .val input{width:100%;text-align:center;font-size:44px}
+/* Las libras al lado del número y no debajo, así la fila no crece de alto —
+   pero FUERA del flujo: si ocuparan su lugar empujarían el input y el número
+   quedaría descentrado respecto de sus botones. */
+.setrows .step .val .alt{
+  position:absolute;right:2px;bottom:8px;
+  margin-top:0;font-size:13px;white-space:nowrap;pointer-events:none;
+}
 .setchips{margin-top:12px}
 /* durante la sesión sólo un ejercicio está "abierto". Los que faltan se apagan
    para que no parezca que podés saltear el orden a dedo. */
