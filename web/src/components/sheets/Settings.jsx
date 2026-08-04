@@ -37,6 +37,7 @@ import { fmtMMSS, vibrate } from '../../lib/format.js';
 import { computeMacros, applyComputedGoals } from '../../lib/macros.js';
 import { seedRegistro, seedCount, wipeSeed } from '../../lib/seed.js';
 import { exportJSON, importJSON, wipeAll } from '../../lib/backup.js';
+import { exportFoodsMD, importFoodsMD } from '../../lib/foodmd.js';
 import { toast } from '../../lib/toast.js';
 
 function MacroPreview({ m }) {
@@ -57,6 +58,7 @@ export default function Settings() {
   const m = S.cfg.goalsAuto ? computeMacros() : null;
   const nSeed = seedCount();
   const importRef = useRef(null);
+  const mdRef = useRef(null);
 
   function setUnit(u) {
     S.cfg.unit = u; saveCfg();
@@ -158,6 +160,12 @@ export default function Settings() {
     e.target.value = '';
   }
 
+  function onMdFile(e) {
+    const f = e.target.files[0];
+    if (f) importFoodsMD(f);
+    e.target.value = '';
+  }
+
   return (
     <>
       <h2>Ajustes</h2>
@@ -217,6 +225,15 @@ export default function Settings() {
       {nSeed > 0 && (
         <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={startSeedWipe}>Borrar lo cargado ({nSeed} registros)</button>
       )}
+
+      <h3>Mi base de alimentos</h3>
+      <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+        Bajá la tabla en Markdown, editala donde quieras y volvé a subirla. Se
+        actualizan los que ya tenías y se agregan los nuevos — nada se borra.
+      </div>
+      <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => exportFoodsMD()}>⬇ Exportar alimentos a MD</button>
+      <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => mdRef.current?.click()}>⬆ Importar alimentos MD</button>
+      <input ref={mdRef} type="file" accept=".md,text/markdown,text/plain" hidden onChange={onMdFile} />
 
       <h3>Respaldo</h3>
       <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => exportJSON()}>⬇ Exportar todo a JSON</button>
