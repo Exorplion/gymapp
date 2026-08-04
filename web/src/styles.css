@@ -367,6 +367,9 @@ main{
 }
 body.dragging-on{user-select:none;-webkit-user-select:none;cursor:grabbing}
 body.dragging-on [data-sid]:not(.dragging){filter:saturate(.8) brightness(.92)}
+/* mientras se arrastra un día no puede haber una altura animándose: los rects
+   del preview se miden justo después de colapsar el día abierto */
+body.dragging-on .day-body{transition:none}
 .drag-hint{display:flex;align-items:center;gap:6px;font-size:12.5px;margin:0 0 var(--s3);padding:0 2px;color:var(--mut)}
 .drag-hint.tight{margin:0 0 6px;padding:0 4px}
 

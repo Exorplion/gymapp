@@ -189,6 +189,25 @@ export async function applyDayDrop(fromWd, toWd, mode) {
   vibrate([18, 40, 18]);
 }
 
+/** Dónde terminaría el contenido de cada día si soltaras `from` sobre `to`.
+    Devuelve un mapa { weekday origen -> weekday destino }.
+
+    Usa exactamente las mismas reglas que applyDayDrop (nextFreeDay + la
+    preferencia S.cfg.dayDrop), así que el preview del arrastre no puede
+    mentir: si cambia la regla, cambian los dos a la vez. Con 'ask' se
+    previsualiza el corrimiento, que es la primera opción que ofrece el sheet
+    day-drop. */
+export function previewDayDrop(fromWd, toWd) {
+  const from = +fromWd, to = +toWd;
+  const map = {};
+  if (from === to || dayIsFree(from)) return map;
+  map[from] = to;
+  if (dayIsFree(to)) return map;
+  const parked = S.cfg.dayDrop === 'swap' ? null : nextFreeDay(to, from);
+  map[to] = (parked === null || parked === from) ? from : parked;
+  return map;
+}
+
 /** Punto de entrada del arrastre de días (drag.js). Decide si hace falta
     preguntar; la mecánica está en applyDayDrop(). */
 export function dropDayOn(fromWd, toWd) {

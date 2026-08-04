@@ -10,7 +10,11 @@ import { setExOrder } from './session.js';
 // Task 5 completa lo que Task 3 dejó en TODO (ver comentarios más abajo):
 // rutina-logic.js no importa nada de este archivo, así que este import es
 // unidireccional — no hay ciclo drag.js<->rutina-logic.js.
-import { pushHistory, dropDayOn, persistDay } from './rutina-logic.js';
+import { pushHistory, dropDayOn, persistDay, previewDayDrop } from './rutina-logic.js';
+// El único uso de React en este módulo: colapsar el día abierto antes de medir
+// los rects tiene que estar pintado ANTES de medir, y sólo flushSync lo
+// garantiza. Ver dragStart.
+import { flushSync } from 'react-dom';
 
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
@@ -54,20 +58,29 @@ export function dragPick(e) {
 
 export function dragStart(card, clientY) {
   const box = card.parentElement;
+  const kind = box.dataset.sort;
+  // Un día abierto mide el doble que un descanso, y con alturas dispares el
+  // preview salta. Se colapsa ANTES de medir. El orden importa: .day-body
+  // anima grid-template-rows en 340ms, así que primero va la clase que apaga
+  // esa transición (body.dragging-on) y recién después el colapso — si no, los
+  // rects se miden a mitad de la animación y el preview apunta a cualquier
+  // lado.
+  document.body.classList.add('dragging-on');
+  if (kind === 'days' && S.rutOpen != null) {
+    S.rutOpen = null;
+    flushSync(() => bump());
+  }
   const cards = [...box.children].filter(k => k.dataset.sid);
   const from = cards.indexOf(card);
-  if (from < 0) return;
+  if (from < 0) { document.body.classList.remove('dragging-on'); return; }
   const rects = cards.map(k => { const r = k.getBoundingClientRect(); return { top: r.top + scrollY, h: r.height }; });
   const gap = Math.max(0, rects[1].top - (rects[0].top + rects[0].h));
-  const kind = box.dataset.sort;
   Object.assign(DRAG, { on: true, box, el: card, cards, rects, gap, from, to: from, y0: clientY + scrollY, self: 0, cy: clientY, kind });
-  document.body.classList.add('dragging-on');
   card.classList.remove('shift', 'settling');
   card.classList.add('dragging');
-  // Los días no se reordenan: cada tarjeta ES un día de la semana y se queda
-  // donde está. Lo que se mueve es el contenido, así que en vez de abrir un
-  // hueco (el modelo de lista) se resalta la tarjeta sobre la que vas a soltar.
-  if (kind !== 'days') cards.forEach((k, i) => { if (i !== from) k.classList.add('shift'); });
+  // .shift es sólo la transición de transform. En modo lista abre el hueco; en
+  // modo días es lo que hace que el preview se deslice en vez de saltar.
+  cards.forEach((k, i) => { if (i !== from) k.classList.add('shift'); });
   vibrate(18);
   DRAG.raf = requestAnimationFrame(dragTick);
 }
@@ -119,6 +132,7 @@ export function dragUpdate() {
     if (to !== DRAG.to) {
       DRAG.to = to;
       DRAG.cards.forEach((k, i) => k.classList.toggle('drop-target', i === to && i !== DRAG.from));
+      dragPreviewDays(to);
       if (to !== DRAG.from) vibrate(6);
     }
     return;
@@ -127,6 +141,25 @@ export function dragUpdate() {
   let to = 0;
   DRAG.rects.forEach((r, i) => { if (i !== DRAG.from && mid > r.top + r.h / 2) to++; });
   if (to !== DRAG.to) { DRAG.to = to; dragLayout(); vibrate(6); }
+}
+
+/* El preview del arrastre de días: cada día afectado se desliza hacia donde
+   terminaría su contenido si soltaras acá. Antes el gesto era mudo — sólo se
+   iluminaba el destino, y que el ocupante se iba a correr recién se veía
+   después de soltar y confirmar.
+
+   La tarjeta arrastrada no entra: a esa la mueve el dedo. */
+function dragPreviewDays(to) {
+  const clear = () => DRAG.cards.forEach((k, i) => { if (i !== DRAG.from) k.style.transform = ''; });
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || to < 0 || to === DRAG.from) { clear(); return; }
+  const map = previewDayDrop(+DRAG.cards[DRAG.from].dataset.sid, +DRAG.cards[to].dataset.sid);
+  DRAG.cards.forEach((k, i) => {
+    if (i === DRAG.from) return;
+    const dest = map[+k.dataset.sid];
+    if (dest == null) { k.style.transform = ''; return; }
+    const j = DRAG.cards.findIndex(c => +c.dataset.sid === dest);
+    k.style.transform = j < 0 ? '' : `translateY(${DRAG.rects[j].top - DRAG.rects[i].top}px)`;
+  });
 }
 
 /* recalcula el apilado real (las filas no miden todas lo mismo) y corre cada
