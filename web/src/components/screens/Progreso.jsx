@@ -15,8 +15,10 @@ import { streakHeatmap, currentStreak, bestStreak } from '../../lib/streak.js';
 import { WD, WEEK_ORDER, fmtD, fmtDFull, fmtNum, kg2lb, round1 } from '../../lib/format.js';
 import { muscleVolume } from '../../lib/muscle.js';
 import { sessionsSince, routineStability } from '../../lib/rutina-logic.js';
+import { groupSessionsByWeek } from '../../lib/session.js';
 import { weeklyAvg, exerciseSeries, filterByRange, strengthReadout, project } from '../../lib/charts.js';
 import Chart from '../Chart.jsx';
+import SessionCard from '../SessionCard.jsx';
 
 const BODY_LABELS = { waist: 'Cintura', arm: 'Brazo', chest: 'Pecho', leg: 'Pierna' };
 
@@ -103,6 +105,8 @@ export default function Progreso() {
         )}
       </div>
 
+      <SesionesSection />
+
       <div className="seg" style={{ margin: 'var(--s3) 0' }}>
         {[['carga', 'Carga'], ['1rm', '1RM'], ['volumen', 'Volumen']].map(([k, label]) => (
           <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => { S.progTab = k; bump(); }}>{label}</button>
@@ -173,6 +177,45 @@ export default function Progreso() {
         <PRsList exNames={exNames} />
       )}
     </>
+  );
+}
+
+/** "Qué hice" es lo que más se consulta de Progreso, así que va arriba de los
+    gráficos y debajo del hero de peso. Antes el historial no estaba en esta
+    pantalla: vivía detrás del reloj del header, como una lista de filas planas.
+    Muestra las últimas 8 agrupadas por semana; el resto vive en el sheet de
+    todas las sesiones. */
+function SesionesSection() {
+  const recientes = S.sessions.slice(0, 8);
+  return (
+    <div id="sesiones" style={{ scrollMarginTop: 70 }}>
+      <div className="sect">
+        Tus sesiones
+        {S.sessions.length > 8 && (
+          <button
+            type="button" className="btn sm ghost"
+            style={{ width: 'auto', padding: '0 12px', height: 32, marginLeft: 'auto' }}
+            onClick={() => openSheet('history')}
+          >
+            Ver todas
+          </button>
+        )}
+      </div>
+      {!recientes.length ? (
+        <div className="card"><div className="empty" style={{ padding: 18 }}>
+          <p style={{ margin: 0 }}>Cuando cierres tu primera sesión va a aparecer acá.</p>
+        </div></div>
+      ) : (
+        groupSessionsByWeek(recientes).map(g => (
+          <div key={g.key}>
+            <div className="sess-week">{g.label} · {g.sessions.length} sesión{g.sessions.length === 1 ? '' : 'es'}</div>
+            <div className="sess-list">
+              {g.sessions.map(s => <SessionCard key={s.id} sess={s} />)}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
   );
 }
 

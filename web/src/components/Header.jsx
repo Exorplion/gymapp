@@ -5,7 +5,7 @@
 // currentStreak() (streak.js, Task 2) y abre el sheet 'streak-detail'
 // (StreakDetail.jsx) al tocar el botón, igual que 'streak-open' en el ACT{}
 // original.
-export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenStreak = () => {}, onOpenHistory = () => {} }) {
+export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenStreak = () => {}, onOpenSessions = () => {} }) {
   return (
     <header className="top">
       <div className="brand">
@@ -19,9 +19,9 @@ export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenSt
           <span className="streak-flame">🔥</span>
           <span className="streak-n" id="streak-n">{streak}</span>
         </button>
-        {/* El reloj del mockup: abre el historial de sesiones como sheet.
-            Antes el historial vivía al final de la pantalla Hoy. */}
-        <button className="icon-btn" aria-label="Historial" onClick={onOpenHistory}>
+        {/* El reloj del mockup. Antes abría el historial como sheet; ahora
+            lleva a la sección "Tus sesiones" de Progreso, que es donde vive. */}
+        <button className="icon-btn" aria-label="Tus sesiones" onClick={onOpenSessions}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7v5.2l3.4 2" />

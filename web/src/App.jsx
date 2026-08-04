@@ -118,7 +118,17 @@ export default function App() {
 
   return (
     <>
-      <Header streak={currentStreak()} onOpenStreak={() => openSheet('streak-detail')} onOpenSettings={() => openSheet('settings')} onOpenHistory={() => openSheet('history')} />
+      <Header
+        streak={currentStreak()}
+        onOpenStreak={() => openSheet('streak-detail')}
+        onOpenSettings={() => openSheet('settings')}
+        onOpenSessions={() => {
+          S.tab = 'prog';
+          bump();
+          // el scroll espera a que Progreso esté pintado
+          setTimeout(() => document.getElementById('sesiones')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+        }}
+      />
       <main>
         {store.tab === 'hoy' && <Hoy />}
         {store.tab === 'rutina' && <Rutina />}

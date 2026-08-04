@@ -415,6 +415,30 @@ body.dragging-on .card.day.drop-target{filter:none}
   .card.day.drop-target{transform:none}
 }
 
+/* ---------- tarjeta de sesión (Progreso / todas las sesiones) ----------
+   Antes una sesión en el historial era una fila plana: había que abrirla para
+   saber si valía la pena. Acá el volumen, los récords y qué ejercicios hiciste
+   se leen sin entrar. */
+.sess-list{display:flex;flex-direction:column;gap:10px;margin-bottom:var(--s4)}
+.sess-card{
+  display:block;width:100%;text-align:left;
+  background:linear-gradient(158deg,rgba(255,255,255,.075),rgba(255,255,255,.02));
+  border:1px solid var(--glass-border);border-radius:var(--r);padding:12px 14px;
+  transition:transform .15s var(--ease),border-color .15s ease;
+}
+.sess-card:active{transform:scale(.99);border-color:var(--line2)}
+.sc-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.sc-name{font-family:'Barlow Condensed';font-size:19px;font-weight:700;letter-spacing:.02em;flex:1;min-width:0}
+.sc-pr{font-size:13px;font-weight:700;color:var(--warn);flex:none}
+.sc-meta{font-size:12.5px;color:var(--mut)}
+.sc-meta.strong{color:var(--blue2);font-weight:500}
+.sc-exs{font-size:12px;color:var(--mut2);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sess-week{
+  font-family:'Barlow Condensed';font-size:12.5px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
+  margin:var(--s4) 2px var(--s2);
+}
+
 /* ---------- filas de lista (rutina / comidas / historial) ---------- */
 .row{
   display:flex;align-items:center;gap:10px;
