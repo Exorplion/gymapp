@@ -82,16 +82,30 @@ function uso() {
 
    El escalonado importa: con una sola regla de "contiene", buscar "pollo"
    ponía "pollo a la brasa" a la misma altura que "pollo" — el mismo error que
-   foodvoice.js ya documenta para el dictado. */
-function puntajeTexto(f, q) {
-  let best = 0;
-  for (const cand of [f.key, ...f.alias.map(norm)]) {
-    if (!cand) continue;
-    if (cand === q) best = Math.max(best, 100);
-    else if (cand.startsWith(q)) best = Math.max(best, 70);
-    else if (cand.split(/\s+/).some(w => w.startsWith(q))) best = Math.max(best, 50);
-    else if (cand.includes(q)) best = Math.max(best, 30);
+   foodvoice.js ya documenta para el dictado.
+
+   Y el nombre pesa más que el alias en cada escalón. Sin eso, buscar "po"
+   devolvía "pizza" primero: su alias "porción de pizza" empieza con "po" y
+   empataba con el nombre "pollo", y el desempate alfabético hacía el resto.
+   Quien escribe "po" quiere pollo. */
+const ESCALONES = [
+  [(cand, q) => cand === q, 100],
+  [(cand, q) => cand.startsWith(q), 70],
+  [(cand, q) => cand.split(/\s+/).some(w => w.startsWith(q)), 50],
+  [(cand, q) => cand.includes(q), 30],
+];
+
+function puntajeDe(cand, q, penalizacion) {
+  if (!cand) return 0;
+  for (const [test, pts] of ESCALONES) {
+    if (test(cand, q)) return pts - penalizacion;
   }
+  return 0;
+}
+
+function puntajeTexto(f, q) {
+  let best = puntajeDe(f.key, q, 0);
+  for (const a of f.alias) best = Math.max(best, puntajeDe(norm(a), q, 10));
   return best;
 }
 

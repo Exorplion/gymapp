@@ -32,6 +32,20 @@ describe('searchFoods', () => {
     expect(searchFoods('pechuga').some(f => f.name === 'pollo')).toBe(true);
   });
 
+  it('un match por nombre le gana a uno por alias de la misma calidad', () => {
+    // "po" es prefijo del nombre "pollo", y también de los alias "porción de
+    // pizza" y "porotos". Quien escribe "po" quiere pollo, no pizza.
+    const r = searchFoods('po').map(f => f.name);
+    expect(r[0]).toBe('pollo');
+    expect(r.indexOf('pollo')).toBeLessThan(r.indexOf('pizza'));
+    expect(r.indexOf('pollo')).toBeLessThan(r.indexOf('frijoles'));
+  });
+
+  it('el nombre más corto gana entre dos que empiezan igual', () => {
+    const r = searchFoods('pollo').map(f => f.name);
+    expect(r.indexOf('pollo')).toBeLessThan(r.indexOf('pollo a la brasa'));
+  });
+
   it('ignora acentos y mayúsculas', () => {
     expect(searchFoods('PLATANO').some(f => f.name === 'plátano')).toBe(true);
   });
