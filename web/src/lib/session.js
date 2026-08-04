@@ -247,7 +247,12 @@ export async function saveSet(exId) {
   if (!S.draft) {
     S.draft = { id: uid(), date: dstr(), weekday: wd, dayName: S.routine[wd]?.name || WD[wd], start: Date.now(), cur: exId, entries: {} };
   }
-  if (!S.draft.entries[exId]) S.draft.entries[exId] = { name: ex.name, equip: ex.equip, machine: ex.machine, sets: [] };
+  // `cat` se copia SÓLO si es una asignación explícita del ejercicio: sin ella
+  // catOf() clasifica por el nombre que la propia entrada ya guarda, así que
+  // mejorar el matcher arregla también el historial viejo. Lo que no puede
+  // quedar afuera es el override manual, porque ese vive en la rutina y
+  // renombrar un ejercicio ahí no debe reescribir el pasado.
+  if (!S.draft.entries[exId]) S.draft.entries[exId] = { name: ex.name, equip: ex.equip, machine: ex.machine, cat: ex.cat, sets: [] };
   const cur = S.draft.entries[exId].sets;
   /* el objetivo es el techo: llegado a él el ejercicio se cierra solo y pasamos
      al siguiente, en vez de dejar registrar series infinitas. El techo de HOY
@@ -281,7 +286,7 @@ export async function completeSession() {
   const order = (d.order && d.order.length) ? d.order : (wdDay?.exercises || []).map(e => e.id);
   const entries = Object.entries(d.entries)
     .sort((a, b) => { const ia = order.indexOf(a[0]), ib = order.indexOf(b[0]); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); })
-    .map(([exId, e]) => ({ exId, name: e.name, equip: e.equip, machine: e.machine, sets: e.sets }));
+    .map(([exId, e]) => ({ exId, name: e.name, equip: e.equip, machine: e.machine, cat: e.cat, sets: e.sets }));
   if (!entries.length) { toast('No registraste ninguna serie. Usá "Descartar" para cerrar la sesión.'); return; }
   /* d.open cubre borradores viejos (formato anterior) y el caso raro de que
      falte start; la duración mide de la primera serie al cierre */

@@ -7,6 +7,7 @@
 // (antes ACT['exf-step']).
 import { useEffect, useRef, useState } from 'react';
 import { EQUIP, EQUIP_HINT, isMachineBound } from '../../lib/equip.js';
+import { MUSCLE_CATS, catOf } from '../../lib/muscle.js';
 import { shrinkImage } from '../../lib/photo.js';
 import { illusUrl } from '../../lib/illustrations.js';
 import IllusPick from './IllusPick.jsx';
@@ -23,6 +24,7 @@ export default function ExerciseForm({ wd, ex }) {
   const [sets, setSets] = useState(ex ? ex.sets : 4);
   const [reps, setReps] = useState(ex ? ex.reps : 10);
   const [equip, setEquip] = useState(ex?.equip || '');
+  const [cat, setCat] = useState(ex?.cat || '');
   const [machine, setMachine] = useState(ex?.machine || '');
   const [photo, setPhoto] = useState(ex?.photo || '');
   const [illus, setIllus] = useState(ex?.illus || '');
@@ -78,7 +80,9 @@ export default function ExerciseForm({ wd, ex }) {
     rec.start();
   }
 
-  function handleSave() { saveExercise(wd, ex ? ex.id : null, { name, sets, reps, equip, machine, photo, illus }); }
+  // lo que el matcher deduce del nombre, para mostrarlo antes de que elijas
+  const auto = catOf({ name });
+  function handleSave() { saveExercise(wd, ex ? ex.id : null, { name, sets, reps, equip, machine, photo, illus, cat }); }
 
   return (
     <>
@@ -165,6 +169,29 @@ export default function ExerciseForm({ wd, ex }) {
             <button type="button" onClick={() => step(setReps, 1)}>+</button>
           </div>
         </div>
+
+      {/* Qué grupo entrena. El automático acierta en la mayoría, pero ninguna
+          lista de palabras va a adivinar "JM press unilateral" — por eso hay
+          una salida manual, y por eso se muestra qué dedujo antes de tocarla.
+          Sin grupo, las series de este ejercicio no cuentan en "Músculos esta
+          semana". */}
+      <label style={{ marginTop: 'var(--s4)' }}>
+        Qué grupo entrena
+        {!cat && auto && <span className="txt-mut" style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}> · detecté {auto}</span>}
+        {!cat && !auto && name.trim() && <span className="txt-warn" style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}> · no lo reconozco, elegilo</span>}
+      </label>
+      <div className="chips">
+        {MUSCLE_CATS.map(c => (
+          <button
+            key={c}
+            type="button"
+            className={`chip ${cat === c ? 'on' : (!cat && auto === c ? 'blue' : '')}`}
+            onClick={() => setCat(cat === c ? '' : c)}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
 
       {/* Con qué se hace el ejercicio. Es lo que permite que el historial no
           mezcle números que no son comparables — ver lib/equip.js. */}

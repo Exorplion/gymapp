@@ -20,7 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import { S, useStore, bump, openSheet, closeSheet } from '../../lib/state.js';
 import { WD, WD1, WDS, MO, WEEK_ORDER, fmtMMSS, fmtNum, round1 } from '../../lib/format.js';
 import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession, sessionForWeekday, sessionPRs } from '../../lib/session.js';
-import { muscleVolume } from '../../lib/muscle.js';
+import { muscleVolume, uncategorized } from '../../lib/muscle.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
 import { toast } from '../../lib/toast.js';
@@ -140,6 +140,7 @@ export default function Hoy() {
           <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 12 }}>
             10–20 series semanales por grupo es el rango habitual para ganar masa.
           </div>
+          <SinGrupoAviso />
         </div>
         </>
       )}
@@ -188,6 +189,28 @@ export default function Hoy() {
       )}
 
     </>
+  );
+}
+
+/** Los ejercicios sin grupo muscular no suman en esta tarjeta. Antes se
+    descartaban en silencio, así que el resumen se veía completo cuando no lo
+    estaba — de 22 ejercicios reales, 18 no contaban y no había forma de
+    saberlo. Ahora se dicen y se pueden asignar. */
+function SinGrupoAviso() {
+  const sin = uncategorized();
+  if (!sin.length) return null;
+  return (
+    <button
+      type="button"
+      className="sin-grupo"
+      onClick={() => { S.tab = 'rutina'; S.rutMode = 'edit'; bump(); }}
+    >
+      <span className="t">
+        {sin.length} ejercicio{sin.length === 1 ? '' : 's'} sin grupo muscular · no suma{sin.length === 1 ? '' : 'n'} acá
+      </span>
+      <span className="s">{sin.slice(0, 4).map(e => e.name).join(' · ')}{sin.length > 4 ? ` +${sin.length - 4}` : ''}</span>
+      <span className="a">Asignar →</span>
+    </button>
   );
 }
 

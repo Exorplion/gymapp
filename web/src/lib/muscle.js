@@ -1,33 +1,143 @@
-// Puerto de funciones de volumen muscular desde index.html
+// Grupo muscular de un ejercicio, y volumen semanal por grupo.
+//
+// El problema que esto resuelve: catOf() exigía que el nombre registrado
+// CONTUVIERA al del catálogo, y muscleVolume descartaba en silencio lo que no
+// matcheaba. Con la rutina real de Enzo eso dejaba 18 de 22 ejercicios sin
+// clasificar — su pecho, su espalda, sus piernas, sus tríceps y sus abs no
+// aparecían en "Músculos esta semana", que mostraba un resumen incompleto como
+// si fuera completo.
+//
+// El caso que lo resume: "Press inclinado" fallaba porque el catálogo dice
+// "Press inclinado mancuernas". El match iba en una sola dirección.
 import { S } from './state.js';
 import { dstr, norm } from './format.js';
 
-/** Base de ejercicios para el selector de "Nuevo ejercicio" */
+/** Los nueve grupos, en el orden en que se muestran. */
+export const MUSCLE_CATS = ['Pecho', 'Espalda', 'Hombro', 'Bíceps', 'Tríceps', 'Pierna', 'Glúteo', 'Gemelos', 'Abs'];
+
+/** Base de ejercicios para el selector de "Nuevo ejercicio" y para clasificar. */
 export const EXCATALOG = [
   { c: 'Pecho', n: 'Press banca' }, { c: 'Pecho', n: 'Press inclinado mancuernas' }, { c: 'Pecho', n: 'Aperturas en polea' },
   { c: 'Pecho', n: 'Fondos' }, { c: 'Pecho', n: 'Press declinado' },
+  { c: 'Pecho', n: 'Press plano máquina' }, { c: 'Pecho', n: 'Press inclinado' }, { c: 'Pecho', n: 'Pec deck' },
   { c: 'Espalda', n: 'Dominadas' }, { c: 'Espalda', n: 'Remo con barra' }, { c: 'Espalda', n: 'Jalón al pecho' },
   { c: 'Espalda', n: 'Remo en polea' }, { c: 'Espalda', n: 'Peso muerto' },
+  { c: 'Espalda', n: 'Jalón ancho' }, { c: 'Espalda', n: 'Remo espalda alta' }, { c: 'Espalda', n: 'Remo neutro' },
+  { c: 'Espalda', n: 'Back extension' },
   { c: 'Hombro', n: 'Press militar' }, { c: 'Hombro', n: 'Elevaciones laterales' }, { c: 'Hombro', n: 'Pájaros' }, { c: 'Hombro', n: 'Face pull' },
   { c: 'Bíceps', n: 'Curl con barra' }, { c: 'Bíceps', n: 'Curl martillo' }, { c: 'Bíceps', n: 'Curl inclinado' },
+  { c: 'Bíceps', n: 'Curl predicador' },
   { c: 'Tríceps', n: 'Extensión tríceps polea' }, { c: 'Tríceps', n: 'Extensión sobre cabeza' },
+  { c: 'Tríceps', n: 'Extensión tríceps' }, { c: 'Tríceps', n: 'JM press' },
   { c: 'Pierna', n: 'Sentadilla' }, { c: 'Pierna', n: 'Prensa' }, { c: 'Pierna', n: 'Peso muerto rumano' },
   { c: 'Pierna', n: 'Extensiones de cuádriceps' }, { c: 'Pierna', n: 'Curl femoral' }, { c: 'Pierna', n: 'Zancadas' },
+  { c: 'Pierna', n: 'Leg press' }, { c: 'Pierna', n: 'Leg extension' }, { c: 'Pierna', n: 'Hamstring curl' },
+  { c: 'Pierna', n: 'Aductor' }, { c: 'Pierna', n: 'Abductor' },
   { c: 'Glúteo', n: 'Hip thrust' }, { c: 'Gemelos', n: 'Elevación de gemelos' },
-  { c: 'Abs', n: 'Crunch en polea' }, { c: 'Abs', n: 'Rueda abdominal' },
+  { c: 'Gemelos', n: 'Standing calf raise' },
+  { c: 'Abs', n: 'Crunch en polea' }, { c: 'Abs', n: 'Rueda abdominal' }, { c: 'Abs', n: 'Abs polea' },
 ];
 
-/** Categoría muscular del ejercicio, reutilizando el catálogo del selector */
-export function catOf(name) {
-  const n = norm(name); let best = null, len = 0;
-  for (const e of EXCATALOG) { const ne = norm(e.n); if (n.includes(ne) && ne.length > len) { best = e.c; len = ne.length; } }
-  return best;
+/* Palabras clave, de lo MÁS específico a lo más genérico. El orden es la parte
+   que importa y por eso esto es una lista y no un objeto: "Hamstring curl"
+   tiene que caer en Pierna antes de que "curl" lo mande a Bíceps, y "Press
+   militar" en Hombro antes de que "press" lo mande a Pecho. */
+const KEYWORDS = [
+  // pierna antes que bíceps, porque llevan "curl"
+  ['hamstring', 'Pierna'], ['femoral', 'Pierna'], ['isquio', 'Pierna'],
+  // hombro y tríceps antes que pecho, porque llevan "press"
+  ['press militar', 'Hombro'], ['militar', 'Hombro'], ['overhead press', 'Hombro'],
+  ['jm press', 'Tríceps'], ['tricep', 'Tríceps'], ['pushdown', 'Tríceps'],
+  ['frances', 'Tríceps'], ['skull', 'Tríceps'], ['extension sobre cabeza', 'Tríceps'],
+  // espalda
+  ['jalon', 'Espalda'], ['pulldown', 'Espalda'], ['dominada', 'Espalda'], ['pull up', 'Espalda'],
+  ['remo', 'Espalda'], ['row', 'Espalda'], ['espalda', 'Espalda'], ['dorsal', 'Espalda'],
+  ['back extension', 'Espalda'], ['hiperext', 'Espalda'], ['lumbar', 'Espalda'],
+  // pierna
+  ['sldl', 'Pierna'], ['rumano', 'Pierna'], ['rdl', 'Pierna'],
+  ['leg press', 'Pierna'], ['leg extension', 'Pierna'], ['leg curl', 'Pierna'],
+  ['sentadilla', 'Pierna'], ['squat', 'Pierna'], ['prensa', 'Pierna'],
+  ['cuadricep', 'Pierna'], ['zancada', 'Pierna'], ['lunge', 'Pierna'],
+  ['aductor', 'Pierna'], ['abductor', 'Pierna'], ['pierna', 'Pierna'],
+  // gemelos antes que nada que lleve "raise"
+  ['calf', 'Gemelos'], ['gemelo', 'Gemelos'], ['pantorrilla', 'Gemelos'], ['soleo', 'Gemelos'],
+  // hombro
+  ['elevaciones laterales', 'Hombro'], ['lateral raise', 'Hombro'], ['pajaro', 'Hombro'],
+  ['face pull', 'Hombro'], ['rear delt', 'Hombro'], ['deltoide', 'Hombro'], ['hombro', 'Hombro'],
+  // glúteo
+  ['hip thrust', 'Glúteo'], ['gluteo', 'Glúteo'], ['patada', 'Glúteo'], ['puente', 'Glúteo'],
+  // abs
+  ['abs', 'Abs'], ['abdomin', 'Abs'], ['crunch', 'Abs'], ['plancha', 'Abs'],
+  ['rueda abdominal', 'Abs'], ['oblicuo', 'Abs'],
+  // bíceps
+  ['predicador', 'Bíceps'], ['preacher', 'Bíceps'], ['martillo', 'Bíceps'],
+  ['hammer', 'Bíceps'], ['curl', 'Bíceps'], ['bicep', 'Bíceps'],
+  // pecho, lo último porque "press" es la palabra más ambigua de todas
+  ['pec deck', 'Pecho'], ['aperturas', 'Pecho'], ['apertura', 'Pecho'], ['fondos', 'Pecho'],
+  ['dips', 'Pecho'], ['banca', 'Pecho'], ['inclinado', 'Pecho'], ['declinado', 'Pecho'],
+  ['pecho', 'Pecho'], ['press', 'Pecho'],
+];
+
+/**
+ * Grupo muscular de un ejercicio. Acepta el objeto o sólo el nombre.
+ *
+ * Resuelve en cuatro pasos, en orden:
+ *   1. `ex.cat` explícito gana — ninguna lista de palabras va a adivinar
+ *      "JM press unilateral", así que tiene que haber una salida manual.
+ *   2. lo registrado contiene al catálogo → gana la entrada más LARGA, la más
+ *      específica (la regla de siempre).
+ *   3. el catálogo contiene a lo registrado → gana la más CORTA, la más cercana
+ *      a lo que escribiste. Es la dirección que faltaba, y la que arregla
+ *      "Press inclinado" contra "Press inclinado mancuernas".
+ *   4. tabla de palabras clave ordenada.
+ *
+ * Devuelve null si no reconoce nada: nunca inventa una categoría.
+ */
+export function catOf(ex) {
+  if (ex && typeof ex === 'object' && ex.cat) return ex.cat;
+  const n = norm(typeof ex === 'string' ? ex : ex?.name);
+  if (!n) return null;
+
+  let contenido = null, lenC = 0;      // paso 2
+  let contenedor = null, lenD = Infinity; // paso 3
+  for (const e of EXCATALOG) {
+    const ne = norm(e.n);
+    if (!ne) continue;
+    if (n.includes(ne)) { if (ne.length > lenC) { contenido = e.c; lenC = ne.length; } }
+    // sólo para nombres de 4+ caracteres: un fragmento corto se llevaría por
+    // delante media tabla
+    else if (n.length >= 4 && ne.includes(n)) { if (ne.length < lenD) { contenedor = e.c; lenD = ne.length; } }
+  }
+  if (contenido) return contenido;
+  if (contenedor) return contenedor;
+
+  for (const [kw, cat] of KEYWORDS) if (n.includes(kw)) return cat;
+  return null;
 }
 
+/** Series por grupo muscular en los últimos `days` días.
+
+    Lee el `cat` que quedó guardado en cada entrada: sin eso el volumen
+    histórico dependería de la rutina de hoy, y renombrar un ejercicio
+    reescribiría el pasado. */
 export function muscleVolume(days) {
   const cutoff = dstr(new Date(Date.now() - days * 86400000)), tally = {};
   S.sessions.filter(s => s.date >= cutoff).forEach(s => (s.entries || []).forEach(e => {
-    const c = catOf(e.name); if (c) tally[c] = (tally[c] || 0) + e.sets.length;
+    const c = catOf(e);
+    if (c) tally[c] = (tally[c] || 0) + e.sets.length;
   }));
   return tally;
+}
+
+/** Ejercicios de la rutina que no caen en ningún grupo.
+
+    Existe para que el fallo deje de ser silencioso: la tarjeta de músculos los
+    nombra y ofrece asignarlos. Un resumen incompleto presentado como completo
+    es peor que no tener resumen. */
+export function uncategorized() {
+  const out = [];
+  Object.values(S.routine || {}).forEach(d => (d.exercises || []).forEach(e => {
+    if (!catOf(e)) out.push(e);
+  }));
+  return out;
 }
