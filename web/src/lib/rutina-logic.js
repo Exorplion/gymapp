@@ -10,6 +10,7 @@ import { S, bump, openSheet, closeSheet, saveCfg } from './state.js';
 import { dstr, uid, norm, vibrate, WD, WEEK_ORDER } from './format.js';
 import { idb } from './db.js';
 import { EXCATALOG } from './muscle.js';
+import { exKey } from './equip.js';
 import { toast } from './toast.js';
 
 /* ================= RUTINA ================= */
@@ -55,15 +56,113 @@ export function routineName() { return S.cfg.routineName || (routineStats().days
 export function activeDayWds() {
   return WEEK_ORDER.filter(wd => S.routine[wd]?.name || S.routine[wd]?.exercises?.length);
 }
-/* snapshot del split actual, sin ids: al aplicarlo se generan nuevos */
+/* snapshot del split actual, sin ids: al aplicarlo se generan nuevos.
+
+   Conserva equip/machine/illus. Antes guardaba sólo {name,sets,reps}, así que
+   guardar una rutina en "Mis rutinas" y volver a cargarla te borraba el
+   equipamiento de todos los ejercicios — y con él el enlace a su historial,
+   que se compara por nombre+equipo+máquina (equip.js). Pasaba desapercibido
+   porque cargar una rutina guardada es raro; traer ejercicios de una lo
+   convirtió en el camino principal.
+
+   `photo` queda afuera a propósito: son data-URLs y S.lib entero vive en un
+   único registro de `settings`, así que meter fotos ahí lo infla sin límite. */
 export function routineSnapshot() {
   const days = {};
   WEEK_ORDER.forEach(wd => {
     const d = S.routine[wd];
     if (!d?.exercises?.length) return;
-    days[wd] = { name: d.name || WD[wd], exercises: d.exercises.map(e => ({ name: e.name, sets: e.sets, reps: e.reps })) };
+    days[wd] = {
+      name: d.name || WD[wd],
+      exercises: d.exercises.map(e => ({
+        name: e.name, sets: e.sets, reps: e.reps,
+        equip: e.equip, machine: e.machine, illus: e.illus,
+      })),
+    };
   });
   return days;
+}
+
+/** Copia de un ejercicio con id NUEVO.
+
+    El id nuevo no es cosmético: findEx(exId) (session.js) recorre todos los
+    días y devuelve la primera coincidencia, así que dos días con el mismo id
+    harían que guardar una serie apunte al ejercicio equivocado.
+
+    El historial no se pierde por eso: se compara por exKey (nombre + equipo +
+    máquina), no por id, así que la copia llega sabiendo tu última vez y tus
+    PRs sin hacer nada. */
+export function cloneExercise(ex) {
+  return {
+    id: uid(),
+    name: ex.name,
+    sets: ex.sets,
+    reps: ex.reps,
+    equip: ex.equip || undefined,
+    machine: ex.machine || undefined,
+    photo: ex.photo || undefined,
+    illus: ex.illus || undefined,
+  };
+}
+
+/** Los ejercicios de una fuente de copiado: un día de la semana
+    ({fromWd}) o un día de una rutina guardada ({libId, libWd}). */
+export function copySourceExercises(src) {
+  if (src?.libId != null) {
+    const r = S.lib.find(x => x.id === src.libId);
+    return r?.days?.[src.libWd]?.exercises || [];
+  }
+  return S.routine[+src?.fromWd]?.exercises || [];
+}
+
+/** Nombre del día de origen, para heredarlo si el destino no tiene. */
+function copySourceName(src) {
+  if (src?.libId != null) {
+    const r = S.lib.find(x => x.id === src.libId);
+    return r?.days?.[src.libWd]?.name || '';
+  }
+  return S.routine[+src?.fromWd]?.name || '';
+}
+
+/**
+ * Lleva ejercicios de `src` al día `toWd`.
+ *
+ * `ids` identifica qué copiar dentro del origen: por `id` cuando viene de un
+ * día de la semana, y por `name` cuando viene de una rutina guardada (los
+ * ejercicios de S.lib no tienen id — se generan al aplicarlos).
+ *
+ * `mode`:
+ *   'replace' — el destino queda con exactamente lo seleccionado.
+ *   'merge'   — sólo entran los que el destino no tiene ya, comparando por
+ *               exKey: el mismo nombre con otro equipo NO es un repetido, es
+ *               justo lo que el módulo de equipamiento existe para separar.
+ */
+export async function copyExercises(src, toWd, ids, mode = 'merge') {
+  const to = +toWd;
+  if (src?.libId == null && +src?.fromWd === to) return;   // copiar sobre sí mismo
+  const elegidos = copySourceExercises(src).filter(e => ids.includes(e.id ?? e.name));
+  if (!elegidos.length) return;
+
+  const destino = ensureDay(to);
+  const existentes = mode === 'replace' ? [] : (destino.exercises || []);
+  const yaHay = new Set(existentes.map(exKey));
+  const nuevos = elegidos
+    .filter(e => mode === 'replace' || !yaHay.has(exKey(e)))
+    .map(cloneExercise);
+
+  if (!nuevos.length && mode === 'merge') { toast('Ese día ya tiene todos esos ejercicios'); return; }
+
+  pushHistory(
+    mode === 'replace'
+      ? `${WD[to]} reemplazado con ${nuevos.length} ejercicio${nuevos.length === 1 ? '' : 's'}`
+      : `${nuevos.length} ejercicio${nuevos.length === 1 ? '' : 's'} copiado${nuevos.length === 1 ? '' : 's'} al ${WD[to].toLowerCase()}`,
+  );
+  destino.exercises = [...existentes, ...nuevos];
+  // Un día que todavía no tenía nombre hereda el del origen; uno que ya lo
+  // tenía se lo queda — el nombre es del día, no del contenido.
+  if (!destino.name) destino.name = copySourceName(src);
+  await persistDay(to);
+  bump();
 }
 export async function saveLib() { await idb.put('settings', { key: 'lib', value: S.lib }); }
 export async function applyDays(days, name) {
@@ -72,7 +171,12 @@ export async function applyDays(days, name) {
   for (const wd in days) {
     S.routine[wd] = {
       weekday: +wd, name: days[wd].name,
-      exercises: days[wd].exercises.map(e => ({ id: uid(), name: e.name, sets: e.sets, reps: e.reps })),
+      // conserva equip/machine/illus: sin ellos la rutina cargada pierde el
+      // enlace a su historial (ver routineSnapshot)
+      exercises: days[wd].exercises.map(e => ({
+        id: uid(), name: e.name, sets: e.sets, reps: e.reps,
+        equip: e.equip || undefined, machine: e.machine || undefined, illus: e.illus || undefined,
+      })),
     };
     await persistDay(+wd);
   }

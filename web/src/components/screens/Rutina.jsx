@@ -287,6 +287,23 @@ function DayCard({ wd }) {
             ✎ Día
           </button>
         </div>
+        {/* Anterior A y Anterior B son la misma rutina: sin esto había que
+            cargar los mismos nueve ejercicios a mano dos veces, y cada
+            corrección otras dos. Botones siempre visibles y no un aviso al
+            salir del editor — un cartel cada vez que terminás de editar se
+            vuelve ruido y termina en que lo cerrás sin leer. */}
+        <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+          <button
+            type="button" className="btn sm dim" style={{ flex: 1 }}
+            disabled={!exs.length}
+            onClick={() => openSheet('copy-exs', { mode: 'push', wd })}
+          >
+            ⧉ Copiar a otro día
+          </button>
+          <button type="button" className="btn sm dim" style={{ flex: 1 }} onClick={() => openSheet('copy-exs', { mode: 'pull', wd })}>
+            ⤓ Traer de otro día
+          </button>
+        </div>
       </div></div>
     </div>
   );

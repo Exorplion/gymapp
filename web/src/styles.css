@@ -497,6 +497,24 @@ body.dragging-on .card.day.drop-target{filter:none}
   margin:var(--s4) 2px var(--s2);
 }
 
+/* ---------- lista con tildes (copiar ejercicios entre días) ---------- */
+.pick-list{display:flex;flex-direction:column;gap:6px}
+.pick-row{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 11px;border-radius:12px;
+  background:var(--card2);border:1px solid var(--line);
+}
+.pick-row input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:var(--blue)}
+.pick-row .i{
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;
+  color:var(--mut2);flex:none;min-width:12px;
+}
+.pick-row .grow{flex:1;min-width:0}
+.pick-row .t{display:block;font-size:14.5px;font-weight:600}
+.pick-row .s{display:block;font-size:12px;color:var(--mut);margin-top:1px}
+/* el que el destino ya tiene: se ve, pero apagado, para que la cuenta cierre */
+.pick-row.dim{opacity:.55}
+
 /* ---------- ejercicio en el editor de rutina ----------
    Cada ejercicio es una tarjeta y el nombre tiene su propia línea a ancho
    completo. Antes era una .row con cinco botones de 40px al lado: en una fila

@@ -15,6 +15,7 @@ import Nutricion from './components/screens/Nutricion.jsx';
 import Progreso from './components/screens/Progreso.jsx';
 import DayEdit from './components/sheets/DayEdit.jsx';
 import DayDrop from './components/sheets/DayDrop.jsx';
+import CopyExercises from './components/sheets/CopyExercises.jsx';
 import ExerciseForm from './components/sheets/ExerciseForm.jsx';
 import Library from './components/sheets/Library.jsx';
 import DayPeek from './components/sheets/DayPeek.jsx';
@@ -64,6 +65,7 @@ function SheetContent({ sheet }) {
   switch (sheet.type) {
     case 'day-edit': return <DayEdit {...sheet.props} />;
     case 'day-drop': return <DayDrop {...sheet.props} />;
+    case 'copy-exs': return <CopyExercises {...sheet.props} />;
     case 'ex-form': return <ExerciseForm {...sheet.props} />;
     case 'library': return <Library {...sheet.props} />;
     case 'day-peek': return <DayPeek {...sheet.props} />;
