@@ -195,7 +195,7 @@ export async function completeSession() {
   stopRest();
   vibrate([30, 50, 30]);
   bump();
-  openSheet('session-recap', { sess, prs });
+  openSheet('session-view', { id: sess.id, justFinished: true });
   if (prs.length > 0) fireConfetti();
 }
 

@@ -32,7 +32,7 @@ export default function History() {
                 key={s.id}
                 type="button"
                 className="hist-row"
-                onClick={() => openSheet('hist-detail', { id: s.id })}
+                onClick={() => openSheet('session-view', { id: s.id })}
               >
                 <span className="hist-badge">{WDS[s.weekday]}</span>
                 <span className="grow">

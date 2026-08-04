@@ -7,16 +7,19 @@
 // RutinaView/RutinaEdit/DayCard), no en archivos nuevos: el plan sólo pide
 // un archivo para esta pantalla.
 //
-// SessStartInfo y HistDetail se exportan acá (no son de los "5 sheets" que
-// pide el Paso 4 del brief, que sí tienen archivo propio) porque son
+// SessStartInfo se exporta acá (no es de los "5 sheets" que pide el Paso 4
+// del brief, que sí tienen archivo propio) porque es
 // contenido de sheet específico de Hoy sin lógica de scroll/drag que
-// justifique aislarlos — mismo criterio que ConfirmSheet en App.jsx (sheet
-// cross-cutting definido junto a quien lo usa). App.jsx los registra en el
-// switch de <SheetContent/> como 'sess-start-info' y 'hist-detail'.
+// justifique aislarlo — mismo criterio que ConfirmSheet en App.jsx (sheet
+// cross-cutting definido junto a quien lo usa). App.jsx lo registra en el
+// switch de <SheetContent/> como 'sess-start-info'.
+//
+// HistDetail vivía acá hasta que SessionView (components/sheets/) unificó las
+// dos vistas de una sesión — la del historial y la del cierre.
 import { useEffect, useRef, useState } from 'react';
 import { S, useStore, bump, openSheet, closeSheet } from '../../lib/state.js';
-import { WD, WD1, WDS, MO, WEEK_ORDER, fmtMMSS, fmtDFull, fmtNum, round1 } from '../../lib/format.js';
-import { orderedExs, nextPending, setsDone, startSession, discardSession, completeSession, deleteHistorySession } from '../../lib/session.js';
+import { WD, WD1, WDS, MO, WEEK_ORDER, fmtMMSS } from '../../lib/format.js';
+import { orderedExs, nextPending, setsDone, startSession, discardSession, completeSession } from '../../lib/session.js';
 import { muscleVolume } from '../../lib/muscle.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
@@ -346,31 +349,3 @@ function VoiceLogButton() {
   );
 }
 
-/** Puerto de sheetHist() (index.html) — detalle de una sesión del historial. */
-export function HistDetail({ id }) {
-  const s = S.sessions.find(x => x.id === id);
-  if (!s) return null;
-  return (
-    <>
-      <h2>{s.dayName || WD[s.weekday]}</h2>
-      <div className="txt-mut" style={{ margin: '-8px 0 14px', fontSize: 14 }}>{fmtDFull(s.date)} · {s.duration} min</div>
-      {(s.entries || []).map((e, i) => (
-        <div key={i} className="card" style={{ padding: '12px 14px' }}>
-          <div className="cond" style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>{e.name}</div>
-          <div className="chips">{e.sets.map((st, j) => <span key={j} className="chip">{fmtNum(round1(st.w))}kg × {st.r}</span>)}</div>
-        </div>
-      ))}
-      <button type="button" className="btn danger sm" style={{ marginTop: 6 }} onClick={() => confirmHistDel(s.id)}>Eliminar sesión</button>
-    </>
-  );
-}
-
-function confirmHistDel(id) {
-  openSheet('confirm', {
-    title: 'Eliminar sesión',
-    body: 'Se elimina del historial. Esta acción no se puede deshacer.',
-    confirmLabel: 'Eliminar',
-    onConfirm: () => deleteHistorySession(id),
-    onCancel: () => openSheet('hist-detail', { id }),
-  });
-}
