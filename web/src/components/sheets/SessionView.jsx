@@ -239,7 +239,12 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
             <div key={i} className="load">
               <span className="kg">{fmtNum(round1(g.w))}<small>kg</small></span>
               <span className="reps">
-                {g.reps.map((r, j) => <b key={j}>{r}</b>)}
+                {g.reps.map((r, j) => (
+                  <span key={j} className="rep">
+                    <b className="s">Serie {g.from + j}</b>
+                    <b className="r">{r}<small>reps</small></b>
+                  </span>
+                ))}
               </span>
             </div>
           ))}

@@ -10,6 +10,7 @@ import { S, bump, useStore, openSheet } from '../../lib/state.js';
 import { WD, WD1, WEEK_ORDER } from '../../lib/format.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
 import { equipLabel } from '../../lib/equip.js';
+import { catOf } from '../../lib/muscle.js';
 import { flipSort } from '../../lib/drag.js';
 import {
   routineStats, routineName, activeDayWds,
@@ -189,6 +190,8 @@ function DayCard({ wd }) {
   const empty = !d?.name && !exs.length;
   const open = S.rutOpen === wd && !empty;
   const fx = S.dayFx[wd];
+  // referencia del riel: el ejercicio con más series del día
+  const maxSets = Math.max(1, ...exs.map(e => e.sets || 0));
 
   // Día libre: una tarjeta fina, sin cuerpo. Sigue siendo arrastrable y sobre
   // todo soltable — es el destino natural al correr una rutina de día.
@@ -232,26 +235,31 @@ function DayCard({ wd }) {
               quedaban 62px: los 40 ejercicios del split se veían como
               "Press ...", "Pec de...", "Leg pr...". */}
           {exs.map((ex, i) => (
-            <div className="ex-row" data-sid={ex.id} key={ex.id}>
+            <div
+              className="ex-row" data-sid={ex.id} key={ex.id}
+              /* el riel se llena según las series de ESTE ejercicio contra el
+                 que más tiene del día: la lista se vuelve un gráfico del
+                 reparto de volumen, que es lo que estás decidiendo acá */
+              style={{ '--fill': maxSets ? ex.sets / maxSets : 1, '--i': i }}
+            >
               <div className="ex-row-top">
-                <span className="i">{i + 1}</span>
-                <span className="n">
-                  {ex.name}
-                  <button
-                    type="button"
-                    className="mini info inline"
-                    data-act="ex-info"
-                    style={exInfo(ex.name) ? undefined : { opacity: .4 }}
-                    onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
-                  >
-                    ⓘ
-                  </button>
-                </span>
+                <span className="eyebrow">{i + 1} · {catOf(ex) || 'sin grupo'}</span>
+                <button
+                  type="button"
+                  className="mini info inline"
+                  data-act="ex-info"
+                  style={exInfo(ex.name) ? undefined : { opacity: .4 }}
+                  onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
+                >
+                  ⓘ
+                </button>
               </div>
+              <div className="n">{ex.name}</div>
               <div className="ex-row-bot">
+                <span className="presc">{ex.sets}<i>×</i>{ex.reps}</span>
                 <span className="m">
+                  RIR {rirScheme(ex.sets, ex.name).join('/')}
                   {equipLabel(ex) && <span className="eq-tag">{equipLabel(ex)}</span>}
-                  {ex.sets}×{ex.reps} · RIR {rirScheme(ex.sets, ex.name).join('/')}
                 </span>
                 <span className="acts">
                   <button

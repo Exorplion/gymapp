@@ -182,19 +182,26 @@ describe('entryDelta', () => {
 describe('groupSets', () => {
   it('agrupa series consecutivas del mismo peso: "85 por 7 y 6"', async () => {
     const { groupSets } = await import('../session.js');
-    expect(groupSets([{ w: 85, r: 7 }, { w: 85, r: 6 }])).toEqual([{ w: 85, reps: [7, 6] }]);
+    expect(groupSets([{ w: 85, r: 7 }, { w: 85, r: 6 }])).toEqual([{ w: 85, reps: [7, 6], from: 1 }]);
   });
 
   it('un cambio de peso abre un grupo nuevo', async () => {
     const { groupSets } = await import('../session.js');
     expect(groupSets([{ w: 60, r: 10 }, { w: 65, r: 8 }, { w: 65, r: 7 }]))
-      .toEqual([{ w: 60, reps: [10] }, { w: 65, reps: [8, 7] }]);
+      .toEqual([{ w: 60, reps: [10], from: 1 }, { w: 65, reps: [8, 7], from: 2 }]);
   });
 
   it('volver al mismo peso más tarde no se fusiona con el grupo anterior', async () => {
     const { groupSets } = await import('../session.js');
     expect(groupSets([{ w: 60, r: 10 }, { w: 65, r: 8 }, { w: 60, r: 9 }]))
-      .toEqual([{ w: 60, reps: [10] }, { w: 65, reps: [8] }, { w: 60, reps: [9] }]);
+      .toEqual([{ w: 60, reps: [10], from: 1 }, { w: 65, reps: [8], from: 2 }, { w: 60, reps: [9], from: 3 }]);
+  });
+
+  it('la numeración de series es continua entre grupos', async () => {
+    const { groupSets } = await import('../session.js');
+    const g = groupSets([{ w: 60, r: 10 }, { w: 60, r: 9 }, { w: 65, r: 8 }]);
+    // serie 1 y 2 al primer peso, serie 3 al segundo
+    expect(g.map(x => x.from)).toEqual([1, 3]);
   });
 
   it('sin series devuelve lista vacía', async () => {

@@ -101,10 +101,13 @@ export function sessionPRs(sess) {
     momentos distintos de la sesión y fusionarlos borraría el orden real. */
 export function groupSets(sets) {
   const out = [];
-  (sets || []).forEach(s => {
+  (sets || []).forEach((s, i) => {
     const ult = out[out.length - 1];
     if (ult && ult.w === s.w) ult.reps.push(s.r);
-    else out.push({ w: s.w, reps: [s.r] });
+    // `from` es el número de la primera serie del grupo (1-based): agrupar por
+    // peso no puede costar saber qué serie fue cada una, así que la numeración
+    // sigue siendo continua a lo largo de todo el ejercicio.
+    else out.push({ w: s.w, reps: [s.r], from: i + 1 });
   });
   return out;
 }
