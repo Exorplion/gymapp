@@ -14,7 +14,7 @@ export default function DayPeek({ wd }) {
   return (
     <>
       <h2>{d.name || WD[wd]}</h2>
-      <div className="txt-mut" style={{ fontSize: 13.5, margin: '-8px 0 16px' }}>
+      <div className="sheet-sub">
         {WD[wd]} · {d.exercises.length} ejercicios · {sets} series
       </div>
       <div className="card sub" style={{ padding: 'var(--s2) var(--s3)' }}>

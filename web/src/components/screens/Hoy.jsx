@@ -137,7 +137,7 @@ export default function Hoy() {
               </div>
             </div>
           ))}
-          <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 12 }}>
+          <div className="ptext sm" style={{ marginTop: 12 }}>
             10–20 series semanales por grupo es el rango habitual para ganar masa.
           </div>
           <SinGrupoAviso />
@@ -307,7 +307,7 @@ function DoneHero({ sess, wd, today }) {
     <div className="card hero done-hero">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ width: 7, height: 7, borderRadius: 4, background: 'var(--ok)', boxShadow: '0 0 8px var(--ok)' }}></span>
-        <div className="txt-mut" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase' }}>
+        <div className="eyebrow">
           Completado · {wd === today.getDay() ? 'hoy' : WD[wd]}
         </div>
       </div>
@@ -339,7 +339,7 @@ function PreSessionHero({ day, wd, exs, today }) {
     <div className="card hero">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ width: 7, height: 7, borderRadius: 4, background: 'var(--cyan)', boxShadow: '0 0 8px var(--cyan)' }}></span>
-        <div className="txt-mut" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase' }}>
+        <div className="eyebrow">
           {wd === today.getDay() ? 'Toca hoy' : WD[wd]}
         </div>
       </div>
@@ -378,7 +378,7 @@ export function SessStartInfo({ wd }) {
   return (
     <>
       <h2>Iniciar entrenamiento</h2>
-      <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.55, margin: '-8px 0 16px' }}>
+      <div className="sheet-sub">
         Vas a abrir la sesión de <b className="txt-blue">{day?.name || WD[wd]}</b> · {n} ejercicio{n === 1 ? '' : 's'}.
       </div>
       <div className="calcbox">

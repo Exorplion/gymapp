@@ -476,6 +476,47 @@ body.dragging-on .card.day.drop-target{filter:none}
   letter-spacing:.12em;text-transform:uppercase;color:var(--mut);
 }
 
+/* ---------- un ejercicio dentro de "Lo que hiciste" ----------
+   Era el nombre y una fila de chips: sin grupo muscular, sin resumen y sin
+   relación con la vez anterior. La vista donde uno mira "cómo me fue" no
+   contestaba esa pregunta. */
+.entry-top{display:flex;align-items:center;gap:var(--s2);margin-bottom:2px}
+.entry-pr{font-size:15px;flex:none}
+/* el nombre pasa a ser tocable en modo corrección: es el gesto que abre
+   "cambiar qué ejercicio fue" */
+.entry-name-edit{
+  flex:1;min-width:0;text-align:left;
+  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;
+  letter-spacing:.02em;color:var(--txt);
+  padding:2px 8px;margin-left:-8px;border-radius:9px;
+  border:1px dashed var(--line2);background:none;
+}
+.entry-name-edit .pen{font-size:12px;color:var(--blue2);margin-left:4px}
+.entry-name-edit:active{border-color:var(--blue2)}
+
+/* Series numeradas en vez de chips sueltos: se leen como una lista de lo que
+   pasó, en orden, y las cifras quedan alineadas por ser tabulares. */
+.set-list{display:flex;flex-direction:column;gap:1px}
+.set-line{
+  display:flex;align-items:baseline;gap:var(--s2);
+  padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.set-line:last-child{border-bottom:none}
+.set-line .i{
+  width:20px;flex:none;font-family:'Barlow Condensed',sans-serif;
+  font-size:12px;font-weight:700;color:var(--mut2);
+}
+.set-line .w{
+  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;
+  font-variant-numeric:tabular-nums;min-width:62px;
+}
+.set-line .w small{font-size:11px;font-weight:600;color:var(--mut)}
+.set-line .x{color:var(--mut2);font-size:12px}
+.set-line .r{
+  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+
 /* fila de serie en modo corrección: los inputs guardan en blur, no en cada
    tecla — mismo criterio que las metas de Ajustes (escribir a IndexedDB por
    tecla persiste dígitos parciales) */
@@ -653,7 +694,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .dayline.rest .t{color:var(--mut);font-weight:500}
 .dayline .s{color:var(--mut);font-size:12.5px;margin-top:1px}
 .dayline:active{background:rgba(46,125,255,.06)}
-.lib-tag{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
+.lib-tag{font-size:var(--t-micro);letter-spacing:.06em;text-transform:uppercase;font-weight:700;
   color:var(--ok);background:rgba(46,230,168,.12);border-radius:6px;padding:2px 6px;margin-left:6px}
 
 /* ---------- rutina: día ---------- */
@@ -887,6 +928,81 @@ nav.tabbar button.on svg{filter:none}
 .spacer{height:8px}
 .txt-blue{color:var(--blue2)} .txt-ok{color:var(--ok)} .txt-red{color:var(--red)} .txt-mut{color:var(--mut)} .txt-warn{color:var(--warn)}
 
+/* ================= primitivas de las vistas profundas =================
+   La app tenía sistema de diseño, pero se terminaba en las portadas: debajo
+   había 246 estilos inline reinventando los mismos seis patrones. La escala
+   tipográfica de más arriba lleva escrito "la app tenía 18 tamaños distintos,
+   que es deriva, no jerarquía" — se creó para esto y se usaba 17 veces.
+
+   Nada de esto es un sistema nuevo: son los patrones que ya estaban repetidos
+   a mano, con nombre. Los alias viejos (.hero-eyebrow, .macro3) se conservan
+   para no tocar lo que ya funciona. */
+
+/* El subtítulo bajo el título de un sheet. Estaba escrito a mano diez veces
+   como margin:'-8px 0 16px' — el -8px sube la línea contra el h2, que ya trae
+   su propio margen inferior. */
+.sheet-sub{
+  font-size:var(--t-body);line-height:1.5;color:var(--mut);
+  margin:-8px 0 var(--s4);
+}
+.sheet-sub b{color:var(--txt);font-weight:600}
+
+/* Etiqueta corta en versalitas. .hero-eyebrow es la variante celeste del hero;
+   ésta es la neutra, para cualquier profundidad. */
+.eyebrow{
+  font-size:var(--t-micro);font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--mut);
+}
+.eyebrow.ok{color:var(--ok)} .eyebrow.warn{color:var(--warn)} .eyebrow.blue{color:var(--blue2)}
+/* un <label> fuera de .field: hasta ahora salía como texto suelto mientras el
+   de al lado, por estar dentro de .field, salía en versalitas. Es literalmente
+   el problema que se vino a arreglar, en la misma pantalla. */
+.lbl-block{display:block;margin-bottom:6px}
+
+/* Fila de cifras. Es lo que .macro3 hacía sólo para nutrición, generalizado a
+   N columnas: el resumen de una sesión, las medidas del cuerpo, la constancia. */
+.stats{display:grid;grid-template-columns:repeat(var(--n,3),1fr);gap:var(--s2);margin-top:var(--s4)}
+.stats > div{text-align:center;min-width:0}
+.stats .n{
+  font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;
+  line-height:1.05;font-variant-numeric:tabular-nums;
+}
+.stats .l{
+  display:block;font-size:var(--t-micro);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--mut);margin-top:2px;
+}
+
+/* Tarjeta de dato: encabezado + cuerpo. Para las vistas de detalle, donde
+   .card suelto obligaba a ajustar el padding a mano cada vez. */
+.dcard{
+  background:linear-gradient(180deg,var(--card),rgba(12,19,34,.6));
+  border:1px solid var(--glass-border);border-radius:var(--r);
+  padding:var(--s3) 14px;margin-bottom:10px;
+}
+.dcard-head{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s2)}
+.dcard-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;
+  letter-spacing:.02em;flex:1;min-width:0;
+}
+.dcard-foot{
+  display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);
+  margin-top:10px;padding-top:9px;border-top:1px solid var(--line);
+  font-size:var(--t-sm);color:var(--mut);
+}
+
+/* Nota informativa. .calcbox ya existía; le faltaban los tonos, que estaban
+   escritos a mano con rgba() en cada lugar que los necesitaba. */
+.calcbox.warn{background:rgba(255,180,84,.09);border-color:rgba(255,180,84,.28);color:var(--warn)}
+.calcbox.ok{background:rgba(16,185,129,.09);border-color:rgba(16,185,129,.28);color:var(--ok)}
+.calcbox.blue{background:rgba(46,125,255,.09);border-color:rgba(46,125,255,.28)}
+
+/* Texto de párrafo dentro de un sheet: la combinación tamaño+interlínea que
+   estaba suelta 34 veces (lineHeight 1.5 y 1.55). */
+.ptext{font-size:var(--t-body);line-height:1.55;color:var(--txt)}
+.ptext.sm{font-size:var(--t-sm);line-height:1.5;color:var(--mut)}
+.ptext.mut{color:var(--mut)}
+.ptext.center{text-align:center}
+
 /* ---------- perfil / macros ---------- */
 .profcard{display:flex;align-items:center;gap:12px;cursor:pointer}
 .profcard .pavatar{width:44px;height:44px;flex:none;border-radius:13px;background:var(--grad);display:grid;place-items:center;font-size:20px;box-shadow:var(--glow)}
@@ -939,7 +1055,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .hero-stats .cond{font-size:26px;font-weight:700;line-height:1}
 .hero-stats span{
   display:block;margin-top:2px;
-  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
+  font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
 }
 .hero-cta{
   margin-top:18px;height:58px;border-radius:18px;
@@ -1054,7 +1170,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .kcal-ring svg{width:132px;height:132px}
 .kr-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .kr-n{font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:700;line-height:1}
-.kr-of{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);margin-top:2px}
+.kr-of{font-size:var(--t-micro);letter-spacing:.16em;text-transform:uppercase;color:var(--mut);margin-top:2px}
 .kcal-side{flex:1;min-width:0}
 /* El número grande es lo que QUEDA: es el dato sobre el que se decide si
    comer algo más o no. */
@@ -1127,7 +1243,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .const-stats .cond{font-size:26px;font-weight:700;line-height:1}
 .const-stats span{
   display:block;margin-top:2px;
-  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
+  font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
 }
 /* Fuerza · 1RM: la cifra en cian claro y su unidad debajo, como el mockup */
 .str-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;line-height:1;color:#A9E8FF}

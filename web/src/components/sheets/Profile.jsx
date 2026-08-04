@@ -99,7 +99,7 @@ export default function Profile() {
   return (
     <>
       <h2>Perfil y macros</h2>
-      <div className="txt-mut" style={{ margin: '-8px 0 16px', fontSize: 13.5 }}>Todo se recalcula desde estos datos. Nada queda fijo.</div>
+      <div className="sheet-sub">Todo se recalcula desde estos datos. Nada queda fijo.</div>
 
       <h3>Sexo</h3>
       <div className="seg">

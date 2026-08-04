@@ -91,6 +91,28 @@ export function sessionPRs(sess) {
   return prs;
 }
 
+/** Cuánto cambió la mejor serie de este ejercicio respecto de la última vez
+    que lo hiciste antes de esta sesión.
+
+    Compara por exKey, así que el mismo nombre con otro equipo no cuenta como
+    la misma serie histórica — es justo lo que equip.js existe para separar.
+    Devuelve null si no hay con qué comparar: nunca se inventa una tendencia. */
+export function entryDelta(sess, entry) {
+  if (!entry?.sets?.length) return null;
+  const key = exKey(entry);
+  const actual = entry.sets.reduce((a, b) => (b.w > a.w ? b : a), entry.sets[0]).w;
+  const previas = S.sessions
+    .filter(s => s.id !== sess.id && s.start < sess.start)
+    .sort((a, b) => b.start - a.start);
+  for (const s of previas) {
+    const e = (s.entries || []).find(x => exKey(x) === key && x.sets?.length);
+    if (!e) continue;
+    const anterior = e.sets.reduce((a, b) => (b.w > a.w ? b : a), e.sets[0]).w;
+    return { delta: round1(actual - anterior), anterior, actual };
+  }
+  return null;
+}
+
 /** Agrupa sesiones por semana calendario, conservando el orden de entrada. */
 export function groupSessionsByWeek(list) {
   const ws = weekStart();

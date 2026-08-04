@@ -48,7 +48,7 @@ export default function SessionExercise({ wd, exId = null }) {
   return (
     <>
       <h2>{esCambio ? 'Cambiar ejercicio' : 'Agregar ejercicio'}</h2>
-      <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.55, margin: '-8px 0 16px' }}>
+      <div className="sheet-sub">
         {esCambio
           ? <>En vez de <b className="txt-blue">{original?.name}</b>, que queda saltado en su lugar. Podés restablecerlo después.</>
           : <>Se suma al final de la sesión de <b className="txt-blue">{S.routine[+wd]?.name || WD[+wd]}</b>.</>}

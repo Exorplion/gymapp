@@ -77,7 +77,7 @@ export default function CopyExercises({ mode = 'push', wd }) {
   return (
     <>
       <h2>{esPush ? 'Copiar a otro día' : 'Traer de otro día'}</h2>
-      <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5, margin: '-8px 0 16px' }}>
+      <div className="sheet-sub">
         {esPush
           ? <>Desde <b className="txt-blue">{nombreOrigen}</b>. El historial de cada ejercicio viaja con él.</>
           : <>Hacia <b className="txt-blue">{S.routine[propio]?.name || WD[propio]}</b>. El historial de cada ejercicio viaja con él.</>}

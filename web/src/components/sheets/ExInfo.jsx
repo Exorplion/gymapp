@@ -60,7 +60,7 @@ export default function ExInfo({ name, exId }) {
               </span>
             ))}
           </div>
-          <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5 }}>
+          <div className="ptext sm">
             Solo el <b>último set</b> va al fallo (RIR 0). Los primeros dejan reps en reserva para no arruinar el volumen con fatiga.
             {isLowerBackLift(name) && <> <span className="txt-warn">En este ejercicio nunca vayas al fallo (zona lumbar): máximo RIR 1.</span></>}
           </div>

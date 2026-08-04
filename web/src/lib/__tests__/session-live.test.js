@@ -143,3 +143,38 @@ describe('replaceSessionExercise', () => {
     expect(S.draft.order[0]).toBe('a');
   });
 });
+
+describe('entryDelta', () => {
+  beforeEach(() => { S.sessions = []; });
+
+  it('compara la mejor serie contra la sesión anterior del mismo ejercicio', async () => {
+    const { entryDelta } = await import('../session.js');
+    const vieja = { id: 'v', date: '2026-08-01', start: 100, entries: [{ name: 'Jalón', sets: [{ w: 80, r: 7 }] }] };
+    const nueva = { id: 'n', date: '2026-08-06', start: 200, entries: [{ name: 'Jalón', sets: [{ w: 85, r: 7 }] }] };
+    S.sessions = [nueva, vieja];
+    expect(entryDelta(nueva, nueva.entries[0])).toEqual({ delta: 5, anterior: 80, actual: 85 });
+  });
+
+  it('sin sesión anterior no inventa comparación', async () => {
+    const { entryDelta } = await import('../session.js');
+    const sola = { id: 'n', date: '2026-08-06', start: 200, entries: [{ name: 'Jalón', sets: [{ w: 85, r: 7 }] }] };
+    S.sessions = [sola];
+    expect(entryDelta(sola, sola.entries[0])).toBe(null);
+  });
+
+  it('el equipo distinto no es la misma serie histórica', async () => {
+    const { entryDelta } = await import('../session.js');
+    const vieja = { id: 'v', date: '2026-08-01', start: 100, entries: [{ name: 'Press', equip: 'barra', sets: [{ w: 80, r: 7 }] }] };
+    const nueva = { id: 'n', date: '2026-08-06', start: 200, entries: [{ name: 'Press', equip: 'discos', sets: [{ w: 85, r: 7 }] }] };
+    S.sessions = [nueva, vieja];
+    expect(entryDelta(nueva, nueva.entries[0])).toBe(null);
+  });
+
+  it('bajar también se informa', async () => {
+    const { entryDelta } = await import('../session.js');
+    const vieja = { id: 'v', date: '2026-08-01', start: 100, entries: [{ name: 'Jalón', sets: [{ w: 90, r: 7 }] }] };
+    const nueva = { id: 'n', date: '2026-08-06', start: 200, entries: [{ name: 'Jalón', sets: [{ w: 85, r: 7 }] }] };
+    S.sessions = [nueva, vieja];
+    expect(entryDelta(nueva, nueva.entries[0]).delta).toBe(-5);
+  });
+});

@@ -17,6 +17,7 @@ import DayEdit from './components/sheets/DayEdit.jsx';
 import DayDrop from './components/sheets/DayDrop.jsx';
 import CopyExercises from './components/sheets/CopyExercises.jsx';
 import SessionExercise from './components/sheets/SessionExercise.jsx';
+import EntryEdit from './components/sheets/EntryEdit.jsx';
 import ExerciseForm from './components/sheets/ExerciseForm.jsx';
 import Library from './components/sheets/Library.jsx';
 import DayPeek from './components/sheets/DayPeek.jsx';
@@ -68,6 +69,7 @@ function SheetContent({ sheet }) {
     case 'day-drop': return <DayDrop {...sheet.props} />;
     case 'copy-exs': return <CopyExercises {...sheet.props} />;
     case 'ex-swap': return <SessionExercise {...sheet.props} />;
+    case 'entry-edit': return <EntryEdit {...sheet.props} />;
     case 'ex-form': return <ExerciseForm {...sheet.props} />;
     case 'library': return <Library {...sheet.props} />;
     case 'day-peek': return <DayPeek {...sheet.props} />;

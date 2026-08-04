@@ -15,7 +15,7 @@ function LibraryList() {
   return (
     <>
       <h2>Mis rutinas</h2>
-      <div className="txt-mut" style={{ fontSize: 13.5, lineHeight: 1.5, margin: '-8px 0 16px' }}>
+      <div className="sheet-sub">
         Guardá el split que estés usando para volver a él cuando quieras, o cargá una plantilla.
       </div>
       {st.days.length > 0 && (

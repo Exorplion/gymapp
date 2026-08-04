@@ -94,11 +94,11 @@ export default function Progreso() {
         </div>
         <div style={{ marginTop: 12 }}><Chart id="chartWeight" pts={wpts} opts={{ unit: 'kg' }} /></div>
         {Object.keys(lastVals).length > 0 && (
-          <div className="macro3" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+          <div className="stats" style={{ '--n': 4 }}>
             {Object.entries(lastVals).map(([k, v]) => (
-              <div key={k} style={{ textAlign: 'center' }}>
-                <div className="cond" style={{ fontSize: 24, fontWeight: 700 }}>{fmtNum(v)}</div>
-                <div className="txt-mut" style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase' }}>{BODY_LABELS[k]} cm</div>
+              <div key={k}>
+                <div className="n">{fmtNum(v)}</div>
+                <span className="l">{BODY_LABELS[k]} cm</span>
               </div>
             ))}
           </div>
@@ -137,9 +137,9 @@ export default function Progreso() {
         <>
           <div className="sect">Frecuencia</div>
           <div className="card">
-            <div className="macro3" style={{ gridTemplateColumns: 'repeat(2,1fr)' }}>
-              <div style={{ textAlign: 'center' }}><div className="cond" style={{ fontSize: 26, fontWeight: 700 }}>{sessionsSince(7)}</div><div className="txt-mut" style={{ fontSize: 'var(--t-micro)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Sesiones · 7 días</div></div>
-              <div style={{ textAlign: 'center' }}><div className="cond" style={{ fontSize: 26, fontWeight: 700 }}>{sessionsSince(30)}</div><div className="txt-mut" style={{ fontSize: 'var(--t-micro)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Sesiones · 30 días</div></div>
+            <div className="stats" style={{ '--n': 2 }}>
+              <div><div className="n">{sessionsSince(7)}</div><span className="l">Sesiones · 7 días</span></div>
+              <div><div className="n">{sessionsSince(30)}</div><span className="l">Sesiones · 30 días</span></div>
             </div>
           </div>
           <div className="card sub">

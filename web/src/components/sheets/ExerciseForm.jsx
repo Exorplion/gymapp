@@ -175,7 +175,7 @@ export default function ExerciseForm({ wd, ex }) {
           una salida manual, y por eso se muestra qué dedujo antes de tocarla.
           Sin grupo, las series de este ejercicio no cuentan en "Músculos esta
           semana". */}
-      <label style={{ marginTop: 'var(--s4)' }}>
+      <label className="eyebrow lbl-block" style={{ marginTop: 'var(--s4)' }}>
         Qué grupo entrena
         {!cat && auto && <span className="txt-mut" style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}> · detecté {auto}</span>}
         {!cat && !auto && name.trim() && <span className="txt-warn" style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}> · no lo reconozco, elegilo</span>}
@@ -195,7 +195,7 @@ export default function ExerciseForm({ wd, ex }) {
 
       {/* Con qué se hace el ejercicio. Es lo que permite que el historial no
           mezcle números que no son comparables — ver lib/equip.js. */}
-      <label style={{ marginTop: 'var(--s4)' }}>Con qué lo hacés</label>
+      <label className="eyebrow lbl-block" style={{ marginTop: 'var(--s4)' }}>Con qué lo hacés</label>
       <div className="chips">
         {EQUIP.map(e => (
           <button
@@ -209,7 +209,7 @@ export default function ExerciseForm({ wd, ex }) {
         ))}
       </div>
       {equip && (
-        <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 8 }}>
+        <div className="ptext sm" style={{ marginTop: 8 }}>
           {EQUIP_HINT[equip]}
         </div>
       )}
@@ -222,7 +222,7 @@ export default function ExerciseForm({ wd, ex }) {
             value={machine}
             onChange={e => setMachine(e.target.value)}
           />
-          <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 6 }}>
+          <div className="ptext sm" style={{ marginTop: 6 }}>
             En este sistema el número depende de la máquina, así que el historial
             se lleva por separado para cada una. Poné el nombre que te sirva a vos.
           </div>
@@ -255,7 +255,7 @@ export default function ExerciseForm({ wd, ex }) {
               <button type="button" className="btn ghost" onClick={() => photoRef.current?.click()}>
                 📷 Sacar o elegir foto
               </button>
-              <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 6 }}>
+              <div className="ptext sm" style={{ marginTop: 6 }}>
                 Para reconocerla al llegar. Se guarda reducida en tu teléfono, nunca se sube a ningún lado.
               </div>
             </>
@@ -282,7 +282,7 @@ export default function ExerciseForm({ wd, ex }) {
             <button type="button" className="btn ghost" onClick={() => setPicking(true)}>
               🖼 Buscar ilustración
             </button>
-            <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 6 }}>
+            <div className="ptext sm" style={{ marginTop: 6 }}>
               Para ver cómo se hace el movimiento. Se descarga la primera vez y queda guardada.
             </div>
           </>

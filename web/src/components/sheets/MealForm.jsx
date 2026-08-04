@@ -193,7 +193,7 @@ function AlimentoNuevo({ nombre, onListo, onCancel }) {
   return (
     <>
       <h2>Alimento nuevo</h2>
-      <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5, margin: '-8px 0 16px' }}>
+      <div className="sheet-sub">
         No lo tengo en la base, así que no me lo invento. Poné sus macros una vez
         y queda guardado para siempre.
       </div>

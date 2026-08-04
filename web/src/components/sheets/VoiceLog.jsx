@@ -98,7 +98,7 @@ export default function VoiceLog({ items: initialItems, duration: initialDuratio
   return (
     <>
       <h2>Confirmá tu sesión</h2>
-      <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.55, margin: '-8px 0 16px' }}>
+      <div className="sheet-sub">
         Esto es lo que entendí. <b>Revisá los pesos</b>: el dictado casi nunca los capta bien, así que van con lo que levantaste la última vez.
       </div>
       {items.map(it => (

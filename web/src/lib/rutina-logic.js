@@ -237,6 +237,22 @@ export async function pinAddedToRoutine(wd, added) {
   bump();
 }
 
+/** Renombra un ejercicio de la rutina de un día. Se ofrece al corregir qué
+    ejercicio fue una entrada del historial: si el nombre estaba mal en el
+    plan, lo vas a volver a registrar mal. Con un botón, no automáticamente. */
+export async function renameRoutineExercise(wd, nombreViejo, { name, equip, machine, cat }) {
+  const d = S.routine[+wd];
+  const ex = (d?.exercises || []).find(e => e.name === nombreViejo);
+  if (!ex) return;
+  pushHistory(`"${nombreViejo}" ahora es "${name}"`);
+  ex.name = name;
+  ex.equip = equip || undefined;
+  ex.machine = equip && machine ? machine : undefined;
+  ex.cat = cat || undefined;
+  await persistDay(+wd);
+  bump();
+}
+
 export function dayIsFree(wd) {
   const d = S.routine[+wd];
   return !d?.name && !d?.exercises?.length;

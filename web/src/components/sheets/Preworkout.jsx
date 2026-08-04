@@ -64,25 +64,25 @@ export default function Preworkout() {
   return (
     <>
       <h2>Pre-workout</h2>
-      <div className="txt-mut" style={{ fontSize: 13, margin: '-8px 0 16px' }}>
+      <div className="sheet-sub">
         Calculado para tu peso de <b className="txt-blue">{fmtNum(round1(w))} kg</b>. Tómalo ~30-60 min antes de entrenar.
       </div>
 
       <div className="calcbox">
         <div className="cr big"><span>💧 Fluidos + electrolitos</span><b>{fluidMin}–{fluidMax} ml</b></div>
-        <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 8 }}>Agua con sodio, potasio, magnesio y calcio (5-7 ml/kg).</div>
+        <div className="ptext sm" style={{ marginTop: 8 }}>Agua con sodio, potasio, magnesio y calcio (5-7 ml/kg).</div>
       </div>
 
       <div className="calcbox" style={{ marginTop: 10, opacity: PW.meal ? .55 : 1 }}>
         <div className="cr big"><span>🍯 Carbos rápidos</span><b>{PW.meal ? '—' : `${carbs} g`}</b></div>
-        <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 8 }}>
+        <div className="ptext sm" style={{ marginTop: 8 }}>
           {PW.meal ? 'Ya cubierto: comiste una comida completa 60-90 min antes, no necesitas carbo extra.' : 'Fructosa, glucosa o sacarosa (1 g/kg) para energía rápida.'}
         </div>
       </div>
 
       <div className="calcbox" style={{ marginTop: 10 }}>
         <div className="cr big"><span>☕ Cafeína</span><b className={overCap || PW.sensitive ? 'txt-warn' : ''}>{cafRec}</b></div>
-        <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 8 }}>
+        <div className="ptext sm" style={{ marginTop: 8 }}>
           {PW.sensitive
             ? <span className="txt-warn">Marcaste sensibilidad: empieza bajo (o evítala). No la tomes tarde.</span>
             : <>Rango efectivo 3-6 mg/kg. {overCap && <span className="txt-warn">Tu 6 mg/kg = {cafHi} mg supera el límite prudente de 400 mg — no pases de 400.</span>}</>}
@@ -95,7 +95,7 @@ export default function Preworkout() {
           <button type="button" className="btn ghost" style={{ marginTop: 14 }} onClick={addMacros}>
             ＋ Sumar a Nutrición · {carbs} g carbos ({Math.round(carbs * 4)} kcal)
           </button>
-          <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 8 }}>
+          <div className="ptext sm" style={{ marginTop: 8 }}>
             Solo si de verdad los tomás. Fluidos y cafeína no aportan calorías, así que no se cuentan.
           </div>
         </>

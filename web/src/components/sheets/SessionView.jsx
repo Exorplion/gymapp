@@ -1,20 +1,20 @@
 // Una sola vista para una sesión, con tres entradas: al terminarla
 // (justFinished), al tocarla en el historial, y desde el día ya completado en
-// Hoy.
+// Hoy. Lee la sesión de S.sessions POR ID, no por prop, para que una edición
+// se refleje sin cerrar y reabrir el sheet.
 //
-// Antes eran dos componentes que mostraban lo mismo distinto: SessionRecap
-// (cuatro stats + tarjeta de PR, sólo al cerrar) y HistDetail (chips planos,
-// sin stats ni PRs, sólo desde el historial). Mirar una sesión de hace tres
-// días no tenía por qué dar menos información que mirar la que acabás de
-// cerrar.
-//
-// Lee la sesión de S.sessions POR ID, no por prop: así una edición se refleja
-// sin cerrar y reabrir el sheet.
+// "Lo que hiciste" era una tarjeta plana por ejercicio: el nombre y una fila
+// de chips. Sin grupo muscular, sin resumen y sin relación con la vez
+// anterior — la vista donde uno mira "cómo me fue" no contestaba esa pregunta.
+// Ahora cada ejercicio es una .dcard con su grupo, sus series numeradas, su
+// volumen y cuánto cambió respecto de la última vez.
 import { useState } from 'react';
 import { S, useStore, openSheet, closeSheet } from '../../lib/state.js';
 import { WD, fmtDFull, fmtNum, round1, uid } from '../../lib/format.js';
-import { sessionPRs, deleteHistorySession, updateHistorySession } from '../../lib/session.js';
+import { sessionPRs, deleteHistorySession, updateHistorySession, entryDelta } from '../../lib/session.js';
 import { pinAddedToRoutine } from '../../lib/rutina-logic.js';
+import { catOf } from '../../lib/muscle.js';
+import { equipLabel, exKey } from '../../lib/equip.js';
 import { toast } from '../../lib/toast.js';
 
 export default function SessionView({ id, justFinished = false }) {
@@ -27,9 +27,11 @@ export default function SessionView({ id, justFinished = false }) {
 
   const prs = sessionPRs(s);
   const hasPR = prs.length > 0;
-  const nsets = (s.entries || []).reduce((a, e) => a + e.sets.length, 0);
-  const vol = (s.entries || []).reduce((a, e) => a + e.sets.reduce((b, st) => b + st.w * st.r, 0), 0);
-  const delDia = (S.routine[s.weekday]?.exercises || []).filter(ex => !(s.entries || []).some(e => e.name === ex.name));
+  const prKeys = new Set(prs.map(exKey));
+  const entries = s.entries || [];
+  const nsets = entries.reduce((a, e) => a + e.sets.length, 0);
+  const vol = entries.reduce((a, e) => a + e.sets.reduce((b, st) => b + st.w * st.r, 0), 0);
+  const delDia = (S.routine[s.weekday]?.exercises || []).filter(ex => !entries.some(e => e.name === ex.name));
 
   /* Toda edición clona la sesión, la muta y la manda entera a
      updateHistorySession — que guarda y ofrece Deshacer. start, end, duration,
@@ -66,7 +68,7 @@ export default function SessionView({ id, justFinished = false }) {
 
   const agregarEjercicio = ex => editar(c => {
     c.entries.push({
-      exId: ex.id || uid(), name: ex.name, equip: ex.equip, machine: ex.machine,
+      exId: ex.id || uid(), name: ex.name, equip: ex.equip, machine: ex.machine, cat: ex.cat,
       sets: [{ w: 20, r: ex.reps || 10, t: Date.now() }],
     });
   }, `${ex.name} agregado`);
@@ -74,25 +76,25 @@ export default function SessionView({ id, justFinished = false }) {
   return (
     <>
       <h2>{justFinished ? `${hasPR ? '🎉' : '💪'} Sesión guardada` : (s.dayName || WD[s.weekday])}</h2>
-      <div className="txt-mut" style={{ margin: '-8px 0 16px', fontSize: 14 }}>
+      <div className="sheet-sub">
         {justFinished ? `${s.dayName || WD[s.weekday]} · ` : ''}{fmtDFull(s.date)} · {s.duration} min
       </div>
 
-      <div className="macro3" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
-        <SessStat n={s.duration} l="Min" />
-        <SessStat n={nsets} l="Series" />
-        <SessStat n={(s.entries || []).length} l="Ejercicios" />
-        <SessStat n={Math.round(vol)} l="Kg vol." />
+      <div className="stats" style={{ '--n': 4 }}>
+        <div><div className="n">{s.duration}</div><span className="l">Min</span></div>
+        <div><div className="n">{nsets}</div><span className="l">Series</span></div>
+        <div><div className="n">{entries.length}</div><span className="l">Ejercicios</span></div>
+        <div><div className="n">{Math.round(vol)}</div><span className="l">Kg vol.</span></div>
       </div>
 
       {hasPR && (
         <div className="card pr-card" style={{ marginTop: 18, animation: justFinished ? 'flash 1.2s ease 2' : undefined }}>
           <div className="pr-troph">🏆</div>
           <div className="grow">
-            <div className="cond" style={{ fontSize: 17, fontWeight: 700 }}>
+            <div className="cond" style={{ fontSize: 'var(--t-lg)', fontWeight: 700 }}>
               {justFinished ? '¡Nuevo récord!' : `${prs.length} récord${prs.length === 1 ? '' : 's'} en esta sesión`}
             </div>
-            <div className="txt-mut" style={{ fontSize: 13 }}>
+            <div className="ptext sm">
               {prs.map(p => `${p.name} · ${fmtNum(round1(p.w))} kg × ${p.r}`).join(' · ')}
             </div>
           </div>
@@ -102,22 +104,16 @@ export default function SessionView({ id, justFinished = false }) {
       {/* Agregaste algo fuera del plan: se pregunta una vez si queda fijo.
           Improvisar en el gimnasio no debería reescribir tu rutina solo. */}
       {justFinished && !pinResuelto && s.added?.length > 0 && (
-        <div className="calcbox" style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 12 }}>
+        <div className="calcbox blue" style={{ marginTop: 16 }}>
+          <p className="ptext" style={{ marginBottom: 12 }}>
             Agregaste <b className="txt-blue">{s.added.map(a => a.name).join(', ')}</b> hoy.
             ¿Lo dejo en tu rutina del {WD[s.weekday].toLowerCase()}?
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              type="button" className="btn sm ghost" style={{ flex: 1 }}
-              onClick={() => { setPinResuelto(true); toast('Queda sólo en esta sesión'); }}
-            >
+          </p>
+          <div className="btn-row" style={{ marginTop: 0 }}>
+            <button type="button" className="btn sm ghost" onClick={() => { setPinResuelto(true); toast('Queda sólo en esta sesión'); }}>
               No, sólo fue hoy
             </button>
-            <button
-              type="button" className="btn sm" style={{ flex: 1 }}
-              onClick={async () => { setPinResuelto(true); await pinAddedToRoutine(s.weekday, s.added); }}
-            >
+            <button type="button" className="btn sm" onClick={async () => { setPinResuelto(true); await pinAddedToRoutine(s.weekday, s.added); }}>
               Sí, agregarlo
             </button>
           </div>
@@ -134,42 +130,15 @@ export default function SessionView({ id, justFinished = false }) {
       )}
 
       <div className="sect">Lo que hiciste</div>
-      {(s.entries || []).map((e, ei) => (
-        <div key={ei} className="card" style={{ padding: '12px 14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <div className="cond" style={{ fontSize: 18, fontWeight: 700, flex: 1 }}>{e.name}</div>
-            {editando && <button type="button" className="mini red" title="Quitar ejercicio" onClick={() => borrarEjercicio(ei)}>✕</button>}
-          </div>
-          {editando ? (
-            <>
-              {e.sets.map((st, si) => (
-                // la key lleva los valores: al borrar una serie los índices se
-                // corren, y sin esto el input no controlado seguiría mostrando
-                // el defaultValue de la serie que ocupaba ese lugar antes
-                <div key={`${si}-${st.w}-${st.r}`} className="set-edit">
-                  <span className="i">{si + 1}</span>
-                  <input
-                    type="number" inputMode="decimal" step="any" defaultValue={fmtNum(round1(st.w))}
-                    onBlur={ev => setSerie(ei, si, 'w', ev.target.value)}
-                  />
-                  <span className="u">kg ×</span>
-                  <input
-                    type="number" inputMode="numeric" defaultValue={st.r}
-                    onBlur={ev => setSerie(ei, si, 'r', ev.target.value)}
-                  />
-                  <button type="button" className="mini red" onClick={() => borrarSerie(ei, si)}>✕</button>
-                </div>
-              ))}
-              <button type="button" className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => agregarSerie(ei)}>+ Serie</button>
-            </>
-          ) : (
-            <div className="chips">
-              {e.sets.map((st, si) => (
-                <span key={si} className="chip">{fmtNum(round1(st.w))}kg × {st.r}</span>
-              ))}
-            </div>
-          )}
-        </div>
+      {entries.map((e, ei) => (
+        <EntryCard
+          key={ei}
+          sess={s} entry={e} idx={ei}
+          editando={editando}
+          esPR={prKeys.has(exKey(e))}
+          onSetSerie={setSerie} onBorrarSerie={borrarSerie}
+          onAgregarSerie={agregarSerie} onBorrarEjercicio={borrarEjercicio}
+        />
       ))}
 
       {editando && delDia.length > 0 && (
@@ -192,9 +161,9 @@ export default function SessionView({ id, justFinished = false }) {
           <button type="button" className="btn ghost" style={{ marginTop: 14 }} onClick={() => setEditando(v => !v)}>
             {editando ? '✓ Listo' : '✎ Corregir lo que anoté'}
           </button>
-          <div className="txt-mut" style={{ fontSize: 12, textAlign: 'center', marginTop: 8, lineHeight: 1.45 }}>
-            Los minutos y la fecha no cambian: sólo se corrigen los pesos y las series.
-          </div>
+          <p className="ptext sm center" style={{ marginTop: 8 }}>
+            Los minutos y la fecha no cambian: sólo se corrige lo que hiciste.
+          </p>
           <button type="button" className="btn danger sm" style={{ marginTop: 14 }} onClick={() => confirmDel(s.id)}>
             Eliminar sesión
           </button>
@@ -204,11 +173,75 @@ export default function SessionView({ id, justFinished = false }) {
   );
 }
 
-function SessStat({ n, l }) {
+/** Un ejercicio de la sesión. En lectura cuenta cómo te fue; en corrección,
+    cada serie es editable y el nombre se puede cambiar. */
+function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie, onAgregarSerie, onBorrarEjercicio }) {
+  const grupo = catOf(entry);
+  const vol = entry.sets.reduce((a, st) => a + st.w * st.r, 0);
+  const d = entryDelta(sess, entry);
+
   return (
-    <div style={{ textAlign: 'center' }}>
-      <div className="cond" style={{ fontSize: 26, fontWeight: 700 }}>{n}</div>
-      <div className="txt-mut" style={{ fontSize: 'var(--t-micro)', letterSpacing: '.08em', textTransform: 'uppercase' }}>{l}</div>
+    <div className="dcard">
+      <div className="entry-top">
+        <span className={`eyebrow ${grupo ? '' : 'warn'}`}>{grupo || 'sin grupo'}</span>
+        {equipLabel(entry) && <span className="eq-tag">{equipLabel(entry)}</span>}
+      </div>
+      <div className="dcard-head">
+        {editando ? (
+          <button type="button" className="entry-name-edit" onClick={() => openSheet('entry-edit', { sessId: sess.id, idx })}>
+            {entry.name} <span className="pen">✎</span>
+          </button>
+        ) : (
+          <span className="dcard-title">{entry.name}</span>
+        )}
+        {esPR && <span className="entry-pr" title="Récord en esta sesión">🏆</span>}
+        {editando && <button type="button" className="mini red" title="Quitar ejercicio" onClick={() => onBorrarEjercicio(idx)}>✕</button>}
+      </div>
+
+      {editando ? (
+        <>
+          {entry.sets.map((st, si) => (
+            // la key lleva los valores: al borrar una serie los índices se
+            // corren, y sin esto el input no controlado seguiría mostrando el
+            // defaultValue de la serie que ocupaba ese lugar antes
+            <div key={`${si}-${st.w}-${st.r}`} className="set-edit">
+              <span className="i">{si + 1}</span>
+              <input
+                type="number" inputMode="decimal" step="any" defaultValue={fmtNum(round1(st.w))}
+                onBlur={ev => onSetSerie(idx, si, 'w', ev.target.value)}
+              />
+              <span className="u">kg ×</span>
+              <input
+                type="number" inputMode="numeric" defaultValue={st.r}
+                onBlur={ev => onSetSerie(idx, si, 'r', ev.target.value)}
+              />
+              <button type="button" className="mini red" onClick={() => onBorrarSerie(idx, si)}>✕</button>
+            </div>
+          ))}
+          <button type="button" className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => onAgregarSerie(idx)}>+ Serie</button>
+        </>
+      ) : (
+        <div className="set-list">
+          {entry.sets.map((st, si) => (
+            <div key={si} className="set-line">
+              <span className="i">{si + 1}</span>
+              <span className="w">{fmtNum(round1(st.w))}<small> kg</small></span>
+              <span className="x">×</span>
+              <span className="r">{st.r}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="dcard-foot">
+        <span>{entry.sets.length} serie{entry.sets.length === 1 ? '' : 's'} · {Math.round(vol).toLocaleString('es')} kg</span>
+        {d && d.delta !== 0 && (
+          <span className={d.delta > 0 ? 'txt-ok' : 'txt-warn'}>
+            {d.delta > 0 ? '↗ +' : '↘ '}{fmtNum(d.delta)} kg vs. la anterior
+          </span>
+        )}
+        {d && d.delta === 0 && <span className="txt-mut">= igual que la anterior</span>}
+      </div>
     </div>
   );
 }
