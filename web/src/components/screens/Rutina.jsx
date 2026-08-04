@@ -227,44 +227,55 @@ function DayCard({ wd }) {
           <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un ejercicio para reordenarlo.</span></div>
         )}
         <div data-sort="rut" data-wd={wd} style={{ '--lift': 1.015 }}>
+          {/* El nombre va en su propia línea a ancho completo. Cuando esto era
+              una .row con los cinco botones al lado, en 320px al nombre le
+              quedaban 62px: los 40 ejercicios del split se veían como
+              "Press ...", "Pec de...", "Leg pr...". */}
           {exs.map((ex, i) => (
-            <div className="row" data-sid={ex.id} key={ex.id}>
-              <button
-                type="button"
-                className="mini info"
-                data-act="ex-info"
-                style={exInfo(ex.name) ? undefined : { opacity: .4 }}
-                onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
-              >
-                ⓘ
-              </button>
-              <div className="grow">
-                <div className="t">{ex.name}</div>
-                <div className="s">
+            <div className="ex-row" data-sid={ex.id} key={ex.id}>
+              <div className="ex-row-top">
+                <span className="i">{i + 1}</span>
+                <span className="n">
+                  {ex.name}
+                  <button
+                    type="button"
+                    className="mini info inline"
+                    data-act="ex-info"
+                    style={exInfo(ex.name) ? undefined : { opacity: .4 }}
+                    onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
+                  >
+                    ⓘ
+                  </button>
+                </span>
+              </div>
+              <div className="ex-row-bot">
+                <span className="m">
                   {equipLabel(ex) && <span className="eq-tag">{equipLabel(ex)}</span>}
                   {ex.sets}×{ex.reps} · RIR {rirScheme(ex.sets, ex.name).join('/')}
-                </div>
+                </span>
+                <span className="acts">
+                  <button
+                    type="button"
+                    className="mini"
+                    data-act="ex-up"
+                    disabled={i === 0}
+                    onClick={() => handleMoveEx(wd, ex.id, -1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className="mini"
+                    data-act="ex-down"
+                    disabled={i === exs.length - 1}
+                    onClick={() => handleMoveEx(wd, ex.id, 1)}
+                  >
+                    ↓
+                  </button>
+                  <button type="button" className="mini" onClick={() => openSheet('ex-form', { wd, ex })}>✎</button>
+                  <button type="button" className="mini red" onClick={() => deleteExercise(wd, ex.id)}>✕</button>
+                </span>
               </div>
-              <button
-                type="button"
-                className="mini"
-                data-act="ex-up"
-                disabled={i === 0}
-                onClick={() => handleMoveEx(wd, ex.id, -1)}
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                className="mini"
-                data-act="ex-down"
-                disabled={i === exs.length - 1}
-                onClick={() => handleMoveEx(wd, ex.id, 1)}
-              >
-                ↓
-              </button>
-              <button type="button" className="mini" onClick={() => openSheet('ex-form', { wd, ex })}>✎</button>
-              <button type="button" className="mini red" onClick={() => deleteExercise(wd, ex.id)}>✕</button>
             </div>
           ))}
         </div>

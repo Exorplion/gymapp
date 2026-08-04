@@ -497,6 +497,42 @@ body.dragging-on .card.day.drop-target{filter:none}
   margin:var(--s4) 2px var(--s2);
 }
 
+/* ---------- ejercicio en el editor de rutina ----------
+   Cada ejercicio es una tarjeta y el nombre tiene su propia línea a ancho
+   completo. Antes era una .row con cinco botones de 40px al lado: en una fila
+   de 320px los botones se llevaban 200px y al nombre le quedaban 62px, así que
+   los 40 ejercicios del split se leían "Press ...", "Pec de...", "Leg pr...".
+   Las acciones bajan a la segunda línea, más chicas, donde no compiten con
+   el dato que importa. */
+.ex-row{
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:14px;
+  padding:10px 12px;margin-bottom:8px;
+}
+.ex-row-top{display:flex;align-items:baseline;gap:9px}
+.ex-row .i{
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+  color:var(--mut2);flex:none;min-width:14px;
+}
+.ex-row .n{flex:1;min-width:0;font-size:16px;font-weight:600;line-height:1.3}
+.ex-row .n .info.inline{
+  display:inline-grid;vertical-align:middle;width:24px;height:24px;
+  font-size:13px;margin-left:3px;
+}
+.ex-row-bot{display:flex;align-items:center;gap:8px;margin-top:8px}
+.ex-row .m{
+  flex:1;min-width:0;font-size:12.5px;color:var(--mut);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.ex-row .acts{display:flex;gap:6px;flex:none}
+.ex-row .acts .mini{width:34px;height:34px;border-radius:10px;font-size:14px}
+/* al levantarla para arrastrar, la tarjeta gana relieve sobre las vecinas */
+.ex-row.dragging{
+  background:var(--card2);
+  box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(46,125,255,.3);
+}
+
 /* ---------- filas de lista (rutina / comidas / historial) ---------- */
 .row{
   display:flex;align-items:center;gap:10px;
