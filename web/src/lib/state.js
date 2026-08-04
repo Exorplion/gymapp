@@ -14,6 +14,11 @@ export const S = {
   meals: [], foods: [], body: [],
   cfg: {
     unit: 'kg', rest: 90, goals: { kcal: 2600, p: 160, c: 280, f: 80 }, goalsAuto: false,
+    // Qué hacer al soltar un día sobre otro que ya tiene entrenamiento:
+    // 'ask' pregunta cada vez · 'shift' corre al ocupante al próximo día libre
+    // · 'swap' los intercambia. Arranca preguntando porque las dos opciones son
+    // razonables y cuál querés depende de la semana que estés armando.
+    dayDrop: 'ask',
     profile: { sex: 'm', age: null, height: null, weightKg: null, activity: 'moderate', goal: 'deficit_mod', tdeeEmpirical: null, proteinPref: 0.5, fatPref: 0.5 },
   },
   draft: null,          // sesión en curso
@@ -21,6 +26,10 @@ export const S = {
   hoyVals: {},          // exId -> {w(kg), r}
   hoyDay: null,         // weekday elegido en Hoy
   hoyOrder: {},         // weekday -> [exId] reordenado antes de arrancar el reloj
+  // weekday -> 'arrive'|'bumped'|'left': marca transitoria para animar en el
+  // editor qué le pasó a cada día después de mover uno. Vive en S y no en el
+  // DOM para que sea el render de React el que la aplique — ver setDayFx().
+  dayFx: {},
   rutOpen: new Date().getDay(),
   rutMode: 'view',      // 'view' = resumen de la semana · 'edit' = editor
   lib: [],              // rutinas guardadas por el usuario

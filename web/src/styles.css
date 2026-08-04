@@ -223,6 +223,19 @@ main{
 .btn.danger{background:rgba(255,93,115,.12);box-shadow:none;border:1px solid rgba(255,93,115,.35);color:var(--red)}
 .btn.ok{background:linear-gradient(135deg,#0E9F6E,#2EE6A8);box-shadow:0 6px 24px -6px rgba(46,230,168,.4);color:var(--on-grad)}
 .btn:disabled{opacity:.4;box-shadow:none}
+/* botón con una segunda línea que explica la consecuencia. Los .btn son
+   versalitas apretadas: el subtexto necesita romper la caja (minúsculas, sin
+   tracking) o no se lee como explicación sino como más título. */
+.btn.stack{flex-direction:column;gap:3px;padding:12px 14px;line-height:1.15}
+.btn-sub{
+  font-family:'Barlow';font-size:12.5px;font-weight:500;
+  letter-spacing:0;text-transform:none;opacity:.82;
+}
+.check-row{
+  display:flex;align-items:center;gap:10px;
+  margin-top:var(--s3);padding:2px;font-size:13.5px;color:var(--mut);
+}
+.check-row input{width:18px;height:18px;flex:none;accent-color:var(--blue)}
 
 /* ---------- steppers ---------- */
 .step{display:flex;align-items:center;gap:6px}
@@ -255,6 +268,9 @@ main{
 .setchips .chip:last-child{animation:pop .2s cubic-bezier(.2,.8,.3,1.2)}
 .chip.blue{background:rgba(46,125,255,.14);border-color:rgba(46,125,255,.4);color:var(--blue3)}
 .chip .x{color:var(--mut);font-size:15px;padding:0 2px}
+/* punto = ese día ya tiene entrenamiento. Sin esto, elegir destino en el
+   selector de día es a ciegas: no sabés cuál vas a desplazar. */
+.chip-dot{width:5px;height:5px;border-radius:999px;background:currentColor;opacity:.55}
 .chip-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}
 .chip-scroll::-webkit-scrollbar{display:none}
 .chip-scroll .chip{flex:none;padding:10px 14px;font-size:15px}
@@ -338,8 +354,50 @@ body.dragging-on{user-select:none;-webkit-user-select:none;cursor:grabbing}
 body.dragging-on [data-sid]:not(.dragging){filter:saturate(.8) brightness(.92)}
 .drag-hint{display:flex;align-items:center;gap:6px;font-size:12.5px;margin:0 0 var(--s3);padding:0 2px;color:var(--mut)}
 .drag-hint.tight{margin:0 0 6px;padding:0 4px}
+
+/* ---------- arrastrar un día sobre otro ----------
+   Los días no se reordenan como una lista: cada tarjeta ES un día de la semana
+   y se queda donde está, así que no se abre un hueco — se marca la tarjeta
+   sobre la que vas a soltar, y al soltar cada día afectado cuenta con una
+   animación qué le pasó (recibió, se corrió, o quedó libre). */
+.card.day.drop-target{
+  border-color:rgba(46,125,255,.55);
+  box-shadow:0 0 0 1px rgba(46,125,255,.35),0 0 30px -6px rgba(46,125,255,.45);
+  transform:scale(1.012);
+  transition:transform .18s var(--ease),box-shadow .18s ease,border-color .18s ease;
+}
+body.dragging-on .card.day.drop-target{filter:none}
+.card.day.rest{opacity:.72}
+.card.day.rest .day-name{font-style:italic}
+/* Sin esto el bloque de texto no toma el ancho sobrante y el nombre del día se
+   parte en cuatro líneas, estirando la tarjeta al triple de su alto. */
+.day-txt{flex:1;min-width:0}
+
+/* el día que recibe la rutina: entra desde arriba con un destello azul */
+.card.day.fx-arrive{animation:dayArrive .52s var(--ease)}
+/* el que fue desplazado a otro día: mismo movimiento, tinte distinto, para que
+   se lea como consecuencia y no como la acción que pediste */
+.card.day.fx-bumped{animation:dayBumped .52s var(--ease)}
+/* el que quedó vacío: se apaga en el lugar */
+.card.day.fx-left{animation:dayLeft .52s var(--ease)}
+@keyframes dayArrive{
+  0%{transform:translateY(-10px) scale(.985);box-shadow:0 0 0 1px rgba(46,125,255,.5),0 0 34px -4px rgba(46,125,255,.55)}
+  60%{box-shadow:0 0 0 1px rgba(46,125,255,.3),0 0 24px -8px rgba(46,125,255,.35)}
+  100%{transform:none;box-shadow:none}
+}
+@keyframes dayBumped{
+  0%{transform:translateY(-8px) scale(.99);box-shadow:0 0 0 1px rgba(127,209,255,.45),0 0 30px -6px rgba(34,211,238,.4)}
+  100%{transform:none;box-shadow:none}
+}
+@keyframes dayLeft{
+  0%{opacity:.25;transform:scale(.985)}
+  100%{opacity:.72;transform:none}
+}
+
 @media (prefers-reduced-motion:reduce){
   [data-sid].shift,[data-sid].settling{transition:none}
+  .card.day.fx-arrive,.card.day.fx-bumped,.card.day.fx-left{animation:none}
+  .card.day.drop-target{transform:none}
 }
 
 /* ---------- filas de lista (rutina / comidas / historial) ---------- */
@@ -403,7 +461,11 @@ body.dragging-on [data-sid]:not(.dragging){filter:saturate(.8) brightness(.92)}
   color:var(--blue2);text-transform:uppercase;display:block;
 }
 .day-name{font-family:'Barlow Condensed';font-weight:700;font-size:22px;display:block;line-height:1.15}
-.day-name.empty{color:var(--mut2);font-weight:500}
+/* `off` y no `empty`: .empty es el bloque de estado vacío de una pantalla
+   entera (text-align:center; padding:36px 20px), y al compartir nombre le
+   metía ese padding al nombre del día — la tarjeta de un día sin asignar
+   medía el triple de alto, con el texto centrado. */
+.day-name.off{color:var(--mut2);font-weight:500}
 .day-meta{margin-left:auto;color:var(--mut);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
 .chev{transition:.2s;display:inline-block;color:var(--mut2)}
 .day.open .chev{transform:rotate(90deg);color:var(--blue2)}
@@ -589,6 +651,11 @@ nav.tabbar button.on svg{filter:none}
   box-shadow:0 8px 30px -6px rgba(0,0,0,.6);
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+/* con un sheet abierto el toast baja... arriba: el panel del sheet ocupa hasta
+   88dvh desde abajo, así que en su posición normal caía justo encima de los
+   botones. Entra desde el borde de arriba, que ahí no hay nada. */
+#toast.over-sheet{bottom:auto;top:calc(env(safe-area-inset-top) + 14px);transform:translateX(-50%) translateY(-20px)}
+#toast.over-sheet.show{transform:translateX(-50%) translateY(0)}
 .toast-act{background:none;border:none;color:var(--blue2);font-weight:700;font-size:13px;padding:0 0 0 4px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
 
 /* ---------- misc ---------- */

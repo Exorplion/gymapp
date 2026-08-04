@@ -155,7 +155,6 @@ function RutinaView() {
 
 function RutinaEdit() {
   const active = activeDayWds();
-  const rest = WEEK_ORDER.filter(wd => !active.includes(wd));
 
   return (
     <>
@@ -171,46 +170,53 @@ function RutinaEdit() {
           💾 Guardar como…
         </button>
       </div>
-      {active.length > 1 && (
-        <div className="drag-hint tight"><span>↕</span><span>Mantené presionada el asa para intercambiar dos días.</span></div>
+      {active.length > 0 && (
+        <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un día y soltalo sobre otro para moverlo ahí.</span></div>
       )}
+      {/* Los siete días, siempre. Antes sólo se listaban los activos y los
+          libres eran chips aparte, así que no había forma de arrastrar una
+          rutina a un día de descanso — que es justo el caso de "entreno martes
+          y jueves, no lunes y miércoles". Cada tarjeta es un destino de drop. */}
       <div data-sort="days">
-        {active.map(wd => <DayCard key={wd} wd={wd} />)}
+        {WEEK_ORDER.map(wd => <DayCard key={wd} wd={wd} />)}
       </div>
-      {/* El original exigía además `rest.length < 7`, lo que escondía este
-          bloque justo cuando la rutina estaba 100% vacía (los 7 días libres):
-          en modo edición no quedaba forma de asignar el primer día. Se corrige
-          acá porque la app React ya es la app, así que el criterio de "puerto
-          fiel, incluidos los bugs del original" dejó de aplicar. */}
-      {rest.length > 0 && (
-        <div className="card sub">
-          <div className="steplabel" style={{ marginBottom: 'var(--s2)' }}>Días libres</div>
-          <div className="chips">
-            {rest.map(wd => (
-              <button key={wd} type="button" className="chip" onClick={() => openSheet('day-edit', { wd })}>{WD1[wd]}</button>
-            ))}
-          </div>
-          <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)' }}>
-            Tocá un día para asignarle entrenamiento.
-          </div>
-        </div>
-      )}
     </>
   );
 }
 function DayCard({ wd }) {
   const d = S.routine[wd];
   const exs = d?.exercises || [];
-  const open = S.rutOpen === wd;
+  const empty = !d?.name && !exs.length;
+  const open = S.rutOpen === wd && !empty;
+  const fx = S.dayFx[wd];
+
+  // Día libre: una tarjeta fina, sin cuerpo. Sigue siendo arrastrable y sobre
+  // todo soltable — es el destino natural al correr una rutina de día.
+  if (empty) {
+    return (
+      <div className={`card day rest ${fx ? `fx-${fx}` : ''}`} data-wd={wd} data-sid={wd}>
+        <div className="day-headrow">
+          <span className="mini day-handle" title="Arrastrar">✥</span>
+          <button type="button" className="day-head" onClick={() => openSheet('day-edit', { wd })}>
+            <div className="day-txt">
+              <span className="day-wd">{WD[wd]}</span>
+              <span className="day-name off">Descanso</span>
+            </div>
+            <span className="day-meta">asignar<span className="chev">›</span></span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`card day ${open ? 'open' : ''}`} data-wd={wd} data-sid={wd}>
+    <div className={`card day ${open ? 'open' : ''} ${fx ? `fx-${fx}` : ''}`} data-wd={wd} data-sid={wd}>
       <div className="day-headrow">
-        <span className="mini day-handle" title="Arrastrar para intercambiar">✥</span>
+        <span className="mini day-handle" title="Arrastrar a otro día">✥</span>
         <button type="button" className="day-head" onClick={() => toggleDayOpen(wd)}>
-          <div>
+          <div className="day-txt">
             <span className="day-wd">{WD[wd]}</span>
-            <span className={`day-name ${d?.name ? '' : 'empty'}`}>{d?.name || 'Descanso / sin asignar'}</span>
+            <span className={`day-name ${d?.name ? '' : 'off'}`}>{d?.name || 'Descanso / sin asignar'}</span>
           </div>
           <span className="day-meta">{exs.length ? `${exs.length} ej.` : ''}<span className="chev">›</span></span>
         </button>

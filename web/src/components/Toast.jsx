@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { S, useStore } from '../lib/state.js';
 import { subscribeToast } from '../lib/toast.js';
 
 // Único suscriptor del pub-sub de lib/toast.js. La función toast() vive allá
 // (no acá) para que los módulos de negocio no tengan que importar desde
 // components/ — ver el comentario de cabecera de lib/toast.js.
 export default function Toast() {
+  useStore();   // para saber si hay un sheet abierto — ver más abajo
   const [state, setState] = useState(null); // {msg, actionLabel, onAction} | null
   const [show, setShow] = useState(false);
 
@@ -15,7 +17,9 @@ export default function Toast() {
   }), []);
 
   return (
-    <div id="toast" className={show ? 'show' : ''}>
+    // Con un sheet abierto el toast se va arriba: el panel llega hasta 88dvh y
+    // el toast, que va por encima (z-index 70 vs 60), le tapaba los botones.
+    <div id="toast" className={`${show ? 'show' : ''}${S.sheet ? ' over-sheet' : ''}`}>
       {state && (
         <>
           <span>{state.msg}</span>

@@ -10,7 +10,7 @@ import { setExOrder } from './session.js';
 // Task 5 completa lo que Task 3 dejó en TODO (ver comentarios más abajo):
 // rutina-logic.js no importa nada de este archivo, así que este import es
 // unidireccional — no hay ciclo drag.js<->rutina-logic.js.
-import { pushHistory, swapDayContents, persistDay } from './rutina-logic.js';
+import { pushHistory, dropDayOn, persistDay } from './rutina-logic.js';
 
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
@@ -37,7 +37,7 @@ export function flipSort(mutate) {
   });
 }
 
-export const DRAG = { on: false, box: null, el: null, cards: [], rects: [], gap: 12, from: -1, to: -1, y0: 0, self: 0, cy: 0, raf: 0, swallow: false };
+export const DRAG = { on: false, box: null, el: null, cards: [], rects: [], gap: 12, from: -1, to: -1, y0: 0, self: 0, cy: 0, raf: 0, swallow: false, kind: '' };
 const LP = { t: null, card: null, x: 0, y: 0 };
 
 export function dragPick(e) {
@@ -59,11 +59,15 @@ export function dragStart(card, clientY) {
   if (from < 0) return;
   const rects = cards.map(k => { const r = k.getBoundingClientRect(); return { top: r.top + scrollY, h: r.height }; });
   const gap = Math.max(0, rects[1].top - (rects[0].top + rects[0].h));
-  Object.assign(DRAG, { on: true, box, el: card, cards, rects, gap, from, to: from, y0: clientY + scrollY, self: 0, cy: clientY });
+  const kind = box.dataset.sort;
+  Object.assign(DRAG, { on: true, box, el: card, cards, rects, gap, from, to: from, y0: clientY + scrollY, self: 0, cy: clientY, kind });
   document.body.classList.add('dragging-on');
   card.classList.remove('shift', 'settling');
   card.classList.add('dragging');
-  cards.forEach((k, i) => { if (i !== from) k.classList.add('shift'); });
+  // Los días no se reordenan: cada tarjeta ES un día de la semana y se queda
+  // donde está. Lo que se mueve es el contenido, así que en vez de abrir un
+  // hueco (el modelo de lista) se resalta la tarjeta sobre la que vas a soltar.
+  if (kind !== 'days') cards.forEach((k, i) => { if (i !== from) k.classList.add('shift'); });
   vibrate(18);
   DRAG.raf = requestAnimationFrame(dragTick);
 }
@@ -95,6 +99,31 @@ export function dragUpdate() {
   const dy = (DRAG.cy + scrollY) - DRAG.y0;
   DRAG.el.style.transform = `translateY(${dy}px) scale(var(--lift,1.03))`;
   const mid = DRAG.rects[DRAG.from].top + DRAG.rects[DRAG.from].h / 2 + dy;
+
+  if (DRAG.kind === 'days') {
+    // El destino es el día que está bajo EL DEDO, no bajo el centro de la
+    // tarjeta que arrastrás. En una lista de filas iguales da lo mismo, pero
+    // acá las tarjetas miden distinto (un día abierto mide el doble que un
+    // descanso), así que el centro de la que llevás puede caer dos días más
+    // abajo de donde estás apuntando.
+    const py = DRAG.cy + scrollY;
+    let to = -1;
+    DRAG.rects.forEach((r, i) => { if (py >= r.top && py <= r.top + r.h) to = i; });
+    if (to < 0) {   // en los huecos entre tarjetas, la más cercana
+      let best = Infinity;
+      DRAG.rects.forEach((r, i) => {
+        const d = Math.abs(py - (r.top + r.h / 2));
+        if (d < best) { best = d; to = i; }
+      });
+    }
+    if (to !== DRAG.to) {
+      DRAG.to = to;
+      DRAG.cards.forEach((k, i) => k.classList.toggle('drop-target', i === to && i !== DRAG.from));
+      if (to !== DRAG.from) vibrate(6);
+    }
+    return;
+  }
+
   let to = 0;
   DRAG.rects.forEach((r, i) => { if (i !== DRAG.from && mid > r.top + r.h / 2) to++; });
   if (to !== DRAG.to) { DRAG.to = to; dragLayout(); vibrate(6); }
@@ -124,21 +153,23 @@ export function dragEnd(commit) {
   el.classList.remove('dragging');
   el.classList.add('settling');
   el.style.transform = moved ? `translateY(${self}px)` : '';
-  const clean = () => cards.forEach(k => { k.style.transform = ''; k.classList.remove('shift', 'settling'); });
+  const clean = () => cards.forEach(k => { k.style.transform = ''; k.classList.remove('shift', 'settling', 'drop-target'); });
+  const kind = box.dataset.sort, wd = box.dataset.wd;
+  if (kind === 'days') {
+    // La tarjeta arrastrada vuelve a su sitio: cada tarjeta ES un día de la
+    // semana y no se mueve nunca. Lo que viaja es el contenido, y de contarlo
+    // se encarga la animación de los días afectados (S.dayFx en Rutina.jsx).
+    el.style.transform = '';
+    if (!moved) { setTimeout(clean, 300); return; }
+    vibrate(22);
+    const fromWd = +cards[from].dataset.sid, toWd = +cards[to].dataset.sid;
+    setTimeout(() => { clean(); dropDayOn(fromWd, toWd); }, 220);
+    return;
+  }
   if (!moved) { setTimeout(clean, 300); return; }
   const ids = cards.map(k => k.dataset.sid);
   const [m] = ids.splice(from, 1); ids.splice(to, 0, m);
   vibrate(22);
-  const kind = box.dataset.sort, wd = box.dataset.wd;
-  if (kind === 'days') {
-    pushHistory('Días intercambiados');
-    setTimeout(async () => {
-      await swapDayContents(ids);
-      clean();
-      bump(); // originalmente renderRutina()
-    }, 300);
-    return;
-  }
   /* guardo ya, en paralelo con la animación de aterrizaje */
   const saved = commitSort(kind, wd, ids);
   setTimeout(async () => {

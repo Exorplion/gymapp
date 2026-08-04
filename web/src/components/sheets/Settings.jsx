@@ -69,6 +69,12 @@ export default function Settings() {
     bump();
   }
 
+  function setDayDrop(mode) {
+    S.cfg.dayDrop = mode;
+    saveCfg();
+    bump();
+  }
+
   function setGoalMode(auto) {
     S.cfg.goalsAuto = auto;
     if (S.cfg.goalsAuto && !computeMacros()) {
@@ -170,6 +176,16 @@ export default function Settings() {
           <span className="alt">−/+ 15 seg · 0 = sin timer</span>
         </div>
         <button type="button" onClick={() => stepRest(15)}>+</button>
+      </div>
+
+      <h3>Al mover un día sobre otro ocupado</h3>
+      <div className="seg">
+        <button type="button" className={(S.cfg.dayDrop || 'ask') === 'ask' ? 'on' : ''} onClick={() => setDayDrop('ask')}>Preguntar</button>
+        <button type="button" className={S.cfg.dayDrop === 'shift' ? 'on' : ''} onClick={() => setDayDrop('shift')}>Correr</button>
+        <button type="button" className={S.cfg.dayDrop === 'swap' ? 'on' : ''} onClick={() => setDayDrop('swap')}>Intercambiar</button>
+      </div>
+      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)', lineHeight: 1.45 }}>
+        <b>Correr</b>: el día que estaba ahí se va al próximo día libre. <b>Intercambiar</b>: los dos cambian de lugar.
       </div>
 
       <h3>Metas nutricionales diarias</h3>
