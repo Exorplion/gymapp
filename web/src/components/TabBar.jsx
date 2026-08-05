@@ -10,8 +10,11 @@ import { useLayoutEffect, useRef } from 'react';
 // un flash del chip en la posición vieja.
 const TABS = [
   {
-    id: 'hoy', label: 'Hoy',
-    path: 'M13 2 4.5 13.5h5L10 22l8.5-11.5h-5L13 2z',
+    // Inicio toma el lugar de Hoy: la barra no crece. "Hoy" pasa a ser adonde
+    // te lleva el botón grande de la portada.
+    id: 'inicio', label: 'Inicio',
+    path: 'M3.5 10.5 12 3.5l8.5 7',
+    path2: 'M5.5 9v11.5h13V9',
   },
   {
     id: 'rutina', label: 'Rutina',

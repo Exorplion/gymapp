@@ -129,6 +129,49 @@ export function muscleVolume(days) {
   return tally;
 }
 
+/** Días enteros entre dos fechas YYYY-MM-DD, en hora local.
+    El mediodía evita que el horario de verano corra el resultado un día. */
+function diasEntre(desde, hasta) {
+  const a = new Date(desde + 'T12:00:00');
+  const b = new Date(hasta + 'T12:00:00');
+  return Math.round((b - a) / 86400000);
+}
+
+/** Hace cuántos días entrenaste este grupo por última vez.
+
+    `null` = nunca, y es distinto de "hace mucho": un grupo sin historial no
+    tiene por qué aparecer marcado, o la app le estaría gritando a alguien
+    recién llegado por algo que todavía no hizo mal.
+
+    Es un hecho, no un modelo. Deliberadamente NO se llama "recuperación": eso
+    sería una afirmación fisiológica que la app no puede sostener. */
+export function daysSinceGroup(cat) {
+  let ultima = null;
+  for (const s of S.sessions || []) {
+    const tiene = (s.entries || []).some(e => e.sets?.length && catOf(e) === cat);
+    if (!tiene) continue;
+    if (ultima === null || s.date > ultima) ultima = s.date;
+  }
+  return ultima === null ? null : Math.max(0, diasEntre(ultima, dstr()));
+}
+
+/** El mapa completo de los nueve grupos, para pasárselo a la silueta. */
+export function daysSinceAll() {
+  const out = {};
+  MUSCLE_CATS.forEach(c => { out[c] = daysSinceGroup(c); });
+  return out;
+}
+
+/** Los grupos que llevan `min` días o más sin entrenar, del más viejo al más
+    nuevo. Sólo los que TIENEN historial. */
+export function stalestGroups(min = 7) {
+  return MUSCLE_CATS
+    .map(c => ({ c, d: daysSinceGroup(c) }))
+    .filter(x => x.d !== null && x.d >= min)
+    .sort((a, b) => b.d - a.d)
+    .map(x => x.c);
+}
+
 /** Ejercicios de la rutina que no caen en ningún grupo.
 
     Existe para que el fallo deje de ser silencioso: la tarjeta de músculos los

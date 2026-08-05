@@ -22,7 +22,7 @@ export const S = {
     profile: { sex: 'm', age: null, height: null, weightKg: null, activity: 'moderate', goal: 'deficit_mod', tdeeEmpirical: null, proteinPref: 0.5, fatPref: 0.5 },
   },
   draft: null,          // sesión en curso
-  tab: 'hoy',
+  tab: 'inicio',        // la portada; 'hoy' sigue existiendo, pero se entra desde acá
   hoyVals: {},          // exId -> {w(kg), r}
   hoyDay: null,         // weekday elegido en Hoy
   hoyOrder: {},         // weekday -> [exId] reordenado antes de arrancar el reloj

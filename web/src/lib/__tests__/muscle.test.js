@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../state.js';
-import { catOf, muscleVolume, uncategorized } from '../muscle.js';
+import { catOf, muscleVolume, uncategorized, daysSinceGroup, daysSinceAll, stalestGroups, MUSCLE_CATS } from '../muscle.js';
 
 // Los 18 ejercicios de la rutina real de Enzo que HOY no matchean: son el
 // motivo de este bloque, así que son el test.
@@ -109,5 +109,92 @@ describe('uncategorized', () => {
   it('con todo clasificado devuelve lista vacía', () => {
     S.routine = { 1: { weekday: 1, name: 'A', exercises: [{ id: 'a', name: 'Jalón ancho' }] } };
     expect(uncategorized()).toEqual([]);
+  });
+});
+
+const sesion = (id, date, ejercicios) => ({
+  id, date, start: Number(date.replace(/-/g, '')),
+  entries: ejercicios.map(([name, sets]) => ({ name, sets })),
+});
+const serie = [{ w: 80, r: 7 }];
+
+describe('daysSinceGroup', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 10));   // 2026-08-10
+    S.sessions = [];
+  });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('cuenta los días desde la última sesión con ese grupo', () => {
+    S.sessions = [sesion('a', '2026-08-08', [['Jalón ancho', serie]])];
+    expect(daysSinceGroup('Espalda')).toBe(2);
+  });
+
+  it('un grupo entrenado hoy da 0', () => {
+    S.sessions = [sesion('a', '2026-08-10', [['Jalón ancho', serie]])];
+    expect(daysSinceGroup('Espalda')).toBe(0);
+  });
+
+  it('un grupo que nunca entrenaste da null, no un número grande', () => {
+    S.sessions = [sesion('a', '2026-08-08', [['Jalón ancho', serie]])];
+    expect(daysSinceGroup('Gemelos')).toBe(null);
+  });
+
+  it('toma la sesión MÁS RECIENTE de ese grupo, no la primera que encuentra', () => {
+    S.sessions = [
+      sesion('nueva', '2026-08-09', [['Jalón ancho', serie]]),
+      sesion('vieja', '2026-07-01', [['Jalón ancho', serie]]),
+    ];
+    expect(daysSinceGroup('Espalda')).toBe(1);
+  });
+
+  it('una entrada sin series no cuenta como haber entrenado el grupo', () => {
+    S.sessions = [sesion('a', '2026-08-09', [['Jalón ancho', []]])];
+    expect(daysSinceGroup('Espalda')).toBe(null);
+  });
+});
+
+describe('daysSinceAll', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 10));
+    S.sessions = [sesion('a', '2026-08-09', [['Jalón ancho', serie], ['Curl martillo', serie]])];
+  });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('devuelve los nueve grupos, con null en los que no tienen historial', () => {
+    const m = daysSinceAll();
+    expect(Object.keys(m).sort()).toEqual([...MUSCLE_CATS].sort());
+    expect(m.Espalda).toBe(1);
+    expect(m['Bíceps']).toBe(1);
+    expect(m.Pecho).toBe(null);
+  });
+});
+
+describe('stalestGroups', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 10));
+  });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('lista los que llevan 7 días o más, del más viejo al más nuevo', () => {
+    S.sessions = [
+      sesion('a', '2026-08-09', [['Curl martillo', serie]]),
+      sesion('b', '2026-08-01', [['Jalón ancho', serie]]),
+      sesion('c', '2026-07-20', [['Hip thrust', serie]]),
+    ];
+    expect(stalestGroups()).toEqual(['Glúteo', 'Espalda']);
+  });
+
+  it('los que nunca entrenaste NO aparecen: la app no le grita a un usuario nuevo', () => {
+    S.sessions = [];
+    expect(stalestGroups()).toEqual([]);
+  });
+
+  it('los frescos no aparecen', () => {
+    S.sessions = [sesion('a', '2026-08-09', [['Jalón ancho', serie]])];
+    expect(stalestGroups()).toEqual([]);
   });
 });

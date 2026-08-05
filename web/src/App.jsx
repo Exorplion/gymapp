@@ -10,6 +10,7 @@ import Sheet from './components/Sheet.jsx';
 import Toast from './components/Toast.jsx';
 import RestTimer from './components/RestTimer.jsx';
 import Rutina from './components/screens/Rutina.jsx';
+import Inicio from './components/screens/Inicio.jsx';
 import Hoy, { SessStartInfo } from './components/screens/Hoy.jsx';
 import Nutricion from './components/screens/Nutricion.jsx';
 import Progreso from './components/screens/Progreso.jsx';
@@ -135,13 +136,20 @@ export default function App() {
           setTimeout(() => document.getElementById('sesiones')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
         }}
       />
-      <main>
+      {/* Inicio no scrollea: necesita que main deje de reservar el colchón
+          inferior que sí usan las pantallas largas. */}
+      <main className={store.tab === 'inicio' ? 'full' : ''}>
+        {store.tab === 'inicio' && <Inicio />}
         {store.tab === 'hoy' && <Hoy />}
         {store.tab === 'rutina' && <Rutina />}
         {store.tab === 'nutri' && <Nutricion />}
         {store.tab === 'prog' && <Progreso />}
       </main>
-      <TabBar active={store.tab} onChange={t => { S.tab = t; bump(); }} />
+      {/* Con S.tab === 'hoy' ninguna pestaña sería la activa, y
+          moveTabIndicator() (TabBar.jsx) busca `button.on`: sin encontrarlo
+          deja la píldora colgada donde estaba. Hoy se entra desde Inicio, así
+          que mientras estás ahí Inicio sigue siendo la pestaña activa. */}
+      <TabBar active={store.tab === 'hoy' ? 'inicio' : store.tab} onChange={t => { S.tab = t; bump(); }} />
       <Toast />
       <Sheet open={!!store.sheet} onClose={closeSheet}>
         <SheetContent sheet={store.sheet} />

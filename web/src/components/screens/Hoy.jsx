@@ -75,7 +75,13 @@ export default function Hoy() {
 
   return (
     <>
-      <div className="vtitle"><h1>Hoy</h1><span className="sub">{WDS[today.getDay()]} {today.getDate()} {MO[today.getMonth()]}</span></div>
+      {/* Hoy dejó de ser pestaña: se entra desde Inicio, así que necesita su
+          propia salida. */}
+      <div className="vtitle">
+        <button type="button" className="back-btn" aria-label="Volver a Inicio" onClick={() => { S.tab = 'inicio'; bump(); }}>‹</button>
+        <h1>Hoy</h1>
+        <span className="sub">{WDS[today.getDay()]} {today.getDate()} {MO[today.getMonth()]}</span>
+      </div>
 
       {active ? (
         <ActiveHero day={day} wd={wd} exs={exs} started={started} allDone={allDone} />
