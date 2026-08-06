@@ -1392,35 +1392,119 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    El color dice hace cuántos días entrenaste cada grupo. Es un hecho, no un
    modelo: no es "recuperación". La pantalla se enciende cuando entrenás y se
    apaga sola con los días — entrar y verla apagada da ganas de prenderla. */
-.sil-pair{display:flex;justify-content:center;gap:14px;flex:1;min-height:0;margin:2px 0}
+.sil-pair{display:flex;justify-content:center;gap:14px;flex:1;min-height:0;margin:2px 0;position:relative}
 .sil-defs{position:absolute;width:0;height:0}
 /* El ancho manda y el SVG se ajusta solo con su preserveAspectRatio. Con
    height:100% + width:auto el navegador no puede usar el ancho del SVG para
    dimensionar la caja —sería circular—, así que la caja se encogía al ancho de
    la etiqueta y el dibujo se desbordaba encima del vecino. */
+/* El ancho manda, así que sobra alto: justify-content centra el cuerpo en la
+   banda en vez de dejarlo colgando arriba con un hueco muerto abajo. */
 .sil-box{
   flex:1 1 0;min-width:0;min-height:0;max-width:180px;
-  display:flex;flex-direction:column;align-items:center;gap:3px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
 }
 .sil-box svg{
-  width:100%;aspect-ratio:120/250;flex:none;max-height:100%;display:block;
+  width:100%;aspect-ratio:100/200;flex:none;max-height:100%;display:block;
 }
 .sil-box>span{
   font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
   letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
 }
-.sil-z{transition:fill .45s var(--ease)}
-.sil-d0{fill:#22D3EE}
-.sil-d1{fill:var(--blue)}
-.sil-d2{fill:#27467F}
-/* 7+ días: hueco con borde ámbar. Es la única zona que llama la atención. */
-.sil-d3{fill:rgba(255,180,84,.16);stroke:rgba(255,180,84,.6);stroke-width:.9}
+
+/* La masa: los mismos polígonos engordados con un stroke grueso del mismo
+   color. Une el cuerpo por debajo para que los huecos entre músculos lean como
+   surcos y no como agujeros al fondo de la pantalla. */
+.sil-masa{pointer-events:none}
+.sil-masa polygon{fill:#101B2F;stroke:#101B2F;stroke-width:2.6;stroke-linejoin:round}
+
+/* fill y stroke se heredan del <g> a sus polígonos: el estado se pinta una vez
+   y el glow se aplica al grupo entero en vez de a cada pieza. */
+.sil-z{stroke:rgba(2,5,12,.5);stroke-width:.3;stroke-linejoin:round;
+  transition:fill .45s var(--ease),opacity .2s var(--ease)}
+.sil-d0{fill:url(#sil-g0);filter:url(#sil-glow)}
+.sil-d1{fill:url(#sil-g1)}
+.sil-d2{fill:url(#sil-g2)}
+/* 7+ días: ámbar. Es la única zona que llama la atención. */
+.sil-d3{fill:url(#sil-g3);stroke:rgba(255,190,110,.5);stroke-width:.4}
 /* nunca entrenado: neutro y callado, distinto de "hace mucho" */
-.sil-none{fill:rgba(255,255,255,.05)}
-.sil-skin{fill:rgba(255,255,255,.05)}
-.sil-edge{fill:none;stroke:rgba(255,255,255,.16);stroke-width:1}
-.sil-sep{fill:none;stroke:rgba(4,7,15,.5);stroke-width:.9;stroke-linecap:round}
-@media (prefers-reduced-motion:reduce){.sil-z{transition:none}}
+.sil-none{fill:url(#sil-gn)}
+/* lo que no rastreamos: cabeza, cuello, antebrazo, rodilla */
+.sil-neutro{fill:url(#sil-gne);stroke:rgba(2,5,12,.5);stroke-width:.3;pointer-events:none}
+
+/* Una sola fuente de luz sobre todo el cuerpo. Sin esto cada músculo se ilumina
+   por su cuenta y el conjunto se ve facetado, como vidrio roto. */
+.sil-luz{mix-blend-mode:overlay;pointer-events:none}
+.sil-luz polygon{fill:url(#sil-luz);stroke:none}
+
+.sil-tap{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sil-tap:focus{outline:none}
+.sil-tap:focus-visible,.sil-sel{stroke:var(--accent);stroke-width:.9}
+/* Al abrir un grupo el resto baja: el que preguntaste queda solo. */
+.sil-pair:has(.sil-sel) .sil-z:not(.sil-sel){opacity:.42}
+
+/* ---------- el globo de estadísticas ---------- */
+/* Sale pegado al músculo y no como hoja desde abajo: la pregunta es "¿y este de
+   acá?", y una hoja que tapa media pantalla te saca de vista el cuerpo justo
+   cuando lo estás mirando. */
+.sil-tapa{position:absolute;inset:0;z-index:4;border:0;background:transparent;padding:0}
+.mpop{
+  position:absolute;z-index:5;width:208px;transform-origin:var(--org,50% 0);
+  padding:11px 12px 9px;border-radius:14px;
+  background:linear-gradient(158deg,rgba(255,255,255,.1),rgba(255,255,255,.04)),rgba(10,16,29,.97);
+  border:1px solid var(--line2);
+  box-shadow:0 20px 44px -16px rgba(0,0,0,.85),0 0 0 1px rgba(0,0,0,.35);
+  animation:mpop-in .19s var(--ease) both;
+}
+.mpop.abajo{--org:50% 0;transform:translateX(-50%)}
+.mpop.arriba{--org:50% 100%;transform:translate(-50%,-100%)}
+@keyframes mpop-in{from{opacity:0;transform:translateX(-50%) scale(.88)}}
+.mpop.arriba{animation-name:mpop-in-up}
+@keyframes mpop-in-up{from{opacity:0;transform:translate(-50%,-100%) scale(.88)}}
+
+.mpop-head{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.mpop-name{
+  font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;
+  font-style:italic;letter-spacing:-.02em;flex:1;min-width:0;
+}
+.mpop-when{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:99px;white-space:nowrap}
+.mpop-when.t0{color:#22D3EE;background:rgba(34,211,238,.14)}
+.mpop-when.t1{color:#8FB6FF;background:rgba(46,125,255,.15)}
+.mpop-when.t2{color:#8CA2C8;background:rgba(120,150,200,.12)}
+.mpop-when.t3{color:var(--warn);background:rgba(255,180,84,.14)}
+.mpop-when.tn{color:var(--mut2);background:rgba(255,255,255,.06)}
+.mpop-x{
+  flex:none;width:20px;height:20px;border-radius:7px;border:0;padding:0;line-height:1;
+  background:rgba(255,255,255,.07);color:var(--mut);font-size:15px;
+}
+
+.mpop-nums{display:flex;gap:6px;margin-bottom:9px}
+.mpop-nums div{
+  flex:1;min-width:0;text-align:center;padding:6px 2px;border-radius:9px;
+  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.055);
+}
+.mpop-nums b{
+  display:block;font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;
+  line-height:1.05;font-variant-numeric:tabular-nums;
+}
+.mpop-nums span{display:block;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--mut2);margin-top:2px;white-space:nowrap}
+
+.mpop-list{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:1px}
+.mpop-list li{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0}
+.mpop-list li+li{border-top:1px solid rgba(255,255,255,.05)}
+.mpop-list span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mut)}
+.mpop-list b{flex:none;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent)}
+
+.mpop-pie{display:flex;flex-wrap:wrap;gap:4px 9px;font-size:10.5px;color:var(--mut2)}
+.mpop-top{color:var(--warn);font-weight:600}
+.mpop-vacio{margin:0 0 8px;font-size:11.5px;line-height:1.45;color:var(--mut2)}
+.mpop-cap{margin-top:7px;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut2);opacity:.7}
+
+@media (prefers-reduced-motion:reduce){
+  .sil-z{transition:none}
+  .mpop{animation:none}
+}
 
 /* ---------- la pantalla de inicio ----------
    Compuesta, no scrolleable: entra entera en un teléfono. Por eso la silueta
@@ -1448,10 +1532,11 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-legend{display:flex;justify-content:center;gap:11px;margin-bottom:7px;flex:none}
 .ini-legend span{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--mut2);letter-spacing:.04em}
 .ini-legend .sw{width:9px;height:9px;border-radius:3px;flex:none;display:inline-block}
-.sil-sw0{background:#22D3EE}
-.sil-sw1{background:var(--blue)}
-.sil-sw2{background:#27467F}
-.sil-sw3{background:rgba(255,180,84,.18);border:1px solid rgba(255,180,84,.6)}
+/* Los mismos degradados que la silueta, para que la leyenda no mienta. */
+.sil-sw0{background:linear-gradient(140deg,#B9F8FF,#22D3EE);box-shadow:0 0 7px rgba(34,211,238,.55)}
+.sil-sw1{background:linear-gradient(140deg,#A9CEFF,#2E7DFF)}
+.sil-sw2{background:linear-gradient(140deg,#5B7FB5,#2C4C86)}
+.sil-sw3{background:linear-gradient(140deg,#F6C98B,#E39C43)}
 
 .ini-stale{
   display:flex;align-items:center;gap:7px;padding:8px 11px;border-radius:11px;flex:none;

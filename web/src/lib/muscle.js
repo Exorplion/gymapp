@@ -172,6 +172,65 @@ export function stalestGroups(min = 7) {
     .map(x => x.c);
 }
 
+/** Cuántos días lleva sin entrenarse, en castellano. `null` es "nunca". */
+export function diasTexto(d) {
+  if (d === null || d === undefined) return 'nunca';
+  if (d === 0) return 'hoy';
+  if (d === 1) return 'ayer';
+  return `hace ${d} días`;
+}
+
+/**
+ * Todo lo que la app sabe de un grupo muscular, para el globo de Inicio.
+ *
+ * La ventana es de 28 días y no de 30 porque son cuatro semanas exactas: así
+ * "veces por semana" es una división limpia y no un promedio con resto.
+ *
+ * Cuenta series y no repeticiones porque las series son la unidad con la que
+ * se programa un entrenamiento. El volumen en kg va aparte, para el que lo
+ * quiera mirar.
+ *
+ * Todo lo que devuelve es un hecho medido. No hay ninguna recomendación: la
+ * app no sabe si entrenaste poco o mucho, sólo cuánto.
+ */
+export function groupStats(cat, ventana = 28) {
+  const cutoff = dstr(new Date(Date.now() - ventana * 86400000));
+  let sets = 0, volumen = 0, sesiones = 0, mejor = null;
+  const porEx = new Map();
+
+  for (const s of S.sessions || []) {
+    if (s.date < cutoff) continue;
+    let tocado = false;
+    for (const e of s.entries || []) {
+      if (catOf(e) !== cat) continue;
+      const ss = (e.sets || []).filter(x => x && x.r);
+      if (!ss.length) continue;
+      tocado = true;
+      sets += ss.length;
+      for (const st of ss) {
+        volumen += (st.w || 0) * (st.r || 0);
+        if (!mejor || (st.w || 0) > mejor.w) mejor = { w: st.w || 0, r: st.r, name: e.name };
+      }
+      porEx.set(e.name, (porEx.get(e.name) || 0) + ss.length);
+    }
+    if (tocado) sesiones++;
+  }
+
+  return {
+    cat,
+    ventana,
+    dias: daysSinceGroup(cat),
+    sets,
+    sesiones,
+    volumen: Math.round(volumen),
+    mejor,
+    /** Sesiones por semana, con un decimal. */
+    porSemana: Math.round((sesiones / (ventana / 7)) * 10) / 10,
+    /** Los ejercicios con los que más lo trabajaste, de más a menos series. */
+    top: [...porEx.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name, n]) => ({ name, sets: n })),
+  };
+}
+
 /** Ejercicios de la rutina que no caen en ningún grupo.
 
     Existe para que el fallo deje de ser silencioso: la tarjeta de músculos los

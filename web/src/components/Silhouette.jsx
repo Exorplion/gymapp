@@ -1,25 +1,31 @@
 // Las dos siluetas de la pantalla de inicio: frente y espalda, con cada grupo
-// muscular coloreado según hace cuántos días lo entrenaste.
+// muscular coloreado según hace cuántos días lo entrenaste, y tocable.
 //
-// Anatómico y no geométrico: a ~330px de alto, que es el tamaño real en
-// pantalla, el argumento de "las formas simples se leen mejor en chico" no
-// aplica porque no es chico. Las formas son reconocibles —el abanico del
-// pectoral, la V del dorsal, la gota del cuádriceps, el diamante del gemelo—
-// pero el relleno es liso, sin sombreado ni textura: diagrama técnico, no
-// lámina de medicina.
+// La geometría NO se dibuja acá: viene de lib/bodydata.js, que es una lámina
+// anatómica hecha por un diseñador. Lo que sí es de FIERRO es cómo se ve, y son
+// tres capas por cuerpo:
 //
-// Dos vistas y no una porque con los nueve grupos de FIERRO la espalda y el
-// glúteo no existen de frente, y el tríceps casi no se ve. Y hay un efecto de
-// composición: dos cuerpos simétricos con zonas marcadas es la forma de una
-// lámina de anatomía, no la de un avatar de videojuego.
+//   1. masa   — los mismos polígonos, oscuros y engordados con un stroke
+//               grueso. Une los músculos por debajo, así los huecos entre ellos
+//               leen como surcos de un cuerpo y no como agujeros al fondo.
+//   2. músculo— cada grupo con el degradado de su estado. El degradado va por
+//               músculo, no por cuerpo: es lo que los hace parecer inflados.
+//   3. luz    — una sola fuente arriba a la izquierda sobre TODO el cuerpo, en
+//               coordenadas del SVG. Sin esta capa cada músculo se ilumina por
+//               su cuenta y el conjunto se ve facetado, como vidrio roto.
 //
-// Se dibuja SÓLO la mitad izquierda de cada cuerpo dentro de <defs>, y la
-// derecha es un <use> espejado. La mitad del trazado, simetría exacta, y
-// cambiar la forma del dorsal la cambia en los dos lados. La cabeza y el
-// cuello van aparte porque no se espejan.
+// Cada grupo es un <g> con la clase de estado encima. `fill` y `stroke` se
+// heredan a los polígonos de adentro, así que el estado se pinta una vez y el
+// glow se aplica al grupo entero en lugar de a cada pieza.
 //
-// Este componente no calcula nada: recibe el mapa {grupo: días} y lo pinta.
-// El cálculo vive en lib/muscle.js.
+// Este componente no calcula estadísticas: pide groupStats() cuando tocás.
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { ANTERIOR, POSTERIOR } from '../lib/bodydata.js';
+import { groupStats, diasTexto } from '../lib/muscle.js';
+import { vibrate } from '../lib/format.js';
+import MusclePop from './MusclePop.jsx';
+
+const ANCHO_POP = 208;
 
 /** Días → clase de color.
 
@@ -34,88 +40,127 @@ function tono(d) {
   return 'sil-d3';
 }
 
+function Cara({ zonas, days, etiqueta, sel, onPick }) {
+  return (
+    <div className="sil-box">
+      <svg viewBox="0 0 100 200" role="group" aria-label={`Músculos: ${etiqueta}`}>
+        <g className="sil-masa">
+          {zonas.map((z, i) => z.pts.map((p, j) => <polygon key={`${i}.${j}`} points={p} />))}
+        </g>
+
+        {zonas.map((z, i) => {
+          const pol = z.pts.map((p, j) => <polygon key={j} points={p} />);
+          if (!z.cat) return <g key={i} className="sil-z sil-neutro">{pol}</g>;
+          const activo = sel === z.cat;
+          return (
+            <g
+              key={i}
+              className={`sil-z sil-tap ${tono(days[z.cat])} ${activo ? 'sil-sel' : ''}`}
+              role="button"
+              tabIndex={0}
+              aria-label={`${z.cat}, ${diasTexto(days[z.cat])}. Ver estadísticas.`}
+              aria-pressed={activo}
+              onClick={e => onPick(z.cat, e.currentTarget)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(z.cat, e.currentTarget); }
+              }}
+            >
+              {pol}
+            </g>
+          );
+        })}
+
+        <g className="sil-luz">
+          {zonas.map((z, i) => z.pts.map((p, j) => <polygon key={`${i}.${j}`} points={p} />))}
+        </g>
+      </svg>
+      <span>{etiqueta}</span>
+    </div>
+  );
+}
+
 export default function Silhouette({ days = {} }) {
-  // El trapecio pinta con Espalda: FIERRO no lo tiene como grupo propio y
-  // catOf manda ahí los remos. Los antebrazos van neutros — no los
-  // rastreamos, y pintarlos sería inventar un dato.
-  const t = c => tono(days[c]);
+  const [sel, setSel] = useState(null);   // { cat, x, y, arriba }
+  const caja = useRef(null);
+
+  const cerrar = useCallback(() => setSel(null), []);
+
+  // Escape cierra. Se registra sólo mientras hay algo abierto.
+  useEffect(() => {
+    if (!sel) return;
+    const h = e => { if (e.key === 'Escape') cerrar(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [sel, cerrar]);
+
+  /** Ancla el globo al músculo tocado, en coordenadas de la caja.
+
+      Se mide con getBoundingClientRect y no con el bbox del SVG porque el SVG
+      escala: el bbox está en unidades del viewBox y acá hacen falta píxeles.
+
+      El globo va debajo del músculo, salvo que no entre — entonces va arriba.
+      Y se recorta a los bordes de la caja para que nunca se salga por un
+      costado. */
+  const tocar = (cat, el) => {
+    if (sel?.cat === cat) return cerrar();
+    const c = caja.current?.getBoundingClientRect();
+    const m = el.getBoundingClientRect();
+    if (!c) return;
+    const cx = m.left + m.width / 2 - c.left;
+    const media = ANCHO_POP / 2;
+    const abajo = m.bottom - c.top + 8;
+    const arriba = abajo + 190 > c.height;
+    vibrate(8);
+    setSel({
+      cat,
+      x: Math.max(media + 2, Math.min(cx, c.width - media - 2)),
+      y: arriba ? m.top - c.top - 8 : abajo,
+      arriba,
+    });
+  };
 
   return (
-    <div className="sil-pair">
-      <div className="sil-box">
-        <svg viewBox="0 0 120 250" role="img" aria-label="Músculos del frente">
-          <use href="#sil-fh" /><use href="#sil-fh" transform="translate(120,0) scale(-1,1)" />
-          <ellipse className="sil-skin" cx="60" cy="20" rx="12" ry="14.5" />
-          <path className="sil-skin" d="M53,32 L67,32 L68,44 L52,44 Z" />
-          <ellipse className="sil-edge" cx="60" cy="20" rx="12" ry="14.5" />
-        </svg>
-        <span>Frente</span>
-      </div>
+    <div className="sil-pair" ref={caja}>
+      <Cara zonas={ANTERIOR} days={days} etiqueta="Frente" sel={sel?.cat} onPick={tocar} />
+      <Cara zonas={POSTERIOR} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={tocar} />
 
-      <div className="sil-box">
-        <svg viewBox="0 0 120 250" role="img" aria-label="Músculos de la espalda">
-          <use href="#sil-bh" /><use href="#sil-bh" transform="translate(120,0) scale(-1,1)" />
-          <ellipse className="sil-skin" cx="60" cy="20" rx="12" ry="14.5" />
-          <path className="sil-skin" d="M53,32 L67,32 L68,44 L52,44 Z" />
-          <ellipse className="sil-edge" cx="60" cy="20" rx="12" ry="14.5" />
-        </svg>
-        <span>Espalda</span>
-      </div>
+      {sel && (
+        <>
+          <button type="button" className="sil-tapa" onClick={cerrar} aria-label="Cerrar estadísticas" />
+          <MusclePop stats={groupStats(sel.cat)} pos={sel} onClose={cerrar} />
+        </>
+      )}
 
-      {/* Los trazados, una sola vez. Viven acá y no en un archivo aparte
-          porque sólo los usa este componente. */}
+      {/* Degradados y filtro, una sola vez para las dos caras. */}
       <svg width="0" height="0" className="sil-defs" aria-hidden="true"><defs>
-
-        <g id="sil-fh">
-          {/* brazo y antebrazo: sin grupo propio, van neutros */}
-          <path className="sil-skin" d="M25,57 C19,61 15,71 14,84 L13,104 C13,114 15,124 18,131 L24,130 C22,121 21,111 21,101 L23,84 C24,74 27,66 31,62 Z" />
-          <path className="sil-skin" d="M60,44 C50,43 41,45 35,50 C29,56 27,66 27,76 L29,96 C31,110 34,124 38,134 L60,136 Z" />
-          <path className="sil-skin" d="M60,136 L38,134 C35,146 34,162 35,178 L37,198 C38,210 40,224 42,236 L52,237 C54,222 55,206 56,190 L60,160 Z" />
-          {/* deltoides anterior */}
-          <path className={`sil-z ${t('Hombro')}`} d="M40,46 C32,49 28,57 28,66 C33,68 39,66 43,62 C45,55 44,49 42,46 Z" />
-          {/* pectoral: el abanico desde el esternón */}
-          <path className={`sil-z ${t('Pecho')}`} d="M58,46 C50,46 42,49 38,55 C35,62 36,70 40,75 C46,79 54,79 58,76 Z" />
-          {/* bíceps: el pico */}
-          <path className={`sil-z ${t('Bíceps')}`} d="M27,63 C22,68 19,77 19,88 C19,95 21,101 24,104 C28,103 30,97 30,90 L31,72 C31,67 30,64 27,63 Z" />
-          {/* recto abdominal y oblicuo */}
-          <path className={`sil-z ${t('Abs')}`} d="M58,79 L45,80 C44,92 45,106 48,118 C51,124 55,127 58,127 Z" />
-          <path className={`sil-z ${t('Abs')}`} d="M43,80 C40,88 40,100 42,110 L46,118 C44,106 43,92 44,80 Z" />
-          {/* cuádriceps: la gota */}
-          <path className={`sil-z ${t('Pierna')}`} d="M56,142 C48,141 41,144 39,152 C36,164 36,178 38,190 C40,196 45,198 49,195 C52,184 54,170 56,156 Z" />
-          {/* gemelo */}
-          <path className={`sil-z ${t('Gemelos')}`} d="M46,202 C41,204 38,212 38,222 C38,230 40,236 43,238 C47,237 49,231 49,223 L48,208 Z" />
-          <g className="sil-sep">
-            <path d="M46,92 L58,92" /><path d="M47,104 L58,104" /><path d="M49,115 L58,115" />
-          </g>
-          <g className="sil-edge">
-            <path d="M60,44 C50,43 41,45 35,50 C29,56 27,66 27,76 L29,96 C31,110 34,124 38,134" />
-            <path d="M38,134 C35,146 34,162 35,178 L37,198 C38,210 40,224 42,236" />
-          </g>
-        </g>
-
-        <g id="sil-bh">
-          <path className="sil-skin" d="M25,57 C19,61 15,71 14,84 L13,104 C13,114 15,124 18,131 L24,130 C22,121 21,111 21,101 L23,84 C24,74 27,66 31,62 Z" />
-          <path className="sil-skin" d="M60,44 C50,43 41,45 35,50 C29,56 27,66 27,76 L29,96 C31,108 34,120 38,130 L60,132 Z" />
-          <path className="sil-skin" d="M60,132 L38,130 C35,142 34,160 35,178 L37,198 C38,210 40,224 42,236 L52,237 C54,222 55,206 56,190 L60,158 Z" />
-          {/* deltoides posterior */}
-          <path className={`sil-z ${t('Hombro')}`} d="M40,46 C32,49 28,57 28,66 C33,68 39,66 43,62 C45,55 44,49 42,46 Z" />
-          {/* trapecio y dorsal ancho: los dos pintan con Espalda */}
-          <path className={`sil-z ${t('Espalda')}`} d="M60,42 L48,46 C44,52 42,58 42,64 L60,68 Z" />
-          <path className={`sil-z ${t('Espalda')}`} d="M42,66 C36,72 32,82 31,92 C33,102 37,110 42,116 L60,110 L60,70 Z" />
-          {/* tríceps: la herradura */}
-          <path className={`sil-z ${t('Tríceps')}`} d="M27,63 C22,68 19,77 19,88 C19,95 21,101 24,104 C28,103 30,97 30,90 L31,72 C31,67 30,64 27,63 Z" />
-          {/* glúteo */}
-          <path className={`sil-z ${t('Glúteo')}`} d="M58,124 C48,123 40,127 37,136 C35,146 37,155 43,159 C50,161 56,157 58,150 Z" />
-          {/* femoral */}
-          <path className={`sil-z ${t('Pierna')}`} d="M56,163 C48,162 41,165 39,173 C37,184 37,196 39,206 C42,211 47,211 50,207 C53,196 54,180 56,170 Z" />
-          {/* gemelo: el diamante del gastrocnemio */}
-          <path className={`sil-z ${t('Gemelos')}`} d="M47,210 C41,212 38,220 38,229 C38,236 40,241 43,242 C47,241 49,235 49,227 L48,215 Z" />
-          <g className="sil-edge">
-            <path d="M60,44 C50,43 41,45 35,50 C29,56 27,66 27,76 L29,96 C31,108 34,120 38,130" />
-            <path d="M38,130 C35,142 34,160 35,178 L37,198 C38,210 40,224 42,236" />
-          </g>
-        </g>
-
+        <linearGradient id="sil-g0" x1="12%" y1="0%" x2="88%" y2="100%">
+          <stop offset="0%" stopColor="#B9F8FF" /><stop offset="45%" stopColor="#22D3EE" /><stop offset="100%" stopColor="#0A6F88" />
+        </linearGradient>
+        <linearGradient id="sil-g1" x1="12%" y1="0%" x2="88%" y2="100%">
+          <stop offset="0%" stopColor="#A9CEFF" /><stop offset="45%" stopColor="#2E7DFF" /><stop offset="100%" stopColor="#12315F" />
+        </linearGradient>
+        <linearGradient id="sil-g2" x1="12%" y1="0%" x2="88%" y2="100%">
+          <stop offset="0%" stopColor="#5B7FB5" /><stop offset="45%" stopColor="#2C4C86" /><stop offset="100%" stopColor="#101E38" />
+        </linearGradient>
+        <linearGradient id="sil-g3" x1="12%" y1="0%" x2="88%" y2="100%">
+          <stop offset="0%" stopColor="#F6C98B" /><stop offset="45%" stopColor="#E39C43" /><stop offset="100%" stopColor="#6B3F10" />
+        </linearGradient>
+        <linearGradient id="sil-gn" x1="12%" y1="0%" x2="88%" y2="100%">
+          <stop offset="0%" stopColor="#39445C" /><stop offset="45%" stopColor="#232C42" /><stop offset="100%" stopColor="#131A2B" />
+        </linearGradient>
+        <linearGradient id="sil-gne" x1="12%" y1="0%" x2="88%" y2="100%">
+          <stop offset="0%" stopColor="#3A4763" /><stop offset="45%" stopColor="#26304A" /><stop offset="100%" stopColor="#151D30" />
+        </linearGradient>
+        {/* userSpaceOnUse: la luz es del cuerpo entero, no de cada polígono */}
+        <linearGradient id="sil-luz" gradientUnits="userSpaceOnUse" x1="18" y1="10" x2="86" y2="190">
+          <stop offset="0%" stopColor="rgba(255,255,255,.30)" />
+          <stop offset="38%" stopColor="rgba(255,255,255,.06)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,.30)" />
+        </linearGradient>
+        <filter id="sil-glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="1.1" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
       </defs></svg>
     </div>
   );

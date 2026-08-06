@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../state.js';
-import { catOf, muscleVolume, uncategorized, daysSinceGroup, daysSinceAll, stalestGroups, MUSCLE_CATS } from '../muscle.js';
+import { catOf, muscleVolume, uncategorized, daysSinceGroup, daysSinceAll, stalestGroups, MUSCLE_CATS, groupStats, diasTexto } from '../muscle.js';
 
 // Los 18 ejercicios de la rutina real de Enzo que HOY no matchean: son el
 // motivo de este bloque, así que son el test.
@@ -197,4 +197,81 @@ describe('stalestGroups', () => {
     S.sessions = [sesion('a', '2026-08-09', [['Jalón ancho', serie]])];
     expect(stalestGroups()).toEqual([]);
   });
+});
+
+describe('groupStats', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 10));   // 2026-08-10
+    S.sessions = [];
+  });
+  afterEach(() => { vi.useRealTimers(); });
+
+  const s2 = [{ w: 60, r: 10 }, { w: 70, r: 8 }];
+
+  it('suma series, sesiones y volumen del grupo', () => {
+    S.sessions = [
+      sesion('a', '2026-08-09', [['Jalón ancho', s2], ['Curl con barra', serie]]),
+      sesion('b', '2026-08-05', [['Remo neutro', serie]]),
+    ];
+    const g = groupStats('Espalda');
+    expect(g.sets).toBe(3);
+    expect(g.sesiones).toBe(2);
+    expect(g.volumen).toBe(60 * 10 + 70 * 8 + 80 * 7);
+  });
+
+  it('ignora lo que cae fuera de la ventana', () => {
+    S.sessions = [
+      sesion('viejo', '2026-06-01', [['Jalón ancho', serie]]),
+      sesion('nuevo', '2026-08-09', [['Jalón ancho', serie]]),
+    ];
+    expect(groupStats('Espalda').sets).toBe(1);
+  });
+
+  it('una sesión con dos ejercicios del grupo cuenta como UNA sesión', () => {
+    S.sessions = [sesion('a', '2026-08-09', [['Jalón ancho', serie], ['Remo neutro', serie]])];
+    const g = groupStats('Espalda');
+    expect(g.sesiones).toBe(1);
+    expect(g.sets).toBe(2);
+  });
+
+  it('las series sin repeticiones no cuentan', () => {
+    S.sessions = [sesion('a', '2026-08-09', [['Jalón ancho', [{ w: 80, r: 0 }]]])];
+    const g = groupStats('Espalda');
+    expect(g.sets).toBe(0);
+    expect(g.sesiones).toBe(0);
+  });
+
+  it('porSemana divide por las cuatro semanas de la ventana', () => {
+    S.sessions = [
+      sesion('a', '2026-08-09', [['Jalón ancho', serie]]),
+      sesion('b', '2026-08-02', [['Jalón ancho', serie]]),
+    ];
+    expect(groupStats('Espalda').porSemana).toBe(0.5);
+  });
+
+  it('el tope es la serie más pesada, no la última', () => {
+    S.sessions = [sesion('a', '2026-08-09', [['Jalón ancho', [{ w: 90, r: 5 }, { w: 50, r: 12 }]]])];
+    expect(groupStats('Espalda').mejor).toMatchObject({ w: 90, r: 5, name: 'Jalón ancho' });
+  });
+
+  it('los ejercicios top van de más a menos series', () => {
+    S.sessions = [sesion('a', '2026-08-09', [['Remo neutro', serie], ['Jalón ancho', s2]])];
+    expect(groupStats('Espalda').top).toEqual([
+      { name: 'Jalón ancho', sets: 2 },
+      { name: 'Remo neutro', sets: 1 },
+    ]);
+  });
+
+  it('un grupo sin historial devuelve ceros y días null', () => {
+    S.sessions = [sesion('a', '2026-08-09', [['Jalón ancho', serie]])];
+    const g = groupStats('Gemelos');
+    expect(g).toMatchObject({ sets: 0, sesiones: 0, volumen: 0, porSemana: 0, dias: null, mejor: null, top: [] });
+  });
+});
+
+describe('diasTexto', () => {
+  it.each([[null, 'nunca'], [0, 'hoy'], [1, 'ayer'], [2, 'hace 2 días'], [12, 'hace 12 días']])(
+    '%s → %s', (d, esperado) => { expect(diasTexto(d)).toBe(esperado); },
+  );
 });
