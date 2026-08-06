@@ -944,6 +944,25 @@ nav.tabbar button.on svg{filter:none}
 .rfs-btns .btn{flex:1}
 .rfs-min{position:absolute;top:-6px;right:-6px}
 
+/* ---------- sonando ----------
+   El anillo deja de ser una cuenta regresiva y pasa a ser el aviso: late, se
+   pone ámbar y el único control es cortarla. */
+.rfs-inner.ringing .rfs-lbl{color:var(--warn)}
+.rfs-inner.ringing .rfs-time{font-size:46px;color:var(--warn);letter-spacing:.02em}
+.rfs-inner.ringing .rfs-prog{stroke:var(--warn);transition:none}
+.rfs-inner.ringing .rfs-ring{animation:rfs-late .9s ease-in-out infinite}
+@keyframes rfs-late{0%,100%{transform:scale(1)}50%{transform:scale(1.055)}}
+.rfs-parar{
+  width:100%;height:60px;border:0;border-radius:18px;
+  background:linear-gradient(112deg,#FFB454,#E07C1A);color:#2A1603;
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:21px;letter-spacing:.14em;
+  box-shadow:0 16px 40px -12px rgba(255,180,84,.55);
+}
+.rfs-parar:active{transform:scale(.98)}
+@media (prefers-reduced-motion:reduce){
+  .rfs-inner.ringing .rfs-ring{animation:none}
+}
+
 /* ---------- bottom sheet ---------- */
 #sheet{position:fixed;inset:0;z-index:60;display:none}
 #sheet.open{display:block}

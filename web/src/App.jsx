@@ -4,6 +4,8 @@ import { S, useStore, bump, loadAll, closeSheet, openSheet } from './lib/state.j
 import { applyComputedGoals } from './lib/macros.js';
 import { initDragListeners } from './lib/drag.js';
 import { currentStreak } from './lib/streak.js';
+import { sessionExs } from './lib/session.js';
+import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
 import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
@@ -115,6 +117,32 @@ export default function App() {
   useEffect(() => {
     initDragListeners();
   }, []);
+
+  // El aviso de "sesión en curso" en la barra del teléfono.
+  //
+  // Va acá, atado a si HAY sesión, en vez de encenderlo en startSession() y
+  // apagarlo en los tres lugares que la terminan (completar, descartar,
+  // recargar con un borrador viejo). Un solo punto no se puede desincronizar.
+  //
+  // Lee S.draft dentro del callback y no en las dependencias: la sesión cambia
+  // a cada serie, y pasar una foto de cómo estaba al arrancar dejaría el aviso
+  // mintiendo desde el primer ejercicio.
+  const haySesion = !!store.draft;
+  useEffect(() => {
+    if (!haySesion) return ocultarSesion();
+    mostrarSesion(() => {
+      const d = S.draft;
+      if (!d) return null;
+      const entries = Object.values(d.entries || {});
+      return {
+        start: d.start,
+        hechos: entries.filter(e => e.sets?.length).length,
+        total: sessionExs(d.weekday).length,
+        series: entries.reduce((a, e) => a + (e.sets?.length || 0), 0),
+      };
+    });
+    return ocultarSesion;
+  }, [haySesion]);
 
   if (!store.ready) {
     // body{background:var(--bg)} ya cubre el fondo (styles.css se importa

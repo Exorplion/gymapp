@@ -19,10 +19,13 @@ import { fmtMMSS } from '../lib/format.js';
 export default function RestTimer() {
   useStore(); // se suscribe a bump(); T se lee directo (T.leftSec/T.pct/T.state) igual que S
 
+  const sonandoAhora = T.state === 'ringing';
   const timeStr = fmtMMSS(T.leftSec);
   const pctClamped = Math.max(0, Math.min(1, T.pct));
   const fillPct = pctClamped * 100;
-  const dashOffset = REST_CIRC * (1 - pctClamped);
+  // Sonando el anillo se cierra entero: pasa de ser cuenta regresiva a ser el
+  // aviso. Va acá y no en el CSS porque el style inline le gana a la hoja.
+  const dashOffset = sonandoAhora ? 0 : REST_CIRC * (1 - pctClamped);
 
   // El dispatcher original resolvía un solo data-act por click (closest()
   // se detiene en el ancestro más cercano), así que clickear +30s/Saltar no
@@ -57,21 +60,29 @@ export default function RestTimer() {
         <div id="rest-track"><i id="rest-fill" style={{ width: `${fillPct}%` }}></i></div>
       </div>
 
-      <div id="rest-fs" className={T.state === 'fullscreen' ? 'show' : ''}>
-        <div className="rfs-inner">
-          <div className="rfs-lbl">Descanso</div>
+      <div id="rest-fs" className={T.state === 'fullscreen' || sonandoAhora ? 'show' : ''}>
+        <div className={`rfs-inner${sonandoAhora ? ' ringing' : ''}`}>
+          <div className="rfs-lbl">{sonandoAhora ? '¡Dale!' : 'Descanso'}</div>
           <div className="rfs-ring">
             <svg viewBox="0 0 200 200">
               <circle className="rfs-track" cx="100" cy="100" r="88" />
               <circle className="rfs-prog" id="rfs-prog" cx="100" cy="100" r="88" style={{ strokeDashoffset: dashOffset }} />
             </svg>
-            <div className="rfs-time" id="rfs-time">{timeStr}</div>
+            <div className="rfs-time" id="rfs-time">{sonandoAhora ? '¡YA!' : timeStr}</div>
           </div>
-          <div className="rfs-btns">
-            <button type="button" className="btn sm ghost" onClick={addTime}>+30s</button>
-            <button type="button" className="btn sm dim" onClick={skip}>Saltar</button>
-          </div>
-          <button type="button" className="icon-btn rfs-min" aria-label="Minimizar" onClick={minimize}>⌄</button>
+          {sonandoAhora ? (
+            /* Un solo botón, ancho y sin vecinos: está sonando y lo único que
+               querés es callarla. Poner "+30s" al lado sería invitarte a errarle. */
+            <button type="button" className="rfs-parar" onClick={skip} autoFocus>PARAR</button>
+          ) : (
+            <div className="rfs-btns">
+              <button type="button" className="btn sm ghost" onClick={addTime}>+30s</button>
+              <button type="button" className="btn sm dim" onClick={skip}>Saltar</button>
+            </div>
+          )}
+          {!sonandoAhora && (
+            <button type="button" className="icon-btn rfs-min" aria-label="Minimizar" onClick={minimize}>⌄</button>
+          )}
         </div>
       </div>
     </>

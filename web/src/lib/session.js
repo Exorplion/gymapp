@@ -4,6 +4,7 @@ import { dstr, uid, round1, WD, fmtD, vibrate } from './format.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
 import { startRest, stopRest } from './rest.js';
+import { pedirPermiso } from './alarm.js';
 import { scrollCarouselTo } from './carousel.js';
 import { fireConfetti } from './confetti.js';
 import { exKey } from './equip.js';
@@ -375,6 +376,9 @@ export async function completeSession() {
 export async function startSession(wd) {
   const day = S.routine[wd];
   if (!day?.exercises?.length) { toast('Este día no tiene ejercicios'); return; }
+  // Acá y no al terminar el primer descanso: abrir la sesión es un toque de
+  // botón, que es el gesto que los navegadores exigen para poder preguntar.
+  pedirPermiso();
   S.draft = {
     id: uid(), date: dstr(), weekday: wd, dayName: day.name || WD[wd], open: Date.now(), start: null, cur: null,
     order: orderedExs(wd, day.exercises).map(e => e.id), entries: {},

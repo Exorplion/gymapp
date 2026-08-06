@@ -3,11 +3,18 @@
 // mismo patrón que streak.js/session.js. Las escrituras directas a nodos DOM
 // del original ($('#rest-fs'), $('#rfs-time'), $('#rest-fill'), etc.) se
 // reemplazan por campos en T (T.leftSec, T.pct) que el componente
-// <RestTimer/> (Task 4) lee en cada render en vez de que la función los
-// escriba a mano.
+// <RestTimer/> lee en cada render en vez de que la función los escriba a mano.
+//
+// El final del descanso NO se decide contando ticks: se compara contra T.end,
+// que es una marca de tiempo absoluta. El navegador frena los setInterval de
+// las pestañas ocultas, así que contar ticks atrasaría la alarma justo cuando
+// más importa — con el teléfono bloqueado. Comparando contra un instante fijo,
+// que el tick llegue tarde sólo significa que la alarma suena apenas tarde, no
+// que se pierda.
 import { S, bump } from './state.js';
 import { vibrate } from './format.js';
 import { toast } from './toast.js';
+import { prepararAlarma, pedirPermiso, sonar, callar } from './alarm.js';
 
 export const T = { end: 0, total: 0, int: null, audio: null, state: 'hidden', leftSec: 0, pct: 0 };
 
@@ -36,7 +43,9 @@ export const REST_CIRC = 2 * Math.PI * 88;
 
 export function startRest() {
   if (!S.cfg.rest) return;
-  audioCtx(); // crear con gesto del usuario
+  audioCtx();        // crear con gesto del usuario
+  prepararAlarma();  // desbloquear el <audio> con el mismo gesto
+  pedirPermiso();
   T.total = S.cfg.rest; T.end = Date.now() + T.total * 1000;
   T.state = 'fullscreen';
   bump();
@@ -61,12 +70,45 @@ export function tickRest() {
   const pct = Math.max(0, (T.end - Date.now()) / (T.total * 1000));
   T.leftSec = left;
   T.pct = pct;
+  if (left <= 0 && T.state !== 'ringing') return terminar();
   bump();
-  if (left <= 0) { stopRest(); ding(); toast('⏱ ¡Descanso terminado!'); }
+}
+
+/** Se acabó: para el reloj y arranca la alarma, que suena hasta que la cortan. */
+function terminar() {
+  clearInterval(T.int); T.int = null;
+  T.leftSec = 0; T.pct = 0;
+  T.state = 'ringing';
+  bump();
+  toast('⏱ ¡Descanso terminado!');
+  // Si se calla sola por el tope, hay que sacar la pantalla de "sonando" o
+  // quedaría pidiendo que pares algo que ya no suena.
+  sonar('Ya pasaron tus ' + T.total + ' segundos. A la próxima serie.', () => {
+    if (T.state === 'ringing') { T.state = 'hidden'; bump(); }
+  });
 }
 
 export function stopRest() {
   clearInterval(T.int); T.int = null;
+  callar();
   T.state = 'hidden';
   bump();
+}
+
+/** Recupera el descanso al volver a la app.
+
+    El navegador puede haber congelado los timers mientras estabas en otra app.
+    Al volver, esto compara contra T.end y dispara la alarma si el descanso
+    venció mientras no mirabas — sin esto la pantalla se quedaría en un número
+    viejo, esperando un tick que nunca llegó. */
+export function recuperarRest() {
+  if (T.state === 'hidden' || T.state === 'ringing') return;
+  if (Date.now() >= T.end) terminar();
+  else tickRest();
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) recuperarRest();
+  });
 }
