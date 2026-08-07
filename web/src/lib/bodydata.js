@@ -166,6 +166,22 @@ function anchoEn(y) {
 const EJE = 50;
 const r2 = n => Math.round(n * 100) / 100;
 
+/** Cuánto le toca del ajuste a un punto según lo lejos que esté del eje.
+
+    El ajuste es del TRONCO. Los brazos cuelgan a los costados y a la altura de
+    la cadera están en el borde del lienzo: aplicarles el ensanche los mandaba
+    fuera del dibujo, y además es falso — una cadera ancha no te separa las
+    manos. Hasta 34 el punto recibe todo (ahí entran el deltoides y el glúteo);
+    de 34 a 50 se va soltando hasta quedarse casi quieto. */
+function pesoDelAjuste(dx) {
+  const d = Math.abs(dx);
+  if (d <= 34) return 1;
+  if (d >= 50) return 0.25;
+  return 1 - 0.75 * ((d - 34) / 16);
+}
+
+const dentro = x => Math.min(100, Math.max(0, x));
+
 function feminizar(zonas) {
   return zonas.map(z => ({
     cat: z.cat,
@@ -173,8 +189,9 @@ function feminizar(zonas) {
       const n = p.split(' ').map(Number);
       const out = [];
       for (let i = 0; i < n.length; i += 2) {
-        const y = n[i + 1];
-        out.push(r2(EJE + (n[i] - EJE) * anchoEn(y)), y);
+        const y = n[i + 1], dx = n[i] - EJE;
+        const factor = 1 + (anchoEn(y) - 1) * pesoDelAjuste(dx);
+        out.push(r2(dentro(EJE + dx * factor)), y);
       }
       return out.join(' ');
     }),

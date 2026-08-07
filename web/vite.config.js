@@ -8,6 +8,18 @@ export default defineConfig({
   // (GitHub Pages con .nojekyll), y la app vainilla ya usaba './' en todos
   // lados: con base '/' el build sólo funcionaría en un dominio propio.
   base: './',
+  // Sello del build, visible en Ajustes. Existe porque la app se instala como
+  // PWA y el service worker puede seguir sirviendo una versión vieja del caché:
+  // sin un número a la vista no hay forma de distinguir "el cambio no se
+  // publicó" de "tu teléfono todavía tiene el anterior".
+  define: {
+    __BUILD__: JSON.stringify(
+      new Date().toLocaleString('es-PE', {
+        timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false,
+      }),
+    ),
+  },
   plugins: [
     react(),
     VitePWA({

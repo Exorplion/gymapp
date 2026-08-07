@@ -31,7 +31,7 @@
 // sólo hace falta mientras Ajustes está abierto, así que vive local a este
 // componente — mismo comportamiento (mismo <input hidden> disparado por
 // "Importar JSON"), distinto lugar en el árbol.
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { S, bump, closeSheet, openSheet, saveCfg } from '../../lib/state.js';
 import { fmtMMSS, vibrate } from '../../lib/format.js';
 import { computeMacros, applyComputedGoals } from '../../lib/macros.js';
@@ -59,6 +59,7 @@ export default function Settings() {
   const nSeed = seedCount();
   const importRef = useRef(null);
   const mdRef = useRef(null);
+  const [buscando, setBuscando] = useState(false);
 
   function setUnit(u) {
     S.cfg.unit = u; saveCfg();
@@ -69,6 +70,48 @@ export default function Settings() {
     S.cfg.rest = Math.max(0, (S.cfg.rest || 0) + d);
     saveCfg();
     bump();
+  }
+
+  /* El cuerpo se elige acá, que es donde uno lo busca.
+
+     `cfg.bodySex` es un ajuste propio y no el sexo del perfil: aquél existe
+     para calcular calorías, y mezclarlos obligaría a mentir en uno para
+     arreglar el otro. Mientras nadie lo toque hereda el del perfil, así que
+     quien ya lo cargó no tiene que elegir dos veces. */
+  const cuerpoSexo = () => S.cfg.bodySex || S.cfg.profile?.sex || 'm';
+
+  function setCuerpo(s) {
+    S.cfg.bodySex = s;
+    saveCfg();
+    bump();
+  }
+
+  /* Va a buscar una versión nueva a mano.
+
+     La app está en autoUpdate, pero eso sólo revisa al cargar la página, y una
+     PWA instalada que se retoma de segundo plano puede no cargar nada durante
+     días. El resultado es que pedís un cambio, se publica, y en el teléfono no
+     aparece — sin ninguna señal de por qué.
+
+     Se borran los cachés además de actualizar el service worker: si el SW ya
+     estaba al día pero los archivos viejos seguían guardados, sólo con
+     update() no alcanzaría. */
+  async function buscarUpdate() {
+    setBuscando(true);
+    try {
+      const regs = await navigator.serviceWorker?.getRegistrations?.() || [];
+      await Promise.all(regs.map(r => r.update().catch(() => {})));
+      if (window.caches) {
+        const claves = await caches.keys();
+        await Promise.all(claves.map(k => caches.delete(k).catch(() => false)));
+      }
+      toast('Buscando la última versión…');
+      // recarga sin caché: si había una nueva, entra ahora
+      setTimeout(() => window.location.reload(true), 600);
+    } catch {
+      setBuscando(false);
+      toast('No se pudo revisar. Probá cerrar y abrir la app.');
+    }
   }
 
   function setDayDrop(mode) {
@@ -176,6 +219,15 @@ export default function Settings() {
         <button type="button" className={S.cfg.unit === 'lb' ? 'on' : ''} onClick={() => setUnit('lb')}>Libras (lb)</button>
       </div>
 
+      <h3>Cuerpo del mapa muscular</h3>
+      <div className="seg">
+        <button type="button" className={cuerpoSexo() !== 'f' ? 'on' : ''} onClick={() => setCuerpo('m')}>Hombre</button>
+        <button type="button" className={cuerpoSexo() === 'f' ? 'on' : ''} onClick={() => setCuerpo('f')}>Mujer</button>
+      </div>
+      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)', lineHeight: 1.45 }}>
+        Cambia la silueta de Inicio. Los grupos musculares y tus datos son los mismos.
+      </div>
+
       <h3>Descanso entre series</h3>
       <div className="step">
         <button type="button" onClick={() => stepRest(-15)}>−</button>
@@ -240,6 +292,16 @@ export default function Settings() {
       <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => importRef.current?.click()}>⬆ Importar JSON</button>
       <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={onImportFile} />
       <button type="button" className="btn danger" onClick={startWipeAll}>Borrar todos los datos</button>
+
+      <h3>Versión</h3>
+      <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+        Instalada: <b className="txt-blue">{__BUILD__}</b><br />
+        Si acabás de pedir un cambio y no lo ves, es que tu teléfono todavía
+        tiene la versión anterior guardada. Este botón la va a buscar.
+      </div>
+      <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={buscarUpdate} disabled={buscando}>
+        {buscando ? 'Buscando…' : '⟳ Buscar actualización'}
+      </button>
 
       <div className="txt-mut" style={{ fontSize: 12, textAlign: 'center', marginTop: 16 }}>FIERRO v1 · datos 100% en tu dispositivo</div>
     </>

@@ -84,10 +84,11 @@ export default function Silhouette({ days = {} }) {
   const [sel, setSel] = useState(null);   // { cat, x, y, arriba }
   const caja = useRef(null);
 
-  // El cuerpo sigue al sexo del perfil, que ya existe porque lo usan las
-  // calorías. Un ajuste aparte sería una segunda fuente de verdad que se puede
-  // contradecir con la primera.
-  const { frente, espalda } = cuerpo(S.cfg.profile?.sex);
+  // `bodySex` es el ajuste explícito de Ajustes; si nunca se tocó, hereda el
+  // sexo del perfil para que quien ya lo cargó no tenga que elegir dos veces.
+  // Van separados porque el del perfil existe para calcular calorías: unirlos
+  // obligaría a mentir en uno para arreglar el otro.
+  const { frente, espalda } = cuerpo(S.cfg.bodySex || S.cfg.profile?.sex);
 
   const cerrar = useCallback(() => setSel(null), []);
 
