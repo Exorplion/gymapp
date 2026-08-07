@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { muestrasAlarma, PITIDOS, SR, DUR } from '../alarm.js';
 import { tiempoDeSesion, resumenDeSesion } from '../ongoing.js';
 import { S } from '../state.js';
-import { T, startRest, stopRest, tickRest, recuperarRest } from '../rest.js';
+import { T, startRest, stopRest, tickRest, recuperarRest, shiftRest, minimizeRest } from '../rest.js';
 
 /** Lee el WAV como muestras con signo, salteando las 44 bytes de cabecera. */
 function muestras() {
@@ -172,5 +172,60 @@ describe('el aviso de sesión en curso', () => {
 
   it('sin series todavía, sólo nombra los ejercicios', () => {
     expect(resumenDeSesion({ hechos: 0, total: 4, series: 0 })).toBe('0 de 4 ejercicios');
+  });
+});
+
+describe('ajustar el descanso en curso', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 6, 10, 0, 0));
+    S.cfg.rest = 90;
+    T.state = 'hidden'; T.end = 0; T.int = null;
+  });
+  afterEach(() => { stopRest(); vi.useRealTimers(); });
+
+  it('+30s alarga el descanso', () => {
+    startRest();
+    shiftRest(30);
+    expect(T.leftSec).toBe(120);
+  });
+
+  it('−30s lo acorta', () => {
+    startRest();
+    shiftRest(-30);
+    expect(T.leftSec).toBe(60);
+  });
+
+  // Restar más de lo que queda dispararía la alarma en el acto, que es lo
+  // contrario de lo que pedís al tocar −30s.
+  it('−30s con menos de 30 restantes deja un piso, no dispara la alarma', () => {
+    startRest();
+    vi.advanceTimersByTime(80000);   // quedan 10
+    shiftRest(-30);
+    expect(T.leftSec).toBe(5);
+    expect(T.state).toBe('fullscreen');
+  });
+
+  it('el anillo no se pasa de vuelta al sumar tiempo', () => {
+    startRest();
+    shiftRest(30);
+    expect(T.pct).toBeLessThanOrEqual(1);
+    expect(T.total).toBeGreaterThanOrEqual(120);
+  });
+
+  it('no hace nada si ya está sonando', () => {
+    startRest();
+    vi.advanceTimersByTime(90000);
+    expect(T.state).toBe('ringing');
+    shiftRest(30);
+    expect(T.state).toBe('ringing');
+  });
+
+  it('funciona igual con el timer minimizado', () => {
+    startRest();
+    minimizeRest();
+    shiftRest(-30);
+    expect(T.leftSec).toBe(60);
+    expect(T.state).toBe('minimized');
   });
 });

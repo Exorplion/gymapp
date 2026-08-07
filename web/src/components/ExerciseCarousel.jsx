@@ -31,6 +31,8 @@ import {
 } from '../lib/session.js';
 import { jumpToSlide, slideCenterDist } from '../lib/carousel.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
+import { iconOf } from '../lib/exicon.js';
+import ExIcon from './ExIcon.jsx';
 
 export default function ExerciseCarousel({ exs, wd, active, started, curId, nextEx }) {
   const carRef = useRef(null);
@@ -194,6 +196,7 @@ function ExerciseSlide({ m, wd, started }) {
     <div className="carousel-slide" data-exid={ex.id}>
       <div className={`card ex-card ${cls}`} id={`exc-${ex.id}`} style={{ '--done': Math.min(1, done.length / target) }}>
         <div className={`ex-done-count ${full ? 'full' : ''}`}>{done.length}/{target}</div>
+        <ExIcon icono={iconOf(ex)} size={38} className="ex-card-icon" />
         <div className="exname">
           {ex.name}{' '}
           {info && (

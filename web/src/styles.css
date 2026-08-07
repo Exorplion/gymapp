@@ -296,6 +296,32 @@ main{
 .mini.info{color:var(--blue2);font-size:15px;font-weight:700}
 .prog-warn{margin-top:10px;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.4;
   background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.32);color:var(--warn);font-weight:500}
+/* ---------- pictogramas de ejercicio ----------
+   La persona hereda el color de la tarjeta; el aparato va apagado, para que lo
+   que se lea primero sea el cuerpo y no el fierro. */
+/* overflow oculto —el de fábrica en SVG— a propósito: si un trazo se sale del
+   lienzo por una cuenta mal hecha, queda recortado en su caja en vez de pintar
+   rayas sobre toda la tarjeta. Ya pasó una vez. */
+.exi{display:block;flex:none;overflow:hidden}
+.exi .exi-b,.exi .exi-e,.exi .exi-p{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.exi .exi-b{stroke:currentColor;stroke-width:3.2}
+.exi .exi-h{fill:currentColor;stroke:none}
+.exi .exi-e{stroke:var(--mut2);stroke-width:2.3}
+.exi .exi-p{stroke:var(--line2);stroke-width:2}
+
+/* En Hoy va arriba a la izquierda, en el hueco que dejan el nombre y el
+   contador de series — no le roba ancho al nombre, que es lo que más costó
+   acomodar en esta tarjeta. */
+.ex-card{position:relative}
+.ex-card-icon{position:absolute;top:12px;left:14px;color:var(--accent);opacity:.9}
+.ex-card .exname{padding-left:48px;min-height:38px}
+
+/* En Rutina va a la izquierda, pegado al riel. A la derecha no entra: ahí ya
+   viven el ⓘ arriba y los cuatro botones de acción abajo, y el dibujo se les
+   montaba encima. El hueco se lo hace el padding de .ex-row, más abajo — no
+   una regla acá, que quedaría antes en la hoja y la perdería la cascada. */
+.ex-row-icon{position:absolute;top:12px;left:14px;color:var(--blue2);opacity:.6}
+
 .ex-done-count{
   position:absolute;top:14px;right:14px;
   font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.05em;
@@ -649,7 +675,8 @@ body.dragging-on .card.day.drop-target{filter:none}
   background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
   border:1px solid rgba(255,255,255,.07);
   border-radius:14px;
-  padding:10px 12px 10px 22px;margin-bottom:8px;
+  /* los 46 de la izquierda son el riel más el pictograma (.ex-row-icon) */
+  padding:10px 12px 10px 46px;margin-bottom:8px;
 }
 /* El riel, igual que en el detalle de sesión pero diciendo otra cosa: acá su
    altura son las series de este ejercicio contra el que más tiene del día.
@@ -668,7 +695,10 @@ body.dragging-on .card.day.drop-target{filter:none}
   display:inline-grid;width:24px;height:24px;flex:none;
   font-size:13px;border-radius:8px;
 }
-.ex-row-bot{display:flex;align-items:center;gap:9px;margin-top:8px}
+/* El pictograma sólo ocupa el alto del nombre, así que la fila de abajo se
+   corre a la izquierda y recupera ese ancho: sin esto el esquema de RIR se
+   cortaba en las filas de números anchos ("4×15"). */
+.ex-row-bot{display:flex;align-items:center;gap:9px;margin-top:8px;margin-left:-32px}
 /* la prescripción es el dato de esta pantalla, así que es el número grande —
    el mismo rol que el peso en el detalle de sesión */
 .ex-row .presc{

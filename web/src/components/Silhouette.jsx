@@ -20,9 +20,10 @@
 //
 // Este componente no calcula estadísticas: pide groupStats() cuando tocás.
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ANTERIOR, POSTERIOR } from '../lib/bodydata.js';
+import { cuerpo } from '../lib/bodydata.js';
 import { groupStats, diasTexto } from '../lib/muscle.js';
 import { vibrate } from '../lib/format.js';
+import { S } from '../lib/state.js';
 import MusclePop from './MusclePop.jsx';
 
 const ANCHO_POP = 208;
@@ -83,6 +84,11 @@ export default function Silhouette({ days = {} }) {
   const [sel, setSel] = useState(null);   // { cat, x, y, arriba }
   const caja = useRef(null);
 
+  // El cuerpo sigue al sexo del perfil, que ya existe porque lo usan las
+  // calorías. Un ajuste aparte sería una segunda fuente de verdad que se puede
+  // contradecir con la primera.
+  const { frente, espalda } = cuerpo(S.cfg.profile?.sex);
+
   const cerrar = useCallback(() => setSel(null), []);
 
   // Escape cierra. Se registra sólo mientras hay algo abierto.
@@ -121,8 +127,8 @@ export default function Silhouette({ days = {} }) {
 
   return (
     <div className="sil-pair" ref={caja}>
-      <Cara zonas={ANTERIOR} days={days} etiqueta="Frente" sel={sel?.cat} onPick={tocar} />
-      <Cara zonas={POSTERIOR} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={tocar} />
+      <Cara zonas={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={tocar} />
+      <Cara zonas={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={tocar} />
 
       {sel && (
         <>

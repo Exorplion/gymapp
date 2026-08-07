@@ -53,6 +53,20 @@ export function startRest() {
   tickRest();
 }
 
+/** Suma o resta segundos al descanso en curso.
+
+    Restar no puede dejar el final en el pasado: eso dispararía la alarma en el
+    acto, que no es lo que pedís cuando tocás −30s con 10 segundos a favor. El
+    piso son 5 segundos, suficiente para volver a tocar +30 si te pasaste. */
+export function shiftRest(secs) {
+  if (T.state !== 'fullscreen' && T.state !== 'minimized') return;
+  const piso = Date.now() + 5000;
+  T.end = Math.max(piso, T.end + secs * 1000);
+  // el total sube con el tiempo agregado para que el anillo no se pase de vuelta
+  T.total = Math.max(T.total, Math.ceil((T.end - Date.now()) / 1000));
+  tickRest();
+}
+
 export function minimizeRest() {
   if (T.state !== 'fullscreen') return;
   T.state = 'minimized';

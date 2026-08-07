@@ -123,3 +123,70 @@ export const POSTERIOR = [
     '69.79 195.74 71.91 195.74 73.62 198.3 71.91 213.19 70.21 219.57 67.23 202.13',
   ] },
 ];
+
+/* ---------- la variante femenina ----------
+
+   Se calcula, no se dibuja aparte. Es la MISMA lámina anatómica con las
+   proporciones cambiadas: hombros más angostos, cintura más marcada y cadera
+   más ancha. Los músculos y sus nombres son idénticos, porque lo son.
+
+   Se hace así y no con un segundo archivo de polígonos por dos razones: no
+   duplica los 7.5 KB, y sobre todo no deja dos geometrías que se puedan ir
+   desincronizando — si algún día se corrige el dorsal, se corrige en las dos.
+
+   Qué NO es: una lámina femenina dibujada desde cero por un anatomista. Es un
+   ajuste de proporciones sobre la misma base. Se nota y se ve bien a este
+   tamaño, pero conviene llamarlo por su nombre. */
+
+/** Ancho relativo al eje según la altura. Los valores de `y` salen de medir
+    dónde caen de verdad los grupos en esta lámina: hombros 36-54, cintura
+    57-108, glúteo 99-126. */
+const PERFIL_F = [
+  [0, 0.95],     // cabeza
+  [34, 0.92],    // cuello
+  [46, 0.85],    // hombros: lo más angosto respecto del hombre
+  [60, 0.90],    // pecho
+  [84, 0.87],    // cintura
+  [106, 1.15],   // cadera: lo más ancho
+  [126, 1.10],   // glúteo hacia el muslo
+  [150, 1.02],   // rodilla
+  [200, 0.98],   // tobillo
+];
+
+/** Interpola el perfil. Fuera de rango se queda en la punta más cercana. */
+function anchoEn(y) {
+  if (y <= PERFIL_F[0][0]) return PERFIL_F[0][1];
+  for (let i = 1; i < PERFIL_F.length; i++) {
+    const [y0, s0] = PERFIL_F[i - 1], [y1, s1] = PERFIL_F[i];
+    if (y <= y1) return s0 + (s1 - s0) * ((y - y0) / (y1 - y0));
+  }
+  return PERFIL_F[PERFIL_F.length - 1][1];
+}
+
+const EJE = 50;
+const r2 = n => Math.round(n * 100) / 100;
+
+function feminizar(zonas) {
+  return zonas.map(z => ({
+    cat: z.cat,
+    pts: z.pts.map(p => {
+      const n = p.split(' ').map(Number);
+      const out = [];
+      for (let i = 0; i < n.length; i += 2) {
+        const y = n[i + 1];
+        out.push(r2(EJE + (n[i] - EJE) * anchoEn(y)), y);
+      }
+      return out.join(' ');
+    }),
+  }));
+}
+
+/** @type {Zona[]} */
+export const ANTERIOR_F = feminizar(ANTERIOR);
+/** @type {Zona[]} */
+export const POSTERIOR_F = feminizar(POSTERIOR);
+
+/** Las dos caras del cuerpo elegido. `sexo` es 'f' o cualquier otra cosa. */
+export const cuerpo = sexo => sexo === 'f'
+  ? { frente: ANTERIOR_F, espalda: POSTERIOR_F }
+  : { frente: ANTERIOR, espalda: POSTERIOR };

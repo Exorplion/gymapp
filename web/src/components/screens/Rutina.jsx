@@ -17,6 +17,8 @@ import {
   enterEditMode, exitEditMode, toggleDayOpen, deleteDay, deleteExercise, moveEx,
 } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
+import { iconOf } from '../../lib/exicon.js';
+import ExIcon from '../ExIcon.jsx';
 
 /** Puerto del guard de sheetLibSave() (index.html): "No hay rutina que
     guardar" si S.routine no tiene ningún día con ejercicios. En el original
@@ -242,6 +244,7 @@ function DayCard({ wd }) {
                  reparto de volumen, que es lo que estás decidiendo acá */
               style={{ '--fill': maxSets ? ex.sets / maxSets : 1, '--i': i }}
             >
+              <ExIcon icono={iconOf(ex)} size={26} className="ex-row-icon" />
               <div className="ex-row-top">
                 <span className="eyebrow">{i + 1} · {catOf(ex) || 'sin grupo'}</span>
                 <button

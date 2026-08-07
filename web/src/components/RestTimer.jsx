@@ -12,7 +12,7 @@
 // Ambos bloques (pill minimizada y overlay de pantalla completa) viven en un
 // solo componente, igual que en el original: son mutuamente excluyentes
 // según T.state y comparten el mismo <defs> de gradiente SVG.
-import { T, minimizeRest, expandRest, stopRest, tickRest, REST_CIRC } from '../lib/rest.js';
+import { T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC } from '../lib/rest.js';
 import { useStore } from '../lib/state.js';
 import { fmtMMSS } from '../lib/format.js';
 
@@ -31,7 +31,8 @@ export default function RestTimer() {
   // se detiene en el ancestro más cercano), así que clickear +30s/Saltar no
   // también disparaba rest-expand del contenedor. Acá el equivalente es
   // stopPropagation() en los botones.
-  function addTime(e) { e.stopPropagation(); T.end += 30000; tickRest(); }
+  function addTime(e) { e.stopPropagation(); shiftRest(30); }
+  function subTime(e) { e.stopPropagation(); shiftRest(-30); }
   function skip(e) { e.stopPropagation(); stopRest(); }
   function minimize(e) { e.stopPropagation(); minimizeRest(); }
 
@@ -53,6 +54,7 @@ export default function RestTimer() {
             <div id="rest-time">{timeStr}</div>
           </div>
           <div className="rb-btns">
+            <button type="button" onClick={subTime}>−30s</button>
             <button type="button" onClick={addTime}>+30s</button>
             <button type="button" onClick={skip}>Saltar</button>
           </div>
@@ -76,6 +78,7 @@ export default function RestTimer() {
             <button type="button" className="rfs-parar" onClick={skip} autoFocus>PARAR</button>
           ) : (
             <div className="rfs-btns">
+              <button type="button" className="btn sm ghost" onClick={subTime}>−30s</button>
               <button type="button" className="btn sm ghost" onClick={addTime}>+30s</button>
               <button type="button" className="btn sm dim" onClick={skip}>Saltar</button>
             </div>
