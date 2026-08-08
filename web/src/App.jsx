@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { idbOpenOnce } from './lib/db.js';
 import { S, useStore, bump, loadAll, closeSheet, openSheet } from './lib/state.js';
 import { applyComputedGoals } from './lib/macros.js';
@@ -95,8 +95,30 @@ function SheetContent({ sheet }) {
   }
 }
 
+/* Orden de las pantallas, para saber hacia qué lado entra la nueva.
+
+   "Hoy" va pegado a Inicio porque se entra desde ahí: yendo a Hoy la pantalla
+   avanza, y al volver retrocede. La barra de abajo no lo muestra como pestaña,
+   pero el movimiento tiene que contar la misma historia que el gesto. */
+const ORDEN = ['inicio', 'hoy', 'rutina', 'nutri', 'prog'];
+
 export default function App() {
   const store = useStore();
+
+  /* La animación de deslizamiento ya estaba en la hoja de estilos —slideR y
+     slideL— y la usaba la app original; se perdió al migrar a React y las
+     pantallas pasaron a aparecer de golpe. Esto la vuelve a enchufar.
+
+     La dirección sale del orden de las pantallas: si vas hacia la derecha de la
+     barra, la nueva entra desde la derecha. Sin eso el movimiento sería siempre
+     igual y no diría nada sobre dónde estás parado. */
+  const tabPrevio = useRef(store.tab);
+  const dir = useMemo(() => {
+    const antes = ORDEN.indexOf(tabPrevio.current);
+    const ahora = ORDEN.indexOf(store.tab);
+    tabPrevio.current = store.tab;
+    return ahora < antes ? 'l' : 'r';
+  }, [store.tab]);
 
   // Puerto del arranque original (el script inline al final de index.html
   // hacía idbOpen().then(loadAll) antes de la primera render()). loadAll()
@@ -167,11 +189,15 @@ export default function App() {
       {/* Inicio no scrollea: necesita que main deje de reservar el colchón
           inferior que sí usan las pantallas largas. */}
       <main className={store.tab === 'inicio' ? 'full' : ''}>
-        {store.tab === 'inicio' && <Inicio />}
-        {store.tab === 'hoy' && <Hoy />}
-        {store.tab === 'rutina' && <Rutina />}
-        {store.tab === 'nutri' && <Nutricion />}
-        {store.tab === 'prog' && <Progreso />}
+        {/* El `key` es lo que hace que la animación se repita: sin él React
+            reusa el mismo div y el navegador no vuelve a correr el keyframe. */}
+        <div className={`view enter dir-${dir}`} key={store.tab}>
+          {store.tab === 'inicio' && <Inicio />}
+          {store.tab === 'hoy' && <Hoy />}
+          {store.tab === 'rutina' && <Rutina />}
+          {store.tab === 'nutri' && <Nutricion />}
+          {store.tab === 'prog' && <Progreso />}
+        </div>
       </main>
       {/* Con S.tab === 'hoy' ninguna pestaña sería la activa, y
           moveTabIndicator() (TabBar.jsx) busca `button.on`: sin encontrarlo

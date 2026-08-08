@@ -136,6 +136,7 @@ function RutinaView() {
                   {dd.exercises.map((e, i) => (
                     <div key={e.id} className="day-ex">
                       <span className="i">{i + 1}</span>
+                      <ExIcon icono={iconOf(e)} size={24} className="day-ex-icon" />
                       <span className="grow">
                         <span className="t">{e.name}</span>
                         <span className="s">

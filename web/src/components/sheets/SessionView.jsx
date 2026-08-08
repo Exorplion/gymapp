@@ -16,6 +16,8 @@ import { pinAddedToRoutine } from '../../lib/rutina-logic.js';
 import { catOf } from '../../lib/muscle.js';
 import { equipLabel, exKey } from '../../lib/equip.js';
 import { toast } from '../../lib/toast.js';
+import { iconOf } from '../../lib/exicon.js';
+import ExIcon from '../ExIcon.jsx';
 
 export default function SessionView({ id, justFinished = false }) {
   useStore();
@@ -196,6 +198,7 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
   return (
     <div className={`dcard entry v-${veredicto}`} style={{ '--i': idx }}>
       <div className="entry-top">
+        <ExIcon icono={iconOf(entry)} size={22} className="entry-icon" />
         <span className={`eyebrow ${grupo ? '' : 'warn'}`}>{grupo || 'sin grupo'}</span>
         {equipLabel(entry) && <span className="eq-tag">{equipLabel(entry)}</span>}
         {esPR && <span className="entry-pr" title="Récord en esta sesión">🏆</span>}

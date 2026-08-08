@@ -41,7 +41,38 @@ function tono(d) {
   return 'sil-d3';
 }
 
-function Cara({ zonas, days, etiqueta, sel, onPick }) {
+/* El pelo.
+
+   La proporción sola no alcanzaba para distinguir los dos cuerpos: a 170 px de
+   ancho, hombros y cadera se leen sólo si tenés los dos al lado. El pelo se ve
+   de una.
+
+   No sale de bodydata.js porque la lámina anatómica no trae cabello — la cabeza
+   ahí es un polígono liso (y 0-25, x 40-59). Se dibuja acá encima. */
+const PELO = {
+  m: (
+    <path
+      className="sil-pelo"
+      d="M39.6,12.5 C39.6,4.2 44,0 49.5,0 C55,0 59.4,4.2 59.4,12.5
+         C55.6,9 52.8,7.6 49.5,7.6 C46.2,7.6 43.4,9 39.6,12.5 Z"
+    />
+  ),
+  f: (
+    <g className="sil-pelo">
+      <path d="M38.6,13.5 C38.6,3.8 43.4,-0.6 49.5,-0.6 C55.6,-0.6 60.4,3.8 60.4,13.5
+               C56.4,9.3 53,7.8 49.5,7.8 C46,7.8 42.6,9.3 38.6,13.5 Z" />
+      {/* Las dos mechas que caen al costado de la cara. Terminan sobre el
+          cuello y no sobre el hombro: más largas tapaban el cuello entero y el
+          conjunto pasaba de "pelo" a "capucha". */}
+      <path d="M38.9,11 C37.4,16 37.3,24 38.9,30.5 L42.2,30.5
+               C41.2,24 41.5,17 43.2,12.5 Z" />
+      <path d="M60.1,11 C61.6,16 61.7,24 60.1,30.5 L56.8,30.5
+               C57.8,24 57.5,17 55.8,12.5 Z" />
+    </g>
+  ),
+};
+
+function Cara({ zonas, days, etiqueta, sel, onPick, pelo }) {
   return (
     <div className="sil-box">
       <svg viewBox="0 0 100 200" role="group" aria-label={`Músculos: ${etiqueta}`}>
@@ -71,6 +102,8 @@ function Cara({ zonas, days, etiqueta, sel, onPick }) {
           );
         })}
 
+        {PELO[pelo] || PELO.m}
+
         <g className="sil-luz">
           {zonas.map((z, i) => z.pts.map((p, j) => <polygon key={`${i}.${j}`} points={p} />))}
         </g>
@@ -88,7 +121,9 @@ export default function Silhouette({ days = {} }) {
   // sexo del perfil para que quien ya lo cargó no tenga que elegir dos veces.
   // Van separados porque el del perfil existe para calcular calorías: unirlos
   // obligaría a mentir en uno para arreglar el otro.
-  const { frente, espalda } = cuerpo(S.cfg.bodySex || S.cfg.profile?.sex);
+  const sexo = S.cfg.bodySex || S.cfg.profile?.sex;
+  const { frente, espalda } = cuerpo(sexo);
+  const pelo = sexo === 'f' ? 'f' : 'm';
 
   const cerrar = useCallback(() => setSel(null), []);
 
@@ -128,8 +163,8 @@ export default function Silhouette({ days = {} }) {
 
   return (
     <div className="sil-pair" ref={caja}>
-      <Cara zonas={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={tocar} />
-      <Cara zonas={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={tocar} />
+      <Cara zonas={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={tocar} pelo={pelo} />
+      <Cara zonas={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={tocar} pelo={pelo} />
 
       {sel && (
         <>
@@ -157,6 +192,11 @@ export default function Silhouette({ days = {} }) {
         </linearGradient>
         <linearGradient id="sil-gne" x1="12%" y1="0%" x2="88%" y2="100%">
           <stop offset="0%" stopColor="#3A4763" /><stop offset="45%" stopColor="#26304A" /><stop offset="100%" stopColor="#151D30" />
+        </linearGradient>
+        {/* Bien por debajo del tono de la piel: el contraste es lo que hace que
+            el pelo se lea a 170 px de ancho, que es el tamaño real. */}
+        <linearGradient id="sil-gpelo" x1="15%" y1="0%" x2="85%" y2="100%">
+          <stop offset="0%" stopColor="#1A2338" /><stop offset="50%" stopColor="#0F1626" /><stop offset="100%" stopColor="#070B15" />
         </linearGradient>
         {/* userSpaceOnUse: la luz es del cuerpo entero, no de cada polígono */}
         <linearGradient id="sil-luz" gradientUnits="userSpaceOnUse" x1="18" y1="10" x2="86" y2="190">

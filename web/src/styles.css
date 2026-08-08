@@ -132,8 +132,11 @@ main{
   max-width:520px;margin:0 auto;
   padding:16px 18px calc(var(--tabs-h) + env(safe-area-inset-bottom) + 110px);
 }
-.view{display:none}
-.view.active{display:block}
+/* En la app original .view envolvía a TODAS las pantallas a la vez y se
+   mostraba la activa con .active. En React sólo se renderiza la activa, así que
+   el interruptor sobra y esconderlas por defecto dejaría la pantalla en blanco.
+   Lo que queda de .view es la animación de entrada. */
+.view{display:block}
 @keyframes vin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 /* la pantalla entra desde el lado hacia el que vas, como en una app nativa:
    pestaña siguiente → entra por la derecha; anterior → por la izquierda.
@@ -143,6 +146,9 @@ main{
 .view.enter.dir-r{animation:slideR .38s var(--ease)}
 .view.enter.dir-l{animation:slideL .38s var(--ease)}
 .view.enter>*{animation:vin .38s var(--ease) backwards}
+@media (prefers-reduced-motion:reduce){
+  .view.enter.dir-r,.view.enter.dir-l,.view.enter>*{animation:none}
+}
 /* escalonado: la pantalla entra por partes en vez de un bloque único */
 .view.enter>*:nth-child(2){animation-delay:.045s}
 .view.enter>*:nth-child(3){animation-delay:.09s}
@@ -262,6 +268,21 @@ main{
   padding:8px 12px;border-radius:999px;font-size:14px;font-weight:600;
   background:var(--card2);border:1px solid var(--line2);color:var(--txt);
 }
+/* Elegir la rutina de destino: una por renglón, porque lo que se lee es el
+   nombre ("Posterior B") y en fila apretada no entra. */
+.chips.col{flex-direction:column;flex-wrap:nowrap}
+.chip.ancho{
+  width:100%;border-radius:12px;padding:9px 12px;justify-content:flex-start;gap:10px;
+}
+.chip-dia{
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:.1em;color:var(--mut2);min-width:15px;flex:none;
+}
+.chip.blue .chip-dia{color:inherit;opacity:.75}
+.chip-nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.chip-sub{font-size:11.5px;font-weight:500;color:var(--mut2);flex:none}
+.chip.blue .chip-sub{color:inherit;opacity:.7}
+
 @keyframes pop{from{transform:scale(.7);opacity:0}}
 /* solo la serie recién guardada hace "pop"; antes lo hacían todos los chips en
    cada re-render y la fila entera parpadeaba */
@@ -321,6 +342,12 @@ main{
    montaba encima. El hueco se lo hace el padding de .ex-row, más abajo — no
    una regla acá, que quedaría antes en la hoja y la perdería la cascada. */
 .ex-row-icon{position:absolute;top:12px;left:14px;color:var(--blue2);opacity:.6}
+
+/* En el resumen de la semana y en el detalle de una sesión las filas ya son
+   flex, así que el dibujo entra como un elemento más y no hace falta sacarlo
+   del flujo. */
+.day-ex-icon{color:var(--blue2);opacity:.6}
+.entry-icon{color:var(--blue2);opacity:.55}
 
 .ex-done-count{
   position:absolute;top:14px;right:14px;
@@ -1267,7 +1294,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .day-head .s{display:block;font-size:12.5px;color:var(--mut);margin-top:1px}
 .day-head .chev{color:var(--mut2);font-size:18px}
 .day-exs{padding:0 16px 14px}
-.day-ex{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,.07)}
+/* 9px y no 12 de separación: el pictograma se sumó a la fila y el nombre
+   necesita recuperar ese ancho. */
+.day-ex{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid rgba(255,255,255,.07)}
 .day-ex .i{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--mut2);min-width:14px}
 .day-ex .grow{flex:1;min-width:0}
 .day-ex .t{display:block;font-size:15px;font-weight:600}
@@ -1480,6 +1509,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .sil-none{fill:url(#sil-gn)}
 /* lo que no rastreamos: cabeza, cuello, antebrazo, rodilla */
 .sil-neutro{fill:url(#sil-gne);stroke:rgba(2,5,12,.5);stroke-width:.3;pointer-events:none}
+/* El pelo: más oscuro que la piel para que se despegue de la cabeza. Es la
+   señal que distingue los dos cuerpos de un vistazo. */
+.sil-pelo{fill:url(#sil-gpelo);stroke:rgba(2,5,12,.45);stroke-width:.3;
+  stroke-linejoin:round;pointer-events:none}
 
 /* Una sola fuente de luz sobre todo el cuerpo. Sin esto cada músculo se ilumina
    por su cuenta y el conjunto se ve facetado, como vidrio roto. */

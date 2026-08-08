@@ -145,8 +145,8 @@ const PERFIL_F = [
   [0, 0.95],     // cabeza
   [34, 0.92],    // cuello
   [46, 0.85],    // hombros: lo más angosto respecto del hombre
-  [60, 0.90],    // pecho
-  [84, 0.87],    // cintura
+  [60, 0.87],    // pecho
+  [84, 0.82],    // cintura: el tronco entero va más fino
   [106, 1.15],   // cadera: lo más ancho
   [126, 1.10],   // glúteo hacia el muslo
   [150, 1.02],   // rodilla

@@ -58,11 +58,24 @@ describe('la variante femenina', () => {
     expect(anchoDe(ANTERIOR_F, 'Abs')).toBeLessThan(anchoDe(ANTERIOR, 'Abs'));
   });
 
-  // El ajuste es del tronco: si arrastrara los brazos, además de salirse del
-  // lienzo estaría diciendo que una cadera ancha te separa las manos.
-  it('casi no mueve los brazos', () => {
-    const bic = anchoDe(ANTERIOR, 'Bíceps'), bicF = anchoDe(ANTERIOR_F, 'Bíceps');
-    expect(Math.abs(bicF - bic) / bic).toBeLessThan(0.12);
+  /* El ensanche de cadera no puede empujar las extremidades hacia afuera: eso
+     sacaba las manos del lienzo, y además diría que una cadera ancha te separa
+     los brazos. El contorno total nunca crece.
+
+     Lo que sí se mueve son los brazos hacia ADENTRO, y es correcto: hombros más
+     angostos acercan los brazos al cuerpo. Por eso se mide el contorno y no
+     cada músculo por separado. */
+  it('nunca ensancha el contorno del cuerpo', () => {
+    const contorno = zonas => {
+      let min = Infinity, max = -Infinity;
+      for (const z of zonas) for (const p of z.pts) {
+        const n = p.split(' ').map(Number);
+        for (let i = 0; i < n.length; i += 2) { min = Math.min(min, n[i]); max = Math.max(max, n[i]); }
+      }
+      return max - min;
+    };
+    expect(contorno(ANTERIOR_F)).toBeLessThanOrEqual(contorno(ANTERIOR));
+    expect(contorno(POSTERIOR_F)).toBeLessThanOrEqual(contorno(POSTERIOR));
   });
 
   it('no toca las alturas: sólo cambia el ancho', () => {

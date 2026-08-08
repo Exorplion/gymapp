@@ -21,6 +21,18 @@ export default function CopyExercises({ mode = 'push', wd }) {
   const conEjercicios = WEEK_ORDER.filter(d => S.routine[d]?.exercises?.length);
   const otros = conEjercicios.filter(d => d !== propio);
 
+  /* Destinos posibles: primero las rutinas que ya existen —que es a lo que uno
+     quiere copiar— y después los días libres. Ordenados así porque la pregunta
+     real casi siempre es "a cuál de mis otras rutinas", no "a qué casilla
+     vacía". */
+  const destinos = useMemo(() => {
+    const resto = WEEK_ORDER.filter(d => d !== propio);
+    return [
+      ...resto.filter(d => S.routine[d]?.exercises?.length),
+      ...resto.filter(d => !S.routine[d]?.exercises?.length),
+    ];
+  }, [propio]);
+
   const [fuente, setFuente] = useState('semana');          // sólo en pull
   const [libId, setLibId] = useState(S.lib[0]?.id ?? null);
   const [libWd, setLibWd] = useState(null);
@@ -132,17 +144,38 @@ export default function CopyExercises({ mode = 'push', wd }) {
         </>
       )}
 
-      {/* ---- adónde (sólo push) ---- */}
+      {/* ---- adónde (sólo push) ----
+
+           Se nombra la RUTINA y no sólo el día. Uno no piensa "el miércoles":
+           piensa "Posterior B". Con la inicial suelta, si no te acordás qué
+           rutina vive en cada día la pregunta no se puede contestar — y el lado
+           de "traer de otro día" ya lo mostraba así desde siempre.
+
+           Los días libres se muestran igual, porque copiar a un día vacío es
+           justamente cómo se estrena una rutina nueva; van al final y dicen
+           "libre", para que se lean como otra cosa. */}
       {esPush && (
         <div className="field">
-          <label>¿A qué día?</label>
-          <div className="chips">
-            {WEEK_ORDER.filter(d => d !== propio).map(d => (
-              <button key={d} type="button" className={`chip ${d === destinoWd ? 'blue' : ''}`} onClick={() => { setDestinoWd(d); setSel(null); }}>
-                {WD1[d]}
-                {!!S.routine[d]?.exercises?.length && <span className="chip-dot" />}
-              </button>
-            ))}
+          <label>¿A qué rutina?</label>
+          <div className="chips col">
+            {destinos.map(d => {
+              const dia = S.routine[d];
+              const ocupado = !!dia?.exercises?.length;
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  className={`chip ancho ${d === destinoWd ? 'blue' : ''}`}
+                  onClick={() => { setDestinoWd(d); setSel(null); }}
+                >
+                  <span className="chip-dia">{WD1[d]}</span>
+                  <span className="chip-nom">{ocupado ? (dia.name || WD[d]) : WD[d]}</span>
+                  <span className="chip-sub">
+                    {ocupado ? `${dia.exercises.length} ejercicios` : 'libre'}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -203,8 +236,11 @@ export default function CopyExercises({ mode = 'push', wd }) {
 
       <button type="button" className="btn" style={{ marginTop: 'var(--s3)' }} disabled={destino == null || !elegidos.length} onClick={confirmar}>
         {destino == null
-          ? 'Elegí un día'
-          : `${esPush ? 'Copiar' : 'Traer'} ${elegidos.length} ejercicio${elegidos.length === 1 ? '' : 's'}${esPush ? ` al ${WD[destino].toLowerCase()}` : ''}`}
+          ? (esPush ? 'Elegí a dónde' : 'Elegí un día')
+          /* El destino se nombra por su rutina y no por el día, igual que en la
+             lista de arriba: "al Posterior A" es lo que uno tiene en la cabeza,
+             "al miércoles" te obliga a traducir. */
+          : `${esPush ? 'Copiar' : 'Traer'} ${elegidos.length} ejercicio${elegidos.length === 1 ? '' : 's'}${esPush ? ` a ${S.routine[destino]?.name || WD[destino]}` : ''}`}
       </button>
       <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={closeSheet}>Cancelar</button>
     </>
