@@ -41,12 +41,18 @@ export function ding() {
 
 export const REST_CIRC = 2 * Math.PI * 88;
 
-export function startRest() {
-  if (!S.cfg.rest) return;
+/** Arranca el descanso.
+
+    `segs` permite pedir una duración distinta a la configurada — la usa el
+    calentamiento, que tiene su propia pausa de 2:45 antes de la primera serie.
+    Sin argumento vale el ajuste de siempre. */
+export function startRest(segs) {
+  const total = segs > 0 ? segs : S.cfg.rest;
+  if (!total) return;
   audioCtx();        // crear con gesto del usuario
   prepararAlarma();  // desbloquear el <audio> con el mismo gesto
   pedirPermiso();
-  T.total = S.cfg.rest; T.end = Date.now() + T.total * 1000;
+  T.total = total; T.end = Date.now() + T.total * 1000;
   T.state = 'fullscreen';
   bump();
   if (!T.int) T.int = setInterval(tickRest, 250);

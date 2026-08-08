@@ -17,12 +17,15 @@
 // HistDetail vivía acá hasta que SessionView (components/sheets/) unificó las
 // dos vistas de una sesión — la del historial y la del cierre.
 import { useEffect, useRef, useState } from 'react';
-import { S, useStore, bump, openSheet, closeSheet } from '../../lib/state.js';
+import { S, useStore, bump, openSheet, closeSheet, saveDraft } from '../../lib/state.js';
 import { WD, WD1, WDS, MO, WEEK_ORDER, fmtMMSS, fmtNum, round1 } from '../../lib/format.js';
 import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession, sessionForWeekday, sessionPRs } from '../../lib/session.js';
 import { muscleVolume, uncategorized } from '../../lib/muscle.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
+import WarmupCard from '../WarmupCard.jsx';
+import { tocaCalentar, DESCANSO } from '../../lib/warmup.js';
+import { startRest } from '../../lib/rest.js';
 import { toast } from '../../lib/toast.js';
 
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
@@ -58,6 +61,20 @@ export default function Hoy() {
   const curId = active ? S.draft.cur : null;
   const nextEx = active ? nextPending(exs) : null;
   const allDone = active && exs.length > 0 && !nextEx;
+
+  /* El calentamiento se marca hecho en el borrador y no en un estado local:
+     así sobrevive a cerrar la app en el medio, que es exactamente cuando pasa
+     —dejás el teléfono, calentás, volvés—. Si viviera en React, al volver te
+     lo ofrecería otra vez. */
+  async function cerrarCalentamiento(conDescanso) {
+    if (!S.draft) return;
+    S.draft.warmDone = true;
+    await saveDraft();
+    bump();
+    if (conDescanso) startRest(DESCANSO);
+  }
+  const terminarCalentamiento = () => cerrarCalentamiento(true);
+  const saltarCalentamiento = () => cerrarCalentamiento(false);
 
   // Para que el plegado se pueda animar, el contenido tiene que seguir
   // montado mientras la ranura se cierra: si se desmonta al instante no queda
@@ -182,6 +199,15 @@ export default function Hoy() {
             <button type="button" className="btn sm ghost" style={{ marginBottom: 'var(--s3)' }} onClick={() => openSheet('reorder-hoy')}>
               ↕ Reordenar
             </button>
+          )}
+          {/* El calentamiento va antes del carrusel y sobre el PRIMER ejercicio
+              del día: es el básico pesado, el único que lo necesita. */}
+          {active && exs.length > 0 && tocaCalentar(S.draft, exs[0].id) && (
+            <WarmupCard
+              ex={exs[0]}
+              onListo={terminarCalentamiento}
+              onSaltar={saltarCalentamiento}
+            />
           )}
           <ExerciseCarousel exs={exs} wd={wd} active={active} started={started} curId={curId} nextEx={nextEx} />
           {/* Decidiste hacer algo que no estaba en el plan. Vale sólo para hoy;

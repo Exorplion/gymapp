@@ -1662,3 +1662,39 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   color:var(--mut);font-size:22px;line-height:1;display:grid;place-items:center;
 }
 .back-btn:active{color:var(--blue2);border-color:var(--line2)}
+
+/* ---------- calentamiento ----------
+   Aparece al abrir la sesión y se va con la primera serie registrada. Ámbar y
+   no azul: es preparación, no entrenamiento, y no debe confundirse con las
+   tarjetas de ejercicio que sí registran. */
+.warmup{
+  background:linear-gradient(158deg,rgba(255,180,84,.09),rgba(255,180,84,.03)),var(--card2);
+  border:1px solid rgba(255,180,84,.26);border-radius:16px;
+  padding:14px 15px;margin-bottom:var(--s3);
+}
+.warmup-top{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.warmup-top .eyebrow{flex:1;min-width:0;color:var(--warn);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.warmup-skip{
+  flex:none;border:0;background:rgba(255,255,255,.07);color:var(--mut);
+  font-size:12px;font-weight:600;padding:5px 11px;border-radius:99px;
+}
+.warmup-list{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:1px}
+.warmup-list li{
+  display:flex;align-items:baseline;gap:9px;padding:7px 0;
+}
+.warmup-list li+li{border-top:1px solid rgba(255,255,255,.06)}
+.warmup-list .n{
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;
+  color:var(--mut2);min-width:11px;flex:none;
+}
+.warmup-list .w{
+  font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:800;
+  letter-spacing:-.01em;font-variant-numeric:tabular-nums;
+}
+.warmup-list .w i{font-size:11px;font-weight:600;font-style:normal;color:var(--mut);margin-left:2px}
+.warmup-list .x{flex:1;font-size:13.5px;font-weight:600;color:var(--mut)}
+.warmup-list .p{font-size:11.5px;font-weight:600;color:var(--mut2);flex:none;
+  font-variant-numeric:tabular-nums}
+.warmup-nota{margin:0 0 11px;font-size:12.5px;line-height:1.45;color:var(--mut)}
+.warmup-nota b{color:var(--warn)}
