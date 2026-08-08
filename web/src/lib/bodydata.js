@@ -207,3 +207,14 @@ export const POSTERIOR_F = feminizar(POSTERIOR);
 export const cuerpo = sexo => sexo === 'f'
   ? { frente: ANTERIOR_F, espalda: POSTERIOR_F }
   : { frente: ANTERIOR, espalda: POSTERIOR };
+
+/** Aplica la misma deformación del cuerpo a un trazo suelto.
+
+    Las líneas de detalle anatómico (los cortes del recto abdominal, el surco de
+    los erectores) se dibujan a mano sobre las coordenadas del modelo masculino.
+    Sin pasarlas por acá quedarían fuera de lugar en el femenino, que tiene el
+    tronco más angosto. */
+export function adaptarTrazo(pts, sexo) {
+  if (sexo !== 'f') return pts;
+  return feminizar([{ cat: null, pts: [pts] }])[0].pts[0];
+}

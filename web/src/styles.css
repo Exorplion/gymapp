@@ -1509,10 +1509,25 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .sil-none{fill:url(#sil-gn)}
 /* lo que no rastreamos: cabeza, cuello, antebrazo, rodilla */
 .sil-neutro{fill:url(#sil-gne);stroke:rgba(2,5,12,.5);stroke-width:.3;pointer-events:none}
-/* El pelo: más oscuro que la piel para que se despegue de la cabeza. Es la
-   señal que distingue los dos cuerpos de un vistazo. */
-.sil-pelo{fill:url(#sil-gpelo);stroke:rgba(2,5,12,.45);stroke-width:.3;
+/* El pelo. Castaño cálido y no un azul más oscuro: sobre un fondo casi negro
+   lo oscuro desaparece, y encima el cuerpo entero es frío, así que un tono
+   cálido se lee como pelo al instante. Queda fuera de la paleta de estados a
+   propósito —el ámbar de "7+ días" es mucho más saturado— para que nadie lo
+   confunda con un músculo sin entrenar. */
+.sil-pelo{fill:url(#sil-gpelo);stroke:rgba(20,10,4,.5);stroke-width:.3;
   stroke-linejoin:round;pointer-events:none}
+.sil-pelo path{fill:url(#sil-gpelo)}
+
+/* Los cortes que la lámina no trae: el six-pack, el surco de los erectores, el
+   redondo mayor. Van encima del músculo y debajo de la luz, así se leen como
+   hendiduras del cuerpo y no como rayas dibujadas arriba. */
+.sil-detalle{pointer-events:none}
+.sil-detalle polyline{
+  fill:none;stroke:rgba(2,5,12,.55);stroke-width:.7;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+/* Con un grupo abierto, el detalle se apaga junto con el resto del cuerpo. */
+.sil-pair:has(.sil-sel) .sil-detalle{opacity:.42}
 
 /* Una sola fuente de luz sobre todo el cuerpo. Sin esto cada músculo se ilumina
    por su cuenta y el conjunto se ve facetado, como vidrio roto. */

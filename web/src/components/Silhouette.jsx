@@ -19,8 +19,8 @@
 // glow se aplica al grupo entero en lugar de a cada pieza.
 //
 // Este componente no calcula estadísticas: pide groupStats() cuando tocás.
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { cuerpo } from '../lib/bodydata.js';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { cuerpo, adaptarTrazo } from '../lib/bodydata.js';
 import { groupStats, diasTexto } from '../lib/muscle.js';
 import { vibrate } from '../lib/format.js';
 import { S } from '../lib/state.js';
@@ -48,31 +48,89 @@ function tono(d) {
    de una.
 
    No sale de bodydata.js porque la lámina anatómica no trae cabello — la cabeza
-   ahí es un polígono liso (y 0-25, x 40-59). Se dibuja acá encima. */
+   ahí es un polígono liso (y 0-25, x 40-59). Se dibuja acá encima.
+
+   El casquete se dibuja MÁS GRANDE que el cráneo a propósito y después se
+   recorta contra él: así su borde exterior es exactamente el del hueso. Es lo
+   que hace que se lea como pelo del personaje y no como una calcomanía pegada
+   encima — que era el problema de la primera versión. Lo único que queda fuera
+   del recorte son las mechas largas, porque el pelo sí sobresale de la cabeza. */
 const PELO = {
-  m: (
+  m: clip => (
     <path
-      className="sil-pelo"
-      d="M39.6,12.5 C39.6,4.2 44,0 49.5,0 C55,0 59.4,4.2 59.4,12.5
-         C55.6,9 52.8,7.6 49.5,7.6 C46.2,7.6 43.4,9 39.6,12.5 Z"
+      clipPath={clip}
+      d="M36,15 C36,3 42,-3 49.5,-3 C57,-3 63,3 63,15
+         C58,9.5 54,7.6 49.5,7.6 C45,7.6 41,9.5 36,15 Z"
     />
   ),
-  f: (
-    <g className="sil-pelo">
-      <path d="M38.6,13.5 C38.6,3.8 43.4,-0.6 49.5,-0.6 C55.6,-0.6 60.4,3.8 60.4,13.5
-               C56.4,9.3 53,7.8 49.5,7.8 C46,7.8 42.6,9.3 38.6,13.5 Z" />
-      {/* Las dos mechas que caen al costado de la cara. Terminan sobre el
-          cuello y no sobre el hombro: más largas tapaban el cuello entero y el
-          conjunto pasaba de "pelo" a "capucha". */}
-      <path d="M38.9,11 C37.4,16 37.3,24 38.9,30.5 L42.2,30.5
-               C41.2,24 41.5,17 43.2,12.5 Z" />
-      <path d="M60.1,11 C61.6,16 61.7,24 60.1,30.5 L56.8,30.5
-               C57.8,24 57.5,17 55.8,12.5 Z" />
-    </g>
+  f: clip => (
+    <>
+      <path
+        clipPath={clip}
+        d="M35,16 C35,2.5 41.5,-4 49.5,-4 C57.5,-4 64,2.5 64,16
+           C58.5,10 54,7.8 49.5,7.8 C45,7.8 40.5,10 35,16 Z"
+      />
+      {/* Las mechas que caen al costado de la cara. Salen del borde del cráneo,
+          se abren apenas y terminan en punta sobre el cuello. Rectas y anchas
+          —como estaban— formaban dos barras y el conjunto se leía como un
+          bloque, no como pelo. */}
+      <path d="M40.6,9 C38.7,14 38.5,20.5 39.9,27
+               C41.1,23 41.4,16.5 43.1,10.5 Z" />
+      <path d="M58.4,9 C60.3,14 60.5,20.5 59.1,27
+               C57.9,23 57.6,16.5 55.9,10.5 Z" />
+    </>
   ),
 };
 
-function Cara({ zonas, days, etiqueta, sel, onPick, pelo }) {
+/** El polígono de la cabeza, para recortar el casquete contra el cráneo.
+
+    Se busca en vez de escribirlo a mano porque el modelo femenino deforma las
+    coordenadas: copiarlas dejaría el recorte desalineado en uno de los dos. */
+function craneoDe(zonas) {
+  for (const z of zonas) {
+    if (z.cat) continue;
+    for (const p of z.pts) {
+      const n = p.split(' ').map(Number);
+      let maxY = -Infinity;
+      for (let i = 1; i < n.length; i += 2) maxY = Math.max(maxY, n[i]);
+      if (maxY < 40) return p;
+    }
+  }
+  return null;
+}
+
+/* Detalle anatómico.
+
+   La lámina trae los músculos como bloques, y a algunos les falta el corte que
+   uno reconoce: el recto abdominal viene en DOS columnas enteras —de ahí que
+   los abs se vieran planos—, el dorsal no se separa del redondo mayor, y los
+   erectores no tienen surco.
+
+   Esto es lo único que se dibuja a mano en el cuerpo, y funciona porque no está
+   inventando anatomía: son cortes sobre formas que ya están bien puestas. Las
+   coordenadas salen de medir los polígonos reales, no de suponerlas.
+
+   Las columnas del recto van de y 57 a 107, x 40.8-49.0 y 50.6-58.4. */
+const DETALLE = {
+  frente: [
+    // los cortes del recto abdominal, tres por lado: el six-pack
+    '41.4 66.2 44.8 67.2 48.3 66.3', '51.3 66.3 54.6 67.2 58.1 66.2',
+    '41.2 75.4 44.8 76.4 48.4 75.5', '51.2 75.5 54.7 76.4 58.3 75.4',
+    '41.4 84.4 44.9 85.4 48.5 84.5', '51.1 84.5 54.7 85.4 58.4 84.4',
+    // el borde del haz clavicular del pectoral
+    '31.6 47.4 39.5 49.4 47.4 47.8', '52.6 47.8 60.5 49.4 68.4 47.4',
+  ],
+  espalda: [
+    // el surco de los erectores, a los lados de la columna
+    '48.4 74.5 47.9 87 48.6 100', '51.6 74.5 52.1 87 51.4 100',
+    // el redondo mayor, que la lámina deja pegado al dorsal
+    '33.2 45.5 38.6 48.6 44.2 52.6', '66.8 45.5 61.4 48.6 55.8 52.6',
+    // el pico inferior del trapecio
+    '38.6 50.5 50 62.5 61.4 50.5',
+  ],
+};
+
+function Cara({ zonas, days, etiqueta, sel, onPick, pelo, detalle, craneo, id }) {
   return (
     <div className="sil-box">
       <svg viewBox="0 0 100 200" role="group" aria-label={`Músculos: ${etiqueta}`}>
@@ -102,7 +160,19 @@ function Cara({ zonas, days, etiqueta, sel, onPick, pelo }) {
           );
         })}
 
-        {PELO[pelo] || PELO.m}
+        <g className="sil-detalle">
+          {detalle.map((d, i) => <polyline key={i} points={d} />)}
+        </g>
+
+        {/* El casquete se recorta contra el cráneo: así su borde ES el del
+            hueso y no puede leerse como una figura pegada encima. Las mechas
+            largas quedan afuera a propósito — el pelo sí sobresale. */}
+        {craneo && (
+          <clipPath id={`sil-craneo-${id}`}><polygon points={craneo} /></clipPath>
+        )}
+        <g className="sil-pelo">
+          {(PELO[pelo] || PELO.m)(craneo ? `url(#sil-craneo-${id})` : undefined)}
+        </g>
 
         <g className="sil-luz">
           {zonas.map((z, i) => z.pts.map((p, j) => <polygon key={`${i}.${j}`} points={p} />))}
@@ -124,6 +194,11 @@ export default function Silhouette({ days = {} }) {
   const sexo = S.cfg.bodySex || S.cfg.profile?.sex;
   const { frente, espalda } = cuerpo(sexo);
   const pelo = sexo === 'f' ? 'f' : 'm';
+  // el detalle se deforma con el cuerpo, o quedaría corrido en el femenino
+  const det = useMemo(() => ({
+    frente: DETALLE.frente.map(d => adaptarTrazo(d, sexo)),
+    espalda: DETALLE.espalda.map(d => adaptarTrazo(d, sexo)),
+  }), [sexo]);
 
   const cerrar = useCallback(() => setSel(null), []);
 
@@ -163,8 +238,14 @@ export default function Silhouette({ days = {} }) {
 
   return (
     <div className="sil-pair" ref={caja}>
-      <Cara zonas={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={tocar} pelo={pelo} />
-      <Cara zonas={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={tocar} pelo={pelo} />
+      <Cara
+        zonas={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={tocar}
+        pelo={pelo} detalle={det.frente} craneo={craneoDe(frente)} id="f"
+      />
+      <Cara
+        zonas={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={tocar}
+        pelo={pelo} detalle={det.espalda} craneo={craneoDe(espalda)} id="b"
+      />
 
       {sel && (
         <>
@@ -193,10 +274,10 @@ export default function Silhouette({ days = {} }) {
         <linearGradient id="sil-gne" x1="12%" y1="0%" x2="88%" y2="100%">
           <stop offset="0%" stopColor="#3A4763" /><stop offset="45%" stopColor="#26304A" /><stop offset="100%" stopColor="#151D30" />
         </linearGradient>
-        {/* Bien por debajo del tono de la piel: el contraste es lo que hace que
-            el pelo se lea a 170 px de ancho, que es el tamaño real. */}
+        {/* Castaño: el cuerpo es todo frío, así que el pelo cálido se despega
+            solo. Oscurecerlo en azul lo hacía desaparecer contra el fondo. */}
         <linearGradient id="sil-gpelo" x1="15%" y1="0%" x2="85%" y2="100%">
-          <stop offset="0%" stopColor="#1A2338" /><stop offset="50%" stopColor="#0F1626" /><stop offset="100%" stopColor="#070B15" />
+          <stop offset="0%" stopColor="#8A6A4A" /><stop offset="45%" stopColor="#5C4430" /><stop offset="100%" stopColor="#33241A" />
         </linearGradient>
         {/* userSpaceOnUse: la luz es del cuerpo entero, no de cada polígono */}
         <linearGradient id="sil-luz" gradientUnits="userSpaceOnUse" x1="18" y1="10" x2="86" y2="190">
