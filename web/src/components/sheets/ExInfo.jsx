@@ -7,6 +7,8 @@ import { illusUrl } from '../../lib/illustrations.js';
 import { equipLabel } from '../../lib/equip.js';
 import { S } from '../../lib/state.js';
 import { exInfo, rirScheme, isLowerBackLift } from '../../lib/exdb.js';
+import { fibrasDe } from '../../lib/fibras.js';
+import BodyMini from '../BodyMini.jsx';
 
 export default function ExInfo({ name, exId }) {
   const info = exInfo(name);
@@ -17,9 +19,15 @@ export default function ExInfo({ name, exId }) {
   }
   const scheme = sets ? rirScheme(sets, name) : null;
 
+  const fibras = fibrasDe(name);
+
   return (
     <>
       <h2>{name}</h2>
+      {/* Qué porción trabaja, sobre el mismo cuerpo del mapa de Inicio. Va
+          primero: es lo que contesta "¿para qué hago esto?" de un vistazo,
+          antes que el texto. */}
+      {fibras && <BodyMini fibras={fibras} />}
       {/* Ilustración del movimiento y, si le sacaste foto, la máquina de tu
           gimnasio. La foto va segunda: la ilustración enseña el movimiento, la
           foto sirve para reconocer dónde hacerlo. */}

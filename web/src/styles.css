@@ -1296,7 +1296,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .day-exs{padding:0 16px 14px}
 /* 9px y no 12 de separación: el pictograma se sumó a la fila y el nombre
    necesita recuperar ese ancho. */
-.day-ex{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid rgba(255,255,255,.07)}
+.day-ex{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid rgba(255,255,255,.07);
+  width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;color:inherit;font:inherit}
+.day-ex:active{background:rgba(255,255,255,.03)}
+.day-ex .chev{color:var(--mut2);font-size:15px;flex:none;margin-left:2px}
 .day-ex .i{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--mut2);min-width:14px}
 .day-ex .grow{flex:1;min-width:0}
 .day-ex .t{display:block;font-size:15px;font-weight:600}
@@ -1699,3 +1702,26 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   font-size:12px;font-weight:500;color:var(--mut2);margin-top:1px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
+
+/* ---------- el cuerpo chico de la ficha del ejercicio ----------
+   Misma lámina que el mapa de Inicio: lo que ves acá y lo que ves allá son el
+   mismo dibujo, no dos ilustraciones que puedan contradecirse. */
+.bodymini{
+  background:linear-gradient(158deg,rgba(255,255,255,.05),rgba(255,255,255,.02)),var(--card2);
+  border:1px solid var(--line2);border-radius:16px;
+  padding:12px;margin-bottom:var(--s3);
+}
+.bm-cuerpos{display:flex;justify-content:center;gap:10px}
+.bm-svg{width:96px;height:auto;flex:none;display:block}
+.bm-masa path{fill:#0F1829;stroke:#0F1829;stroke-width:5;stroke-linejoin:round}
+.bm-svg g{stroke:rgba(2,5,12,.5);stroke-width:1.4;stroke-linejoin:round}
+/* lo que no trabaja queda apagado, pero visible: un cuerpo al que le falta una
+   parte se lee como error, no como "acá no hay nada" */
+.bm-off{fill:#232C42}
+.bm-pelo{fill:#4A3A2A}
+.bm-s{fill:#2C4C86}
+.bm-p{fill:url(#bm-grad);filter:drop-shadow(0 0 6px rgba(34,211,238,.5))}
+.bm-leyenda{display:flex;flex-direction:column;gap:3px;align-items:center;margin-top:9px}
+.bm-tag{font-size:12px;font-weight:600;text-align:center;line-height:1.35}
+.bm-tag.p{color:#22D3EE}
+.bm-tag.s{font-size:11px;font-weight:500;color:var(--mut)}

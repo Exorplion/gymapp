@@ -133,8 +133,17 @@ function RutinaView() {
               </button>
               {open && (
                 <div className="day-exs">
+                  {/* Tocar el ejercicio abre su ficha: qué porción del músculo
+                      trabaja, dibujada sobre el mismo cuerpo del mapa de
+                      Inicio. Antes esta fila no hacía nada al tocarla, que es
+                      justo donde uno va a preguntar "¿y esto para qué?". */}
                   {dd.exercises.map((e, i) => (
-                    <div key={e.id} className="day-ex">
+                    <button
+                      key={e.id}
+                      type="button"
+                      className="day-ex"
+                      onClick={() => openSheet('ex-info', { name: e.name, wd: d, exId: e.id })}
+                    >
                       <span className="i">{i + 1}</span>
                       <ExIcon icono={iconOf(e)} size={24} className="day-ex-icon" />
                       <span className="grow">
@@ -145,7 +154,8 @@ function RutinaView() {
                         </span>
                       </span>
                       <span className="x">{e.sets}×{e.reps}</span>
-                    </div>
+                      <span className="chev">›</span>
+                    </button>
                   ))}
                 </div>
               )}
