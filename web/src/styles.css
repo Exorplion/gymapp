@@ -900,6 +900,25 @@ canvas.chart{width:100%;height:200px;display:block}
 }
 .seg button.on{background:var(--grad2);color:var(--on-grad);font-weight:700;box-shadow:var(--glow)}
 
+/* ---------- selector de color (Ajustes) ---------- */
+.theme-picker{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+/* El <input type=color> nativo es casi imposible de estilar por dentro —
+   se lo deja invisible y del tamaño de la etiqueta, que sí se puede pintar:
+   lo que se ve es un círculo sólido del color elegido, no el widget crudo
+   del navegador. */
+.theme-swatch-main{
+  position:relative;width:52px;height:52px;border-radius:50%;flex:none;
+  border:2px solid rgba(255,255,255,.18);box-shadow:0 0 0 4px rgba(255,255,255,.04);
+  cursor:pointer;overflow:hidden;
+}
+.theme-swatch-main input{
+  position:absolute;inset:-4px;width:calc(100% + 8px);height:calc(100% + 8px);
+  opacity:0;cursor:pointer;padding:0;border:0;
+}
+.theme-preview{display:flex;gap:6px}
+.theme-preview i{width:16px;height:16px;border-radius:50%;flex:none;display:block;
+  border:1px solid rgba(255,255,255,.1)}
+
 /* ---------- PR ---------- */
 .pr-card{
   display:flex;align-items:center;gap:14px;

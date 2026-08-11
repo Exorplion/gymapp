@@ -8,6 +8,7 @@ import { sessionExs } from './lib/session.js';
 import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
 import { empiezaExcluido, clasificarSwipe } from './lib/swipe.js';
 import { vibrate } from './lib/format.js';
+import { aplicarPaleta } from './lib/theme.js';
 import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
@@ -136,6 +137,10 @@ export default function App() {
   useEffect(() => {
     idbOpenOnce().then(loadAll).then(() => {
       applyComputedGoals();
+      // El color se aplica ACÁ, apenas se conoce S.cfg, y no cuando se abre
+      // Ajustes: si no, la app arrancaría siempre con el azul de fábrica y
+      // recién cambiaría al tuyo si entrabas a Ajustes.
+      aplicarPaleta(S.cfg.themeColor);
       bump();
     });
   }, []);

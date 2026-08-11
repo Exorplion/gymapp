@@ -39,6 +39,7 @@ import { seedRegistro, seedCount, wipeSeed } from '../../lib/seed.js';
 import { exportJSON, importJSON, wipeAll } from '../../lib/backup.js';
 import { exportFoodsMD, importFoodsMD } from '../../lib/foodmd.js';
 import { toast } from '../../lib/toast.js';
+import { aplicarPaleta, paletaDesde, COLOR_DEFECTO } from '../../lib/theme.js';
 
 function MacroPreview({ m }) {
   return (
@@ -60,6 +61,23 @@ export default function Settings() {
   const importRef = useRef(null);
   const mdRef = useRef(null);
   const [buscando, setBuscando] = useState(false);
+
+  const colorActual = S.cfg.themeColor || COLOR_DEFECTO;
+  const paleta = paletaDesde(colorActual) || {};
+
+  /* Un solo color de entrada, y de ahí sale la paleta entera (ver
+     lib/theme.js): saturación, luminosidad y el corrimiento de matiz entre
+     roles quedan fijos, tomados de la paleta original — lo único que se
+     mueve es DE QUÉ FAMILIA de color se trata. Se aplica en vivo (antes de
+     guardar) para que el selector nativo, que dispara onChange en cada
+     arrastre del dedo sobre la rueda de color, se sienta instantáneo. */
+  function setTheme(hex) {
+    S.cfg.themeColor = hex;
+    aplicarPaleta(hex);
+    saveCfg();
+    bump();
+  }
+  function resetTheme() { setTheme(undefined); }
 
   function setUnit(u) {
     S.cfg.unit = u; saveCfg();
@@ -212,6 +230,26 @@ export default function Settings() {
   return (
     <>
       <h2>Ajustes</h2>
+
+      <h3>Color</h3>
+      <div className="theme-picker">
+        <label className="theme-swatch-main" style={{ background: colorActual }}>
+          <input type="color" value={colorActual} onChange={e => setTheme(e.target.value)} aria-label="Elegir color" />
+        </label>
+        <div className="theme-preview">
+          {['accent', 'blue', 'blue2', 'blue3', 'cyan'].map(k => (
+            <i key={k} style={{ background: paleta[k] }} />
+          ))}
+        </div>
+        {S.cfg.themeColor && (
+          <button type="button" className="btn ghost sm" onClick={resetTheme}>Restablecer</button>
+        )}
+      </div>
+      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)', lineHeight: 1.45 }}>
+        Elegís un color y la app arma el resto de la paleta a partir de ese
+        matiz — no lo pega tal cual, lo combina con la misma receta de
+        siempre para que el texto se siga leyendo sobre el fondo oscuro.
+      </div>
 
       <h3>Unidad de peso</h3>
       <div className="seg">
