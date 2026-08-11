@@ -62,7 +62,15 @@ function proporcion(viewBox) {
 }
 
 function Cara({ cara, days, etiqueta, sel, onPick }) {
-  const trazos = fn => cara.zonas.map((z, i) => z.d.map((d, j) => fn(z, d, `${i}.${j}`)));
+  /* Los parches quedan fuera del cuerpo normal.
+
+     Son las capas que MuscleMap dibuja ENCIMA del músculo base para resaltar
+     una porción —clavicular sobre el pecho, vasto interno sobre el cuádriceps—
+     y pintarlas junto con el padre dejaba manchas con forma de gota: eran sus
+     contornos asomando sobre el músculo entero. Sirven para mostrar qué porción
+     trabaja un ejercicio, no para el mapa general. */
+  const zonas = cara.zonas.filter(z => !z.parche);
+  const trazos = fn => zonas.map((z, i) => z.d.map((d, j) => fn(z, d, `${i}.${j}`)));
 
   return (
     <div className="sil-box">
@@ -76,7 +84,7 @@ function Cara({ cara, days, etiqueta, sel, onPick }) {
           {trazos((z, d, k) => <path key={k} d={d} />)}
         </g>
 
-        {cara.zonas.map((z, i) => {
+        {zonas.map((z, i) => {
           const dibujos = z.d.map((d, j) => <path key={j} d={d} />);
           const cls = claseDe(z, days);
           if (!z.cat || z.cat === 'pelo') {
