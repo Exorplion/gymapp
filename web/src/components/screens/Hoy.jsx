@@ -24,7 +24,7 @@ import { muscleVolume, uncategorized } from '../../lib/muscle.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
 import WarmupCard from '../WarmupCard.jsx';
-import { tocaCalentar, DESCANSO } from '../../lib/warmup.js';
+import { tocaCalentar, bloqueDe, DESCANSO } from '../../lib/warmup.js';
 import { startRest } from '../../lib/rest.js';
 import { toast } from '../../lib/toast.js';
 
@@ -62,13 +62,22 @@ export default function Hoy() {
   const nextEx = active ? nextPending(exs) : null;
   const allDone = active && exs.length > 0 && !nextEx;
 
-  /* El calentamiento se marca hecho en el borrador y no en un estado local:
-     así sobrevive a cerrar la app en el medio, que es exactamente cuando pasa
-     —dejás el teléfono, calentás, volvés—. Si viviera en React, al volver te
-     lo ofrecería otra vez. */
+  // El próximo ejercicio a hacer decide qué calentamiento corresponde — no
+  // necesariamente el primero del día: puede ser el primero de un bloque
+  // nuevo (ver lib/warmup.js).
+  const exCalentar = active ? (nextEx || exs[0]) : null;
+
+  /* El calentamiento se marca hecho por BLOQUE en el borrador y no en un
+     estado local: así sobrevive a cerrar la app en el medio, que es
+     exactamente cuando pasa —dejás el teléfono, calentás, volvés—. Si
+     viviera en React, al volver te lo ofrecería otra vez. */
   async function cerrarCalentamiento(conDescanso) {
-    if (!S.draft) return;
-    S.draft.warmDone = true;
+    if (!S.draft || !exCalentar) return;
+    const bloque = bloqueDe(exCalentar);
+    if (bloque) {
+      if (!Array.isArray(S.draft.warmBlocks)) S.draft.warmBlocks = [];
+      if (!S.draft.warmBlocks.includes(bloque)) S.draft.warmBlocks.push(bloque);
+    }
     await saveDraft();
     bump();
     if (conDescanso) startRest(DESCANSO);
@@ -200,11 +209,13 @@ export default function Hoy() {
               ↕ Reordenar
             </button>
           )}
-          {/* El calentamiento va antes del carrusel y sobre el PRIMER ejercicio
-              del día: es el básico pesado, el único que lo necesita. */}
-          {active && exs.length > 0 && tocaCalentar(S.draft, exs[0].id) && (
+          {/* El calentamiento va antes del carrusel, sobre el próximo ejercicio
+              a hacer — no fijo en el primero del día: reaparece cada vez que
+              ese próximo ejercicio cae en un bloque muscular que todavía no
+              calentaste (ver lib/warmup.js). */}
+          {active && exCalentar && tocaCalentar(S.draft, exCalentar) && (
             <WarmupCard
-              ex={exs[0]}
+              ex={exCalentar}
               onListo={terminarCalentamiento}
               onSaltar={saltarCalentamiento}
             />

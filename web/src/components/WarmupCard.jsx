@@ -1,13 +1,19 @@
-// El calentamiento antes de la primera serie del día.
+// El calentamiento antes de la primera serie de cada bloque muscular del día.
 //
-// Aparece al abrir la sesión y desaparece en cuanto registrás algo: es un
-// recordatorio para un momento puntual, no una tarjeta más de la pantalla.
+// Aparece al empezar el bloque y desaparece en cuanto registrás algo de él: es
+// un recordatorio para un momento puntual, no una tarjeta más de la pantalla.
+//
+// Dos partes, en orden: primero movilidad general del bloque (nada que
+// levantar, nada que registrar), después la rampa numérica de ESTE ejercicio.
+// La rampa calienta el patrón y el peso; la movilidad calienta la
+// articulación entera, que es lo que hace falta de más al entrar en frío a
+// piernas después de una hora de tren superior.
 //
 // Muestra los pesos ya calculados en vez del porcentaje. "50%" te obliga a
 // hacer la cuenta parado frente a la barra; "42.5 kg × 5" se carga y se levanta.
 // El porcentaje va igual, chiquito, para el que quiera ver de dónde sale.
 import { S, wDisplay, wStep } from '../lib/state.js';
-import { warmupSets, DESCANSO } from '../lib/warmup.js';
+import { warmupSets, MOVILIDAD, DESCANSO, bloqueDe } from '../lib/warmup.js';
 import { lastDataFor } from '../lib/session.js';
 import { fmtMMSS } from '../lib/format.js';
 
@@ -21,9 +27,12 @@ export default function WarmupCard({ ex, onListo, onSaltar }) {
   const top = S.hoyVals[ex.id]?.w ?? lastDataFor(ex)?.at(-1)?.w;
   // el paso sale de la unidad activa: en libras el incremento real es otro
   const series = warmupSets(top, wStep());
+  const movilidad = MOVILIDAD[bloqueDe(ex)] || [];
 
   // Sin peso de trabajo no hay porcentaje que calcular. Es el caso de un
   // ejercicio estrenado hoy: mejor no mostrar nada que mostrar tres ceros.
+  // La movilidad sola, sin ninguna rampa debajo, no sería un calentamiento —
+  // sería una lista suelta sin conexión con lo que vas a levantar.
   if (!series.length) return null;
 
   return (
@@ -32,6 +41,12 @@ export default function WarmupCard({ ex, onListo, onSaltar }) {
         <span className="eyebrow">Calentamiento · {ex.name}</span>
         <button type="button" className="warmup-skip" onClick={onSaltar}>Saltar</button>
       </div>
+
+      {movilidad.length > 0 && (
+        <ul className="warmup-mov">
+          {movilidad.map((m, i) => <li key={i}>{m}</li>)}
+        </ul>
+      )}
 
       <ol className="warmup-list">
         {series.map((s, i) => (

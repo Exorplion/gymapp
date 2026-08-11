@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { warmupSets, tocaCalentar, RAMPA, DESCANSO } from '../warmup.js';
+import { warmupSets, tocaCalentar, bloqueDe, MOVILIDAD, RAMPA, DESCANSO } from '../warmup.js';
+
+const press = { id: 'e1', name: 'Press banca', cat: 'Pecho' };
+const sentadilla = { id: 'e2', name: 'Sentadilla', cat: 'Pierna' };
+const abs = { id: 'e3', name: 'Crunch', cat: 'Abs' };
 
 describe('warmupSets', () => {
   it('arma las tres series del protocolo: 5, 3 y 1', () => {
@@ -52,29 +56,61 @@ describe('warmupSets', () => {
   });
 });
 
+describe('bloqueDe', () => {
+  it('pecho, espalda, hombro, brazos y abs son tren superior', () => {
+    expect(bloqueDe(press)).toBe('superior');
+    expect(bloqueDe(abs)).toBe('superior');
+  });
+
+  it('pierna, glúteo y gemelos son tren inferior', () => {
+    expect(bloqueDe(sentadilla)).toBe('inferior');
+  });
+
+  it('un ejercicio que no se puede clasificar no rompe nada', () => {
+    expect(bloqueDe({ id: 'x', name: 'xyz sin grupo' })).toBe(null);
+  });
+});
+
+describe('MOVILIDAD', () => {
+  it('tiene una lista para cada bloque', () => {
+    expect(MOVILIDAD.superior.length).toBeGreaterThan(0);
+    expect(MOVILIDAD.inferior.length).toBeGreaterThan(0);
+  });
+});
+
 describe('tocaCalentar', () => {
   const draft = extra => ({ entries: {}, ...extra });
 
-  it('corresponde al abrir la sesión, antes de registrar nada', () => {
-    expect(tocaCalentar(draft(), 'e1')).toBe(true);
+  it('corresponde al primer ejercicio del día', () => {
+    expect(tocaCalentar(draft(), press)).toBe(true);
   });
 
-  // Con una serie ya hecha el momento pasó: la tarjeta dejaría de ser un
-  // recordatorio para ser un estorbo.
-  it('no corresponde si ya registraste una serie', () => {
-    expect(tocaCalentar(draft({ entries: { e1: { sets: [{ w: 60, r: 8 }] } } }), 'e1')).toBe(false);
+  // El caso que antes no existía: la sesión ya calentó tren superior, pero
+  // cruza a piernas — un bloque nuevo, así que corresponde de nuevo.
+  it('corresponde otra vez al cruzar de tren superior a inferior', () => {
+    expect(tocaCalentar(draft({ warmBlocks: ['superior'] }), sentadilla)).toBe(true);
   });
 
-  it('una entrada sin series todavía no cuenta como empezado', () => {
-    expect(tocaCalentar(draft({ entries: { e1: { sets: [] } } }), 'e1')).toBe(true);
+  it('NO corresponde para otro ejercicio del MISMO bloque ya calentado', () => {
+    expect(tocaCalentar(draft({ warmBlocks: ['superior'] }), abs)).toBe(false);
   });
 
-  it('no vuelve a aparecer si ya lo hiciste o lo saltaste', () => {
-    expect(tocaCalentar(draft({ warmDone: true }), 'e1')).toBe(false);
+  it('con los dos bloques ya calentados, no vuelve a aparecer para ninguno', () => {
+    const d = draft({ warmBlocks: ['superior', 'inferior'] });
+    expect(tocaCalentar(d, press)).toBe(false);
+    expect(tocaCalentar(d, sentadilla)).toBe(false);
+  });
+
+  it('un ejercicio sin grupo reconocible no dispara nada', () => {
+    expect(tocaCalentar(draft(), { id: 'x', name: 'xyz sin grupo' })).toBe(false);
   });
 
   it('sin sesión o sin ejercicio, no', () => {
-    expect(tocaCalentar(null, 'e1')).toBe(false);
+    expect(tocaCalentar(null, press)).toBe(false);
     expect(tocaCalentar(draft(), null)).toBe(false);
+  });
+
+  it('un borrador viejo (warmDone booleano, sin warmBlocks) no rompe', () => {
+    expect(tocaCalentar(draft({ warmDone: true }), press)).toBe(true);
   });
 });

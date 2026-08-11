@@ -1727,6 +1727,14 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   flex:none;border:0;background:rgba(255,255,255,.07);color:var(--mut);
   font-size:12px;font-weight:600;padding:5px 11px;border-radius:99px;
 }
+/* La movilidad va chica y con guion, no numerada como la rampa: son pasos
+   sueltos ("círculos de hombro"), no una progresión de pesos — mezclarlas en
+   la misma lista numerada leería como si fueran parte de la misma secuencia. */
+.warmup-mov{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:5px}
+.warmup-mov li{
+  font-size:12.5px;line-height:1.4;color:var(--mut);padding-left:14px;position:relative;
+}
+.warmup-mov li::before{content:'–';position:absolute;left:0;color:var(--mut2)}
 .warmup-list{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:1px}
 .warmup-list li{
   display:flex;align-items:baseline;gap:9px;padding:7px 0;
