@@ -6,6 +6,8 @@ import { initDragListeners } from './lib/drag.js';
 import { currentStreak } from './lib/streak.js';
 import { sessionExs } from './lib/session.js';
 import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
+import { empiezaExcluido, clasificarSwipe } from './lib/swipe.js';
+import { vibrate } from './lib/format.js';
 import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
@@ -102,8 +104,15 @@ function SheetContent({ sheet }) {
    pero el movimiento tiene que contar la misma historia que el gesto. */
 const ORDEN = ['inicio', 'hoy', 'rutina', 'nutri', 'prog'];
 
+/* Las pantallas que el GESTO de deslizar conecta entre sí — no las cinco de
+   ORDEN. "Hoy" queda afuera: no es una pestaña propia (se entra desde
+   Inicio) y además ya tiene su propio gesto horizontal, el carrusel de
+   ejercicios — meterla acá los pondría a pelear por el mismo dedo. */
+const SWIPE_ORDEN = ORDEN.filter(t => t !== 'hoy');
+
 export default function App() {
   const store = useStore();
+  const mainRef = useRef(null);
 
   /* La animación de deslizamiento ya estaba en la hoja de estilos —slideR y
      slideL— y la usaba la app original; se perdió al migrar a React y las
@@ -139,6 +148,55 @@ export default function App() {
   useEffect(() => {
     initDragListeners();
   }, []);
+
+  /* El gesto de deslizar entre pantallas. Se registra una sola vez —igual que
+     initDragListeners()— y lee S.tab en el momento del toque en vez de
+     depender de un valor cerrado por la closure, porque la pestaña puede
+     haber cambiado (por la barra, por código) entre el pointerdown y el
+     pointerup sin que este efecto se vuelva a montar.
+
+     No sigue el dedo en vivo: mide el gesto completo y recién al soltar
+     decide si fue un swipe. Ver lib/swipe.js para el porqué. */
+  useEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+    let inicio = null;   // {x,y} del pointerdown, o null si este gesto no cuenta
+
+    function onDown(e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (S.tab === 'hoy' || empiezaExcluido(e.target)) return;
+      inicio = { x: e.clientX, y: e.clientY };
+    }
+    function onUp(e) {
+      if (!inicio) return;
+      const dx = e.clientX - inicio.x, dy = e.clientY - inicio.y;
+      inicio = null;
+      const paso = clasificarSwipe(dx, dy);
+      if (!paso) return;
+      const i = SWIPE_ORDEN.indexOf(S.tab);
+      if (i < 0) return;
+      const j = i + paso;
+      if (j < 0 || j >= SWIPE_ORDEN.length) return;   // en las puntas no rebota
+      S.tab = SWIPE_ORDEN[j];
+      bump();
+      vibrate(8);
+    }
+    function onCancel() { inicio = null; }
+
+    main.addEventListener('pointerdown', onDown, { passive: true });
+    main.addEventListener('pointerup', onUp, { passive: true });
+    main.addEventListener('pointercancel', onCancel, { passive: true });
+    return () => {
+      main.removeEventListener('pointerdown', onDown);
+      main.removeEventListener('pointerup', onUp);
+      main.removeEventListener('pointercancel', onCancel);
+    };
+    // `store.ready` y no []: el componente devuelve null hasta que carga
+    // (más abajo, `if (!store.ready) return null`), así que <main> ni existe
+    // en el primer render — con [] este efecto correría una sola vez contra
+    // mainRef.current === null y el gesto quedaría muerto para siempre.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.ready]);
 
   // El aviso de "sesión en curso" en la barra del teléfono.
   //
@@ -188,7 +246,7 @@ export default function App() {
       />
       {/* Inicio no scrollea: necesita que main deje de reservar el colchón
           inferior que sí usan las pantallas largas. */}
-      <main className={store.tab === 'inicio' ? 'full' : ''}>
+      <main className={store.tab === 'inicio' ? 'full' : ''} ref={mainRef}>
         {/* El `key` es lo que hace que la animación se repita: sin él React
             reusa el mismo div y el navegador no vuelve a correr el keyframe. */}
         <div className={`view enter dir-${dir}`} key={store.tab}>
