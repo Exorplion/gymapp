@@ -7,6 +7,7 @@
 // (antes ACT['exf-step']).
 import { useEffect, useRef, useState } from 'react';
 import { EQUIP, EQUIP_HINT, isMachineBound } from '../../lib/equip.js';
+import MachineField from '../MachineField.jsx';
 import { MUSCLE_CATS, catOf } from '../../lib/muscle.js';
 import { shrinkImage } from '../../lib/photo.js';
 import { illusUrl } from '../../lib/illustrations.js';
@@ -26,6 +27,7 @@ export default function ExerciseForm({ wd, ex }) {
   const [equip, setEquip] = useState(ex?.equip || '');
   const [cat, setCat] = useState(ex?.cat || '');
   const [machine, setMachine] = useState(ex?.machine || '');
+  const [unilateral, setUnilateral] = useState(!!ex?.unilateral);
   const [photo, setPhoto] = useState(ex?.photo || '');
   const [illus, setIllus] = useState(ex?.illus || '');
   const [picking, setPicking] = useState(false);
@@ -87,7 +89,7 @@ export default function ExerciseForm({ wd, ex }) {
 
   // lo que el matcher deduce del nombre, para mostrarlo antes de que elijas
   const auto = catOf({ name });
-  function handleSave() { saveExercise(wd, ex ? ex.id : null, { name, sets, reps, equip, machine, photo, illus, cat }); }
+  function handleSave() { saveExercise(wd, ex ? ex.id : null, { name, sets, reps, equip, machine, photo, illus, cat, unilateral }); }
 
   return (
     <>
@@ -174,6 +176,33 @@ export default function ExerciseForm({ wd, ex }) {
             <button type="button" onClick={() => step(setReps, 1)}>+</button>
           </div>
         </div>
+      </div>
+
+      {/* El grid de dos columnas de arriba es sólo para Series/Reps: cierra acá
+          y a propósito. Todo lo de abajo (grupo, equipo, unilateral, foto) es
+          contenido a ancho completo — meterlo dentro del mismo .f2 lo aplastaba
+          a la mitad de la pantalla, porque el grid ubica CUALQUIER hijo directo
+          en una de sus dos columnas, sea o no un .field. */}
+
+      {/* Unilateral: un lado por vez. Cambia sólo cómo se lee lo que anotás en
+          la sesión —"20 kg × 12 por lado" y no "20 kg × 12" a secas— no cómo se
+          guarda. Va como chip solo y no en el nombre porque "curl unilateral"
+          es texto libre que el resto de la app no puede leer: esto sí. */}
+      <label className="eyebrow lbl-block" style={{ marginTop: 'var(--s4)' }}>Cómo se hace</label>
+      <div className="chips">
+        <button
+          type="button"
+          className={`chip ${unilateral ? 'on' : ''}`}
+          onClick={() => setUnilateral(u => !u)}
+        >
+          Un lado por vez
+        </button>
+      </div>
+      {unilateral && (
+        <div className="ptext sm" style={{ marginTop: 6 }}>
+          El peso y las reps que anotes en la sesión van a leerse como "por lado".
+        </div>
+      )}
 
       {/* Qué grupo entrena. El automático acierta en la mayoría, pero ninguna
           lista de palabras va a adivinar "JM press unilateral" — por eso hay
@@ -219,19 +248,7 @@ export default function ExerciseForm({ wd, ex }) {
         </div>
       )}
       {isMachineBound(equip) && (
-        <div className="field" style={{ marginTop: 'var(--s3)' }}>
-          <label>Qué máquina</label>
-          <input
-            type="text"
-            placeholder="Life Fitness, Hammer, la del fondo…"
-            value={machine}
-            onChange={e => setMachine(e.target.value)}
-          />
-          <div className="ptext sm" style={{ marginTop: 6 }}>
-            En este sistema el número depende de la máquina, así que el historial
-            se lleva por separado para cada una. Poné el nombre que te sirva a vos.
-          </div>
-        </div>
+        <MachineField equip={equip} machine={machine} onChange={setMachine} />
       )}
 
       {/* Foto de la máquina: sacada por vos, guardada en el ejercicio. Es más
@@ -267,7 +284,6 @@ export default function ExerciseForm({ wd, ex }) {
           )}
         </div>
       )}
-      </div>
 
       {/* Ilustración del movimiento (free-exercise-db, dominio público). Se
           elige a mano una vez: la base es en inglés y adivinar automáticamente

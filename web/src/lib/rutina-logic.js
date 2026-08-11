@@ -76,7 +76,7 @@ export function routineSnapshot() {
       name: d.name || WD[wd],
       exercises: d.exercises.map(e => ({
         name: e.name, sets: e.sets, reps: e.reps,
-        equip: e.equip, machine: e.machine, illus: e.illus, cat: e.cat,
+        equip: e.equip, machine: e.machine, illus: e.illus, cat: e.cat, unilateral: e.unilateral,
       })),
     };
   });
@@ -103,6 +103,7 @@ export function cloneExercise(ex) {
     photo: ex.photo || undefined,
     illus: ex.illus || undefined,
     cat: ex.cat || undefined,
+    unilateral: ex.unilateral || undefined,
   };
 }
 
@@ -177,7 +178,7 @@ export async function applyDays(days, name) {
       exercises: days[wd].exercises.map(e => ({
         id: uid(), name: e.name, sets: e.sets, reps: e.reps,
         equip: e.equip || undefined, machine: e.machine || undefined, illus: e.illus || undefined,
-        cat: e.cat || undefined,
+        cat: e.cat || undefined, unilateral: e.unilateral || undefined,
       })),
     };
     await persistDay(+wd);
@@ -228,7 +229,7 @@ export async function pinAddedToRoutine(wd, added) {
     .filter(a => !yaHay.has(exKey(a)))
     .map(a => ({
       id: uid(), name: a.name, sets: a.sets, reps: a.reps,
-      equip: a.equip || undefined, machine: a.machine || undefined,
+      equip: a.equip || undefined, machine: a.machine || undefined, unilateral: a.unilateral || undefined,
     }));
   if (!nuevos.length) { toast('Ya estaban en tu rutina'); return; }
   pushHistory(`${nuevos.length} ejercicio${nuevos.length === 1 ? '' : 's'} agregado${nuevos.length === 1 ? '' : 's'} al ${WD[+wd].toLowerCase()}`);
@@ -240,7 +241,7 @@ export async function pinAddedToRoutine(wd, added) {
 /** Renombra un ejercicio de la rutina de un día. Se ofrece al corregir qué
     ejercicio fue una entrada del historial: si el nombre estaba mal en el
     plan, lo vas a volver a registrar mal. Con un botón, no automáticamente. */
-export async function renameRoutineExercise(wd, nombreViejo, { name, equip, machine, cat }) {
+export async function renameRoutineExercise(wd, nombreViejo, { name, equip, machine, cat, unilateral }) {
   const d = S.routine[+wd];
   const ex = (d?.exercises || []).find(e => e.name === nombreViejo);
   if (!ex) return;
@@ -249,6 +250,7 @@ export async function renameRoutineExercise(wd, nombreViejo, { name, equip, mach
   ex.equip = equip || undefined;
   ex.machine = equip && machine ? machine : undefined;
   ex.cat = cat || undefined;
+  ex.unilateral = unilateral || undefined;
   await persistDay(+wd);
   bump();
 }
@@ -460,7 +462,7 @@ export async function saveDay(wd, { name, toWd }) {
 /** Firma adaptada: el original leía $('#f-exname').value etc. directo del DOM
     (ACT['ex-save']->saveExercise); acá ExerciseForm.jsx mantiene esos campos
     como estado de componente y los pasa explícitos. */
-export async function saveExercise(wd, exId, { name, sets, reps, equip, machine, photo, illus, cat }) {
+export async function saveExercise(wd, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral }) {
   name = (name || '').trim();
   const s = Math.max(1, parseInt(sets) || 4);
   const r = Math.max(1, parseInt(reps) || 10);
@@ -478,6 +480,7 @@ export async function saveExercise(wd, exId, { name, sets, reps, equip, machine,
       ex.illus = illus || undefined;
       // vacío = volver al automático de catOf(), no "sin grupo"
       ex.cat = cat || undefined;
+      ex.unilateral = unilateral || undefined;
     }
   } else {
     d.exercises.push({
@@ -487,6 +490,7 @@ export async function saveExercise(wd, exId, { name, sets, reps, equip, machine,
       photo: equip && photo ? photo : undefined,
       illus: illus || undefined,
       cat: cat || undefined,
+      unilateral: unilateral || undefined,
     });
   }
   await persistDay(wd);

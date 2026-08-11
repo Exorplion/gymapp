@@ -97,7 +97,7 @@ export default function SessionView({ id, justFinished = false }) {
               {justFinished ? '¡Nuevo récord!' : `${prs.length} récord${prs.length === 1 ? '' : 's'} en esta sesión`}
             </div>
             <div className="ptext sm">
-              {prs.map(p => `${p.name} · ${fmtNum(round1(p.w))} kg × ${p.r}`).join(' · ')}
+              {prs.map(p => `${p.name} · ${fmtNum(round1(p.w))} kg × ${p.r}${p.unilateral ? ' por lado' : ''}`).join(' · ')}
             </div>
           </div>
         </div>

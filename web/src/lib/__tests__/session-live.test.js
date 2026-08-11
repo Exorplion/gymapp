@@ -3,7 +3,7 @@ import { S } from '../state.js';
 import {
   targetSets, sessionExs, nextPending, isSkipped,
   skipExercise, unskipExercise, addExtraSet, addSessionExercise, replaceSessionExercise,
-  dropSet, reemplazaA,
+  dropSet, reemplazaA, isUnilateral, toggleUnilateral, saveSet,
 } from '../session.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
@@ -143,6 +143,52 @@ describe('replaceSessionExercise', () => {
     const nuevo = S.draft.extras[0];
     expect(S.draft.order.indexOf(nuevo.id)).toBe(1);   // pegado detrás de 'a'
     expect(S.draft.order[0]).toBe('a');
+  });
+
+  /* El cambio de variante en vivo (SessionExercise.jsx) manda el MISMO nombre
+     con otro equipo — "predicador con barra" a "predicador con mancuerna" —
+     y esto es lo que hace que ese cambio se registre como una variante nueva
+     y no como si nada hubiera pasado. */
+  it('lleva el equipo y la máquina nuevos, con el nombre sin tocar', async () => {
+    await replaceSessionExercise('a', { name: 'Press', sets: 3, reps: 10, equip: 'polea', machine: 'se siente pesada' });
+    const nuevo = S.draft.extras[0];
+    expect(nuevo).toMatchObject({ name: 'Press', equip: 'polea', machine: 'se siente pesada' });
+  });
+
+  it('lleva el flag unilateral', async () => {
+    await replaceSessionExercise('a', { name: 'Press', sets: 3, reps: 10, unilateral: true });
+    expect(S.draft.extras[0].unilateral).toBe(true);
+  });
+});
+
+describe('isUnilateral / toggleUnilateral', () => {
+  it('sin override, es lo que dice la rutina', () => {
+    expect(isUnilateral({ id: 'a', unilateral: true })).toBe(true);
+    expect(isUnilateral({ id: 'b' })).toBe(false);
+  });
+
+  it('togglear crea un override de sesión que pisa a la rutina', async () => {
+    await toggleUnilateral('a');   // 'a' (Press) no es unilateral en la rutina
+    expect(isUnilateral(S.routine[4].exercises.find(e => e.id === 'a'))).toBe(true);
+  });
+
+  it('togglear dos veces vuelve al valor de la rutina', async () => {
+    await toggleUnilateral('a');
+    await toggleUnilateral('a');
+    expect(isUnilateral(S.routine[4].exercises.find(e => e.id === 'a'))).toBe(false);
+  });
+
+  it('sin sesión abierta no explota', async () => {
+    S.draft = null;
+    await expect(toggleUnilateral('a')).resolves.toBeUndefined();
+  });
+
+  it('si ya hay una serie registrada hoy, el toggle también actualiza esa entrada', async () => {
+    S.hoyVals = {};
+    await saveSet('a');   // crea S.draft.entries.a con unilateral: false (heredado)
+    expect(S.draft.entries.a.unilateral).toBe(false);
+    await toggleUnilateral('a');
+    expect(S.draft.entries.a.unilateral).toBe(true);
   });
 });
 

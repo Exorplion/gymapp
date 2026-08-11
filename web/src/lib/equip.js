@@ -28,6 +28,18 @@ export const EQUIP = [
 export const EQUIP_LABEL = Object.fromEntries(EQUIP.map(e => [e.id, e.label]));
 export const EQUIP_HINT = Object.fromEntries(EQUIP.map(e => [e.id, e.hint]));
 
+/** Para polea, "qué máquina" pedía una marca que casi nadie sabe de memoria —
+    entrenás en el mismo gimnasio de siempre y lo que en verdad distingue una
+    polea de otra no es el fabricante, es cuánto pesa realmente tirar de ella
+    (cuántas poleas tiene el sistema, si hay contrapeso). Estas opciones piden
+    justo eso, y sirven para el mismo campo `machine` que ya existía — no es
+    un campo nuevo, es una forma más fácil de llenar el mismo. */
+export const POLEA_FEEL = [
+  { id: 'se siente liviana', label: 'Se siente liviana' },
+  { id: 'normal', label: 'Normal' },
+  { id: 'se siente pesada', label: 'Se siente pesada' },
+];
+
 /** Equipos cuyo número NO es comparable fuera de esa máquina concreta. */
 const MACHINE_BOUND = new Set(['discos', 'placas', 'polea']);
 export const isMachineBound = equip => MACHINE_BOUND.has(equip);

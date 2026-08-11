@@ -28,6 +28,7 @@ import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
 import {
   ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
   targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, dropSet, reemplazaA,
+  isUnilateral, toggleUnilateral,
 } from '../lib/session.js';
 import { jumpToSlide, slideCenterDist } from '../lib/carousel.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
@@ -145,6 +146,9 @@ function ExerciseSlide({ m, wd, started }) {
   // Sin historial propio: primera vez en ESTE equipo. Mostramos de dónde venís
   // en las otras variantes, sin traducir el número (ver relatedHistory).
   const related = last ? [] : relatedHistory(ex, S.sessions);
+  // "Un lado por vez": lo que dice la rutina, salvo que la máquina de HOY te
+  // haya obligado a cambiarlo (ver isUnilateral en session.js).
+  const uni = isUnilateral(ex);
 
   const wRef = useRef(null), rRef = useRef(null), altRef = useRef(null), pwRef = useRef(null);
 
@@ -225,7 +229,10 @@ function ExerciseSlide({ m, wd, started }) {
           )}
         </div>
         {last && (
-          <div className="exlast">Última vez: {last.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg</div>
+          <div className="exlast">
+            Última vez: {last.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg
+            {uni && ' por lado'}
+          </div>
         )}
         {!last && equipLabel(ex) && (
           <div className="ex-first">
@@ -275,9 +282,20 @@ function ExerciseSlide({ m, wd, started }) {
             <div className="prog-warn" ref={pwRef} style={{ display: pwarnInitial ? '' : 'none' }}>
               {pwarnInitial ? `⚠ ${pwarnInitial}` : ''}
             </div>
+            {/* Un lado por vez: lo que dice la rutina, con un botón para
+                anularlo sólo hoy — la máquina que te tocó puede obligarte a
+                hacerlo distinto de cómo lo planeaste. */}
+            <button
+              type="button"
+              className={`chip ${uni ? 'on' : ''}`}
+              style={{ marginBottom: 8 }}
+              onClick={() => toggleUnilateral(ex.id)}
+            >
+              {uni ? '✓ Un lado por vez' : 'Un lado por vez'}
+            </button>
             <div className="setrows">
               <div>
-                <div className="steplabel">Peso ({S.cfg.unit === 'kg' ? 'kg' : 'lb'})</div>
+                <div className="steplabel">Peso ({S.cfg.unit === 'kg' ? 'kg' : 'lb'}){uni ? ' por lado' : ''}</div>
                 <div className="step">
                   <button type="button" onClick={() => stepW(-1)}>−</button>
                   <div className="val">

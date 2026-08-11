@@ -15,6 +15,7 @@ import { renameRoutineExercise } from '../../lib/rutina-logic.js';
 import { EXCATALOG, MUSCLE_CATS, catOf } from '../../lib/muscle.js';
 import { EQUIP, isMachineBound } from '../../lib/equip.js';
 import { toast } from '../../lib/toast.js';
+import MachineField from '../MachineField.jsx';
 
 export default function EntryEdit({ sessId, idx }) {
   const sess = S.sessions.find(s => s.id === sessId);
@@ -24,6 +25,7 @@ export default function EntryEdit({ sessId, idx }) {
   const [equip, setEquip] = useState(entry?.equip || '');
   const [machine, setMachine] = useState(entry?.machine || '');
   const [cat, setCat] = useState(entry?.cat || '');
+  const [unilateral, setUnilateral] = useState(!!entry?.unilateral);
   const nameRef = useRef(null);
 
   useEffect(() => {
@@ -50,6 +52,7 @@ export default function EntryEdit({ sessId, idx }) {
       equip: equip || undefined,
       machine: equip && isMachineBound(equip) && machine ? machine.trim() : undefined,
       cat: cat || undefined,
+      unilateral: unilateral || undefined,
     });
     await updateHistorySession(copia, `Ahora dice ${n}`);
 
@@ -60,7 +63,7 @@ export default function EntryEdit({ sessId, idx }) {
         title: '¿También en tu rutina?',
         body: `"${S.routine[sess.weekday]?.name || WD[sess.weekday]}" todavía tiene "${original}". Si el nombre estaba mal en el plan, lo vas a volver a registrar mal.`,
         confirmLabel: 'Cambiarlo ahí también',
-        onConfirm: () => renameRoutineExercise(sess.weekday, original, { name: n, equip, machine, cat }),
+        onConfirm: () => renameRoutineExercise(sess.weekday, original, { name: n, equip, machine, cat, unilateral }),
       });
       return;
     }
@@ -124,16 +127,24 @@ export default function EntryEdit({ sessId, idx }) {
         ))}
       </div>
       {isMachineBound(equip) && (
-        <div className="field" style={{ marginTop: 'var(--s3)' }}>
-          <label>Qué máquina</label>
-          <input value={machine} onChange={e => setMachine(e.target.value)} placeholder="Life Fitness" autoComplete="off" />
-        </div>
+        <MachineField equip={equip} machine={machine} onChange={setMachine} />
       )}
 
       <p className="ptext sm" style={{ marginTop: 'var(--s3)' }}>
         El equipo es lo que decide contra qué historial se compara: el mismo
         ejercicio en dos máquinas distintas no mueve la misma carga.
       </p>
+
+      <label className="eyebrow lbl-block" style={{ marginTop: 'var(--s4)' }}>Cómo se hizo</label>
+      <div className="chips">
+        <button
+          type="button"
+          className={`chip ${unilateral ? 'on' : ''}`}
+          onClick={() => setUnilateral(u => !u)}
+        >
+          Un lado por vez
+        </button>
+      </div>
 
       <button type="button" className="btn" style={{ marginTop: 'var(--s4)' }} onClick={guardar}>Guardar</button>
       <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={closeSheet}>Cancelar</button>

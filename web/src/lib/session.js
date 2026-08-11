@@ -21,6 +21,34 @@ export function lastDataFor(ex) {
   return null;
 }
 
+/** Si HOY este ejercicio se hace un lado por vez.
+
+    Vive en dos capas: lo que dice la rutina (`ex.unilateral`, la config de
+    siempre) y lo que anulaste sólo por esta sesión (`S.draft.
+    unilateralOverride`, para el día que la máquina te obliga a hacerlo distinto
+    de cómo lo planeaste). La sesión gana mientras exista — es "hoy lo hago
+    así", no un cambio permanente al plan. */
+export function isUnilateral(ex) {
+  const o = S.draft?.unilateralOverride;
+  if (o && ex?.id in o) return o[ex.id];
+  return !!ex?.unilateral;
+}
+
+/** Cambia el "un lado por vez" de HOY, sin tocar la rutina. */
+export async function toggleUnilateral(exId) {
+  if (!S.draft) return;
+  const ex = findEx(exId);
+  if (!ex) return;
+  if (!S.draft.unilateralOverride) S.draft.unilateralOverride = {};
+  S.draft.unilateralOverride[exId] = !isUnilateral(ex);
+  // si ya hay una entrada para hoy, la etiqueta la sigue — es la misma serie,
+  // no una distinta, así que no debería quedar con la etiqueta vieja
+  if (S.draft.entries[exId]) S.draft.entries[exId].unilateral = S.draft.unilateralOverride[exId];
+  await saveDraft();
+  vibrate(8);
+  bump();
+}
+
 export function ensureVals(ex) {
   if (!S.hoyVals[ex.id]) {
     const last = lastDataFor(ex);
@@ -87,7 +115,7 @@ export function sessionPRs(sess) {
       if (exKey(pe) !== exKey(e)) return;
       pe.sets.forEach(st => { if (st.w > prevMax) prevMax = st.w; });
     }));
-    if (bestSet.w > prevMax) prs.push({ name: e.name, equip: e.equip, machine: e.machine, w: bestSet.w, r: bestSet.r });
+    if (bestSet.w > prevMax) prs.push({ name: e.name, equip: e.equip, machine: e.machine, unilateral: e.unilateral, w: bestSet.w, r: bestSet.r });
   });
   return prs;
 }
@@ -288,7 +316,7 @@ export async function dropSet(exId) {
 
 /** Un ejercicio que decidiste hacer hoy y no estaba en el plan. Vive sólo en
     el borrador; al cerrar la sesión se ofrece dejarlo fijo en la rutina. */
-export async function addSessionExercise({ name, sets, reps, equip, machine } = {}, afterExId = null) {
+export async function addSessionExercise({ name, sets, reps, equip, machine, unilateral } = {}, afterExId = null) {
   if (!S.draft) return null;
   const ex = {
     id: uid(),
@@ -297,6 +325,7 @@ export async function addSessionExercise({ name, sets, reps, equip, machine } = 
     reps: Math.max(1, parseInt(reps, 10) || 10),
     equip: equip || undefined,
     machine: equip && machine ? machine : undefined,
+    unilateral: unilateral || undefined,
   };
   if (!ex.name) return null;
   if (!S.draft.extras) S.draft.extras = [];
@@ -356,7 +385,7 @@ export async function saveSet(exId) {
   // mejorar el matcher arregla también el historial viejo. Lo que no puede
   // quedar afuera es el override manual, porque ese vive en la rutina y
   // renombrar un ejercicio ahí no debe reescribir el pasado.
-  if (!S.draft.entries[exId]) S.draft.entries[exId] = { name: ex.name, equip: ex.equip, machine: ex.machine, cat: ex.cat, sets: [] };
+  if (!S.draft.entries[exId]) S.draft.entries[exId] = { name: ex.name, equip: ex.equip, machine: ex.machine, cat: ex.cat, unilateral: isUnilateral(ex), sets: [] };
   const cur = S.draft.entries[exId].sets;
   /* el objetivo es el techo: llegado a él el ejercicio se cierra solo y pasamos
      al siguiente, en vez de dejar registrar series infinitas. El techo de HOY
@@ -390,7 +419,7 @@ export async function completeSession() {
   const order = (d.order && d.order.length) ? d.order : (wdDay?.exercises || []).map(e => e.id);
   const entries = Object.entries(d.entries)
     .sort((a, b) => { const ia = order.indexOf(a[0]), ib = order.indexOf(b[0]); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); })
-    .map(([exId, e]) => ({ exId, name: e.name, equip: e.equip, machine: e.machine, cat: e.cat, sets: e.sets }));
+    .map(([exId, e]) => ({ exId, name: e.name, equip: e.equip, machine: e.machine, cat: e.cat, unilateral: e.unilateral, sets: e.sets }));
   if (!entries.length) { toast('No registraste ninguna serie. Usá "Descartar" para cerrar la sesión.'); return; }
   /* d.open cubre borradores viejos (formato anterior) y el caso raro de que
      falte start; la duración mide de la primera serie al cierre */
@@ -408,7 +437,7 @@ export async function completeSession() {
      agregaste y después salteaste no tiene por qué ofrecerse para el plan. */
   const added = (d.extras || [])
     .filter(e => d.entries[e.id]?.sets?.length)
-    .map(e => ({ name: e.name, sets: e.sets, reps: e.reps, equip: e.equip, machine: e.machine }));
+    .map(e => ({ name: e.name, sets: e.sets, reps: e.reps, equip: e.equip, machine: e.machine, unilateral: e.unilateral }));
 
   const sess = {
     id: d.id, date: d.date, weekday: d.weekday, dayName: d.dayName,

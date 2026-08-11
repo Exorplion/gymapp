@@ -288,6 +288,15 @@ main{
    cada re-render y la fila entera parpadeaba */
 .setchips .chip:last-child{animation:pop .2s cubic-bezier(.2,.8,.3,1.2)}
 .chip.blue{background:rgba(46,125,255,.14);border-color:rgba(46,125,255,.4);color:var(--blue3)}
+/* La elección firme del usuario, y no una sugerencia del auto-detectado: por
+   eso no es el mismo estilo que .blue (relleno tenue, "esto detecté") — hacía
+   falta que se vieran distintos para poder confiar en cuál es cuál. Mismo
+   lenguaje que ya usa el resto de la app para "esto está elegido"
+   (nav.tabbar button.on, .seg button.on): relleno sólido con el degradado, no
+   un tinte.
+   Antes esta clase no tenía ninguna regla: elegir equipo, grupo muscular o
+   cualquier chip "on" no daba señal visual de haberse registrado. */
+.chip.on{background:var(--grad2);color:var(--on-grad);border-color:transparent;font-weight:700}
 .chip .x{color:var(--mut);font-size:15px;padding:0 2px}
 /* punto = ese día ya tiene entrenamiento. Sin esto, elegir destino en el
    selector de día es a ciegas: no sabés cuál vas a desplazar. */

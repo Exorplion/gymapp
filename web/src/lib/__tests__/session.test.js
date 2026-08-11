@@ -77,6 +77,15 @@ describe('sessionPRs', () => {
     S.sessions = [vieja];               // todavía no se guardó
     expect(sessionPRs(nueva)).toHaveLength(1);
   });
+
+  // El peso "por lado" no se traslada al total: un 20kg por lado de récord
+  // luce el doble de impresionante de lo que fue si se muestra pelado.
+  it('lleva la marca de unilateral, para que la ficha diga "por lado"', () => {
+    const vieja = { id: 'v', start: 100, entries: [{ name: 'Curl unilateral', sets: [{ w: 15, r: 10 }] }] };
+    const nueva = { id: 'n', start: 200, entries: [{ name: 'Curl unilateral', unilateral: true, sets: [{ w: 17.5, r: 10 }] }] };
+    S.sessions = [nueva, vieja];
+    expect(sessionPRs(nueva)).toEqual([{ name: 'Curl unilateral', equip: undefined, machine: undefined, unilateral: true, w: 17.5, r: 10 }]);
+  });
 });
 
 describe('groupSessionsByWeek', () => {
