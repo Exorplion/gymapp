@@ -1473,28 +1473,64 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    El color dice hace cuántos días entrenaste cada grupo. Es un hecho, no un
    modelo: no es "recuperación". La pantalla se enciende cuando entrenás y se
    apaga sola con los días — entrar y verla apagada da ganas de prenderla. */
-.sil-pair{display:flex;justify-content:center;gap:14px;flex:1;min-height:0;margin:2px 0;position:relative}
+.sil-pair{display:flex;flex-direction:column;align-items:center;gap:8px;
+  flex:1;min-height:0;margin:2px 0;position:relative}
 .sil-defs{position:absolute;width:0;height:0}
-/* El ancho manda y el SVG se ajusta solo con su preserveAspectRatio. Con
-   height:100% + width:auto el navegador no puede usar el ancho del SVG para
-   dimensionar la caja —sería circular—, así que la caja se encogía al ancho de
-   la etiqueta y el dibujo se desbordaba encima del vecino. */
-/* El ancho manda, así que sobra alto: justify-content centra el cuerpo en la
-   banda en vez de dejarlo colgando arriba con un hueco muerto abajo. */
-.sil-box{
-  flex:1 1 0;min-width:0;min-height:0;max-width:180px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+
+/* Un cuerpo y no dos: con dos, cada uno se llevaba medio ancho (170px de 354)
+   mientras sobraban 134px de alto sin usar. Solo, se come las dos medidas y se
+   dibuja un 40% más grande.
+
+   touch-action pan-y deja el scroll vertical al navegador y se queda con el
+   horizontal: el dedo puede girar el cuerpo sin pelearse con la página. */
+.sil-stage{
+  flex:1;min-height:0;width:100%;position:relative;
+  perspective:1400px;touch-action:pan-y;cursor:grab;
 }
-/* La proporción la pone el componente desde el viewBox: los dos cuerpos NO
-   miden lo mismo (el masculino es 727×1280 y el femenino 650×1450), así que
-   fijarla acá deformaría uno de los dos. */
-.sil-box svg{
-  width:100%;flex:none;max-height:100%;display:block;
+.sil-stage.girando{cursor:grabbing}
+
+/* Las capas ocupan el stage entero y el dibujo se centra adentro con su propio
+   preserveAspectRatio. Es a propósito: pedirle a la caja que tome la forma del
+   cuerpo obliga a resolver alto y ancho uno a partir del otro, y el navegador
+   se queda en cero. Que la caja sea el rectángulo entero y el SVG se encaje
+   solo no tiene ese nudo, y de paso el eje de giro cae justo en el medio del
+   cuerpo, que es donde uno espera que gire. */
+.sil-flip{
+  position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;
 }
-.sil-box>span{
-  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
+/* La caída a la cara más cercana. Mientras el dedo manda no hay transición: la
+   transición y el dedo peleándose por el mismo ángulo se siente como barro.
+
+   Curva simétrica y no la de siempre (.22,1,.36,1): son dos dibujos planos, y
+   de canto —a los 90°— el cuerpo se ve como una raya. La curva de siempre
+   arranca rápido y se demora al final, justo al revés de lo que hace falta acá.
+   Ésta pasa rápido por el medio y se toma su tiempo en las dos caras, que es
+   donde hay algo para mirar. */
+.sil-flip.suave{transition:transform .55s cubic-bezier(.65,0,.35,1)}
+/* En pleno giro el cuerpo no recibe toques: el rectángulo de un músculo
+   aplastado por la perspectiva anclaría el globo en cualquier lado. */
+.sil-stage.girando .sil-flip{pointer-events:none}
+
+.sil-face{
+  position:absolute;inset:0;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+}
+.sil-face.atras{transform:rotateY(180deg)}
+.sil-face svg{width:100%;height:100%;display:block}
+
+/* Dos botones y no uno que alterne: uno solo tendría que decir o dónde estás o
+   adónde vas, y las dos lecturas son igual de válidas. */
+.sil-caras{
+  display:inline-flex;gap:2px;padding:2px;flex:none;border-radius:999px;
+  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);
+}
+.sil-caras button{
+  font-family:'Barlow Condensed',sans-serif;font-size:10.5px;font-weight:700;
   letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
+  background:transparent;border:0;padding:5px 15px;border-radius:999px;
+  cursor:pointer;transition:color .2s var(--ease),background .2s var(--ease);
 }
+.sil-caras button[aria-pressed="true"]{color:var(--txt);background:rgba(255,255,255,.1)}
 
 /* La masa: los mismos polígonos engordados con un stroke grueso del mismo
    color. Une el cuerpo por debajo para que los huecos entre músculos lean como
@@ -1596,9 +1632,14 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .mpop-vacio{margin:0 0 8px;font-size:11.5px;line-height:1.45;color:var(--mut2)}
 .mpop-cap{margin-top:7px;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut2);opacity:.7}
 
+/* Para quien pidió menos movimiento, el cuerpo cambia de cara de golpe. El giro
+   es lindo, no es información: sacarlo no le quita nada a lo que la pantalla
+   dice. El arrastre sigue funcionando —eso es el dedo, no una animación— pero
+   ya no queda nada girando solo. */
 @media (prefers-reduced-motion:reduce){
   .sil-z{transition:none}
   .mpop{animation:none}
+  .sil-flip.suave{transition:none}
 }
 
 /* ---------- la pantalla de inicio ----------

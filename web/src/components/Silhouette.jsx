@@ -1,5 +1,15 @@
-// Las dos siluetas de la pantalla de inicio: frente y espalda, con cada grupo
+// La silueta de la pantalla de inicio: un cuerpo que gira, con cada grupo
 // muscular coloreado según hace cuántos días lo entrenaste, y tocable.
+//
+// Antes eran dos cuerpos lado a lado y quedaban chicos: cada uno se llevaba
+// medio ancho de pantalla (170px de 354) mientras sobraban 134px de alto sin
+// usar. Uno solo aprovecha las dos medidas y se dibuja un 40% más grande.
+//
+// Gira de verdad con el dedo —el ángulo sigue la mano y al soltar cae a la cara
+// más cercana—, pero que quede claro qué es: son DOS dibujos planos montados
+// espalda contra espalda, no un modelo 3D. Se puede ver de frente o de atrás, no
+// de perfil. Un 3D real necesitaría una malla, y la lámina anatómica que
+// tenemos —la única con esta calidad de músculo— es SVG plano.
 //
 // La geometría NO se dibuja acá: viene de lib/bodydata.js, que es una lámina
 // anatómica de MuscleMap (MIT) — curvas bezier, no polígonos. Antes usábamos
@@ -32,6 +42,17 @@ import MusclePop from './MusclePop.jsx';
 
 const ANCHO_POP = 208;
 
+/** Ancho al que se dibuja el cuerpo dentro de su caja.
+
+    No es el ancho de la caja: el SVG se encaja adentro con su proporción y deja
+    aire a los costados. Hace falta el ancho del CUERPO porque es contra eso que
+    se mide el arrastre — girás el cuerpo, no la pantalla. */
+function anchoDelCuerpo(el, viewBox) {
+  const [, , w, h] = viewBox.split(/\s+/).map(Number);
+  if (!el) return 220;
+  return Math.min(el.clientWidth, el.clientHeight * (w / h)) || 220;
+}
+
 /** Días → clase de color.
 
     `null` (nunca entrenado) se pinta neutro y callado: no es lo mismo que
@@ -52,16 +73,7 @@ function claseDe(z, days) {
   return tono(days[z.cat]);
 }
 
-/** Proporción del lienzo, para que la caja no deforme el dibujo.
-
-    Sale del viewBox y no de una constante porque los dos cuerpos NO miden lo
-    mismo: el masculino es 727×1280 y el femenino 650×1450. */
-function proporcion(viewBox) {
-  const [, , w, h] = viewBox.split(/\s+/).map(Number);
-  return `${w} / ${h}`;
-}
-
-function Cara({ cara, days, etiqueta, sel, onPick }) {
+function Cara({ cara, days, etiqueta, sel, onPick, activa }) {
   /* Los parches quedan fuera del cuerpo normal.
 
      Son las capas que MuscleMap dibuja ENCIMA del músculo base para resaltar
@@ -72,55 +84,60 @@ function Cara({ cara, days, etiqueta, sel, onPick }) {
   const zonas = cara.zonas.filter(z => !z.parche);
   const trazos = fn => zonas.map((z, i) => z.d.map((d, j) => fn(z, d, `${i}.${j}`)));
 
+  /* La cara que quedó atrás sale del alcance del teclado y del lector: sigue en
+     el DOM porque el giro necesita las dos montadas, pero tabular hasta un
+     músculo que no se ve sería tabular al vacío. */
   return (
-    <div className="sil-box">
-      <svg
-        viewBox={cara.viewBox}
-        style={{ aspectRatio: proporcion(cara.viewBox) }}
-        role="group"
-        aria-label={`Músculos: ${etiqueta}`}
-      >
-        <g className="sil-masa">
-          {trazos((z, d, k) => <path key={k} d={d} />)}
-        </g>
+    <svg
+      viewBox={cara.viewBox}
+      role="group"
+      aria-label={`Músculos: ${etiqueta}`}
+      aria-hidden={!activa}
+    >
+      <g className="sil-masa">
+        {trazos((z, d, k) => <path key={k} d={d} />)}
+      </g>
 
-        {zonas.map((z, i) => {
-          const dibujos = z.d.map((d, j) => <path key={j} d={d} />);
-          const cls = claseDe(z, days);
-          if (!z.cat || z.cat === 'pelo') {
-            return <g key={i} className={`sil-z ${cls}`}>{dibujos}</g>;
-          }
-          const activo = sel === z.cat;
-          return (
-            <g
-              key={i}
-              className={`sil-z sil-tap ${cls} ${activo ? 'sil-sel' : ''}`}
-              role="button"
-              tabIndex={0}
-              aria-label={`${z.cat}, ${diasTexto(days[z.cat])}. Ver estadísticas.`}
-              aria-pressed={activo}
-              onClick={e => onPick(z.cat, e.currentTarget)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(z.cat, e.currentTarget); }
-              }}
-            >
-              {dibujos}
-            </g>
-          );
-        })}
+      {zonas.map((z, i) => {
+        const dibujos = z.d.map((d, j) => <path key={j} d={d} />);
+        const cls = claseDe(z, days);
+        if (!z.cat || z.cat === 'pelo') {
+          return <g key={i} className={`sil-z ${cls}`}>{dibujos}</g>;
+        }
+        const activo = sel === z.cat;
+        return (
+          <g
+            key={i}
+            className={`sil-z sil-tap ${cls} ${activo ? 'sil-sel' : ''}`}
+            role="button"
+            tabIndex={activa ? 0 : -1}
+            aria-label={`${z.cat}, ${diasTexto(days[z.cat])}. Ver estadísticas.`}
+            aria-pressed={activo}
+            onClick={e => onPick(z.cat, e.currentTarget)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(z.cat, e.currentTarget); }
+            }}
+          >
+            {dibujos}
+          </g>
+        );
+      })}
 
-        <g className="sil-luz">
-          {trazos((z, d, k) => <path key={k} d={d} />)}
-        </g>
-      </svg>
-      <span>{etiqueta}</span>
-    </div>
+      <g className="sil-luz">
+        {trazos((z, d, k) => <path key={k} d={d} />)}
+      </g>
+    </svg>
   );
 }
 
 export default function Silhouette({ days = {} }) {
   const [sel, setSel] = useState(null);   // { cat, x, y, arriba }
+  const [ang, setAng] = useState(0);      // grados; los múltiplos pares de 180 son la frente
+  const [quieto, setQuieto] = useState(true);   // ni girando ni cayendo: se puede tocar
+  const [tirando, setTirando] = useState(false); // el dedo manda: sin transición, el giro sigue la mano
   const caja = useRef(null);
+  const stage = useRef(null);
+  const gesto = useRef(null);             // { x, ang, giro } mientras el dedo está apoyado
 
   // `bodySex` es el ajuste explícito de Ajustes; si nunca se tocó, hereda el
   // sexo del perfil para que quien ya lo cargó no tenga que elegir dos veces.
@@ -128,7 +145,29 @@ export default function Silhouette({ days = {} }) {
   // obligaría a mentir en uno para arreglar el otro.
   const { frente, espalda } = cuerpo(S.cfg.bodySex || S.cfg.profile?.sex);
 
+  // Qué cara mira al frente: 0 frente, 1 espalda. Se saca del ángulo y no de un
+  // estado aparte para que no puedan discrepar — el ángulo es la única verdad.
+  const atras = Math.abs(Math.round(ang / 180) % 2) === 1;
+
   const cerrar = useCallback(() => setSel(null), []);
+
+  /** El cuerpo terminó de moverse: vuelve a aceptar toques y el gesto se olvida.
+
+      Olvidarlo acá y no en el click es lo que evita que un giro viejo se quede
+      colgado y se coma el siguiente toque —por ejemplo uno hecho con el
+      teclado, que nunca pasa por el dedo. */
+  const asentar = () => { setQuieto(true); gesto.current = null; };
+
+  /** Gira hasta la cara pedida por el camino más corto. */
+  const girarA = quiero => {
+    const n = Math.round(ang / 180);
+    const destino = (Math.abs(n % 2) === 1) === quiero ? n : n + 1;
+    if (destino * 180 === ang) return;
+    setSel(null);
+    setQuieto(false);
+    vibrate(8);
+    setAng(destino * 180);
+  };
 
   // Escape cierra. Se registra sólo mientras hay algo abierto.
   useEffect(() => {
@@ -137,6 +176,21 @@ export default function Silhouette({ days = {} }) {
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, [sel, cerrar]);
+
+  /* Red por si el fin de la transición no llega nunca.
+
+     Pasa de verdad: con "reducir movimiento" activado no hay transición, así
+     que tampoco hay transitionend, y el cuerpo se quedaría sordo a los toques
+     para siempre esperando un aviso que no existe. También cubre el caso de una
+     transición interrumpida a mitad de camino. */
+  useEffect(() => {
+    if (quieto || tirando) return;
+    const t = setTimeout(asentar, 700);
+    return () => clearTimeout(t);
+    // `asentar` sólo toca setters y un ref: no hace falta en las dependencias, y
+    // ponerlo reiniciaría el temporizador en cada render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quieto, tirando, ang]);
 
   /** Ancla el globo al músculo tocado, en coordenadas de la caja.
 
@@ -147,6 +201,9 @@ export default function Silhouette({ days = {} }) {
       Y se recorta a los bordes de la caja para que nunca se salga por un
       costado. */
   const tocar = (cat, el) => {
+    // Si el dedo venía girando el cuerpo, el click de cierre no es un toque:
+    // soltar sobre un músculo no es lo mismo que elegirlo.
+    if (gesto.current?.giro) { gesto.current = null; return; }
     if (sel?.cat === cat) return cerrar();
     const c = caja.current?.getBoundingClientRect();
     const m = el.getBoundingClientRect();
@@ -164,10 +221,81 @@ export default function Silhouette({ days = {} }) {
     });
   };
 
+  /* Arrastrar para girar.
+
+     El ángulo sigue al dedo en vez de saltar al final del gesto: media vuelta
+     por ancho de cuerpo. Contra el ancho del CUERPO y no el de la pantalla —
+     medido contra la pantalla había que arrastrar 177px para darlo vuelta y se
+     sentía pesado; contra el cuerpo alcanza con 110, que es un pulgar.
+
+     Recién a los 8px se considera giro: abajo de eso es un toque, y el músculo
+     tiene que poder recibirlo. */
+  const dedoAbajo = e => {
+    if (e.button > 0) return;
+    gesto.current = { x: e.clientX, ang, giro: false };
+  };
+
+  const dedoMueve = e => {
+    const g = gesto.current;
+    if (!g) return;
+    const dx = e.clientX - g.x;
+    if (!g.giro) {
+      if (Math.abs(dx) < 8) return;
+      g.giro = true;
+      setSel(null);
+      setQuieto(false);
+      setTirando(true);
+      stage.current?.setPointerCapture?.(e.pointerId);
+    }
+    setAng(g.ang + (dx / anchoDelCuerpo(stage.current, frente.viewBox)) * 180);
+  };
+
+  const dedoArriba = () => {
+    const g = gesto.current;
+    if (!g?.giro) { gesto.current = null; return; }
+    setTirando(false);
+    vibrate(8);
+    // Cae a la cara más cercana. Si ya estaba justo ahí no hay transición que
+    // esperar, así que el cuerpo se da por asentado en el acto: si no, quedaría
+    // sordo a los toques para siempre.
+    const destino = Math.round(ang / 180) * 180;
+    setAng(destino);
+    if (destino === ang) asentar();
+  };
+
   return (
     <div className="sil-pair" ref={caja}>
-      <Cara cara={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={tocar} />
-      <Cara cara={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={tocar} />
+      {/* Las dos caras montadas espalda contra espalda. Mientras el cuerpo se
+          mueve no recibe toques: el rectángulo de un músculo en pleno giro está
+          aplastado y el globo saldría anclado a cualquier lado. */}
+      <div
+        className={`sil-stage ${quieto ? '' : 'girando'}`}
+        ref={stage}
+        onPointerDown={dedoAbajo}
+        onPointerMove={dedoMueve}
+        onPointerUp={dedoArriba}
+        onPointerCancel={dedoArriba}
+      >
+        <div
+          className={`sil-flip ${tirando ? '' : 'suave'}`}
+          style={{ transform: `rotateY(${ang}deg)` }}
+          onTransitionEnd={asentar}
+        >
+          <div className={`sil-face ${atras ? '' : 'on'}`}>
+            <Cara cara={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={tocar} activa={!atras} />
+          </div>
+          <div className={`sil-face atras ${atras ? 'on' : ''}`}>
+            <Cara cara={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={tocar} activa={atras} />
+          </div>
+        </div>
+      </div>
+
+      {/* Dos botones y no uno que alterna: un botón solo tendría que decir o
+          dónde estás o adónde vas, y las dos lecturas son igual de válidas. */}
+      <div className="sil-caras" role="group" aria-label="Girar el cuerpo">
+        <button type="button" aria-pressed={!atras} onClick={() => girarA(false)}>Frente</button>
+        <button type="button" aria-pressed={atras} onClick={() => girarA(true)}>Espalda</button>
+      </div>
 
       {sel && (
         <>
