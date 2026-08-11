@@ -73,7 +73,37 @@ export function muestrasAlarma() {
   return buf;
 }
 
-/** El elemento de audio, creado una sola vez.
+/** Suelta el elemento de audio del todo.
+
+    Pausarlo no alcanza: mientras haya un <audio> vivo en la página, Android
+    deja las teclas de volumen en el canal multimedia, y el teléfono se queda
+    así hasta que cerrás la app. Bajarle el volumen al timbre de tus mensajes
+    porque hace media hora sonó un descanso es un efecto que nadie pidió.
+
+    Por eso se desmonta entero —pausar, soltar el recurso, sacarlo del DOM— y se
+    vuelve a crear en el próximo descanso. Crearlo es barato: el WAV ya está
+    sintetizado y el blob se reusa. */
+function soltar() {
+  const el = A.el;
+  A.el = null;
+  A.listo = false;   // habrá que volver a desbloquearlo con un gesto
+  if (!el) return;
+  try {
+    el.pause();
+    el.removeAttribute('src');
+    el.load();       // fuerza al navegador a largar el recurso
+    el.remove();
+  } catch { /* ya estaba desmontado */ }
+  try {
+    if (navigator.mediaSession) {
+      navigator.mediaSession.playbackState = 'none';
+      navigator.mediaSession.metadata = null;
+    }
+  } catch { /* sin MediaSession */ }
+}
+
+/** El elemento de audio. Se crea al preparar cada descanso y se suelta al
+    cortar la alarma.
 
     Devuelve null si el navegador no lo deja: la alarma se degrada a vibración y
     notificación en vez de tirar abajo el final del descanso. */
@@ -157,5 +187,6 @@ export function callar() {
   if (A.int) { clearInterval(A.int); A.int = null; }
   if (A.el) { A.el.pause(); A.el.currentTime = 0; }
   vibrate(0);
+  soltar();
   cerrarNotificacion(TAG_DESCANSO);
 }

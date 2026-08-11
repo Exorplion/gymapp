@@ -202,7 +202,9 @@ export function isSkipped(exId) { return !!S.draft?.skipped?.includes(exId); }
 /** Los ejercicios de la sesión: los del día más los agregados hoy, en el orden
     del borrador. Reemplaza a orderedExs() mientras hay sesión abierta. */
 export function sessionExs(wd) {
-  const todos = [...(S.routine[wd]?.exercises || []), ...(S.draft?.extras || [])];
+  const cambiados = S.draft?.replaced || {};
+  const todos = [...(S.routine[wd]?.exercises || []), ...(S.draft?.extras || [])]
+    .filter(e => !cambiados[e.id]);   // el que cambiaste ya no está en la lista
   const ord = S.draft?.order;
   if (!ord?.length) return todos;
   const by = new Map(todos.map(e => [e.id, e]));
@@ -245,6 +247,45 @@ export async function addExtraSet(exId) {
   return S.draft.extraSets[exId];
 }
 
+/** Quitar una serie del objetivo de hoy.
+
+    Sólo saca series que NO hiciste: si el objetivo son 4, llevás 3 y bajás,
+    queda en 3 y el ejercicio se cierra. Nunca borra una serie registrada —
+    "ya no quiero hacer la cuarta" y "borrá la cuarta que ya hice" son cosas
+    distintas, y la segunda tiene su propio gesto en el detalle de la sesión.
+
+    El piso es 1: un ejercicio con cero series objetivo no es un ejercicio. */
+export async function dropSet(exId) {
+  if (!S.draft) return 0;
+  const ex = findEx(exId);
+  if (!ex) return 0;
+  const hechas = (S.draft.entries?.[exId]?.sets || []).length;
+  const actual = targetSets(ex);
+  const piso = Math.max(1, hechas);
+  if (actual <= piso) {
+    toast(hechas ? `Ya hiciste ${hechas} serie${hechas === 1 ? '' : 's'}` : 'Tiene que quedar al menos una');
+    return actual;
+  }
+  if (!S.draft.extraSets) S.draft.extraSets = {};
+  S.draft.extraSets[exId] = (S.draft.extraSets[exId] || 0) - 1;
+
+  // si al bajar el objetivo el ejercicio queda completo, se cierra y pasamos al
+  // siguiente, igual que cuando lo completás registrando
+  const nuevo = targetSets(ex);
+  if (hechas >= nuevo && S.draft.cur === exId) {
+    /* El día sale del BORRADOR y no de currentDayForHoy(): esa función devuelve
+       el día que estás mirando, y podés estar viendo el martes con la sesión
+       del jueves abierta. Con el día equivocado la lista viene vacía y el
+       siguiente ejercicio se pierde. */
+    const sig = nextPending(sessionExs(S.draft.weekday));
+    S.draft.cur = sig ? sig.id : null;
+  }
+  await saveDraft();
+  vibrate(15);
+  bump();
+  return nuevo;
+}
+
 /** Un ejercicio que decidiste hacer hoy y no estaba en el plan. Vive sólo en
     el borrador; al cerrar la sesión se ofrece dejarlo fijo en la rutina. */
 export async function addSessionExercise({ name, sets, reps, equip, machine } = {}, afterExId = null) {
@@ -271,16 +312,35 @@ export async function addSessionExercise({ name, sets, reps, equip, machine } = 
 }
 
 /** Cambiar un ejercicio por otro: la máquina ocupada es la regla, no la
-    excepción. Es saltar el original y meter el reemplazo justo detrás, así el
-    lugar en el orden del día no se altera. */
+    excepción. El reemplazo entra justo detrás, así el lugar en el orden del día
+    no se altera.
+
+    El original DESAPARECE de la lista en vez de quedar tachado. Antes se
+    marcaba como saltado y seguía ocupando una tarjeta: pedías cambiar y te
+    quedaban los dos, que es lo contrario de cambiar.
+
+    Pero no se pierde: queda anotado en `replaced` con su nombre, así la tarjeta
+    nueva puede decir "en vez de Press banca" y la sesión guardada también. Se
+    guarda el NOMBRE y no sólo el id porque el original puede desaparecer de la
+    rutina más adelante, y lo que querés leer es el nombre. */
 export async function replaceSessionExercise(exId, datos) {
+  const orig = findEx(exId);
   const nuevo = await addSessionExercise(datos, exId);
   if (!nuevo) return null;
-  await skipExercise(exId);
+  if (!S.draft.replaced) S.draft.replaced = {};
+  S.draft.replaced[exId] = { by: nuevo.id, name: orig?.name || '' };
   S.draft.cur = nuevo.id;
   await saveDraft();
   bump();
   return nuevo;
+}
+
+/** Si este ejercicio entró en lugar de otro, el nombre del que reemplazó. */
+export function reemplazaA(exId) {
+  const r = S.draft?.replaced;
+  if (!r) return null;
+  for (const k of Object.keys(r)) if (r[k]?.by === exId) return r[k].name || null;
+  return null;
 }
 
 export async function saveSet(exId) {

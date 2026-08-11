@@ -1698,3 +1698,9 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   font-variant-numeric:tabular-nums}
 .warmup-nota{margin:0 0 11px;font-size:12.5px;line-height:1.45;color:var(--mut)}
 .warmup-nota b{color:var(--warn)}
+
+/* De dónde salió este ejercicio cuando cambiaste otro por él. */
+.ex-envez{
+  font-size:12px;font-weight:500;color:var(--mut2);margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}

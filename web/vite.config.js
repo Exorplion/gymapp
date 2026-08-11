@@ -56,6 +56,11 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
+        // generateSW no deja escribir código propio dentro del service worker;
+        // esto es la vía oficial para sumarle uno. sw-notif.js hace que tocar
+        // la notificación de sesión en curso abra la app — sin él no hay nadie
+        // escuchando el evento y el toque no hace nada.
+        importScripts: ['sw-notif.js'],
       },
     }),
   ],

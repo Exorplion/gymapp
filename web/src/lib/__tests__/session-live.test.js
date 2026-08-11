@@ -3,6 +3,7 @@ import { S } from '../state.js';
 import {
   targetSets, sessionExs, nextPending, isSkipped,
   skipExercise, unskipExercise, addExtraSet, addSessionExercise, replaceSessionExercise,
+  dropSet, reemplazaA,
 } from '../session.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
@@ -129,11 +130,12 @@ describe('addSessionExercise', () => {
 });
 
 describe('replaceSessionExercise', () => {
-  it('saltea el viejo y pone el nuevo en su lugar exacto', async () => {
+  /* Antes el original quedaba marcado como saltado y seguía ocupando su
+     tarjeta: pedías cambiar y te quedaban los dos. Ahora sale de la lista. */
+  it('saca el viejo y pone el nuevo en su lugar exacto', async () => {
     await replaceSessionExercise('b', { name: 'Remo polea', sets: 3, reps: 10 });
-    expect(isSkipped('b')).toBe(true);
-    const ids = sessionExs(4).filter(e => !isSkipped(e.id)).map(e => e.name);
-    expect(ids).toEqual(['Press', 'Remo polea', 'Curl']);
+    expect(isSkipped('b')).toBe(false);
+    expect(sessionExs(4).map(e => e.name)).toEqual(['Press', 'Remo polea', 'Curl']);
   });
 
   it('el reemplazo queda justo donde estaba el original en el orden', async () => {
@@ -208,5 +210,82 @@ describe('groupSets', () => {
     const { groupSets } = await import('../session.js');
     expect(groupSets([])).toEqual([]);
     expect(groupSets(undefined)).toEqual([]);
+  });
+});
+
+describe('cambiar un ejercicio por otro', () => {
+  it('el original desaparece de la lista', async () => {
+    await replaceSessionExercise('b', { name: 'Jalón', sets: 3, reps: 10 });
+    const nombres = sessionExs(4).map(e => e.name);
+    expect(nombres).not.toContain('Remo');
+    expect(nombres).toContain('Jalón');
+  });
+
+  it('el reemplazo entra en el lugar del original, no al final', async () => {
+    await replaceSessionExercise('b', { name: 'Jalón', sets: 3, reps: 10 });
+    expect(sessionExs(4).map(e => e.name)).toEqual(['Press', 'Jalón', 'Curl']);
+  });
+
+  // "Que se quede registrado por cuál lo cambié": el original ya no está a la
+  // vista, pero no se perdió.
+  it('queda anotado a cuál reemplazó', async () => {
+    const nuevo = await replaceSessionExercise('b', { name: 'Jalón', sets: 3, reps: 10 });
+    expect(reemplazaA(nuevo.id)).toBe('Remo');
+  });
+
+  it('los que no reemplazaron a nadie no dicen nada', async () => {
+    await replaceSessionExercise('b', { name: 'Jalón', sets: 3, reps: 10 });
+    expect(reemplazaA('a')).toBe(null);
+  });
+
+  it('el reemplazo queda como ejercicio actual', async () => {
+    const nuevo = await replaceSessionExercise('b', { name: 'Jalón', sets: 3, reps: 10 });
+    expect(S.draft.cur).toBe(nuevo.id);
+  });
+
+  // El original sale de la lista por `replaced`, no por `skipped`: si contara
+  // como saltado, el resumen del día diría que salteaste algo que en realidad
+  // cambiaste.
+  it('cambiar no es lo mismo que saltar', async () => {
+    await replaceSessionExercise('b', { name: 'Jalón', sets: 3, reps: 10 });
+    expect(isSkipped('b')).toBe(false);
+  });
+});
+
+describe('dropSet', () => {
+  it('baja el objetivo en uno', async () => {
+    expect(await dropSet('a')).toBe(2);
+    expect(targetSets(ex('a', 'Press', 3))).toBe(2);
+  });
+
+  it('deshace una serie extra antes de tocar el plan', async () => {
+    S.draft.extraSets = { a: 1 };
+    expect(await dropSet('a')).toBe(3);
+  });
+
+  // "Solo borro la que no hice": nunca toca una serie registrada.
+  it('no baja por debajo de las series que ya hiciste', async () => {
+    S.draft.entries = { a: { name: 'Press', sets: [{ w: 60, r: 8 }, { w: 60, r: 8 }] } };
+    expect(await dropSet('a')).toBe(2);
+    expect(await dropSet('a')).toBe(2);
+    expect(S.draft.entries.a.sets).toHaveLength(2);
+  });
+
+  it('nunca deja un ejercicio en cero series', async () => {
+    await dropSet('a'); await dropSet('a');
+    expect(await dropSet('a')).toBe(1);
+    expect(targetSets(ex('a', 'Press', 3))).toBe(1);
+  });
+
+  it('si al bajar queda completo, pasa al siguiente', async () => {
+    S.draft.cur = 'a';
+    S.draft.entries = { a: { name: 'Press', sets: [{ w: 60, r: 8 }, { w: 60, r: 8 }] } };
+    await dropSet('a');
+    expect(S.draft.cur).toBe('b');
+  });
+
+  it('sin sesión abierta no explota', async () => {
+    S.draft = null;
+    expect(await dropSet('a')).toBe(0);
   });
 });

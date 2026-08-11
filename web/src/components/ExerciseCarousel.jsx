@@ -27,7 +27,7 @@ import { round1, fmtNum, lb2kg } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
 import {
   ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
-  targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet,
+  targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, dropSet, reemplazaA,
 } from '../lib/session.js';
 import { jumpToSlide, slideCenterDist } from '../lib/carousel.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
@@ -122,6 +122,9 @@ function ExActions({ ex, wd }) {
   }
   return (
     <div className="ex-actions">
+      {/* Sumar y quitar juntos: decidir "hoy hago una menos" es tan común como
+          "hoy hago una más", y hasta ahora sólo se podía hacia arriba. */}
+      <button type="button" onClick={() => dropSet(ex.id)}>− Serie</button>
       <button type="button" onClick={() => addExtraSet(ex.id)}>+ Serie</button>
       <button type="button" onClick={() => openSheet('ex-swap', { wd, exId: ex.id })}>⇄ Cambiar</button>
       <button type="button" onClick={confirmarSalto}>↷ Saltar</button>
@@ -209,6 +212,11 @@ function ExerciseSlide({ m, wd, started }) {
             </button>
           )}
         </div>
+        {/* Cambiaste éste por otro: el original ya no está en la lista, pero
+            queda dicho de dónde salió. */}
+        {reemplazaA(ex.id) && (
+          <div className="ex-envez">en vez de {reemplazaA(ex.id)}</div>
+        )}
         <div className="extarget">
           Objetivo {target} × {ex.reps}
           {target > ex.sets && <span className="txt-blue"> (+{target - ex.sets} hoy)</span>}
