@@ -1482,8 +1482,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   flex:1 1 0;min-width:0;min-height:0;max-width:180px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
 }
+/* La proporción la pone el componente desde el viewBox: los dos cuerpos NO
+   miden lo mismo (el masculino es 727×1280 y el femenino 650×1450), así que
+   fijarla acá deformaría uno de los dos. */
 .sil-box svg{
-  width:100%;aspect-ratio:100/200;flex:none;max-height:100%;display:block;
+  width:100%;flex:none;max-height:100%;display:block;
 }
 .sil-box>span{
   font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
@@ -1493,50 +1496,42 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* La masa: los mismos polígonos engordados con un stroke grueso del mismo
    color. Une el cuerpo por debajo para que los huecos entre músculos lean como
    surcos y no como agujeros al fondo de la pantalla. */
+/* stroke-width 5 y no 2.6: el lienzo de la lámina nueva es siete veces más
+   grande (727×1280 contra 100×200), así que un grosor pensado para el chico
+   sería invisible acá. */
 .sil-masa{pointer-events:none}
-.sil-masa polygon{fill:#101B2F;stroke:#101B2F;stroke-width:2.6;stroke-linejoin:round}
+.sil-masa path{fill:#101B2F;stroke:#101B2F;stroke-width:5;stroke-linejoin:round}
 
 /* fill y stroke se heredan del <g> a sus polígonos: el estado se pinta una vez
    y el glow se aplica al grupo entero en vez de a cada pieza. */
-.sil-z{stroke:rgba(2,5,12,.5);stroke-width:.3;stroke-linejoin:round;
+.sil-z{stroke:rgba(2,5,12,.5);stroke-width:1.4;stroke-linejoin:round;
   transition:fill .45s var(--ease),opacity .2s var(--ease)}
 .sil-d0{fill:url(#sil-g0);filter:url(#sil-glow)}
 .sil-d1{fill:url(#sil-g1)}
 .sil-d2{fill:url(#sil-g2)}
 /* 7+ días: ámbar. Es la única zona que llama la atención. */
-.sil-d3{fill:url(#sil-g3);stroke:rgba(255,190,110,.5);stroke-width:.4}
+.sil-d3{fill:url(#sil-g3);stroke:rgba(255,190,110,.5);stroke-width:1.8}
 /* nunca entrenado: neutro y callado, distinto de "hace mucho" */
 .sil-none{fill:url(#sil-gn)}
 /* lo que no rastreamos: cabeza, cuello, antebrazo, rodilla */
-.sil-neutro{fill:url(#sil-gne);stroke:rgba(2,5,12,.5);stroke-width:.3;pointer-events:none}
+.sil-neutro{fill:url(#sil-gne);stroke:rgba(2,5,12,.5);stroke-width:1.4;pointer-events:none}
 /* El pelo. Castaño cálido y no un azul más oscuro: sobre un fondo casi negro
    lo oscuro desaparece, y encima el cuerpo entero es frío, así que un tono
    cálido se lee como pelo al instante. Queda fuera de la paleta de estados a
    propósito —el ámbar de "7+ días" es mucho más saturado— para que nadie lo
    confunda con un músculo sin entrenar. */
-.sil-pelo{fill:url(#sil-gpelo);stroke:rgba(20,10,4,.5);stroke-width:.3;
+.sil-pelo{fill:url(#sil-gpelo);stroke:rgba(20,10,4,.5);stroke-width:1.4;
   stroke-linejoin:round;pointer-events:none}
-.sil-pelo path{fill:url(#sil-gpelo)}
 
-/* Los cortes que la lámina no trae: el six-pack, el surco de los erectores, el
-   redondo mayor. Van encima del músculo y debajo de la luz, así se leen como
-   hendiduras del cuerpo y no como rayas dibujadas arriba. */
-.sil-detalle{pointer-events:none}
-.sil-detalle polyline{
-  fill:none;stroke:rgba(2,5,12,.55);stroke-width:.7;
-  stroke-linecap:round;stroke-linejoin:round;
-}
-/* Con un grupo abierto, el detalle se apaga junto con el resto del cuerpo. */
-.sil-pair:has(.sil-sel) .sil-detalle{opacity:.42}
 
 /* Una sola fuente de luz sobre todo el cuerpo. Sin esto cada músculo se ilumina
    por su cuenta y el conjunto se ve facetado, como vidrio roto. */
 .sil-luz{mix-blend-mode:overlay;pointer-events:none}
-.sil-luz polygon{fill:url(#sil-luz);stroke:none}
+.sil-luz path{fill:url(#sil-luz);stroke:none}
 
 .sil-tap{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .sil-tap:focus{outline:none}
-.sil-tap:focus-visible,.sil-sel{stroke:var(--accent);stroke-width:.9}
+.sil-tap:focus-visible,.sil-sel{stroke:var(--accent);stroke-width:4}
 /* Al abrir un grupo el resto baja: el que preguntaste queda solo. */
 .sil-pair:has(.sil-sel) .sil-z:not(.sil-sel){opacity:.42}
 

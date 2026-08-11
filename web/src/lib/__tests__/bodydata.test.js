@@ -1,109 +1,77 @@
 import { describe, it, expect } from 'vitest';
-import { ANTERIOR, POSTERIOR, ANTERIOR_F, POSTERIOR_F, cuerpo } from '../bodydata.js';
+import { CUERPOS, cuerpo } from '../bodydata.js';
+import { MUSCLE_CATS } from '../muscle.js';
 
-/** Ancho de UN grupo muscular. Se mide el grupo y no el cuerpo entero porque a
-    la altura de la cadera los puntos más extremos son las manos, no la cadera:
-    medir el total contestaría otra pregunta. */
-function anchoDe(zonas, cat) {
-  let min = Infinity, max = -Infinity;
-  for (const z of zonas) {
-    if (z.cat !== cat) continue;
-    for (const p of z.pts) {
-      const n = p.split(' ').map(Number);
-      for (let i = 0; i < n.length; i += 2) { min = Math.min(min, n[i]); max = Math.max(max, n[i]); }
-    }
-  }
-  return max - min;
-}
+const CARAS = [['m', 'frente'], ['m', 'espalda'], ['f', 'frente'], ['f', 'espalda']];
+const todas = () => CARAS.map(([s, c]) => ({ s, c, cara: CUERPOS[s][c] }));
 
 describe('cuerpo()', () => {
-  it("'f' devuelve la variante femenina", () => {
-    expect(cuerpo('f').frente).toBe(ANTERIOR_F);
-    expect(cuerpo('f').espalda).toBe(POSTERIOR_F);
+  it("'f' devuelve el cuerpo femenino", () => {
+    expect(cuerpo('f')).toBe(CUERPOS.f);
   });
 
-  it('cualquier otra cosa devuelve la masculina, incluido no elegir', () => {
-    for (const v of ['m', undefined, null, '', 'x']) {
-      expect(cuerpo(v).frente).toBe(ANTERIOR);
-      expect(cuerpo(v).espalda).toBe(POSTERIOR);
-    }
+  it('cualquier otra cosa devuelve el masculino, incluido no elegir', () => {
+    for (const v of ['m', undefined, null, '', 'x']) expect(cuerpo(v)).toBe(CUERPOS.m);
   });
 });
 
-describe('la variante femenina', () => {
-  it('mantiene los mismos grupos musculares', () => {
-    expect(ANTERIOR_F.map(z => z.cat)).toEqual(ANTERIOR.map(z => z.cat));
-    expect(POSTERIOR_F.map(z => z.cat)).toEqual(POSTERIOR.map(z => z.cat));
+describe('la lámina', () => {
+  it('tiene las cuatro caras con trazos', () => {
+    for (const { s, c, cara } of todas()) {
+      expect(cara.zonas.length, `${s}.${c}`).toBeGreaterThan(10);
+      expect(cara.zonas.every(z => z.d.length > 0), `${s}.${c}`).toBe(true);
+    }
   });
 
-  it('mantiene la misma cantidad de polígonos y de puntos', () => {
-    ANTERIOR.forEach((z, i) => {
-      expect(ANTERIOR_F[i].pts.length).toBe(z.pts.length);
-      z.pts.forEach((p, j) => {
-        expect(ANTERIOR_F[i].pts[j].split(' ').length).toBe(p.split(' ').length);
-      });
-    });
+  it('cada cara declara su viewBox', () => {
+    for (const { s, c, cara } of todas()) {
+      expect(cara.viewBox, `${s}.${c}`).toMatch(/^-?\d+(\.\d+)? -?\d+(\.\d+)? \d+(\.\d+)? \d+(\.\d+)?$/);
+    }
   });
 
-  // Lo que define la silueta: hombro más angosto, cadera más ancha.
-  it('tiene los hombros más angostos que el modelo masculino', () => {
-    expect(anchoDe(ANTERIOR_F, 'Hombro')).toBeLessThan(anchoDe(ANTERIOR, 'Hombro'));
+  // Los dos cuerpos están DIBUJADOS por separado, no es uno deformado a partir
+  // del otro: por eso sus lienzos no miden lo mismo.
+  it('el cuerpo femenino no es el masculino estirado', () => {
+    expect(CUERPOS.f.frente.viewBox).not.toBe(CUERPOS.m.frente.viewBox);
+    expect(CUERPOS.f.frente.zonas.map(z => z.d.join()))
+      .not.toEqual(CUERPOS.m.frente.zonas.map(z => z.d.join()));
   });
 
-  it('tiene el glúteo más ancho', () => {
-    expect(anchoDe(POSTERIOR_F, 'Glúteo')).toBeGreaterThan(anchoDe(POSTERIOR, 'Glúteo'));
-  });
-
-  it('tiene la cintura más angosta', () => {
-    expect(anchoDe(ANTERIOR_F, 'Abs')).toBeLessThan(anchoDe(ANTERIOR, 'Abs'));
-  });
-
-  /* El ensanche de cadera no puede empujar las extremidades hacia afuera: eso
-     sacaba las manos del lienzo, y además diría que una cadera ancha te separa
-     los brazos. El contorno total nunca crece.
-
-     Lo que sí se mueve son los brazos hacia ADENTRO, y es correcto: hombros más
-     angostos acercan los brazos al cuerpo. Por eso se mide el contorno y no
-     cada músculo por separado. */
-  it('nunca ensancha el contorno del cuerpo', () => {
-    const contorno = zonas => {
-      let min = Infinity, max = -Infinity;
-      for (const z of zonas) for (const p of z.pts) {
-        const n = p.split(' ').map(Number);
-        for (let i = 0; i < n.length; i += 2) { min = Math.min(min, n[i]); max = Math.max(max, n[i]); }
+  it('todos los trazos son paths SVG que arrancan con un movimiento', () => {
+    for (const { s, c, cara } of todas()) {
+      for (const z of cara.zonas) {
+        for (const d of z.d) expect(d, `${s}.${c}/${z.slug}`).toMatch(/^[Mm]\s*-?[\d.]/);
       }
-      return max - min;
-    };
-    expect(contorno(ANTERIOR_F)).toBeLessThanOrEqual(contorno(ANTERIOR));
-    expect(contorno(POSTERIOR_F)).toBeLessThanOrEqual(contorno(POSTERIOR));
+    }
   });
 
-  it('no toca las alturas: sólo cambia el ancho', () => {
-    const alturas = z => z.flatMap(g => g.pts.flatMap(p => p.split(' ').filter((_, i) => i % 2 === 1)));
-    expect(alturas(ANTERIOR_F)).toEqual(alturas(ANTERIOR));
+  it('sólo usa categorías que FIERRO conoce', () => {
+    const validas = new Set([...MUSCLE_CATS, 'pelo', null]);
+    for (const { s, c, cara } of todas()) {
+      for (const z of cara.zonas) expect(validas.has(z.cat), `${s}.${c}/${z.slug} → ${z.cat}`).toBe(true);
+    }
   });
 
-  it('sigue centrada en el eje del cuerpo', () => {
-    const centro = zonas => {
-      let min = Infinity, max = -Infinity;
-      for (const z of zonas) for (const p of z.pts) {
-        const n = p.split(' ').map(Number);
-        for (let i = 0; i < n.length; i += 2) { min = Math.min(min, n[i]); max = Math.max(max, n[i]); }
-      }
-      return (min + max) / 2;
-    };
-    expect(centro(ANTERIOR_F)).toBeCloseTo(centro(ANTERIOR), 0);
+  // Si un grupo no aparece en ninguna cara, tocarlo en la app sería imposible y
+  // el mapa muscular mentiría por omisión.
+  it('los nueve grupos aparecen en algún lado, en los dos cuerpos', () => {
+    for (const sexo of ['m', 'f']) {
+      const presentes = new Set();
+      for (const c of ['frente', 'espalda']) CUERPOS[sexo][c].zonas.forEach(z => z.cat && presentes.add(z.cat));
+      for (const g of MUSCLE_CATS) expect(presentes.has(g), `${sexo} sin ${g}`).toBe(true);
+    }
   });
 
-  it('no se sale del lienzo de 100 × 200', () => {
-    for (const zonas of [ANTERIOR_F, POSTERIOR_F]) {
-      for (const z of zonas) for (const p of z.pts) {
-        const n = p.split(' ').map(Number);
-        for (let i = 0; i < n.length; i += 2) {
-          expect(n[i]).toBeGreaterThanOrEqual(0);
-          expect(n[i]).toBeLessThanOrEqual(100);
-        }
-      }
+  it('los dos cuerpos tienen pelo', () => {
+    for (const sexo of ['m', 'f']) {
+      const conPelo = ['frente', 'espalda'].some(c => CUERPOS[sexo][c].zonas.some(z => z.cat === 'pelo'));
+      expect(conPelo, `${sexo} sin pelo`).toBe(true);
+    }
+  });
+
+  it('cada zona dice de qué músculo salió', () => {
+    for (const { cara } of todas()) {
+      for (const z of cara.zonas) expect(typeof z.slug).toBe('string');
     }
   });
 });
