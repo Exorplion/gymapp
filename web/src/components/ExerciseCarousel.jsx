@@ -202,7 +202,15 @@ function ExerciseSlide({ m, wd, started }) {
   return (
     <div className="carousel-slide" data-exid={ex.id}>
       <div className={`card ex-card ${cls}`} id={`exc-${ex.id}`} style={{ '--done': Math.min(1, done.length / target) }}>
-        <div className={`ex-done-count ${full ? 'full' : ''}`}>{done.length}/{target}</div>
+        {/* key=done.length: fuerza a React a remontar el nodo cada vez que el
+            número cambia, así el "pop" de styles.css se repite en cada serie
+            (el mismo truco que ya usa App.jsx con key={store.tab} para la
+            animación de deslizamiento — sin un key nuevo, React reusa el
+            nodo y el @keyframes nunca vuelve a correr). Antes esta cuenta
+            saltaba de "1/3" a "2/3" sin ningún acuse de recibo propio: el
+            chip nuevo hacía pop, el riel lateral se llenaba, pero el número
+            que en verdad resume el progreso quedaba mudo. */}
+        <div key={done.length} className={`ex-done-count ${full ? 'full' : ''}`}>{done.length}/{target}</div>
         <ExIcon icono={iconOf(ex)} size={38} className="ex-card-icon" />
         <div className="exname">
           {ex.name}{' '}

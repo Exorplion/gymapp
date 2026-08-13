@@ -363,7 +363,10 @@ main{
   font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.05em;
   color:var(--mut);background:var(--card2);border:1px solid var(--line);
   padding:4px 10px;border-radius:999px;
+  animation:countPop .32s var(--ease);
+  transition:color .3s var(--ease),background .3s var(--ease),border-color .3s var(--ease);
 }
+@keyframes countPop{0%{transform:scale(.55)}55%{transform:scale(1.2)}100%{transform:scale(1)}}
 .ex-done-count.full{color:#062b18;background:var(--ok);border-color:transparent}
 /* Peso y reps apilados, no lado a lado. En dos columnas (1.4fr/1fr) la de reps
    medía 105px en un teléfono de 390px y sus dos botones de 48px más el gap ya
