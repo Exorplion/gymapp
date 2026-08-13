@@ -33,11 +33,28 @@ describe('fibrasDe', () => {
   // El orden de la tabla ES la lógica, igual que en catOf.
   it('lo específico gana a lo genérico', () => {
     expect(fibrasDe('Curl femoral').p).toEqual(['Femoral']);
-    expect(fibrasDe('Curl con barra').p).toEqual(['Bíceps']);
+    expect(fibrasDe('Curl con barra').p).toEqual(['Bíceps braquial']);
     expect(fibrasDe('Press militar').p).toEqual(['Deltoides anterior']);
     expect(fibrasDe('JM press').p).toEqual(['Tríceps']);
     expect(fibrasDe('Peso muerto rumano').p).toEqual(['Femoral']);
     expect(fibrasDe('Jalón al pecho').p).toEqual(['Dorsal bajo']);
+  });
+
+  // Bíceps braquial (agarre supinado) vs braquiorradial (agarre neutro o
+  // pronado): son dos músculos distintos, no la misma bolsa "bíceps".
+  it('distingue bíceps braquial de braquiorradial por el agarre', () => {
+    expect(fibrasDe('Curl predicador').p).toEqual(['Bíceps braquial']);
+    expect(fibrasDe('Curl inclinado').p).toEqual(['Bíceps braquial']);
+    expect(fibrasDe('Curl martillo').p).toEqual(['Braquiorradial']);
+    expect(fibrasDe('Curl inverso').p).toEqual(['Braquiorradial']);
+  });
+
+  // Según el criterio de Enzo (ver la nota en fibras.js): overhead reparte
+  // distinto que la extensión con el brazo pegado al cuerpo.
+  it('distingue la extensión de tríceps overhead de la que va con el brazo pegado', () => {
+    expect(fibrasDe('Extensión sobre cabeza').p).toEqual(['Tríceps medial-lateral']);
+    expect(fibrasDe('Extensión tríceps polea').p).toEqual(['Tríceps']);
+    expect(fibrasDe('JM press').p).toEqual(['Tríceps']);
   });
 
   it('las secundarias son las que acompañan, no las que mandan', () => {
@@ -81,7 +98,11 @@ describe('las porciones que nombra se pueden pintar', () => {
   });
 
   it('todo grupo tiene a qué zona del cuerpo corresponde', () => {
-    for (const g of ['Bíceps', 'Tríceps', 'Hombro', 'Glúteo', 'Gemelos', 'Femoral', 'Aductores']) {
+    for (const g of [
+      'Bíceps', 'Bíceps braquial', 'Braquiorradial',
+      'Tríceps', 'Tríceps medial-lateral',
+      'Hombro', 'Glúteo', 'Gemelos', 'Femoral', 'Aductores',
+    ]) {
       expect(esGrupo(g), g).toBe(true);
       expect(ZONA_DE[g], g).toBeTruthy();
     }

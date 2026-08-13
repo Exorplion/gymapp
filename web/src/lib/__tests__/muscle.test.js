@@ -268,6 +268,61 @@ describe('groupStats', () => {
     const g = groupStats('Gemelos');
     expect(g).toMatchObject({ sets: 0, sesiones: 0, volumen: 0, porSemana: 0, dias: null, mejor: null, top: [] });
   });
+
+  describe('fibras (qué ejercicios hiciste, por fibra)', () => {
+    it('agrupa por fibra cuando hay más de una — el jalón abajo, el remo arriba', () => {
+      S.sessions = [sesion('a', '2026-08-09', [['Jalón ancho', s2], ['Remo neutro', serie]])];
+      const g = groupStats('Espalda');
+      expect(g.fibras).toEqual([
+        { fibra: 'Dorsal bajo', sets: 2, ejercicios: [{ name: 'Jalón ancho', sets: 2 }] },
+        { fibra: 'Dorsal alto', sets: 1, ejercicios: [{ name: 'Remo neutro', sets: 1 }] },
+      ]);
+    });
+
+    // Glúteo no tiene sub-fibra: todo cae en la misma bolsa, así que mostrar
+    // el desglose no agregaría nada sobre la lista plana de siempre.
+    it('sin más de una fibra distinta, no arma el desglose', () => {
+      S.sessions = [sesion('a', '2026-08-09', [['Hip thrust', serie], ['Patada de glúteo', s2]])];
+      expect(groupStats('Glúteo').fibras).toBe(null);
+    });
+
+    it('un ejercicio sin fibra reconocida cae bajo el nombre del grupo entero, no un "otros" inventado', () => {
+      // `cat` explícito y no el helper `sesion()`: fibrasDe() no reconoce
+      // "Zarandaja voladora" por el nombre, así que hace falta un cat propio
+      // en la entrada para que catOf() la cuente como Espalda de todos modos
+      // (mismo patrón que el test de muscleVolume más arriba).
+      S.sessions = [{
+        id: 'a', date: '2026-08-09', start: 1,
+        entries: [
+          { name: 'Jalón ancho', sets: serie },                        // Dorsal bajo
+          { name: 'Zarandaja voladora', cat: 'Espalda', sets: s2 },    // sin fibra -> "Espalda"
+        ],
+      }];
+      const g = groupStats('Espalda');
+      const bajo = g.fibras.find(f => f.fibra === 'Dorsal bajo');
+      const generico = g.fibras.find(f => f.fibra === 'Espalda');
+      expect(bajo.ejercicios).toEqual([{ name: 'Jalón ancho', sets: 1 }]);
+      expect(generico.ejercicios).toEqual([{ name: 'Zarandaja voladora', sets: 2 }]);
+    });
+
+    it('las fibras van de más a menos series, y los ejercicios dentro de cada una también', () => {
+      S.sessions = [sesion('a', '2026-08-09', [
+        ['Curl predicador', serie],         // Bíceps braquial: 1
+        ['Curl con barra', s2],             // Bíceps braquial: 2 (total 3)
+        ['Curl martillo', [{ w: 20, r: 10 }, { w: 20, r: 10 }, { w: 20, r: 10 }]], // Braquiorradial: 3
+      ])];
+      const g = groupStats('Bíceps');
+      expect(g.fibras.map(f => f.fibra)).toEqual(['Bíceps braquial', 'Braquiorradial']);
+      expect(g.fibras[0].ejercicios.map(e => e.name)).toEqual(['Curl con barra', 'Curl predicador']);
+    });
+
+    // Bíceps braquial vs braquiorradial ahora sí distingue dentro de "Bíceps"
+    // aunque la lámina no tenga un parche propio para cada uno (ver fibras.js).
+    it('bíceps y tríceps también se desglosan aunque no tengan parche propio en la lámina', () => {
+      S.sessions = [sesion('a', '2026-08-09', [['Curl predicador', serie], ['Curl martillo', s2]])];
+      expect(groupStats('Bíceps').fibras).not.toBe(null);
+    });
+  });
 });
 
 describe('diasTexto', () => {

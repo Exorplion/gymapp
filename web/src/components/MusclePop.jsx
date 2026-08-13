@@ -16,7 +16,7 @@ function kilos(v) {
 }
 
 export default function MusclePop({ stats, pos, onClose }) {
-  const { cat, dias, sets, sesiones, porSemana, volumen, mejor, top, ventana } = stats;
+  const { cat, dias, sets, sesiones, porSemana, volumen, mejor, top, fibras, ventana } = stats;
   const nunca = dias === null;
 
   return (
@@ -44,7 +44,25 @@ export default function MusclePop({ stats, pos, onClose }) {
             <div><b>{porSemana}</b><span>por sem.</span></div>
           </div>
 
-          {top.length > 0 && (
+          {/* Por fibra cuando hay más de una fibra real que distinguir (ver
+              groupStats en lib/muscle.js) — reemplaza a la lista plana y no
+              se muestra junto a ella, porque diría lo mismo dos veces. Sin
+              eso —Glúteo, Gemelos, cualquier grupo donde todo cae en la
+              misma bolsa— la lista plana de siempre. */}
+          {fibras ? (
+            <div className="mpop-fibras">
+              {fibras.map(f => (
+                <div key={f.fibra} className="mpop-fibra">
+                  <div className="mpop-fibra-nombre">{f.fibra}</div>
+                  <ul className="mpop-list">
+                    {f.ejercicios.map(e => (
+                      <li key={e.name}><span>{e.name}</span><b>{e.sets}</b></li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          ) : top.length > 0 && (
             <ul className="mpop-list">
               {top.map(t => (
                 <li key={t.name}><span>{t.name}</span><b>{t.sets}</b></li>

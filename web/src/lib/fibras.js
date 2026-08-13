@@ -46,6 +46,23 @@ const TABLA = [
   ['back extension', { p: ['Dorsal bajo'], s: ['Glúteo'] }],
   ['hiperext', { p: ['Dorsal bajo'], s: ['Glúteo'] }],
 
+  // ---- bíceps (sólo los nombres compuestos): van ANTES que pecho a propósito ----
+  // "Curl inclinado" tiene que ganarle al "inclinado" genérico de pecho de
+  // acá abajo — si no, un ejercicio de brazo cae clasificado como pecho. El
+  // orden ES la lógica (ver cabecera del archivo). El "curl" genérico NO se
+  // mueve para acá: se queda en su lugar de siempre, más abajo, DESPUÉS de
+  // "curl femoral"/"hamstring curl"/"leg curl" — si se moviera con estos,
+  // "Curl femoral" quedaría clasificado como bíceps en vez de isquiotibial.
+  //
+  // Bíceps braquial (agarre supinado) vs braquiorradial (agarre neutro o
+  // pronado): son dos músculos distintos que responden a agarres distintos,
+  // no una sola bolsa "bíceps".
+  ['curl predicador', { p: ['Bíceps braquial'] }],
+  ['curl inclinado', { p: ['Bíceps braquial'] }],
+  ['curl martillo', { p: ['Braquiorradial'] }],
+  ['curl inverso', { p: ['Braquiorradial'] }],
+  ['reverse curl', { p: ['Braquiorradial'] }],
+
   // ---- pecho: clavicular arriba, costal abajo ----
   ['press inclinado', { p: ['Clavicular'], s: ['Deltoides anterior', 'Tríceps'] }],
   ['inclinado', { p: ['Clavicular'], s: ['Deltoides anterior'] }],
@@ -97,12 +114,19 @@ const TABLA = [
   ['pantorrilla', { p: ['Gemelos'] }],
 
   // ---- brazo ----
-  ['curl predicador', { p: ['Bíceps'] }],
-  ['curl martillo', { p: ['Bíceps'] }],
-  ['curl inclinado', { p: ['Bíceps'] }],
-  ['curl', { p: ['Bíceps'] }],
+  // El resto de bíceps (curl predicador/inclinado/martillo/inverso) vive
+  // arriba, antes de pecho — ver la nota ahí. Acá sólo queda el genérico, que
+  // SÍ tiene que estar después de "curl femoral"/"hamstring curl"/"leg curl"
+  // (sección de pierna, más arriba): moverlo con el resto haría que "Curl
+  // femoral" cayera clasificado como bíceps.
+  ['curl', { p: ['Bíceps braquial'] }],
+  // Tríceps: según el criterio de Enzo, la extensión con el brazo pegado al
+  // cuerpo reparte entre las tres cabezas, y la que se hace con el brazo
+  // arriba (overhead) carga más medial y lateral — es su lectura, no una cita
+  // de un estudio, y queda anotada así para poder revisarla si cambia de
+  // opinión. Ver LÍMITE HONESTO arriba: esto ya era una guía, no una medición.
   ['jm press', { p: ['Tríceps'] }],
-  ['extension sobre cabeza', { p: ['Tríceps'] }],
+  ['extension sobre cabeza', { p: ['Tríceps medial-lateral'] }],
   ['tricep', { p: ['Tríceps'] }],
   ['pushdown', { p: ['Tríceps'] }],
 
@@ -134,23 +158,37 @@ export function fibrasDe(ex) {
 
 /* Los nombres que usa la tabla y NO son subzonas de la lámina: son grupos
    enteros, y se pintan como tales. Tenerlos acá explícitos evita que un typo
-   ("Gluteo" sin tilde) se convierta en una zona que nunca se pinta. */
-const GRUPOS = new Set(['Bíceps', 'Tríceps', 'Hombro', 'Glúteo', 'Gemelos', 'Femoral', 'Aductores']);
+   ("Gluteo" sin tilde) se convierta en una zona que nunca se pinta.
 
-/** ¿Este nombre es un grupo entero y no una porción? */
+   Bíceps braquial, Braquiorradial y Tríceps medial-lateral entran acá por lo
+   mismo que Femoral: son un músculo (o una porción) real, pero la lámina no
+   tiene un parche propio para ellos — brazo es una sola forma sin costuras.
+   Se pintan con el grupo entero (Bíceps/Tríceps) y el texto es el que lleva
+   la precisión que el dibujo no puede. */
+const GRUPOS = new Set([
+  'Bíceps', 'Bíceps braquial', 'Braquiorradial',
+  'Tríceps', 'Tríceps medial-lateral',
+  'Hombro', 'Glúteo', 'Gemelos', 'Femoral', 'Aductores',
+]);
+
+/** ¿Este nombre es un grupo entero (o una porción sin parche propio) y no una
+    subzona con su propia forma en la lámina? */
 export const esGrupo = n => GRUPOS.has(n);
 
 /** Cómo se pinta cada nombre sobre el cuerpo.
 
-    Femoral y Aductores no tienen subzona propia en la lámina —son parte de
-    Pierna— así que se pintan con el grupo entero. Es menos preciso que el
-    nombre, y prefiero que el dibujo diga de menos antes que señalar el músculo
-    equivocado. */
+    Femoral, Aductores, Bíceps braquial, Braquiorradial y Tríceps
+    medial-lateral no tienen subzona propia en la lámina, así que se pintan
+    con el grupo entero. Es menos preciso que el nombre, y prefiero que el
+    dibujo diga de menos antes que señalar el músculo equivocado. */
 export const ZONA_DE = {
   Femoral: 'Pierna',
   Aductores: 'Pierna',
   Bíceps: 'Bíceps',
+  'Bíceps braquial': 'Bíceps',
+  Braquiorradial: 'Bíceps',
   Tríceps: 'Tríceps',
+  'Tríceps medial-lateral': 'Tríceps',
   Hombro: 'Hombro',
   Glúteo: 'Glúteo',
   Gemelos: 'Gemelos',

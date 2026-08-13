@@ -11,6 +11,7 @@
 // "Press inclinado mancuernas". El match iba en una sola dirección.
 import { S } from './state.js';
 import { dstr, norm } from './format.js';
+import { fibrasDe } from './fibras.js';
 
 /** Los nueve grupos, en el orden en que se muestran. */
 export const MUSCLE_CATS = ['Pecho', 'Espalda', 'Hombro', 'Bíceps', 'Tríceps', 'Pierna', 'Glúteo', 'Gemelos', 'Abs'];
@@ -197,6 +198,10 @@ export function groupStats(cat, ventana = 28) {
   const cutoff = dstr(new Date(Date.now() - ventana * 86400000));
   let sets = 0, volumen = 0, sesiones = 0, mejor = null;
   const porEx = new Map();
+  // fibra -> (nombre de ejercicio -> series). Un Map de Maps y no un objeto
+  // plano porque el nombre de la fibra puede traer tildes/espacios y este
+  // camino nunca necesita usarlo como key de JSON ni nada por el estilo.
+  const porFibra = new Map();
 
   for (const s of S.sessions || []) {
     if (s.date < cutoff) continue;
@@ -212,9 +217,37 @@ export function groupStats(cat, ventana = 28) {
         if (!mejor || (st.w || 0) > mejor.w) mejor = { w: st.w || 0, r: st.r, name: e.name };
       }
       porEx.set(e.name, (porEx.get(e.name) || 0) + ss.length);
+
+      /* Sin fibra reconocida, el ejercicio cae bajo el nombre del grupo
+         entero (cat) — no bajo un "otros" inventado. Es honesto: "esto
+         trabaja Espalda" es lo único que sabemos de verdad de un ejercicio
+         sin mapear, y es lo mismo que ya decía antes de que existiera este
+         desglose. */
+      const fib = fibrasDe(e);
+      const principales = fib?.p?.length ? fib.p : [cat];
+      for (const nombreFibra of principales) {
+        if (!porFibra.has(nombreFibra)) porFibra.set(nombreFibra, new Map());
+        const porExDeFibra = porFibra.get(nombreFibra);
+        porExDeFibra.set(e.name, (porExDeFibra.get(e.name) || 0) + ss.length);
+      }
     }
     if (tocado) sesiones++;
   }
+
+  /* Sólo vale la pena mostrar el desglose si hay MÁS de una fibra real: un
+     grupo donde todo cae en una sola bolsa (Glúteo, Gemelos) no gana nada
+     mostrando "Glúteo: Hip thrust" en vez de la lista plana de siempre —
+     sería la misma información con un paso extra. */
+  const fibras = porFibra.size > 1
+    ? [...porFibra.entries()]
+      .map(([fibra, ejPorNombre]) => {
+        const ejercicios = [...ejPorNombre.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .map(([name, n]) => ({ name, sets: n }));
+        return { fibra, sets: ejercicios.reduce((a, e) => a + e.sets, 0), ejercicios };
+      })
+      .sort((a, b) => b.sets - a.sets)
+    : null;
 
   return {
     cat,
@@ -228,6 +261,9 @@ export function groupStats(cat, ventana = 28) {
     porSemana: Math.round((sesiones / (ventana / 7)) * 10) / 10,
     /** Los ejercicios con los que más lo trabajaste, de más a menos series. */
     top: [...porEx.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name, n]) => ({ name, sets: n })),
+    /** Lo mismo que `top`, pero agrupado por fibra — null si el grupo no
+        tiene más de una fibra distinta entre lo que registraste (ver arriba). */
+    fibras,
   };
 }
 
