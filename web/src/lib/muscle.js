@@ -279,3 +279,17 @@ export function uncategorized() {
   }));
   return out;
 }
+
+/** Los grupos musculares que trabajó una sesión ya cerrada, en el orden en
+    que aparecen (primer ejercicio de cada uno manda) y sin repetir — para
+    la pantalla de fin de sesión, que ilumina el cuerpo con lo que se hizo
+    HOY y no con el historial completo (eso ya lo hace groupStats). */
+export function catsDeSesion(sess) {
+  const vistos = new Set();
+  const out = [];
+  for (const e of sess?.entries || []) {
+    const c = catOf(e);
+    if (c && !vistos.has(c)) { vistos.add(c); out.push(c); }
+  }
+  return out;
+}

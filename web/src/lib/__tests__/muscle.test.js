@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../state.js';
-import { catOf, muscleVolume, uncategorized, daysSinceGroup, daysSinceAll, stalestGroups, MUSCLE_CATS, groupStats, diasTexto } from '../muscle.js';
+import { catOf, muscleVolume, uncategorized, daysSinceGroup, daysSinceAll, stalestGroups, MUSCLE_CATS, groupStats, diasTexto, catsDeSesion } from '../muscle.js';
 
 // Los 18 ejercicios de la rutina real de Enzo que HOY no matchean: son el
 // motivo de este bloque, así que son el test.
@@ -329,4 +329,31 @@ describe('diasTexto', () => {
   it.each([[null, 'nunca'], [0, 'hoy'], [1, 'ayer'], [2, 'hace 2 días'], [12, 'hace 12 días']])(
     '%s → %s', (d, esperado) => { expect(diasTexto(d)).toBe(esperado); },
   );
+});
+
+describe('catsDeSesion', () => {
+  it('devuelve los grupos únicos, en el orden de primera aparición', () => {
+    const sess = {
+      entries: [
+        { name: 'Press banca', cat: 'Pecho', sets: [{ w: 60, r: 8 }] },
+        { name: 'Sentadilla', cat: 'Pierna', sets: [{ w: 80, r: 8 }] },
+        { name: 'Press inclinado', cat: 'Pecho', sets: [{ w: 40, r: 10 }] },
+      ],
+    };
+    expect(catsDeSesion(sess)).toEqual(['Pecho', 'Pierna']);
+  });
+
+  it('sesión vacía no explota', () => {
+    expect(catsDeSesion({ entries: [] })).toEqual([]);
+  });
+
+  it('sin sess (undefined/null) no explota', () => {
+    expect(catsDeSesion(undefined)).toEqual([]);
+    expect(catsDeSesion(null)).toEqual([]);
+  });
+
+  it('una entrada sin cat asignado se clasifica por nombre, como en cualquier otro lado', () => {
+    const sess = { entries: [{ name: 'Press banca', sets: [{ w: 60, r: 8 }] }] };
+    expect(catsDeSesion(sess)).toEqual(['Pecho']);
+  });
 });
