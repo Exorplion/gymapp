@@ -129,7 +129,7 @@ header.top{
 
 /* ---------- layout ---------- */
 main{
-  position:relative;
+  position:relative;overflow:hidden;
   max-width:520px;margin:0 auto;
   padding:16px 18px calc(var(--tabs-h) + env(safe-area-inset-bottom) + 110px);
 }
@@ -147,12 +147,23 @@ main{
 .view.enter.dir-r{animation:slideR .38s var(--ease)}
 .view.enter.dir-l{animation:slideL .38s var(--ease)}
 .view.enter>*{animation:vin .38s var(--ease) backwards}
+/* z-index explícito, con position:relative para que z-index tenga efecto
+   (sin position, un elemento static ignora z-index aunque sea flex/grid no
+   aplica acá). Así la entrante queda SIEMPRE arriba de la saliente, sin
+   depender de que la animación con transform le cree un stacking context
+   implícito — eso es lo que pasaba antes, y con prefers-reduced-motion:reduce
+   apagando esa animación (ver media query más abajo) dejaba de funcionar:
+   .view.leave (position:absolute) pintaba por encima de .view.enter
+   (position:static) por orden de pintado de CSS, tapando la pantalla nueva
+   con la vieja congelada durante 380ms. */
+.view.enter{position:relative;z-index:1}
 /* La saliente ocupa el mismo lugar que la entrante (absolute, ancla a
    main gracias al position:relative de arriba) para que las dos se vean
    deslizando juntas y no una debajo de la otra. No participa del alto de
    main: si sumara su propio alto al de la entrante, la página saltaría de
-   scroll por 380ms cada vez que cambiás de pestaña. */
-.view.leave{position:absolute;top:0;left:0;right:0;pointer-events:none}
+   scroll por 380ms cada vez que cambiás de pestaña. z-index:0 (menor que el
+   de .enter) para que quede siempre debajo. */
+.view.leave{position:absolute;top:0;left:0;right:0;z-index:0;pointer-events:none}
 @keyframes slideOutL{to{opacity:0;transform:translate3d(-56px,0,0)}}
 @keyframes slideOutR{to{opacity:0;transform:translate3d(56px,0,0)}}
 .view.leave.dir-r{animation:slideOutL .38s var(--ease) forwards}
