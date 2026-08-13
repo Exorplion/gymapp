@@ -983,12 +983,19 @@ nav.tabbar button{
   flex:1;max-width:110px;display:flex;flex-direction:column;align-items:center;gap:3px;
   padding:7px 0 5px;border-radius:14px;color:var(--mut2);position:relative;transition:.15s;
 }
-nav.tabbar button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.tabbar button svg{width:24px;height:24px;stroke:currentColor;fill:none;fill-opacity:0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke-width .18s var(--ease),fill-opacity .18s var(--ease)}
 nav.tabbar button span{font-family:'Barlow Condensed';font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
 nav.tabbar button.on{color:var(--on-grad)}
 /* la píldora activa se rellena de gradiente, así que el ícono pasa a oscuro
-   sobre ella en vez de brillar sobre el fondo oscuro */
-nav.tabbar button.on svg{filter:none}
+   sobre ella en vez de brillar sobre el fondo oscuro.
+
+   Antes el único cambio entre pestaña activa/inactiva era el color — el
+   mismo ícono fino, solo que oscuro en vez de gris (el mismo patrón "básico"
+   que usa la app Teléfono de Apple). Acá además se engrosa el trazo y se le
+   suma un relleno tenue: no es un ícono nuevo, es el MISMO trazo puesto más
+   "pesado", como una versión bold del ícono thin — la distinción que separa
+   un tab bar prolijo de uno con más carácter. */
+nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opacity:.22}
 /* una sola píldora que se desliza y cubre el botón activo entero, en vez de
    reaparecer en cada botón: el movimiento es lo que comunica "te moviste de
    aquí para allá" */
