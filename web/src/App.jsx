@@ -6,7 +6,7 @@ import { initDragListeners } from './lib/drag.js';
 import { currentStreak } from './lib/streak.js';
 import { sessionExs } from './lib/session.js';
 import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
-import { empiezaExcluido, clasificarSwipe } from './lib/swipe.js';
+import { empiezaExcluido, clasificarSwipe, pintaHorizontal } from './lib/swipe.js';
 import { vibrate } from './lib/format.js';
 import { aplicarPaleta } from './lib/theme.js';
 import Header from './components/Header.jsx';
@@ -169,12 +169,38 @@ export default function App() {
   useEffect(() => {
     const main = mainRef.current;
     if (!main) return;
-    let inicio = null;   // {x,y} del pointerdown, o null si este gesto no cuenta
+    let inicio = null;    // {x,y} del pointerdown, o null si este gesto no cuenta
+    let reclamado = false; // ya le pedimos al navegador que no haga scroll con este toque
 
     function onDown(e) {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       if (empiezaExcluido(e.target)) return;
       inicio = { x: e.clientX, y: e.clientY };
+      reclamado = false;
+    }
+    /* Con touch real el navegador arranca a scrollear (y cancela el gesto,
+       ver onCancel) con MUY poco movimiento — bastante antes de que
+       clasificarSwipe tenga los 60px que necesita para decidir. Por eso acá,
+       apenas se nota que el gesto pinta horizontal (pintaHorizontal, umbral
+       mucho más chico), se llama preventDefault: eso es lo que le dice al
+       navegador "este toque lo manejo yo", y sin eso el swipe queda muerto
+       en cualquier pantalla que scrollee (o sea, casi todas salvo Inicio).
+
+       Tiene que ser un listener de touchmove, NO de pointermove: probado a
+       mano, preventDefault sobre el PointerEvent no frena el scroll nativo
+       (el pointercancel llega igual) — sólo el TouchEvent de verdad tiene ese
+       poder. onDown/onUp siguen en pointerdown/pointerup porque ahí sí sirven
+       (y así el gesto también funciona con mouse, para probarlo en desktop). */
+    function onTouchMove(e) {
+      if (!inicio) return;
+      if (reclamado) { e.preventDefault(); return; }
+      const t = e.touches[0];
+      if (!t) return;
+      const dx = t.clientX - inicio.x, dy = t.clientY - inicio.y;
+      const horizontal = pintaHorizontal(dx, dy);
+      if (horizontal === null) return;   // todavía poco movimiento, esperar
+      if (horizontal) { e.preventDefault(); reclamado = true; }
+      else inicio = null;   // pinta vertical: que scrollee normal, listo
     }
     function onUp(e) {
       if (!inicio) return;
@@ -201,10 +227,14 @@ export default function App() {
     function onCancel() { inicio = null; }
 
     main.addEventListener('pointerdown', onDown, { passive: true });
+    // No pasivo a propósito: preventDefault (ver onTouchMove) no hace nada
+    // si el listener es passive.
+    main.addEventListener('touchmove', onTouchMove, { passive: false });
     main.addEventListener('pointerup', onUp, { passive: true });
     main.addEventListener('pointercancel', onCancel, { passive: true });
     return () => {
       main.removeEventListener('pointerdown', onDown);
+      main.removeEventListener('touchmove', onTouchMove);
       main.removeEventListener('pointerup', onUp);
       main.removeEventListener('pointercancel', onCancel);
     };

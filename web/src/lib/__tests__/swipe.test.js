@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clasificarSwipe, empiezaExcluido } from '../swipe.js';
+import { clasificarSwipe, empiezaExcluido, pintaHorizontal } from '../swipe.js';
 
 describe('clasificarSwipe', () => {
   it('un swipe largo hacia la izquierda avanza', () => {
@@ -45,5 +45,23 @@ describe('empiezaExcluido', () => {
 
   it('un target sin .closest (no es un Element) no explota', () => {
     expect(empiezaExcluido({})).toBe(false);
+  });
+});
+
+describe('pintaHorizontal', () => {
+  it('con muy poco movimiento todavía no se sabe (null)', () => {
+    expect(pintaHorizontal(3, 2)).toBe(null);
+  });
+
+  it('ya pinta horizontal con poco movimiento, mucho antes del umbral de swipe', () => {
+    expect(pintaHorizontal(15, 2)).toBe(true);
+  });
+
+  it('ya pinta vertical con poco movimiento', () => {
+    expect(pintaHorizontal(3, 15)).toBe(false);
+  });
+
+  it('vertical dominante aunque el total ya sea grande', () => {
+    expect(pintaHorizontal(20, 100)).toBe(false);
   });
 });
