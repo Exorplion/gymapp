@@ -1,5 +1,5 @@
 // Puerto de funciones de sesión desde index.html
-import { S, bump, saveDraft, wBoth, openSheet, closeSheet } from './state.js';
+import { S, bump, saveDraft, wBoth, closeSheet } from './state.js';
 import { dstr, uid, round1, WD, fmtD, vibrate } from './format.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
@@ -454,8 +454,12 @@ export async function completeSession() {
   await saveDraft();
   stopRest();
   vibrate([30, 50, 30]);
+  // Antes acá se abría directo el sheet de detalle (session-view). Ahora
+  // primero pasa la pantalla de racha/resumen/cuerpo (SessionComplete.jsx,
+  // montada en App.jsx) — ella es quien abre session-view cuando termina o
+  // la salteás tocando. El confetti de PRs no cambia: sigue disparándose acá.
+  S.sessionComplete = sess;
   bump();
-  openSheet('session-view', { id: sess.id, justFinished: true });
   if (prs.length > 0) fireConfetti();
 }
 

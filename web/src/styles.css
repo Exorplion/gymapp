@@ -1889,3 +1889,37 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .bm-tag{font-size:12px;font-weight:600;text-align:center;line-height:1.35}
 .bm-tag.p{color:#22D3EE}
 .bm-tag.s{font-size:11px;font-weight:500;color:var(--mut)}
+
+/* ---------- pantalla de fin de sesión ---------- */
+#session-complete{
+  position:fixed;inset:0;z-index:70;
+  background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.16),transparent 60%),#05070c;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.sc-beat{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  opacity:0;padding:24px;text-align:center;
+  animation:sc-beat var(--dur) var(--ease) forwards;
+}
+@keyframes sc-beat{0%{opacity:0;transform:scale(.94)}12%{opacity:1;transform:none}88%{opacity:1}100%{opacity:0;transform:scale(1.04)}}
+.sc-beat.b1{--dur:1000ms;animation-delay:0ms}
+.sc-beat.b2{--dur:1050ms;animation-delay:950ms}
+.sc-beat.b3{--dur:1700ms;animation-delay:1950ms}
+@media (prefers-reduced-motion:reduce){
+  .sc-beat{animation:none;opacity:1}
+}
+
+.sc-flame{font-size:56px;line-height:1}
+.sc-streak-n{font-family:'Barlow Condensed';font-weight:800;font-size:64px;color:#fff;line-height:1}
+.sc-lbl{color:var(--mut);font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.1em}
+
+.sc-resumen{display:flex;gap:28px}
+.sc-resumen div{display:flex;flex-direction:column;align-items:center;gap:2px}
+.sc-resumen b{font-family:'Barlow Condensed';font-weight:800;font-size:34px;color:#fff}
+.sc-resumen span{color:var(--mut);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+
+/* .sil-pair (Silhouette) usa flex:1;min-height:0 — necesita un padre flex
+   con alto definido para poder estirarse; sin display:flex acá colapsaría
+   a alto cero. */
+.sc-cuerpo{display:flex;flex-direction:column;width:220px;height:280px}

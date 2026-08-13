@@ -41,6 +41,11 @@ export const S = {
   progTab: 'carga',
   ready: false,         // true una vez que loadAll() terminó
   sheet: null,           // {type, props} | null — qué sheet está abierto (Task 1 dejó esto pendiente para quien lo necesitara primero; ver Sheet.jsx)
+  // La sesión recién cerrada, mientras dura la pantalla de racha/resumen/
+  // cuerpo (SessionComplete.jsx) — null cuando no hay nada que mostrar.
+  // Separado de `sheet` porque es pantalla completa, no un sheet: los dos
+  // sistemas conviven pero no se pisan.
+  sessionComplete: null,
 };
 
 let version = 0;

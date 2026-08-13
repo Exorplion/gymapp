@@ -14,6 +14,7 @@ import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
 import Toast from './components/Toast.jsx';
 import RestTimer from './components/RestTimer.jsx';
+import SessionComplete from './components/SessionComplete.jsx';
 import Rutina from './components/screens/Rutina.jsx';
 import Inicio from './components/screens/Inicio.jsx';
 import Hoy, { SessStartInfo } from './components/screens/Hoy.jsx';
@@ -350,6 +351,7 @@ export default function App() {
         <SheetContent sheet={store.sheet} />
       </Sheet>
       <RestTimer />
+      <SessionComplete />
     </>
   );
 }
