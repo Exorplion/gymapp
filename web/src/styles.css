@@ -129,6 +129,7 @@ header.top{
 
 /* ---------- layout ---------- */
 main{
+  position:relative;
   max-width:520px;margin:0 auto;
   padding:16px 18px calc(var(--tabs-h) + env(safe-area-inset-bottom) + 110px);
 }
@@ -146,8 +147,19 @@ main{
 .view.enter.dir-r{animation:slideR .38s var(--ease)}
 .view.enter.dir-l{animation:slideL .38s var(--ease)}
 .view.enter>*{animation:vin .38s var(--ease) backwards}
+/* La saliente ocupa el mismo lugar que la entrante (absolute, ancla a
+   main gracias al position:relative de arriba) para que las dos se vean
+   deslizando juntas y no una debajo de la otra. No participa del alto de
+   main: si sumara su propio alto al de la entrante, la página saltaría de
+   scroll por 380ms cada vez que cambiás de pestaña. */
+.view.leave{position:absolute;top:0;left:0;right:0;pointer-events:none}
+@keyframes slideOutL{to{opacity:0;transform:translate3d(-56px,0,0)}}
+@keyframes slideOutR{to{opacity:0;transform:translate3d(56px,0,0)}}
+.view.leave.dir-r{animation:slideOutL .38s var(--ease) forwards}
+.view.leave.dir-l{animation:slideOutR .38s var(--ease) forwards}
 @media (prefers-reduced-motion:reduce){
-  .view.enter.dir-r,.view.enter.dir-l,.view.enter>*{animation:none}
+  .view.enter.dir-r,.view.enter.dir-l,.view.enter>*,
+  .view.leave.dir-r,.view.leave.dir-l{animation:none}
 }
 /* escalonado: la pantalla entra por partes en vez de un bloque único */
 .view.enter>*:nth-child(2){animation-delay:.045s}

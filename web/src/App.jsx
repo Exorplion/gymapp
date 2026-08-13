@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { idbOpenOnce } from './lib/db.js';
 import { S, useStore, bump, loadAll, closeSheet, openSheet } from './lib/state.js';
 import { applyComputedGoals } from './lib/macros.js';
@@ -115,6 +115,20 @@ const ORDEN = ['inicio', 'hoy', 'rutina', 'nutri', 'prog'];
    se pasa. */
 const SWIPE_ORDEN = ORDEN.filter(t => t !== 'hoy');
 
+/* Qué componente va para cada pestaña — la usan tanto la pantalla activa
+   como la saliente (Task de transición), así que vive aparte del JSX del
+   render para no duplicar el bloque de cinco casos. */
+function pantallaDe(tab) {
+  switch (tab) {
+    case 'inicio': return <Inicio />;
+    case 'hoy': return <Hoy />;
+    case 'rutina': return <Rutina />;
+    case 'nutri': return <Nutricion />;
+    case 'prog': return <Progreso />;
+    default: return null;
+  }
+}
+
 export default function App() {
   const store = useStore();
   const mainRef = useRef(null);
@@ -130,9 +144,27 @@ export default function App() {
   const dir = useMemo(() => {
     const antes = ORDEN.indexOf(tabPrevio.current);
     const ahora = ORDEN.indexOf(store.tab);
-    tabPrevio.current = store.tab;
     return ahora < antes ? 'l' : 'r';
   }, [store.tab]);
+
+  /* Antes sólo existía la pantalla activa: al cambiar de pestaña, la vieja
+     desaparecía de golpe y sólo la nueva entraba animada — un corte, no un
+     deslizamiento. Acá, mientras dura la transición (380ms, mismo tiempo que
+     ya usa .view.enter), se guarda cuál era la pantalla anterior para
+     poder pintarla también: sale deslizando hacia el lado opuesto de por
+     donde entra la nueva, las dos a la vez. La mutación de tabPrevio.current
+     se hace ACÁ (no en el useMemo de arriba) para que dir se calcule contra
+     el valor viejo antes de perderlo. */
+  const [saliente, setSaliente] = useState(null); // {tab, dir} | null
+  const salienteTimer = useRef(null);
+  useEffect(() => {
+    if (store.tab === tabPrevio.current) return;
+    setSaliente({ tab: tabPrevio.current, dir });
+    tabPrevio.current = store.tab;
+    clearTimeout(salienteTimer.current);
+    salienteTimer.current = setTimeout(() => setSaliente(null), 380);
+    return () => clearTimeout(salienteTimer.current);
+  }, [store.tab, dir]);
 
   // Puerto del arranque original (el script inline al final de index.html
   // hacía idbOpen().then(loadAll) antes de la primera render()). loadAll()
@@ -294,14 +326,18 @@ export default function App() {
       {/* Inicio no scrollea: necesita que main deje de reservar el colchón
           inferior que sí usan las pantallas largas. */}
       <main className={store.tab === 'inicio' ? 'full' : ''} ref={mainRef}>
+        {/* La saliente va PRIMERO en el DOM (así la entrante, montada después,
+            queda arriba en el stacking normal) y con pointer-events:none —
+            es puramente decorativa mientras se termina de ir. */}
+        {saliente && (
+          <div className={`view leave dir-${saliente.dir}`}>
+            {pantallaDe(saliente.tab)}
+          </div>
+        )}
         {/* El `key` es lo que hace que la animación se repita: sin él React
             reusa el mismo div y el navegador no vuelve a correr el keyframe. */}
         <div className={`view enter dir-${dir}`} key={store.tab}>
-          {store.tab === 'inicio' && <Inicio />}
-          {store.tab === 'hoy' && <Hoy />}
-          {store.tab === 'rutina' && <Rutina />}
-          {store.tab === 'nutri' && <Nutricion />}
-          {store.tab === 'prog' && <Progreso />}
+          {pantallaDe(store.tab)}
         </div>
       </main>
       {/* Con S.tab === 'hoy' ninguna pestaña sería la activa, y
