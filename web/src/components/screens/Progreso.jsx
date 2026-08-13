@@ -89,7 +89,7 @@ export default function Progreso() {
         )}
         <div className="seg" style={{ marginTop: 12 }}>
           {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['all', 'Todo']].map(([r, label]) => (
-            <button key={r} type="button" className={(S.progRange || 'all') === r ? 'on' : ''} onClick={() => { S.progRange = r; bump(); }}>{label}</button>
+            <button key={r} type="button" className={(S.progRange || 'all') === r ? 'on' : ''} aria-pressed={(S.progRange || 'all') === r} onClick={() => { S.progRange = r; bump(); }}>{label}</button>
           ))}
         </div>
         <div style={{ marginTop: 12 }}><Chart id="chartWeight" pts={wpts} opts={{ unit: 'kg' }} /></div>
@@ -109,7 +109,7 @@ export default function Progreso() {
 
       <div className="seg" style={{ margin: 'var(--s3) 0' }}>
         {[['carga', 'Carga'], ['1rm', '1RM'], ['volumen', 'Volumen']].map(([k, label]) => (
-          <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => { S.progTab = k; bump(); }}>{label}</button>
+          <button key={k} type="button" className={tab === k ? 'on' : ''} aria-pressed={tab === k} onClick={() => { S.progTab = k; bump(); }}>{label}</button>
         ))}
       </div>
 
@@ -119,7 +119,7 @@ export default function Progreso() {
         ) : (
           <div className="card">
             <div className="field" style={{ marginBottom: 10 }}>
-              <select value={S.progEx || ''} onChange={e => { S.progEx = e.target.value; bump(); }}>
+              <select aria-label="Elegir ejercicio" value={S.progEx || ''} onChange={e => { S.progEx = e.target.value; bump(); }}>
                 {exNames.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>

@@ -101,14 +101,14 @@ export default function MealForm({ slot: slotInicial }) {
 
       <div className="seg" style={{ marginBottom: 'var(--s3)' }}>
         {SLOTS.map(s => (
-          <button key={s.k} type="button" className={slot === s.k ? 'on' : ''} onClick={() => setSlot(s.k)}>{s.label}</button>
+          <button key={s.k} type="button" className={slot === s.k ? 'on' : ''} aria-pressed={slot === s.k} onClick={() => setSlot(s.k)}>{s.label}</button>
         ))}
       </div>
 
       <div className="field">
         <input
           ref={buscarRef} value={q} onChange={e => setQ(e.target.value)}
-          placeholder="🔍 Buscá un alimento" autoComplete="off"
+          placeholder="🔍 Buscá un alimento" aria-label="Buscar un alimento" autoComplete="off"
         />
       </div>
 
@@ -198,14 +198,14 @@ function AlimentoNuevo({ nombre, onListo, onCancel }) {
         y queda guardado para siempre.
       </div>
       <div className="field">
-        <label>Nombre</label>
-        <input value={name} onChange={e => setName(e.target.value)} autoComplete="off" />
+        <label htmlFor="alimento-nombre">Nombre</label>
+        <input id="alimento-nombre" value={name} onChange={e => setName(e.target.value)} autoComplete="off" />
       </div>
       <div className="f2">
-        <div className="field"><label>Calorías</label><input type="number" inputMode="numeric" placeholder="0" value={kcal} onChange={e => setKcal(e.target.value)} /></div>
-        <div className="field"><label>Proteína (g)</label><input type="number" inputMode="decimal" placeholder="0" value={prot} onChange={e => setProt(e.target.value)} /></div>
-        <div className="field"><label>Carbos (g)</label><input type="number" inputMode="decimal" placeholder="0" value={carbs} onChange={e => setCarbs(e.target.value)} /></div>
-        <div className="field"><label>Grasa (g)</label><input type="number" inputMode="decimal" placeholder="0" value={fat} onChange={e => setFat(e.target.value)} /></div>
+        <div className="field"><label htmlFor="alimento-kcal">Calorías</label><input id="alimento-kcal" type="number" inputMode="numeric" placeholder="0" value={kcal} onChange={e => setKcal(e.target.value)} /></div>
+        <div className="field"><label htmlFor="alimento-prot">Proteína (g)</label><input id="alimento-prot" type="number" inputMode="decimal" placeholder="0" value={prot} onChange={e => setProt(e.target.value)} /></div>
+        <div className="field"><label htmlFor="alimento-carbs">Carbos (g)</label><input id="alimento-carbs" type="number" inputMode="decimal" placeholder="0" value={carbs} onChange={e => setCarbs(e.target.value)} /></div>
+        <div className="field"><label htmlFor="alimento-fat">Grasa (g)</label><input id="alimento-fat" type="number" inputMode="decimal" placeholder="0" value={fat} onChange={e => setFat(e.target.value)} /></div>
       </div>
       <button type="button" className="btn" onClick={crear}>Guardar y agregar</button>
       <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={onCancel}>Cancelar</button>

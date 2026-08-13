@@ -32,8 +32,9 @@ export default function DayEdit({ wd }) {
     <>
       <h2>{WD[wd]}</h2>
       <div className="field">
-        <label>Nombre del día (grupos musculares)</label>
+        <label htmlFor="dayedit-nombre">Nombre del día (grupos musculares)</label>
         <input
+          id="dayedit-nombre"
           ref={inputRef}
           value={name}
           onChange={e => setName(e.target.value)}
@@ -49,6 +50,7 @@ export default function DayEdit({ wd }) {
                 key={x}
                 type="button"
                 className={`chip ${x === day ? 'blue' : ''}`}
+                aria-pressed={x === day}
                 onClick={() => setDay(x)}
               >
                 {WD1[x]}

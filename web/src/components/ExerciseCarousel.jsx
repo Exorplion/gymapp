@@ -289,6 +289,7 @@ function ExerciseSlide({ m, wd, started }) {
               type="button"
               className={`chip ${uni ? 'on' : ''}`}
               style={{ marginBottom: 8 }}
+              aria-pressed={uni}
               onClick={() => toggleUnilateral(ex.id)}
             >
               {uni ? '✓ Un lado por vez' : 'Un lado por vez'}
@@ -323,9 +324,15 @@ function ExerciseSlide({ m, wd, started }) {
         {done.length > 0 && (
           <div className="chips setchips">
             {done.map((s, i) => (
-              <span key={i} className="chip blue" onClick={() => deleteSet(ex.id, i)}>
+              <button
+                key={i}
+                type="button"
+                className="chip blue"
+                aria-label={`Borrar serie: ${fmtNum(round1(s.w))} kg por ${s.r}`}
+                onClick={() => deleteSet(ex.id, i)}
+              >
                 {fmtNum(round1(s.w))}kg × {s.r}<span className="x">✕</span>
-              </span>
+              </button>
             ))}
           </div>
         )}

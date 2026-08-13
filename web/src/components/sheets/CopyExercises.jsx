@@ -100,8 +100,8 @@ export default function CopyExercises({ mode = 'push', wd }) {
         <>
           {S.lib.length > 0 && (
             <div className="seg" style={{ marginBottom: 'var(--s3)' }}>
-              <button type="button" className={fuente === 'semana' ? 'on' : ''} onClick={() => { setFuente('semana'); setSel(null); }}>Mi semana</button>
-              <button type="button" className={fuente === 'lib' ? 'on' : ''} onClick={() => { setFuente('lib'); setSel(null); }}>Mis rutinas</button>
+              <button type="button" className={fuente === 'semana' ? 'on' : ''} aria-pressed={fuente === 'semana'} onClick={() => { setFuente('semana'); setSel(null); }}>Mi semana</button>
+              <button type="button" className={fuente === 'lib' ? 'on' : ''} aria-pressed={fuente === 'lib'} onClick={() => { setFuente('lib'); setSel(null); }}>Mis rutinas</button>
             </div>
           )}
           {fuente === 'semana' ? (
@@ -112,7 +112,7 @@ export default function CopyExercises({ mode = 'push', wd }) {
               ) : (
                 <div className="chips">
                   {otros.map(d => (
-                    <button key={d} type="button" className={`chip ${d === origenWd ? 'blue' : ''}`} onClick={() => { setOrigenWd(d); setSel(null); }}>
+                    <button key={d} type="button" className={`chip ${d === origenWd ? 'blue' : ''}`} aria-pressed={d === origenWd} onClick={() => { setOrigenWd(d); setSel(null); }}>
                       {WD1[d]} · {S.routine[d]?.name || WD[d]}
                     </button>
                   ))}
@@ -122,8 +122,8 @@ export default function CopyExercises({ mode = 'push', wd }) {
           ) : (
             <>
               <div className="field">
-                <label>¿De qué rutina?</label>
-                <select value={libId ?? ''} onChange={e => { setLibId(e.target.value); setLibWd(null); setSel(null); }}>
+                <label htmlFor="copyex-rutina">¿De qué rutina?</label>
+                <select id="copyex-rutina" value={libId ?? ''} onChange={e => { setLibId(e.target.value); setLibWd(null); setSel(null); }}>
                   {S.lib.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               </div>
@@ -132,7 +132,7 @@ export default function CopyExercises({ mode = 'push', wd }) {
                   <label>¿De qué día de esa rutina?</label>
                   <div className="chips">
                     {diasLib.map(d => (
-                      <button key={d} type="button" className={`chip ${d === libWdActivo ? 'blue' : ''}`} onClick={() => { setLibWd(d); setSel(null); }}>
+                      <button key={d} type="button" className={`chip ${d === libWdActivo ? 'blue' : ''}`} aria-pressed={d === libWdActivo} onClick={() => { setLibWd(d); setSel(null); }}>
                         {WD1[d]} · {rutinaLib.days[d].name || WD[d]}
                       </button>
                     ))}
@@ -166,6 +166,7 @@ export default function CopyExercises({ mode = 'push', wd }) {
                   key={d}
                   type="button"
                   className={`chip ancho ${d === destinoWd ? 'blue' : ''}`}
+                  aria-pressed={d === destinoWd}
                   onClick={() => { setDestinoWd(d); setSel(null); }}
                 >
                   <span className="chip-dia">{WD1[d]}</span>

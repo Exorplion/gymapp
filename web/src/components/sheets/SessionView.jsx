@@ -148,7 +148,7 @@ export default function SessionView({ id, justFinished = false }) {
           <div className="sect">Agregar un ejercicio que hiciste</div>
           <div className="chips" style={{ marginBottom: 'var(--s3)' }}>
             {delDia.map(ex => (
-              <span key={ex.id} className="chip blue" onClick={() => agregarEjercicio(ex)}>＋ {ex.name}</span>
+              <button key={ex.id} type="button" className="chip blue" onClick={() => agregarEjercicio(ex)}>＋ {ex.name}</button>
             ))}
           </div>
         </>

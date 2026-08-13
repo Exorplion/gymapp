@@ -36,6 +36,22 @@ export default function RestTimer() {
   function skip(e) { e.stopPropagation(); stopRest(); }
   function minimize(e) { e.stopPropagation(); minimizeRest(); }
 
+  /* La franja entera es "tocar para expandir", pero adentro tiene botones de
+     verdad (−30s/+30s/Saltar) — no puede ser un <button>, anidar interactivos
+     no es válido HTML. role="button" + tabIndex la hace alcanzable por
+     teclado igual.
+
+     El chequeo target===currentTarget importa: sin él, apretar Enter en
+     "Saltar" (que SÍ está enfocado y responde a Enter por su cuenta, como
+     cualquier <button>) dispararía ADEMÁS expandRest() acá, porque el keydown
+     original sigue burbujeando aunque el click que ese botón generó ya se
+     haya frenado con stopPropagation() más arriba — eso frena el click, no
+     este keydown, que es un evento aparte. */
+  function onKeyExpand(e) {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); expandRest(); }
+  }
+
   return (
     <>
       <svg width="0" height="0" style={{ position: 'absolute' }}>
@@ -47,7 +63,16 @@ export default function RestTimer() {
         </defs>
       </svg>
 
-      <div id="restbar" className={T.state === 'minimized' ? 'show' : ''} data-act="rest-expand" onClick={expandRest}>
+      <div
+        id="restbar"
+        className={T.state === 'minimized' ? 'show' : ''}
+        data-act="rest-expand"
+        role="button"
+        tabIndex={0}
+        aria-label={`Descanso, ${timeStr} restantes. Tocar para expandir.`}
+        onClick={expandRest}
+        onKeyDown={onKeyExpand}
+      >
         <div className="rb-top">
           <div>
             <div className="rb-lbl">Descanso</div>

@@ -103,56 +103,57 @@ export default function Profile() {
 
       <h3>Sexo</h3>
       <div className="seg">
-        <button type="button" className={draft.sex === 'm' ? 'on' : ''} onClick={() => setField('sex', 'm')}>Hombre</button>
-        <button type="button" className={draft.sex === 'f' ? 'on' : ''} onClick={() => setField('sex', 'f')}>Mujer</button>
+        <button type="button" className={draft.sex === 'm' ? 'on' : ''} aria-pressed={draft.sex === 'm'} onClick={() => setField('sex', 'm')}>Hombre</button>
+        <button type="button" className={draft.sex === 'f' ? 'on' : ''} aria-pressed={draft.sex === 'f'} onClick={() => setField('sex', 'f')}>Mujer</button>
       </div>
 
       <div className="f2" style={{ marginTop: 14 }}>
         <div className="field">
-          <label>Edad</label>
-          <input ref={ageRef} type="number" inputMode="numeric" defaultValue={draft.age ?? ''} placeholder="24" onChange={e => setNumField('age', e.target.value)} />
+          <label htmlFor="perfil-edad">Edad</label>
+          <input id="perfil-edad" ref={ageRef} type="number" inputMode="numeric" defaultValue={draft.age ?? ''} placeholder="24" onChange={e => setNumField('age', e.target.value)} />
         </div>
         <div className="field">
-          <label>Altura (cm)</label>
-          <input type="number" inputMode="numeric" defaultValue={draft.height ?? ''} placeholder="179" onChange={e => setNumField('height', e.target.value)} />
+          <label htmlFor="perfil-altura">Altura (cm)</label>
+          <input id="perfil-altura" type="number" inputMode="numeric" defaultValue={draft.height ?? ''} placeholder="179" onChange={e => setNumField('height', e.target.value)} />
         </div>
       </div>
 
       <div className="field">
-        <label>
+        <label htmlFor="perfil-peso">
           Peso (kg)
-          {bw != null && <> · <span className="txt-blue" role="button" onClick={useLastWeight}>usar último registrado ({fmtNum(round1(bw))})</span></>}
+          {bw != null && <> · <button type="button" className="txt-blue linklike" onClick={useLastWeight}>usar último registrado ({fmtNum(round1(bw))})</button></>}
         </label>
-        <input ref={weightRef} type="number" inputMode="decimal" step="any" defaultValue={draft.weightKg ?? ''} placeholder="74" onChange={e => setNumField('weightKg', e.target.value)} />
+        <input id="perfil-peso" ref={weightRef} type="number" inputMode="decimal" step="any" defaultValue={draft.weightKg ?? ''} placeholder="74" onChange={e => setNumField('weightKg', e.target.value)} />
       </div>
 
-      <h3>Nivel de actividad</h3>
+      <h3 id="perfil-hlbl-actividad">Nivel de actividad</h3>
       <div className="field">
-        <select value={draft.activity} onChange={e => setField('activity', e.target.value)}>
+        <select aria-labelledby="perfil-hlbl-actividad" value={draft.activity} onChange={e => setField('activity', e.target.value)}>
           {Object.keys(ACTF).map(k => <option key={k} value={k}>{ACT_LABEL[k]} — {ACT_HINT[k]}</option>)}
         </select>
       </div>
 
-      <h3>Objetivo</h3>
+      <h3 id="perfil-hlbl-objetivo">Objetivo</h3>
       <div className="field">
-        <select value={draft.goal} onChange={e => setField('goal', e.target.value)}>
+        <select aria-labelledby="perfil-hlbl-objetivo" value={draft.goal} onChange={e => setField('goal', e.target.value)}>
           {Object.keys(GOALDELTA).map(k => <option key={k} value={k}>{GOAL_LABEL[k]} — {GOAL_HINT[k]}</option>)}
         </select>
       </div>
 
       <h3>Reparto de proteína y grasa</h3>
       <div className="rangerow">
-        <div className="rlbl"><span>Proteína</span><b>{m ? m.prot + ' g' : '—'}</b></div>
-        <input type="range" min="0" max="100" value={Math.round((draft.proteinPref ?? 0.5) * 100)} onChange={e => setField('proteinPref', (+e.target.value) / 100)} />
+        <div className="rlbl" id="perfil-lbl-prot"><span>Proteína</span><b>{m ? m.prot + ' g' : '—'}</b></div>
+        <input type="range" aria-labelledby="perfil-lbl-prot" min="0" max="100" value={Math.round((draft.proteinPref ?? 0.5) * 100)} onChange={e => setField('proteinPref', (+e.target.value) / 100)} />
       </div>
       <div className="rangerow">
-        <div className="rlbl"><span>Grasa</span><b>{m ? m.fat + ' g' : '—'}</b></div>
-        <input type="range" min="0" max="100" value={Math.round((draft.fatPref ?? 0.5) * 100)} onChange={e => setField('fatPref', (+e.target.value) / 100)} />
+        <div className="rlbl" id="perfil-lbl-grasa"><span>Grasa</span><b>{m ? m.fat + ' g' : '—'}</b></div>
+        <input type="range" aria-labelledby="perfil-lbl-grasa" min="0" max="100" value={Math.round((draft.fatPref ?? 0.5) * 100)} onChange={e => setField('fatPref', (+e.target.value) / 100)} />
       </div>
 
-      <h3>TDEE empírico <span className="txt-mut" style={{ fontWeight: 500, letterSpacing: 0, textTransform: 'none', fontSize: 12 }}>(opcional)</span></h3>
+      <h3 id="perfil-hlbl-tdee">TDEE empírico <span className="txt-mut" style={{ fontWeight: 500, letterSpacing: 0, textTransform: 'none', fontSize: 12 }}>(opcional)</span></h3>
       <div className="field">
         <input
+          aria-labelledby="perfil-hlbl-tdee"
           type="number" inputMode="numeric"
           defaultValue={draft.tdeeEmpirical ?? ''}
           placeholder={m ? `calculado: ${m.tdeeCalc}` : 'kcal de mantenimiento real'}

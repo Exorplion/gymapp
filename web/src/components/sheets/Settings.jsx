@@ -253,14 +253,14 @@ export default function Settings() {
 
       <h3>Unidad de peso</h3>
       <div className="seg">
-        <button type="button" className={S.cfg.unit === 'kg' ? 'on' : ''} onClick={() => setUnit('kg')}>Kilos (kg)</button>
-        <button type="button" className={S.cfg.unit === 'lb' ? 'on' : ''} onClick={() => setUnit('lb')}>Libras (lb)</button>
+        <button type="button" className={S.cfg.unit === 'kg' ? 'on' : ''} aria-pressed={S.cfg.unit === 'kg'} onClick={() => setUnit('kg')}>Kilos (kg)</button>
+        <button type="button" className={S.cfg.unit === 'lb' ? 'on' : ''} aria-pressed={S.cfg.unit === 'lb'} onClick={() => setUnit('lb')}>Libras (lb)</button>
       </div>
 
       <h3>Cuerpo del mapa muscular</h3>
       <div className="seg">
-        <button type="button" className={cuerpoSexo() !== 'f' ? 'on' : ''} onClick={() => setCuerpo('m')}>Hombre</button>
-        <button type="button" className={cuerpoSexo() === 'f' ? 'on' : ''} onClick={() => setCuerpo('f')}>Mujer</button>
+        <button type="button" className={cuerpoSexo() !== 'f' ? 'on' : ''} aria-pressed={cuerpoSexo() !== 'f'} onClick={() => setCuerpo('m')}>Hombre</button>
+        <button type="button" className={cuerpoSexo() === 'f' ? 'on' : ''} aria-pressed={cuerpoSexo() === 'f'} onClick={() => setCuerpo('f')}>Mujer</button>
       </div>
       <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)', lineHeight: 1.45 }}>
         Cambia la silueta de Inicio. Los grupos musculares y tus datos son los mismos.
@@ -278,9 +278,9 @@ export default function Settings() {
 
       <h3>Al mover un día sobre otro ocupado</h3>
       <div className="seg">
-        <button type="button" className={(S.cfg.dayDrop || 'ask') === 'ask' ? 'on' : ''} onClick={() => setDayDrop('ask')}>Preguntar</button>
-        <button type="button" className={S.cfg.dayDrop === 'shift' ? 'on' : ''} onClick={() => setDayDrop('shift')}>Correr</button>
-        <button type="button" className={S.cfg.dayDrop === 'swap' ? 'on' : ''} onClick={() => setDayDrop('swap')}>Intercambiar</button>
+        <button type="button" className={(S.cfg.dayDrop || 'ask') === 'ask' ? 'on' : ''} aria-pressed={(S.cfg.dayDrop || 'ask') === 'ask'} onClick={() => setDayDrop('ask')}>Preguntar</button>
+        <button type="button" className={S.cfg.dayDrop === 'shift' ? 'on' : ''} aria-pressed={S.cfg.dayDrop === 'shift'} onClick={() => setDayDrop('shift')}>Correr</button>
+        <button type="button" className={S.cfg.dayDrop === 'swap' ? 'on' : ''} aria-pressed={S.cfg.dayDrop === 'swap'} onClick={() => setDayDrop('swap')}>Intercambiar</button>
       </div>
       <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)', lineHeight: 1.45 }}>
         <b>Correr</b>: el día que estaba ahí se va al próximo día libre. <b>Intercambiar</b>: los dos cambian de lugar.
@@ -288,8 +288,8 @@ export default function Settings() {
 
       <h3>Metas nutricionales diarias</h3>
       <div className="seg">
-        <button type="button" className={S.cfg.goalsAuto ? 'on' : ''} onClick={() => setGoalMode(true)}>Desde perfil</button>
-        <button type="button" className={S.cfg.goalsAuto ? '' : 'on'} onClick={() => setGoalMode(false)}>Manual</button>
+        <button type="button" className={S.cfg.goalsAuto ? 'on' : ''} aria-pressed={S.cfg.goalsAuto} onClick={() => setGoalMode(true)}>Desde perfil</button>
+        <button type="button" className={S.cfg.goalsAuto ? '' : 'on'} aria-pressed={!S.cfg.goalsAuto} onClick={() => setGoalMode(false)}>Manual</button>
       </div>
       {S.cfg.goalsAuto ? (
         <>
@@ -300,10 +300,10 @@ export default function Settings() {
         </>
       ) : (
         <div className="f4" style={{ marginTop: 12 }}>
-          <div className="field"><label>Kcal</label><input type="number" inputMode="numeric" defaultValue={g.kcal} onBlur={e => setGoal('kcal', e.target.value)} /></div>
-          <div className="field"><label>Prot</label><input type="number" inputMode="numeric" defaultValue={g.p} onBlur={e => setGoal('p', e.target.value)} /></div>
-          <div className="field"><label>Carb</label><input type="number" inputMode="numeric" defaultValue={g.c} onBlur={e => setGoal('c', e.target.value)} /></div>
-          <div className="field"><label>Grasa</label><input type="number" inputMode="numeric" defaultValue={g.f} onBlur={e => setGoal('f', e.target.value)} /></div>
+          <div className="field"><label htmlFor="meta-kcal">Kcal</label><input id="meta-kcal" type="number" inputMode="numeric" defaultValue={g.kcal} onBlur={e => setGoal('kcal', e.target.value)} /></div>
+          <div className="field"><label htmlFor="meta-prot">Prot</label><input id="meta-prot" type="number" inputMode="numeric" defaultValue={g.p} onBlur={e => setGoal('p', e.target.value)} /></div>
+          <div className="field"><label htmlFor="meta-carb">Carb</label><input id="meta-carb" type="number" inputMode="numeric" defaultValue={g.c} onBlur={e => setGoal('c', e.target.value)} /></div>
+          <div className="field"><label htmlFor="meta-grasa">Grasa</label><input id="meta-grasa" type="number" inputMode="numeric" defaultValue={g.f} onBlur={e => setGoal('f', e.target.value)} /></div>
         </div>
       )}
 

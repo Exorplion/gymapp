@@ -87,8 +87,9 @@ export default function FoodVoice() {
       </button>
 
       <div className="field" style={{ marginTop: 'var(--s3)' }}>
-        <label>O escribilo</label>
+        <label htmlFor="foodvoice-texto">O escribilo</label>
         <input
+          id="foodvoice-texto"
           type="text"
           value={text}
           placeholder="dos huevos, 150 g de pollo…"

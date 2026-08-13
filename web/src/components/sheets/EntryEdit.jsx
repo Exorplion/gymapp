@@ -79,8 +79,8 @@ export default function EntryEdit({ sessId, idx }) {
       </div>
 
       <div className="field">
-        <label>Qué ejercicio fue</label>
-        <input ref={nameRef} value={name} onChange={e => setName(e.target.value)} autoComplete="off" />
+        <label htmlFor="entryedit-nombre">Qué ejercicio fue</label>
+        <input id="entryedit-nombre" ref={nameRef} value={name} onChange={e => setName(e.target.value)} autoComplete="off" />
       </div>
 
       {sugeridos.length > 0 && (
@@ -106,6 +106,7 @@ export default function EntryEdit({ sessId, idx }) {
             key={c}
             type="button"
             className={`chip ${cat === c ? 'on' : (!cat && auto === c ? 'blue' : '')}`}
+            aria-pressed={cat === c}
             onClick={() => setCat(cat === c ? '' : c)}
           >
             {c}
@@ -120,6 +121,7 @@ export default function EntryEdit({ sessId, idx }) {
             key={e.id}
             type="button"
             className={`chip ${equip === e.id ? 'on' : ''}`}
+            aria-pressed={equip === e.id}
             onClick={() => setEquip(equip === e.id ? '' : e.id)}
           >
             {e.label}
@@ -140,6 +142,7 @@ export default function EntryEdit({ sessId, idx }) {
         <button
           type="button"
           className={`chip ${unilateral ? 'on' : ''}`}
+          aria-pressed={unilateral}
           onClick={() => setUnilateral(u => !u)}
         >
           Un lado por vez

@@ -64,6 +64,7 @@ export default function TabBar({ active, onChange }) {
           key={t.id}
           type="button"
           className={active === t.id ? 'on' : ''}
+          aria-current={active === t.id ? 'page' : undefined}
           onClick={() => onChange(t.id)}
         >
           <svg viewBox="0 0 24 24">

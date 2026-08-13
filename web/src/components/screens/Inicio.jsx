@@ -108,6 +108,7 @@ export default function Inicio() {
               key={d}
               type="button"
               className={`wd ${has ? 'has' : ''} ${d === wd ? 'today on' : ''} ${listo ? 'done' : ''}`}
+              aria-current={d === wd ? 'date' : undefined}
               onClick={() => { S.hoyDay = d; S.tab = 'hoy'; bump(); }}
             >
               <div className="l">{WD1[d]}</div>

@@ -60,25 +60,25 @@ export default function BodyForm() {
     <>
       <h2>Registro corporal</h2>
       <div className="field">
-        <label>Peso (kg)</label>
-        <input ref={weightRef} type="number" inputMode="decimal" step="any" placeholder={last.weight ?? '70.0'} value={weight} onChange={e => setWeight(e.target.value)} />
+        <label htmlFor="body-peso">Peso (kg)</label>
+        <input id="body-peso" ref={weightRef} type="number" inputMode="decimal" step="any" placeholder={last.weight ?? '70.0'} value={weight} onChange={e => setWeight(e.target.value)} />
       </div>
       <div className="f2">
         <div className="field">
-          <label>Cintura (cm)</label>
-          <input type="number" inputMode="decimal" step="any" placeholder={last.waist ?? '—'} value={waist} onChange={e => setWaist(e.target.value)} />
+          <label htmlFor="body-cintura">Cintura (cm)</label>
+          <input id="body-cintura" type="number" inputMode="decimal" step="any" placeholder={last.waist ?? '—'} value={waist} onChange={e => setWaist(e.target.value)} />
         </div>
         <div className="field">
-          <label>Brazo (cm)</label>
-          <input type="number" inputMode="decimal" step="any" placeholder={last.arm ?? '—'} value={arm} onChange={e => setArm(e.target.value)} />
+          <label htmlFor="body-brazo">Brazo (cm)</label>
+          <input id="body-brazo" type="number" inputMode="decimal" step="any" placeholder={last.arm ?? '—'} value={arm} onChange={e => setArm(e.target.value)} />
         </div>
         <div className="field">
-          <label>Pecho (cm)</label>
-          <input type="number" inputMode="decimal" step="any" placeholder={last.chest ?? '—'} value={chest} onChange={e => setChest(e.target.value)} />
+          <label htmlFor="body-pecho">Pecho (cm)</label>
+          <input id="body-pecho" type="number" inputMode="decimal" step="any" placeholder={last.chest ?? '—'} value={chest} onChange={e => setChest(e.target.value)} />
         </div>
         <div className="field">
-          <label>Pierna (cm)</label>
-          <input type="number" inputMode="decimal" step="any" placeholder={last.leg ?? '—'} value={leg} onChange={e => setLeg(e.target.value)} />
+          <label htmlFor="body-pierna">Pierna (cm)</label>
+          <input id="body-pierna" type="number" inputMode="decimal" step="any" placeholder={last.leg ?? '—'} value={leg} onChange={e => setLeg(e.target.value)} />
         </div>
       </div>
       <button type="button" className="btn" onClick={save}>Guardar registro</button>

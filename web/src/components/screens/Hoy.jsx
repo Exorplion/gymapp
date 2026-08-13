@@ -141,6 +141,7 @@ export default function Hoy() {
                   key={d}
                   type="button"
                   className={`wd ${has ? 'has' : ''} ${d === wd ? 'on' : ''} ${isToday ? 'today' : ''} ${hecho ? 'done' : ''}`}
+                  aria-pressed={d === wd}
                   onClick={() => { S.hoyDay = d; bump(); }}
                 >
                   <div className="l">{WD1[d]}</div>

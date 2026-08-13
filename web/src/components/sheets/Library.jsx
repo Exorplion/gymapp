@@ -38,10 +38,10 @@ function LibraryList() {
               const cur = r.name === S.cfg.routineName;
               return (
                 <div className="row" key={r.id}>
-                  <div className="grow" data-act="lib-apply" style={{ cursor: 'pointer' }} onClick={() => applyLibRoutine(r.id)}>
+                  <button type="button" className="grow linkcard" data-act="lib-apply" onClick={() => applyLibRoutine(r.id)}>
                     <div className="t">{r.name}{cur && <span className="lib-tag">en uso</span>}</div>
                     <div className="s">{nd} días · {ne} ejercicios · guardada {fmtD(r.savedAt)}</div>
-                  </div>
+                  </button>
                   <button type="button" className="mini red" onClick={() => deleteLibRoutine(r.id)}>✕</button>
                 </div>
               );
@@ -95,8 +95,8 @@ function LibrarySave({ initialName }) {
     <>
       <h2>Guardar rutina</h2>
       <div className="field">
-        <label>Nombre</label>
-        <input ref={inputRef} value={name} onChange={e => setName(e.target.value)} placeholder="Mi rutina" />
+        <label htmlFor="lib-nombre">Nombre</label>
+        <input id="lib-nombre" ref={inputRef} value={name} onChange={e => setName(e.target.value)} placeholder="Mi rutina" />
       </div>
       <div style={{ display: 'flex', gap: 10 }}>
         <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={closeSheet}>Cancelar</button>

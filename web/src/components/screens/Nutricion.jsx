@@ -87,14 +87,14 @@ export default function Nutricion() {
           <button type="button" className="icon-btn accent" aria-label="Ver / modificar mis datos" onClick={() => openSheet('profile')}>✎</button>
         </div>
       ) : (
-        <div className="card profcard" style={{ borderColor: 'var(--line2)' }} onClick={() => openSheet('profile')}>
+        <button type="button" className="card profcard" style={{ borderColor: 'var(--line2)' }} onClick={() => openSheet('profile')}>
           <div className="pavatar">🎯</div>
           <div className="grow">
             <div className="pt">Calcular mis macros</div>
             <div className="txt-mut" style={{ fontSize: 12.5 }}>Perfil → TDEE → target y rangos automáticos{S.cfg.goalsAuto ? '' : ' (usando metas manuales)'}</div>
           </div>
           <span className="chev">›</span>
-        </div>
+        </button>
       )}
 
       <div className="datenav">
@@ -160,9 +160,9 @@ export default function Nutricion() {
           <div className="sect">Un toque</div>
           <div className="chip-scroll">
             {freq.map((f, i) => (
-              <span key={i} className="chip blue" onClick={() => logMeal(f)}>
+              <button key={i} type="button" className="chip blue" onClick={() => logMeal(f)}>
                 ＋ {f.name} <span className="txt-mut" style={{ fontWeight: 500 }}>{f.kcal}</span>
-              </span>
+              </button>
             ))}
           </div>
         </>
@@ -174,6 +174,8 @@ export default function Nutricion() {
           <button
             type="button" className="mini"
             style={{ width: 32, height: 32, fontSize: 13, ...(S.foodEdit ? { color: 'var(--blue2)', borderColor: 'var(--line2)' } : {}) }}
+            aria-pressed={S.foodEdit}
+            aria-label="Editar la lista de frecuentes"
             onClick={() => { S.foodEdit = !S.foodEdit; bump(); }}
           >✎</button>
         )}
@@ -181,11 +183,11 @@ export default function Nutricion() {
       {S.foods.length > 0 ? (
         <div className="chip-scroll">
           {S.foods.map(f => S.foodEdit ? (
-            <span key={f.id} className="chip" onClick={() => deleteFood(f.id)}>{f.name}<span className="x">✕</span></span>
+            <button key={f.id} type="button" className="chip" aria-label={`Borrar ${f.name} de frecuentes`} onClick={() => deleteFood(f.id)}>{f.name}<span className="x">✕</span></button>
           ) : (
-            <span key={f.id} className="chip blue" onClick={() => addMealFromFood(f.id)}>
+            <button key={f.id} type="button" className="chip blue" onClick={() => addMealFromFood(f.id)}>
               ＋ {f.name} <span className="txt-mut" style={{ fontWeight: 500 }}>{f.kcal}</span>
-            </span>
+            </button>
           ))}
         </div>
       ) : (

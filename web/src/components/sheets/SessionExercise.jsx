@@ -79,8 +79,8 @@ export default function SessionExercise({ wd, exId = null }) {
       </div>
 
       <div className="field">
-        <label>Ejercicio</label>
-        <input ref={nameRef} value={name} onChange={e => setName(e.target.value)} placeholder="Remo en polea" autoComplete="off" />
+        <label htmlFor="sessex-nombre">Ejercicio</label>
+        <input id="sessex-nombre" ref={nameRef} value={name} onChange={e => setName(e.target.value)} placeholder="Remo en polea" autoComplete="off" />
       </div>
 
       {sugeridos.length > 0 && (
@@ -88,9 +88,15 @@ export default function SessionExercise({ wd, exId = null }) {
           <label>Sugerencias para este día</label>
           <div className="chips">
             {sugeridos.map(s => (
-              <span key={s.n} className={`chip ${name.trim().toLowerCase() === s.n.toLowerCase() ? 'blue' : ''}`} onClick={() => setName(s.n)}>
+              <button
+                key={s.n}
+                type="button"
+                className={`chip ${name.trim().toLowerCase() === s.n.toLowerCase() ? 'blue' : ''}`}
+                aria-pressed={name.trim().toLowerCase() === s.n.toLowerCase()}
+                onClick={() => setName(s.n)}
+              >
                 {s.n}
-              </span>
+              </button>
             ))}
           </div>
         </div>
@@ -98,12 +104,12 @@ export default function SessionExercise({ wd, exId = null }) {
 
       <div className="f2">
         <div className="field">
-          <label>Series</label>
-          <input type="number" inputMode="numeric" value={sets} onChange={e => setSets(e.target.value)} />
+          <label htmlFor="sessex-series">Series</label>
+          <input id="sessex-series" type="number" inputMode="numeric" value={sets} onChange={e => setSets(e.target.value)} />
         </div>
         <div className="field">
-          <label>Reps</label>
-          <input type="number" inputMode="numeric" value={reps} onChange={e => setReps(e.target.value)} />
+          <label htmlFor="sessex-reps">Reps</label>
+          <input id="sessex-reps" type="number" inputMode="numeric" value={reps} onChange={e => setReps(e.target.value)} />
         </div>
       </div>
 
@@ -118,6 +124,7 @@ export default function SessionExercise({ wd, exId = null }) {
             key={e.id}
             type="button"
             className={`chip ${equip === e.id ? 'on' : ''}`}
+            aria-pressed={equip === e.id}
             onClick={() => setEquip(equip === e.id ? '' : e.id)}
           >
             {e.label}
@@ -133,6 +140,7 @@ export default function SessionExercise({ wd, exId = null }) {
         <button
           type="button"
           className={`chip ${unilateral ? 'on' : ''}`}
+          aria-pressed={unilateral}
           onClick={() => setUnilateral(u => !u)}
         >
           Un lado por vez

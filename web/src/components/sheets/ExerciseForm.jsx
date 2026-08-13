@@ -95,9 +95,10 @@ export default function ExerciseForm({ wd, ex }) {
     <>
       <h2>{ex ? 'Editar' : 'Nuevo'} ejercicio</h2>
       <div className="field">
-        <label>Nombre</label>
+        <label htmlFor="exform-nombre">Nombre</label>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
+            id="exform-nombre"
             ref={nameRef}
             value={name}
             onChange={e => handleNameChange(e.target.value)}
@@ -161,18 +162,18 @@ export default function ExerciseForm({ wd, ex }) {
       )}
       <div className="f2" style={{ marginTop: 14 }}>
         <div className="field">
-          <label>Series objetivo</label>
+          <label htmlFor="exform-series">Series objetivo</label>
           <div className="step">
             <button type="button" onClick={() => step(setSets, -1)}>−</button>
-            <div className="val"><input type="number" inputMode="numeric" value={sets} onChange={e => setSets(e.target.value)} /></div>
+            <div className="val"><input id="exform-series" type="number" inputMode="numeric" value={sets} onChange={e => setSets(e.target.value)} /></div>
             <button type="button" onClick={() => step(setSets, 1)}>+</button>
           </div>
         </div>
         <div className="field">
-          <label>Reps objetivo</label>
+          <label htmlFor="exform-reps">Reps objetivo</label>
           <div className="step">
             <button type="button" onClick={() => step(setReps, -1)}>−</button>
-            <div className="val"><input type="number" inputMode="numeric" value={reps} onChange={e => setReps(e.target.value)} /></div>
+            <div className="val"><input id="exform-reps" type="number" inputMode="numeric" value={reps} onChange={e => setReps(e.target.value)} /></div>
             <button type="button" onClick={() => step(setReps, 1)}>+</button>
           </div>
         </div>
@@ -193,6 +194,7 @@ export default function ExerciseForm({ wd, ex }) {
         <button
           type="button"
           className={`chip ${unilateral ? 'on' : ''}`}
+          aria-pressed={unilateral}
           onClick={() => setUnilateral(u => !u)}
         >
           Un lado por vez
@@ -220,6 +222,7 @@ export default function ExerciseForm({ wd, ex }) {
             key={c}
             type="button"
             className={`chip ${cat === c ? 'on' : (!cat && auto === c ? 'blue' : '')}`}
+            aria-pressed={cat === c}
             onClick={() => setCat(cat === c ? '' : c)}
           >
             {c}
@@ -236,6 +239,7 @@ export default function ExerciseForm({ wd, ex }) {
             key={e.id}
             type="button"
             className={`chip ${equip === e.id ? 'on' : ''}`}
+            aria-pressed={equip === e.id}
             onClick={() => setEquip(equip === e.id ? '' : e.id)}
           >
             {e.label}

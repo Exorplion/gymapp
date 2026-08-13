@@ -11,13 +11,14 @@ export default function MachineField({ equip, machine, onChange }) {
   if (equip === 'polea') {
     return (
       <div className="field" style={{ marginTop: 'var(--s3)' }}>
-        <label>Cómo se siente</label>
-        <div className="chips">
+        <label id="lbl-como-siente">Cómo se siente</label>
+        <div className="chips" role="group" aria-labelledby="lbl-como-siente">
           {POLEA_FEEL.map(f => (
             <button
               key={f.id}
               type="button"
               className={`chip ${machine === f.id ? 'on' : ''}`}
+              aria-pressed={machine === f.id}
               onClick={() => onChange(machine === f.id ? '' : f.id)}
             >
               {f.label}
@@ -34,8 +35,9 @@ export default function MachineField({ equip, machine, onChange }) {
   }
   return (
     <div className="field" style={{ marginTop: 'var(--s3)' }}>
-      <label>Qué máquina</label>
+      <label htmlFor="campo-que-maquina">Qué máquina</label>
       <input
+        id="campo-que-maquina"
         type="text"
         placeholder="Life Fitness, Hammer, la del fondo…"
         value={machine}

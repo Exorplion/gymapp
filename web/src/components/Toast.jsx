@@ -19,7 +19,12 @@ export default function Toast() {
   return (
     // Con un sheet abierto el toast se va arriba: el panel llega hasta 88dvh y
     // el toast, que va por encima (z-index 70 vs 60), le tapaba los botones.
-    <div id="toast" className={`${show ? 'show' : ''}${S.sheet ? ' over-sheet' : ''}`}>
+    // role="status" + aria-live: sin esto el toast es puramente visual — cada
+    // "Serie registrada", "Ejercicio completo" o error de validación aparece y
+    // desaparece sin que un lector de pantalla lo anuncie nunca (WCAG 4.1.3).
+    // "polite" y no "assertive": son confirmaciones y avisos de baja urgencia,
+    // no interrumpen lo que el lector esté leyendo en ese momento.
+    <div id="toast" role="status" aria-live="polite" className={`${show ? 'show' : ''}${S.sheet ? ' over-sheet' : ''}`}>
       {state && (
         <>
           <span>{state.msg}</span>

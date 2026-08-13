@@ -34,6 +34,7 @@ export default function IllusPick({ exName = '', onPick, onClose }) {
           type="text"
           value={q}
           placeholder="press banca, sentadilla, jalón…"
+          aria-label="Buscar ilustración del movimiento"
           onChange={e => setQ(e.target.value)}
         />
       </div>
