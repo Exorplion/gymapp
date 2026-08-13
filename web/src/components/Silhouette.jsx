@@ -73,7 +73,7 @@ function claseDe(z, days) {
   return tono(days[z.cat]);
 }
 
-function Cara({ cara, days, etiqueta, sel, onPick, activa }) {
+function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar }) {
   /* Los parches quedan fuera del cuerpo normal.
 
      Son las capas que MuscleMap dibuja ENCIMA del músculo base para resaltar
@@ -104,6 +104,23 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa }) {
         if (!z.cat || z.cat === 'pelo') {
           return <g key={i} className={`sil-z ${cls}`}>{dibujos}</g>;
         }
+        const delayMs = revelar ? revelar[z.cat] : undefined;
+        const revelando = delayMs !== undefined;
+        /* Sin onPick (modo no interactivo, ver Silhouette más abajo): la
+           zona es sólo el dibujo pintado, sin role=button/tabIndex/onClick.
+           Es la pantalla de fin de sesión mostrando un vistazo, no un mapa
+           para tocar. */
+        if (!onPick) {
+          return (
+            <g
+              key={i}
+              className={`sil-z ${cls}${revelando ? ' sil-revela' : ''}`}
+              style={revelando ? { animationDelay: `${delayMs}ms` } : undefined}
+            >
+              {dibujos}
+            </g>
+          );
+        }
         const activo = sel === z.cat;
         return (
           <g
@@ -130,7 +147,7 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa }) {
   );
 }
 
-export default function Silhouette({ days = {} }) {
+export default function Silhouette({ days = {}, interactivo = true, revelar = null }) {
   const [sel, setSel] = useState(null);   // { cat, x, y, arriba }
   const [ang, setAng] = useState(0);      // grados; los múltiplos pares de 180 son la frente
   const [quieto, setQuieto] = useState(true);   // ni girando ni cayendo: se puede tocar
@@ -271,10 +288,12 @@ export default function Silhouette({ days = {} }) {
       <div
         className={`sil-stage ${quieto ? '' : 'girando'}`}
         ref={stage}
-        onPointerDown={dedoAbajo}
-        onPointerMove={dedoMueve}
-        onPointerUp={dedoArriba}
-        onPointerCancel={dedoArriba}
+        {...(interactivo ? {
+          onPointerDown: dedoAbajo,
+          onPointerMove: dedoMueve,
+          onPointerUp: dedoArriba,
+          onPointerCancel: dedoArriba,
+        } : {})}
       >
         <div
           className={`sil-flip ${tirando ? '' : 'suave'}`}
@@ -282,22 +301,26 @@ export default function Silhouette({ days = {} }) {
           onTransitionEnd={asentar}
         >
           <div className={`sil-face ${atras ? '' : 'on'}`}>
-            <Cara cara={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={tocar} activa={!atras} />
+            <Cara cara={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={interactivo ? tocar : undefined} activa={!atras} revelar={revelar} />
           </div>
           <div className={`sil-face atras ${atras ? 'on' : ''}`}>
-            <Cara cara={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={tocar} activa={atras} />
+            <Cara cara={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={interactivo ? tocar : undefined} activa={atras} revelar={revelar} />
           </div>
         </div>
       </div>
 
       {/* Dos botones y no uno que alterna: un botón solo tendría que decir o
-          dónde estás o adónde vas, y las dos lecturas son igual de válidas. */}
-      <div className="sil-caras" role="group" aria-label="Girar el cuerpo">
-        <button type="button" aria-pressed={!atras} onClick={() => girarA(false)}>Frente</button>
-        <button type="button" aria-pressed={atras} onClick={() => girarA(true)}>Espalda</button>
-      </div>
+          dónde estás o adónde vas, y las dos lecturas son igual de válidas.
+          No interactivo (pantalla de fin de sesión): ni girar ni tocar
+          tienen sentido en un vistazo de unos segundos. */}
+      {interactivo && (
+        <div className="sil-caras" role="group" aria-label="Girar el cuerpo">
+          <button type="button" aria-pressed={!atras} onClick={() => girarA(false)}>Frente</button>
+          <button type="button" aria-pressed={atras} onClick={() => girarA(true)}>Espalda</button>
+        </div>
+      )}
 
-      {sel && (
+      {interactivo && sel && (
         <>
           <button type="button" className="sil-tapa" onClick={cerrar} aria-label="Cerrar estadísticas" />
           <MusclePop stats={groupStats(sel.cat)} pos={sel} onClose={cerrar} />

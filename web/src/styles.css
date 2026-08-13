@@ -1657,6 +1657,19 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .sil-tap{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .sil-tap:focus{outline:none}
 .sil-tap:focus-visible,.sil-sel{stroke:var(--accent);stroke-width:4}
+
+/* Revelado escalonado para la pantalla de fin de sesión (Silhouette con
+   interactivo=false + revelar): cada zona entra con su propio delay en vez
+   de estar ya pintada desde el primer frame — "backwards" la mantiene en el
+   estado inicial (tenue) durante el delay, si no destellaría a opacidad
+   completa antes de empezar a animar. Sólo anima opacity: si tocara filter
+   pelearía con el glow que .sil-d0 ya trae puesto (filter:url(#sil-glow)) y
+   se vería un parpadeo al terminar la animación. */
+@keyframes sil-revela{from{opacity:.18}to{opacity:1}}
+.sil-revela{animation:sil-revela .5s var(--ease) backwards}
+@media (prefers-reduced-motion:reduce){
+  .sil-revela{animation:none}
+}
 /* Al abrir un grupo el resto baja: el que preguntaste queda solo. */
 .sil-pair:has(.sil-sel) .sil-z:not(.sil-sel){opacity:.42}
 
