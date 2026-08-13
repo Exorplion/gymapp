@@ -34,8 +34,19 @@ export default function MusclePop({ stats, pos, onClose }) {
         <button type="button" className="mpop-x" onClick={onClose} aria-label="Cerrar">×</button>
       </div>
 
-      {nunca && sets === 0 ? (
-        <p className="mpop-vacio">Todavía no registraste nada de este grupo.</p>
+      {/* Antes esto sólo cubría "nunca" (dias===null): si lo habías
+          entrenado alguna vez pero no dentro de la ventana de 28 días, caía
+          al bloque de abajo y mostraba "0 series · 0 sesiones · 0 por sem." —
+          técnicamente correcto pero mudo sobre el porqué, cuando el dato
+          real (hace cuántos días) ya estaba arriba en el badge. Mismo
+          principio que el estado "Locked" de Ultrahuman: explicar la
+          condición en vez de mostrar un bloque en cero. */}
+      {sets === 0 ? (
+        <p className="mpop-vacio">
+          {nunca
+            ? 'Todavía no registraste nada de este grupo.'
+            : `Sin series en los últimos ${ventana} días — la última vez fue ${diasTexto(dias)}.`}
+        </p>
       ) : (
         <>
           <div className="mpop-nums">
