@@ -1108,6 +1108,15 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   box-shadow:var(--glass-hi),0 -20px 60px -20px rgba(0,0,0,.7);
 }
 @keyframes shup{from{transform:translateY(60%);opacity:.4}}
+/* El cierre es el espejo exacto de shup/fdin, misma duración cada uno —
+   antes no existía ninguno de los dos: #sheet pasaba a display:none en el
+   instante en que open se ponía en false y todo desaparecía de golpe.
+   #sheet.closing es más específico que #sheet .panel/.bk de arriba, así
+   que gana en la cascada sin necesitar !important. */
+@keyframes shdown{to{transform:translateY(60%);opacity:.4}}
+@keyframes fdout{to{opacity:0}}
+#sheet.closing .panel{animation:shdown .3s cubic-bezier(.2,.8,.3,1) forwards}
+#sheet.closing .bk{animation:fdout .2s forwards}
 #sheet .handle{width:44px;height:5px;border-radius:3px;background:var(--line2);margin:6px auto 16px}
 /* En el mockup los títulos de sheet van en itálica y caja normal
    ("Historial"), no en versales: es el mismo gesto del título de pantalla,
