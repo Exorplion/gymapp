@@ -105,10 +105,14 @@ function SheetContent({ sheet }) {
    pero el movimiento tiene que contar la misma historia que el gesto. */
 const ORDEN = ['inicio', 'hoy', 'rutina', 'nutri', 'prog'];
 
-/* Las pantallas que el GESTO de deslizar conecta entre sí — no las cinco de
-   ORDEN. "Hoy" queda afuera: no es una pestaña propia (se entra desde
-   Inicio) y además ya tiene su propio gesto horizontal, el carrusel de
-   ejercicios — meterla acá los pondría a pelear por el mismo dedo. */
+/* Las cuatro pestañas reales de la barra — no las cinco de ORDEN. "Hoy" no
+   tiene su propio lugar acá porque no es una pestaña propia (se entra desde
+   Inicio), pero SÍ participa del gesto: un swipe estando en Hoy cuenta desde
+   la posición de Inicio (ver el uso de SWIPE_ORDEN más abajo). El carrusel
+   de ejercicios de Hoy queda protegido aparte, por selector, en
+   empiezaExcluido (lib/swipe.js) — no hacía falta apagar la pantalla
+   entera, y apagarla dejaba sin swipe justo la pantalla donde más tiempo
+   se pasa. */
 const SWIPE_ORDEN = ORDEN.filter(t => t !== 'hoy');
 
 export default function App() {
@@ -169,7 +173,7 @@ export default function App() {
 
     function onDown(e) {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
-      if (S.tab === 'hoy' || empiezaExcluido(e.target)) return;
+      if (empiezaExcluido(e.target)) return;
       inicio = { x: e.clientX, y: e.clientY };
     }
     function onUp(e) {
@@ -178,7 +182,15 @@ export default function App() {
       inicio = null;
       const paso = clasificarSwipe(dx, dy);
       if (!paso) return;
-      const i = SWIPE_ORDEN.indexOf(S.tab);
+      /* "Hoy" no es una pestaña propia de SWIPE_ORDEN —se entra desde
+         Inicio, TabBar ya la trata como si fuera Inicio para la píldora
+         activa (ver más abajo, active={store.tab==='hoy'?'inicio':...}—
+         así que un swipe ahí cuenta desde la posición de Inicio. Antes esto
+         se resolvía excluyendo TODO Hoy del gesto (ver empiezaExcluido, que
+         ya protege el carrusel de ejercicios en particular): eso apagaba el
+         swipe en la pantalla donde más tiempo se pasa, que es exactamente
+         donde alguien lo prueba primero. */
+      const i = SWIPE_ORDEN.indexOf(S.tab === 'hoy' ? 'inicio' : S.tab);
       if (i < 0) return;
       const j = i + paso;
       if (j < 0 || j >= SWIPE_ORDEN.length) return;   // en las puntas no rebota
