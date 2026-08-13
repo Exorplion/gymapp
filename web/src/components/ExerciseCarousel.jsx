@@ -30,7 +30,7 @@ import {
   targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, dropSet, reemplazaA,
   isUnilateral, toggleUnilateral,
 } from '../lib/session.js';
-import { jumpToSlide, slideCenterDist } from '../lib/carousel.js';
+import { jumpToSlide, scrollToSlideEl, slideCenterDist } from '../lib/carousel.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
@@ -68,11 +68,26 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
   // Decisions.
   const focusKey = `${wd}|${active}|${curId ?? ''}|${exs.map(e => e.id).join(',')}`;
 
+  // El PRIMER posicionamiento de este montaje tiene que ser instantáneo
+  // (jumpToSlide) — recién se abre Hoy, animar desde scrollLeft=0 se vería
+  // como el carrusel "viajando" apenas se pinta la pantalla. Los
+  // reposicionamientos SIGUIENTES (cambiaste de día, arrancó la sesión,
+  // avanzó el ejercicio en curso) sí deslizan: antes saltaban de golpe, el
+  // único movimiento suave era el que hacías vos con el dedo.
+  const yaHuboSalto = useRef(false);
+
   useLayoutEffect(() => {
     const car = carRef.current;
     if (!car) return;
     const idx = exs.length ? Math.max(0, openIdx) : 0;
-    jumpToSlide(car, idx);
+    if (!yaHuboSalto.current) {
+      jumpToSlide(car, idx);
+      yaHuboSalto.current = true;
+    } else if (idx > 0) {
+      // jumpToSlide ignora idx<=0 a propósito (no hace falta reposicionar
+      // hacia el primer slide) — se preserva el mismo criterio acá.
+      scrollToSlideEl(car, car.children[idx], 'smooth');
+    }
     const dotsWrap = dotsRef.current;
     function upd() {
       if (!dotsWrap) return;
