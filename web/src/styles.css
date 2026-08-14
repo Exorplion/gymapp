@@ -1906,8 +1906,17 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .sc-beat.b1{--dur:1000ms;animation-delay:0ms}
 .sc-beat.b2{--dur:1050ms;animation-delay:950ms}
 .sc-beat.b3{--dur:1700ms;animation-delay:1950ms}
+/* No basta con animation:none: los tres beats son position:absolute;inset:0
+   (montados unos sobre otros) y era la animación la única que los separaba
+   en el tiempo. El *{animation-duration:.01ms!important} global (más arriba)
+   tampoco sirve acá: aplastaría también los ~1s que cada beat necesita
+   quedarse visible. Por eso, bajo reducir movimiento, SessionComplete.jsx
+   decide con JS (setTimeout, mismos momentos que estos animation-delay)
+   cuál beat está opacity:1 vía estilo inline — acá sólo se apaga la
+   animación en sí, sin forzar opacity:1 en los tres a la vez (eso es
+   justamente lo que causaba la superposición). */
 @media (prefers-reduced-motion:reduce){
-  .sc-beat{animation:none;opacity:1}
+  .sc-beat{animation:none}
 }
 
 .sc-flame{font-size:56px;line-height:1}
