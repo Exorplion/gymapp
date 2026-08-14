@@ -150,7 +150,7 @@ export default function App() {
 
   /* Antes sólo existía la pantalla activa: al cambiar de pestaña, la vieja
      desaparecía de golpe y sólo la nueva entraba animada — un corte, no un
-     deslizamiento. Acá, mientras dura la transición (380ms, mismo tiempo que
+     deslizamiento. Acá, mientras dura la transición (260ms, mismo tiempo que
      ya usa .view.enter), se guarda cuál era la pantalla anterior para
      poder pintarla también: sale deslizando hacia el lado opuesto de por
      donde entra la nueva, las dos a la vez. La mutación de tabPrevio.current
@@ -163,7 +163,7 @@ export default function App() {
     setSaliente({ tab: tabPrevio.current, dir });
     tabPrevio.current = store.tab;
     clearTimeout(salienteTimer.current);
-    salienteTimer.current = setTimeout(() => setSaliente(null), 380);
+    salienteTimer.current = setTimeout(() => setSaliente(null), 260);
     return () => clearTimeout(salienteTimer.current);
   }, [store.tab, dir]);
 

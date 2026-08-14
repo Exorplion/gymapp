@@ -13,7 +13,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 const FOCUSABLES = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-const CIERRE_MS = 300; // mismo tiempo que .panel usa para abrir (shup .3s)
+const CIERRE_MS = 220; // mismo tiempo que .panel usa para abrir (shup .22s)
 
 export default function Sheet({ open, onClose, children }) {
   const panelRef = useRef(null);

@@ -25,10 +25,10 @@ import Silhouette from './Silhouette.jsx';
 // timeline normal. Los delays de cada zona del cuerpo (revelar, más abajo)
 // se suman a partir de BEAT3_DELAY, para que el revelado escalonado ocurra
 // DURANTE el tiempo en que ese bloque ya es visible, no antes.
-const BEAT2_DELAY = 950;
-const BEAT3_DELAY = 1950;
-const STAGGER_ZONA = 150;
-const DUR_TOTAL = 3650; // 1950 (arranca beat 3) + 1700 (dura beat 3)
+const BEAT2_DELAY = 650;
+const BEAT3_DELAY = 1300;
+const STAGGER_ZONA = 120;
+const DUR_TOTAL = 2400; // 1300 (arranca beat 3) + 1100 (dura beat 3)
 
 function resumenDe(sess) {
   let series = 0, kg = 0;
@@ -50,7 +50,7 @@ export default function SessionComplete() {
      .sc-beat (el fade+scale) — pero los tres beats están montados unos
      sobre otros (position:absolute;inset:0) y sin esa animación no queda
      NADA que los mantenga separados en el tiempo: se verían los tres
-     superpuestos y opacos a la vez durante los ~3.65s. El
+     superpuestos y opacos a la vez durante los ~2.4s. El
      *{animation-duration:.01ms!important} global (más arriba en
      styles.css) tampoco sirve de red acá: aplastaría también la duración
      de CADA beat a .01ms, cuando tienen que durar ~1s cada uno para que se

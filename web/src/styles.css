@@ -147,9 +147,9 @@ main{
    Corre SOLO al cambiar de pestaña (.enter), nunca en un re-render. */
 @keyframes slideR{from{opacity:0;transform:translate3d(56px,0,0)}to{opacity:1;transform:none}}
 @keyframes slideL{from{opacity:0;transform:translate3d(-56px,0,0)}to{opacity:1;transform:none}}
-.view.enter.dir-r{animation:slideR .38s var(--ease)}
-.view.enter.dir-l{animation:slideL .38s var(--ease)}
-.view.enter>*{animation:vin .38s var(--ease) backwards}
+.view.enter.dir-r{animation:slideR .26s var(--ease)}
+.view.enter.dir-l{animation:slideL .26s var(--ease)}
+.view.enter>*{animation:vin .26s var(--ease) backwards}
 /* z-index explícito, con position:relative para que z-index tenga efecto
    (sin position, un elemento static ignora z-index aunque sea flex/grid no
    aplica acá). Así la entrante queda SIEMPRE arriba de la saliente, sin
@@ -158,7 +158,7 @@ main{
    apagando esa animación (ver media query más abajo) dejaba de funcionar:
    .view.leave (position:absolute) pintaba por encima de .view.enter
    (position:static) por orden de pintado de CSS, tapando la pantalla nueva
-   con la vieja congelada durante 380ms. */
+   con la vieja congelada durante los 260ms de la transición. */
 .view.enter{position:relative;z-index:1}
 /* La saliente ocupa el mismo lugar que la entrante (absolute, ancla a
    main gracias al position:relative de arriba) para que las dos se vean
@@ -174,8 +174,8 @@ main{
 .view.leave{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none}
 @keyframes slideOutL{to{opacity:0;transform:translate3d(-56px,0,0)}}
 @keyframes slideOutR{to{opacity:0;transform:translate3d(56px,0,0)}}
-.view.leave.dir-r{animation:slideOutL .38s var(--ease) forwards}
-.view.leave.dir-l{animation:slideOutR .38s var(--ease) forwards}
+.view.leave.dir-r{animation:slideOutL .26s var(--ease) forwards}
+.view.leave.dir-l{animation:slideOutR .26s var(--ease) forwards}
 @media (prefers-reduced-motion:reduce){
   .view.enter.dir-r,.view.enter.dir-l,.view.enter>*,
   .view.leave.dir-r,.view.leave.dir-l{animation:none}
@@ -188,11 +188,11 @@ main{
   .view.leave{display:none}
 }
 /* escalonado: la pantalla entra por partes en vez de un bloque único */
-.view.enter>*:nth-child(2){animation-delay:.045s}
-.view.enter>*:nth-child(3){animation-delay:.09s}
-.view.enter>*:nth-child(4){animation-delay:.13s}
-.view.enter>*:nth-child(5){animation-delay:.165s}
-.view.enter>*:nth-child(n+6){animation-delay:.19s}
+.view.enter>*:nth-child(2){animation-delay:.03s}
+.view.enter>*:nth-child(3){animation-delay:.06s}
+.view.enter>*:nth-child(4){animation-delay:.09s}
+.view.enter>*:nth-child(5){animation-delay:.11s}
+.view.enter>*:nth-child(n+6){animation-delay:.13s}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
 }
@@ -1111,7 +1111,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 /* ---------- bottom sheet ---------- */
 #sheet{position:fixed;inset:0;z-index:60;display:none}
 #sheet.open{display:block}
-#sheet .bk{position:absolute;inset:0;background:rgba(2,4,9,.7);backdrop-filter:blur(4px);animation:fdin .2s}
+#sheet .bk{position:absolute;inset:0;background:rgba(2,4,9,.7);backdrop-filter:blur(4px);animation:fdin .15s}
 @keyframes fdin{from{opacity:0}}
 #sheet .panel{
   position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;
@@ -1121,7 +1121,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   border:1px solid rgba(255,255,255,.14);border-bottom:none;
   border-radius:26px 26px 0 0;
   padding:10px 20px calc(24px + env(safe-area-inset-bottom));
-  animation:shup .3s cubic-bezier(.2,.8,.3,1);
+  animation:shup .22s cubic-bezier(.2,.8,.3,1);
   box-shadow:var(--glass-hi),0 -20px 60px -20px rgba(0,0,0,.7);
 }
 @keyframes shup{from{transform:translateY(60%);opacity:.4}}
@@ -1132,8 +1132,8 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
    que gana en la cascada sin necesitar !important. */
 @keyframes shdown{to{transform:translateY(60%);opacity:.4}}
 @keyframes fdout{to{opacity:0}}
-#sheet.closing .panel{animation:shdown .3s cubic-bezier(.2,.8,.3,1) forwards}
-#sheet.closing .bk{animation:fdout .2s forwards}
+#sheet.closing .panel{animation:shdown .22s cubic-bezier(.2,.8,.3,1) forwards}
+#sheet.closing .bk{animation:fdout .15s forwards}
 /* La regla global de arriba (*{animation-duration:.01ms!important}) acorta
    shdown pero no toca animation-fill-mode:forwards: bajo movimiento
    reducido la animación "termina" casi al instante y se queda CONGELADA en
@@ -1931,9 +1931,9 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   animation:sc-beat var(--dur) var(--ease) forwards;
 }
 @keyframes sc-beat{0%{opacity:0;transform:scale(.94)}12%{opacity:1;transform:none}88%{opacity:1}100%{opacity:0;transform:scale(1.04)}}
-.sc-beat.b1{--dur:1000ms;animation-delay:0ms}
-.sc-beat.b2{--dur:1050ms;animation-delay:950ms}
-.sc-beat.b3{--dur:1700ms;animation-delay:1950ms}
+.sc-beat.b1{--dur:700ms;animation-delay:0ms}
+.sc-beat.b2{--dur:700ms;animation-delay:650ms}
+.sc-beat.b3{--dur:1100ms;animation-delay:1300ms}
 /* No basta con animation:none: los tres beats son position:absolute;inset:0
    (montados unos sobre otros) y era la animación la única que los separaba
    en el tiempo. El *{animation-duration:.01ms!important} global (más arriba)
