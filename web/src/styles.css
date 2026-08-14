@@ -163,7 +163,12 @@ main{
    main: si sumara su propio alto al de la entrante, la página saltaría de
    scroll por 380ms cada vez que cambiás de pestaña. z-index:0 (menor que el
    de .enter) para que quede siempre debajo. */
-.view.leave{position:absolute;top:0;left:0;right:0;z-index:0;pointer-events:none}
+/* top/left/right calzan con el padding real de main (16px 18px ...) y no con
+   0: el containing block de un absolute es el padding box del ancestro
+   posicionado, así que top/left/right:0 la ponía por fuera del padding de
+   main — ~36px más ancha y corrida ~18px/16px respecto de .view.enter,
+   un salto de layout visible en el primer frame de cada cambio de pestaña. */
+.view.leave{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none}
 @keyframes slideOutL{to{opacity:0;transform:translate3d(-56px,0,0)}}
 @keyframes slideOutR{to{opacity:0;transform:translate3d(56px,0,0)}}
 .view.leave.dir-r{animation:slideOutL .38s var(--ease) forwards}
@@ -171,6 +176,13 @@ main{
 @media (prefers-reduced-motion:reduce){
   .view.enter.dir-r,.view.enter.dir-l,.view.enter>*,
   .view.leave.dir-r,.view.leave.dir-l{animation:none}
+  /* Sin animación no hay nada que la esconda: .view.leave no tiene opacidad
+     propia fuera de slideOut, así que quedaría opaca y tapando (las
+     pantallas no tienen fondo sólido propio) el contenido nuevo detrás de
+     ella durante los 380ms del cambio de pestaña — texto viejo y nuevo
+     superpuestos. No hay nada que mostrar de la pantalla saliente una vez
+     apagado el movimiento, así que se saca del render directamente. */
+  .view.leave{display:none}
 }
 /* escalonado: la pantalla entra por partes en vez de un bloque único */
 .view.enter>*:nth-child(2){animation-delay:.045s}
@@ -1117,6 +1129,17 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 @keyframes fdout{to{opacity:0}}
 #sheet.closing .panel{animation:shdown .3s cubic-bezier(.2,.8,.3,1) forwards}
 #sheet.closing .bk{animation:fdout .2s forwards}
+/* La regla global de arriba (*{animation-duration:.01ms!important}) acorta
+   shdown pero no toca animation-fill-mode:forwards: bajo movimiento
+   reducido la animación "termina" casi al instante y se queda CONGELADA en
+   su keyframe final (translateY(60%);opacity:.4) — un panel fantasma,
+   translúcido y a medio bajar. Sheet.jsx igual mantiene #sheet.closing en
+   el DOM los 300ms de CIERRE_MS (ese timer es JS, no se acorta con la
+   media query), así que sin esta regla el fantasma queda visible todo ese
+   tiempo. Se saca del render directamente: no hay nada que animar. */
+@media (prefers-reduced-motion:reduce){
+  #sheet.closing{display:none}
+}
 #sheet .handle{width:44px;height:5px;border-radius:3px;background:var(--line2);margin:6px auto 16px}
 /* En el mockup los títulos de sheet van en itálica y caja normal
    ("Historial"), no en versales: es el mismo gesto del título de pantalla,

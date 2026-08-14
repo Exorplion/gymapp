@@ -6,7 +6,6 @@ import { toast } from './toast.js';
 import { startRest, stopRest } from './rest.js';
 import { pedirPermiso } from './alarm.js';
 import { scrollCarouselTo } from './carousel.js';
-import { fireConfetti } from './confetti.js';
 import { exKey } from './equip.js';
 
 /** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
@@ -457,10 +456,14 @@ export async function completeSession() {
   // Antes acá se abría directo el sheet de detalle (session-view). Ahora
   // primero pasa la pantalla de racha/resumen/cuerpo (SessionComplete.jsx,
   // montada en App.jsx) — ella es quien abre session-view cuando termina o
-  // la salteás tocando. El confetti de PRs no cambia: sigue disparándose acá.
-  S.sessionComplete = sess;
+  // la salteás tocando. El confetti de PRs YA NO se dispara acá: el sheet
+  // que muestra el PR recién abre ~3.65s después (al final de esa pantalla),
+  // y la animación de confetti dura ~2.7s — se veía y se apagaba entero
+  // mientras el usuario todavía miraba racha/resumen, antes de que el PR
+  // fuera visible. Se guarda si hubo PR junto con la sesión, y es
+  // SessionComplete.jsx quien dispara fireConfetti() al abrir session-view.
+  S.sessionComplete = { ...sess, huboPR: prs.length > 0 };
   bump();
-  if (prs.length > 0) fireConfetti();
 }
 
 /** Abre el borrador de sesión (weekday `wd`, con el orden ya reacomodado si

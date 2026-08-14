@@ -12,6 +12,7 @@ import { S, useStore, openSheet } from '../lib/state.js';
 import { currentStreak } from '../lib/streak.js';
 import { catsDeSesion } from '../lib/muscle.js';
 import { fmtNum, round1 } from '../lib/format.js';
+import { fireConfetti } from '../lib/confetti.js';
 import Silhouette from './Silhouette.jsx';
 
 // Los tres tiempos NO duran lo mismo (a propósito: racha y resumen son un
@@ -62,9 +63,16 @@ export default function SessionComplete() {
   function cerrar() {
     clearTimeout(timerRef.current);
     beatTimersRef.current.forEach(clearTimeout);
-    const id = S.sessionComplete?.id;
+    const actual = S.sessionComplete;
     S.sessionComplete = null;
-    if (id) openSheet('session-view', { id, justFinished: true });
+    if (!actual?.id) return;
+    openSheet('session-view', { id: actual.id, justFinished: true });
+    // El confetti se dispara ACÁ (cuando se abre el sheet que muestra el PR),
+    // no al terminar la sesión: ver el comentario en completeSession()
+    // (session.js) para el porqué del cambio. cerrar() es el único camino de
+    // salida de esta pantalla —lo mismo si el timer la cierra sola que si la
+    // tocás para saltarla— así que cubre los dos casos sin nada extra.
+    if (actual.huboPR) fireConfetti();
   }
 
   useEffect(() => {
@@ -94,7 +102,14 @@ export default function SessionComplete() {
   const { ejercicios, series, kg } = resumenDe(sess);
   const streak = currentStreak();
   const cats = catsDeSesion(sess);
-  const revelar = Object.fromEntries(cats.map((c, i) => [c, BEAT3_DELAY + i * STAGGER_ZONA]));
+  // Glúteo sólo tiene geometría en la cara de espalda (ver bodydata.js), y
+  // esta pantalla no interactiva arranca de frente y nunca gira (Task 5 le
+  // sacó el gesto de rotar). Un Glúteo entrenado nunca se ve acá, pero si
+  // ocupara un turno del escalonado dejaría un hueco muerto —una pausa sin
+  // que nada se ilumine— en el ritmo de revelado de las zonas que sí se ven.
+  // Se excluye del cálculo de delays para que el resto quede parejo.
+  const catsVisibles = cats.filter(c => c !== 'Glúteo');
+  const revelar = Object.fromEntries(catsVisibles.map((c, i) => [c, BEAT3_DELAY + i * STAGGER_ZONA]));
   const diasHoy = Object.fromEntries(cats.map(c => [c, 0]));
 
   // Sólo bajo movimiento reducido: la opacidad de CADA beat la manda
