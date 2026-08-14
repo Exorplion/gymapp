@@ -16,6 +16,7 @@ import { norm } from '../../lib/format.js';
 import { EXCATALOG } from '../../lib/muscle.js';
 import { recommendedExercises, saveExercise } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
+import { Mic, RecordDot } from '../Icon.jsx';
 
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
 const CATALOG_CATS = [...new Set(EXCATALOG.map(e => e.c))];
@@ -115,7 +116,7 @@ export default function ExerciseForm({ wd, ex }) {
               style={{ flex: 'none' }}
               onClick={toggleVoice}
             >
-              {recording ? '🔴' : '🎤'}
+              {recording ? <RecordDot /> : <Mic />}
             </button>
           )}
         </div>

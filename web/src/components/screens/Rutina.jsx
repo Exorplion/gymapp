@@ -19,6 +19,7 @@ import {
 import { toast } from '../../lib/toast.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
+import { Info } from '../Icon.jsx';
 
 /** Puerto del guard de sheetLibSave() (index.html): "No hay rutina que
     guardar" si S.routine no tiene ningún día con ejercicios. En el original
@@ -265,7 +266,7 @@ function DayCard({ wd }) {
                   style={exInfo(ex.name) ? undefined : { opacity: .4 }}
                   onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
                 >
-                  ⓘ
+                  <Info />
                 </button>
               </div>
               <div className="n">{ex.name}</div>

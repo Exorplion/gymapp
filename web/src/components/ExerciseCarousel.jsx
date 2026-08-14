@@ -34,6 +34,7 @@ import { jumpToSlide, scrollToSlideEl, slideCenterDist } from '../lib/carousel.j
 import { relatedHistory, equipLabel } from '../lib/equip.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
+import { Info, Skip, Swap } from './Icon.jsx';
 
 export default function ExerciseCarousel({ exs, wd, active, started, curId, nextEx }) {
   const carRef = useRef(null);
@@ -142,8 +143,8 @@ function ExActions({ ex, wd }) {
           "hoy hago una más", y hasta ahora sólo se podía hacia arriba. */}
       <button type="button" onClick={() => dropSet(ex.id)}>− Serie</button>
       <button type="button" onClick={() => addExtraSet(ex.id)}>+ Serie</button>
-      <button type="button" onClick={() => openSheet('ex-swap', { wd, exId: ex.id })}>⇄ Cambiar</button>
-      <button type="button" onClick={confirmarSalto}>↷ Saltar</button>
+      <button type="button" onClick={() => openSheet('ex-swap', { wd, exId: ex.id })}><Swap /> Cambiar</button>
+      <button type="button" onClick={confirmarSalto}><Skip /> Saltar</button>
     </div>
   );
 }
@@ -235,7 +236,7 @@ function ExerciseSlide({ m, wd, started }) {
               className="mini info inline"
               onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
             >
-              ⓘ
+              <Info />
             </button>
           )}
         </div>
@@ -278,7 +279,7 @@ function ExerciseSlide({ m, wd, started }) {
             devuelve exactamente a su lugar porque saltar no toca draft.order. */}
         {skipped && (
           <>
-            <div className="ex-state skip">↷ Saltado{done.length ? ` · ${done.length} serie${done.length === 1 ? '' : 's'} registrada${done.length === 1 ? '' : 's'}` : ''}</div>
+            <div className="ex-state skip"><Skip size={13} /> Saltado{done.length ? ` · ${done.length} serie${done.length === 1 ? '' : 's'} registrada${done.length === 1 ? '' : 's'}` : ''}</div>
             <button type="button" className="btn sm ghost" style={{ marginTop: 12 }} onClick={() => unskipExercise(ex.id)}>
               ↺ Restablecer
             </button>

@@ -3,13 +3,14 @@
 // (currentStreak/bestStreak/streakHeatmap); acá sólo se arma el markup.
 import { streakHeatmap, currentStreak, bestStreak } from '../../lib/streak.js';
 import { fmtDFull } from '../../lib/format.js';
+import { Flame } from '../Icon.jsx';
 
 export default function StreakDetail() {
   const { days, pct } = streakHeatmap();
 
   return (
     <>
-      <h2>🔥 Racha</h2>
+      <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Flame size={24} style={{ color: '#FFC46B' }} />Racha</h2>
       <div className="stats">
         <div><div className="n">{currentStreak()}</div><span className="l">Actual</span></div>
         <div><div className="n">{bestStreak()}</div><span className="l">Mejor</span></div>

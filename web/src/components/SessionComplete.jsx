@@ -13,6 +13,7 @@ import { currentStreak } from '../lib/streak.js';
 import { catsDeSesion } from '../lib/muscle.js';
 import { fmtNum, round1 } from '../lib/format.js';
 import { fireConfetti } from '../lib/confetti.js';
+import { Flame } from './Icon.jsx';
 import Silhouette from './Silhouette.jsx';
 
 // Los tres tiempos NO duran lo mismo (a propósito: racha y resumen son un
@@ -121,7 +122,7 @@ export default function SessionComplete() {
   return (
     <div id="session-complete" role="status" aria-label="Entrenamiento completo" onClick={cerrar}>
       <div className="sc-beat b1" style={estiloDe(1)}>
-        <div className="sc-flame">🔥</div>
+        <Flame size={56} className="sc-flame" />
         <div className="sc-streak-n">{streak}</div>
         <div className="sc-lbl">{streak === 1 ? 'día de racha' : 'días de racha'}</div>
       </div>

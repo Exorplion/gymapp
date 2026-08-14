@@ -5,6 +5,7 @@ import { WD } from '../../lib/format.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
 import { editDay } from '../../lib/rutina-logic.js';
 import { openSheet } from '../../lib/state.js';
+import { Info } from '../Icon.jsx';
 
 export default function DayPeek({ wd }) {
   const d = S.routine[wd];
@@ -31,7 +32,7 @@ export default function DayPeek({ wd }) {
                 className="mini info"
                 onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
               >
-                ⓘ
+                <Info />
               </button>
             )}
           </div>

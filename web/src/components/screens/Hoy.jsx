@@ -27,6 +27,7 @@ import WarmupCard from '../WarmupCard.jsx';
 import { tocaCalentar, bloqueDe, DESCANSO } from '../../lib/warmup.js';
 import { startRest } from '../../lib/rest.js';
 import { toast } from '../../lib/toast.js';
+import { Bolt, Mic, RecordDot } from '../Icon.jsx';
 
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
 
@@ -182,7 +183,7 @@ export default function Hoy() {
           nada y solo compite con las tarjetas de ejercicio */}
       {!active && exs.length > 0 && (
         <button type="button" className="pw-btn" onClick={() => openSheet('preworkout')}>
-          <span className="pwi">⚡</span><span className="pwt">Pre-workout</span>
+          <Bolt size={20} className="pwi" /><span className="pwt">Pre-workout</span>
           <span className="txt-mut" style={{ fontSize: 12.5, fontWeight: 500 }}>fluidos · carbos · cafeína</span>
           <span className="chev">›</span>
         </button>
@@ -471,7 +472,7 @@ function VoiceLogButton() {
 
   return (
     <button type="button" className={`pw-btn${recording ? ' accent' : ''}`} onClick={toggle}>
-      <span className="pwi">{recording ? '🔴' : '🎤'}</span>
+      <span className="pwi">{recording ? <RecordDot size={20} /> : <Mic size={20} />}</span>
       <span className="pwt">{recording ? 'Escuchando…' : 'Registrar por voz'}</span>
       <span className="txt-mut" style={{ fontSize: 12.5, fontWeight: 500 }}>contá qué entrenaste hoy</span>
       <span className="chev">›</span>

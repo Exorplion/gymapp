@@ -19,6 +19,7 @@ import { groupSessionsByWeek } from '../../lib/session.js';
 import { weeklyAvg, exerciseSeries, filterByRange, strengthReadout, project } from '../../lib/charts.js';
 import Chart from '../Chart.jsx';
 import SessionCard from '../SessionCard.jsx';
+import { Info } from '../Icon.jsx';
 
 const BODY_LABELS = { waist: 'Cintura', arm: 'Brazo', chest: 'Pecho', leg: 'Pierna' };
 
@@ -64,7 +65,7 @@ export default function Progreso() {
       <div className="vtitle">
         <h1>Progreso</h1>
         <span className="sub">{weeksTracked} semana{weeksTracked === 1 ? '' : 's'}</span>
-        <button type="button" className="icon-btn" style={{ marginLeft: 'auto' }} aria-label="Guía" onClick={() => openSheet('guide')}>ⓘ</button>
+        <button type="button" className="icon-btn" style={{ marginLeft: 'auto' }} aria-label="Guía" onClick={() => openSheet('guide')}><Info /></button>
       </div>
 
       <div className="card hero hero-prog">

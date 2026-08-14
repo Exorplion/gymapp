@@ -119,7 +119,10 @@ header.top{
   background:linear-gradient(150deg,rgba(255,196,107,.18),rgba(255,255,255,.03));
   border:1px solid rgba(255,196,107,.32);
 }
-.streak-flame{font-size:14px;line-height:1}
+/* Más específico que .icon-btn svg (línea de arriba): la llama es más chica
+   que el resto de los íconos de header y va en ámbar, no en el gris/azul de
+   siempre — es el único acento cálido de la interfaz. */
+.icon-btn svg.streak-flame{width:15px;height:15px;color:#FFC46B;flex:none}
 .streak-n{font-family:'Barlow Condensed';font-weight:700;font-size:16px;letter-spacing:.04em;color:#FFC46B}
 .heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .heatmap .cell{aspect-ratio:1;border-radius:4px;background:var(--card2);border:1px solid var(--line)}
@@ -429,7 +432,7 @@ main{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 26px 54px -28px rgba(34,211,238,.5);
 }
 .ex-card.doneex{opacity:.72}
-.ex-state{margin-top:10px;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
+.ex-state{margin-top:10px;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);display:flex;align-items:center;gap:5px}
 .ex-state.ok{color:var(--ok)}
 .ex-state.skip{color:var(--warn)}
 /* El saltado no desaparece: se queda en su lugar, apagado, con su botón de
@@ -444,6 +447,7 @@ main{
   flex:1;min-height:38px;border-radius:12px;
   background:var(--card2);border:1px solid var(--line);
   color:var(--mut);font-size:12.5px;font-weight:600;letter-spacing:.02em;
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
 }
 .ex-actions button:active{border-color:var(--line2);color:var(--blue2)}
 /* los saltados en el resumen de la sesión */
@@ -451,6 +455,7 @@ main{
   margin-top:14px;padding:9px 12px;border-radius:12px;
   font-size:12.5px;line-height:1.45;font-weight:500;
   background:rgba(255,180,84,.09);border:1px solid rgba(255,180,84,.28);color:var(--warn);
+  display:flex;gap:6px;
 }
 .carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;
   margin:0 calc(-1*var(--s4)) 0;padding:0 var(--s4) 4px;scrollbar-width:none}
@@ -1942,7 +1947,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   .sc-beat{animation:none}
 }
 
-.sc-flame{font-size:56px;line-height:1}
+.sc-flame{color:#FFC46B}
 .sc-streak-n{font-family:'Barlow Condensed';font-weight:800;font-size:64px;color:#fff;line-height:1}
 .sc-lbl{color:var(--mut);font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.1em}
 

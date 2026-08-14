@@ -15,6 +15,7 @@
 import { T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC } from '../lib/rest.js';
 import { useStore } from '../lib/state.js';
 import { fmtMMSS } from '../lib/format.js';
+import { ChevronDown } from './Icon.jsx';
 
 export default function RestTimer() {
   useStore(); // se suscribe a bump(); T se lee directo (T.leftSec/T.pct/T.state) igual que S
@@ -109,7 +110,7 @@ export default function RestTimer() {
             </div>
           )}
           {!sonandoAhora && (
-            <button type="button" className="icon-btn rfs-min" aria-label="Minimizar" onClick={minimize}>⌄</button>
+            <button type="button" className="icon-btn rfs-min" aria-label="Minimizar" onClick={minimize}><ChevronDown /></button>
           )}
         </div>
       </div>

@@ -18,6 +18,7 @@ import { equipLabel, exKey } from '../../lib/equip.js';
 import { toast } from '../../lib/toast.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
+import { Skip } from '../Icon.jsx';
 
 export default function SessionView({ id, justFinished = false }) {
   useStore();
@@ -127,7 +128,8 @@ export default function SessionView({ id, justFinished = false }) {
           si ese día no tocaba o si lo dejaste pasar. */}
       {s.skipped?.length > 0 && (
         <div className="skip-note">
-          ↷ {s.skipped.length} saltado{s.skipped.length === 1 ? '' : 's'} · {s.skipped.map(x => x.name).join(' · ')}
+          <Skip size={14} style={{ flex: 'none', marginTop: 2 }} />
+          <span>{s.skipped.length} saltado{s.skipped.length === 1 ? '' : 's'} · {s.skipped.map(x => x.name).join(' · ')}</span>
         </div>
       )}
 
