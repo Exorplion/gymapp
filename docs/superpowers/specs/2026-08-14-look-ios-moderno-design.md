@@ -21,7 +21,7 @@ aire/título más grande en la tipografía (recomendación mía, sin objeción).
 
 1. Movimiento con resorte (`--spring`)
 2. Vidrio esmerilado en `.card` (base, afecta toda la app)
-3. Tipografía y espaciado más generosos
+3. Tipografía y espaciado más generosos — **descartada, ya implementada** (ver corrección en su sección)
 
 Cada una se implementa y verifica por separado.
 
@@ -41,76 +41,114 @@ gustó) como variable global en `:root`, junto a `--ease`. Reemplazar
 **entrada/salida de superficies completas** (algo aparece o desaparece de
 la pantalla):
 
-- `shup`/`shdown` (sheets abren/cierran) — `Sheet.jsx` + `styles.css`
-- `slideR`/`slideL`/`vin`/`slideOutL`/`slideOutR` (transición de pestañas)
-  — `App.jsx` + `styles.css`
+- `shup` (sheet abre) — `styles.css`
+- `slideR`/`slideL`/`vin` (pestaña entrante) — `styles.css`
 - `dayArrive`/`dayBumped`/`dayLeft` (tarjetas de día en Rutina)
-- `railIn` (filas que entran en Progreso/Rutina)
-- `.sc-beat` (los tres tiempos de la pantalla de fin de sesión)
-- `mpop-in` (el globo de estadísticas del músculo)
+- `mpop-in`/`mpop-in-up` (el globo de estadísticas del músculo)
+- `.sc-beat`, sólo en el tramo de entrada (0%→12% del keyframe) — ver nota
+  de `.sc-beat` más abajo, no todo el keyframe
+
+**Corrección post-spec — `shdown` y `slideOutL`/`slideOutR` NO llevan
+`--spring`, se quedan en `--ease`:** los tres animan opacidad
+*bajando* hasta un valor menor (`shdown`: 1→.4; `slideOutL`/`slideOutR`:
+1→0) al mismo tiempo que un transform. Un resorte hace que el valor pase
+de largo antes de asentarse — sobre opacidad decreciente eso se ve como
+un parpadeo (se apaga de más y "rebota" hacia visible otra vez justo al
+terminar), exactamente el artefacto que la regla de abajo ya dice que hay
+que evitar en transiciones de opacidad. Esto no se notó al escribir el
+spec porque sólo se probó la maqueta con una tarjeta ENTRANDO, nunca
+saliendo. El resorte queda reservado a entradas (opacidad subiendo o
+transform puro sin opacidad) — las salidas seguidas de un `forwards`
+siguen con `--ease`.
+
+**Corrección post-spec:** `railIn` se saca de la lista de arriba. Al leer
+el CSS se confirmó que es exactamente el tipo de animación que la regla de
+abajo excluye — sus dos usos (`.dcard.entry::before` en Rutina,
+`.ex-row::before` en el editor de ejercicio) son rieles que se **llenan**
+(`scaleY(0)→scaleY(var(--fill))`) para representar una magnitud de datos
+(volumen movido), no una superficie que entra a escena. Un resorte ahí se
+vería como un dato que se pasa de su valor real y rebota, no como una
+tarjeta asentándose.
+
+**Nota sobre `.sc-beat`:** su único keyframe (`sc-beat`) cubre entrada Y
+salida en una sola línea de tiempo (0-12% entra, 12-88% se sostiene,
+88-100% sale) con una sola curva para las tres. Por el mismo motivo de
+arriba, no se puede poner `--spring` en el `animation` completo sin
+afectar también la salida (88-100%, opacidad bajando). La forma correcta
+en CSS es declarar `animation-timing-function:var(--spring)` sólo en el
+stop `0%` de `@keyframes sc-beat` (controla el tramo 0%→12%); el resto
+del timeline sigue con el `var(--ease)` que ya trae el `animation`
+shorthand de `.sc-beat`.
 
 **Qué NO cambia a `--spring`:** nada que sea un relleno/progreso continuo
-(el anillo del descanso, la barra de series, `.tab-ind` deslizándose entre
-pestañas de la tab bar) ni transiciones de color/opacidad puras (el rebote
-ahí se vería como un parpadeo raro, no como movimiento físico). Esas
-siguen con `--ease` tal cual están.
+(el anillo del descanso, la barra de series, `railIn`, `.tab-ind`
+deslizándose entre pestañas de la tab bar) ni transiciones de
+color/opacidad puras (el rebote ahí se vería como un parpadeo raro, no
+como movimiento físico). Esas siguen con `--ease` tal cual están.
 
 **Duraciones:** se mantienen las ya acortadas (260ms pestañas, 220ms
 sheets, etc.) — este cambio es sólo de curva, no de tiempo.
 
 ## 2. Vidrio esmerilado en las tarjetas
 
-**Hoy:** sólo la tab bar y los sheets usan `backdrop-filter:blur(...)`. La
-clase `.card` (usada en casi todas las pantallas: el hero de Hoy, cada
-fila de ejercicio en Rutina, las tarjetas de Progreso, etc.) tiene un
-fondo con degradado pero casi opaco — no deja pasar nada de lo que hay
-detrás.
+**Corrección post-spec:** al leer `styles.css` para armar el plan, se
+encontró que `.card` YA tiene `backdrop-filter:blur(22px) saturate(1.5)`
+desde el primer commit de la app — no es cierto que sólo la tab bar y los
+sheets lo usen. La comparación mostrada a Enzo (tarjeta "A" totalmente
+opaca) no reflejaba el CSS real. El problema real es otro: **el blur ya
+está pero casi no se nota**, porque el fondo de `.card` es
+`linear-gradient(180deg,var(--card) /* 100% opaco */,rgba(12,19,34,.6))`
+— arriba de la tarjeta el blur no se ve (tapado por color 100% opaco), y
+sólo se insinúa un poco abajo. El panel de los sheets, en cambio, usa un
+degradado *uniformemente* translúcido
+(`linear-gradient(180deg,rgba(14,22,38,.92),rgba(10,16,28,.92))`), por
+eso su vidrio sí se percibe. `.card.hero` (la tarjeta principal de Hoy) es
+el peor caso: su fondo pone `var(--card)` 100% opaco como última capa,
+así que su blur es invisible pese a heredarlo de `.card`.
 
-**Cambio:** `.card` (la regla base en `styles.css`, la que heredan todos
-los usos) suma `backdrop-filter:blur(20px) saturate(1.6)` (mismo valor que
-ya usa el panel de los sheets, para que se sienta como el mismo material
-en toda la app) y ajusta su fondo a una versión más translúcida del
-degradado que ya tiene, no un color nuevo.
+**Cambio (corregido):** no se agrega `backdrop-filter` (ya existe). Se
+cambia el fondo de `.card` de "opaco arriba → 60% abajo" a un degradado
+uniformemente translúcido, mismo tono azul/marino que ya usa (no un color
+nuevo, no el blanco genérico de la maqueta), en el rango del 85-90% de
+opacidad — similar al material de los sheets pero un poco más sólido
+porque las tarjetas conviven con más contenido/scroll. Ajuste específico
+para `.card.hero`: reemplazar la última capa opaca (`var(--card)`) por su
+equivalente translúcido para que su blur (el más visible del app, al ser
+la tarjeta principal de Hoy) deje de estar tapado.
 
 **Confirmado explícitamente con Enzo:** esto se aplica a la clase base, así
 que alcanza a TODAS las tarjetas de la app — no sólo los hero cards
-destacados. Es el cambio de mayor superficie visual de los tres.
+destacados. Sigue siendo el cambio de mayor superficie visual de los tres,
+aunque técnicamente es un ajuste de opacidad, no de blur nuevo.
 
-**Riesgo a vigilar:** blur real sobre MUCHAS tarjetas a la vez en una
-pantalla larga (por ejemplo el historial de sesiones en Progreso, con
-varias `.card` apiladas) puede pesarle a un teléfono viejo — cada capa de
-blur es su propio costo de repintado. Si al verificar en navegador se ve
-lento en una lista larga, la salida es acotar el blur a menos tarjetas por
-pantalla (por ejemplo sólo la primera visible) en vez de sacarlo del todo
-— eso se decide en la implementación, con datos reales, no a priori acá.
+**Riesgo a vigilar:** el blur en sí ya corre hoy sobre todas las
+`.card` sin problema de rendimiento reportado, así que el riesgo de este
+ajuste es bajo (no se agrega una capa de repintado nueva, sólo cambia
+cuánto de ella se ve). Igual se verifica en una pantalla larga (historial
+de Progreso) por si el cambio de opacidad revela algo distinto.
 
-**Qué NO cambia:** las clases más específicas ya construidas sobre `.card`
-(`.card.hero`, `.card.sub`, `.card.day`, etc.) heredan el blur de la base
-automáticamente — no hace falta tocarlas una por una salvo que alguna
-tenga su propio `background` que lo tape (se revisa caso por caso al
+**Qué NO cambia:** `.card.sub` (`background:rgba(12,19,34,.4)`, 40% de
+opacidad) ya es más translúcida que el objetivo — no se toca. El resto de
+clases construidas sobre `.card` heredan el ajuste automáticamente salvo
+que tengan su propio `background` (se revisa caso por caso al
 implementar).
 
 ## 3. Tipografía y espaciado más generosos
 
-**Hoy:** los títulos de pantalla (`.vtitle h1`, ~1.7rem/27px) y el margen
-entre secciones (`.sect`, ~14-16px arriba) son compactos — se ve más
-contenido sin scrollear, pero la jerarquía es menos marcada que en una
-pantalla nativa de iOS.
-
-**Cambio:** agrandar el título de pantalla (`h1` dentro de `.vtitle`, y
-equivalentes en Hoy/Nutrición/Progreso) a un tamaño más grande (referencia
-de la comparación: ~34-38px, similar a "Ajustes" de iOS), y aumentar el
-margen superior de `.sect` (secciones dentro de una pantalla) para que
-respiren más. Aplica a las cuatro pantallas principales (Inicio, Rutina,
-Hoy, Nutrición, Progreso) de forma consistente — mismo criterio, no una
-pantalla sí y otra no.
-
-**Trade-off aceptado:** más scroll para ver la misma cantidad de
-contenido. Enzo lo vio en la comparación y no objetó.
-
-**Qué NO cambia:** el tamaño de texto dentro de las tarjetas (nombres de
-ejercicio, números, etc.) — esto es específicamente el título de pantalla
-y el espacio ENTRE bloques, no una revisión de toda la escala tipográfica.
+**Corrección post-spec — esta pieza queda descartada, ya está hecha.** La
+premisa de esta sección (títulos de ~27px, secciones con ~14-16px arriba)
+era incorrecta: al leer `styles.css` se encontró que `.vtitle h1` ya está
+en `font-size:40px` (con un comentario propio: *"40px e itálica, como el
+mockup"* — ya se había llevado a este tamaño en una vuelta de diseño
+anterior de esta misma sesión) y `.sect` ya usa `margin:22px 2px 10px`.
+Comparado contra los dos tratamientos mostrados en la maqueta (A:
+título 27px/margen 14px arriba — cramped; B: título 37.6px/margen 22.4px
+arriba — "estilo Ajustes de iOS"), el valor real de hoy YA IGUALA O SUPERA
+el tratamiento "B" en las cuatro pantallas (Hoy, Rutina ×3, Nutrición,
+Progreso vía `<div className="vtitle">`, confirmado leyendo los cinco
+usos de `<h1>` en `components/screens/*.jsx`). No hay una pieza de código
+que escribir acá — se documenta la corrección y se cierra sin tarea en el
+plan.
 
 ## Testing
 
