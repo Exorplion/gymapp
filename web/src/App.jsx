@@ -345,7 +345,11 @@ export default function App() {
           moveTabIndicator() (TabBar.jsx) busca `button.on`: sin encontrarlo
           deja la píldora colgada donde estaba. Hoy se entra desde Inicio, así
           que mientras estás ahí Inicio sigue siendo la pestaña activa. */}
-      <TabBar active={store.tab === 'hoy' ? 'inicio' : store.tab} onChange={t => { S.tab = t; bump(); }} />
+      {/* Mismo vibrate(8) que ya usa el swipe (más abajo, onUp): tocar la
+          barra y deslizar llevan al mismo lugar, así que tienen que sentirse
+          igual — antes sólo el swipe vibraba y tocar la pestaña se sentía
+          "más apagado" que deslizar hasta ahí. */}
+      <TabBar active={store.tab === 'hoy' ? 'inicio' : store.tab} onChange={t => { S.tab = t; bump(); vibrate(8); }} />
       <Toast />
       <Sheet open={!!store.sheet} onClose={closeSheet}>
         <SheetContent sheet={store.sheet} />

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { idb, STORES } from './db.js';
-import { dstr, fmtNum, round1, kg2lb, KG2LB } from './format.js';
+import { dstr, fmtNum, round1, kg2lb, KG2LB, vibrate } from './format.js';
 
 // S sigue siendo el mismo objeto mutable de la app original: todo el código
 // de negocio (session.js, streak.js, drag.js, etc.) lo lee y lo muta
@@ -103,5 +103,10 @@ export function wStep() {
 // props — quien renderiza <Sheet/> (App.jsx) decide qué componente pintar
 // según S.sheet.type. Un solo campo alcanza porque, igual que en el
 // original, sólo hay un sheet abierto a la vez en toda la app.
-export function openSheet(type, props = {}) { S.sheet = { type, props }; bump(); }
+// Un solo lugar y no cada llamado a openSheet() en cada archivo: abrir CUALQUIER
+// sheet (Ajustes, Biblioteca, editar un día, lo que sea) es una acción frecuente
+// y hoy no vibraba nunca — más liviano que cambiar de pestaña porque pasa más
+// seguido. Cerrar no suma vibración propia: no hace falta un aviso físico para
+// algo que ya elegiste dejar de mirar.
+export function openSheet(type, props = {}) { S.sheet = { type, props }; bump(); vibrate(6); }
 export function closeSheet() { S.sheet = null; bump(); }
