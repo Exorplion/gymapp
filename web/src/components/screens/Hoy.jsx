@@ -28,6 +28,7 @@ import { tocaCalentar, bloqueDe, DESCANSO } from '../../lib/warmup.js';
 import { startRest } from '../../lib/rest.js';
 import { toast } from '../../lib/toast.js';
 import { Bolt, Mic, RecordDot } from '../Icon.jsx';
+import { HoySinPlan } from '../Illustration.jsx';
 
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
 
@@ -193,7 +194,7 @@ export default function Hoy() {
 
       {!exs.length ? (
         <div className="card"><div className="empty">
-          <div className="big">🏋️</div>
+          <HoySinPlan className="big" />
           <p>No hay rutina para <b>{WD[wd]}</b>.<br />Configura tu split en la pestaña Rutina.</p>
           <button
             type="button"

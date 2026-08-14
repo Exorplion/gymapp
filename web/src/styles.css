@@ -1173,7 +1173,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .empty{
   text-align:center;padding:36px 20px;color:var(--mut);
 }
-.empty .big{font-size:44px;margin-bottom:10px;filter:grayscale(.3)}
+.empty .big{display:block;margin:0 auto 14px;color:var(--mut2)}
 .empty p{font-size:15px;line-height:1.5;margin-bottom:18px}
 .sect{
   font-family:'Barlow Condensed';font-size:15px;font-weight:700;letter-spacing:.18em;

@@ -20,6 +20,7 @@ import { toast } from '../../lib/toast.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
 import { Info } from '../Icon.jsx';
+import { RutinaVacia } from '../Illustration.jsx';
 
 /** Puerto del guard de sheetLibSave() (index.html): "No hay rutina que
     guardar" si S.routine no tiene ningún día con ejercicios. En el original
@@ -58,7 +59,7 @@ function RutinaView() {
       <>
         <div className="vtitle"><h1>Rutina</h1><span className="sub">tu semana de un vistazo</span></div>
         <div className="card"><div className="empty">
-          <div className="big">🏗</div>
+          <RutinaVacia className="big" />
           <p>Todavía no tenés rutina.<br />Elegí una <b>plantilla</b> lista o armá tu split día por día.</p>
           <button
             type="button"
