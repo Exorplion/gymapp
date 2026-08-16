@@ -40,6 +40,7 @@
   --t-micro:11px; --t-sm:13px; --t-body:15px; --t-lg:18px; --t-xl:22px;
   --t-display:34px; --t-hero:44px;
   --ease:cubic-bezier(.22,.9,.28,1);
+  --spring:cubic-bezier(.34,1.56,.64,1);
   font-synthesis:none;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -147,9 +148,9 @@ main{
    Corre SOLO al cambiar de pestaña (.enter), nunca en un re-render. */
 @keyframes slideR{from{opacity:0;transform:translate3d(56px,0,0)}to{opacity:1;transform:none}}
 @keyframes slideL{from{opacity:0;transform:translate3d(-56px,0,0)}to{opacity:1;transform:none}}
-.view.enter.dir-r{animation:slideR .26s var(--ease)}
-.view.enter.dir-l{animation:slideL .26s var(--ease)}
-.view.enter>*{animation:vin .26s var(--ease) backwards}
+.view.enter.dir-r{animation:slideR .26s var(--spring)}
+.view.enter.dir-l{animation:slideL .26s var(--spring)}
+.view.enter>*{animation:vin .26s var(--spring) backwards}
 /* z-index explícito, con position:relative para que z-index tenga efecto
    (sin position, un elemento static ignora z-index aunque sea flex/grid no
    aplica acá). Así la entrante queda SIEMPRE arriba de la saliente, sin
@@ -228,14 +229,14 @@ main{
 
 /* ---------- cards ---------- */
 .card{
-  background:linear-gradient(180deg,var(--card),rgba(12,19,34,.6));
+  background:linear-gradient(180deg,rgba(12,19,34,.9),rgba(12,19,34,.74));
   border:1px solid var(--glass-border);border-radius:var(--r);
   padding:var(--s4);margin-bottom:var(--s3);
   backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
   box-shadow:var(--glass-hi),0 14px 34px -18px rgba(0,0,0,.6);
 }
 .card.hero{
-  background:linear-gradient(158deg,rgba(37,64,232,.3),rgba(255,255,255,.03) 58%),var(--card);
+  background:linear-gradient(158deg,rgba(37,64,232,.3),rgba(255,255,255,.03) 58%),rgba(12,19,34,.85);
   border-color:rgba(120,170,255,.22);border-radius:var(--r-lg);
   padding:20px;position:relative;overflow:hidden;
 }
@@ -523,12 +524,12 @@ body.dragging-on .card.day.drop-target{filter:none}
 .day-txt{flex:1;min-width:0}
 
 /* el día que recibe la rutina: entra desde arriba con un destello azul */
-.card.day.fx-arrive{animation:dayArrive .52s var(--ease)}
+.card.day.fx-arrive{animation:dayArrive .52s var(--spring)}
 /* el que fue desplazado a otro día: mismo movimiento, tinte distinto, para que
    se lea como consecuencia y no como la acción que pediste */
-.card.day.fx-bumped{animation:dayBumped .52s var(--ease)}
+.card.day.fx-bumped{animation:dayBumped .52s var(--spring)}
 /* el que quedó vacío: se apaga en el lugar */
-.card.day.fx-left{animation:dayLeft .52s var(--ease)}
+.card.day.fx-left{animation:dayLeft .52s var(--spring)}
 @keyframes dayArrive{
   0%{transform:translateY(-10px) scale(.985);box-shadow:0 0 0 1px rgba(46,125,255,.5),0 0 34px -4px rgba(46,125,255,.55)}
   60%{box-shadow:0 0 0 1px rgba(46,125,255,.3),0 0 24px -8px rgba(46,125,255,.35)}
@@ -1121,7 +1122,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   border:1px solid rgba(255,255,255,.14);border-bottom:none;
   border-radius:26px 26px 0 0;
   padding:10px 20px calc(24px + env(safe-area-inset-bottom));
-  animation:shup .22s cubic-bezier(.2,.8,.3,1);
+  animation:shup .22s var(--spring);
   box-shadow:var(--glass-hi),0 -20px 60px -20px rgba(0,0,0,.7);
 }
 @keyframes shup{from{transform:translateY(60%);opacity:.4}}
@@ -1139,7 +1140,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
    reducido la animación "termina" casi al instante y se queda CONGELADA en
    su keyframe final (translateY(60%);opacity:.4) — un panel fantasma,
    translúcido y a medio bajar. Sheet.jsx igual mantiene #sheet.closing en
-   el DOM los 300ms de CIERRE_MS (ese timer es JS, no se acorta con la
+   el DOM los 220ms de CIERRE_MS (ese timer es JS, no se acorta con la
    media query), así que sin esta regla el fantasma queda visible todo ese
    tiempo. Se saca del render directamente: no hay nada que animar. */
 @media (prefers-reduced-motion:reduce){
@@ -1712,7 +1713,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   background:linear-gradient(158deg,rgba(255,255,255,.1),rgba(255,255,255,.04)),rgba(10,16,29,.97);
   border:1px solid var(--line2);
   box-shadow:0 20px 44px -16px rgba(0,0,0,.85),0 0 0 1px rgba(0,0,0,.35);
-  animation:mpop-in .19s var(--ease) both;
+  animation:mpop-in .19s var(--spring) both;
 }
 .mpop.abajo{--org:50% 0;transform:translateX(-50%)}
 .mpop.arriba{--org:50% 100%;transform:translate(-50%,-100%)}
@@ -1930,7 +1931,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   opacity:0;padding:24px;text-align:center;
   animation:sc-beat var(--dur) var(--ease) forwards;
 }
-@keyframes sc-beat{0%{opacity:0;transform:scale(.94)}12%{opacity:1;transform:none}88%{opacity:1}100%{opacity:0;transform:scale(1.04)}}
+@keyframes sc-beat{0%{opacity:0;transform:scale(.94);animation-timing-function:var(--spring)}12%{opacity:1;transform:none}88%{opacity:1}100%{opacity:0;transform:scale(1.04)}}
 .sc-beat.b1{--dur:700ms;animation-delay:0ms}
 .sc-beat.b2{--dur:700ms;animation-delay:650ms}
 .sc-beat.b3{--dur:1100ms;animation-delay:1300ms}
