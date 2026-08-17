@@ -1238,9 +1238,10 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 /* Tarjeta de dato: encabezado + cuerpo. Para las vistas de detalle, donde
    .card suelto obligaba a ajustar el padding a mano cada vez. */
 .dcard{
-  background:linear-gradient(180deg,var(--card),rgba(12,19,34,.6));
+  background:linear-gradient(180deg,rgba(12,19,34,.9),rgba(12,19,34,.74));
   border:1px solid var(--glass-border);border-radius:var(--r);
   padding:var(--s3) 14px;margin-bottom:10px;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
 }
 .dcard-head{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s2)}
 .dcard-title{
