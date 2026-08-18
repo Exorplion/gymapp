@@ -1,20 +1,38 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
+import { loadAll } from './src/lib/state.js';
+import Inicio from './src/screens/Inicio.js';
+import Rutina from './src/screens/Rutina.js';
+import Comida from './src/screens/Comida.js';
+import Progreso from './src/screens/Progreso.js';
+
+const Tab = createBottomTabNavigator();
 
 export default function App() {
+  // Puerto del efecto de arranque de web/src/App.jsx: idbOpenOnce().then(loadAll)
+  // corría ahí; acá loadAll() ya no necesita idbOpenOnce por separado porque
+  // AsyncStorage no tiene noción de "abrir conexión" (ver Task 2).
+  const [ready, setReady] = useState(false);
+  useEffect(() => { loadAll().then(() => setReady(true)); }, []);
+
+  if (!ready) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#05070d' }}>
+        <ActivityIndicator color="#2e7dff" />
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      <Tab.Navigator screenOptions={{ headerShown: false, tabBarActiveTintColor: '#2e7dff' }}>
+        <Tab.Screen name="Inicio" component={Inicio} />
+        <Tab.Screen name="Rutina" component={Rutina} />
+        <Tab.Screen name="Comida" component={Comida} />
+        <Tab.Screen name="Progreso" component={Progreso} />
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
