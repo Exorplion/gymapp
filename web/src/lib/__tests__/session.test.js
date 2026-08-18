@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../state.js';
-import { weekStart, sessionForWeekday, sessionPRs, groupSessionsByWeek } from '../session.js';
+import { weekStart, sessionForSlot, sessionPRs, groupSessionsByWeek } from '../session.js';
 
 // dstr() y weekStart() trabajan en hora local, así que las fechas de prueba se
 // construyen con el constructor local (año, mes, día), nunca con strings ISO.
@@ -24,26 +24,26 @@ describe('weekStart', () => {
   });
 });
 
-describe('sessionForWeekday', () => {
+describe('sessionForSlot', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(d(2026, 8, 6));      // jueves
     S.sessions = [];
   });
 
-  it('encuentra la sesión de ese weekday en la semana en curso', () => {
-    S.sessions = [{ id: 'a', weekday: 4, date: '2026-08-06', start: 300 }];
-    expect(sessionForWeekday(4)?.id).toBe('a');
+  it('encuentra la sesión de ese turno en la semana en curso', () => {
+    S.sessions = [{ id: 'a', slotId: 'jueves-a', date: '2026-08-06', start: 300 }];
+    expect(sessionForSlot('jueves-a')?.id).toBe('a');
   });
 
-  it('ignora la del mismo weekday pero de la semana pasada', () => {
-    S.sessions = [{ id: 'vieja', weekday: 4, date: '2026-07-30', start: 100 }];
-    expect(sessionForWeekday(4)).toBe(null);
+  it('ignora la del mismo turno pero de la semana pasada', () => {
+    S.sessions = [{ id: 'vieja', slotId: 'jueves-a', date: '2026-07-30', start: 100 }];
+    expect(sessionForSlot('jueves-a')).toBe(null);
   });
 
-  it('un día de esta semana sin sesión devuelve null', () => {
-    S.sessions = [{ id: 'a', weekday: 4, date: '2026-08-06', start: 300 }];
-    expect(sessionForWeekday(5)).toBe(null);
+  it('un turno de esta semana sin sesión devuelve null', () => {
+    S.sessions = [{ id: 'a', slotId: 'jueves-a', date: '2026-08-06', start: 300 }];
+    expect(sessionForSlot('viernes-b')).toBe(null);
   });
 });
 

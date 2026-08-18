@@ -15,9 +15,9 @@ vi.mock('../confetti.js', () => ({ fireConfetti: vi.fn() }));
 const ex = (id, name, sets = 3) => ({ id, name, sets, reps: 10 });
 
 beforeEach(() => {
-  S.routine = { 4: { weekday: 4, name: 'Anterior A', exercises: [ex('a', 'Press'), ex('b', 'Remo'), ex('c', 'Curl')] } };
+  S.routine = [{ id: 'slot4', order: 0, type: 'workout', name: 'Anterior A', exercises: [ex('a', 'Press'), ex('b', 'Remo'), ex('c', 'Curl')] }];
   S.draft = {
-    id: 'd1', date: '2026-08-06', weekday: 4, dayName: 'Anterior A',
+    id: 'd1', date: '2026-08-06', slotId: 'slot4', dayName: 'Anterior A',
     open: 1, start: null, cur: null, entries: {},
     order: ['a', 'b', 'c'], skipped: [], extraSets: {}, extras: [],
   };
@@ -47,18 +47,18 @@ describe('targetSets', () => {
 describe('sessionExs', () => {
   it('devuelve los de la rutina en el orden del borrador', () => {
     S.draft.order = ['c', 'a', 'b'];
-    expect(sessionExs(4).map(e => e.id)).toEqual(['c', 'a', 'b']);
+    expect(sessionExs(0).map(e => e.id)).toEqual(['c', 'a', 'b']);
   });
 
   it('incluye los ejercicios agregados sólo para hoy', () => {
     S.draft.extras = [ex('x', 'Face pull')];
     S.draft.order = ['a', 'b', 'c', 'x'];
-    expect(sessionExs(4).map(e => e.name)).toEqual(['Press', 'Remo', 'Curl', 'Face pull']);
+    expect(sessionExs(0).map(e => e.name)).toEqual(['Press', 'Remo', 'Curl', 'Face pull']);
   });
 
   it('un borrador viejo sin extras sigue funcionando', () => {
     delete S.draft.extras;
-    expect(sessionExs(4)).toHaveLength(3);
+    expect(sessionExs(0)).toHaveLength(3);
   });
 });
 
@@ -74,12 +74,12 @@ describe('saltar', () => {
     await skipExercise('b');
     await unskipExercise('b');
     expect(S.draft.order).toEqual(['a', 'b', 'c']);
-    expect(sessionExs(4).map(e => e.id)).toEqual(['a', 'b', 'c']);
+    expect(sessionExs(0).map(e => e.id)).toEqual(['a', 'b', 'c']);
   });
 
   it('nextPending lo ignora', async () => {
     await skipExercise('a');
-    expect(nextPending(sessionExs(4)).id).toBe('b');
+    expect(nextPending(sessionExs(0)).id).toBe('b');
   });
 
   it('saltar el que está en curso lo suelta', async () => {
@@ -90,7 +90,7 @@ describe('saltar', () => {
 
   it('con todo salteado no queda ninguno pendiente', async () => {
     await skipExercise('a'); await skipExercise('b'); await skipExercise('c');
-    expect(nextPending(sessionExs(4))).toBe(null);
+    expect(nextPending(sessionExs(0))).toBe(null);
   });
 
   it('saltar dos veces no lo duplica', async () => {
@@ -109,9 +109,9 @@ describe('addExtraSet', () => {
 
   it('reabre un ejercicio que estaba completo', async () => {
     S.draft.entries.a = { name: 'Press', sets: [{ w: 50, r: 10 }, { w: 50, r: 10 }, { w: 50, r: 10 }] };
-    expect(nextPending(sessionExs(4)).id).toBe('b');
+    expect(nextPending(sessionExs(0)).id).toBe('b');
     await addExtraSet('a');
-    expect(nextPending(sessionExs(4)).id).toBe('a');
+    expect(nextPending(sessionExs(0)).id).toBe('a');
   });
 });
 
@@ -120,12 +120,12 @@ describe('addSessionExercise', () => {
     await addSessionExercise({ name: 'Face pull', sets: 3, reps: 12 });
     expect(S.draft.extras).toHaveLength(1);
     expect(S.draft.order[S.draft.order.length - 1]).toBe(S.draft.extras[0].id);
-    expect(S.routine[4].exercises).toHaveLength(3);   // la rutina no se toca
+    expect(S.routine[0].exercises).toHaveLength(3);   // la rutina no se toca
   });
 
   it('el agregado aparece en sessionExs', async () => {
     await addSessionExercise({ name: 'Face pull', sets: 3, reps: 12 });
-    expect(sessionExs(4).map(e => e.name)).toContain('Face pull');
+    expect(sessionExs(0).map(e => e.name)).toContain('Face pull');
   });
 });
 
@@ -135,7 +135,7 @@ describe('replaceSessionExercise', () => {
   it('saca el viejo y pone el nuevo en su lugar exacto', async () => {
     await replaceSessionExercise('b', { name: 'Remo polea', sets: 3, reps: 10 });
     expect(isSkipped('b')).toBe(false);
-    expect(sessionExs(4).map(e => e.name)).toEqual(['Press', 'Remo polea', 'Curl']);
+    expect(sessionExs(0).map(e => e.name)).toEqual(['Press', 'Remo polea', 'Curl']);
   });
 
   it('el reemplazo queda justo donde estaba el original en el orden', async () => {
@@ -169,13 +169,13 @@ describe('isUnilateral / toggleUnilateral', () => {
 
   it('togglear crea un override de sesión que pisa a la rutina', async () => {
     await toggleUnilateral('a');   // 'a' (Press) no es unilateral en la rutina
-    expect(isUnilateral(S.routine[4].exercises.find(e => e.id === 'a'))).toBe(true);
+    expect(isUnilateral(S.routine[0].exercises.find(e => e.id === 'a'))).toBe(true);
   });
 
   it('togglear dos veces vuelve al valor de la rutina', async () => {
     await toggleUnilateral('a');
     await toggleUnilateral('a');
-    expect(isUnilateral(S.routine[4].exercises.find(e => e.id === 'a'))).toBe(false);
+    expect(isUnilateral(S.routine[0].exercises.find(e => e.id === 'a'))).toBe(false);
   });
 
   it('sin sesión abierta no explota', async () => {
@@ -262,14 +262,14 @@ describe('groupSets', () => {
 describe('cambiar un ejercicio por otro', () => {
   it('el original desaparece de la lista', async () => {
     await replaceSessionExercise('b', { name: 'Jalón', sets: 3, reps: 10 });
-    const nombres = sessionExs(4).map(e => e.name);
+    const nombres = sessionExs(0).map(e => e.name);
     expect(nombres).not.toContain('Remo');
     expect(nombres).toContain('Jalón');
   });
 
   it('el reemplazo entra en el lugar del original, no al final', async () => {
     await replaceSessionExercise('b', { name: 'Jalón', sets: 3, reps: 10 });
-    expect(sessionExs(4).map(e => e.name)).toEqual(['Press', 'Jalón', 'Curl']);
+    expect(sessionExs(0).map(e => e.name)).toEqual(['Press', 'Jalón', 'Curl']);
   });
 
   // "Que se quede registrado por cuál lo cambié": el original ya no está a la

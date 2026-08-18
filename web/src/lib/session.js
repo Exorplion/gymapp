@@ -1,6 +1,6 @@
 // Puerto de funciones de sesión desde index.html
-import { S, bump, saveDraft, wBoth, closeSheet } from './state.js';
-import { dstr, uid, round1, WD, fmtD, vibrate } from './format.js';
+import { S, bump, saveDraft, saveCfg, wBoth, closeSheet } from './state.js';
+import { dstr, uid, round1, fmtD, vibrate } from './format.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
 import { startRest, stopRest } from './rest.js';
@@ -60,8 +60,9 @@ export function ensureVals(ex) {
 /** Orden de ejercicios de la sesión: se puede reacomodar mientras el reloj no
     arrancó (la máquina ocupada es la regla, no la excepción). Una vez que
     empezás a entrenar el orden queda fijo. */
-export function orderedExs(wd, exs) {
-  const ord = (S.draft && S.draft.weekday === wd) ? S.draft.order : S.hoyOrder[wd];
+export function orderedExs(index, exs) {
+  const slotId = S.routine[index]?.id;
+  const ord = (S.draft && S.draft.slotId === slotId) ? S.draft.order : S.hoyOrder?.[slotId];
   if (!ord || !ord.length) return exs;
   const by = new Map(exs.map(e => [e.id, e]));
   const out = [];
@@ -70,9 +71,10 @@ export function orderedExs(wd, exs) {
   return out;
 }
 
-export async function setExOrder(wd, ids) {
-  if (S.draft && S.draft.weekday === wd) { S.draft.order = ids; await saveDraft(); }
-  else S.hoyOrder[wd] = ids;
+export async function setExOrder(index, ids) {
+  const slotId = S.routine[index]?.id;
+  if (S.draft && S.draft.slotId === slotId) { S.draft.order = ids; await saveDraft(); }
+  else { S.hoyOrder = S.hoyOrder || {}; S.hoyOrder[slotId] = ids; }
 }
 
 export function setsDone(exId) { return S.draft?.entries[exId]?.sets || []; }
@@ -94,10 +96,13 @@ export function weekStart(d = new Date()) {
 
     S.sessions está ordenado descendente por start, así que find() da la más
     reciente. */
-export function sessionForWeekday(wd) {
+export function sessionForSlot(slotId) {
   const ws = weekStart();
-  return S.sessions.find(s => s.weekday === +wd && s.date >= ws) || null;
+  return S.sessions.find(s => s.slotId === slotId && s.date >= ws) || null;
 }
+
+/** El turno pendiente según el puntero de la secuencia. */
+export function pendingSlot() { return S.routine[S.cfg.seqIndex] || null; }
 
 /** Récords de `sess`: la mejor serie de cada ejercicio contra el máximo de las
     sesiones ANTERIORES a ella. Sirve para cualquier sesión, esté o no todavía
@@ -228,9 +233,10 @@ export function isSkipped(exId) { return !!S.draft?.skipped?.includes(exId); }
 
 /** Los ejercicios de la sesión: los del día más los agregados hoy, en el orden
     del borrador. Reemplaza a orderedExs() mientras hay sesión abierta. */
-export function sessionExs(wd) {
+export function sessionExs(index) {
+  const slot = S.routine[index];
   const cambiados = S.draft?.replaced || {};
-  const todos = [...(S.routine[wd]?.exercises || []), ...(S.draft?.extras || [])]
+  const todos = [...(slot?.exercises || []), ...(S.draft?.extras || [])]
     .filter(e => !cambiados[e.id]);   // el que cambiaste ya no está en la lista
   const ord = S.draft?.order;
   if (!ord?.length) return todos;
@@ -300,11 +306,11 @@ export async function dropSet(exId) {
   // siguiente, igual que cuando lo completás registrando
   const nuevo = targetSets(ex);
   if (hechas >= nuevo && S.draft.cur === exId) {
-    /* El día sale del BORRADOR y no de currentDayForHoy(): esa función devuelve
-       el día que estás mirando, y podés estar viendo el martes con la sesión
-       del jueves abierta. Con el día equivocado la lista viene vacía y el
-       siguiente ejercicio se pierde. */
-    const sig = nextPending(sessionExs(S.draft.weekday));
+    /* El turno sale del BORRADOR (slotId), no de un índice mirado aparte:
+       podés estar viendo otro turno con la sesión de éste abierta. Con el
+       turno equivocado la lista viene vacía y el siguiente ejercicio se
+       pierde. */
+    const sig = nextPending(sessionExs(S.routine.findIndex(s => s.id === S.draft.slotId)));
     S.draft.cur = sig ? sig.id : null;
   }
   await saveDraft();
@@ -375,9 +381,8 @@ export async function saveSet(exId) {
   const ex = findEx(exId); if (!ex) return;
   const v = ensureVals(ex);
   if (!(v.w > 0) || !(v.r > 0)) { toast('Peso y reps deben ser > 0'); return; }
-  const wd = currentDayForHoy();
   if (!S.draft) {
-    S.draft = { id: uid(), date: dstr(), weekday: wd, dayName: S.routine[wd]?.name || WD[wd], start: Date.now(), cur: exId, entries: {} };
+    S.draft = { id: uid(), date: dstr(), slotId: pendingSlot()?.id, dayName: pendingSlot()?.name, start: Date.now(), cur: exId, entries: {} };
   }
   // `cat` se copia SÓLO si es una asignación explícita del ejercicio: sin ella
   // catOf() clasifica por el nombre que la propia entrada ya guarda, así que
@@ -395,7 +400,7 @@ export async function saveSet(exId) {
   cur.push({ w: round1(v.w), r: v.r, t: Date.now() });
   if (!S.draft.start) S.draft.start = Date.now();
   const finished = cur.length >= techo;
-  const exs = sessionExs(S.draft.weekday);
+  const exs = sessionExs(S.routine.findIndex(s => s.id === S.draft.slotId));
   const nxt = finished ? nextPending(exs) : null;
   if (finished) S.draft.cur = null;
   await saveDraft();
@@ -413,9 +418,9 @@ export async function saveSet(exId) {
 export async function completeSession() {
   if (!S.draft) return;
   const d = S.draft;
-  const wdDay = S.routine[d.weekday];
+  const slot = S.routine.find(s => s.id === d.slotId);
   /* el orden real de la sesión manda sobre el de la rutina (se pudo reacomodar) */
-  const order = (d.order && d.order.length) ? d.order : (wdDay?.exercises || []).map(e => e.id);
+  const order = (d.order && d.order.length) ? d.order : (slot?.exercises || []).map(e => e.id);
   const entries = Object.entries(d.entries)
     .sort((a, b) => { const ia = order.indexOf(a[0]), ib = order.indexOf(b[0]); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); })
     .map(([exId, e]) => ({ exId, name: e.name, equip: e.equip, machine: e.machine, cat: e.cat, unilateral: e.unilateral, sets: e.sets }));
@@ -427,7 +432,7 @@ export async function completeSession() {
      suman volumen, no compiten por PRs, no tocan el gráfico de carga. Se
      guardan aparte para que dentro de un mes sepas si ese día no tocaba peso
      muerto o si lo dejaste pasar. */
-  const todos = sessionExs(d.weekday);
+  const todos = sessionExs(S.routine.findIndex(s => s.id === d.slotId));
   const skipped = (d.skipped || [])
     .map(id => todos.find(e => e.id === id))
     .filter(Boolean)
@@ -439,7 +444,7 @@ export async function completeSession() {
     .map(e => ({ name: e.name, sets: e.sets, reps: e.reps, equip: e.equip, machine: e.machine, unilateral: e.unilateral }));
 
   const sess = {
-    id: d.id, date: d.date, weekday: d.weekday, dayName: d.dayName,
+    id: d.id, date: d.date, slotId: d.slotId, dayName: d.dayName,
     start: startAt, end: Date.now(), duration: Math.max(1, Math.round((Date.now() - startAt) / 60000)), entries,
     ...(skipped.length ? { skipped } : {}),
     ...(added.length ? { added } : {}),
@@ -449,8 +454,15 @@ export async function completeSession() {
   // sessionPRs filtra por start < sess.start, así que la sesión recién
   // insertada se excluye sola: da lo mismo calcular antes o después de guardar.
   const prs = sessionPRs(sess);
-  S.draft = null; S.hoyDay = null;
-  await saveDraft();
+  S.draft = null;
+
+  // Avanza el puntero al turno siguiente al que se acaba de completar,
+  // buscando por id (no por índice guardado): si reordenaste la secuencia
+  // mientras entrenabas, esto sigue apuntando al lugar correcto.
+  const finishedAt = S.routine.findIndex(s => s.id === d.slotId);
+  S.cfg.seqIndex = finishedAt >= 0 ? (finishedAt + 1) % Math.max(1, S.routine.length) : S.cfg.seqIndex;
+  S.cfg.seqIndexDate = dstr();
+  await Promise.all([saveDraft(), saveCfg()]);
   stopRest();
   vibrate([30, 50, 30]);
   // Antes acá se abría directo el sheet de detalle (session-view). Ahora
@@ -469,15 +481,15 @@ export async function completeSession() {
 /** Abre el borrador de sesión (weekday `wd`, con el orden ya reacomodado si
     hubo drag-to-reorder antes de arrancar). El cronómetro NO arranca acá —
     arranca en startExercise(), cuando de verdad estás en la máquina. */
-export async function startSession(wd) {
-  const day = S.routine[wd];
-  if (!day?.exercises?.length) { toast('Este día no tiene ejercicios'); return; }
+export async function startSession(index) {
+  const slot = S.routine[index];
+  if (!slot?.exercises?.length) { toast('Este turno no tiene ejercicios'); return; }
   // Acá y no al terminar el primer descanso: abrir la sesión es un toque de
   // botón, que es el gesto que los navegadores exigen para poder preguntar.
   pedirPermiso();
   S.draft = {
-    id: uid(), date: dstr(), weekday: wd, dayName: day.name || WD[wd], open: Date.now(), start: null, cur: null,
-    order: orderedExs(wd, day.exercises).map(e => e.id), entries: {},
+    id: uid(), date: dstr(), slotId: slot.id, dayName: slot.name || 'Entrenamiento', open: Date.now(), start: null, cur: null,
+    order: orderedExs(index, slot.exercises).map(e => e.id), entries: {},
     // lo que se puede cambiar sin tocar el plan: ver "modificar la sesión
     // mientras entrenás" más arriba
     skipped: [], extraSets: {}, extras: [],
@@ -490,7 +502,7 @@ export async function startSession(wd) {
 }
 
 export async function discardSession() {
-  S.draft = null; S.hoyDay = null;
+  S.draft = null;
   await saveDraft();
   stopRest();
   bump();
@@ -529,14 +541,13 @@ export async function deleteHistorySession(id) {
 }
 
 // === Helper functions ===
-export function currentDayForHoy() { return S.hoyDay ?? new Date().getDay(); }
 
 function findEx(exId) {
   // los agregados durante la sesión viven en el borrador, no en la rutina
   const extra = (S.draft?.extras || []).find(x => x.id === exId);
   if (extra) return extra;
-  for (const d of Object.values(S.routine)) {
-    const e = (d.exercises || []).find(x => x.id === exId);
+  for (const slot of S.routine) {
+    const e = (slot.exercises || []).find(x => x.id === exId);
     if (e) return e;
   }
   return null;
