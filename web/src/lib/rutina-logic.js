@@ -258,7 +258,7 @@ export async function undoRutina() {
   if (!RUT_HISTORY.length) return;
   RUT_REDO.push(structuredClone(S.routine));
   S.routine = RUT_HISTORY.pop();
-  await Promise.all(Object.keys(S.routine).map(wd => persistDay(+wd)));
+  await persistAll();
   bump();
   toast('Deshecho', { actionLabel: 'Rehacer', onAction: redoRutina });
 }
@@ -266,7 +266,7 @@ export async function redoRutina() {
   if (!RUT_REDO.length) return;
   RUT_HISTORY.push(structuredClone(S.routine));
   S.routine = RUT_REDO.pop();
-  await Promise.all(Object.keys(S.routine).map(wd => persistDay(+wd)));
+  await persistAll();
   bump();
   toast('Rehecho', { actionLabel: 'Deshacer', onAction: undoRutina });
 }
@@ -461,7 +461,7 @@ export function applyLibRoutine(id) {
     confirmLabel: 'Reemplazar',
     onConfirm: async () => {
       await applyDays(r.days, r.name);
-      S.rutMode = 'view'; S.rutOpen = routineStats().days[0] ?? new Date().getDay();
+      S.rutMode = 'view'; S.rutOpen = 0;
       closeSheet(); bump(); vibrate([20, 40, 20]);
       toast(`"${r.name}" en uso`);
     },

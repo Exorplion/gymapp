@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from './state.js';
-import { ensureSlot, reorderSeq, insertWorkout, insertRest, removeSlot, routineStats, routineName } from './rutina-logic.js';
+import { ensureSlot, reorderSeq, insertWorkout, insertRest, removeSlot, routineStats, routineName, undoRutina } from './rutina-logic.js';
 
 vi.mock('./db.js', () => ({ idb: { put: vi.fn(), clear: vi.fn(), del: vi.fn(), all: vi.fn() } }));
 
@@ -57,5 +57,17 @@ describe('rutina-logic — secuencia', () => {
     expect(routineName()).toBe('Rutina personalizada');
     S.routine = [{ id: 'x', order: 0, type: 'rest' }];
     expect(routineName()).toBe('Sin rutina');
+  });
+
+  it('undoRutina no tira ReferenceError tras un mutator nuevo (regresión: usaba persistDay, que este task borró)', async () => {
+    const { idb } = await import('./db.js');
+    idb.clear.mockClear(); idb.put.mockClear();
+    await insertRest(0); // pushHistory + persistAll ya corrieron acá sin explotar
+    expect(S.routine.length).toBe(4);
+    idb.clear.mockClear(); idb.put.mockClear();
+    await expect(undoRutina()).resolves.not.toThrow();
+    // persistAll (no persistDay) es lo que debe haber corrido: clear + put por cada turno
+    expect(idb.clear).toHaveBeenCalledWith('routine');
+    expect(idb.put).toHaveBeenCalled();
   });
 });
