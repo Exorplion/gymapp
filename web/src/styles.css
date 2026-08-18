@@ -150,9 +150,18 @@ main{
    desvanecía otra vez individualmente en cascada (vin + animation-delay
    escalonado) — dos fundidos superpuestos que se leían como parpadeo, no
    como un deslizamiento. Un tab-switch nativo no desvanece nada: la
-   pantalla es sólida de punta a punta del gesto, sólo cambia de posición. */
-@keyframes slideR{from{transform:translate3d(56px,0,0)}to{transform:none}}
-@keyframes slideL{from{transform:translate3d(-56px,0,0)}to{transform:none}}
+   pantalla es sólida de punta a punta del gesto, sólo cambia de posición.
+
+   100% y no unos pocos px: el offset chico (56px) estaba pensado para
+   acompañar el fundido que se acaba de sacar — con opacity, no importaba
+   que la pantalla no llegara a salir del marco, porque terminaba invisible
+   igual. Sin opacity, 56px la dejaba sólida y a medio camino: un after-image
+   de la pantalla anterior pisando a la nueva. Con 100% (todo el ancho de
+   la propia vista) la que sale queda realmente fuera del marco al terminar
+   —clip de `overflow:hidden` en main, sin scrollbar— y la que entra arranca
+   igual de afuera, como un push/pop real. */
+@keyframes slideR{from{transform:translate3d(100%,0,0)}to{transform:none}}
+@keyframes slideL{from{transform:translate3d(-100%,0,0)}to{transform:none}}
 .view.enter.dir-r{animation:slideR .26s var(--spring)}
 .view.enter.dir-l{animation:slideL .26s var(--spring)}
 /* z-index explícito, con position:relative para que z-index tenga efecto
@@ -178,11 +187,12 @@ main{
    un salto de layout visible en el primer frame de cada cambio de pestaña. */
 .view.leave{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none}
 /* La saliente también se mantiene sólida — desliza afuera sin fundido,
-   igual que la entrante. Sigue tapando lo que hay detrás (ver nota de
-   .view.leave arriba), así que aunque no se desvanezca, nunca deja ver un
-   hueco: se va caminando hasta salir del marco. */
-@keyframes slideOutL{to{transform:translate3d(-56px,0,0)}}
-@keyframes slideOutR{to{transform:translate3d(56px,0,0)}}
+   igual que la entrante, y también al 100% (ver nota de slideR/slideL):
+   con el offset chico de antes quedaba a medio camino, sólida y superpuesta
+   a la nueva — un after-image de la pantalla anterior. Al 100% sale
+   realmente del marco. */
+@keyframes slideOutL{to{transform:translate3d(-100%,0,0)}}
+@keyframes slideOutR{to{transform:translate3d(100%,0,0)}}
 .view.leave.dir-r{animation:slideOutL .26s var(--ease) forwards}
 .view.leave.dir-l{animation:slideOutR .26s var(--ease) forwards}
 @media (prefers-reduced-motion:reduce){
