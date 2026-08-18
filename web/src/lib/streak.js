@@ -2,16 +2,23 @@
 import { S } from './state.js';
 import { dstr, fmtDFull } from './format.js';
 
-/** Un día "cumplido" necesita rutina asignada Y una sesión guardada esa fecha;
-    los días de descanso (sin rutina) no cuentan ni cortan la racha */
+/** Un día "cumplido" mira qué turno de la secuencia estaba pendiente esa
+    fecha (aproximado por S.cfg.seqIndexDate: el turno vigente cuando
+    seqIndex cambió por última vez) — si es descanso, no cuenta ni corta;
+    si es entrenamiento, cumple si hay una sesión de ESE turno esa fecha. */
 export function dayCompleted(dateStr) {
-  const wd = new Date(dateStr + 'T12:00:00').getDay();
-  if (!S.routine[wd]?.exercises?.length) return null;
-  return S.sessions.some(s => s.date === dateStr);
+  // Sólo se puede evaluar con precisión el turno vigente ahora mismo (no
+  // se reconstruye el puntero histórico completo — ver nota de diseño).
+  // Para `dateStr === S.cfg.seqIndexDate` (el día en que el puntero quedó
+  // en su valor actual) esto es exacto; para fechas más viejas se usa la
+  // misma aproximación, consistente con "sólo aplica desde la migración".
+  const slot = S.routine[S.cfg.seqIndex];
+  if (!slot || slot.type === 'rest') return null;
+  return S.sessions.some(s => s.slotId === slot.id && s.date === dateStr);
 }
 
 export function currentStreak() {
-  if (!Object.values(S.routine).some(d => d.exercises?.length)) return 0;
+  if (!S.routine.some(s => s.type === 'workout' && s.exercises?.length)) return 0;
   const todayStr = dstr();
   let n = 0, d = new Date(), first = true;
   for (;;) {
