@@ -1,4 +1,7 @@
-import { dstr, fmtD, fmtDFull, fmtNum, round1, kg2lb, lb2kg, fmtMMSS, norm, KG2LB } from './format.js';
+import * as Haptics from 'expo-haptics';
+import { dstr, fmtD, fmtDFull, fmtNum, round1, kg2lb, lb2kg, fmtMMSS, norm, KG2LB, vibrate } from './format.js';
+
+jest.mock('expo-haptics');
 
 describe('format.js — portado de web/src/lib/format.js', () => {
   it('dstr formatea YYYY-MM-DD', () => {
@@ -30,5 +33,10 @@ describe('format.js — portado de web/src/lib/format.js', () => {
   it('norm normaliza mayúsculas y acentos para comparar texto', () => {
     expect(norm('Press Banca')).toBe('press banca');
     expect(norm('SENTADILLA')).toBe('sentadilla');
+  });
+  it('vibrate(0) es un no-op, no dispara háptica (0 cancela en la PWA, no debe "hacer algo" acá)', () => {
+    vibrate(0);
+    expect(Haptics.impactAsync).not.toHaveBeenCalled();
+    expect(Haptics.notificationAsync).not.toHaveBeenCalled();
   });
 });

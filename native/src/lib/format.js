@@ -24,6 +24,7 @@ export const kg2lb = kg => round1(kg * KG2LB);
 export const lb2kg = lb => lb / KG2LB;
 export const vibrate = p => {
   try {
+    if (!p || (Array.isArray(p) && p.length === 0)) return;
     if (Array.isArray(p)) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   } catch (e) {}
