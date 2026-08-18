@@ -150,12 +150,13 @@ export default function App() {
 
   /* Antes sólo existía la pantalla activa: al cambiar de pestaña, la vieja
      desaparecía de golpe y sólo la nueva entraba animada — un corte, no un
-     deslizamiento. Acá, mientras dura la transición (260ms, mismo tiempo que
-     ya usa .view.enter), se guarda cuál era la pantalla anterior para
-     poder pintarla también: sale deslizando hacia el lado opuesto de por
-     donde entra la nueva, las dos a la vez. La mutación de tabPrevio.current
-     se hace ACÁ (no en el useMemo de arriba) para que dir se calcule contra
-     el valor viejo antes de perderlo. */
+     deslizamiento. Acá, mientras dura la transición (340ms, mismo tiempo que
+     ya usa .view.enter — bajado de 260ms porque se sentía apurado, no como
+     el push/pop de una app nativa), se guarda cuál era la pantalla anterior
+     para poder pintarla también: sale deslizando hacia el lado opuesto de
+     por donde entra la nueva, las dos a la vez. La mutación de
+     tabPrevio.current se hace ACÁ (no en el useMemo de arriba) para que dir
+     se calcule contra el valor viejo antes de perderlo. */
   const [saliente, setSaliente] = useState(null); // {tab, dir} | null
   const salienteTimer = useRef(null);
   useEffect(() => {
@@ -163,7 +164,7 @@ export default function App() {
     setSaliente({ tab: tabPrevio.current, dir });
     tabPrevio.current = store.tab;
     clearTimeout(salienteTimer.current);
-    salienteTimer.current = setTimeout(() => setSaliente(null), 260);
+    salienteTimer.current = setTimeout(() => setSaliente(null), 340);
     return () => clearTimeout(salienteTimer.current);
   }, [store.tab, dir]);
 

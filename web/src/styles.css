@@ -162,8 +162,8 @@ main{
    igual de afuera, como un push/pop real. */
 @keyframes slideR{from{transform:translate3d(100%,0,0)}to{transform:none}}
 @keyframes slideL{from{transform:translate3d(-100%,0,0)}to{transform:none}}
-.view.enter.dir-r{animation:slideR .26s var(--spring)}
-.view.enter.dir-l{animation:slideL .26s var(--spring)}
+.view.enter.dir-r{animation:slideR .34s var(--spring)}
+.view.enter.dir-l{animation:slideL .34s var(--spring)}
 /* z-index explícito, con position:relative para que z-index tenga efecto
    (sin position, un elemento static ignora z-index aunque sea flex/grid no
    aplica acá). Así la entrante queda SIEMPRE arriba de la saliente, sin
@@ -172,13 +172,13 @@ main{
    apagando esa animación (ver media query más abajo) dejaba de funcionar:
    .view.leave (position:absolute) pintaba por encima de .view.enter
    (position:static) por orden de pintado de CSS, tapando la pantalla nueva
-   con la vieja congelada durante los 260ms de la transición. */
+   con la vieja congelada durante los 340ms de la transición. */
 .view.enter{position:relative;z-index:1}
 /* La saliente ocupa el mismo lugar que la entrante (absolute, ancla a
    main gracias al position:relative de arriba) para que las dos se vean
    deslizando juntas y no una debajo de la otra. No participa del alto de
    main: si sumara su propio alto al de la entrante, la página saltaría de
-   scroll por 380ms cada vez que cambiás de pestaña. z-index:0 (menor que el
+   scroll por 340ms cada vez que cambiás de pestaña. z-index:0 (menor que el
    de .enter) para que quede siempre debajo. */
 /* top/left/right calzan con el padding real de main (16px 18px ...) y no con
    0: el containing block de un absolute es el padding box del ancestro
@@ -193,15 +193,15 @@ main{
    realmente del marco. */
 @keyframes slideOutL{to{transform:translate3d(-100%,0,0)}}
 @keyframes slideOutR{to{transform:translate3d(100%,0,0)}}
-.view.leave.dir-r{animation:slideOutL .26s var(--ease) forwards}
-.view.leave.dir-l{animation:slideOutR .26s var(--ease) forwards}
+.view.leave.dir-r{animation:slideOutL .34s var(--ease) forwards}
+.view.leave.dir-l{animation:slideOutR .34s var(--ease) forwards}
 @media (prefers-reduced-motion:reduce){
   .view.enter.dir-r,.view.enter.dir-l,
   .view.leave.dir-r,.view.leave.dir-l{animation:none}
   /* Sin animación no hay nada que la esconda: .view.leave no tiene opacidad
      propia fuera de slideOut, así que quedaría opaca y tapando (las
      pantallas no tienen fondo sólido propio) el contenido nuevo detrás de
-     ella durante los 380ms del cambio de pestaña — texto viejo y nuevo
+     ella durante los 340ms del cambio de pestaña — texto viejo y nuevo
      superpuestos. No hay nada que mostrar de la pantalla saliente una vez
      apagado el movimiento, así que se saca del render directamente. */
   .view.leave{display:none}
