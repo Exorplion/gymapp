@@ -17,11 +17,18 @@ export function dayCompleted(dateStr) {
   return S.sessions.some(s => s.slotId === slot.id && s.date === dateStr);
 }
 
+// Cota dura para el retroceso día a día: dayCompleted() ya no depende de
+// la fecha pedida cuando el turno pendiente es de descanso (lee siempre
+// S.routine[S.cfg.seqIndex]), así que puede devolver null indefinidamente
+// sin importar qué tan atrás se camine — el loop necesita un límite que no
+// dependa de que dayCompleted() alguna vez deje de ser null.
+const MAX_STREAK_LOOKBACK_DAYS = 3650; // ~10 años
+
 export function currentStreak() {
   if (!S.routine.some(s => s.type === 'workout' && s.exercises?.length)) return 0;
   const todayStr = dstr();
   let n = 0, d = new Date(), first = true;
-  for (;;) {
+  for (let i = 0; i < MAX_STREAK_LOOKBACK_DAYS; i++) {
     const ds = dstr(d);
     const c = dayCompleted(ds);
     if (c === null) { d.setDate(d.getDate() - 1); first = false; continue; }

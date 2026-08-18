@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { S } from './state.js';
-import { dayCompleted } from './streak.js';
+import { dayCompleted, currentStreak } from './streak.js';
 
 describe('streak.js — secuencia', () => {
   beforeEach(() => {
@@ -26,5 +26,18 @@ describe('streak.js — secuencia', () => {
     S.cfg.seqIndex = 0; S.cfg.seqIndexDate = '2026-08-10';
     S.sessions = [{ id: 's1', date: '2026-08-10', slotId: 'a' }];
     expect(dayCompleted('2026-08-10')).toBe(true);
+  });
+
+  it('currentStreak() no cuelga cuando el turno pendiente es descanso (regresión)', () => {
+    // dayCompleted() no depende de la fecha pedida — con el turno pendiente
+    // en descanso devuelve null para CUALQUIER fecha, así que sin una cota
+    // dura en currentStreak() el loop caminaría hacia atrás para siempre.
+    S.cfg.seqIndex = 1; S.cfg.seqIndexDate = '2026-08-10';
+    S.sessions = [];
+    const start = Date.now();
+    const n = currentStreak();
+    const elapsed = Date.now() - start;
+    expect(n).toBe(0);
+    expect(elapsed).toBeLessThan(2000);
   });
 });
