@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { idbOpenOnce } from './lib/db.js';
 import { S, useStore, bump, loadAll, closeSheet, openSheet } from './lib/state.js';
 import { applyComputedGoals } from './lib/macros.js';
@@ -150,23 +151,34 @@ export default function App() {
 
   /* Antes sólo existía la pantalla activa: al cambiar de pestaña, la vieja
      desaparecía de golpe y sólo la nueva entraba animada — un corte, no un
-     deslizamiento. Acá, mientras dura la transición (340ms, mismo tiempo que
-     ya usa .view.enter — bajado de 260ms porque se sentía apurado, no como
-     el push/pop de una app nativa), se guarda cuál era la pantalla anterior
-     para poder pintarla también: sale deslizando hacia el lado opuesto de
-     por donde entra la nueva, las dos a la vez. La mutación de
-     tabPrevio.current se hace ACÁ (no en el useMemo de arriba) para que dir
-     se calcule contra el valor viejo antes de perderlo. */
+     deslizamiento. Acá se guarda cuál era la pantalla anterior para poder
+     pintarla también: sale deslizando hacia el lado opuesto de por donde
+     entra la nueva, las dos a la vez. La mutación de tabPrevio.current se
+     hace ACÁ (no en el useMemo de arriba) para que dir se calcule contra el
+     valor viejo antes de perderlo.
+
+     El movimiento en sí lo maneja Framer Motion con un resorte de verdad
+     (mass/stiffness/damping), no un @keyframes de curva fija — responde a
+     dónde arranca en vez de reproducir siempre la misma curva, que es lo
+     que hacía que 260-340ms igual se sintiera "de animación" y no como un
+     gesto nativo. Por eso `saliente` ya no se limpia con un setTimeout
+     adivinando cuánto dura la animación (un resorte no tiene una duración
+     fija) — se limpia en onAnimationComplete de la vista que sale, cuando
+     el resorte realmente terminó de asentarse. */
   const [saliente, setSaliente] = useState(null); // {tab, dir} | null
-  const salienteTimer = useRef(null);
   useEffect(() => {
     if (store.tab === tabPrevio.current) return;
     setSaliente({ tab: tabPrevio.current, dir });
     tabPrevio.current = store.tab;
-    clearTimeout(salienteTimer.current);
-    salienteTimer.current = setTimeout(() => setSaliente(null), 340);
-    return () => clearTimeout(salienteTimer.current);
   }, [store.tab, dir]);
+
+  const reduceMotion = useReducedMotion();
+  // Mismo resorte para entrar y salir: mass más baja que el default (1) para
+  // que se sienta ágil sin perder el "asentado" característico de un
+  // resorte real, en vez de la curva pareja de un cubic-bezier.
+  const spring = reduceMotion
+    ? { duration: 0 }
+    : { type: 'spring', mass: 0.7, stiffness: 380, damping: 34 };
 
   // Puerto del arranque original (el script inline al final de index.html
   // hacía idbOpen().then(loadAll) antes de la primera render()). loadAll()
@@ -330,17 +342,32 @@ export default function App() {
       <main className={store.tab === 'inicio' ? 'full' : ''} ref={mainRef}>
         {/* La saliente va PRIMERO en el DOM (así la entrante, montada después,
             queda arriba en el stacking normal) y con pointer-events:none —
-            es puramente decorativa mientras se termina de ir. */}
+            es puramente decorativa mientras se termina de ir. Se limpia sola
+            en onAnimationComplete, no con un timer externo (ver nota más
+            arriba de por qué un resorte no tiene una duración fija que
+            adivinar). */}
         {saliente && (
-          <div className={`view leave dir-${saliente.dir}`}>
+          <motion.div
+            className="view leave"
+            initial={{ x: 0 }}
+            animate={{ x: saliente.dir === 'r' ? '100%' : '-100%' }}
+            transition={spring}
+            onAnimationComplete={() => setSaliente(null)}
+          >
             {pantallaDe(saliente.tab)}
-          </div>
+          </motion.div>
         )}
         {/* El `key` es lo que hace que la animación se repita: sin él React
-            reusa el mismo div y el navegador no vuelve a correr el keyframe. */}
-        <div className={`view enter dir-${dir}`} key={store.tab}>
+            reusa el mismo nodo y Framer Motion no vuelve a correr initial→animate. */}
+        <motion.div
+          className="view enter"
+          key={store.tab}
+          initial={{ x: dir === 'r' ? '100%' : '-100%' }}
+          animate={{ x: 0 }}
+          transition={spring}
+        >
           {pantallaDe(store.tab)}
-        </div>
+        </motion.div>
       </main>
       {/* Con S.tab === 'hoy' ninguna pestaña sería la activa, y
           moveTabIndicator() (TabBar.jsx) busca `button.on`: sin encontrarlo
