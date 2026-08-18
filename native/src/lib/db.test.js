@@ -40,6 +40,6 @@ describe('db.js — capa de almacenamiento (AsyncStorage, interfaz idb)', () => 
   });
 
   it('STORES incluye los 6 stores de la PWA', () => {
-    expect(STORES.sort()).toEqual(['body', 'foods', 'meals', 'routine', 'sessions', 'settings']);
+    expect([...STORES].sort()).toEqual(['body', 'foods', 'meals', 'routine', 'sessions', 'settings']);
   });
 });

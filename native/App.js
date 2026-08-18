@@ -15,7 +15,11 @@ export default function App() {
   // corría ahí; acá loadAll() ya no necesita idbOpenOnce por separado porque
   // AsyncStorage no tiene noción de "abrir conexión" (ver Task 2).
   const [ready, setReady] = useState(false);
-  useEffect(() => { loadAll().then(() => setReady(true)); }, []);
+  useEffect(() => {
+    loadAll()
+      .then(() => setReady(true))
+      .catch(e => { console.error('loadAll() falló:', e); setReady(true); });
+  }, []);
 
   if (!ready) {
     return (
