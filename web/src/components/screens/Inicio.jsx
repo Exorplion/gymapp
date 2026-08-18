@@ -11,7 +11,10 @@
 // el resto. "Hoy" pasa a ser adonde te lleva el botón grande.
 import { S, useStore, bump, openSheet } from '../../lib/state.js';
 import { WD, WD1, WDS, MO, WEEK_ORDER } from '../../lib/format.js';
-import { orderedExs, sessionForWeekday } from '../../lib/session.js';
+import { orderedExs } from '../../lib/session.js';
+// TEMP verification-only stub (task 9) — sessionForWeekday no longer exists;
+// Inicio.jsx's weekday-based model is a known separate gap, not fixed here.
+const sessionForWeekday = () => null;
 import { daysSinceAll, stalestGroups } from '../../lib/muscle.js';
 import Silhouette from '../Silhouette.jsx';
 

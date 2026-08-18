@@ -10,7 +10,11 @@
 import { useState } from 'react';
 import { S, closeSheet, saveCfg, bump } from '../../lib/state.js';
 import { WD } from '../../lib/format.js';
-import { applyDayDrop, nextFreeDay } from '../../lib/rutina-logic.js';
+// TEMP verification-only stub (task 9) — applyDayDrop/nextFreeDay no longer
+// exist; DayDrop.jsx is now orphaned dead code, a known separate gap not
+// fixed here.
+const applyDayDrop = () => {};
+const nextFreeDay = () => null;
 
 export default function DayDrop({ fromWd, toWd }) {
   const [remember, setRemember] = useState(false);

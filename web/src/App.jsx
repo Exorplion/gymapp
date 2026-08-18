@@ -20,7 +20,7 @@ import Inicio from './components/screens/Inicio.jsx';
 import Hoy, { SessStartInfo } from './components/screens/Hoy.jsx';
 import Nutricion from './components/screens/Nutricion.jsx';
 import Progreso from './components/screens/Progreso.jsx';
-import DayEdit from './components/sheets/DayEdit.jsx';
+import SlotEdit from './components/sheets/SlotEdit.jsx';
 import DayDrop from './components/sheets/DayDrop.jsx';
 import CopyExercises from './components/sheets/CopyExercises.jsx';
 import SessionExercise from './components/sheets/SessionExercise.jsx';
@@ -72,7 +72,7 @@ function ConfirmSheet({ title, body, confirmLabel, onConfirm, onCancel }) {
 function SheetContent({ sheet }) {
   if (!sheet) return null;
   switch (sheet.type) {
-    case 'day-edit': return <DayEdit {...sheet.props} />;
+    case 'slot-edit': return <SlotEdit {...sheet.props} />;
     case 'day-drop': return <DayDrop {...sheet.props} />;
     case 'copy-exs': return <CopyExercises {...sheet.props} />;
     case 'ex-swap': return <SessionExercise {...sheet.props} />;

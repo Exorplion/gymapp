@@ -18,7 +18,7 @@ function LibraryList() {
       <div className="sheet-sub">
         Guardá el split que estés usando para volver a él cuando quieras, o cargá una plantilla.
       </div>
-      {st.days.length > 0 && (
+      {st.workoutCount > 0 && (
         <button
           type="button"
           className="btn ghost"
@@ -34,7 +34,7 @@ function LibraryList() {
           <div className="card sub" style={{ padding: 'var(--s2) var(--s3)', marginBottom: 16 }}>
             {S.lib.map(r => {
               const nd = Object.keys(r.days).length;
-              const ne = Object.values(r.days).reduce((a, d) => a + d.exercises.length, 0);
+              const ne = Object.values(r.days).reduce((a, d) => a + (d.exercises?.length || 0), 0);
               const cur = r.name === S.cfg.routineName;
               return (
                 <div className="row" key={r.id}>

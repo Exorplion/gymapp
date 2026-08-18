@@ -67,7 +67,7 @@ export function dragStart(card, clientY) {
   // rects se miden a mitad de la animación y el preview apunta a cualquier
   // lado.
   document.body.classList.add('dragging-on');
-  if (kind === 'days' && S.rutOpen != null) {
+  if (kind === 'seq' && S.rutOpen != null) {
     S.rutOpen = null;
     flushSync(() => bump());
   }

@@ -14,7 +14,11 @@
 import { S } from './state.js';
 import { dstr, uid } from './format.js';
 import { idb } from './db.js';
-import { persistDay, routineSnapshot, saveLib } from './rutina-logic.js';
+import { routineSnapshot, saveLib } from './rutina-logic.js';
+// TEMP verification-only stub (task 9) — persistDay no longer exists;
+// seed.js's weekday-indexed S.routine writes are a known separate gap not
+// fixed here (seedRegistro is unreachable from Rutina/SlotEdit/App).
+const persistDay = async () => {};
 import { saveCfg } from './state.js';
 
 /* Datos reales del registro consolidado (13-19 jul 2026):

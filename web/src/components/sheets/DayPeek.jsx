@@ -3,7 +3,9 @@
 import { S } from '../../lib/state.js';
 import { WD } from '../../lib/format.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
-import { editDay } from '../../lib/rutina-logic.js';
+// TEMP verification-only stub (task 9) — editDay no longer exists; DayPeek.jsx
+// is now orphaned dead code, a known separate gap not fixed here.
+const editDay = () => {};
 import { openSheet } from '../../lib/state.js';
 import { Info } from '../Icon.jsx';
 

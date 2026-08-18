@@ -336,7 +336,15 @@ export async function removeSlot(index) {
 export function hasOpenSession(index) { return !!S.draft && S.draft.slotId === S.routine[index]?.id; }
 
 export async function saveSlot(index, { name }) {
-  ensureSlot(index).name = (name || '').trim();
+  const trimmed = (name || '').trim();
+  // Un descanso al que le ponés nombre pasa a ser un turno de entrenamiento:
+  // no tiene sentido "nombrar" un descanso, así que el nombre es la señal de
+  // que dejó de serlo.
+  if (S.routine[index]?.type === 'rest' && trimmed) {
+    S.routine[index] = { ...S.routine[index], type: 'workout', name: trimmed, exercises: [] };
+  } else {
+    ensureSlot(index).name = trimmed;
+  }
   await persistSlot(index);
   closeSheet();
   bump();

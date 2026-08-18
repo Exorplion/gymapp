@@ -1,20 +1,26 @@
 // Puerto de renderRutina() (index.html) — pantalla Rutina completa: resumen
-// de la semana (modo "view") y editor día por día (modo "edit"), según
+// de la secuencia (modo "view") y editor turno por turno (modo "edit"), según
 // S.rutMode. Sigue el mismo mecanismo de sheets de Task 1/5 (S.sheet vía
 // openSheet/closeSheet, ver state.js) y el mismo drag-to-reorder de Task 3/4
-// (data-sort/data-sid, ver drag.js) para días (kind="days") y ejercicios
-// dentro de un día (kind="rut" — el mismo string que usaba el original y que
-// commitSort() ya distingue de "hoy"/"days").
+// (data-sort/data-sid, ver drag.js) para la secuencia de turnos (kind="seq")
+// y ejercicios dentro de un turno (kind="rut" — el mismo string que usaba el
+// original y que commitSort() ya distingue de "hoy"/"seq").
+//
+// Task 9 (rutina-por-secuencia): la rutina dejó de ser 7 casilleros fijos por
+// weekday (S.routine[wd]) y pasó a ser una secuencia ordenada de largo
+// variable (S.routine[i]), así que ni la vista ni el editor recorren
+// WEEK_ORDER — recorren S.routine directo, y cada turno se identifica por su
+// posición (i) en vez de por el día de la semana que le tocaba.
 import { flushSync } from 'react-dom';
 import { S, bump, useStore, openSheet } from '../../lib/state.js';
-import { WD, WD1, WEEK_ORDER } from '../../lib/format.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
 import { equipLabel } from '../../lib/equip.js';
 import { catOf } from '../../lib/muscle.js';
 import { flipSort } from '../../lib/drag.js';
 import {
-  routineStats, routineName, activeDayWds,
-  enterEditMode, exitEditMode, toggleDayOpen, deleteDay, deleteExercise, moveEx,
+  routineStats, routineName,
+  enterEditMode, exitEditMode, toggleSlotOpen, removeSlot, insertWorkout, insertRest,
+  deleteExercise, moveEx,
 } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
 import { iconOf } from '../../lib/exicon.js';
@@ -23,14 +29,14 @@ import { Info } from '../Icon.jsx';
 import { RutinaVacia } from '../Illustration.jsx';
 
 /** Puerto del guard de sheetLibSave() (index.html): "No hay rutina que
-    guardar" si S.routine no tiene ningún día con ejercicios. En el original
+    guardar" si S.routine no tiene ningún turno con ejercicios. En el original
     este chequeo vive DENTRO de sheetLibSave, así que es el único punto de
     entrada al formulario de guardado — acá el editor tiene un segundo punto
     de entrada (el botón "Guardar como…" de la barra de edición, además del
     de Library.jsx en modo lista), así que el guard se repite acá para que
     ningún camino hacia el sheet 'library'/{mode:'save'} se lo salte. */
 function openLibSaveSheet() {
-  if (!routineStats().days.length) { toast('No hay rutina que guardar'); return; }
+  if (!routineStats().workoutCount) { toast('No hay rutina que guardar'); return; }
   openSheet('library', { mode: 'save' });
 }
 
@@ -40,8 +46,8 @@ function openLibSaveSheet() {
     necesita para medir la posición "after" correctamente; sin esto React
     podría no haber pintado todavía cuando flipSort mide, y la animación no
     se vería (aunque el reordenamiento en sí seguiría siendo correcto). */
-async function handleMoveEx(wd, exId, dir) {
-  await moveEx(wd, exId, dir);
+async function handleMoveEx(index, exId, dir) {
+  await moveEx(index, exId, dir);
   flipSort(() => flushSync(() => bump()));
 }
 
@@ -52,15 +58,15 @@ export default function Rutina() {
 
 function RutinaView() {
   const st = routineStats();
-  const maxSets = Math.max(1, ...WEEK_ORDER.map(d => S.routine[d]?.exercises?.reduce((a, e) => a + e.sets, 0) || 0));
+  const maxSets = Math.max(1, ...S.routine.map(slot => slot.type === 'workout' ? (slot.exercises || []).reduce((a, e) => a + e.sets, 0) : 0));
 
-  if (!st.days.length) {
+  if (!st.workoutCount) {
     return (
       <>
         <div className="vtitle"><h1>Rutina</h1><span className="sub">tu semana de un vistazo</span></div>
         <div className="card"><div className="empty">
           <RutinaVacia className="big" />
-          <p>Todavía no tenés rutina.<br />Elegí una <b>plantilla</b> lista o armá tu split día por día.</p>
+          <p>Todavía no tenés rutina.<br />Elegí una <b>plantilla</b> lista o armá tu split turno por turno.</p>
           <button
             type="button"
             className="btn sm"
@@ -87,19 +93,18 @@ function RutinaView() {
         <div className="hero-eyebrow">Plan activo</div>
         <div className="hero-day">{routineName()}</div>
         <div className="txt-mut" style={{ fontSize: 13, marginTop: 4 }}>
-          {st.days.length} día{st.days.length === 1 ? '' : 's'} de entrenamiento · {st.ex} ejercicios · {st.sets} series por semana
+          {st.workoutCount} turno{st.workoutCount === 1 ? '' : 's'} de entrenamiento · {st.ex} ejercicios · {st.sets} series por ciclo
         </div>
-        {/* Barras proporcionales a las series del día: la semana se lee de un
-            vistazo, y los días libres quedan como un guion bajo. */}
+        {/* Barras proporcionales a las series del turno: la secuencia se lee de
+            un vistazo, y los turnos de descanso quedan como un guion bajo. */}
         <div className="weekbars">
-          {WEEK_ORDER.map(d => {
-            const dd = S.routine[d];
-            const sets = dd?.exercises?.reduce((a, e) => a + e.sets, 0) || 0;
+          {S.routine.map((slot, i) => {
+            const sets = slot.type === 'workout' ? (slot.exercises || []).reduce((a, e) => a + e.sets, 0) : 0;
             const h = sets ? Math.round(30 + (sets / maxSets) * 40) : 10;
             return (
-              <div key={d} className={`wbar ${sets ? 'on' : ''}`}>
+              <div key={slot.id} className={`wbar ${sets ? 'on' : ''}`}>
                 <div className="b" style={{ height: h }}></div>
-                <span>{WD1[d]}</span>
+                <span>{i + 1}</span>
               </div>
             );
           })}
@@ -111,25 +116,24 @@ function RutinaView() {
         <button type="button" className="btn glass" onClick={() => openSheet('library')}>Mis rutinas</button>
       </div>
 
-      {/* Cada día es una tarjeta que se despliega en el lugar, con sus
+      {/* Cada turno es una tarjeta que se despliega en el lugar, con sus
           ejercicios numerados — en el original abría un sheet aparte. */}
       <div className="day-cards">
-        {WEEK_ORDER.map(d => {
-          const dd = S.routine[d];
-          const on = !!dd?.exercises?.length;
-          const sets = on ? dd.exercises.reduce((a, e) => a + e.sets, 0) : 0;
-          const open = S.rutOpen === d && on;
+        {S.routine.map((slot, i) => {
+          const on = slot.type === 'workout' && !!slot.exercises?.length;
+          const sets = on ? slot.exercises.reduce((a, e) => a + e.sets, 0) : 0;
+          const open = S.rutOpen === i && on;
           return (
-            <div key={d} className={`day-card ${open ? 'open' : ''}`}>
+            <div key={slot.id} className={`day-card ${open ? 'open' : ''}`}>
               <button
                 type="button"
                 className="day-head"
-                onClick={() => { S.rutOpen = open ? -1 : d; bump(); }}
+                onClick={() => { S.rutOpen = open ? -1 : i; bump(); }}
               >
-                <span className={`day-badge ${on ? '' : 'off'}`}>{WD1[d]}</span>
+                <span className={`day-badge ${on ? '' : 'off'}`}>{i + 1}</span>
                 <span className="grow">
-                  <span className="t">{on ? (dd.name || WD[d]) : 'Descanso'}</span>
-                  <span className="s">{on ? `${dd.exercises.length} ejercicios · ${sets} series` : 'libre'}</span>
+                  <span className="t">{on ? (slot.name || 'Rutina') : 'Descanso'}</span>
+                  <span className="s">{on ? `${slot.exercises.length} ejercicios · ${sets} series` : 'libre'}</span>
                 </span>
                 <span className="chev">{open ? '⌄' : '›'}</span>
               </button>
@@ -139,14 +143,14 @@ function RutinaView() {
                       trabaja, dibujada sobre el mismo cuerpo del mapa de
                       Inicio. Antes esta fila no hacía nada al tocarla, que es
                       justo donde uno va a preguntar "¿y esto para qué?". */}
-                  {dd.exercises.map((e, i) => (
+                  {slot.exercises.map((e, k) => (
                     <button
                       key={e.id}
                       type="button"
                       className="day-ex"
-                      onClick={() => openSheet('ex-info', { name: e.name, wd: d, exId: e.id })}
+                      onClick={() => openSheet('ex-info', { name: e.name, wd: i, exId: e.id })}
                     >
-                      <span className="i">{i + 1}</span>
+                      <span className="i">{k + 1}</span>
                       <ExIcon icono={iconOf(e)} size={24} className="day-ex-icon" />
                       <span className="grow">
                         <span className="t">{e.name}</span>
@@ -170,8 +174,6 @@ function RutinaView() {
 }
 
 function RutinaEdit() {
-  const active = activeDayWds();
-
   return (
     <>
       <div className="vtitle"><h1>Editar</h1><span className="sub">{routineName()}</span></div>
@@ -186,65 +188,65 @@ function RutinaEdit() {
           💾 Guardar como…
         </button>
       </div>
-      {active.length > 0 && (
-        <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un día y soltalo sobre otro para moverlo ahí.</span></div>
+      {S.routine.length > 1 && (
+        <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un turno y soltalo para reordenarlo.</span></div>
       )}
-      {/* Los siete días, siempre. Antes sólo se listaban los activos y los
-          libres eran chips aparte, así que no había forma de arrastrar una
-          rutina a un día de descanso — que es justo el caso de "entreno martes
-          y jueves, no lunes y miércoles". Cada tarjeta es un destino de drop. */}
-      <div data-sort="days">
-        {WEEK_ORDER.map(wd => <DayCard key={wd} wd={wd} />)}
+      <div data-sort="seq">
+        {S.routine.map((slot, i) => <SlotCard key={slot.id} slot={slot} index={i} />)}
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginTop: 'var(--s3)' }}>
+        <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={() => insertWorkout(S.routine.length)}>+ Entrenamiento</button>
+        <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={() => insertRest(S.routine.length)}>+ Descanso</button>
       </div>
     </>
   );
 }
-function DayCard({ wd }) {
-  const d = S.routine[wd];
-  const exs = d?.exercises || [];
-  const empty = !d?.name && !exs.length;
-  const open = S.rutOpen === wd && !empty;
-  const fx = S.dayFx[wd];
-  // referencia del riel: el ejercicio con más series del día
+function SlotCard({ slot, index }) {
+  const exs = slot.type === 'workout' ? (slot.exercises || []) : [];
+  const open = S.rutOpen === index && slot.type === 'workout';
+  // referencia del riel: el ejercicio con más series del turno
   const maxSets = Math.max(1, ...exs.map(e => e.sets || 0));
 
-  // Día libre: una tarjeta fina, sin cuerpo. Sigue siendo arrastrable y sobre
-  // todo soltable — es el destino natural al correr una rutina de día.
-  if (empty) {
+  // Turno de descanso: una tarjeta fina, sin cuerpo. Sigue siendo arrastrable
+  // — es un turno más de la secuencia, sólo que sin contenido. No tiene
+  // "asignar" nada acá: para volverlo un turno de entrenamiento se lo borra y
+  // se agrega uno nuevo con "+ Entrenamiento", o se le pone nombre desde el
+  // sheet "✎ Turno" (ver SlotEdit.jsx), que lo convierte automáticamente.
+  if (slot.type === 'rest') {
     return (
-      <div className={`card day rest ${fx ? `fx-${fx}` : ''}`} data-wd={wd} data-sid={wd}>
+      <div className="card day rest" data-sid={slot.id}>
         <div className="day-headrow">
           <span className="mini day-handle" title="Arrastrar">✥</span>
-          <button type="button" className="day-head" onClick={() => openSheet('day-edit', { wd })}>
+          <div className="day-head" style={{ flex: 1 }}>
             <div className="day-txt">
-              <span className="day-wd">{WD[wd]}</span>
+              <span className="day-wd">Turno {index + 1}</span>
               <span className="day-name off">Descanso</span>
             </div>
-            <span className="day-meta">asignar<span className="chev">›</span></span>
-          </button>
+          </div>
+          <button type="button" className="mini red" title="Quitar turno" onClick={() => removeSlot(index)}>✕</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`card day ${open ? 'open' : ''} ${fx ? `fx-${fx}` : ''}`} data-wd={wd} data-sid={wd}>
+    <div className={`card day ${open ? 'open' : ''}`} data-sid={slot.id}>
       <div className="day-headrow">
-        <span className="mini day-handle" title="Arrastrar a otro día">✥</span>
-        <button type="button" className="day-head" onClick={() => toggleDayOpen(wd)}>
+        <span className="mini day-handle" title="Arrastrar a otra posición">✥</span>
+        <button type="button" className="day-head" onClick={() => toggleSlotOpen(index)}>
           <div className="day-txt">
-            <span className="day-wd">{WD[wd]}</span>
-            <span className={`day-name ${d?.name ? '' : 'off'}`}>{d?.name || 'Descanso / sin asignar'}</span>
+            <span className="day-wd">Turno {index + 1}</span>
+            <span className={`day-name ${slot.name ? '' : 'off'}`}>{slot.name || 'Sin nombre'}</span>
           </div>
           <span className="day-meta">{exs.length ? `${exs.length} ej.` : ''}<span className="chev">›</span></span>
         </button>
-        <button type="button" className="mini red" title="Vaciar día" onClick={() => deleteDay(wd)}>✕</button>
+        <button type="button" className="mini red" title="Quitar turno" onClick={() => removeSlot(index)}>✕</button>
       </div>
       <div className="day-body"><div className="dbi">
         {exs.length > 1 && (
           <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un ejercicio para reordenarlo.</span></div>
         )}
-        <div data-sort="rut" data-wd={wd} style={{ '--lift': 1.015 }}>
+        <div data-sort="rut" data-wd={index} style={{ '--lift': 1.015 }}>
           {/* El nombre va en su propia línea a ancho completo. Cuando esto era
               una .row con los cinco botones al lado, en 320px al nombre le
               quedaban 62px: los 40 ejercicios del split se veían como
@@ -253,7 +255,7 @@ function DayCard({ wd }) {
             <div
               className="ex-row" data-sid={ex.id} key={ex.id}
               /* el riel se llena según las series de ESTE ejercicio contra el
-                 que más tiene del día: la lista se vuelve un gráfico del
+                 que más tiene del turno: la lista se vuelve un gráfico del
                  reparto de volumen, que es lo que estás decidiendo acá */
               style={{ '--fill': maxSets ? ex.sets / maxSets : 1, '--i': i }}
             >
@@ -265,7 +267,7 @@ function DayCard({ wd }) {
                   className="mini info inline"
                   data-act="ex-info"
                   style={exInfo(ex.name) ? undefined : { opacity: .4 }}
-                  onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
+                  onClick={() => openSheet('ex-info', { name: ex.name, wd: index, exId: ex.id })}
                 >
                   <Info />
                 </button>
@@ -283,7 +285,7 @@ function DayCard({ wd }) {
                     className="mini"
                     data-act="ex-up"
                     disabled={i === 0}
-                    onClick={() => handleMoveEx(wd, ex.id, -1)}
+                    onClick={() => handleMoveEx(index, ex.id, -1)}
                   >
                     ↑
                   </button>
@@ -292,23 +294,23 @@ function DayCard({ wd }) {
                     className="mini"
                     data-act="ex-down"
                     disabled={i === exs.length - 1}
-                    onClick={() => handleMoveEx(wd, ex.id, 1)}
+                    onClick={() => handleMoveEx(index, ex.id, 1)}
                   >
                     ↓
                   </button>
-                  <button type="button" className="mini" onClick={() => openSheet('ex-form', { wd, ex })}>✎</button>
-                  <button type="button" className="mini red" onClick={() => deleteExercise(wd, ex.id)}>✕</button>
+                  <button type="button" className="mini" onClick={() => openSheet('ex-form', { wd: index, ex })}>✎</button>
+                  <button type="button" className="mini red" onClick={() => deleteExercise(index, ex.id)}>✕</button>
                 </span>
               </div>
             </div>
           ))}
         </div>
         <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-          <button type="button" className="btn sm ghost" style={{ flex: 2 }} onClick={() => openSheet('ex-form', { wd, ex: null })}>
+          <button type="button" className="btn sm ghost" style={{ flex: 2 }} onClick={() => openSheet('ex-form', { wd: index, ex: null })}>
             + Ejercicio
           </button>
-          <button type="button" className="btn sm dim" style={{ flex: 1 }} onClick={() => openSheet('day-edit', { wd })}>
-            ✎ Día
+          <button type="button" className="btn sm dim" style={{ flex: 1 }} onClick={() => openSheet('slot-edit', { index })}>
+            ✎ Turno
           </button>
         </div>
         {/* Anterior A y Anterior B son la misma rutina: sin esto había que
@@ -320,12 +322,12 @@ function DayCard({ wd }) {
           <button
             type="button" className="btn sm dim" style={{ flex: 1 }}
             disabled={!exs.length}
-            onClick={() => openSheet('copy-exs', { mode: 'push', wd })}
+            onClick={() => openSheet('copy-exs', { mode: 'push', wd: index })}
           >
-            ⧉ Copiar a otro día
+            ⧉ Copiar a otro turno
           </button>
-          <button type="button" className="btn sm dim" style={{ flex: 1 }} onClick={() => openSheet('copy-exs', { mode: 'pull', wd })}>
-            ⤓ Traer de otro día
+          <button type="button" className="btn sm dim" style={{ flex: 1 }} onClick={() => openSheet('copy-exs', { mode: 'pull', wd: index })}>
+            ⤓ Traer de otro turno
           </button>
         </div>
       </div></div>
