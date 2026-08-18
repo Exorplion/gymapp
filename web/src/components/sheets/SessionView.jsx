@@ -10,7 +10,7 @@
 // volumen y cuánto cambió respecto de la última vez.
 import { useState } from 'react';
 import { S, useStore, openSheet, closeSheet } from '../../lib/state.js';
-import { WD, fmtDFull, fmtNum, round1, uid } from '../../lib/format.js';
+import { fmtDFull, fmtNum, round1, uid } from '../../lib/format.js';
 import { sessionPRs, deleteHistorySession, updateHistorySession, entryDelta, groupSets } from '../../lib/session.js';
 import { pinAddedToRoutine } from '../../lib/rutina-logic.js';
 import { catOf } from '../../lib/muscle.js';
@@ -34,7 +34,7 @@ export default function SessionView({ id, justFinished = false }) {
   const entries = s.entries || [];
   const nsets = entries.reduce((a, e) => a + e.sets.length, 0);
   const vol = entries.reduce((a, e) => a + e.sets.reduce((b, st) => b + st.w * st.r, 0), 0);
-  const delDia = (S.routine[s.weekday]?.exercises || []).filter(ex => !entries.some(e => e.name === ex.name));
+  const delDia = (S.routine.find(sl => sl.id === s.slotId)?.exercises || []).filter(ex => !entries.some(e => e.name === ex.name));
 
   /* Toda edición clona la sesión, la muta y la manda entera a
      updateHistorySession — que guarda y ofrece Deshacer. start, end, duration,
@@ -78,9 +78,9 @@ export default function SessionView({ id, justFinished = false }) {
 
   return (
     <>
-      <h2>{justFinished ? `${hasPR ? '🎉' : '💪'} Sesión guardada` : (s.dayName || WD[s.weekday])}</h2>
+      <h2>{justFinished ? `${hasPR ? '🎉' : '💪'} Sesión guardada` : (s.dayName || 'Entrenamiento')}</h2>
       <div className="sheet-sub">
-        {justFinished ? `${s.dayName || WD[s.weekday]} · ` : ''}{fmtDFull(s.date)} · {s.duration} min
+        {justFinished ? `${s.dayName || 'Entrenamiento'} · ` : ''}{fmtDFull(s.date)} · {s.duration} min
       </div>
 
       <div className="stats" style={{ '--n': 4 }}>
