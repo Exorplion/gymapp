@@ -79,16 +79,26 @@ export async function loadAll() {
     entrenamiento; esto cubre el caso simétrico del descanso, que no se
     "completa" con una acción del usuario.
 
-    El `while` (no `if`) cubre varios descansos seguidos en la secuencia:
-    los salta todos de una vez hasta el próximo turno de entrenamiento, o
-    hasta dar la vuelta completa si la rutina es 100% descanso. */
+    El loop (no un solo paso) cubre varios descansos seguidos en la
+    secuencia: los salta todos de una vez hasta el próximo turno de
+    entrenamiento, o hasta dar la vuelta completa si la rutina es 100%
+    descanso — acotado a `S.routine.length` pasos para no depender de que
+    la fecha cambie en el medio para cortar. */
 export function resolveAutoRest() {
   const today = dstr();
-  while (S.routine[S.cfg.seqIndex]?.type === 'rest' && S.cfg.seqIndexDate && S.cfg.seqIndexDate < today) {
-    S.cfg.seqIndex = (S.cfg.seqIndex + 1) % Math.max(1, S.routine.length);
-    S.cfg.seqIndexDate = today;
+  if (S.cfg.seqIndexDate && S.cfg.seqIndexDate < today) {
+    // `seqIndexDate` NO se toca acá adentro: si se pisara en cada vuelta, la
+    // siguiente iteración compararía contra "hoy" en vez de contra la fecha
+    // vieja y el while se frenaría después de un solo paso — exactamente el
+    // bug que esto reemplaza. Se guarda una única vez, al final, ya resuelto
+    // el punto de llegada.
+    // Tope defensivo en S.routine.length: cubre la rutina 100% descanso sin
+    // depender de que la fecha cambie para cortar el loop.
+    for (let i = 0; i < S.routine.length && S.routine[S.cfg.seqIndex]?.type === 'rest'; i++) {
+      S.cfg.seqIndex = (S.cfg.seqIndex + 1) % Math.max(1, S.routine.length);
+    }
   }
-  if (S.routine.length && !S.cfg.seqIndexDate) S.cfg.seqIndexDate = today;
+  if (S.routine.length) S.cfg.seqIndexDate = today;
   return saveCfg();
 }
 
