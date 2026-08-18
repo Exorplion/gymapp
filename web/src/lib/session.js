@@ -382,7 +382,7 @@ export async function saveSet(exId) {
   const v = ensureVals(ex);
   if (!(v.w > 0) || !(v.r > 0)) { toast('Peso y reps deben ser > 0'); return; }
   if (!S.draft) {
-    S.draft = { id: uid(), date: dstr(), slotId: pendingSlot()?.id, dayName: pendingSlot()?.name, start: Date.now(), cur: exId, entries: {} };
+    S.draft = { id: uid(), date: dstr(), slotId: pendingSlot()?.id, dayName: pendingSlot()?.name || 'Entrenamiento', start: Date.now(), cur: exId, entries: {} };
   }
   // `cat` se copia SÓLO si es una asignación explícita del ejercicio: sin ella
   // catOf() clasifica por el nombre que la propia entrada ya guarda, así que
