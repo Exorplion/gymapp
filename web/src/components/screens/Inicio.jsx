@@ -10,40 +10,39 @@
 // Todo entra sin scroll — por eso la silueta es flex:1 y se encoge antes que
 // el resto. "Hoy" pasa a ser adonde te lleva el botón grande.
 import { S, useStore, bump, openSheet } from '../../lib/state.js';
-import { WD, WD1, WDS, MO, WEEK_ORDER } from '../../lib/format.js';
-import { orderedExs } from '../../lib/session.js';
-// TEMP verification-only stub (task 9) — sessionForWeekday no longer exists;
-// Inicio.jsx's weekday-based model is a known separate gap, not fixed here.
-const sessionForWeekday = () => null;
+import { WDS, MO } from '../../lib/format.js';
+import { pendingSlot, sessionForSlot } from '../../lib/session.js';
 import { daysSinceAll, stalestGroups } from '../../lib/muscle.js';
 import Silhouette from '../Silhouette.jsx';
 
 export default function Inicio() {
   useStore();
   const hoy = new Date();
-  const wd = hoy.getDay();
-  const day = S.routine[wd];
-  const exs = orderedExs(wd, day?.exercises || []);
-  const hecha = sessionForWeekday(wd);
+  const slot = pendingSlot();
+  const hecha = slot ? sessionForSlot(slot.id) : null;
   const draft = S.draft;
   const enCurso = !!draft;
 
   const dias = daysSinceAll();
   const viejos = stalestGroups();
-  const totalSets = exs.reduce((a, e) => a + e.sets, 0);
-  const estMin = Math.round(totalSets * ((S.cfg.rest || 90) + 40) / 60);
-  const fecha = `${WDS[wd]} ${hoy.getDate()} ${MO[hoy.getMonth()]}`;
+  // La fecha es puramente informativa acá — ubica al usuario en el
+  // calendario, pero no decide qué turno toca (eso lo resuelve la
+  // secuencia, no el día de la semana). El detalle del turno — nombre,
+  // ejercicios, series, minutos estimados — vive en Hoy; acá sólo se
+  // avisa el estado para no duplicar esa tarjeta.
+  const fecha = `${WDS[hoy.getDay()]} ${hoy.getDate()} ${MO[hoy.getMonth()]}`;
 
-  const irAHoy = () => { S.tab = 'hoy'; S.hoyDay = null; bump(); };
+  const irAHoy = () => { S.tab = 'hoy'; bump(); };
 
   // Los cuatro estados de la misma pantalla. Cambia el texto y el botón, no la
   // forma: la silueta sigue siendo el héroe en todos.
   let eyebrow, titulo, sub, cta;
   if (enCurso) {
     const hechos = Object.values(draft.entries).filter(e => e.sets.length).length;
-    const total = orderedExs(draft.weekday, S.routine[draft.weekday]?.exercises || []).length;
+    const turnoDraft = S.routine.find(s => s.id === draft.slotId);
+    const total = (turnoDraft?.exercises || []).length;
     eyebrow = 'Sesión en curso';
-    titulo = draft.dayName || WD[draft.weekday];
+    titulo = 'Entrenando';
     sub = `${hechos} de ${total} ejercicios registrados`;
     cta = (
       <button type="button" className="ini-cta pulse" onClick={irAHoy}>
@@ -52,24 +51,20 @@ export default function Inicio() {
     );
   } else if (hecha) {
     eyebrow = 'Completado · hoy';
-    titulo = hecha.dayName || WD[wd];
+    titulo = 'Listo por hoy';
     sub = `${hecha.duration} min · ${(hecha.entries || []).length} ejercicios`;
     cta = (
       <button type="button" className="ini-cta ok" onClick={() => openSheet('session-view', { id: hecha.id })}>
         VER LO QUE HICISTE
       </button>
     );
-  } else if (exs.length) {
-    eyebrow = `${fecha} · toca hoy`;
-    titulo = day.name || WD[wd];
-    sub = `${exs.length} ejercicios · ${totalSets} series · ~${estMin} min`;
-    cta = (
-      <button type="button" className="ini-cta" onClick={irAHoy}>
-        EMPEZAR<small>{exs.length} ej · ~{estMin} min</small>
-      </button>
-    );
+  } else if (slot?.type === 'workout' && slot.exercises?.length) {
+    eyebrow = fecha;
+    titulo = 'Toca entrenar';
+    sub = 'Vas por tu racha';
+    cta = <button type="button" className="ini-cta" onClick={irAHoy}>IR A HOY</button>;
   } else {
-    const hayRutina = WEEK_ORDER.some(d => S.routine[d]?.exercises?.length);
+    const hayRutina = S.routine.some(s => s.type === 'workout' && s.exercises?.length);
     eyebrow = fecha;
     titulo = hayRutina ? 'Descanso' : 'Sin rutina';
     sub = hayRutina ? 'Hoy no toca entrenar' : 'Armá tu split para empezar';
@@ -100,27 +95,6 @@ export default function Inicio() {
       {viejos.length > 0 && <StaleLine grupos={viejos} dias={dias} />}
 
       {cta}
-
-      <div className="wkstrip ini-wk">
-        {WEEK_ORDER.map(d => {
-          const dd = S.routine[d];
-          const has = dd?.exercises?.length;
-          const listo = !!has && !!sessionForWeekday(d);
-          return (
-            <button
-              key={d}
-              type="button"
-              className={`wd ${has ? 'has' : ''} ${d === wd ? 'today on' : ''} ${listo ? 'done' : ''}`}
-              aria-current={d === wd ? 'date' : undefined}
-              onClick={() => { S.hoyDay = d; S.tab = 'hoy'; bump(); }}
-            >
-              <div className="l">{WD1[d]}</div>
-              <div className="n">{has ? (dd.name || 'Rutina') : 'Descanso'}</div>
-              {listo && <div className="tick">✓</div>}
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }
