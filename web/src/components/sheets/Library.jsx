@@ -33,7 +33,7 @@ function LibraryList() {
           <h3>Guardadas</h3>
           <div className="card sub" style={{ padding: 'var(--s2) var(--s3)', marginBottom: 16 }}>
             {S.lib.map(r => {
-              const nd = Object.keys(r.days).length;
+              const nd = Object.values(r.days).filter(d => d.type === 'workout').length;
               const ne = Object.values(r.days).reduce((a, d) => a + (d.exercises?.length || 0), 0);
               const cur = r.name === S.cfg.routineName;
               return (
