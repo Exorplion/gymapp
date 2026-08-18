@@ -142,15 +142,19 @@ main{
    el interruptor sobra y esconderlas por defecto dejaría la pantalla en blanco.
    Lo que queda de .view es la animación de entrada. */
 .view{display:block}
-@keyframes vin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 /* la pantalla entra desde el lado hacia el que vas, como en una app nativa:
    pestaña siguiente → entra por la derecha; anterior → por la izquierda.
-   Corre SOLO al cambiar de pestaña (.enter), nunca en un re-render. */
-@keyframes slideR{from{opacity:0;transform:translate3d(56px,0,0)}to{opacity:1;transform:none}}
-@keyframes slideL{from{opacity:0;transform:translate3d(-56px,0,0)}to{opacity:1;transform:none}}
+   Corre SOLO al cambiar de pestaña (.enter), nunca en un re-render.
+
+   Sin opacity: antes la entrante se desvanecía completa Y cada hijo se
+   desvanecía otra vez individualmente en cascada (vin + animation-delay
+   escalonado) — dos fundidos superpuestos que se leían como parpadeo, no
+   como un deslizamiento. Un tab-switch nativo no desvanece nada: la
+   pantalla es sólida de punta a punta del gesto, sólo cambia de posición. */
+@keyframes slideR{from{transform:translate3d(56px,0,0)}to{transform:none}}
+@keyframes slideL{from{transform:translate3d(-56px,0,0)}to{transform:none}}
 .view.enter.dir-r{animation:slideR .26s var(--spring)}
 .view.enter.dir-l{animation:slideL .26s var(--spring)}
-.view.enter>*{animation:vin .26s var(--spring) backwards}
 /* z-index explícito, con position:relative para que z-index tenga efecto
    (sin position, un elemento static ignora z-index aunque sea flex/grid no
    aplica acá). Así la entrante queda SIEMPRE arriba de la saliente, sin
@@ -173,12 +177,16 @@ main{
    main — ~36px más ancha y corrida ~18px/16px respecto de .view.enter,
    un salto de layout visible en el primer frame de cada cambio de pestaña. */
 .view.leave{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none}
-@keyframes slideOutL{to{opacity:0;transform:translate3d(-56px,0,0)}}
-@keyframes slideOutR{to{opacity:0;transform:translate3d(56px,0,0)}}
+/* La saliente también se mantiene sólida — desliza afuera sin fundido,
+   igual que la entrante. Sigue tapando lo que hay detrás (ver nota de
+   .view.leave arriba), así que aunque no se desvanezca, nunca deja ver un
+   hueco: se va caminando hasta salir del marco. */
+@keyframes slideOutL{to{transform:translate3d(-56px,0,0)}}
+@keyframes slideOutR{to{transform:translate3d(56px,0,0)}}
 .view.leave.dir-r{animation:slideOutL .26s var(--ease) forwards}
 .view.leave.dir-l{animation:slideOutR .26s var(--ease) forwards}
 @media (prefers-reduced-motion:reduce){
-  .view.enter.dir-r,.view.enter.dir-l,.view.enter>*,
+  .view.enter.dir-r,.view.enter.dir-l,
   .view.leave.dir-r,.view.leave.dir-l{animation:none}
   /* Sin animación no hay nada que la esconda: .view.leave no tiene opacidad
      propia fuera de slideOut, así que quedaría opaca y tapando (las
@@ -188,12 +196,6 @@ main{
      apagado el movimiento, así que se saca del render directamente. */
   .view.leave{display:none}
 }
-/* escalonado: la pantalla entra por partes en vez de un bloque único */
-.view.enter>*:nth-child(2){animation-delay:.03s}
-.view.enter>*:nth-child(3){animation-delay:.06s}
-.view.enter>*:nth-child(4){animation-delay:.09s}
-.view.enter>*:nth-child(5){animation-delay:.11s}
-.view.enter>*:nth-child(n+6){animation-delay:.13s}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
 }
@@ -1125,13 +1127,18 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   animation:shup .22s var(--spring);
   box-shadow:var(--glass-hi),0 -20px 60px -20px rgba(0,0,0,.7);
 }
-@keyframes shup{from{transform:translateY(60%);opacity:.4}}
+/* Sin opacity: la hoja entra sólida, sólo sube desde abajo del marco — el
+   fundido de .4→1 se leía como el mismo parpadeo que tenían las pestañas.
+   El fondo oscuro (.bk, fdin) sí sigue con su propio fundido: es una
+   cortina detrás, no contenido, y una cortina apareciendo de golpe se ve
+   más brusco que sumar movimiento ahí. */
+@keyframes shup{from{transform:translateY(60%)}}
 /* El cierre es el espejo exacto de shup/fdin, misma duración cada uno —
    antes no existía ninguno de los dos: #sheet pasaba a display:none en el
    instante en que open se ponía en false y todo desaparecía de golpe.
    #sheet.closing es más específico que #sheet .panel/.bk de arriba, así
    que gana en la cascada sin necesitar !important. */
-@keyframes shdown{to{transform:translateY(60%);opacity:.4}}
+@keyframes shdown{to{transform:translateY(60%)}}
 @keyframes fdout{to{opacity:0}}
 #sheet.closing .panel{animation:shdown .22s cubic-bezier(.2,.8,.3,1) forwards}
 #sheet.closing .bk{animation:fdout .15s forwards}
