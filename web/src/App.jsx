@@ -297,7 +297,7 @@ export default function App() {
       return {
         start: d.start,
         hechos: entries.filter(e => e.sets?.length).length,
-        total: sessionExs(d.weekday).length,
+        total: sessionExs(S.routine.findIndex(s => s.id === d.slotId)).length,
         series: entries.reduce((a, e) => a + (e.sets?.length || 0), 0),
       };
     });

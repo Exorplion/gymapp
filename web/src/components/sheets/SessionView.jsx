@@ -110,13 +110,13 @@ export default function SessionView({ id, justFinished = false }) {
         <div className="calcbox blue" style={{ marginTop: 16 }}>
           <p className="ptext" style={{ marginBottom: 12 }}>
             Agregaste <b className="txt-blue">{s.added.map(a => a.name).join(', ')}</b> hoy.
-            ¿Lo dejo en tu rutina del {WD[s.weekday].toLowerCase()}?
+            ¿Lo dejo en tu rutina de {s.dayName}?
           </p>
           <div className="btn-row" style={{ marginTop: 0 }}>
             <button type="button" className="btn sm ghost" onClick={() => { setPinResuelto(true); toast('Queda sólo en esta sesión'); }}>
               No, sólo fue hoy
             </button>
-            <button type="button" className="btn sm" onClick={async () => { setPinResuelto(true); await pinAddedToRoutine(s.weekday, s.added); }}>
+            <button type="button" className="btn sm" onClick={async () => { setPinResuelto(true); await pinAddedToRoutine(s.slotId, s.added); }}>
               Sí, agregarlo
             </button>
           </div>

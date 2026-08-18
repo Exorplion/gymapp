@@ -7,7 +7,7 @@
 // del original se reemplazan por `bump()`/`openSheet(type,props)` (Task 1/5,
 // ver state.js) en todos los casos.
 import { S, bump, openSheet, closeSheet, saveCfg } from './state.js';
-import { dstr, uid, norm, vibrate, WD } from './format.js';
+import { dstr, uid, norm, vibrate } from './format.js';
 import { idb } from './db.js';
 import { EXCATALOG } from './muscle.js';
 import { exKey } from './equip.js';
@@ -210,8 +210,10 @@ export async function moveDayTo(fromWd, toWd) {
 
     Salta los que el día ya tiene (por exKey), así responder que sí dos veces
     no duplica nada. */
-export async function pinAddedToRoutine(wd, added) {
-  const d = ensureDay(+wd);
+export async function pinAddedToRoutine(slotId, added) {
+  const index = S.routine.findIndex(s => s.id === slotId);
+  if (index < 0) return;
+  const d = ensureSlot(index);
   const yaHay = new Set((d.exercises || []).map(exKey));
   const nuevos = (added || [])
     .filter(a => !yaHay.has(exKey(a)))
@@ -220,9 +222,9 @@ export async function pinAddedToRoutine(wd, added) {
       equip: a.equip || undefined, machine: a.machine || undefined, unilateral: a.unilateral || undefined,
     }));
   if (!nuevos.length) { toast('Ya estaban en tu rutina'); return; }
-  pushHistory(`${nuevos.length} ejercicio${nuevos.length === 1 ? '' : 's'} agregado${nuevos.length === 1 ? '' : 's'} al ${WD[+wd].toLowerCase()}`);
+  pushHistory(`${nuevos.length} ejercicio${nuevos.length === 1 ? '' : 's'} agregado${nuevos.length === 1 ? '' : 's'} a ${d.name || 'tu rutina'}`);
   d.exercises = [...(d.exercises || []), ...nuevos];
-  await persistDay(+wd);
+  await persistSlot(index);
   bump();
 }
 

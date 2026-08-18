@@ -28,10 +28,11 @@
 // dejaría un <input> no controlado mostrando el valor tecleado de OTRO
 // ejercicio). Se genera una vez, al sembrar el estado inicial.
 import { useRef, useState } from 'react';
-import { S, bump, wStep, closeSheet } from '../../lib/state.js';
-import { WD, dstr, uid, round1, vibrate } from '../../lib/format.js';
+import { S, bump, saveCfg, wStep, closeSheet } from '../../lib/state.js';
+import { dstr, uid, round1, vibrate } from '../../lib/format.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
+import { pendingSlot } from '../../lib/session.js';
 
 const FIELDS = [['sets', 'Series'], ['reps', 'Reps'], ['w', 'Peso kg']];
 
@@ -74,18 +75,25 @@ export default function VoiceLog({ items: initialItems, duration: initialDuratio
 
   async function save() {
     if (!items.length) return;
-    const wd = new Date().getDay(), day = S.routine[wd];
+    const slot = pendingSlot();
     const entries = items.map(it => ({
       exId: uid(), name: it.name,
       sets: Array.from({ length: it.sets }, () => ({ w: round1(it.w), r: it.reps })),
     }));
     const end = Date.now(), dur = Math.max(1, duration | 0);
     const sess = {
-      id: uid(), date: dstr(), weekday: wd, dayName: day?.name || WD[wd],
+      id: uid(), date: dstr(), slotId: slot?.id, dayName: slot?.name || 'Entrenamiento',
       start: end - dur * 60000, end, duration: dur, entries,
     };
     await idb.put('sessions', sess);
     S.sessions.unshift(sess);
+    // Mismo avance de puntero que completeSession() (session.js): un
+    // registro por voz cierra el turno pendiente igual que cualquier otra
+    // sesión, así la racha y el "qué sigue" no se desincronizan.
+    const finishedAt = S.routine.findIndex(s => s.id === slot?.id);
+    S.cfg.seqIndex = finishedAt >= 0 ? (finishedAt + 1) % Math.max(1, S.routine.length) : S.cfg.seqIndex;
+    S.cfg.seqIndexDate = dstr();
+    await saveCfg();
     const n = entries.reduce((a, e) => a + e.sets.length, 0);
     closeSheet();
     vibrate([30, 50, 30]);
