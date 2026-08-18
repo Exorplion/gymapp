@@ -9,28 +9,22 @@ import { dstr, fmtNum, round1, kg2lb, KG2LB, vibrate } from './format.js';
 // React (en S), no en un componente; es la API que React expone para
 // exactamente este caso ("external mutable store").
 export const S = {
-  routine: {},          // weekday -> {weekday,name,exercises:[{id,name,sets,reps}]}
+  routine: [],   // [{id, order, type:'workout'|'rest', name?, exercises?}]
   sessions: [],         // desc por start
   meals: [], foods: [], body: [],
   cfg: {
     unit: 'kg', rest: 90, goals: { kcal: 2600, p: 160, c: 280, f: 80 }, goalsAuto: false,
-    // Qué hacer al soltar un día sobre otro que ya tiene entrenamiento:
-    // 'ask' pregunta cada vez · 'shift' corre al ocupante al próximo día libre
-    // · 'swap' los intercambia. Arranca preguntando porque las dos opciones son
-    // razonables y cuál querés depende de la semana que estés armando.
-    dayDrop: 'ask',
+    seqIndex: 0,        // posición pendiente en S.routine
+    seqIndexDate: null, // 'YYYY-MM-DD': desde cuándo seqIndex está en este valor
     profile: { sex: 'm', age: null, height: null, weightKg: null, activity: 'moderate', goal: 'deficit_mod', tdeeEmpirical: null, proteinPref: 0.5, fatPref: 0.5 },
   },
   draft: null,          // sesión en curso
   tab: 'inicio',        // la portada; 'hoy' sigue existiendo, pero se entra desde acá
   hoyVals: {},          // exId -> {w(kg), r}
-  hoyDay: null,         // weekday elegido en Hoy
-  hoyOrder: {},         // weekday -> [exId] reordenado antes de arrancar el reloj
-  // weekday -> 'arrive'|'bumped'|'left': marca transitoria para animar en el
-  // editor qué le pasó a cada día después de mover uno. Vive en S y no en el
-  // DOM para que sea el render de React el que la aplique — ver setDayFx().
-  dayFx: {},
-  rutOpen: new Date().getDay(),
+  // hoyDay / hoyOrder / dayFx / rutOpen(por weekday) / dayDrop se eliminan
+  // acá — reemplazados en las tasks siguientes por sus equivalentes de
+  // secuencia (S.rutOpen pasa a ser un índice o null, ver Task 9).
+  rutOpen: null,
   rutMode: 'view',      // 'view' = resumen de la semana · 'edit' = editor
   lib: [],              // rutinas guardadas por el usuario
   nutriDate: dstr(),
@@ -65,7 +59,7 @@ export function useStore() {
 
 export async function loadAll() {
   const [rt, ss, ms, fs, bd, st] = await Promise.all(STORES.map(s => idb.all(s)));
-  S.routine = {}; rt.forEach(d => S.routine[d.weekday] = d);
+  S.routine = rt.sort((a, b) => a.order - b.order);
   S.sessions = ss.sort((a, b) => b.start - a.start);
   S.meals = ms; S.foods = fs;
   S.body = bd.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
@@ -74,7 +68,6 @@ export async function loadAll() {
     if (kv.key === 'draft') S.draft = kv.value;
     if (kv.key === 'lib') S.lib = kv.value || [];
   });
-  if (S.draft) S.hoyDay = S.draft.weekday;
   S.ready = true;
 }
 
