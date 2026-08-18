@@ -5,12 +5,13 @@
 // DOM que arrastrar, por eso Task 3 sólo verifica que el módulo importe
 // limpio y que las firmas exportadas sean correctas (ver task-3-brief.md).
 import { S, bump } from './state.js';
+import { idb } from './db.js';
 import { vibrate } from './format.js';
 import { setExOrder } from './session.js';
 // Task 5 completa lo que Task 3 dejó en TODO (ver comentarios más abajo):
 // rutina-logic.js no importa nada de este archivo, así que este import es
 // unidireccional — no hay ciclo drag.js<->rutina-logic.js.
-import { pushHistory, dropDayOn, persistDay, previewDayDrop } from './rutina-logic.js';
+import { pushHistory, persistSlot } from './rutina-logic.js';
 // El único uso de React en este módulo: colapsar el día abierto antes de medir
 // los rects tiene que estar pintado ANTES de medir, y sólo flushSync lo
 // garantiza. Ver dragStart.
@@ -113,53 +114,9 @@ export function dragUpdate() {
   DRAG.el.style.transform = `translateY(${dy}px) scale(var(--lift,1.03))`;
   const mid = DRAG.rects[DRAG.from].top + DRAG.rects[DRAG.from].h / 2 + dy;
 
-  if (DRAG.kind === 'days') {
-    // El destino es el día que está bajo EL DEDO, no bajo el centro de la
-    // tarjeta que arrastrás. En una lista de filas iguales da lo mismo, pero
-    // acá las tarjetas miden distinto (un día abierto mide el doble que un
-    // descanso), así que el centro de la que llevás puede caer dos días más
-    // abajo de donde estás apuntando.
-    const py = DRAG.cy + scrollY;
-    let to = -1;
-    DRAG.rects.forEach((r, i) => { if (py >= r.top && py <= r.top + r.h) to = i; });
-    if (to < 0) {   // en los huecos entre tarjetas, la más cercana
-      let best = Infinity;
-      DRAG.rects.forEach((r, i) => {
-        const d = Math.abs(py - (r.top + r.h / 2));
-        if (d < best) { best = d; to = i; }
-      });
-    }
-    if (to !== DRAG.to) {
-      DRAG.to = to;
-      DRAG.cards.forEach((k, i) => k.classList.toggle('drop-target', i === to && i !== DRAG.from));
-      dragPreviewDays(to);
-      if (to !== DRAG.from) vibrate(6);
-    }
-    return;
-  }
-
   let to = 0;
   DRAG.rects.forEach((r, i) => { if (i !== DRAG.from && mid > r.top + r.h / 2) to++; });
   if (to !== DRAG.to) { DRAG.to = to; dragLayout(); vibrate(6); }
-}
-
-/* El preview del arrastre de días: cada día afectado se desliza hacia donde
-   terminaría su contenido si soltaras acá. Antes el gesto era mudo — sólo se
-   iluminaba el destino, y que el ocupante se iba a correr recién se veía
-   después de soltar y confirmar.
-
-   La tarjeta arrastrada no entra: a esa la mueve el dedo. */
-function dragPreviewDays(to) {
-  const clear = () => DRAG.cards.forEach((k, i) => { if (i !== DRAG.from) k.style.transform = ''; });
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches || to < 0 || to === DRAG.from) { clear(); return; }
-  const map = previewDayDrop(+DRAG.cards[DRAG.from].dataset.sid, +DRAG.cards[to].dataset.sid);
-  DRAG.cards.forEach((k, i) => {
-    if (i === DRAG.from) return;
-    const dest = map[+k.dataset.sid];
-    if (dest == null) { k.style.transform = ''; return; }
-    const j = DRAG.cards.findIndex(c => +c.dataset.sid === dest);
-    k.style.transform = j < 0 ? '' : `translateY(${DRAG.rects[j].top - DRAG.rects[i].top}px)`;
-  });
 }
 
 /* recalcula el apilado real (las filas no miden todas lo mismo) y corre cada
@@ -188,17 +145,6 @@ export function dragEnd(commit) {
   el.style.transform = moved ? `translateY(${self}px)` : '';
   const clean = () => cards.forEach(k => { k.style.transform = ''; k.classList.remove('shift', 'settling', 'drop-target'); });
   const kind = box.dataset.sort, wd = box.dataset.wd;
-  if (kind === 'days') {
-    // La tarjeta arrastrada vuelve a su sitio: cada tarjeta ES un día de la
-    // semana y no se mueve nunca. Lo que viaja es el contenido, y de contarlo
-    // se encarga la animación de los días afectados (S.dayFx en Rutina.jsx).
-    el.style.transform = '';
-    if (!moved) { setTimeout(clean, 300); return; }
-    vibrate(22);
-    const fromWd = +cards[from].dataset.sid, toWd = +cards[to].dataset.sid;
-    setTimeout(() => { clean(); dropDayOn(fromWd, toWd); }, 220);
-    return;
-  }
   if (!moved) { setTimeout(clean, 300); return; }
   const ids = cards.map(k => k.dataset.sid);
   const [m] = ids.splice(from, 1); ids.splice(to, 0, m);
@@ -238,7 +184,18 @@ export function keepScroll(fn) {
 }
 
 export async function commitSort(kind, wd, ids) {
-  if (kind === 'hoy') return setExOrder(S.hoyDay ?? new Date().getDay(), ids);
+  if (kind === 'hoy') return setExOrder(S.cfg.seqIndex, ids);
+  if (kind === 'seq') {
+    const by = new Map(S.routine.map(s => [s.id, s]));
+    const out = [];
+    ids.forEach(id => { if (by.has(id)) { out.push(by.get(id)); by.delete(id); } });
+    by.forEach(s => out.push(s));
+    out.forEach((s, i) => { s.order = i; });
+    S.routine = out;
+    await idb.clear('routine');
+    await Promise.all(S.routine.map(s => idb.put('routine', s)));
+    return;
+  }
   const d = S.routine[+wd];
   if (!d || !d.exercises) return;
   pushHistory('Ejercicios reordenados');
@@ -247,7 +204,7 @@ export async function commitSort(kind, wd, ids) {
   ids.forEach(i => { if (by.has(i)) { out.push(by.get(i)); by.delete(i); } });
   by.forEach(e => out.push(e));   // nada se pierde si la lista quedó desfasada
   d.exercises = out;
-  return persistDay(+wd);
+  return persistSlot(+wd);
 }
 
 /** Registra los listeners globales de drag una sola vez. Se llama desde
