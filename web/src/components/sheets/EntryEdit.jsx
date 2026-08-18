@@ -9,7 +9,7 @@
 // corregir un registro no debería reescribir el plan sin permiso.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { S, closeSheet, openSheet } from '../../lib/state.js';
-import { WD, norm } from '../../lib/format.js';
+import { norm } from '../../lib/format.js';
 import { updateHistorySession } from '../../lib/session.js';
 import { renameRoutineExercise } from '../../lib/rutina-logic.js';
 import { EXCATALOG, MUSCLE_CATS, catOf } from '../../lib/muscle.js';
@@ -56,14 +56,19 @@ export default function EntryEdit({ sessId, idx }) {
     });
     await updateHistorySession(copia, `Ahora dice ${n}`);
 
-    // ¿la rutina de ese día también lo tiene mal?
-    const enRutina = (S.routine[sess.weekday]?.exercises || []).some(e => e.name === original);
+    // ¿la rutina de ese turno también lo tiene mal? Sólo se puede resolver
+    // para sesiones nuevas (con slotId) — una sesión vieja (weekday) no
+    // tiene forma confiable de mapearse a un turno actual de la secuencia,
+    // así que no se ofrece el cambio ahí (mejor no ofrecerlo que ofrecer
+    // corregir el turno equivocado).
+    const slot = sess.slotId ? S.routine.find(s => s.id === sess.slotId) : null;
+    const enRutina = (slot?.exercises || []).some(e => e.name === original);
     if (enRutina && n !== original) {
       openSheet('confirm', {
         title: '¿También en tu rutina?',
-        body: `"${S.routine[sess.weekday]?.name || WD[sess.weekday]}" todavía tiene "${original}". Si el nombre estaba mal en el plan, lo vas a volver a registrar mal.`,
+        body: `"${slot.name || 'Tu rutina'}" todavía tiene "${original}". Si el nombre estaba mal en el plan, lo vas a volver a registrar mal.`,
         confirmLabel: 'Cambiarlo ahí también',
-        onConfirm: () => renameRoutineExercise(sess.weekday, original, { name: n, equip, machine, cat, unilateral }),
+        onConfirm: () => renameRoutineExercise(sess.slotId, original, { name: n, equip, machine, cat, unilateral }),
       });
       return;
     }

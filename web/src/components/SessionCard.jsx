@@ -7,7 +7,7 @@
 // saber si valía la pena. Acá el volumen, los récords y qué ejercicios
 // hiciste se leen sin entrar.
 import { openSheet } from '../lib/state.js';
-import { WDS, WD, fmtD } from '../lib/format.js';
+import { WDS, fmtD } from '../lib/format.js';
 import { sessionPRs } from '../lib/session.js';
 
 export default function SessionCard({ sess }) {
@@ -15,12 +15,16 @@ export default function SessionCard({ sess }) {
   const vol = Math.round((sess.entries || []).reduce((a, e) => a + e.sets.reduce((b, s) => b + s.w * s.r, 0), 0));
   const nprs = sessionPRs(sess).length;
   const names = (sess.entries || []).map(e => e.name).join(' · ');
+  // El día de semana se deriva de la fecha, no de sess.weekday — ese campo
+  // sólo existe en sesiones viejas (pre-secuencia). La fecha siempre está,
+  // en sesiones viejas y nuevas por igual, así que es la fuente confiable.
+  const wd = new Date(sess.date + 'T12:00:00').getDay();
 
   return (
     <button type="button" className="sess-card" onClick={() => openSheet('session-view', { id: sess.id })}>
       <div className="sc-top">
-        <span className="hist-badge">{WDS[sess.weekday]}</span>
-        <span className="sc-name">{sess.dayName || WD[sess.weekday]}</span>
+        <span className="hist-badge">{WDS[wd]}</span>
+        <span className="sc-name">{sess.dayName || 'Entrenamiento'}</span>
         {nprs > 0 && <span className="sc-pr">🏆{nprs}</span>}
       </div>
       <div className="sc-meta">{fmtD(sess.date)} · {sess.duration} min</div>

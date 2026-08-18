@@ -9,16 +9,12 @@
 // Settings.jsx) las necesitaba desde afuera.
 //
 // Import unidireccional: sólo depende de state.js/format.js/db.js/
-// rutina-logic.js (persistDay/routineSnapshot/saveLib) — ninguno de esos
+// rutina-logic.js (applyDays/routineSnapshot/saveLib) — ninguno de esos
 // importa de vuelta seed.js, así que no hay ciclo con state.js.
 import { S } from './state.js';
-import { dstr, uid } from './format.js';
+import { dstr, uid, WEEK_ORDER } from './format.js';
 import { idb } from './db.js';
-import { routineSnapshot, saveLib } from './rutina-logic.js';
-// TEMP verification-only stub (task 9) — persistDay no longer exists;
-// seed.js's weekday-indexed S.routine writes are a known separate gap not
-// fixed here (seedRegistro is unreachable from Rutina/SlotEdit/App).
-const persistDay = async () => {};
+import { applyDays, routineSnapshot, saveLib } from './rutina-logic.js';
 import { saveCfg } from './state.js';
 
 /* Datos reales del registro consolidado (13-19 jul 2026):
@@ -113,12 +109,17 @@ function genMealsForDay(date, goals) {
   });
 }
 
-function seedSessions() {
+/** `slotByWd`: mapa día-de-semana (número real, para la matemática de
+    fechas) -> turno ya persistido por applyDays, con su `id` estable. El
+    array de S.routine está ordenado por posición (WEEK_ORDER), no por
+    número de día — indexarlo directo con `wd` agarraba el turno equivocado. */
+function seedSessions(slotByWd) {
   const out = [];
   const today = new Date(); today.setHours(0, 0, 0, 0);
   Object.keys(SEED_SPLIT).forEach(k => {
     const wd = +k, [dayName, list] = SEED_SPLIT[wd];
-    const exs = S.routine[wd].exercises;
+    const slot = slotByWd[wd];
+    const exs = slot.exercises;
     const iRef = SEED_WEEKS - 1 - SEED_REF;
     for (let i = 0; i < SEED_WEEKS; i++) {
       /* día salteado de tanto en tanto (ocupado/enfermo) — nunca la semana más reciente */
@@ -142,7 +143,7 @@ function seedSessions() {
       const dur = Math.round(nsets * 2.9 + 8);
       const start = new Date(d); start.setHours(6, 0, 0, 0);
       out.push({
-        id: uid(), date: dstr(d), weekday: wd, dayName, seed: true,
+        id: uid(), date: dstr(d), slotId: slot.id, dayName, seed: true,
         start: start.getTime(), end: start.getTime() + dur * 60000, duration: dur, entries,
       });
     }
@@ -151,15 +152,20 @@ function seedSessions() {
 }
 
 export async function seedRegistro() {
-  for (const wd in SEED_SPLIT) {
-    const [name, list] = SEED_SPLIT[wd];
-    S.routine[wd] = {
-      weekday: +wd, name, seed: true,
-      exercises: list.map(([n, st, r]) => ({ id: uid(), name: n, sets: st, reps: r })),
-    };
-    await persistDay(+wd);
-  }
-  for (const s of seedSessions()) { await idb.put('sessions', s); S.sessions.push(s); }
+  // La secuencia sigue el orden natural de la semana (WEEK_ORDER: lunes
+  // primero) — mismo criterio que usan las plantillas de templates.js.
+  // Los días sin entrada en SEED_SPLIT (3/6/0: miércoles, sábado, domingo)
+  // son descanso.
+  const seq = WEEK_ORDER.map(wd => {
+    const entry = SEED_SPLIT[wd];
+    return entry
+      ? { type: 'workout', name: entry[0], exercises: entry[1].map(([n, st, r]) => ({ name: n, sets: st, reps: r })) }
+      : { type: 'rest' };
+  });
+  await applyDays(seq, 'Anterior / Posterior');
+  const slotByWd = {};
+  WEEK_ORDER.forEach((wd, i) => { slotByWd[wd] = S.routine[i]; });
+  for (const s of seedSessions(slotByWd)) { await idb.put('sessions', s); S.sessions.push(s); }
   S.sessions.sort((a, b) => b.start - a.start);
 
   S.cfg.goals = { kcal: 1950, p: 140, c: 201, f: 65 };
@@ -187,7 +193,6 @@ export async function seedRegistro() {
   S.body.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
   S.cfg.profile.weightKg = 74;
   S.cfg.rest = 180;                  // 3 min, el descanso de compuestos
-  S.cfg.routineName = 'Anterior / Posterior';
   await saveCfg();
   /* queda también en la biblioteca, para poder volver a ella tras probar otra */
   S.lib = S.lib.filter(r => r.name !== 'Anterior / Posterior');
@@ -204,5 +209,9 @@ export async function wipeSeed() {
   for (const st of ['sessions', 'meals', 'body']) {
     for (const r of await idb.all(st)) if (r.seed) await idb.del(st, r.id);
   }
-  for (const wd in S.routine) if (S.routine[wd].seed) await idb.del('routine', S.routine[wd].weekday);
+  // La rutina NO se toca acá a propósito: seedRegistro la carga vía
+  // applyDays (mismo camino que aplicar una plantilla), que no marca los
+  // turnos con `.seed` — no hay forma de distinguir "turno que puso el
+  // seed" de "turno que edité después a mano" una vez cargada. Vaciar el
+  // split sin que el usuario lo pida sería peor que dejarlo como está.
 }

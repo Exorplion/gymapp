@@ -12,7 +12,7 @@
 // líneas.
 import { S, useStore, bump, openSheet } from '../../lib/state.js';
 import { streakHeatmap, currentStreak, bestStreak } from '../../lib/streak.js';
-import { WD, WEEK_ORDER, fmtD, fmtDFull, fmtNum, kg2lb, round1 } from '../../lib/format.js';
+import { fmtD, fmtDFull, fmtNum, kg2lb, round1 } from '../../lib/format.js';
 import { muscleVolume } from '../../lib/muscle.js';
 import { sessionsSince, routineStability } from '../../lib/rutina-logic.js';
 import { groupSessionsByWeek } from '../../lib/session.js';
@@ -52,7 +52,7 @@ export default function Progreso() {
     ? filterByRange((series[S.progEx] || []).map(p => ({ date: p.date, y: Math.round(p.w), r: p.r })), S.progRange)
     : [];
 
-  const trainDays = WEEK_ORDER.filter(wd => S.routine[wd]?.exercises?.length);
+  const trainDays = S.routine.filter(s => s.type === 'workout' && s.exercises?.length);
 
   // Cuántas semanas de historia hay: el mockup lo pone junto al título como
   // contexto de todo lo que se ve abajo.
@@ -144,13 +144,13 @@ export default function Progreso() {
             </div>
           </div>
           <div className="card sub">
-            {trainDays.map(wd => {
-              const st = routineStability(wd);
+            {trainDays.map(slot => {
+              const st = routineStability(slot.id);
               const bits = [];
               bits.push(st?.last ? `última vez ${fmtD(st.last)}` : 'sin sesiones registradas aún');
               if (st?.sessions) bits.push(`mismos ejercicios hace ${st.sessions} ${st.sessions === 1 ? 'sesión' : 'sesiones'}`);
               return (
-                <div key={wd} className="row"><div className="grow"><div className="t">{S.routine[wd].name || WD[wd]}</div><div className="s">{bits.join(' · ')}</div></div></div>
+                <div key={slot.id} className="row"><div className="grow"><div className="t">{slot.name || 'Rutina'}</div><div className="s">{bits.join(' · ')}</div></div></div>
               );
             })}
           </div>

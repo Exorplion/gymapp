@@ -19,18 +19,25 @@ import { toast } from './toast.js';
    todavía Rutina.jsx (son para el sheet de "antes de entrenar" — Task 6),
    pero viven acá porque son la misma familia de lógica y ya estaban en este
    mismo bloque del original. */
-export function daySessions(wd) {
-  return S.sessions.filter(s => s.weekday === wd).slice().sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+/** Sesiones de un turno, por `slotId` (estable, sobrevive a reordenamientos)
+    — no por weekday. Sólo encuentra sesiones nuevas (post-migración a
+    secuencia): las viejas guardan `weekday`, no `slotId`, y no hay forma
+    confiable de mapear un día de semana histórico a un turno actual, así
+    que no se intenta — mejor no mostrar nada que mostrar algo por
+    coincidencia de índice. */
+export function daySessions(slotId) {
+  return S.sessions.filter(s => s.slotId === slotId).slice().sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 }
 export function sessionsSince(days) {
   const cutoff = dstr(new Date(Date.now() - days * 86400000));
   return S.sessions.filter(s => s.date >= cutoff).length;
 }
-/* ¿hace cuántas sesiones que el día no cambia de ejercicios? compara contra la config actual del día */
-export function routineStability(wd) {
-  const cur = new Set((S.routine[wd]?.exercises || []).map(e => norm(e.name)));
+/* ¿hace cuántas sesiones que el turno no cambia de ejercicios? compara contra la config actual del turno */
+export function routineStability(slotId) {
+  const slot = S.routine.find(s => s.id === slotId);
+  const cur = new Set((slot?.exercises || []).map(e => norm(e.name)));
   if (!cur.size) return null;
-  const sess = daySessions(wd);
+  const sess = daySessions(slotId);
   if (!sess.length) return { sessions: 0, last: null };
   let stable = 0;
   for (const s of sess) {
@@ -180,29 +187,6 @@ export async function applyDays(seq, name) {
   S.cfg.seqIndex = 0; S.cfg.seqIndexDate = null;
   await saveCfg();
 }
-/** Mueve un día entero — nombre y ejercicios — a otro día de la semana. Si el
-    destino ya tenía entrenamiento, los dos se intercambian: no hay caso en que
-    algo se pise o se pierda.
-
-    El historial no entra acá a propósito: cada sesión guarda su propio
-    `weekday`, que es el día en que realmente entrenaste. Mover el plan cambia
-    de acá en adelante; reescribir las sesiones sería falsear el registro. */
-export async function moveDayTo(fromWd, toWd) {
-  const from = +fromWd, to = +toWd;
-  if (from === to) return;
-  const a = S.routine[from] || { weekday: from, name: '', exercises: [] };
-  const b = S.routine[to] || { weekday: to, name: '', exercises: [] };
-  // weekday es el keyPath del store: corregirlo es lo que hace que cada uno se
-  // guarde en su registro nuevo en vez de sobrescribir el viejo.
-  S.routine[to] = { ...a, weekday: to };
-  S.routine[from] = { ...b, weekday: from };
-  // El orden reacomodado en Hoy es por día, así que viaja con el día.
-  const ordA = S.hoyOrder[from], ordB = S.hoyOrder[to];
-  if (ordB) S.hoyOrder[from] = ordB; else delete S.hoyOrder[from];
-  if (ordA) S.hoyOrder[to] = ordA; else delete S.hoyOrder[to];
-  await Promise.all([persistDay(from), persistDay(to)]);
-}
-
 /** Deja fijos en la rutina del día los ejercicios que agregaste durante una
     sesión. Se ofrece una vez, al cerrarla (SessionView): improvisar en el
     gimnasio no debería reescribir el plan solo, pero repetir a mano lo que ya
@@ -228,12 +212,17 @@ export async function pinAddedToRoutine(slotId, added) {
   bump();
 }
 
-/** Renombra un ejercicio de la rutina de un día. Se ofrece al corregir qué
+/** Renombra un ejercicio de la rutina del turno. Se ofrece al corregir qué
     ejercicio fue una entrada del historial: si el nombre estaba mal en el
-    plan, lo vas a volver a registrar mal. Con un botón, no automáticamente. */
-export async function renameRoutineExercise(wd, nombreViejo, { name, equip, machine, cat, unilateral }) {
-  const d = S.routine[+wd];
-  const ex = (d?.exercises || []).find(e => e.name === nombreViejo);
+    plan, lo vas a volver a registrar mal. Con un botón, no automáticamente.
+
+    Recibe el `slotId` de la sesión (estable, sobrevive a reordenamientos),
+    no un índice ni un weekday — el turno se busca por id. */
+export async function renameRoutineExercise(slotId, nombreViejo, { name, equip, machine, cat, unilateral }) {
+  const index = S.routine.findIndex(s => s.id === slotId);
+  if (index < 0) return;
+  const d = S.routine[index];
+  const ex = (d.exercises || []).find(e => e.name === nombreViejo);
   if (!ex) return;
   pushHistory(`"${nombreViejo}" ahora es "${name}"`);
   ex.name = name;
@@ -241,7 +230,7 @@ export async function renameRoutineExercise(wd, nombreViejo, { name, equip, mach
   ex.machine = equip && machine ? machine : undefined;
   ex.cat = cat || undefined;
   ex.unilateral = unilateral || undefined;
-  await persistDay(+wd);
+  await persistSlot(index);
   bump();
 }
 
@@ -443,7 +432,7 @@ export async function moveEx(index, exId, dir) {
 }
 
 export function startBlank() {
-  if (!Object.values(S.routine).some(d => d.exercises?.length)) {
+  if (!S.routine.some(d => d.exercises?.length)) {
     S.rutMode = 'edit'; closeSheet(); bump(); return;
   }
   openSheet('confirm', {
@@ -451,7 +440,7 @@ export function startBlank() {
     body: 'Se borran todos los días y ejercicios.',
     confirmLabel: 'Vaciar',
     onConfirm: async () => {
-      await idb.clear('routine'); S.routine = {};
+      await idb.clear('routine'); S.routine = [];
       S.cfg.routineName = ''; await saveCfg();
       S.rutMode = 'edit'; closeSheet(); bump();
       toast('Split vacío — armá el tuyo');

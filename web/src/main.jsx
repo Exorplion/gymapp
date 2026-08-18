@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 import App from './App.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 
 // Limpieza única del service worker de la app vainilla. Esa versión cacheaba
 // su propio index.html con estrategia cache-first bajo el nombre 'fierro-vNN'
@@ -22,6 +23,8 @@ if ('caches' in window) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )
