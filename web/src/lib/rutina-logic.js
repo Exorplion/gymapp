@@ -7,7 +7,7 @@
 // del original se reemplazan por `bump()`/`openSheet(type,props)` (Task 1/5,
 // ver state.js) en todos los casos.
 import { S, bump, openSheet, closeSheet, saveCfg } from './state.js';
-import { dstr, uid, norm, vibrate, WD, WEEK_ORDER } from './format.js';
+import { dstr, uid, norm, vibrate, WD } from './format.js';
 import { idb } from './db.js';
 import { EXCATALOG } from './muscle.js';
 import { exKey } from './equip.js';
@@ -65,19 +65,16 @@ export function routineName() { return S.cfg.routineName || (routineStats().work
    `photo` queda afuera a propósito: son data-URLs y S.lib entero vive en un
    único registro de `settings`, así que meter fotos ahí lo infla sin límite. */
 export function routineSnapshot() {
-  const days = {};
-  WEEK_ORDER.forEach(wd => {
-    const d = S.routine[wd];
-    if (!d?.exercises?.length) return;
-    days[wd] = {
-      name: d.name || WD[wd],
-      exercises: d.exercises.map(e => ({
-        name: e.name, sets: e.sets, reps: e.reps,
-        equip: e.equip, machine: e.machine, illus: e.illus, cat: e.cat, unilateral: e.unilateral,
-      })),
-    };
-  });
-  return days;
+  return S.routine.map(s => s.type === 'rest'
+    ? { type: 'rest' }
+    : {
+        type: 'workout',
+        name: s.name || '',
+        exercises: (s.exercises || []).map(e => ({
+          name: e.name, sets: e.sets, reps: e.reps,
+          equip: e.equip, machine: e.machine, illus: e.illus, cat: e.cat, unilateral: e.unilateral,
+        })),
+      });
 }
 
 /** Copia de un ejercicio con id NUEVO.
@@ -104,31 +101,31 @@ export function cloneExercise(ex) {
   };
 }
 
-/** Los ejercicios de una fuente de copiado: un día de la semana
-    ({fromWd}) o un día de una rutina guardada ({libId, libWd}). */
+/** Los ejercicios de una fuente de copiado: un turno de la secuencia actual
+    ({fromIndex}) o un turno de una rutina guardada ({libId, libIndex}). */
 export function copySourceExercises(src) {
   if (src?.libId != null) {
     const r = S.lib.find(x => x.id === src.libId);
-    return r?.days?.[src.libWd]?.exercises || [];
+    return r?.days?.[src.libIndex]?.exercises || [];
   }
-  return S.routine[+src?.fromWd]?.exercises || [];
+  return S.routine[+src?.fromIndex]?.exercises || [];
 }
 
-/** Nombre del día de origen, para heredarlo si el destino no tiene. */
+/** Nombre del turno de origen, para heredarlo si el destino no tiene. */
 function copySourceName(src) {
   if (src?.libId != null) {
     const r = S.lib.find(x => x.id === src.libId);
-    return r?.days?.[src.libWd]?.name || '';
+    return r?.days?.[src.libIndex]?.name || '';
   }
-  return S.routine[+src?.fromWd]?.name || '';
+  return S.routine[+src?.fromIndex]?.name || '';
 }
 
 /**
- * Lleva ejercicios de `src` al día `toWd`.
+ * Lleva ejercicios de `src` al turno `toIndex`.
  *
  * `ids` identifica qué copiar dentro del origen: por `id` cuando viene de un
- * día de la semana, y por `name` cuando viene de una rutina guardada (los
- * ejercicios de S.lib no tienen id — se generan al aplicarlos).
+ * turno de la secuencia actual, y por `name` cuando viene de una rutina
+ * guardada (los ejercicios de S.lib no tienen id — se generan al aplicarlos).
  *
  * `mode`:
  *   'replace' — el destino queda con exactamente lo seleccionado.
@@ -136,51 +133,51 @@ function copySourceName(src) {
  *               exKey: el mismo nombre con otro equipo NO es un repetido, es
  *               justo lo que el módulo de equipamiento existe para separar.
  */
-export async function copyExercises(src, toWd, ids, mode = 'merge') {
-  const to = +toWd;
-  if (src?.libId == null && +src?.fromWd === to) return;   // copiar sobre sí mismo
+export async function copyExercises(src, toIndex, ids, mode = 'merge') {
+  const to = +toIndex;
+  if (src?.libId == null && +src?.fromIndex === to) return;   // copiar sobre sí mismo
   const elegidos = copySourceExercises(src).filter(e => ids.includes(e.id ?? e.name));
   if (!elegidos.length) return;
 
-  const destino = ensureDay(to);
+  const destino = ensureSlot(to);
   const existentes = mode === 'replace' ? [] : (destino.exercises || []);
   const yaHay = new Set(existentes.map(exKey));
   const nuevos = elegidos
     .filter(e => mode === 'replace' || !yaHay.has(exKey(e)))
     .map(cloneExercise);
 
-  if (!nuevos.length && mode === 'merge') { toast('Ese día ya tiene todos esos ejercicios'); return; }
+  if (!nuevos.length && mode === 'merge') { toast('Ese turno ya tiene todos esos ejercicios'); return; }
 
   pushHistory(
     mode === 'replace'
-      ? `${WD[to]} reemplazado con ${nuevos.length} ejercicio${nuevos.length === 1 ? '' : 's'}`
-      : `${nuevos.length} ejercicio${nuevos.length === 1 ? '' : 's'} copiado${nuevos.length === 1 ? '' : 's'} al ${WD[to].toLowerCase()}`,
+      ? `Turno reemplazado con ${nuevos.length} ejercicio${nuevos.length === 1 ? '' : 's'}`
+      : `${nuevos.length} ejercicio${nuevos.length === 1 ? '' : 's'} copiado${nuevos.length === 1 ? '' : 's'}`,
   );
   destino.exercises = [...existentes, ...nuevos];
-  // Un día que todavía no tenía nombre hereda el del origen; uno que ya lo
-  // tenía se lo queda — el nombre es del día, no del contenido.
+  // Un turno que todavía no tenía nombre hereda el del origen; uno que ya lo
+  // tenía se lo queda — el nombre es del turno, no del contenido.
   if (!destino.name) destino.name = copySourceName(src);
-  await persistDay(to);
+  await persistSlot(to);
   bump();
 }
 export async function saveLib() { await idb.put('settings', { key: 'lib', value: S.lib }); }
-export async function applyDays(days, name) {
+export async function applyDays(seq, name) {
   await idb.clear('routine');
-  S.routine = {};
-  for (const wd in days) {
-    S.routine[wd] = {
-      weekday: +wd, name: days[wd].name,
-      // conserva equip/machine/illus: sin ellos la rutina cargada pierde el
-      // enlace a su historial (ver routineSnapshot)
-      exercises: days[wd].exercises.map(e => ({
-        id: uid(), name: e.name, sets: e.sets, reps: e.reps,
-        equip: e.equip || undefined, machine: e.machine || undefined, illus: e.illus || undefined,
-        cat: e.cat || undefined, unilateral: e.unilateral || undefined,
-      })),
-    };
-    await persistDay(+wd);
-  }
+  S.routine = seq.map((s, i) => s.type === 'rest'
+    ? { id: uid(), order: i, type: 'rest' }
+    : {
+        id: uid(), order: i, type: 'workout', name: s.name,
+        // conserva equip/machine/illus: sin ellos la rutina cargada pierde el
+        // enlace a su historial (ver routineSnapshot)
+        exercises: s.exercises.map(e => ({
+          id: uid(), name: e.name, sets: e.sets, reps: e.reps,
+          equip: e.equip || undefined, machine: e.machine || undefined, illus: e.illus || undefined,
+          cat: e.cat || undefined, unilateral: e.unilateral || undefined,
+        })),
+      });
+  await persistAll();
   S.cfg.routineName = name;
+  S.cfg.seqIndex = 0; S.cfg.seqIndexDate = null;
   await saveCfg();
 }
 /** Mueve un día entero — nombre y ejercicios — a otro día de la semana. Si el
@@ -461,6 +458,10 @@ export function applyLibRoutine(id) {
     confirmLabel: 'Reemplazar',
     onConfirm: async () => {
       await applyDays(r.days, r.name);
+      // S.routine siempre queda con al menos un turno acá: r.days viene de
+      // routineSnapshot(), que sólo se llama sobre una S.routine ya no vacía
+      // (saveCurrentAsLib no ofrece guardar un split sin turnos — ver
+      // Library.jsx, "Guardar la actual como…" sólo aparece con turnos).
       S.rutMode = 'view'; S.rutOpen = 0;
       closeSheet(); bump(); vibrate([20, 40, 20]);
       toast(`"${r.name}" en uso`);
