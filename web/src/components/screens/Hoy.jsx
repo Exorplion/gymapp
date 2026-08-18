@@ -18,8 +18,8 @@
 // dos vistas de una sesión — la del historial y la del cierre.
 import { useEffect, useRef, useState } from 'react';
 import { S, useStore, bump, openSheet, closeSheet, saveDraft } from '../../lib/state.js';
-import { WD, WD1, WDS, MO, WEEK_ORDER, fmtMMSS, fmtNum, round1 } from '../../lib/format.js';
-import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession, sessionForWeekday, sessionPRs } from '../../lib/session.js';
+import { WDS, MO, fmtMMSS, dstr, fmtDFull } from '../../lib/format.js';
+import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession } from '../../lib/session.js';
 import { muscleVolume, uncategorized } from '../../lib/muscle.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
@@ -32,33 +32,15 @@ import { HoySinPlan } from '../Illustration.jsx';
 
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
 
-
-/** Devuelve 'r' o 'l' según hacia qué lado del orden semanal se movió el día
-    elegido desde el render anterior. Se usa sólo para decidir de qué lado
-    entra la tarjeta: no participa del estado de la app. */
-function useDayDirection() {
-  const wd = S.hoyDay ?? new Date().getDay();
-  const prev = useRef(wd);
-  const dir = useRef('r');
-  if (prev.current !== wd) {
-    dir.current = WEEK_ORDER.indexOf(wd) >= WEEK_ORDER.indexOf(prev.current) ? 'r' : 'l';
-    prev.current = wd;
-  }
-  return dir.current;
-}
-
 export default function Hoy() {
   useStore();
-  // Hacia qué lado se movió el usuario en la tira semanal: la tarjeta entra
-  // desde ese lado, así el gesto y la animación coinciden.
-  const dir = useDayDirection();
   const today = new Date();
-  const wd = S.hoyDay ?? today.getDay();
-  const day = S.routine[wd];
+  const index = S.cfg.seqIndex;
+  const day = S.routine[index];
   const active = !!S.draft;
   // Con sesión abierta la lista sale del borrador: incluye lo que agregaste
   // hoy, que no está en la rutina.
-  const exs = active && S.draft.weekday === wd ? sessionExs(wd) : orderedExs(wd, day?.exercises || []);
+  const exs = active ? sessionExs(index) : orderedExs(index, day?.exercises || []);
   const started = active && !!S.draft.start;
   const curId = active ? S.draft.cur : null;
   const nextEx = active ? nextPending(exs) : null;
@@ -87,15 +69,6 @@ export default function Hoy() {
   const terminarCalentamiento = () => cerrarCalentamiento(true);
   const saltarCalentamiento = () => cerrarCalentamiento(false);
 
-  // Para que el plegado se pueda animar, el contenido tiene que seguir
-  // montado mientras la ranura se cierra: si se desmonta al instante no queda
-  // nada cuya altura interpolar y el colapso salta a 0. Conservamos el último
-  // día con rutina y lo seguimos pintando; cuando la ranura está cerrada
-  // queda oculto por el overflow.
-  const lastShown = useRef(null);
-  if (day?.name) lastShown.current = { day, wd, exs };
-  const shown = lastShown.current;
-
   const mv = muscleVolume(7);
   const mvCats = Object.entries(mv).sort((a, b) => b[1] - a[1]);
   const maxv = mvCats.length ? mvCats[0][1] : 0;
@@ -112,49 +85,16 @@ export default function Hoy() {
       </div>
 
       {active ? (
-        <ActiveHero day={day} wd={wd} exs={exs} started={started} allDone={allDone} />
+        <ActiveHero day={day} exs={exs} started={started} allDone={allDone} />
+      ) : day?.type === 'rest' ? (
+        <RestHero />
       ) : (
-        <>
-          {/* El mockup pone la tarjeta del día PRIMERO y la tira semanal
-              debajo: lo primero que ves es qué te toca hoy, no el calendario.
-              Antes estaba al revés. */}
-          {/* Ranura con altura animada: al cambiar de día la tarjeta se
-              despliega o se pliega en vez de aparecer/desaparecer de golpe.
-              El grid-template-rows 0fr↔1fr es lo que permite animar "auto"
-              sin medir alturas a mano. La key por día hace que el contenido
-              entre de nuevo al pasar de un día de entrenamiento a otro. */}
-          <div className={`hero-slot ${day?.name ? 'open' : ''}`} aria-hidden={!day?.name}>
-            <div className="hero-slot-in">
-              {shown && (
-                <div key={shown.wd} className={`hero-swap dir-${dir}`}>
-                  <HeroForDay day={shown.day} wd={shown.wd} exs={shown.exs} today={today} />
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="wkstrip">
-            {WEEK_ORDER.map(d => {
-              const dayR = S.routine[d];
-              const has = dayR?.exercises?.length;
-              const isToday = d === today.getDay();
-              const hecho = !!has && !!sessionForWeekday(d);
-              return (
-                <button
-                  key={d}
-                  type="button"
-                  className={`wd ${has ? 'has' : ''} ${d === wd ? 'on' : ''} ${isToday ? 'today' : ''} ${hecho ? 'done' : ''}`}
-                  aria-pressed={d === wd}
-                  onClick={() => { S.hoyDay = d; bump(); }}
-                >
-                  <div className="l">{WD1[d]}</div>
-                  <div className="n">{has ? (dayR.name || 'Rutina') : 'Descanso'}</div>
-                  {hecho && <div className="tick">✓</div>}
-                </button>
-              );
-            })}
-          </div>
-        </>
+        <PreSessionHero day={day} index={index} exs={exs} />
       )}
+      <div className="sect">Esta semana</div>
+      <div className="card">
+        <WeekHistory />
+      </div>
 
       {mvCats.length > 0 && (
         <>
@@ -195,7 +135,7 @@ export default function Hoy() {
       {!exs.length ? (
         <div className="card"><div className="empty">
           <HoySinPlan className="big" />
-          <p>No hay rutina para <b>{WD[wd]}</b>.<br />Configura tu split en la pestaña Rutina.</p>
+          <p>Este turno todavía no tiene ejercicios.<br />Configuralo en la pestaña Rutina.</p>
           <button
             type="button"
             className="btn sm ghost"
@@ -223,11 +163,11 @@ export default function Hoy() {
               onSaltar={saltarCalentamiento}
             />
           )}
-          <ExerciseCarousel exs={exs} wd={wd} active={active} started={started} curId={curId} nextEx={nextEx} />
+          <ExerciseCarousel exs={exs} wd={index} active={active} started={started} curId={curId} nextEx={nextEx} />
           {/* Decidiste hacer algo que no estaba en el plan. Vale sólo para hoy;
               al cerrar la sesión se ofrece dejarlo fijo. */}
           {active && (
-            <button type="button" className="btn sm ghost" style={{ marginTop: 'var(--s2)' }} onClick={() => openSheet('ex-swap', { wd })}>
+            <button type="button" className="btn sm ghost" style={{ marginTop: 'var(--s2)' }} onClick={() => openSheet('ex-swap', { wd: index })}>
               + Agregar ejercicio a esta sesión
             </button>
           )}
@@ -274,7 +214,7 @@ function ElapsedTimer({ start }) {
   return <span id="hoy-elapsed" data-start={start}>{fmtMMSS(Math.floor((Date.now() - start) / 1000))}</span>;
 }
 
-function ActiveHero({ day, wd, exs, started, allDone }) {
+function ActiveHero({ day, exs, started, allDone }) {
   const nsets = Object.values(S.draft.entries).reduce((a, e) => a + e.sets.length, 0);
   const doneEx = exs.filter(e => !isSkipped(e.id) && setsDone(e.id).length >= targetSets(e)).length;
   const nSkip = exs.filter(e => isSkipped(e.id)).length;
@@ -288,7 +228,7 @@ function ActiveHero({ day, wd, exs, started, allDone }) {
           animation: 'pulse 1.5s infinite',
         }}></span>
         <div className="grow" style={{ flex: 1 }}>
-          <div className="cond" style={{ fontSize: 20, fontWeight: 700 }}>{day?.name || WD[wd]}</div>
+          <div className="cond" style={{ fontSize: 20, fontWeight: 700 }}>{day?.name || 'Entrenamiento'}</div>
           <div className="txt-mut" style={{ fontSize: 13 }}>
             {started
               ? <><ElapsedTimer start={S.draft.start} /> · {doneEx}/{exs.length - nSkip} ejercicios · {nsets} serie{nsets === 1 ? '' : 's'}{nSkip > 0 ? ` · ${nSkip} saltado${nSkip === 1 ? '' : 's'}` : ''}</>
@@ -330,68 +270,38 @@ function confirmSessDiscard() {
   });
 }
 
-/** Un día de esta semana que ya tiene sesión cerrada muestra el resumen; el
-    resto, la invitación a empezar. */
-function HeroForDay({ day, wd, exs, today }) {
-  const done = sessionForWeekday(wd);
-  return done
-    ? <DoneHero sess={done} wd={wd} today={today} />
-    : <PreSessionHero day={day} wd={wd} exs={exs} today={today} />;
-}
-
-/** El día de esta semana que ya entrenaste. Antes acá seguía apareciendo
-    "Empezar entrenamiento" como si nada: nadie miraba S.sessions para saber si
-    el día ya se había cerrado.
-
-    El botón principal pasa a ser mirar lo que hiciste. Volver a entrenar queda
-    como texto discreto — existe para la doble sesión y para el día que te
-    equivocaste, no como camino principal. */
-function DoneHero({ sess, wd, today }) {
-  const nsets = (sess.entries || []).reduce((a, e) => a + e.sets.length, 0);
-  const prs = sessionPRs(sess);
+/** Descanso programado: informativa y sin botón — el turno avanza solo al
+    otro día (completeSession() ya adelanta seqIndex al completar un
+    entrenamiento; resolveAutoRest() en state.js hace lo mismo con el
+    descanso cuando pasa un día calendario). */
+function RestHero() {
   return (
-    <div className="card hero done-hero">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ width: 7, height: 7, borderRadius: 4, background: 'var(--ok)', boxShadow: '0 0 8px var(--ok)' }}></span>
-        <div className="eyebrow">
-          Completado · {wd === today.getDay() ? 'hoy' : WD[wd]}
-        </div>
+    <div className="card hero">
+      <div className="eyebrow">Hoy</div>
+      <div className="hero-day">Descanso</div>
+      <div className="txt-mut" style={{ fontSize: 13, marginTop: 6 }}>
+        Mañana seguís con el próximo turno de tu rutina.
       </div>
-      <div className="hero-day">{sess.dayName || WD[wd]}</div>
-      <div className="hero-stats">
-        <div><div className="cond">{sess.duration}</div><span>Minutos</span></div>
-        <div><div className="cond">{nsets}</div><span>Series</span></div>
-        <div><div className="cond">{(sess.entries || []).length}</div><span>Ejercicios</span></div>
-      </div>
-      {prs.length > 0 && (
-        <div className="done-pr">
-          🏆 {prs.length} récord{prs.length === 1 ? '' : 's'} · {prs.map(p => `${p.name} ${fmtNum(round1(p.w))} × ${p.r}`).join(' · ')}
-        </div>
-      )}
-      <button type="button" className="btn hero-cta ok" onClick={() => openSheet('session-view', { id: sess.id })}>
-        Ver lo que hiciste
-      </button>
-      <button type="button" className="done-again" onClick={() => openSheet('sess-start-info', { wd })}>
-        Entrenar de nuevo
-      </button>
     </div>
   );
 }
 
-function PreSessionHero({ day, wd, exs, today }) {
+/** El turno pendiente según la secuencia. Al completar un entrenamiento el
+    puntero ya avanzó (session.js), así que acá siempre es el próximo por
+    hacer — nunca uno ya cerrado —, y el eyebrow puede quedar fijo en "Toca
+    hoy" sin comparar contra ningún día de la semana. */
+function PreSessionHero({ day, index, exs }) {
   const totalSets = exs.reduce((a, e) => a + e.sets, 0);
   const estMin = Math.round(totalSets * ((S.cfg.rest || 90) + 40) / 60);
   return (
     <div className="card hero">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ width: 7, height: 7, borderRadius: 4, background: 'var(--cyan)', boxShadow: '0 0 8px var(--cyan)' }}></span>
-        <div className="eyebrow">
-          {wd === today.getDay() ? 'Toca hoy' : WD[wd]}
-        </div>
+        <div className="eyebrow">Toca hoy</div>
       </div>
       {/* 46px e itálica: en el mockup el nombre del día es el elemento más
           grande de la pantalla, por encima del propio título "HOY". */}
-      <div className="hero-day">{day.name}</div>
+      <div className="hero-day">{day?.name || 'Entrenamiento'}</div>
       <div className="hero-stats">
         <div>
           <div className="cond">{exs.length}</div>
@@ -407,7 +317,7 @@ function PreSessionHero({ day, wd, exs, today }) {
         </div>
       </div>
       {exs.length > 0 && (
-        <button type="button" className="btn hero-cta" onClick={() => openSheet('sess-start-info', { wd })}>
+        <button type="button" className="btn hero-cta" onClick={() => openSheet('sess-start-info', { index })}>
           Empezar entrenamiento
         </button>
       )}
@@ -415,17 +325,31 @@ function PreSessionHero({ day, wd, exs, today }) {
   );
 }
 
+/** Lista simple de las sesiones de los últimos 7 días — nunca inventa "días
+    futuros": si todavía no hiciste nada esta semana, dice eso. */
+function WeekHistory() {
+  const cutoff = dstr(new Date(Date.now() - 7 * 86400000));
+  const recent = S.sessions.filter(s => s.date >= cutoff);
+  if (!recent.length) return <div className="txt-mut" style={{ fontSize: 13 }}>Todavía no hay sesiones esta semana.</div>;
+  return recent.map(s => (
+    <div key={s.id} className="hist-row" onClick={() => openSheet('session-view', { id: s.id })}>
+      <span className="t">{s.dayName}</span>
+      <span className="s">{fmtDFull(s.date)}</span>
+    </div>
+  ));
+}
+
 /** Sheet informativo previo a abrir la sesión (data-act="sess-start" del
     original) — separado de 'sess-start-go', que en el puerto es
     startSession() (session.js). */
-export function SessStartInfo({ wd }) {
-  const day = S.routine[wd];
+export function SessStartInfo({ index }) {
+  const day = S.routine[index];
   const n = day?.exercises?.length || 0;
   return (
     <>
       <h2>Iniciar entrenamiento</h2>
       <div className="sheet-sub">
-        Vas a abrir la sesión de <b className="txt-blue">{day?.name || WD[wd]}</b> · {n} ejercicio{n === 1 ? '' : 's'}.
+        Vas a abrir la sesión de <b className="txt-blue">{day?.name || 'Entrenamiento'}</b> · {n} ejercicio{n === 1 ? '' : 's'}.
       </div>
       <div className="calcbox">
         <div style={{ fontSize: 14, lineHeight: 1.55 }}>
@@ -438,7 +362,7 @@ export function SessStartInfo({ wd }) {
       <div className="calcbox" style={{ marginTop: 10 }}>
         <div style={{ fontSize: 14, lineHeight: 1.55 }}>✓ Vas de a un ejercicio: al llegar a las series objetivo se cierra solo y pasás al siguiente.</div>
       </div>
-      <button type="button" className="btn" style={{ marginTop: 16 }} onClick={() => startSession(wd)}>Abrir sesión</button>
+      <button type="button" className="btn" style={{ marginTop: 16 }} onClick={() => startSession(index)}>Abrir sesión</button>
       <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={closeSheet}>Cancelar</button>
     </>
   );

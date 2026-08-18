@@ -69,6 +69,27 @@ export async function loadAll() {
     if (kv.key === 'lib') S.lib = kv.value || [];
   });
   S.ready = true;
+  await resolveAutoRest();
+}
+
+/** Si el turno pendiente es un descanso y quedó así desde ANTES de hoy,
+    avanza al próximo turno de entrenamiento — el descanso no necesita que
+    completes nada para pasar de página, sólo que pase el día calendario.
+    `completeSession()` (session.js) ya adelanta el puntero al cerrar un
+    entrenamiento; esto cubre el caso simétrico del descanso, que no se
+    "completa" con una acción del usuario.
+
+    El `while` (no `if`) cubre varios descansos seguidos en la secuencia:
+    los salta todos de una vez hasta el próximo turno de entrenamiento, o
+    hasta dar la vuelta completa si la rutina es 100% descanso. */
+export function resolveAutoRest() {
+  const today = dstr();
+  while (S.routine[S.cfg.seqIndex]?.type === 'rest' && S.cfg.seqIndexDate && S.cfg.seqIndexDate < today) {
+    S.cfg.seqIndex = (S.cfg.seqIndex + 1) % Math.max(1, S.routine.length);
+    S.cfg.seqIndexDate = today;
+  }
+  if (S.routine.length && !S.cfg.seqIndexDate) S.cfg.seqIndexDate = today;
+  return saveCfg();
 }
 
 export const saveCfg = () => idb.put('settings', { key: 'cfg', value: S.cfg });

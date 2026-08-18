@@ -1332,8 +1332,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    reconocer el patrón de la semana sin leer cada fecha. */
 .hist-list{display:flex;flex-direction:column}
 .hist-row{
-  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
-  padding:12px 2px;border-bottom:1px solid rgba(255,255,255,.07);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;
+  padding:12px 2px;border-bottom:1px solid var(--line);cursor:pointer;
 }
 .hist-row:last-child{border-bottom:none}
 .hist-badge{
