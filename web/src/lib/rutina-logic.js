@@ -46,16 +46,13 @@ export function routineStability(wd) {
 /* Dos modos: "view" contesta qué rutina estás usando y cómo es tu semana de un
    vistazo; "edit" es el editor día por día de siempre. */
 export function routineStats() {
-  const days = WEEK_ORDER.filter(wd => S.routine[wd]?.exercises?.length);
-  const rest = WEEK_ORDER.filter(wd => !S.routine[wd]?.exercises?.length);
-  const ex = days.reduce((a, wd) => a + S.routine[wd].exercises.length, 0);
-  const sets = days.reduce((a, wd) => a + S.routine[wd].exercises.reduce((b, e) => b + e.sets, 0), 0);
-  return { days, rest, ex, sets };
+  const workouts = S.routine.filter(s => s.type === 'workout' && s.exercises?.length);
+  const rest = S.routine.filter(s => s.type === 'rest');
+  const ex = workouts.reduce((a, s) => a + s.exercises.length, 0);
+  const sets = workouts.reduce((a, s) => a + s.exercises.reduce((b, e) => b + e.sets, 0), 0);
+  return { workouts, workoutCount: workouts.length, restCount: rest.length, ex, sets };
 }
-export function routineName() { return S.cfg.routineName || (routineStats().days.length ? 'Rutina personalizada' : 'Sin rutina'); }
-export function activeDayWds() {
-  return WEEK_ORDER.filter(wd => S.routine[wd]?.name || S.routine[wd]?.exercises?.length);
-}
+export function routineName() { return S.cfg.routineName || (routineStats().workoutCount ? 'Rutina personalizada' : 'Sin rutina'); }
 /* snapshot del split actual, sin ids: al aplicarlo se generan nuevos.
 
    Conserva equip/machine/illus. Antes guardaba sólo {name,sets,reps}, así que
@@ -186,12 +183,6 @@ export async function applyDays(days, name) {
   S.cfg.routineName = name;
   await saveCfg();
 }
-/** ¿Hay una sesión en curso en este día? Mover un día con la sesión abierta le
-    cambiaría los ejercicios por debajo: orderedExs() (session.js) los resuelve
-    leyendo S.routine[draft.weekday] en cada render, así que el editor lo
-    bloquea en vez de dejar la sesión apuntando a otra cosa. */
-export function hasOpenSession(wd) { return !!S.draft && S.draft.weekday === +wd; }
-
 /** Mueve un día entero — nombre y ejercicios — a otro día de la semana. Si el
     destino ya tenía entrenamiento, los dos se intercambian: no hay caso en que
     algo se pise o se pierda.
@@ -255,121 +246,6 @@ export async function renameRoutineExercise(wd, nombreViejo, { name, equip, mach
   bump();
 }
 
-export function dayIsFree(wd) {
-  const d = S.routine[+wd];
-  return !d?.name && !d?.exercises?.length;
-}
-
-/** Primer día libre después de `wd`, dando la vuelta a la semana en el orden en
-    que se ve (lunes primero). `alsoFree` es el día que va a quedar libre en
-    esta misma operación — el origen del arrastre: todavía tiene contenido pero
-    lo está por perder, así que cuenta como disponible. null si no queda ninguno. */
-export function nextFreeDay(wd, alsoFree) {
-  const i = WEEK_ORDER.indexOf(+wd);
-  for (let k = 1; k < WEEK_ORDER.length; k++) {
-    const cand = WEEK_ORDER[(i + k) % WEEK_ORDER.length];
-    if (cand === +alsoFree || dayIsFree(cand)) return cand;
-  }
-  return null;
-}
-
-/** Marca transitoria por día para que el editor pueda animar lo que acaba de
-    pasar (`arrive` el que recibió, `bumped` el que se corrió, `left` el que
-    quedó vacío). Se limpia sola: es un efecto, no estado que valga guardar. */
-let fxTimer = null;
-export function setDayFx(map, ms = 900) {
-  clearTimeout(fxTimer);
-  S.dayFx = map;
-  bump();
-  fxTimer = setTimeout(() => { S.dayFx = {}; bump(); }, ms);
-}
-
-/** Aplica un drop ya decidido. `mode`: 'shift' corre al ocupante del destino al
-    próximo día libre; 'swap' intercambia los dos. */
-export async function applyDayDrop(fromWd, toWd, mode) {
-  const from = +fromWd, to = +toWd;
-  if (from === to) return;
-  if (hasOpenSession(from) || hasOpenSession(to)) {
-    toast('Hay una sesión abierta en esos días — terminala o descartala primero');
-    return;
-  }
-  const moving = S.routine[from]?.name || WD[from];
-  const sitting = S.routine[to]?.name || WD[to];
-
-  // Destino libre: no hay nada que decidir, es una mudanza y ya.
-  if (dayIsFree(to)) {
-    pushHistory(`"${moving}" ahora va el ${WD[to].toLowerCase()}`);
-    await moveDayTo(from, to);
-    S.rutOpen = to;
-    setDayFx({ [to]: 'arrive', [from]: 'left' });
-    vibrate(18);
-    return;
-  }
-
-  // 'shift' sin ningún día libre adonde correr al ocupante degenera en un
-  // intercambio. Es el único resultado posible con la semana llena, y decirlo
-  // es mejor que hacerlo callado.
-  const parked = mode === 'shift' ? nextFreeDay(to, from) : null;
-  if (mode === 'swap' || parked === null || parked === from) {
-    pushHistory(`"${moving}" va el ${WD[to].toLowerCase()}; "${sitting}" pasó al ${WD[from].toLowerCase()}`);
-    await moveDayTo(from, to);
-    S.rutOpen = to;
-    setDayFx({ [to]: 'arrive', [from]: 'bumped' });
-    vibrate([18, 40, 18]);
-    return;
-  }
-
-  pushHistory(`"${moving}" va el ${WD[to].toLowerCase()}; "${sitting}" se corrió al ${WD[parked].toLowerCase()}`);
-  const dragged = S.routine[from];
-  const bumped = S.routine[to];
-  S.routine[parked] = { ...bumped, weekday: parked };
-  S.routine[to] = { ...dragged, weekday: to };
-  S.routine[from] = { weekday: from, name: '', exercises: [] };
-  // El orden reacomodado en Hoy es por día: sigue a cada rutina a su día nuevo.
-  const ordFrom = S.hoyOrder[from], ordTo = S.hoyOrder[to];
-  if (ordTo) S.hoyOrder[parked] = ordTo; else delete S.hoyOrder[parked];
-  if (ordFrom) S.hoyOrder[to] = ordFrom; else delete S.hoyOrder[to];
-  delete S.hoyOrder[from];
-  await Promise.all([persistDay(from), persistDay(to), persistDay(parked)]);
-  S.rutOpen = to;
-  setDayFx({ [to]: 'arrive', [parked]: 'bumped', [from]: 'left' });
-  vibrate([18, 40, 18]);
-}
-
-/** Dónde terminaría el contenido de cada día si soltaras `from` sobre `to`.
-    Devuelve un mapa { weekday origen -> weekday destino }.
-
-    Usa exactamente las mismas reglas que applyDayDrop (nextFreeDay + la
-    preferencia S.cfg.dayDrop), así que el preview del arrastre no puede
-    mentir: si cambia la regla, cambian los dos a la vez. Con 'ask' se
-    previsualiza el corrimiento, que es la primera opción que ofrece el sheet
-    day-drop. */
-export function previewDayDrop(fromWd, toWd) {
-  const from = +fromWd, to = +toWd;
-  const map = {};
-  if (from === to || dayIsFree(from)) return map;
-  map[from] = to;
-  if (dayIsFree(to)) return map;
-  const parked = S.cfg.dayDrop === 'swap' ? null : nextFreeDay(to, from);
-  map[to] = (parked === null || parked === from) ? from : parked;
-  return map;
-}
-
-/** Punto de entrada del arrastre de días (drag.js). Decide si hace falta
-    preguntar; la mecánica está en applyDayDrop(). */
-export function dropDayOn(fromWd, toWd) {
-  const from = +fromWd, to = +toWd;
-  if (from === to || dayIsFree(from)) return;
-  if (hasOpenSession(from) || hasOpenSession(to)) {
-    toast('Hay una sesión abierta en esos días — terminala o descartala primero');
-    return;
-  }
-  if (dayIsFree(to)) { applyDayDrop(from, to, 'shift'); return; }
-  const mode = S.cfg.dayDrop || 'ask';
-  if (mode === 'ask') { openSheet('day-drop', { fromWd: from, toWd: to }); return; }
-  applyDayDrop(from, to, mode);
-}
-
 /* ---------- deshacer/rehacer del editor de rutina ---------- */
 let RUT_HISTORY = [], RUT_REDO = [];
 export function pushHistory(msg) {
@@ -396,11 +272,78 @@ export async function redoRutina() {
 }
 export function clearHistory() { RUT_HISTORY = []; RUT_REDO = []; }
 
-export function ensureDay(wd) {
-  if (!S.routine[wd]) S.routine[wd] = { weekday: wd, name: '', exercises: [] };
-  return S.routine[wd];
+export function ensureSlot(index) {
+  if (!S.routine[index]) {
+    // Rellena huecos intermedios con descanso si insertás más allá del final.
+    for (let i = S.routine.length; i < index; i++) S.routine[i] = { id: uid(), order: i, type: 'rest' };
+    S.routine[index] = { id: uid(), order: index, type: 'workout', name: '', exercises: [] };
+  }
+  return S.routine[index];
 }
-export async function persistDay(wd) { await idb.put('routine', S.routine[wd]); }
+export async function persistSlot(index) { await idb.put('routine', S.routine[index]); }
+export function slotIsWorkout(index) { return S.routine[index]?.type === 'workout'; }
+
+async function persistAll() {
+  await idb.clear('routine');
+  await Promise.all(S.routine.map(s => idb.put('routine', s)));
+}
+
+function reindex() { S.routine.forEach((s, i) => { s.order = i; }); }
+
+/** Mueve un turno de `fromIndex` a `toIndex` (mismo mecanismo que reordenar
+    ejercicios: splice + reindex). No hay colisión que resolver — a
+    diferencia del modelo viejo (7 casilleros fijos por weekday), acá
+    insertar en una posición simplemente corre lo demás un lugar. */
+export async function reorderSeq(fromIndex, toIndex) {
+  if (fromIndex === toIndex) return;
+  const [m] = S.routine.splice(fromIndex, 1);
+  S.routine.splice(toIndex, 0, m);
+  reindex();
+  pushHistory('Secuencia reordenada');
+  await persistAll();
+  bump();
+}
+
+export async function insertWorkout(atIndex) {
+  S.routine.splice(atIndex, 0, { id: uid(), order: atIndex, type: 'workout', name: '', exercises: [] });
+  reindex();
+  pushHistory('Entrenamiento agregado');
+  await persistAll();
+  bump();
+}
+
+export async function insertRest(atIndex) {
+  S.routine.splice(atIndex, 0, { id: uid(), order: atIndex, type: 'rest' });
+  reindex();
+  pushHistory('Descanso agregado');
+  await persistAll();
+  bump();
+}
+
+export async function removeSlot(index) {
+  if (hasOpenSession(index)) { toast('Hay una sesión abierta en este turno — terminala o descartala primero'); return; }
+  pushHistory('Turno eliminado');
+  S.routine.splice(index, 1);
+  reindex();
+  // Si el turno pendiente estaba en o después del que se borró, el puntero
+  // se corre para seguir apuntando al mismo contenido relativo.
+  if (S.cfg.seqIndex > index) S.cfg.seqIndex--;
+  else if (S.cfg.seqIndex >= S.routine.length) S.cfg.seqIndex = Math.max(0, S.routine.length - 1);
+  await Promise.all([persistAll(), saveCfg()]);
+  bump();
+}
+
+/** ¿Hay una sesión en curso en este turno? Comparado por `id` del turno
+    (estable), no por índice: si reordenás mientras hay una sesión abierta,
+    sigue detectándola correctamente. */
+export function hasOpenSession(index) { return !!S.draft && S.draft.slotId === S.routine[index]?.id; }
+
+export async function saveSlot(index, { name }) {
+  ensureSlot(index).name = (name || '').trim();
+  await persistSlot(index);
+  closeSheet();
+  bump();
+}
 
 /* mapea el nombre del día (ej. "Pecho / Tríceps") a categorías del catálogo */
 export function dayCategories(name) {
@@ -425,49 +368,18 @@ export function recommendedExercises(wd) {
 /* ---------- acciones del editor (antes handlers sueltos del ACT{} global) ---------- */
 export function enterEditMode() { S.rutMode = 'edit'; bump(); scrollTo({ top: 0, behavior: 'instant' }); }
 export function exitEditMode() { S.rutMode = 'view'; clearHistory(); bump(); scrollTo({ top: 0, behavior: 'instant' }); }
-/** Abre el editor directo en un día puntual (usado desde DayPeek: "Editar este día") */
-export function editDay(wd) { S.rutMode = 'edit'; S.rutOpen = wd; closeSheet(); bump(); scrollTo({ top: 0, behavior: 'instant' }); }
-
-export function toggleDayOpen(wd) { S.rutOpen = S.rutOpen === wd ? null : wd; bump(); }
-
-export async function deleteDay(wd) {
-  const d = S.routine[wd];
-  if (!d?.name && !d?.exercises?.length) return;
-  pushHistory('Día vaciado');
-  S.routine[wd] = { weekday: wd, name: '', exercises: [] };
-  await persistDay(wd);
-  bump();
-}
-
-/** Guarda el sheet de día: el nombre y, si cambió, a qué día de la semana va.
-    El movimiento no se resuelve acá — se delega en dropDayOn(), el mismo camino
-    que usa el arrastre, para que elegir el día con el dedo o con la lista dé
-    exactamente el mismo resultado (incluida la pregunta de qué hacer si el
-    destino está ocupado). */
-export async function saveDay(wd, { name, toWd }) {
-  const from = +wd;
-  const to = +(toWd ?? wd);
-
-  // El nombre se guarda primero y solo: si el movimiento termina preguntando y
-  // cancelás, el nombre igual quedó guardado, que es lo que uno espera de un
-  // botón que dice "Guardar".
-  ensureDay(from).name = (name || '').trim();
-  await persistDay(from);
-  closeSheet();
-  bump();
-
-  if (to !== from) dropDayOn(from, to);
-}
+export function editSlot(index) { S.rutMode = 'edit'; S.rutOpen = index; closeSheet(); bump(); scrollTo({ top: 0, behavior: 'instant' }); }
+export function toggleSlotOpen(index) { S.rutOpen = S.rutOpen === index ? null : index; bump(); }
 
 /** Firma adaptada: el original leía $('#f-exname').value etc. directo del DOM
     (ACT['ex-save']->saveExercise); acá ExerciseForm.jsx mantiene esos campos
     como estado de componente y los pasa explícitos. */
-export async function saveExercise(wd, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral }) {
+export async function saveExercise(index, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral }) {
   name = (name || '').trim();
   const s = Math.max(1, parseInt(sets) || 4);
   const r = Math.max(1, parseInt(reps) || 10);
   if (!name) { toast('Ponle nombre al ejercicio'); return; }
-  const d = ensureDay(wd);
+  const d = ensureSlot(index);
   if (exId) {
     const ex = d.exercises.find(e => e.id === exId);
     if (ex) {
@@ -493,34 +405,34 @@ export async function saveExercise(wd, exId, { name, sets, reps, equip, machine,
       unilateral: unilateral || undefined,
     });
   }
-  await persistDay(wd);
+  await persistSlot(index);
   closeSheet(); bump(); toast('Guardado');
 }
 
-export async function deleteExercise(wd, exId) {
-  const d = S.routine[wd];
+export async function deleteExercise(index, exId) {
+  const d = S.routine[index];
   const ex = d.exercises.find(e => e.id === exId);
   if (!ex) return;
   pushHistory(`"${ex.name}" eliminado`);
   d.exercises = d.exercises.filter(e => e.id !== exId);
-  await persistDay(wd);
+  await persistSlot(index);
   bump();
 }
 
 /** Sube/baja un ejercicio con las flechas ↑↓ (distinto del drag: acá no hay
     gesto, así que el original anima con flipSort). Deliberadamente NO llama
     bump() acá adentro — igual que el original no llama renderRutina() hasta
-    después de `await persistDay`: el llamador (Rutina.jsx) envuelve esta
+    después de `await persistSlot`: el llamador (Rutina.jsx) envuelve esta
     función en flipSort(), que necesita medir el DOM ANTES de que la mutación
     se refleje en pantalla. Ver Rutina.jsx: handleMoveEx(). */
-export async function moveEx(wd, exId, dir) {
-  const d = S.routine[wd];
+export async function moveEx(index, exId, dir) {
+  const d = S.routine[index];
   const i = d.exercises.findIndex(e => e.id === exId);
   const j = i + dir;
   if (i < 0 || j < 0 || j >= d.exercises.length) return;
   pushHistory('Ejercicios reordenados');
   [d.exercises[i], d.exercises[j]] = [d.exercises[j], d.exercises[i]];
-  await persistDay(wd);
+  await persistSlot(index);
 }
 
 export function startBlank() {
