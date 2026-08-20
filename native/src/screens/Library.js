@@ -6,16 +6,39 @@
 // nuevo: no hace falta ida y vuelta de navegación para abrir el form de
 // guardado, ver decisión en el ledger de Task 3).
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
-import { S, useStore } from '../lib/state.js';
+import { View, Text, Pressable, ScrollView, StyleSheet, TextInput, Alert } from 'react-native';
+import { S, useStore, closeSheet } from '../lib/state.js';
 import { fmtD } from '../lib/format.js';
 import { TEMPLATES, applyTemplate } from '../lib/templates.js';
 import {
   routineStats, routineName, applyLibRoutine, deleteLibRoutine, saveCurrentAsLib, startBlank,
 } from '../lib/rutina-logic.js';
 
+// Puente a Alert nativo: rutina-logic.js/templates.js siguen usando el
+// contrato openSheet('confirm', {...}) heredado del sistema de sheets web
+// (Etapa 5 en RN todavía no existe), así que acá lo interceptamos y lo
+// mostramos con Alert.alert en vez de reimplementar esas funciones. Se
+// guarda la última instancia de S.sheet ya procesada (por referencia) para
+// no disparar el mismo Alert dos veces por sucesivos re-renders.
+function useConfirmSheetBridge() {
+  const lastRef = useRef(null);
+  useEffect(() => {
+    const sheet = S.sheet;
+    if (sheet?.type === 'confirm' && sheet !== lastRef.current) {
+      lastRef.current = sheet;
+      const { title, body, confirmLabel, onConfirm, onCancel } = sheet.props;
+      closeSheet();
+      Alert.alert(title, body, [
+        { text: 'Cancelar', style: 'cancel', onPress: () => onCancel?.() },
+        { text: confirmLabel || 'Confirmar', onPress: () => onConfirm?.() },
+      ]);
+    }
+  });
+}
+
 export default function Library({ navigation }) {
   useStore();
+  useConfirmSheetBridge();
   const [mode, setMode] = useState('list');
 
   return (
