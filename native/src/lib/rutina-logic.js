@@ -364,9 +364,9 @@ export function recommendedExercises(wd) {
 }
 
 /* ---------- acciones del editor (antes handlers sueltos del ACT{} global) ---------- */
-export function enterEditMode() { S.rutMode = 'edit'; bump(); scrollTo({ top: 0, behavior: 'instant' }); }
-export function exitEditMode() { S.rutMode = 'view'; clearHistory(); bump(); scrollTo({ top: 0, behavior: 'instant' }); }
-export function editSlot(index) { S.rutMode = 'edit'; S.rutOpen = index; closeSheet(); bump(); scrollTo({ top: 0, behavior: 'instant' }); }
+export function enterEditMode() { S.rutMode = 'edit'; bump(); }
+export function exitEditMode() { S.rutMode = 'view'; clearHistory(); bump(); }
+export function editSlot(index) { S.rutMode = 'edit'; S.rutOpen = index; closeSheet(); bump(); }
 export function toggleSlotOpen(index) { S.rutOpen = S.rutOpen === index ? null : index; bump(); }
 
 /** Firma adaptada: el original leía $('#f-exname').value etc. directo del DOM
