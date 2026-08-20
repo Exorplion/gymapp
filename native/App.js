@@ -11,9 +11,9 @@ import Progreso from './src/screens/Progreso.js';
 
 const Tab = createBottomTabNavigator();
 
-function InicioTab() {
+function InicioTab({ navigation }) {
   useStore();
-  return S.tab === 'hoy' ? <Hoy /> : <Inicio />;
+  return S.tab === 'hoy' ? <Hoy /> : <Inicio navigation={navigation} />;
 }
 
 export default function App() {
@@ -38,7 +38,13 @@ export default function App() {
   return (
     <NavigationContainer>
       <Tab.Navigator screenOptions={{ headerShown: false, tabBarActiveTintColor: '#2e7dff' }}>
-        <Tab.Screen name="Inicio" component={InicioTab} />
+        <Tab.Screen
+          name="Inicio"
+          component={InicioTab}
+          listeners={{
+            tabPress: () => { if (S.tab !== 'inicio') { S.tab = 'inicio'; bump(); } },
+          }}
+        />
         <Tab.Screen name="Rutina" component={Rutina} />
         <Tab.Screen name="Comida" component={Comida} />
         <Tab.Screen name="Progreso" component={Progreso} />

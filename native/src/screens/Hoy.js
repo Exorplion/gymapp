@@ -23,6 +23,9 @@ export default function Hoy() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.containerContent} keyboardShouldPersistTaps="handled">
+      <Pressable style={styles.backRow} onPress={() => { S.tab = 'inicio'; bump(); }}>
+        <Text style={styles.backText}>‹ Inicio</Text>
+      </Pressable>
       <Text style={styles.title}>Hoy</Text>
       {active ? (
         <ActiveHero slot={slot} />
@@ -121,6 +124,8 @@ function ActiveHero({ slot }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#05070d' },
   containerContent: { padding: 18 },
+  backRow: { alignSelf: 'flex-start', marginBottom: 10 },
+  backText: { color: '#2e7dff', fontSize: 14, fontWeight: '600' },
   title: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 16 },
   card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
   eyebrow: { color: '#2e7dff', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },

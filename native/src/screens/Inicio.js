@@ -9,7 +9,7 @@ import { WDS, MO } from '../lib/format.js';
 import { pendingSlot, sessionForSlot } from '../lib/session.js';
 import { daysSinceAll, stalestGroups } from '../lib/muscle.js';
 
-export default function Inicio() {
+export default function Inicio({ navigation }) {
   useStore();
   const hoy = new Date();
   const slot = pendingSlot();
@@ -51,7 +51,7 @@ export default function Inicio() {
     sub = hayRutina ? 'Hoy no toca entrenar' : 'Armá tu split para empezar';
     ctaLabel = hayRutina ? 'ENTRENAR IGUAL' : 'IR A RUTINA';
     ctaSub = null;
-    onCta = hayRutina ? irAHoy : () => { S.tab = 'rutina'; bump(); };
+    onCta = hayRutina ? irAHoy : () => navigation.navigate('Rutina');
   }
 
   const top = viejos.slice(0, 2);

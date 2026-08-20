@@ -13,7 +13,7 @@ export default function Rutina() {
 
   if (!st.workoutCount) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, styles.scrollContent]}>
         <Text style={styles.title}>Rutina</Text>
         <Text style={styles.sub}>tu semana de un vistazo</Text>
         <View style={styles.card}>
