@@ -1,15 +1,31 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { S, loadAll, useStore, bump } from './src/lib/state.js';
 import Inicio from './src/screens/Inicio.js';
 import Hoy from './src/screens/Hoy.js';
 import Rutina from './src/screens/Rutina.js';
+import Library from './src/screens/Library.js';
 import Comida from './src/screens/Comida.js';
 import Progreso from './src/screens/Progreso.js';
 
 const Tab = createBottomTabNavigator();
+const RutinaStack = createNativeStackNavigator();
+
+// La pestaña "Rutina" necesita navegar a "Mis rutinas" (Library) sin romper
+// las otras 3 pestañas del tab bar de más abajo — se envuelve en su propio
+// Stack.Navigator anidado (patrón estándar de React Navigation: tab → stack),
+// con Rutina como ruta inicial.
+function RutinaTab() {
+  return (
+    <RutinaStack.Navigator screenOptions={{ headerShown: false }}>
+      <RutinaStack.Screen name="RutinaHome" component={Rutina} />
+      <RutinaStack.Screen name="Library" component={Library} />
+    </RutinaStack.Navigator>
+  );
+}
 
 function InicioTab({ navigation }) {
   useStore();
@@ -45,7 +61,7 @@ export default function App() {
             tabPress: () => { if (S.tab !== 'inicio') { S.tab = 'inicio'; bump(); } },
           }}
         />
-        <Tab.Screen name="Rutina" component={Rutina} />
+        <Tab.Screen name="Rutina" component={RutinaTab} />
         <Tab.Screen name="Comida" component={Comida} />
         <Tab.Screen name="Progreso" component={Progreso} />
       </Tab.Navigator>

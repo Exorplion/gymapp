@@ -4,13 +4,13 @@ import { S, useStore, bump } from '../lib/state.js';
 import { routineStats, routineName, enterEditMode, exitEditMode, insertWorkout, insertRest, removeSlot, reorderSeq, saveSlot, moveEx, deleteExercise, saveExercise } from '../lib/rutina-logic.js';
 import { toast } from '../lib/toast.js';
 
-export default function Rutina() {
+export default function Rutina({ navigation }) {
   useStore();
   if (S.rutMode === 'edit') return <RutinaEdit />;
-  return <RutinaView />;
+  return <RutinaView navigation={navigation} />;
 }
 
-function RutinaView() {
+function RutinaView({ navigation }) {
   const [openIdx, setOpenIdx] = useState(-1);
   const st = routineStats();
   const maxSets = Math.max(1, ...S.routine.map(slot =>
@@ -25,7 +25,7 @@ function RutinaView() {
           <Text style={styles.emptyText}>
             Todavía no tenés rutina.{'\n'}Armá tu split turno por turno.
           </Text>
-          <Pressable style={styles.ghostBtn} onPress={() => toast('Próximamente')}>
+          <Pressable style={styles.ghostBtn} onPress={() => navigation.navigate('Library')}>
             <Text style={styles.ghostBtnText}>Ver rutinas y plantillas</Text>
           </Pressable>
         </View>
@@ -65,7 +65,7 @@ function RutinaView() {
         <Pressable style={styles.btn} onPress={() => enterEditMode()}>
           <Text style={styles.btnText}>Editar rutina</Text>
         </Pressable>
-        <Pressable style={styles.btnGlass} onPress={() => toast('Próximamente')}>
+        <Pressable style={styles.btnGlass} onPress={() => navigation.navigate('Library')}>
           <Text style={styles.btnText}>Mis rutinas</Text>
         </Pressable>
       </View>
