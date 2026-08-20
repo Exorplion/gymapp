@@ -6,7 +6,8 @@
 // estados base de la tarjeta principal.
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { S, useStore, bump } from '../lib/state.js';
-import { pendingSlot, sessionForSlot, startSession, discardSession, completeSession } from '../lib/session.js';
+import { pendingSlot, sessionForSlot, startSession, discardSession, completeSession, orderedExs, sessionExs, nextPending } from '../lib/session.js';
+import ExerciseList from './ExerciseList.js';
 
 export default function Hoy() {
   useStore();
@@ -14,6 +15,8 @@ export default function Hoy() {
   const index = S.routine.findIndex(s => s.id === slot?.id);
   const active = !!S.draft;
   const hecha = slot ? sessionForSlot(slot.id) : null;
+  const exs = active ? sessionExs(index) : orderedExs(index, slot?.exercises || []);
+  const nextEx = active ? nextPending(exs) : null;
 
   return (
     <View style={styles.container}>
@@ -27,6 +30,7 @@ export default function Hoy() {
       ) : (
         <PreSessionHero slot={slot} index={index} />
       )}
+      <ExerciseList exs={exs} active={active} started={active && !!S.draft.start} curId={active ? S.draft.cur : null} nextEx={nextEx} />
     </View>
   );
 }
