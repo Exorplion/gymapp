@@ -20,17 +20,31 @@ import {
 // mostramos con Alert.alert en vez de reimplementar esas funciones. Se
 // guarda la última instancia de S.sheet ya procesada (por referencia) para
 // no disparar el mismo Alert dos veces por sucesivos re-renders.
-function useConfirmSheetBridge() {
+// navBackRef: seteado a true por los call sites de applyLibRoutine/
+// applyTemplate/startBlank justo antes de invocarlas (ver LibraryList),
+// para que el puente sepa, sin tocar rutina-logic.js/templates.js, cuándo
+// un onConfirm exitoso debe volver a Rutina. deleteLibRoutine y el overwrite
+// de saveCurrentAsLib nunca lo setean, así que el usuario se queda en la
+// lista tras esas dos acciones.
+function useConfirmSheetBridge(navigation, navBackRef) {
   const lastRef = useRef(null);
   useEffect(() => {
     const sheet = S.sheet;
     if (sheet?.type === 'confirm' && sheet !== lastRef.current) {
       lastRef.current = sheet;
       const { title, body, confirmLabel, onConfirm, onCancel } = sheet.props;
+      const shouldGoBack = navBackRef.current;
+      navBackRef.current = false;
       closeSheet();
       Alert.alert(title, body, [
         { text: 'Cancelar', style: 'cancel', onPress: () => onCancel?.() },
-        { text: confirmLabel || 'Confirmar', onPress: () => onConfirm?.() },
+        {
+          text: confirmLabel || 'Confirmar',
+          onPress: async () => {
+            await onConfirm?.();
+            if (shouldGoBack) navigation.goBack();
+          },
+        },
       ]);
     }
   });
@@ -38,7 +52,8 @@ function useConfirmSheetBridge() {
 
 export default function Library({ navigation }) {
   useStore();
-  useConfirmSheetBridge();
+  const navBackRef = useRef(false);
+  useConfirmSheetBridge(navigation, navBackRef);
   const [mode, setMode] = useState('list');
 
   return (
@@ -48,13 +63,28 @@ export default function Library({ navigation }) {
       </Pressable>
       {mode === 'save'
         ? <LibrarySave onDone={() => setMode('list')} />
-        : <LibraryList onSave={() => setMode('save')} />}
+        : <LibraryList navigation={navigation} navBackRef={navBackRef} onSave={() => setMode('save')} />}
     </ScrollView>
   );
 }
 
-function LibraryList({ onSave }) {
+function LibraryList({ navigation, navBackRef, onSave }) {
   const st = routineStats();
+
+  const handleApplyLib = (id) => {
+    navBackRef.current = true;
+    applyLibRoutine(id);
+  };
+  const handleApplyTemplate = async (id) => {
+    navBackRef.current = true;
+    await applyTemplate(id);
+    if (S.sheet?.type !== 'confirm') { navBackRef.current = false; navigation.goBack(); }
+  };
+  const handleStartBlank = () => {
+    navBackRef.current = true;
+    startBlank();
+    if (S.sheet?.type !== 'confirm') { navBackRef.current = false; navigation.goBack(); }
+  };
   return (
     <>
       <Text style={styles.title}>Mis rutinas</Text>
@@ -78,7 +108,7 @@ function LibraryList({ onSave }) {
               const cur = r.name === S.cfg.routineName;
               return (
                 <View style={styles.row} key={r.id}>
-                  <Pressable style={styles.rowGrow} onPress={() => applyLibRoutine(r.id)}>
+                  <Pressable style={styles.rowGrow} onPress={() => handleApplyLib(r.id)}>
                     <Text style={styles.rowTitle}>
                       {r.name}{cur ? <Text style={styles.tag}>  en uso</Text> : null}
                     </Text>
@@ -97,7 +127,7 @@ function LibraryList({ onSave }) {
       <Text style={styles.h3}>Plantillas</Text>
       <Text style={styles.tmplHint}>Reemplazan tu split actual. Después las editás a gusto.</Text>
       {TEMPLATES.map(t => (
-        <Pressable key={t.id} style={styles.tmplCard} onPress={() => applyTemplate(t.id)}>
+        <Pressable key={t.id} style={styles.tmplCard} onPress={() => handleApplyTemplate(t.id)}>
           <View style={styles.tmplRow}>
             <View style={styles.rowGrow}>
               <Text style={styles.tmplName}>{t.name}</Text>
@@ -114,7 +144,7 @@ function LibraryList({ onSave }) {
       <View style={styles.blankCard}>
         <Text style={styles.blankTitle}>Personalizada</Text>
         <Text style={styles.blankSub}>Empezá de cero y armá tu propio split día por día.</Text>
-        <Pressable style={styles.smallGhostBtn} onPress={() => startBlank()}>
+        <Pressable style={styles.smallGhostBtn} onPress={() => handleStartBlank()}>
           <Text style={styles.smallGhostBtnText}>Empezar en blanco</Text>
         </Pressable>
       </View>

@@ -10,6 +10,7 @@ import Rutina from './src/screens/Rutina.js';
 import Library from './src/screens/Library.js';
 import Comida from './src/screens/Comida.js';
 import Progreso from './src/screens/Progreso.js';
+import Toast from './src/components/Toast.js';
 
 const Tab = createBottomTabNavigator();
 const RutinaStack = createNativeStackNavigator();
@@ -52,19 +53,22 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Tab.Navigator screenOptions={{ headerShown: false, tabBarActiveTintColor: '#2e7dff' }}>
-        <Tab.Screen
-          name="Inicio"
-          component={InicioTab}
-          listeners={{
-            tabPress: () => { if (S.tab !== 'inicio') { S.tab = 'inicio'; bump(); } },
-          }}
-        />
-        <Tab.Screen name="Rutina" component={RutinaTab} />
-        <Tab.Screen name="Comida" component={Comida} />
-        <Tab.Screen name="Progreso" component={Progreso} />
-      </Tab.Navigator>
-    </NavigationContainer>
+    <>
+      <NavigationContainer>
+        <Tab.Navigator screenOptions={{ headerShown: false, tabBarActiveTintColor: '#2e7dff' }}>
+          <Tab.Screen
+            name="Inicio"
+            component={InicioTab}
+            listeners={{
+              tabPress: () => { if (S.tab !== 'inicio') { S.tab = 'inicio'; bump(); } },
+            }}
+          />
+          <Tab.Screen name="Rutina" component={RutinaTab} />
+          <Tab.Screen name="Comida" component={Comida} />
+          <Tab.Screen name="Progreso" component={Progreso} />
+        </Tab.Navigator>
+      </NavigationContainer>
+      <Toast />
+    </>
   );
 }

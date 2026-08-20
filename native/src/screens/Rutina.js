@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { S, useStore, bump } from '../lib/state.js';
 import { routineStats, routineName, enterEditMode, exitEditMode, insertWorkout, insertRest, removeSlot, reorderSeq, saveSlot, moveEx, deleteExercise, saveExercise } from '../lib/rutina-logic.js';
-import { toast } from '../lib/toast.js';
 
 export default function Rutina({ navigation }) {
   useStore();
@@ -29,7 +28,7 @@ function RutinaView({ navigation }) {
             <Text style={styles.ghostBtnText}>Ver rutinas y plantillas</Text>
           </Pressable>
         </View>
-        <Pressable style={styles.editBtn} onPress={() => toast('Próximamente')}>
+        <Pressable style={styles.editBtn} onPress={() => enterEditMode()}>
           <Text style={styles.editBtnText}>✎ Armar mi rutina</Text>
         </Pressable>
       </View>
@@ -150,13 +149,7 @@ function RutinaEdit() {
 
               {isWorkout ? (
                 <Pressable style={styles.editNameRow} onPress={() => setOpenIdx(open ? -1 : i)}>
-                  <TextInput
-                    style={styles.editNameInput}
-                    defaultValue={slot.name || ''}
-                    placeholder="Sin nombre"
-                    placeholderTextColor="#8a93a6"
-                    onBlur={(e) => saveSlot(i, { name: e.nativeEvent.text })}
-                  />
+                  <SlotNameInput i={i} slot={slot} />
                   <Text style={styles.chev}>{open ? '⌄' : '›'}</Text>
                 </Pressable>
               ) : (
@@ -178,6 +171,21 @@ function RutinaEdit() {
         </Pressable>
       </View>
     </ScrollView>
+  );
+}
+
+function SlotNameInput({ i, slot }) {
+  const [name, setName] = useState(slot.name || '');
+
+  return (
+    <TextInput
+      style={styles.editNameInput}
+      value={name}
+      onChangeText={setName}
+      placeholder="Sin nombre"
+      placeholderTextColor="#8a93a6"
+      onBlur={() => saveSlot(i, { name })}
+    />
   );
 }
 
