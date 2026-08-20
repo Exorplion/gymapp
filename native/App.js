@@ -2,13 +2,19 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { loadAll } from './src/lib/state.js';
+import { S, loadAll, useStore, bump } from './src/lib/state.js';
+import Inicio from './src/screens/Inicio.js';
 import Hoy from './src/screens/Hoy.js';
 import Rutina from './src/screens/Rutina.js';
 import Comida from './src/screens/Comida.js';
 import Progreso from './src/screens/Progreso.js';
 
 const Tab = createBottomTabNavigator();
+
+function InicioTab() {
+  useStore();
+  return S.tab === 'hoy' ? <Hoy /> : <Inicio />;
+}
 
 export default function App() {
   // Puerto del efecto de arranque de web/src/App.jsx: idbOpenOnce().then(loadAll)
@@ -32,10 +38,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Tab.Navigator screenOptions={{ headerShown: false, tabBarActiveTintColor: '#2e7dff' }}>
-        {/* TEMP: Hoy real ocupa la pestaña Inicio hasta que Etapa 2c traiga
-            la pantalla Inicio real — así hay un loop usable de punta a
-            punta cuanto antes. */}
-        <Tab.Screen name="Inicio" component={Hoy} />
+        <Tab.Screen name="Inicio" component={InicioTab} />
         <Tab.Screen name="Rutina" component={Rutina} />
         <Tab.Screen name="Comida" component={Comida} />
         <Tab.Screen name="Progreso" component={Progreso} />
