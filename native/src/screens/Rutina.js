@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { S, useStore, bump } from '../lib/state.js';
-import { routineStats, routineName, enterEditMode, exitEditMode, insertWorkout, insertRest, removeSlot, reorderSeq, saveSlot } from '../lib/rutina-logic.js';
+import { routineStats, routineName, enterEditMode, exitEditMode, insertWorkout, insertRest, removeSlot, reorderSeq, saveSlot, moveEx, deleteExercise, saveExercise } from '../lib/rutina-logic.js';
 import { toast } from '../lib/toast.js';
 
 export default function Rutina() {
@@ -131,18 +131,18 @@ function RutinaEdit() {
                   <Pressable
                     style={[styles.miniBtn, i === 0 && styles.miniBtnDisabled]}
                     disabled={i === 0}
-                    onPress={() => reorderSeq(i, i - 1)}
+                    onPress={() => { setOpenIdx(-1); reorderSeq(i, i - 1); }}
                   >
                     <Text style={styles.miniBtnText}>↑</Text>
                   </Pressable>
                   <Pressable
                     style={[styles.miniBtn, i === S.routine.length - 1 && styles.miniBtnDisabled]}
                     disabled={i === S.routine.length - 1}
-                    onPress={() => reorderSeq(i, i + 1)}
+                    onPress={() => { setOpenIdx(-1); reorderSeq(i, i + 1); }}
                   >
                     <Text style={styles.miniBtnText}>↓</Text>
                   </Pressable>
-                  <Pressable style={styles.miniBtnRed} onPress={() => removeSlot(i)}>
+                  <Pressable style={styles.miniBtnRed} onPress={() => { setOpenIdx(-1); removeSlot(i); }}>
                     <Text style={styles.miniBtnRedText}>✕</Text>
                   </Pressable>
                 </View>
@@ -163,11 +163,7 @@ function RutinaEdit() {
                 <Text style={styles.editRestText}>Descanso</Text>
               )}
 
-              {isWorkout && open && (
-                <View style={styles.editBody}>
-                  <Text style={styles.editBodyPlaceholder}>(ejercicios — Task 2)</Text>
-                </View>
-              )}
+              {isWorkout && open && <ExerciseList index={i} slot={slot} />}
             </View>
           );
         })}
@@ -182,6 +178,108 @@ function RutinaEdit() {
         </Pressable>
       </View>
     </ScrollView>
+  );
+}
+
+function ExerciseList({ index, slot }) {
+  const exs = slot.exercises || [];
+  // 'new' = alta; id de ejercicio = edición; null = form cerrado
+  const [formFor, setFormFor] = useState(null);
+  const editing = formFor && formFor !== 'new' ? exs.find(e => e.id === formFor) : null;
+
+  return (
+    <View style={styles.editBody}>
+      {exs.map((ex, k) => (
+        <View key={ex.id} style={styles.exRow}>
+          <Text style={styles.exRowIndex}>{k + 1}</Text>
+          <View style={styles.exRowGrow}>
+            <Text style={styles.exRowName}>{ex.name}</Text>
+            <Text style={styles.exRowSets}>{ex.sets}×{ex.reps}</Text>
+          </View>
+          <Pressable
+            style={[styles.miniBtn, k === 0 && styles.miniBtnDisabled]}
+            disabled={k === 0}
+            onPress={async () => { await moveEx(index, ex.id, -1); bump(); }}
+          >
+            <Text style={styles.miniBtnText}>↑</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.miniBtn, k === exs.length - 1 && styles.miniBtnDisabled]}
+            disabled={k === exs.length - 1}
+            onPress={async () => { await moveEx(index, ex.id, 1); bump(); }}
+          >
+            <Text style={styles.miniBtnText}>↓</Text>
+          </Pressable>
+          <Pressable style={styles.miniBtn} onPress={() => setFormFor(formFor === ex.id ? null : ex.id)}>
+            <Text style={styles.miniBtnText}>✎</Text>
+          </Pressable>
+          <Pressable style={styles.miniBtnRed} onPress={() => deleteExercise(index, ex.id)}>
+            <Text style={styles.miniBtnRedText}>✕</Text>
+          </Pressable>
+        </View>
+      ))}
+
+      {formFor && (
+        <ExerciseForm
+          key={formFor}
+          ex={editing}
+          onCancel={() => setFormFor(null)}
+          onSave={async (fields) => {
+            await saveExercise(index, editing ? editing.id : null, fields);
+            setFormFor(null);
+          }}
+        />
+      )}
+
+      {!formFor && (
+        <Pressable style={styles.addExBtn} onPress={() => setFormFor('new')}>
+          <Text style={styles.addExBtnText}>+ Ejercicio</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+function ExerciseForm({ ex, onSave, onCancel }) {
+  const [name, setName] = useState(ex?.name || '');
+  const [sets, setSets] = useState(ex ? String(ex.sets) : '');
+  const [reps, setReps] = useState(ex ? String(ex.reps) : '');
+
+  return (
+    <View style={styles.exForm}>
+      <TextInput
+        style={styles.exFormInput}
+        value={name}
+        onChangeText={setName}
+        placeholder="Nombre del ejercicio"
+        placeholderTextColor="#8a93a6"
+      />
+      <View style={styles.exFormRow}>
+        <TextInput
+          style={[styles.exFormInput, styles.exFormInputSmall]}
+          value={sets}
+          onChangeText={setSets}
+          placeholder="Series"
+          placeholderTextColor="#8a93a6"
+          keyboardType="numeric"
+        />
+        <TextInput
+          style={[styles.exFormInput, styles.exFormInputSmall]}
+          value={reps}
+          onChangeText={setReps}
+          placeholder="Reps (ej. 8-10)"
+          placeholderTextColor="#8a93a6"
+        />
+      </View>
+      <View style={styles.btnRow}>
+        <Pressable style={styles.btnGlass} onPress={onCancel}>
+          <Text style={styles.btnText}>Cancelar</Text>
+        </Pressable>
+        <Pressable style={styles.btn} onPress={() => onSave({ name, sets, reps })}>
+          <Text style={styles.btnText}>Guardar</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -239,6 +337,16 @@ const styles = StyleSheet.create({
   editNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   editNameInput: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '600', paddingVertical: 4 },
   editRestText: { color: '#8a93a6', fontSize: 15, fontWeight: '600' },
-  editBody: { paddingTop: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,.06)' },
-  editBodyPlaceholder: { color: '#8a93a6', fontSize: 12, fontStyle: 'italic' },
+  editBody: { paddingTop: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,.06)', gap: 8 },
+  exRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
+  exRowIndex: { color: '#8a93a6', fontSize: 11, width: 16 },
+  exRowGrow: { flex: 1 },
+  exRowName: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  exRowSets: { color: '#8a93a6', fontSize: 12, marginTop: 1 },
+  addExBtn: { marginTop: 4, paddingVertical: 10, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,.15)' },
+  addExBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  exForm: { marginTop: 4, gap: 8, padding: 10, borderRadius: 12, backgroundColor: 'rgba(255,255,255,.04)' },
+  exFormRow: { flexDirection: 'row', gap: 8 },
+  exFormInput: { color: '#fff', fontSize: 14, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, backgroundColor: 'rgba(255,255,255,.06)' },
+  exFormInputSmall: { flex: 1 },
 });
