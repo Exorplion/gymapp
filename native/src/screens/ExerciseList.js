@@ -3,7 +3,7 @@
 // vertical (ScrollView), no carrusel deslizable. Inputs controlados
 // (useState), no refs — ver nota de alcance en el plan de esta etapa.
 import { useState } from 'react';
-import { View, Text, Pressable, TextInput, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Pressable, TextInput, StyleSheet } from 'react-native';
 import { S, wDisplay, wAlt, wStep } from '../lib/state.js';
 import { round1, lb2kg, fmtNum } from '../lib/format.js';
 import {
@@ -14,7 +14,7 @@ import {
 export default function ExerciseList({ exs, active, started, curId, nextEx }) {
   if (!exs.length) return null;
   return (
-    <ScrollView style={styles.list} contentContainerStyle={{ gap: 14 }}>
+    <View style={[styles.list, { gap: 14 }]}>
       {exs.map(ex => {
         const done = setsDone(ex.id);
         const target = targetSets(ex);
@@ -31,7 +31,7 @@ export default function ExerciseList({ exs, active, started, curId, nextEx }) {
           />
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 

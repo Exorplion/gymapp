@@ -4,7 +4,7 @@
 // volumen muscular (recortado a propósito, ver el plan de esta etapa).
 // La lista de ejercicios se agrega en Task 2; acá sólo van los tres
 // estados base de la tarjeta principal.
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { S, useStore, bump } from '../lib/state.js';
 import { pendingSlot, sessionForSlot, startSession, discardSession, completeSession, orderedExs, sessionExs, nextPending } from '../lib/session.js';
 import { dstr } from '../lib/format.js';
@@ -13,14 +13,16 @@ import ExerciseList from './ExerciseList.js';
 export default function Hoy() {
   useStore();
   const slot = pendingSlot();
-  const index = S.routine.findIndex(s => s.id === slot?.id);
   const active = !!S.draft;
+  const index = active
+    ? S.routine.findIndex(s => s.id === S.draft.slotId)
+    : S.routine.findIndex(s => s.id === slot?.id);
   const hecha = slot ? sessionForSlot(slot.id) : null;
   const exs = active ? sessionExs(index) : orderedExs(index, slot?.exercises || []);
   const nextEx = active ? nextPending(exs) : null;
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.containerContent} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Hoy</Text>
       {active ? (
         <ActiveHero slot={slot} />
@@ -36,7 +38,7 @@ export default function Hoy() {
       <View style={styles.card}>
         <WeekHistory />
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -102,7 +104,7 @@ function ActiveHero({ slot }) {
   return (
     <View style={styles.card}>
       <Text style={styles.eyebrow}>Sesión en curso</Text>
-      <Text style={styles.heroDay}>{slot?.name || S.draft?.dayName || 'Entrenamiento'}</Text>
+      <Text style={styles.heroDay}>{S.draft?.dayName || slot?.name || 'Entrenamiento'}</Text>
       <Text style={styles.mut}>{nsets} serie{nsets === 1 ? '' : 's'} registrada{nsets === 1 ? '' : 's'}</Text>
       <View style={styles.rowGap}>
         <Pressable style={[styles.smallBtn, styles.okBtn]} onPress={() => completeSession()}>
@@ -117,7 +119,8 @@ function ActiveHero({ slot }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#05070d', padding: 18 },
+  container: { flex: 1, backgroundColor: '#05070d' },
+  containerContent: { padding: 18 },
   title: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 16 },
   card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
   eyebrow: { color: '#2e7dff', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
