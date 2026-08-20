@@ -7,6 +7,7 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { S, useStore, bump } from '../lib/state.js';
 import { pendingSlot, sessionForSlot, startSession, discardSession, completeSession, orderedExs, sessionExs, nextPending } from '../lib/session.js';
+import { dstr } from '../lib/format.js';
 import ExerciseList from './ExerciseList.js';
 
 export default function Hoy() {
@@ -31,8 +32,26 @@ export default function Hoy() {
         <PreSessionHero slot={slot} index={index} />
       )}
       <ExerciseList exs={exs} active={active} started={active && !!S.draft.start} curId={active ? S.draft.cur : null} nextEx={nextEx} />
+      <Text style={styles.sect}>Esta semana</Text>
+      <View style={styles.card}>
+        <WeekHistory />
+      </View>
     </View>
   );
+}
+
+function WeekHistory() {
+  const cutoff = dstr(new Date(Date.now() - 7 * 86400000));
+  const recent = S.sessions.filter(s => s.date >= cutoff);
+  if (!recent.length) {
+    return <Text style={styles.mut}>Todavía no hay sesiones esta semana.</Text>;
+  }
+  return recent.map(s => (
+    <View key={s.id} style={styles.histRow}>
+      <Text style={styles.histTitle}>{s.dayName}</Text>
+      <Text style={styles.histDate}>{s.date}</Text>
+    </View>
+  ));
 }
 
 function RestHero() {
@@ -115,4 +134,8 @@ const styles = StyleSheet.create({
   okBtn: { backgroundColor: '#1fbf75' },
   dimBtn: { backgroundColor: 'rgba(255,255,255,.08)' },
   smallBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  sect: { color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 20, marginBottom: 8 },
+  histRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,.06)' },
+  histTitle: { color: '#fff', fontSize: 14 },
+  histDate: { color: '#8a93a6', fontSize: 13 },
 });
