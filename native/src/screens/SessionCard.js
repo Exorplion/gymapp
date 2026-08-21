@@ -13,7 +13,7 @@ import { S, bump } from '../lib/state.js';
 import { WDS, fmtD, dstr } from '../lib/format.js';
 import { sessionPRs } from '../lib/session.js';
 
-export default function SessionCard({ sess }) {
+export default function SessionCard({ sess, navigation }) {
   const nsets = (sess.entries || []).reduce((a, e) => a + e.sets.length, 0);
   const vol = Math.round((sess.entries || []).reduce((a, e) => a + e.sets.reduce((b, s) => b + s.w * s.r, 0), 0));
   const nprs = sessionPRs(sess).length;
@@ -25,6 +25,10 @@ export default function SessionCard({ sess }) {
     if (!esHoy) return; // sheet de detalle: Etapa 5
     S.tab = 'hoy';
     bump();
+    // S.tab sólo decide qué renderiza InicioTab; hay que navegar a esa
+    // pestaña de verdad, si no el tap no hace nada visible (bug real de
+    // Etapa 4a, análogo al de Inicio.js en Etapa 2c).
+    navigation?.navigate?.('Inicio');
   };
 
   return (

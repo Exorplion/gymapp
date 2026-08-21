@@ -38,7 +38,7 @@ import SessionCard from './SessionCard.js';
 const BLUE = '#2e7dff';
 const GREEN = '#1fbf75';
 
-export default function Progreso() {
+export default function Progreso({ navigation }) {
   useStore();
 
   const heat = streakHeatmap();
@@ -97,7 +97,7 @@ export default function Progreso() {
         </>
       )}
 
-      <SesionesSection />
+      <SesionesSection navigation={navigation} />
     </ScrollView>
   );
 }
@@ -250,7 +250,7 @@ function StrengthChart() {
 
 /** "Qué hice" — últimas 8 sesiones agrupadas por semana. El resto del
     historial (sheet de "todas las sesiones") queda para la Etapa 5. */
-function SesionesSection() {
+function SesionesSection({ navigation }) {
   const recientes = S.sessions.slice(0, 8);
   return (
     <View>
@@ -263,7 +263,7 @@ function SesionesSection() {
         groupSessionsByWeek(recientes).map(g => (
           <View key={g.key} style={{ marginBottom: 10 }}>
             <Text style={styles.weekLabel}>{g.label} · {g.sessions.length} {g.sessions.length === 1 ? 'sesión' : 'sesiones'}</Text>
-            {g.sessions.map(s => <SessionCard key={s.id} sess={s} />)}
+            {g.sessions.map(s => <SessionCard key={s.id} sess={s} navigation={navigation} />)}
           </View>
         ))
       )}

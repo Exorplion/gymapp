@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { S, loadAll, useStore, bump } from './src/lib/state.js';
 import Inicio from './src/screens/Inicio.js';
 import Hoy from './src/screens/Hoy.js';
@@ -53,7 +54,7 @@ export default function App() {
   }
 
   return (
-    <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
         <Tab.Navigator screenOptions={{ headerShown: false, tabBarActiveTintColor: '#2e7dff' }}>
           <Tab.Screen
@@ -69,6 +70,6 @@ export default function App() {
         </Tab.Navigator>
       </NavigationContainer>
       <Toast />
-    </>
+    </GestureHandlerRootView>
   );
 }

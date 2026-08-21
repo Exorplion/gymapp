@@ -20,11 +20,11 @@ import { S } from '../lib/state.js';
 
 /** Días → id del gradiente que le corresponde (ver <Defs> más abajo). */
 function tono(d) {
-  if (d === null || d === undefined) return 'sil-none';
-  if (d <= 1) return 'sil-d0';
-  if (d <= 3) return 'sil-d1';
-  if (d <= 6) return 'sil-d2';
-  return 'sil-d3';
+  if (d === null || d === undefined) return 'sil-gn';
+  if (d <= 1) return 'sil-g0';
+  if (d <= 3) return 'sil-g1';
+  if (d <= 6) return 'sil-g2';
+  return 'sil-g3';
 }
 
 /** El gradiente de una zona. El pelo y lo que no rastreamos tienen el suyo. */
@@ -50,6 +50,39 @@ function Cara({ cara, days, etiqueta, sel, onPick }) {
 
   return (
     <Svg viewBox={cara.viewBox} width="100%" height="100%" accessibilityLabel={`Músculos: ${etiqueta}`}>
+      {/* Defs DEBE vivir dentro de este mismo <Svg>: react-native-svg registra
+          gradientes por instancia de SvgView (no globalmente como el DOM), así
+          que un <Defs> en un <Svg> separado es invisible para los <Path> de
+          acá. */}
+      <Defs>
+        <LinearGradient id="sil-g0" x1="12%" y1="0%" x2="88%" y2="100%">
+          <Stop offset="0%" stopColor="#B9F8FF" /><Stop offset="45%" stopColor="#22D3EE" /><Stop offset="100%" stopColor="#0A6F88" />
+        </LinearGradient>
+        <LinearGradient id="sil-g1" x1="12%" y1="0%" x2="88%" y2="100%">
+          <Stop offset="0%" stopColor="#A9CEFF" /><Stop offset="45%" stopColor="#2E7DFF" /><Stop offset="100%" stopColor="#12315F" />
+        </LinearGradient>
+        <LinearGradient id="sil-g2" x1="12%" y1="0%" x2="88%" y2="100%">
+          <Stop offset="0%" stopColor="#5B7FB5" /><Stop offset="45%" stopColor="#2C4C86" /><Stop offset="100%" stopColor="#101E38" />
+        </LinearGradient>
+        <LinearGradient id="sil-g3" x1="12%" y1="0%" x2="88%" y2="100%">
+          <Stop offset="0%" stopColor="#F6C98B" /><Stop offset="45%" stopColor="#E39C43" /><Stop offset="100%" stopColor="#6B3F10" />
+        </LinearGradient>
+        <LinearGradient id="sil-gn" x1="12%" y1="0%" x2="88%" y2="100%">
+          <Stop offset="0%" stopColor="#39445C" /><Stop offset="45%" stopColor="#232C42" /><Stop offset="100%" stopColor="#131A2B" />
+        </LinearGradient>
+        <LinearGradient id="sil-gne" x1="12%" y1="0%" x2="88%" y2="100%">
+          <Stop offset="0%" stopColor="#3A4763" /><Stop offset="45%" stopColor="#26304A" /><Stop offset="100%" stopColor="#151D30" />
+        </LinearGradient>
+        <LinearGradient id="sil-gpelo" x1="15%" y1="0%" x2="85%" y2="100%">
+          <Stop offset="0%" stopColor="#8A6A4A" /><Stop offset="45%" stopColor="#5C4430" /><Stop offset="100%" stopColor="#33241A" />
+        </LinearGradient>
+        <LinearGradient id="sil-luz" gradientUnits="userSpaceOnUse" x1="120" y1="120" x2="620" y2="1300">
+          <Stop offset="0%" stopColor="rgba(255,255,255,.28)" />
+          <Stop offset="38%" stopColor="rgba(255,255,255,.05)" />
+          <Stop offset="100%" stopColor="rgba(0,0,0,.28)" />
+        </LinearGradient>
+      </Defs>
+
       {/* 1. masa: los mismos trazos, oscuros, para que los huecos entre
           músculos lean como surcos de un cuerpo y no como agujeros. */}
       <G>
@@ -135,37 +168,6 @@ export default function Silhouette({ days = {} }) {
           </Pressable>
         </Pressable>
       </Modal>
-
-      <Svg width={0} height={0}>
-        <Defs>
-          <LinearGradient id="sil-g0" x1="12%" y1="0%" x2="88%" y2="100%">
-            <Stop offset="0%" stopColor="#B9F8FF" /><Stop offset="45%" stopColor="#22D3EE" /><Stop offset="100%" stopColor="#0A6F88" />
-          </LinearGradient>
-          <LinearGradient id="sil-g1" x1="12%" y1="0%" x2="88%" y2="100%">
-            <Stop offset="0%" stopColor="#A9CEFF" /><Stop offset="45%" stopColor="#2E7DFF" /><Stop offset="100%" stopColor="#12315F" />
-          </LinearGradient>
-          <LinearGradient id="sil-g2" x1="12%" y1="0%" x2="88%" y2="100%">
-            <Stop offset="0%" stopColor="#5B7FB5" /><Stop offset="45%" stopColor="#2C4C86" /><Stop offset="100%" stopColor="#101E38" />
-          </LinearGradient>
-          <LinearGradient id="sil-g3" x1="12%" y1="0%" x2="88%" y2="100%">
-            <Stop offset="0%" stopColor="#F6C98B" /><Stop offset="45%" stopColor="#E39C43" /><Stop offset="100%" stopColor="#6B3F10" />
-          </LinearGradient>
-          <LinearGradient id="sil-gn" x1="12%" y1="0%" x2="88%" y2="100%">
-            <Stop offset="0%" stopColor="#39445C" /><Stop offset="45%" stopColor="#232C42" /><Stop offset="100%" stopColor="#131A2B" />
-          </LinearGradient>
-          <LinearGradient id="sil-gne" x1="12%" y1="0%" x2="88%" y2="100%">
-            <Stop offset="0%" stopColor="#3A4763" /><Stop offset="45%" stopColor="#26304A" /><Stop offset="100%" stopColor="#151D30" />
-          </LinearGradient>
-          <LinearGradient id="sil-gpelo" x1="15%" y1="0%" x2="85%" y2="100%">
-            <Stop offset="0%" stopColor="#8A6A4A" /><Stop offset="45%" stopColor="#5C4430" /><Stop offset="100%" stopColor="#33241A" />
-          </LinearGradient>
-          <LinearGradient id="sil-luz" gradientUnits="userSpaceOnUse" x1="120" y1="120" x2="620" y2="1300">
-            <Stop offset="0%" stopColor="rgba(255,255,255,.28)" />
-            <Stop offset="38%" stopColor="rgba(255,255,255,.05)" />
-            <Stop offset="100%" stopColor="rgba(0,0,0,.28)" />
-          </LinearGradient>
-        </Defs>
-      </Svg>
     </View>
   );
 }
