@@ -25,7 +25,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { CartesianChart, Line, Bar } from 'victory-native';
-import { S, useStore, bump } from '../lib/state.js';
+import { S, useStore, bump, openSheet } from '../lib/state.js';
 import { streakHeatmap, currentStreak, bestStreak } from '../lib/streak.js';
 import { fmtD, fmtNum, round1 } from '../lib/format.js';
 import { muscleVolume, daysSinceAll } from '../lib/muscle.js';
@@ -51,6 +51,9 @@ export default function Progreso({ navigation }) {
       <View style={styles.titleRow}>
         <Text style={styles.title}>Progreso</Text>
         <Text style={styles.sub}>{weeksTracked} semana{weeksTracked === 1 ? '' : 's'}</Text>
+        <Pressable style={styles.guideBtn} onPress={() => openSheet('guide')}>
+          <Text style={styles.guideBtnText}>ⓘ</Text>
+        </Pressable>
       </View>
 
       <Silhouette days={daysSinceAll()} />
@@ -58,14 +61,14 @@ export default function Progreso({ navigation }) {
       <RangeSelector />
 
       <Text style={styles.sect}>Constancia · 8 semanas</Text>
-      <View style={styles.card}>
+      <Pressable style={styles.card} onPress={() => openSheet('streak-detail')}>
         <Heatmap heat={heat} />
         <View style={styles.constStats}>
           <View style={styles.constStat}><Text style={styles.constNum}>{currentStreak()}</Text><Text style={styles.constLabel}>Racha actual</Text></View>
           <View style={styles.constStat}><Text style={styles.constNum}>{bestStreak()}</Text><Text style={styles.constLabel}>Mejor racha</Text></View>
           <View style={styles.constStat}><Text style={styles.constNum}>{heat.pct}%</Text><Text style={styles.constLabel}>Cumplimiento</Text></View>
         </View>
-      </View>
+      </Pressable>
 
       <VolumeChart />
 
@@ -277,6 +280,8 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 16 },
   title: { color: '#fff', fontSize: 28, fontWeight: '700' },
   sub: { color: '#8a93a6', fontSize: 13 },
+  guideBtn: { marginLeft: 'auto', width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,.08)', alignItems: 'center', justifyContent: 'center' },
+  guideBtnText: { color: '#8a93a6', fontSize: 15, fontWeight: '700' },
 
   seg: { flexDirection: 'row', backgroundColor: '#0e1626', borderRadius: 12, padding: 4, marginTop: 16, marginBottom: 4 },
   segBtn: { flex: 1, paddingVertical: 8, borderRadius: 9, alignItems: 'center' },

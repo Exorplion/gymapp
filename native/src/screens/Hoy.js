@@ -5,7 +5,7 @@
 // La lista de ejercicios se agrega en Task 2; acá sólo van los tres
 // estados base de la tarjeta principal.
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { S, useStore, bump } from '../lib/state.js';
+import { S, useStore, bump, openSheet } from '../lib/state.js';
 import { pendingSlot, sessionForSlot, startSession, discardSession, completeSession, orderedExs, sessionExs, nextPending } from '../lib/session.js';
 import { dstr } from '../lib/format.js';
 import ExerciseList from './ExerciseList.js';
@@ -35,6 +35,11 @@ export default function Hoy() {
         <DoneHero hecha={hecha} />
       ) : (
         <PreSessionHero slot={slot} index={index} />
+      )}
+      {exs.length > 1 && (
+        <Pressable style={styles.reorderBtn} onPress={() => openSheet('reorder-hoy')}>
+          <Text style={styles.reorderBtnText}>↕ Reordenar</Text>
+        </Pressable>
       )}
       <ExerciseList exs={exs} active={active} started={active && !!S.draft.start} curId={active ? S.draft.cur : null} nextEx={nextEx} />
       <Text style={styles.sect}>Esta semana</Text>
@@ -127,6 +132,8 @@ const styles = StyleSheet.create({
   backRow: { alignSelf: 'flex-start', marginBottom: 10 },
   backText: { color: '#2e7dff', fontSize: 14, fontWeight: '600' },
   title: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 16 },
+  reorderBtn: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,.08)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, marginTop: 14 },
+  reorderBtnText: { color: '#c7cdda', fontSize: 13, fontWeight: '600' },
   card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
   eyebrow: { color: '#2e7dff', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   heroDay: { color: '#fff', fontSize: 26, fontWeight: '700', marginTop: 4 },

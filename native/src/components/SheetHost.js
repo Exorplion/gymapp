@@ -21,11 +21,18 @@
 import { useCallback, useMemo } from 'react';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 import { S, useStore, closeSheet } from '../lib/state.js';
+import Guide from './sheets/Guide.js';
+import StreakDetail from './sheets/StreakDetail.js';
+import ReorderHoy from './sheets/ReorderHoy.js';
 
-// type (string) -> Component. Vacío a propósito en esta task — ver nota
-// arriba. Tasks 2/3 hacen `SHEET_REGISTRY.guide = Guide` etc., no tocan
-// este archivo.
-export const SHEET_REGISTRY = {};
+// type (string) -> Component. Task 2 registra los primeros 3 sheets reales
+// (Guide/StreakDetail/ReorderHoy) acá mismo — el resto (~18 sheets) llega en
+// tasks futuras de esta etapa, siguiendo el mismo patrón de import + entry.
+export const SHEET_REGISTRY = {
+  guide: Guide,
+  'streak-detail': StreakDetail,
+  'reorder-hoy': ReorderHoy,
+};
 
 function SheetContent({ sheet }) {
   if (!sheet) return null;
