@@ -24,14 +24,17 @@ import { S, useStore, closeSheet } from '../lib/state.js';
 import Guide from './sheets/Guide.js';
 import StreakDetail from './sheets/StreakDetail.js';
 import ReorderHoy from './sheets/ReorderHoy.js';
+import ConfirmSheet from './sheets/ConfirmSheet.js';
 
-// type (string) -> Component. Task 2 registra los primeros 3 sheets reales
-// (Guide/StreakDetail/ReorderHoy) acá mismo — el resto (~18 sheets) llega en
-// tasks futuras de esta etapa, siguiendo el mismo patrón de import + entry.
+// type (string) -> Component. Task 2 registró los primeros 3 sheets reales
+// (Guide/StreakDetail/ReorderHoy); Task 3 agrega 'confirm' — el resto
+// (~17 sheets) llega en tasks futuras de esta etapa, siguiendo el mismo
+// patrón de import + entry.
 export const SHEET_REGISTRY = {
   guide: Guide,
   'streak-detail': StreakDetail,
   'reorder-hoy': ReorderHoy,
+  confirm: ConfirmSheet,
 };
 
 function SheetContent({ sheet }) {

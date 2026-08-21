@@ -6,54 +6,63 @@
 // nuevo: no hace falta ida y vuelta de navegación para abrir el form de
 // guardado, ver decisión en el ledger de Task 3).
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, TextInput, Alert } from 'react-native';
-import { S, useStore, closeSheet } from '../lib/state.js';
+import { View, Text, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { S, useStore } from '../lib/state.js';
 import { fmtD } from '../lib/format.js';
 import { TEMPLATES, applyTemplate } from '../lib/templates.js';
 import {
   routineStats, routineName, applyLibRoutine, deleteLibRoutine, saveCurrentAsLib, startBlank,
 } from '../lib/rutina-logic.js';
 
-// Puente a Alert nativo: rutina-logic.js/templates.js siguen usando el
-// contrato openSheet('confirm', {...}) heredado del sistema de sheets web
-// (Etapa 5 en RN todavía no existe), así que acá lo interceptamos y lo
-// mostramos con Alert.alert en vez de reimplementar esas funciones. Se
-// guarda la última instancia de S.sheet ya procesada (por referencia) para
-// no disparar el mismo Alert dos veces por sucesivos re-renders.
-// navBackRef: seteado a true por los call sites de applyLibRoutine/
-// applyTemplate/startBlank justo antes de invocarlas (ver LibraryList),
-// para que el puente sepa, sin tocar rutina-logic.js/templates.js, cuándo
-// un onConfirm exitoso debe volver a Rutina. deleteLibRoutine y el overwrite
-// de saveCurrentAsLib nunca lo setean, así que el usuario se queda en la
-// lista tras esas dos acciones.
-function useConfirmSheetBridge(navigation, navBackRef) {
-  const lastRef = useRef(null);
+// Etapa 3 interceptaba openSheet('confirm', {...}) con un Alert.alert nativo
+// (no había sistema de sheets todavía). Etapa 5a Task 1/3 ya lo resuelve de
+// verdad vía SheetHost + SHEET_REGISTRY.confirm (ConfirmSheet.js) — no hace
+// falta puente ninguno para MOSTRAR el diálogo.
+//
+// Lo que sí seguía haciendo falta portar es el efecto colateral de
+// navegación que el bridge agregaba encima (fix de revisión final de
+// Etapa 3, commit a102939): tras confirmar applyLibRoutine/applyTemplate/
+// startBlank hay que volver a Rutina; tras deleteLibRoutine o el overwrite
+// de saveCurrentAsLib, no. rutina-logic.js/templates.js no saben nada de
+// navegación (y no deberían), así que ese "volver" sigue viviendo acá,
+// desacoplado del componente de sheet genérico.
+//
+// Mecanismo: LibraryList sigue seteando navBackRef.current = true justo
+// antes de llamar a applyLibRoutine/applyTemplate/startBlank (sin cambios).
+// Este efecto corre en cada render (bump() dispara uno vía useStore) y
+// mira la transición de S.sheet:
+//   - cuando aparece un sheet 'confirm' nuevo (por referencia, para no
+//     reprocesar el mismo dos veces), captura el navBackRef vigente en
+//     pendingRef y lo limpia enseguida — igual que el bridge original
+//     (líneas 36-37 de la versión vieja), así un cancel no deja "pegado"
+//     un goBack para la próxima confirmación de otro flujo.
+//   - cuando ese mismo sheet 'confirm' se cierra a null (éxito: los 5
+//     call sites llaman closeSheet() dentro de su propio onConfirm) y
+//     pendingRef estaba en true, navega para atrás.
+//   - un cancel no cierra a null: onCancel de los 3 call sites relevantes
+//     hace openSheet('library') (no-op en RN, sheet type sin registrar),
+//     así que la rama de "cerrado a null" nunca se dispara para un cancel.
+function useNavBackAfterConfirm(navigation, navBackRef) {
+  const prevSheetRef = useRef(null);
+  const pendingRef = useRef(false);
   useEffect(() => {
-    const sheet = S.sheet;
-    if (sheet?.type === 'confirm' && sheet !== lastRef.current) {
-      lastRef.current = sheet;
-      const { title, body, confirmLabel, onConfirm, onCancel } = sheet.props;
-      const shouldGoBack = navBackRef.current;
+    const prev = prevSheetRef.current;
+    const cur = S.sheet;
+    if (cur?.type === 'confirm' && cur !== prev) {
+      pendingRef.current = navBackRef.current;
       navBackRef.current = false;
-      closeSheet();
-      Alert.alert(title, body, [
-        { text: 'Cancelar', style: 'cancel', onPress: () => onCancel?.() },
-        {
-          text: confirmLabel || 'Confirmar',
-          onPress: async () => {
-            await onConfirm?.();
-            if (shouldGoBack) navigation.goBack();
-          },
-        },
-      ]);
+    } else if (prev?.type === 'confirm' && !cur && pendingRef.current) {
+      pendingRef.current = false;
+      navigation.goBack();
     }
+    prevSheetRef.current = cur;
   });
 }
 
 export default function Library({ navigation }) {
   useStore();
   const navBackRef = useRef(false);
-  useConfirmSheetBridge(navigation, navBackRef);
+  useNavBackAfterConfirm(navigation, navBackRef);
   const [mode, setMode] = useState('list');
 
   return (
