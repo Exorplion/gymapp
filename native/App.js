@@ -12,6 +12,7 @@ import Library from './src/screens/Library.js';
 import Nutricion from './src/screens/Nutricion.js';
 import Progreso from './src/screens/Progreso.js';
 import Toast from './src/components/Toast.js';
+import SheetHost from './src/components/SheetHost.js';
 
 const Tab = createBottomTabNavigator();
 const RutinaStack = createNativeStackNavigator();
@@ -70,6 +71,7 @@ export default function App() {
         </Tab.Navigator>
       </NavigationContainer>
       <Toast />
+      <SheetHost />
     </GestureHandlerRootView>
   );
 }
