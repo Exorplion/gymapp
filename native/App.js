@@ -9,7 +9,7 @@ import Inicio from './src/screens/Inicio.js';
 import Hoy from './src/screens/Hoy.js';
 import Rutina from './src/screens/Rutina.js';
 import Library from './src/screens/Library.js';
-import Comida from './src/screens/Comida.js';
+import Nutricion from './src/screens/Nutricion.js';
 import Progreso from './src/screens/Progreso.js';
 import Toast from './src/components/Toast.js';
 
@@ -65,7 +65,7 @@ export default function App() {
             }}
           />
           <Tab.Screen name="Rutina" component={RutinaTab} />
-          <Tab.Screen name="Comida" component={Comida} />
+          <Tab.Screen name="Comida" component={Nutricion} />
           <Tab.Screen name="Progreso" component={Progreso} />
         </Tab.Navigator>
       </NavigationContainer>
