@@ -9,8 +9,9 @@
 // una ref imperativa .present()/.dismiss() por consumidor) porque acá TODO
 // el estado de "qué está abierto" ya vive en un solo lugar — S.sheet — igual
 // que en el original (un solo sheet a la vez, dueño único del estado). Un
-// `index` derivado de `S.sheet` (0 si hay algo, -1 si es null) es más
-// simple y evita duplicar el estado en un ref imperativo.
+// `index` derivado de `S.sheet` Y de si su `type` está registrado (0 si
+// hay algo Y resuelve un componente, -1 si no) evita abrir un sheet vacío
+// para tipos aún no portados — ver revisión final de Etapa 5a (C2).
 //
 // Registro type→componente: EMPTY_REGISTRY se llena en Tasks 2 y 3
 // (Etapa 5a) con 'guide', 'streak-detail', 'reorder-hoy', 'confirm', y
@@ -18,8 +19,9 @@
 // exportado (SHEET_REGISTRY) — a completar así:
 //   SHEET_REGISTRY['guide'] = GuideSheet;
 // Un type sin entrada no crashea: SheetContent devuelve null.
-import { useCallback, useMemo } from 'react';
-import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
+import { useCallback } from 'react';
+import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { Dimensions } from 'react-native';
 import { S, useStore, closeSheet } from '../lib/state.js';
 import Guide from './sheets/Guide.js';
 import StreakDetail from './sheets/StreakDetail.js';
@@ -60,11 +62,12 @@ export default function SheetHost() {
   const sheet = S.sheet;
 
   // -1 = cerrado, 0 = abierto (un solo snap point: el contenido define su
-  // propia altura vía BottomSheetView + enableDynamicSizing). `index` es un
-  // prop controlado en @gorhom/bottom-sheet: cambiarlo entre renders anima
-  // el sheet a ese snap point — no hace falta ref imperativa acá porque
-  // quien manda es S.sheet, no un consumidor individual.
-  const index = sheet ? 0 : -1;
+  // propia altura vía BottomSheetScrollView + enableDynamicSizing, clamped
+  // a maxDynamicContentSize como el 88dvh del original). `index` es un prop
+  // controlado en @gorhom/bottom-sheet: cambiarlo entre renders anima el
+  // sheet a ese snap point — no hace falta ref imperativa acá porque quien
+  // manda es S.sheet, no un consumidor individual.
+  const index = sheet && SHEET_REGISTRY[sheet.type] ? 0 : -1;
 
   // Se dispara tanto por swipe-down como por tap en el backdrop
   // (pressBehavior="close" arriba) — cualquiera de los dos debe sincronizar
@@ -73,22 +76,20 @@ export default function SheetHost() {
     if (S.sheet) closeSheet();
   }, []);
 
-  const snapPoints = useMemo(() => ['CONTENT_HEIGHT'], []);
-
   return (
     <BottomSheet
       index={index}
       enableDynamicSizing
-      snapPoints={snapPoints}
+      maxDynamicContentSize={Dimensions.get('window').height * 0.88}
       enablePanDownToClose
       backdropComponent={renderBackdrop}
       onClose={handleClose}
       backgroundStyle={{ backgroundColor: '#0e1626' }}
       handleIndicatorStyle={{ backgroundColor: 'rgba(255,255,255,.3)' }}
     >
-      <BottomSheetView style={{ paddingBottom: 24 }}>
+      <BottomSheetScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         <SheetContent sheet={sheet} />
-      </BottomSheetView>
+      </BottomSheetScrollView>
     </BottomSheet>
   );
 }
