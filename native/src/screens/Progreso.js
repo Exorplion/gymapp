@@ -51,6 +51,9 @@ export default function Progreso({ navigation }) {
       <View style={styles.titleRow}>
         <Text style={styles.title}>Progreso</Text>
         <Text style={styles.sub}>{weeksTracked} semana{weeksTracked === 1 ? '' : 's'}</Text>
+        <Pressable style={styles.addBtn} onPress={() => openSheet('body-form')}>
+          <Text style={styles.addBtnText}>+ Registro</Text>
+        </Pressable>
         <Pressable style={styles.guideBtn} onPress={() => openSheet('guide')}>
           <Text style={styles.guideBtnText}>ⓘ</Text>
         </Pressable>
@@ -287,7 +290,9 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 16 },
   title: { color: '#fff', fontSize: 28, fontWeight: '700' },
   sub: { color: '#8a93a6', fontSize: 13 },
-  guideBtn: { marginLeft: 'auto', width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,.08)', alignItems: 'center', justifyContent: 'center' },
+  addBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 16, backgroundColor: '#2e7dff', alignItems: 'center', justifyContent: 'center' },
+  addBtnText: { color: '#fff', fontSize: 12.5, fontWeight: '700' },
+  guideBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,.08)', alignItems: 'center', justifyContent: 'center' },
   guideBtnText: { color: '#8a93a6', fontSize: 15, fontWeight: '700' },
 
   seg: { flexDirection: 'row', backgroundColor: '#0e1626', borderRadius: 12, padding: 4, marginTop: 16, marginBottom: 4 },

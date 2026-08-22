@@ -29,6 +29,7 @@ import ReorderHoy from './sheets/ReorderHoy.js';
 import ConfirmSheet from './sheets/ConfirmSheet.js';
 import History from './sheets/History.js';
 import ExInfo from './sheets/ExInfo.js';
+import BodyForm from './sheets/BodyForm.js';
 
 // type (string) -> Component. Task 2 registró los primeros 3 sheets reales
 // (Guide/StreakDetail/ReorderHoy); Task 3 agrega 'confirm' — el resto
@@ -41,6 +42,7 @@ export const SHEET_REGISTRY = {
   confirm: ConfirmSheet,
   history: History,
   'ex-info': ExInfo,
+  'body-form': BodyForm,
 };
 
 function SheetContent({ sheet }) {
