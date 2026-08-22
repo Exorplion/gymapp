@@ -25,7 +25,7 @@
 // (Etapa 5i): reescribir el value con un número redondeado en cada tecla
 // rompe borrar-y-retipear y corta decimales a medio escribir ("62.").
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { S, bump, closeSheet } from '../../lib/state.js';
 import { uid, vibrate, round1 } from '../../lib/format.js';
 import { idb } from '../../lib/db.js';

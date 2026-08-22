@@ -33,7 +33,6 @@ import { computeMacros, GOAL_LABEL } from '../lib/macros.js';
 import { mealsOf, macroCls, nutriFeedback, frequentMeals, mealsBySlot, slotForTime } from '../lib/meals.js';
 import { idb } from '../lib/db.js';
 import { logMeal, addMealFromFood } from '../lib/meal-logic.js';
-import { toast } from '../lib/toast.js';
 
 const BLUE = '#2e7dff';
 const GREEN = '#1fbf75';
