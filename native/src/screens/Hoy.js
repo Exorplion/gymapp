@@ -41,6 +41,11 @@ export default function Hoy() {
           <Text style={styles.reorderBtnText}>↕ Reordenar</Text>
         </Pressable>
       )}
+      {!active && exs.length > 0 && (
+        <Pressable style={styles.reorderBtn} onPress={() => openSheet('preworkout')}>
+          <Text style={styles.reorderBtnText}>⚡ Pre-workout</Text>
+        </Pressable>
+      )}
       <ExerciseList exs={exs} active={active} started={active && !!S.draft.start} curId={active ? S.draft.cur : null} nextEx={nextEx} />
       <Text style={styles.sect}>Esta semana</Text>
       <View style={styles.card}>
