@@ -235,7 +235,7 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
       </View>
       <View style={styles.dcardHead}>
         {editando ? (
-          <Pressable onPress={() => openSheet('entry-edit', { sessId: sess.id, idx })}>
+          <Pressable style={{ flex: 1 }} onPress={() => openSheet('entry-edit', { sessId: sess.id, idx })}>
             <Text style={styles.entryNameEdit}>{entry.name} <Text style={styles.pen}>✎</Text></Text>
           </Pressable>
         ) : (
@@ -260,14 +260,14 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
                 style={styles.setEditInput}
                 keyboardType="decimal-pad"
                 defaultValue={fmtNum(round1(st.w))}
-                onBlur={ev => onSetSerie(idx, si, 'w', ev.nativeEvent.text)}
+                onEndEditing={ev => onSetSerie(idx, si, 'w', ev.nativeEvent.text)}
               />
               <Text style={styles.setEditU}>kg ×</Text>
               <TextInput
                 style={styles.setEditInput}
                 keyboardType="number-pad"
                 defaultValue={String(st.r)}
-                onBlur={ev => onSetSerie(idx, si, 'r', ev.nativeEvent.text)}
+                onEndEditing={ev => onSetSerie(idx, si, 'r', ev.nativeEvent.text)}
               />
               <Pressable style={styles.miniRed} onPress={() => onBorrarSerie(idx, si)}>
                 <Text style={styles.miniRedText}>✕</Text>
