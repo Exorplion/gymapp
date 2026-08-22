@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
-import { S, useStore, bump } from '../lib/state.js';
+import { S, useStore, bump, openSheet } from '../lib/state.js';
 import { routineStats, routineName, enterEditMode, exitEditMode, insertWorkout, insertRest, removeSlot, reorderSeq, saveSlot, moveEx, deleteExercise, saveExercise } from '../lib/rutina-logic.js';
 
 export default function Rutina({ navigation }) {
@@ -89,11 +89,16 @@ function RutinaView({ navigation }) {
               {open && (
                 <View style={styles.dayExs}>
                   {slot.exercises.map((e, k) => (
-                    <View key={e.id} style={styles.dayEx}>
+                    <Pressable
+                      key={e.id}
+                      style={styles.dayEx}
+                      onPress={() => openSheet('ex-info', { name: e.name, wd: i, exId: e.id })}
+                    >
                       <Text style={styles.dayExIndex}>{k + 1}</Text>
                       <Text style={styles.dayExName}>{e.name}</Text>
                       <Text style={styles.dayExSets}>{e.sets}×{e.reps}</Text>
-                    </View>
+                      <Text style={styles.chev}>›</Text>
+                    </Pressable>
                   ))}
                 </View>
               )}
@@ -204,6 +209,12 @@ function ExerciseList({ index, slot }) {
             <Text style={styles.exRowName}>{ex.name}</Text>
             <Text style={styles.exRowSets}>{ex.sets}×{ex.reps}</Text>
           </View>
+          <Pressable
+            style={styles.miniBtn}
+            onPress={() => openSheet('ex-info', { name: ex.name, wd: index, exId: ex.id })}
+          >
+            <Text style={styles.miniBtnText}>ⓘ</Text>
+          </Pressable>
           <Pressable
             style={[styles.miniBtn, k === 0 && styles.miniBtnDisabled]}
             disabled={k === 0}

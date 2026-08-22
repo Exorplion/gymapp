@@ -28,6 +28,7 @@ import StreakDetail from './sheets/StreakDetail.js';
 import ReorderHoy from './sheets/ReorderHoy.js';
 import ConfirmSheet from './sheets/ConfirmSheet.js';
 import History from './sheets/History.js';
+import ExInfo from './sheets/ExInfo.js';
 
 // type (string) -> Component. Task 2 registró los primeros 3 sheets reales
 // (Guide/StreakDetail/ReorderHoy); Task 3 agrega 'confirm' — el resto
@@ -39,6 +40,7 @@ export const SHEET_REGISTRY = {
   'reorder-hoy': ReorderHoy,
   confirm: ConfirmSheet,
   history: History,
+  'ex-info': ExInfo,
 };
 
 function SheetContent({ sheet }) {
