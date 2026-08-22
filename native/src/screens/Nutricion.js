@@ -18,14 +18,16 @@
 // toque" y "Frecuentes" llaman logMeal()/addMealFromFood() (Task 2) directo,
 // sin sheet, igual que el original evita el sheet para esos dos casos. El
 // botón "+ Agregar comida" del original (que abre el sheet meal-form) y el
-// de "Registrar por voz" (food-voice) quedan fuera: no hay ningún consumidor
-// de openSheet() en esta etapa, así que no se llama openSheet(...) en
-// absoluto (bug de Etapa 3 con Library.js, a no repetir) — en su lugar, un
-// botón "+ Agregar comida" muestra toast('Próximamente').
+// de "Registrar por voz" (food-voice) quedan fuera: esos sheets todavía no
+// están portados, así que "+ Agregar comida" sigue mostrando
+// toast('Próximamente') (línea ~227). La tarjeta de perfil incompleto SÍ
+// llama openSheet('profile') desde Etapa 5f, que portó ese sheet — dejarla
+// en toast('Próximamente') habría sido el mismo bug que Etapa 3 tuvo con
+// Library.js (placeholder que sobrevive a que su sheet real ya exista).
 import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { S, useStore, bump } from '../lib/state.js';
+import { S, useStore, bump, openSheet } from '../lib/state.js';
 import { dstr, fmtDFull, fmtNum, round1 } from '../lib/format.js';
 import { computeMacros, GOAL_LABEL } from '../lib/macros.js';
 import { mealsOf, macroCls, nutriFeedback, frequentMeals, mealsBySlot } from '../lib/meals.js';
@@ -107,7 +109,7 @@ export default function Nutricion() {
           </View>
         </View>
       ) : (
-        <Pressable style={styles.profCard} onPress={() => toast('Próximamente')}>
+        <Pressable style={styles.profCard} onPress={() => openSheet('profile')}>
           <Text style={styles.pavatar}>🎯</Text>
           <View style={styles.grow}>
             <Text style={styles.pt}>Calcular mis macros</Text>
