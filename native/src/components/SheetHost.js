@@ -35,6 +35,7 @@ import Profile from './sheets/Profile.js';
 import EntryEdit from './sheets/EntryEdit.js';
 import CopyExercises from './sheets/CopyExercises.js';
 import SessionExercise from './sheets/SessionExercise.js';
+import FoodVoice from './sheets/FoodVoice.js';
 
 // type (string) -> Component. Task 2 registró los primeros 3 sheets reales
 // (Guide/StreakDetail/ReorderHoy); Task 3 agrega 'confirm' — el resto
@@ -53,6 +54,7 @@ export const SHEET_REGISTRY = {
   'entry-edit': EntryEdit,
   'copy-exs': CopyExercises,
   'ex-swap': SessionExercise,
+  'food-voice': FoodVoice,
 };
 
 function SheetContent({ sheet }) {

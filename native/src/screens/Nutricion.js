@@ -17,13 +17,14 @@
 // alimento nuevo — eso requiere los sheets MealForm/FoodVoice (Etapa 5). "Un
 // toque" y "Frecuentes" llaman logMeal()/addMealFromFood() (Task 2) directo,
 // sin sheet, igual que el original evita el sheet para esos dos casos. El
-// botón "+ Agregar comida" del original (que abre el sheet meal-form) y el
-// de "Registrar por voz" (food-voice) quedan fuera: esos sheets todavía no
-// están portados, así que "+ Agregar comida" sigue mostrando
-// toast('Próximamente') (línea ~227). La tarjeta de perfil incompleto SÍ
-// llama openSheet('profile') desde Etapa 5f, que portó ese sheet — dejarla
-// en toast('Próximamente') habría sido el mismo bug que Etapa 3 tuvo con
-// Library.js (placeholder que sobrevive a que su sheet real ya exista).
+// botón "+ Agregar comida" del original (que abre el sheet meal-form) sigue
+// fuera: ese sheet todavía no está portado, así que sigue mostrando
+// toast('Próximamente'). El botón "🎙 Registrar por voz" (food-voice) SÍ se
+// agregó en Etapa 5j, que portó ese sheet (camino de texto completo, dictado
+// diferido) — llama openSheet('food-voice') directo, mismo criterio que la
+// tarjeta de perfil incompleto (openSheet('profile') desde Etapa 5f): no
+// dejar un placeholder sobreviviendo a que su sheet real ya exista (bug de
+// Etapa 3 con Library.js).
 import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
@@ -230,6 +231,11 @@ export default function Nutricion() {
         <Text style={styles.addBtnText}>+ Agregar comida</Text>
       </Pressable>
 
+      <Pressable style={styles.voiceBtn} onPress={() => openSheet('food-voice')}>
+        <Text style={styles.voiceBtnText}>🎙 Registrar por voz</Text>
+        <Text style={styles.mutSm}>decí qué comiste</Text>
+      </Pressable>
+
       <Text style={styles.sect}>Comidas de {isToday ? 'hoy' : 'este día'}</Text>
       {!meals.length ? (
         <View style={styles.card}>
@@ -347,6 +353,9 @@ const styles = StyleSheet.create({
 
   addBtn: { marginTop: 18, backgroundColor: BLUE, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
   addBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+
+  voiceBtn: { marginTop: 10, backgroundColor: '#0e1626', borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
+  voiceBtnText: { color: '#fff', fontSize: 15, fontWeight: '700', marginBottom: 2 },
 
   card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
 
