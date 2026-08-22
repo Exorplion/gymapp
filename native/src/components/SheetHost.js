@@ -31,6 +31,7 @@ import History from './sheets/History.js';
 import ExInfo from './sheets/ExInfo.js';
 import BodyForm from './sheets/BodyForm.js';
 import Preworkout from './sheets/Preworkout.js';
+import Profile from './sheets/Profile.js';
 
 // type (string) -> Component. Task 2 registró los primeros 3 sheets reales
 // (Guide/StreakDetail/ReorderHoy); Task 3 agrega 'confirm' — el resto
@@ -45,6 +46,7 @@ export const SHEET_REGISTRY = {
   'ex-info': ExInfo,
   'body-form': BodyForm,
   preworkout: Preworkout,
+  profile: Profile,
 };
 
 function SheetContent({ sheet }) {
