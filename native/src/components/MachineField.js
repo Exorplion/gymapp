@@ -5,15 +5,15 @@
 // siempre en el mismo gimnasio y ni te acordás cómo se llama la polea— así
 // que en vez de eso se pide lo que sí importa: cuánto pesa tirar de ella. Es
 // el mismo campo `machine` de siempre, sólo una forma más fácil de llenarlo.
-import { View, Text, TextInput, Pressable } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { POLEA_FEEL } from '../lib/equip.js';
 
 export default function MachineField({ equip, machine, onChange }) {
   if (equip === 'polea') {
     return (
-      <View style={{ marginTop: 16 }}>
-        <Text>Cómo se siente</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      <View style={styles.field}>
+        <Text style={styles.label}>Cómo se siente</Text>
+        <View style={styles.chips}>
           {POLEA_FEEL.map(f => {
             const on = machine === f.id;
             return (
@@ -22,21 +22,14 @@ export default function MachineField({ equip, machine, onChange }) {
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
                 onPress={() => onChange(on ? '' : f.id)}
-                style={{
-                  paddingVertical: 6,
-                  paddingHorizontal: 12,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: on ? '#333' : '#ccc',
-                  backgroundColor: on ? '#333' : 'transparent',
-                }}
+                style={[styles.chip, on && styles.chipOn]}
               >
-                <Text style={{ color: on ? '#fff' : '#000' }}>{f.label}</Text>
+                <Text style={[styles.chipText, on && styles.chipTextOn]}>{f.label}</Text>
               </Pressable>
             );
           })}
         </View>
-        <Text style={{ marginTop: 6, fontSize: 13, opacity: 0.7 }}>
+        <Text style={styles.ptext}>
           Las poleas no se distinguen por marca, sino por cuántas lleva el
           sistema y si hay contrapeso. El historial se lleva por separado
           para cada sensación.
@@ -45,17 +38,37 @@ export default function MachineField({ equip, machine, onChange }) {
     );
   }
   return (
-    <View style={{ marginTop: 16 }}>
-      <Text>Qué máquina</Text>
+    <View style={styles.field}>
+      <Text style={styles.label}>Qué máquina</Text>
       <TextInput
+        style={styles.input}
         placeholder="Life Fitness, Hammer, la del fondo…"
+        placeholderTextColor="#5a6478"
         value={machine}
         onChangeText={onChange}
       />
-      <Text style={{ marginTop: 6, fontSize: 13, opacity: 0.7 }}>
+      <Text style={styles.ptext}>
         En este sistema el número depende de la máquina, así que el historial
         se lleva por separado para cada una. Poné el nombre que te sirva a vos.
       </Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  field: { marginTop: 16 },
+  label: { color: '#8a93a6', fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  input: {
+    backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
+    color: '#fff', fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+  },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+  },
+  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: '#2e7dff' },
+  chipText: { color: '#c7cdda', fontSize: 13, fontWeight: '600' },
+  chipTextOn: { color: '#5b9dff' },
+  ptext: { color: '#8a93a6', fontSize: 13, lineHeight: 18, marginTop: 6 },
+});
