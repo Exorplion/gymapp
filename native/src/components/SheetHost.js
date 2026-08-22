@@ -38,6 +38,7 @@ import SessionExercise from './sheets/SessionExercise.js';
 import FoodVoice from './sheets/FoodVoice.js';
 import VoiceLog from './sheets/VoiceLog.js';
 import MealForm from './sheets/MealForm.js';
+import SessionView from './sheets/SessionView.js';
 
 // type (string) -> Component. Task 2 registró los primeros 3 sheets reales
 // (Guide/StreakDetail/ReorderHoy); Task 3 agrega 'confirm' — el resto
@@ -59,6 +60,7 @@ export const SHEET_REGISTRY = {
   'food-voice': FoodVoice,
   'voice-log': VoiceLog,
   'meal-form': MealForm,
+  'session-view': SessionView,
 };
 
 function SheetContent({ sheet }) {
