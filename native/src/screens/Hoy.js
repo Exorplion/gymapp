@@ -47,6 +47,11 @@ export default function Hoy() {
         </Pressable>
       )}
       <ExerciseList exs={exs} active={active} started={active && !!S.draft.start} curId={active ? S.draft.cur : null} nextEx={nextEx} />
+      {active && (
+        <Pressable style={styles.reorderBtn} onPress={() => openSheet('ex-swap', { wd: index })}>
+          <Text style={styles.reorderBtnText}>+ Agregar ejercicio a esta sesión</Text>
+        </Pressable>
+      )}
       <Text style={styles.sect}>Esta semana</Text>
       <View style={styles.card}>
         <WeekHistory />
