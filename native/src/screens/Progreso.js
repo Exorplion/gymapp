@@ -257,7 +257,14 @@ function SesionesSection({ navigation }) {
   const recientes = S.sessions.slice(0, 8);
   return (
     <View>
-      <Text style={styles.sect}>Tus sesiones</Text>
+      <View style={styles.sectRow}>
+        <Text style={styles.sect}>Tus sesiones</Text>
+        {S.sessions.length > 8 && (
+          <Pressable style={styles.verTodasBtn} onPress={() => openSheet('history')}>
+            <Text style={styles.verTodasText}>Ver todas</Text>
+          </Pressable>
+        )}
+      </View>
       {!recientes.length ? (
         <View style={styles.card}>
           <Text style={styles.mutSm}>Cuando cierres tu primera sesión va a aparecer acá.</Text>
@@ -290,6 +297,9 @@ const styles = StyleSheet.create({
   segTextOn: { color: '#fff' },
 
   sect: { color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 22, marginBottom: 8 },
+  sectRow: { flexDirection: 'row', alignItems: 'center' },
+  verTodasBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 8, backgroundColor: 'rgba(255,255,255,.08)', alignItems: 'center', justifyContent: 'center' },
+  verTodasText: { color: '#c7cdda', fontSize: 12, fontWeight: '600' },
   card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
 
   heatGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
