@@ -67,10 +67,10 @@ function WeekHistory() {
     return <Text style={styles.mut}>Todavía no hay sesiones esta semana.</Text>;
   }
   return recent.map(s => (
-    <View key={s.id} style={styles.histRow}>
+    <Pressable key={s.id} style={styles.histRow} onPress={() => openSheet('session-view', { id: s.id })}>
       <Text style={styles.histTitle}>{s.dayName}</Text>
       <Text style={styles.histDate}>{s.date}</Text>
-    </View>
+    </Pressable>
   ));
 }
 

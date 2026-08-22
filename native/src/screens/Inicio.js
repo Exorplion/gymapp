@@ -4,7 +4,7 @@
 // más olvidado" se muestra como texto (StaleLine), igual que el original,
 // porque es dato puro (muscle.js) y no depende de la silueta.
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { S, useStore, bump } from '../lib/state.js';
+import { S, useStore, bump, openSheet } from '../lib/state.js';
 import { WDS, MO } from '../lib/format.js';
 import { pendingSlot, sessionForSlot } from '../lib/session.js';
 import { daysSinceAll, stalestGroups } from '../lib/muscle.js';
@@ -36,9 +36,7 @@ export default function Inicio({ navigation }) {
     eyebrow = 'Completado · hoy';
     titulo = 'Listo por hoy';
     sub = `${hecha.duration} min · ${(hecha.entries || []).length} ejercicios`;
-    // Sin sheet 'session-view' todavía (Etapa 5) — el CTA lleva a Hoy,
-    // que ya muestra el resumen de la sesión completada (DoneHero).
-    ctaLabel = 'VER HOY'; ctaSub = null; onCta = irAHoy;
+    ctaLabel = 'VER LO QUE HICISTE'; ctaSub = null; onCta = () => openSheet('session-view', { id: hecha.id });
   } else if (slot?.type === 'workout' && slot.exercises?.length) {
     eyebrow = fecha;
     titulo = 'Toca entrenar';

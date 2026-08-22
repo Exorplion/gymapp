@@ -7,21 +7,14 @@
 // del header, con una fila plana por sesión. Ahora el reloj lleva a Progreso y
 // esto es el desborde de esa sección.
 import { View, Text, StyleSheet } from 'react-native';
-import { S, useStore, closeSheet } from '../../lib/state.js';
+import { S, useStore } from '../../lib/state.js';
 import { groupSessionsByWeek } from '../../lib/session.js';
 import SessionCard from '../../screens/SessionCard.js';
 
-export default function History({ navigation }) {
+export default function History() {
   useStore();
   const grupos = groupSessionsByWeek(S.sessions);
   const n = S.sessions.length;
-
-  // SessionCard navega a "Inicio" al tocar la sesión de hoy — pero este
-  // componente vive dentro de un sheet abierto, así que hay que cerrarlo
-  // primero o el sheet queda montado sobre la pantalla de destino.
-  // SessionCard sólo llama navigation?.navigate?.(...), así que este
-  // wrapper mínimo alcanza.
-  const navWithClose = { ...navigation, navigate: (...args) => { closeSheet(); navigation?.navigate?.(...args); } };
 
   return (
     <View style={styles.wrap}>
@@ -38,7 +31,7 @@ export default function History({ navigation }) {
         grupos.map(g => (
           <View key={g.key} style={{ marginBottom: 10 }}>
             <Text style={styles.weekLabel}>{g.label} · {g.sessions.length} {g.sessions.length === 1 ? 'sesión' : 'sesiones'}</Text>
-            {g.sessions.map(s => <SessionCard key={s.id} sess={s} navigation={navWithClose} />)}
+            {g.sessions.map(s => <SessionCard key={s.id} sess={s} />)}
           </View>
         ))
       )}

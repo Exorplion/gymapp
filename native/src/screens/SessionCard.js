@@ -3,36 +3,22 @@
 // sesión en el historial.
 //
 // La web abre un sheet de detalle (`openSheet('session-view', {id})`) al
-// tocar la tarjeta. Los sheets son Etapa 5 acá, así que esta versión no abre
-// nada por defecto — salvo que la sesión sea la de HOY, en cuyo caso tocarla
-// navega a la pantalla Hoy (S.tab = 'hoy'): es la única acción con sentido
-// disponible en esta etapa, y evita que la fila de "hoy" quede
-// completamente muerta al tacto.
+// tocar la tarjeta, sin distinguir si la sesión es de hoy o no. Ese sheet ya
+// existe acá (session-view, Etapa 5), así que este puerto hace lo mismo.
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { S, bump } from '../lib/state.js';
-import { WDS, fmtD, dstr } from '../lib/format.js';
+import { openSheet } from '../lib/state.js';
+import { WDS, fmtD } from '../lib/format.js';
 import { sessionPRs } from '../lib/session.js';
 
-export default function SessionCard({ sess, navigation }) {
+export default function SessionCard({ sess }) {
   const nsets = (sess.entries || []).reduce((a, e) => a + e.sets.length, 0);
   const vol = Math.round((sess.entries || []).reduce((a, e) => a + e.sets.reduce((b, s) => b + s.w * s.r, 0), 0));
   const nprs = sessionPRs(sess).length;
   const names = (sess.entries || []).map(e => e.name).join(' · ');
   const wd = new Date(sess.date + 'T12:00:00').getDay();
-  const esHoy = sess.date === dstr();
-
-  const onPress = () => {
-    if (!esHoy) return; // sheet de detalle: Etapa 5
-    S.tab = 'hoy';
-    bump();
-    // S.tab sólo decide qué renderiza InicioTab; hay que navegar a esa
-    // pestaña de verdad, si no el tap no hace nada visible (bug real de
-    // Etapa 4a, análogo al de Inicio.js en Etapa 2c).
-    navigation?.navigate?.('Inicio');
-  };
 
   return (
-    <Pressable style={styles.card} onPress={onPress}>
+    <Pressable style={styles.card} onPress={() => openSheet('session-view', { id: sess.id })}>
       <View style={styles.top}>
         <Text style={styles.badge}>{WDS[wd]}</Text>
         <Text style={styles.name} numberOfLines={1}>{sess.dayName || 'Entrenamiento'}</Text>
