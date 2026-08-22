@@ -13,25 +13,24 @@
 // bug a evitar acá. Por eso: <Defs> propio, DENTRO del mismo <Svg> que tiene
 // los <Circle> que lo consumen.
 //
-// Recorte deliberado (ver brief Task 3 y plan de la etapa): sin alta de
-// alimento nuevo — eso requiere los sheets MealForm/FoodVoice (Etapa 5). "Un
-// toque" y "Frecuentes" llaman logMeal()/addMealFromFood() (Task 2) directo,
-// sin sheet, igual que el original evita el sheet para esos dos casos. El
-// botón "+ Agregar comida" del original (que abre el sheet meal-form) sigue
-// fuera: ese sheet todavía no está portado, así que sigue mostrando
-// toast('Próximamente'). El botón "🎙 Registrar por voz" (food-voice) SÍ se
-// agregó en Etapa 5j, que portó ese sheet (camino de texto completo, dictado
-// diferido) — llama openSheet('food-voice') directo, mismo criterio que la
-// tarjeta de perfil incompleto (openSheet('profile') desde Etapa 5f): no
-// dejar un placeholder sobreviviendo a que su sheet real ya exista (bug de
-// Etapa 3 con Library.js).
+// "Un toque" y "Frecuentes" llaman logMeal()/addMealFromFood() (Task 2)
+// directo, sin sheet, igual que el original evita el sheet para esos dos
+// casos. El botón "+ Agregar comida" del original (que abre el sheet
+// meal-form) se conectó en Etapa 5l — llama openSheet('meal-form', {slot:
+// slotForTime(...)}) directo, ya con MealForm.js portado. El botón
+// "🎙 Registrar por voz" (food-voice) se agregó en Etapa 5j, que portó ese
+// sheet (camino de texto completo, dictado diferido) — llama
+// openSheet('food-voice') directo, mismo criterio que la tarjeta de perfil
+// incompleto (openSheet('profile') desde Etapa 5f): no dejar un placeholder
+// sobreviviendo a que su sheet real ya exista (bug de Etapa 3 con
+// Library.js).
 import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { S, useStore, bump, openSheet } from '../lib/state.js';
 import { dstr, fmtDFull, fmtNum, round1 } from '../lib/format.js';
 import { computeMacros, GOAL_LABEL } from '../lib/macros.js';
-import { mealsOf, macroCls, nutriFeedback, frequentMeals, mealsBySlot } from '../lib/meals.js';
+import { mealsOf, macroCls, nutriFeedback, frequentMeals, mealsBySlot, slotForTime } from '../lib/meals.js';
 import { idb } from '../lib/db.js';
 import { logMeal, addMealFromFood } from '../lib/meal-logic.js';
 import { toast } from '../lib/toast.js';
@@ -227,7 +226,7 @@ export default function Nutricion() {
         </>
       )}
 
-      <Pressable style={styles.addBtn} onPress={() => toast('Próximamente')}>
+      <Pressable style={styles.addBtn} onPress={() => openSheet('meal-form', { slot: slotForTime(new Date().toTimeString().slice(0, 5)) })}>
         <Text style={styles.addBtnText}>+ Agregar comida</Text>
       </Pressable>
 
