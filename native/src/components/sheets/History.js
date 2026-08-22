@@ -7,17 +7,24 @@
 // del header, con una fila plana por sesión. Ahora el reloj lleva a Progreso y
 // esto es el desborde de esa sección.
 import { View, Text, StyleSheet } from 'react-native';
-import { S, useStore } from '../../lib/state.js';
+import { S, useStore, closeSheet } from '../../lib/state.js';
 import { groupSessionsByWeek } from '../../lib/session.js';
 import SessionCard from '../../screens/SessionCard.js';
 
-export default function History() {
+export default function History({ navigation }) {
   useStore();
   const grupos = groupSessionsByWeek(S.sessions);
   const n = S.sessions.length;
 
+  // SessionCard navega a "Inicio" al tocar la sesión de hoy — pero este
+  // componente vive dentro de un sheet abierto, así que hay que cerrarlo
+  // primero o el sheet queda montado sobre la pantalla de destino.
+  // SessionCard sólo llama navigation?.navigate?.(...), así que este
+  // wrapper mínimo alcanza.
+  const navWithClose = { ...navigation, navigate: (...args) => { closeSheet(); navigation?.navigate?.(...args); } };
+
   return (
-    <View>
+    <View style={styles.wrap}>
       <Text style={styles.title}>Todas tus sesiones</Text>
       <Text style={styles.sub}>
         {n ? `${n} ${n === 1 ? 'sesión cerrada' : 'sesiones cerradas'}` : 'Todavía no cerraste ninguna sesión'}
@@ -31,7 +38,7 @@ export default function History() {
         grupos.map(g => (
           <View key={g.key} style={{ marginBottom: 10 }}>
             <Text style={styles.weekLabel}>{g.label} · {g.sessions.length} {g.sessions.length === 1 ? 'sesión' : 'sesiones'}</Text>
-            {g.sessions.map(s => <SessionCard key={s.id} sess={s} />)}
+            {g.sessions.map(s => <SessionCard key={s.id} sess={s} navigation={navWithClose} />)}
           </View>
         ))
       )}
@@ -40,6 +47,7 @@ export default function History() {
 }
 
 const styles = StyleSheet.create({
+  wrap: { paddingHorizontal: 20 },
   title: { color: '#fff', fontSize: 18, fontWeight: '700' },
   sub: { color: '#8a93a6', fontSize: 13, marginTop: 2, marginBottom: 14 },
   card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },

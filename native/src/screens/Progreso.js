@@ -258,9 +258,9 @@ function SesionesSection({ navigation }) {
   return (
     <View>
       <View style={styles.sectRow}>
-        <Text style={styles.sect}>Tus sesiones</Text>
+        <Text style={styles.sectRowText}>Tus sesiones</Text>
         {S.sessions.length > 8 && (
-          <Pressable style={styles.verTodasBtn} onPress={() => openSheet('history')}>
+          <Pressable style={styles.verTodasBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => openSheet('history', { navigation })}>
             <Text style={styles.verTodasText}>Ver todas</Text>
           </Pressable>
         )}
@@ -297,7 +297,8 @@ const styles = StyleSheet.create({
   segTextOn: { color: '#fff' },
 
   sect: { color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 22, marginBottom: 8 },
-  sectRow: { flexDirection: 'row', alignItems: 'center' },
+  sectRow: { flexDirection: 'row', alignItems: 'center', marginTop: 22, marginBottom: 8 },
+  sectRowText: { color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
   verTodasBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 8, backgroundColor: 'rgba(255,255,255,.08)', alignItems: 'center', justifyContent: 'center' },
   verTodasText: { color: '#c7cdda', fontSize: 12, fontWeight: '600' },
   card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
