@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { S, useStore, bump, openSheet } from '../lib/state.js';
-import { routineStats, routineName, enterEditMode, exitEditMode, insertWorkout, insertRest, removeSlot, reorderSeq, saveSlot, moveEx, deleteExercise, saveExercise } from '../lib/rutina-logic.js';
+import { routineStats, routineName, enterEditMode, exitEditMode, insertWorkout, insertRest, removeSlot, reorderSeq, saveSlot, moveEx, deleteExercise } from '../lib/rutina-logic.js';
 
 export default function Rutina({ navigation }) {
   useStore();
@@ -196,9 +196,6 @@ function SlotNameInput({ i, slot }) {
 
 function ExerciseList({ index, slot }) {
   const exs = slot.exercises || [];
-  // 'new' = alta; id de ejercicio = edición; null = form cerrado
-  const [formFor, setFormFor] = useState(null);
-  const editing = formFor && formFor !== 'new' ? exs.find(e => e.id === formFor) : null;
 
   return (
     <View style={styles.editBody}>
@@ -229,7 +226,7 @@ function ExerciseList({ index, slot }) {
           >
             <Text style={styles.miniBtnText}>↓</Text>
           </Pressable>
-          <Pressable style={styles.miniBtn} onPress={() => setFormFor(formFor === ex.id ? null : ex.id)}>
+          <Pressable style={styles.miniBtn} onPress={() => openSheet('ex-form', { wd: index, ex })}>
             <Text style={styles.miniBtnText}>✎</Text>
           </Pressable>
           <Pressable style={styles.miniBtnRed} onPress={() => deleteExercise(index, ex.id)}>
@@ -238,23 +235,9 @@ function ExerciseList({ index, slot }) {
         </View>
       ))}
 
-      {formFor && (
-        <ExerciseForm
-          key={formFor}
-          ex={editing}
-          onCancel={() => setFormFor(null)}
-          onSave={async (fields) => {
-            await saveExercise(index, editing ? editing.id : null, fields);
-            setFormFor(null);
-          }}
-        />
-      )}
-
-      {!formFor && (
-        <Pressable style={styles.addExBtn} onPress={() => setFormFor('new')}>
-          <Text style={styles.addExBtnText}>+ Ejercicio</Text>
-        </Pressable>
-      )}
+      <Pressable style={styles.addExBtn} onPress={() => openSheet('ex-form', { wd: index, ex: null })}>
+        <Text style={styles.addExBtnText}>+ Ejercicio</Text>
+      </Pressable>
 
       {/* Anterior A y Anterior B son la misma rutina: sin esto había que
           cargar los mismos nueve ejercicios a mano dos veces, y cada
@@ -269,49 +252,6 @@ function ExerciseList({ index, slot }) {
         </Pressable>
         <Pressable style={styles.btnGlass} onPress={() => openSheet('copy-exs', { mode: 'pull', wd: index })}>
           <Text style={styles.btnText}>⤓ Traer de otro turno</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function ExerciseForm({ ex, onSave, onCancel }) {
-  const [name, setName] = useState(ex?.name || '');
-  const [sets, setSets] = useState(ex ? String(ex.sets) : '');
-  const [reps, setReps] = useState(ex ? String(ex.reps) : '');
-
-  return (
-    <View style={styles.exForm}>
-      <TextInput
-        style={styles.exFormInput}
-        value={name}
-        onChangeText={setName}
-        placeholder="Nombre del ejercicio"
-        placeholderTextColor="#8a93a6"
-      />
-      <View style={styles.exFormRow}>
-        <TextInput
-          style={[styles.exFormInput, styles.exFormInputSmall]}
-          value={sets}
-          onChangeText={setSets}
-          placeholder="Series"
-          placeholderTextColor="#8a93a6"
-          keyboardType="numeric"
-        />
-        <TextInput
-          style={[styles.exFormInput, styles.exFormInputSmall]}
-          value={reps}
-          onChangeText={setReps}
-          placeholder="Reps (ej. 8-10)"
-          placeholderTextColor="#8a93a6"
-        />
-      </View>
-      <View style={styles.btnRow}>
-        <Pressable style={styles.btnGlass} onPress={onCancel}>
-          <Text style={styles.btnText}>Cancelar</Text>
-        </Pressable>
-        <Pressable style={styles.btn} onPress={() => onSave({ name, sets, reps })}>
-          <Text style={styles.btnText}>Guardar</Text>
         </Pressable>
       </View>
     </View>
@@ -380,8 +320,4 @@ const styles = StyleSheet.create({
   exRowSets: { color: '#8a93a6', fontSize: 12, marginTop: 1 },
   addExBtn: { marginTop: 4, paddingVertical: 10, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,.15)' },
   addExBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  exForm: { marginTop: 4, gap: 8, padding: 10, borderRadius: 12, backgroundColor: 'rgba(255,255,255,.04)' },
-  exFormRow: { flexDirection: 'row', gap: 8 },
-  exFormInput: { color: '#fff', fontSize: 14, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, backgroundColor: 'rgba(255,255,255,.06)' },
-  exFormInputSmall: { flex: 1 },
 });
