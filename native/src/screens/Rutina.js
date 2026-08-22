@@ -255,6 +255,22 @@ function ExerciseList({ index, slot }) {
           <Text style={styles.addExBtnText}>+ Ejercicio</Text>
         </Pressable>
       )}
+
+      {/* Anterior A y Anterior B son la misma rutina: sin esto había que
+          cargar los mismos nueve ejercicios a mano dos veces, y cada
+          corrección otras dos. */}
+      <View style={styles.btnRow}>
+        <Pressable
+          style={[styles.btnGlass, !exs.length && styles.miniBtnDisabled]}
+          disabled={!exs.length}
+          onPress={() => openSheet('copy-exs', { mode: 'push', wd: index })}
+        >
+          <Text style={styles.btnText}>⧉ Copiar a otro turno</Text>
+        </Pressable>
+        <Pressable style={styles.btnGlass} onPress={() => openSheet('copy-exs', { mode: 'pull', wd: index })}>
+          <Text style={styles.btnText}>⤓ Traer de otro turno</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
