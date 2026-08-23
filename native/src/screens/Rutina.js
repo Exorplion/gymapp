@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, StyleSheet, TextInput } from 'react-
 import { S, useStore, bump, openSheet } from '../lib/state.js';
 import { routineStats, routineName, enterEditMode, exitEditMode, insertWorkout, insertRest, removeSlot, reorderSeq, saveSlot, moveEx, deleteExercise } from '../lib/rutina-logic.js';
 import { C, T, R } from '../theme';
+import GradientCard from '../components/GradientCard';
 
 export default function Rutina({ navigation }) {
   useStore();
@@ -41,7 +42,16 @@ function RutinaView({ navigation }) {
       <Text style={styles.title}>Rutina</Text>
       <Text style={styles.sub}>tu semana</Text>
 
-      <View style={styles.heroCard}>
+      <GradientCard
+        style={styles.heroCard}
+        radius={R.r}
+        colors={[
+          { offset: '0%', color: '#6C5CFF', opacity: 0.24 },
+          { offset: '60%', color: '#FFFFFF', opacity: 0.03 },
+          { offset: '100%', color: C.card, opacity: 0 },
+        ]}
+        x1="0%" y1="0%" x2="35%" y2="98%"
+      >
         <Text style={styles.heroEyebrow}>Plan activo</Text>
         <Text style={styles.heroName}>{routineName()}</Text>
         <Text style={styles.heroStats}>
@@ -59,7 +69,7 @@ function RutinaView({ navigation }) {
             );
           })}
         </View>
-      </View>
+      </GradientCard>
 
       <View style={styles.btnRow}>
         <Pressable style={styles.btn} onPress={() => enterEditMode()}>

@@ -3,7 +3,7 @@
 // muscular (Silhouette.jsx, Etapa 4) ni su leyenda de colores. El "grupo
 // más olvidado" se muestra como texto (StaleLine), igual que el original,
 // porque es dato puro (muscle.js) y no depende de la silueta.
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { S, useStore, bump, openSheet } from '../lib/state.js';
 import { WDS, MO } from '../lib/format.js';
 import { pendingSlot, sessionForSlot } from '../lib/session.js';

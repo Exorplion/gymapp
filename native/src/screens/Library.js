@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 8 },
   rowGrow: { flex: 1 },
   rowTitle: { color: C.txt, fontSize: 14, fontWeight: '600' },
-  tag: { color: '#a78bfa', fontSize: T.micro, fontWeight: '700' },
+  tag: { color: C.violet, fontSize: T.micro, fontWeight: '700' },
   rowSub: { color: C.mut, fontSize: 12, marginTop: 2 },
   miniBtnRed: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(248,113,113,.12)' },
   miniBtnRedText: { color: C.red, fontSize: 13, fontWeight: '700' },
