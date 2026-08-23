@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   btn: { backgroundColor: C.blue, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 6 },
   btnText: { color: C.txt, fontWeight: '700', fontSize: 15 },
 
-  ghostBtn: { backgroundColor: C.line, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
+  ghostBtn: { backgroundColor: C.card2, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
   ghostBtnText: { color: C.txt, fontWeight: '700', fontSize: 14, textAlign: 'center' },
 
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },

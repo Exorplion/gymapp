@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   mut: { color: C.mut },
   warn: { color: C.warn },
   input: {
-    backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
+    backgroundColor: C.card2, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
     color: C.txt, fontSize: 15, borderWidth: 1, borderColor: C.line,
   },
   acList: { marginTop: 4 },
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingVertical: 7, paddingHorizontal: 13, borderRadius: 16,
-    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
+    backgroundColor: C.card2, borderWidth: 1, borderColor: C.line,
   },
   chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: C.blue },
   chipBlue: { borderColor: 'rgba(46,125,255,.5)' },
@@ -282,15 +282,15 @@ const styles = StyleSheet.create({
   step: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   stepBtn: {
     width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
+    backgroundColor: C.card2, borderWidth: 1, borderColor: C.line,
   },
   stepBtnText: { color: C.txt, fontSize: 18, fontWeight: '700' },
   stepVal: {
     flex: 1, textAlign: 'center', color: C.txt, fontSize: 16, fontWeight: '700',
-    backgroundColor: C.line, borderRadius: 10, paddingVertical: 8,
+    backgroundColor: C.card2, borderRadius: 10, paddingVertical: 8,
   },
-  illusBox: { backgroundColor: C.line, borderRadius: 12, padding: 8, marginTop: 6 },
-  illusImg: { width: '100%', aspectRatio: 1.6, borderRadius: 8, backgroundColor: C.line },
+  illusBox: { backgroundColor: C.card2, borderRadius: 12, padding: 8, marginTop: 6 },
+  illusImg: { width: '100%', aspectRatio: 1.6, borderRadius: 8, backgroundColor: C.bg2 },
   illusActs: { flexDirection: 'row', gap: 8, marginTop: 8 },
   ghostBtnSm: {
     paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10,

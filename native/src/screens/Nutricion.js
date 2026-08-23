@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   mRow: {},
   mLbl: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   mLblText: { color: C.mut, fontSize: 13 },
-  pbar: { height: 8, borderRadius: 5, backgroundColor: C.line, overflow: 'hidden' },
+  pbar: { height: 8, borderRadius: 5, backgroundColor: C.bg2, overflow: 'hidden' },
   pbarFill: { height: '100%', borderRadius: 5 },
 
   fbRow: { flexDirection: 'row', gap: 8, marginTop: 14, alignItems: 'flex-start' },
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   sectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 
   chipScroll: { marginBottom: 4 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: C.line, marginRight: 8 },
+  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: C.card2, marginRight: 8 },
   chipText: { color: C.mut, fontSize: 13, fontWeight: '600' },
   chipX: { color: MUT },
   chipBlue: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: 'rgba(46,125,255,.15)', borderWidth: 1, borderColor: 'rgba(46,125,255,.4)', marginRight: 8 },

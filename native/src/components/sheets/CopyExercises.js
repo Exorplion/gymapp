@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   seg: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   segBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center',
-    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
+    backgroundColor: C.card2, borderWidth: 1, borderColor: C.line,
   },
   segBtnOn: { backgroundColor: C.blue, borderColor: C.blue },
   segBtnText: { color: C.mut, fontSize: 14, fontWeight: '600' },
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20,
-    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
+    backgroundColor: C.card2, borderWidth: 1, borderColor: C.line,
   },
   chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: C.blue },
   chipText: { color: C.mut, fontSize: 13, fontWeight: '600' },
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
 
   chipsCol: { gap: 8 },
   chipAncho: {
-    padding: 12, borderRadius: 12, backgroundColor: C.line,
+    padding: 12, borderRadius: 12, backgroundColor: C.card2,
     borderWidth: 1, borderColor: C.line,
   },
   chipSub: { color: C.mut, fontSize: 12, marginTop: 2 },
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
 
   sect: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 8 },
   sectText: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
-  ghostSm: { marginLeft: 'auto', paddingHorizontal: 12, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: C.line },
+  ghostSm: { marginLeft: 'auto', paddingHorizontal: 12, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: C.card2 },
   ghostSmText: { color: C.txt, fontSize: 13, fontWeight: '600' },
 
   card: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 16 },
@@ -371,6 +371,6 @@ const styles = StyleSheet.create({
 
   btn: { backgroundColor: C.blue, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
   btnDisabled: { opacity: 0.4 },
-  btnDim: { backgroundColor: C.line, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
+  btnDim: { backgroundColor: C.card2, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
   btnText: { color: C.txt, fontSize: 14, fontWeight: '700' },
 });

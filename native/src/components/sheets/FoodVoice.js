@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 6 },
   mut: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 14 },
 
-  disabledBtn: { backgroundColor: C.line, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, opacity: 0.55 },
+  disabledBtn: { backgroundColor: C.card2, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, opacity: 0.55 },
   disabledBtnText: { color: C.txt, fontSize: 15, fontWeight: '700', textAlign: 'center' },
   disabledBtnSub: { color: C.mut, fontSize: 12, textAlign: 'center', marginTop: 4 },
 

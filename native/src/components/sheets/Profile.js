@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   seg: { flexDirection: 'row', gap: 8 },
   segBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center',
-    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
+    backgroundColor: C.card2, borderWidth: 1, borderColor: C.line,
   },
   segBtnOn: { backgroundColor: C.blue, borderColor: C.blue },
   segBtnText: { color: C.mut, fontSize: 14, fontWeight: '600' },
@@ -297,14 +297,14 @@ const styles = StyleSheet.create({
   label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
   link: { color: C.blue, fontSize: 12, fontWeight: '600' },
   input: {
-    backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
+    backgroundColor: C.card2, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
     color: C.txt, fontSize: 15, borderWidth: 1, borderColor: C.line,
   },
   hintText: { color: C.mut, fontSize: 12, marginTop: 7, lineHeight: 17 },
 
   chipList: { gap: 8 },
   chip: {
-    borderRadius: 12, padding: 12, backgroundColor: C.line,
+    borderRadius: 12, padding: 12, backgroundColor: C.card2,
     borderWidth: 1, borderColor: C.line,
   },
   chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: C.blue },

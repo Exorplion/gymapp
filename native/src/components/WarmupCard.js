@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   },
   n: {
     width: 20, height: 20, borderRadius: 10,
-    backgroundColor: C.line,
+    backgroundColor: C.card2,
     color: C.txt, fontSize: 11, fontWeight: '800',
     textAlign: 'center', lineHeight: 20,
   },

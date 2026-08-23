@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   stepLabel: { color: C.mut, fontSize: 12, marginBottom: 6 },
   stepLabelDur: { color: C.mut, fontSize: 12, marginTop: 18 },
 
-  step: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.line, borderRadius: 12, overflow: 'hidden' },
+  step: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card2, borderRadius: 12, overflow: 'hidden' },
   stepBtn: { paddingHorizontal: 14, paddingVertical: 10 },
   stepBtnText: { color: C.txt, fontSize: 18, fontWeight: '700' },
   val: { flex: 1, alignItems: 'center' },
@@ -200,6 +200,6 @@ const styles = StyleSheet.create({
 
   btn: { backgroundColor: C.blue, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 16 },
   btnText: { color: C.txt, fontWeight: '700', fontSize: 15 },
-  btnDim: { backgroundColor: C.line, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
+  btnDim: { backgroundColor: C.card2, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
   btnDimText: { color: C.mut, fontWeight: '700', fontSize: 14 },
 });

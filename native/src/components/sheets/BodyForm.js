@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   half: { flex: 1 },
   label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
   input: {
-    backgroundColor: C.line,
+    backgroundColor: C.card2,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 11,

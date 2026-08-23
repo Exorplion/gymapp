@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   },
   top: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   badge: {
-    color: C.mut, fontSize: 11, fontWeight: '700', backgroundColor: C.line,
+    color: C.mut, fontSize: 11, fontWeight: '700', backgroundColor: C.card2,
     paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden',
   },
   name: { color: C.txt, fontSize: 15, fontWeight: '700', flexShrink: 1 },

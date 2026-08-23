@@ -83,10 +83,10 @@ const styles = StyleSheet.create({
   t: { color: C.txt, fontSize: 14, fontWeight: '600' },
   s: { color: C.mut, fontSize: 12, marginTop: 2 },
 
-  miniBtn: { width: 34, height: 34, borderRadius: 10, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' },
+  miniBtn: { width: 34, height: 34, borderRadius: 10, backgroundColor: C.card2, alignItems: 'center', justifyContent: 'center' },
   miniBtnDisabled: { opacity: 0.3 },
   miniBtnText: { color: C.txt, fontSize: 15, fontWeight: '700' },
 
-  doneBtn: { backgroundColor: C.line, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 16 },
+  doneBtn: { backgroundColor: C.card2, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 16 },
   doneBtnText: { color: C.txt, fontWeight: '700', fontSize: 15 },
 });

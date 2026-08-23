@@ -152,9 +152,9 @@ const styles = StyleSheet.create({
   pillLbl: { color: C.mut, fontSize: 11, fontWeight: '600', textTransform: 'uppercase', fontFamily: 'Barlow_600SemiBold' },
   pillTime: { color: C.txt, fontSize: 20, fontWeight: '800', marginTop: 2, fontFamily: 'BarlowCondensed_700Bold_Italic' },
   pillBtns: { flexDirection: 'row', gap: 8 },
-  pillBtn: { backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
+  pillBtn: { backgroundColor: C.card2, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
   pillBtnText: { color: C.txt, fontSize: 13, fontWeight: '700' },
-  pillTrack: { height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 10, overflow: 'hidden' },
+  pillTrack: { height: 4, borderRadius: 2, backgroundColor: C.bg2, marginTop: 10, overflow: 'hidden' },
   pillFill: { height: '100%', backgroundColor: C.blue, borderRadius: 2 },
 
   // Overlay de pantalla completa.
@@ -174,9 +174,9 @@ const styles = StyleSheet.create({
   ringTimeRinging: { color: C.warn },
 
   fsBtns: { flexDirection: 'row', gap: 10, marginTop: 26 },
-  fsBtnGhost: { backgroundColor: C.line, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 12 },
+  fsBtnGhost: { backgroundColor: C.card2, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 12 },
   fsBtnGhostText: { color: C.txt, fontSize: 14, fontWeight: '700' },
-  fsBtnDim: { backgroundColor: C.line, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 12 },
+  fsBtnDim: { backgroundColor: C.card2, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 12 },
   fsBtnDimText: { color: C.mut, fontSize: 14, fontWeight: '700' },
 
   // Sin lib de gradiente en RN acá: se aproxima el gradiente ámbar del
@@ -186,6 +186,6 @@ const styles = StyleSheet.create({
   pararBtn: { backgroundColor: C.warn, borderRadius: 18, paddingHorizontal: 48, paddingVertical: 18, marginTop: 26 },
   pararBtnText: { color: '#2A1603', fontSize: 20, fontWeight: '800', letterSpacing: 1 },
 
-  minBtn: { marginTop: 20, width: 40, height: 40, borderRadius: 20, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' },
+  minBtn: { marginTop: 20, width: 40, height: 40, borderRadius: 20, backgroundColor: C.card2, alignItems: 'center', justifyContent: 'center' },
   minBtnText: { color: C.txt, fontSize: 18, fontWeight: '700' },
 });

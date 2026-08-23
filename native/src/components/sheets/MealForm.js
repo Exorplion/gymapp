@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 14 },
   sub: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 14 },
 
-  seg: { flexDirection: 'row', backgroundColor: C.line, borderRadius: 12, padding: 4, marginBottom: 14 },
+  seg: { flexDirection: 'row', backgroundColor: C.card2, borderRadius: 12, padding: 4, marginBottom: 14 },
   segBtn: { flex: 1, paddingVertical: 8, borderRadius: 9, alignItems: 'center' },
   segBtnOn: { backgroundColor: C.blue },
   segBtnText: { color: C.mut, fontSize: 13, fontWeight: '600' },
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   field: { marginBottom: 14 },
   label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
   input: {
-    backgroundColor: C.line,
+    backgroundColor: C.card2,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 11,
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   hits: { marginBottom: 6 },
   hit: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: C.line, borderRadius: 12,
+    backgroundColor: C.card2, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8,
   },
   hitNuevo: { backgroundColor: 'rgba(46,125,255,.12)' },
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   cartRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line, gap: 8 },
   cartName: { color: C.txt, fontSize: 13, fontWeight: '600', flex: 1 },
   cartInput: {
-    width: 56, backgroundColor: C.line, borderRadius: 8,
+    width: 56, backgroundColor: C.card2, borderRadius: 8,
     paddingHorizontal: 8, paddingVertical: 6, color: C.txt, fontSize: 13,
     borderWidth: 1, borderColor: C.line, textAlign: 'right',
   },
@@ -306,6 +306,6 @@ const styles = StyleSheet.create({
   half: { flexBasis: '47%', flexGrow: 1 },
 
   btn: { backgroundColor: C.blue, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 6 },
-  btnDim: { backgroundColor: C.line, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
+  btnDim: { backgroundColor: C.card2, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
   btnText: { color: C.txt, fontSize: 14, fontWeight: '700' },
 });

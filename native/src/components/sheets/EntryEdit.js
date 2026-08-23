@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   field: { marginTop: 14 },
   label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
   input: {
-    backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
+    backgroundColor: C.card2, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
     color: C.txt, fontSize: 15, borderWidth: 1, borderColor: C.line,
   },
 
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingVertical: 8, paddingHorizontal: 12, borderRadius: 16,
-    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
+    backgroundColor: C.card2, borderWidth: 1, borderColor: C.line,
   },
   chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: C.blue },
   chipBlue: { borderColor: C.blue },

@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   sub: { color: C.mut, fontSize: 13 },
   addBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 16, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center' },
   addBtnText: { color: C.txt, fontSize: 13, fontWeight: '700' },
-  guideBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' },
+  guideBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: C.card2, alignItems: 'center', justifyContent: 'center' },
   guideBtnText: { color: C.mut, fontSize: 15, fontWeight: '700' },
 
   seg: { flexDirection: 'row', backgroundColor: C.card, borderRadius: 12, padding: 4, marginTop: 16, marginBottom: 4 },
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   sect: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 22, marginBottom: 8 },
   sectRow: { flexDirection: 'row', alignItems: 'center', marginTop: 22, marginBottom: 8 },
   sectRowText: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
-  verTodasBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 8, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' },
+  verTodasBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 8, backgroundColor: C.card2, alignItems: 'center', justifyContent: 'center' },
   verTodasText: { color: C.mut, fontSize: 12, fontWeight: '600' },
   card: { backgroundColor: C.card, borderRadius: R.r, padding: 16, borderWidth: 1, borderColor: C.line },
 
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   mutSm: { color: C.mut, fontSize: 12, lineHeight: 17, marginTop: 10 },
 
   exChips: { marginBottom: 4 },
-  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, backgroundColor: C.line, marginRight: 8 },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, backgroundColor: C.card2, marginRight: 8 },
   chipOn: { backgroundColor: BLUE },
   chipText: { color: C.mut, fontSize: 12, fontWeight: '600' },
   chipTextOn: { color: C.txt },

@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
 
   btnGhost: {
     borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 14,
-    backgroundColor: C.line,
+    backgroundColor: C.card2,
   },
   btnGhostText: { color: C.mut, fontSize: 14, fontWeight: '600' },
 
@@ -388,14 +388,14 @@ const styles = StyleSheet.create({
 
   btnGhostSm: {
     borderRadius: 10, paddingVertical: 9, paddingHorizontal: 12, alignItems: 'center',
-    backgroundColor: C.line, marginTop: 8,
+    backgroundColor: C.card2, marginTop: 8,
   },
   btnGhostSmText: { color: C.mut, fontSize: 13, fontWeight: '600' },
   btnSm: { backgroundColor: BLUE, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14, alignItems: 'center' },
   btnSmText: { color: C.txt, fontSize: 13, fontWeight: '700' },
 
   entryCard: {
-    backgroundColor: C.line, borderRadius: 14, padding: 14, marginBottom: 12,
+    backgroundColor: C.card2, borderRadius: 14, padding: 14, marginBottom: 12,
     borderLeftWidth: 4,
   },
   entryTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   },
   eyebrowWarn: { color: WARN },
   eqTag: {
-    color: C.mut, fontSize: 11, fontWeight: '600', backgroundColor: C.line,
+    color: C.mut, fontSize: 11, fontWeight: '600', backgroundColor: C.card2,
     borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2,
   },
   entryPr: { fontSize: 15 },
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   setEdit: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   setEditI: { color: MUT, fontSize: 12, width: 16 },
   setEditInput: {
-    backgroundColor: C.line, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7,
+    backgroundColor: C.card2, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7,
     color: C.txt, fontSize: 14, width: 64, borderWidth: 1, borderColor: C.line,
   },
   setEditU: { color: MUT, fontSize: 12 },

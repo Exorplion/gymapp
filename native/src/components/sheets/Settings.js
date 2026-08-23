@@ -261,13 +261,13 @@ const styles = StyleSheet.create({
   seg: { flexDirection: 'row', gap: 8 },
   segBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center',
-    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
+    backgroundColor: C.card2, borderWidth: 1, borderColor: C.line,
   },
   segBtnOn: { backgroundColor: C.blue, borderColor: C.blue },
   segBtnText: { color: C.mut, fontSize: 14, fontWeight: '600' },
   segBtnTextOn: { color: C.txt },
 
-  step: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.line, borderRadius: 12, overflow: 'hidden' },
+  step: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card2, borderRadius: 12, overflow: 'hidden' },
   stepBtn: { paddingHorizontal: 14, paddingVertical: 10 },
   stepBtnText: { color: C.txt, fontSize: 18, fontWeight: '700' },
   val: { flex: 1, alignItems: 'center', paddingVertical: 4 },
@@ -284,14 +284,14 @@ const styles = StyleSheet.create({
   crBigLabel: { color: C.txt, fontSize: 15, fontWeight: '700' },
   crBigVal: { color: C.blue, fontSize: 17, fontWeight: '800' },
 
-  ghostBtn: { backgroundColor: C.line, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 10 },
+  ghostBtn: { backgroundColor: C.card2, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 10 },
   ghostBtnText: { color: C.txt, fontWeight: '700', fontSize: 13 },
 
   f4: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
   f4Item: { width: '47%' },
   label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
   input: {
-    backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
+    backgroundColor: C.card2, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
     color: C.txt, fontSize: 15, borderWidth: 1, borderColor: C.line,
   },
 
