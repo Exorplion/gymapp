@@ -29,6 +29,7 @@ import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { S, bump, closeSheet, openSheet, saveCfg } from '../../lib/state.js';
 import { fmtMMSS } from '../../lib/format.js';
 import { computeMacros, applyComputedGoals } from '../../lib/macros.js';
+import { scheduleTomorrowReminder } from '../../lib/reminder.js';
 
 function MacroPreview({ m }) {
   return (
@@ -89,6 +90,21 @@ export default function Settings() {
     const num = Math.max(0, parseInt(raw, 10) || 0);
     S.cfg.goals[k] = num;
     saveCfg();
+  }
+
+  function setReminderEnabled(on) {
+    S.cfg.reminderEnabled = on;
+    saveCfg();
+    bump();
+    scheduleTomorrowReminder().catch(() => {});
+  }
+
+  function stepReminderHour(d) {
+    const h = ((S.cfg.reminderHour ?? 18) + d + 24) % 24;
+    S.cfg.reminderHour = h;
+    saveCfg();
+    bump();
+    scheduleTomorrowReminder().catch(() => {});
   }
 
   return (
@@ -202,6 +218,30 @@ export default function Settings() {
               onEndEditing={ev => setGoal('f', ev.nativeEvent.text)}
             />
           </View>
+        </View>
+      )}
+
+      <Text style={styles.h3}>Recordatorio diario de entrenar</Text>
+      <View style={styles.seg}>
+        <Pressable style={[styles.segBtn, S.cfg.reminderEnabled !== false && styles.segBtnOn]} onPress={() => setReminderEnabled(true)}>
+          <Text style={[styles.segBtnText, S.cfg.reminderEnabled !== false && styles.segBtnTextOn]}>Activado</Text>
+        </Pressable>
+        <Pressable style={[styles.segBtn, S.cfg.reminderEnabled === false && styles.segBtnOn]} onPress={() => setReminderEnabled(false)}>
+          <Text style={[styles.segBtnText, S.cfg.reminderEnabled === false && styles.segBtnTextOn]}>Desactivado</Text>
+        </Pressable>
+      </View>
+      {S.cfg.reminderEnabled !== false && (
+        <View style={[styles.step, { marginTop: 10 }]}>
+          <Pressable style={styles.stepBtn} onPress={() => stepReminderHour(-1)}>
+            <Text style={styles.stepBtnText}>−</Text>
+          </Pressable>
+          <View style={styles.val}>
+            <Text style={styles.valText}>{String(S.cfg.reminderHour ?? 18).padStart(2, '0')}:00</Text>
+            <Text style={styles.valAlt}>−/+ 1 hora · sólo si hay un turno pendiente</Text>
+          </View>
+          <Pressable style={styles.stepBtn} onPress={() => stepReminderHour(1)}>
+            <Text style={styles.stepBtnText}>+</Text>
+          </Pressable>
         </View>
       )}
 

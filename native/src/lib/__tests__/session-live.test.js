@@ -32,6 +32,14 @@ jest.mock('../rest.js', () => ({
   REST_CIRC: 2 * Math.PI * 88,
 }));
 
+// reminder.js importa expo-notifications; sin mockear, completeSession()
+// dispararía esa librería real en cada test que la ejercite. Nada acá
+// assertea sobre el recordatorio (mismo criterio que rest.js arriba).
+jest.mock('../reminder.js', () => ({
+  scheduleTomorrowReminder: jest.fn().mockResolvedValue(null),
+  cancelReminder: jest.fn(),
+}));
+
 const ex = (id, name, sets = 3) => ({ id, name, sets, reps: 10 });
 
 beforeEach(() => {

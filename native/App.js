@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { S, loadAll, useStore, bump } from './src/lib/state.js';
+import { scheduleTomorrowReminder } from './src/lib/reminder.js';
 import Inicio from './src/screens/Inicio.js';
 import Hoy from './src/screens/Hoy.js';
 import Rutina from './src/screens/Rutina.js';
@@ -43,7 +44,13 @@ export default function App() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     loadAll()
-      .then(() => setReady(true))
+      .then(() => {
+        setReady(true);
+        // Reprograma el recordatorio de mañana con el estado recién cargado
+        // (no con los defaults en memoria). No crítico: un fallo acá no debe
+        // bloquear el arranque de la app.
+        scheduleTomorrowReminder().catch(() => {});
+      })
       .catch(e => { console.error('loadAll() falló:', e); setReady(true); });
   }, []);
 

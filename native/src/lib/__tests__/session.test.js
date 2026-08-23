@@ -16,6 +16,15 @@ jest.mock('../rest.js', () => ({
   REST_CIRC: 2 * Math.PI * 88,
 }));
 
+// reminder.js importa expo-notifications (Notifications.scheduleNotificationAsync
+// etc.) — sin mockear, completeSession() dispararía esa librería real en cada
+// test que la ejercite. Nada en este archivo assertea sobre el recordatorio,
+// así que un stub no-op alcanza (mismo criterio que rest.js arriba).
+jest.mock('../reminder.js', () => ({
+  scheduleTomorrowReminder: jest.fn().mockResolvedValue(null),
+  cancelReminder: jest.fn(),
+}));
+
 import { S } from '../state.js';
 import { weekStart, sessionForSlot, sessionPRs, groupSessionsByWeek } from '../session.js';
 

@@ -10,6 +10,7 @@ import { idb } from './db.js';
 import { toast } from './toast.js';
 import { startRest, stopRest } from './rest.js';
 import { pedirPermiso } from './alarm.js';
+import { scheduleTomorrowReminder } from './reminder.js';
 import { scrollCarouselTo } from './carousel.js';
 import { exKey } from './equip.js';
 
@@ -469,6 +470,10 @@ export async function completeSession() {
   S.cfg.seqIndexDate = dstr();
   await Promise.all([saveDraft(), saveCfg()]);
   stopRest();
+  // seqIndex ya avanzó al turno siguiente: recalcula si el recordatorio de
+  // mañana sigue vigente. No bloqueante — un fallo acá no debe romper el
+  // cierre de la sesión (mismo criterio que startRest/stopRest arriba).
+  try { scheduleTomorrowReminder().catch(() => {}); } catch { /* no crítico */ }
   vibrate([30, 50, 30]);
   // Antes acá se abría directo el sheet de detalle (session-view). Ahora
   // primero pasa la pantalla de racha/resumen/cuerpo (SessionComplete.jsx,

@@ -13,6 +13,7 @@ export const S = {
   meals: [], foods: [], body: [],
   cfg: {
     unit: 'kg', rest: 90, goals: { kcal: 2600, p: 160, c: 280, f: 80 }, goalsAuto: false,
+    reminderHour: 18, reminderEnabled: true,
     seqIndex: 0,
     seqIndexDate: null,
     profile: { sex: 'm', age: null, height: null, weightKg: null, activity: 'moderate', goal: 'deficit_mod', tdeeEmpirical: null, proteinPref: 0.5, fatPref: 0.5 },
