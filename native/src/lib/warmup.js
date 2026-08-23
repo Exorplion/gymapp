@@ -1,7 +1,15 @@
-// Puerto verbatim de web/src/lib/warmup.js — sólo lo que Task 2 del plan
-// pide: tocaCalentar, bloqueDe, DESCANSO. RAMPA/warmupSets/MOVILIDAD quedan
-// para cuando se porte WarmupCard.js (Task 3), que es quien los consume.
+// Puerto verbatim de web/src/lib/warmup.js. Task 2 portó
+// tocaCalentar/bloqueDe/DESCANSO; Task 3 (WarmupCard.js) agrega
+// RAMPA/warmupSets/MOVILIDAD, que es quien los consume.
+import { round1 } from './format.js';
 import { catOf } from './muscle.js';
+
+/** La rampa: porcentaje del peso de trabajo y repeticiones. */
+export const RAMPA = [
+  { pct: 0.50, reps: 5 },
+  { pct: 0.75, reps: 3 },
+  { pct: 0.90, reps: 1 },
+];
 
 /** Descanso después de la rampa, en segundos.
 
@@ -28,6 +36,39 @@ const BLOQUE_DE = {
 export function bloqueDe(ex) {
   return BLOQUE_DE[catOf(ex)] || null;
 }
+
+/**
+ * Los pesos del calentamiento para un peso de trabajo dado.
+ *
+ * `paso` es el incremento más chico que podés cargar de verdad (2.5 kg con
+ * discos, otra cosa con mancuernas). Redondear a ese paso importa: un
+ * calentamiento que dice 46.25 kg no se puede armar, y te deja resolviendo
+ * aritmética en vez de levantando.
+ *
+ * Devuelve [] si no hay un peso de trabajo con el que calcular: sin eso los
+ * porcentajes no significan nada, y mostrar tres ceros sería peor que no
+ * mostrar nada.
+ */
+export function warmupSets(topKg, paso = 2.5) {
+  const top = Number(topKg);
+  if (!(top > 0) || !(paso > 0)) return [];
+  return RAMPA.map(({ pct, reps }) => {
+    // nunca por debajo de un paso: el redondeo de un peso liviano puede dar 0,
+    // y "calentá con 0 kg" no es una instrucción
+    const w = Math.max(paso, Math.round((top * pct) / paso) * paso);
+    return { pct, reps, w: round1(w) };
+  });
+}
+
+/** Movilidad dinámica antes de la rampa numérica, específica del bloque al
+    que estás por entrar. La rampa calienta EL EJERCICIO —el patrón, el peso—
+    pero no la articulación entera; unos minutos de movilidad son lo que
+    tapa esa diferencia, sobre todo en el primer ejercicio de piernas del día.
+    Nada de esto se registra: es preparación, no series. */
+export const MOVILIDAD = {
+  superior: ['Círculos de hombro, 10 hacia cada lado', 'Remo con banda floja o pull-apart, 15', 'Rotación de tronco suave, 10 por lado'],
+  inferior: ['Sentadilla con el propio peso, 10', 'Zancadas caminando, 8 por pierna', 'Balanceo de cadera (leg swings), 10 por lado'],
+};
 
 /** ¿Corresponde ofrecer el calentamiento para ESTE ejercicio?
 
