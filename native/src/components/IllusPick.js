@@ -82,5 +82,5 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   opt: { width: '47%', backgroundColor: C.line, borderRadius: 12, padding: 8 },
   optImg: { width: '100%', aspectRatio: 1, borderRadius: 8, backgroundColor: C.line },
-  optName: { color: C.mut, fontSize: 12.5, marginTop: 6, textAlign: 'center' },
+  optName: { color: C.mut, fontSize: 13, marginTop: 6, textAlign: 'center' },
 });

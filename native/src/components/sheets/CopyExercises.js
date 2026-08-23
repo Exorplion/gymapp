@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   sub: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 14 },
   blue: { color: C.blue2, fontWeight: '700' },
   mut: { color: C.mut },
-  mutSmall: { color: C.mut, fontSize: 13.5 },
+  mutSmall: { color: C.mut, fontSize: 13 },
   warn: { color: C.warn },
 
   seg: { flexDirection: 'row', gap: 8, marginBottom: 14 },
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
   },
   chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: C.blue },
-  chipText: { color: C.mut, fontSize: 13.5, fontWeight: '600' },
+  chipText: { color: C.mut, fontSize: 13, fontWeight: '600' },
   chipTextOn: { color: C.blue2 },
 
   chipsCol: { gap: 8 },
@@ -342,21 +342,21 @@ const styles = StyleSheet.create({
   chipSubOn: { color: C.blue3 },
 
   calcbox: { backgroundColor: C.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.line, marginBottom: 14 },
-  calcText: { color: C.mut, fontSize: 13.5, lineHeight: 19, marginBottom: 8 },
+  calcText: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 8 },
   calcBold: { color: C.txt, fontWeight: '700' },
   radioRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 6 },
   radioOuter: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: C.line2, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   radioOuterOn: { borderColor: C.blue },
   radioInner: { width: 9, height: 9, borderRadius: 4.5, backgroundColor: C.blue },
-  radioText: { color: C.mut, fontSize: 13.5, flex: 1, lineHeight: 18 },
+  radioText: { color: C.mut, fontSize: 13, flex: 1, lineHeight: 18 },
 
   sect: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 8 },
   sectText: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
   ghostSm: { marginLeft: 'auto', paddingHorizontal: 12, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: C.line },
-  ghostSmText: { color: C.txt, fontSize: 12.5, fontWeight: '600' },
+  ghostSmText: { color: C.txt, fontSize: 13, fontWeight: '600' },
 
   card: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 16 },
-  emptyText: { color: C.mut, fontSize: 13.5, textAlign: 'center' },
+  emptyText: { color: C.mut, fontSize: 13, textAlign: 'center' },
 
   pickList: { gap: 2 },
   pickRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line },

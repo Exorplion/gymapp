@@ -13,7 +13,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, TextInput, StyleSheet } from 'react-native';
 import { S, wDisplay, wAlt, wStep, openSheet } from '../lib/state.js';
-import { C } from '../theme';
+import { C, R } from '../theme';
 import { round1, lb2kg, fmtNum } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
 import {
@@ -208,7 +208,7 @@ function ExActions({ ex, wd, onSkip }) {
 
 const styles = StyleSheet.create({
   list: { marginTop: 16 },
-  card: { backgroundColor: C.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: C.line },
+  card: { backgroundColor: C.card, borderRadius: R.r, padding: 16, borderWidth: 1, borderColor: C.line },
   cardOpen: { borderColor: C.blue },
   cardSkipped: { opacity: 0.5 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

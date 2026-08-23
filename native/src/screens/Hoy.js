@@ -26,7 +26,7 @@ import { tocaCalentar, bloqueDe, DESCANSO } from '../lib/warmup.js';
 import { startRest } from '../lib/rest.js';
 import ExerciseList from './ExerciseList.js';
 import WarmupCard from '../components/WarmupCard.js';
-import { C } from '../theme';
+import { C, T, R } from '../theme';
 
 export default function Hoy() {
   useStore();
@@ -319,13 +319,13 @@ const styles = StyleSheet.create({
   containerContent: { padding: 18 },
   backRow: { alignSelf: 'flex-start', marginBottom: 10 },
   backText: { color: C.blue, fontSize: 14, fontWeight: '600' },
-  title: { color: C.txt, fontSize: 28, fontWeight: '700', marginBottom: 16 },
+  title: { color: C.txt, fontSize: T.display, fontWeight: '700', marginBottom: 16 },
   reorderBtn: { alignSelf: 'flex-start', backgroundColor: C.line, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, marginTop: 14 },
   reorderBtnText: { color: C.mut, fontSize: 13, fontWeight: '600' },
-  card: { backgroundColor: C.card, borderRadius: 18, padding: 20, borderWidth: 1, borderColor: C.line },
+  card: { backgroundColor: C.card, borderRadius: R.r, padding: 20, borderWidth: 1, borderColor: C.line },
   emptyText: { color: C.mut, fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 14 },
   eyebrow: { color: C.blue, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  heroDay: { color: C.txt, fontSize: 26, fontWeight: '700', marginTop: 4 },
+  heroDay: { color: C.txt, fontSize: T.hero, fontWeight: '700', marginTop: 4 },
   mut: { color: C.mut, fontSize: 13, marginTop: 6 },
   elapsed: { color: C.txt, fontWeight: '700' },
   statsRow: { flexDirection: 'row', gap: 20, marginTop: 16 },
@@ -348,10 +348,10 @@ const styles = StyleSheet.create({
   mvNum: { color: C.mut, fontSize: 13, fontWeight: '600' },
   pbar: { height: 6, borderRadius: 3, backgroundColor: C.line, overflow: 'hidden' },
   pbarFill: { height: '100%', borderRadius: 3, backgroundColor: C.blue },
-  mvNote: { color: C.mut, fontSize: 12.5, lineHeight: 18, marginTop: 4 },
+  mvNote: { color: C.mut, fontSize: 13, lineHeight: 18, marginTop: 4 },
   sinGrupo: { marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: 'rgba(255,179,71,.1)' },
-  sinGrupoT: { color: '#ffb347', fontSize: 12.5, fontWeight: '700' },
-  sinGrupoS: { color: C.mut, fontSize: 11.5, marginTop: 4 },
+  sinGrupoT: { color: '#ffb347', fontSize: 13, fontWeight: '700' },
+  sinGrupoS: { color: C.mut, fontSize: 11, marginTop: 4 },
   sinGrupoA: { color: '#ffb347', fontSize: 12, fontWeight: '700', marginTop: 6 },
   sheetWrap: { paddingHorizontal: 20 },
   sheetH2: { color: C.txt, fontSize: 20, fontWeight: '700', marginBottom: 8 },

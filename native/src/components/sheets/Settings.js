@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   calcbox: { backgroundColor: C.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.line },
   calcEmpty: { color: C.mut, textAlign: 'center', fontSize: 13 },
   cr: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 },
-  crLabel: { color: C.mut, fontSize: 13.5 },
+  crLabel: { color: C.mut, fontSize: 13 },
   crMut: { color: C.mut2, fontSize: 12 },
   crVal: { color: C.txt, fontSize: 14, fontWeight: '700' },
   crBig: { borderTopWidth: 1, borderTopColor: C.line, marginTop: 4, paddingTop: 10 },

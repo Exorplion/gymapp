@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   disabledBtnSub: { color: C.mut, fontSize: 12, textAlign: 'center', marginTop: 4 },
 
   field: { marginTop: 16 },
-  label: { color: C.mut, fontSize: 12.5, fontWeight: '600', marginBottom: 6 },
+  label: { color: C.mut, fontSize: 13, fontWeight: '600', marginBottom: 6 },
   input: { backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.line, color: C.txt, fontSize: 15, paddingHorizontal: 14, paddingVertical: 12 },
 
   sect: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 20, marginBottom: 8 },
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   totalRow: { borderBottomWidth: 0, borderTopWidth: 1, borderTopColor: C.line2 },
   totalKcal: { color: C.blue, fontSize: 15, fontWeight: '700' },
 
-  explain: { color: C.mut, fontSize: 12.5, lineHeight: 18, marginBottom: 10 },
+  explain: { color: C.mut, fontSize: 13, lineHeight: 18, marginBottom: 10 },
 
   confirmBtn: { backgroundColor: C.blue, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 20 },
   confirmBtnText: { color: C.txt, fontWeight: '700', fontSize: 15 },

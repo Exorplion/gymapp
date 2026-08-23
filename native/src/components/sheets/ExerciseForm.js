@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   chipText: { color: C.mut, fontSize: 13, fontWeight: '600' },
   chipTextOn: { color: C.blue2 },
   explorarLink: { color: C.blue2, fontSize: 13, fontWeight: '600' },
-  ptext: { color: C.mut, fontSize: 12.5, lineHeight: 18, marginTop: 8 },
+  ptext: { color: C.mut, fontSize: 13, lineHeight: 18, marginTop: 8 },
   row2: { flexDirection: 'row', gap: 12, marginTop: 14 },
   field: { flex: 1 },
   step: { flexDirection: 'row', alignItems: 'center', gap: 8 },

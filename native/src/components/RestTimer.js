@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   pillTime: { color: C.txt, fontSize: 20, fontWeight: '800', marginTop: 2 },
   pillBtns: { flexDirection: 'row', gap: 8 },
   pillBtn: { backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
-  pillBtnText: { color: C.txt, fontSize: 12.5, fontWeight: '700' },
+  pillBtnText: { color: C.txt, fontSize: 13, fontWeight: '700' },
   pillTrack: { height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 10, overflow: 'hidden' },
   pillFill: { height: '100%', backgroundColor: C.blue, borderRadius: 2 },
 

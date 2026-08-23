@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   x: { color: C.mut, fontSize: 14, fontWeight: '600' },
   pct: { color: C.mut, fontSize: 12, fontWeight: '600', marginLeft: 'auto' },
 
-  nota: { color: C.mut, fontSize: 12.5, lineHeight: 18, marginBottom: 12 },
+  nota: { color: C.mut, fontSize: 13, lineHeight: 18, marginBottom: 12 },
   notaB: { color: C.txt, fontWeight: '700' },
 
   btn: {

@@ -33,7 +33,7 @@ import { computeMacros, GOAL_LABEL } from '../lib/macros.js';
 import { mealsOf, macroCls, nutriFeedback, frequentMeals, mealsBySlot, slotForTime } from '../lib/meals.js';
 import { idb } from '../lib/db.js';
 import { logMeal, addMealFromFood } from '../lib/meal-logic.js';
-import { C } from '../theme';
+import { C, T, R } from '../theme';
 
 const BLUE = C.blue;
 const GREEN = '#1fbf75';
@@ -295,14 +295,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   content: { padding: 18, paddingBottom: 40 },
   titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 16 },
-  title: { color: C.txt, fontSize: 28, fontWeight: '700' },
+  title: { color: C.txt, fontSize: T.display, fontWeight: '700' },
   sub: { color: MUT, fontSize: 13 },
 
   grow: { flex: 1 },
-  mutSm: { color: MUT, fontSize: 12.5 },
+  mutSm: { color: MUT, fontSize: 13 },
   mutXs: { color: MUT, fontSize: 11 },
 
-  profCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: C.line, gap: 12, marginBottom: 12 },
+  profCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: R.r, padding: 14, borderWidth: 1, borderColor: C.line, gap: 12, marginBottom: 12 },
   pavatar: { fontSize: 26 },
   pt: { color: C.txt, fontSize: 15, fontWeight: '700', marginBottom: 2 },
   chev: { color: MUT, fontSize: 20 },
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   dateMid: { flex: 1, alignItems: 'center' },
   dateMidText: { color: C.txt, fontSize: 15, fontWeight: '700' },
 
-  hero: { backgroundColor: C.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.line, marginBottom: 4 },
+  hero: { backgroundColor: C.card, borderRadius: R.r, padding: 16, borderWidth: 1, borderColor: C.line, marginBottom: 4 },
   kcalTop: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   kcalRing: { width: 104, height: 104, alignItems: 'center', justifyContent: 'center' },
   krVal: { position: 'absolute', alignItems: 'center' },
@@ -331,14 +331,14 @@ const styles = StyleSheet.create({
   macro3: { marginTop: 16, gap: 10 },
   mRow: {},
   mLbl: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  mLblText: { color: C.mut, fontSize: 12.5 },
+  mLblText: { color: C.mut, fontSize: 13 },
   pbar: { height: 8, borderRadius: 5, backgroundColor: C.line, overflow: 'hidden' },
   pbarFill: { height: '100%', borderRadius: 5 },
 
   fbRow: { flexDirection: 'row', gap: 8, marginTop: 14, alignItems: 'flex-start' },
   fdot: { width: 8, height: 8, borderRadius: 4, marginTop: 5 },
   fbText: { color: C.mut, fontSize: 13, lineHeight: 18 },
-  fbWarn: { color: AMBER, fontSize: 12.5, lineHeight: 17, marginTop: 2 },
+  fbWarn: { color: AMBER, fontSize: 13, lineHeight: 17, marginTop: 2 },
 
   sect: { color: MUT, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 22, marginBottom: 8 },
   sectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -356,17 +356,17 @@ const styles = StyleSheet.create({
   voiceBtn: { marginTop: 10, backgroundColor: C.card, borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: C.line },
   voiceBtnText: { color: C.txt, fontSize: 15, fontWeight: '700', marginBottom: 2 },
 
-  card: { backgroundColor: C.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.line },
+  card: { backgroundColor: C.card, borderRadius: R.r, padding: 16, borderWidth: 1, borderColor: C.line },
 
   slotBlock: { marginBottom: 12 },
   slotHead: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, paddingHorizontal: 2 },
   slotLabel: { color: C.mut, fontSize: 13, fontWeight: '700' },
-  slotKcal: { color: MUT, fontSize: 12.5 },
+  slotKcal: { color: MUT, fontSize: 13 },
 
   mealRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line },
   mealName: { color: C.txt, fontSize: 14, fontWeight: '600' },
   mealSub: { color: MUT, fontSize: 12, marginTop: 2 },
-  mealItems: { color: '#6b7387', fontSize: 11.5, marginTop: 2 },
+  mealItems: { color: '#6b7387', fontSize: 11, marginTop: 2 },
   mealDel: { paddingHorizontal: 8, paddingVertical: 4 },
   mealDelText: { color: MUT, fontSize: 16 },
 });

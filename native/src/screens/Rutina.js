@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { S, useStore, bump, openSheet } from '../lib/state.js';
 import { routineStats, routineName, enterEditMode, exitEditMode, insertWorkout, insertRest, removeSlot, reorderSeq, saveSlot, moveEx, deleteExercise } from '../lib/rutina-logic.js';
-import { C } from '../theme';
+import { C, T, R } from '../theme';
 
 export default function Rutina({ navigation }) {
   useStore();
@@ -262,17 +262,17 @@ function ExerciseList({ index, slot }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   scrollContent: { padding: 18, paddingBottom: 40 },
-  title: { color: C.txt, fontSize: 28, fontWeight: '700' },
+  title: { color: C.txt, fontSize: T.display, fontWeight: '700' },
   sub: { color: C.mut, fontSize: 13, marginTop: 2, marginBottom: 16 },
-  card: { backgroundColor: C.card, borderRadius: 18, padding: 20, borderWidth: 1, borderColor: C.line },
+  card: { backgroundColor: C.card, borderRadius: R.r, padding: 20, borderWidth: 1, borderColor: C.line },
   emptyText: { color: C.mut, fontSize: 14, textAlign: 'center', lineHeight: 20 },
   ghostBtn: { marginTop: 16, paddingVertical: 12, alignItems: 'center', borderRadius: 10, backgroundColor: C.line, },
   ghostBtnText: { color: C.txt, fontSize: 13, fontWeight: '600' },
   editBtn: { marginTop: 16, paddingVertical: 14, alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: C.line2 },
   editBtnText: { color: C.txt, fontSize: 14, fontWeight: '600' },
-  heroCard: { backgroundColor: C.card, borderRadius: 18, padding: 20, borderWidth: 1, borderColor: 'rgba(139,92,246,.25)' },
+  heroCard: { backgroundColor: C.card, borderRadius: R.r, padding: 20, borderWidth: 1, borderColor: 'rgba(139,92,246,.25)' },
   heroEyebrow: { color: '#a78bfa', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  heroName: { color: C.txt, fontSize: 22, fontWeight: '700', marginTop: 4 },
+  heroName: { color: C.txt, fontSize: T.display, fontWeight: '700', marginTop: 4 },
   heroStats: { color: C.mut, fontSize: 13, marginTop: 4 },
   weekbars: { flexDirection: 'row', gap: 6, marginTop: 16, alignItems: 'flex-end', height: 70 },
   wbar: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', height: '100%' },
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   btnGlass: { flex: 1, paddingVertical: 13, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.line2 },
   btnText: { color: C.txt, fontSize: 13, fontWeight: '600' },
   dayCards: { marginTop: 20, gap: 10 },
-  dayCard: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.line, overflow: 'hidden' },
+  dayCard: { backgroundColor: C.card, borderRadius: R.r, borderWidth: 1, borderColor: C.line, overflow: 'hidden' },
   dayHead: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
   dayBadge: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#a78bfa', alignItems: 'center', justifyContent: 'center' },
   dayBadgeOff: { backgroundColor: C.line2 },
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   doneBtn: { marginTop: 16, paddingVertical: 12, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.line2 },
   doneBtnText: { color: C.txt, fontSize: 14, fontWeight: '600' },
   editList: { marginTop: 16, gap: 10 },
-  editCard: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 14, gap: 8 },
+  editCard: { backgroundColor: C.card, borderRadius: R.r, borderWidth: 1, borderColor: C.line, padding: 14, gap: 8 },
   editHeadRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   editIndex: { color: C.mut, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
   editArrows: { flexDirection: 'row', gap: 6 },

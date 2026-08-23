@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   blue: { color: C.blue2, fontWeight: '700' },
 
   calcbox: { backgroundColor: C.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.line, marginBottom: 14 },
-  calcText: { color: C.mut, fontSize: 13.5, lineHeight: 19 },
+  calcText: { color: C.mut, fontSize: 13, lineHeight: 19 },
 
   field: { marginTop: 14 },
   label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },

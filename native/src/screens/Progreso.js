@@ -34,7 +34,7 @@ import { groupSessionsByWeek } from '../lib/session.js';
 import { strengthReadout, project, filterByRange, RANGE_DAYS } from '../lib/charts.js';
 import Silhouette from './Silhouette.js';
 import SessionCard from './SessionCard.js';
-import { C } from '../theme';
+import { C, T, R } from '../theme';
 
 const BLUE = C.blue;
 const GREEN = '#1fbf75';
@@ -289,10 +289,10 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   content: { padding: 18, paddingBottom: 40 },
   titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 16 },
-  title: { color: C.txt, fontSize: 28, fontWeight: '700' },
+  title: { color: C.txt, fontSize: T.display, fontWeight: '700' },
   sub: { color: C.mut, fontSize: 13 },
   addBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 16, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center' },
-  addBtnText: { color: C.txt, fontSize: 12.5, fontWeight: '700' },
+  addBtnText: { color: C.txt, fontSize: 13, fontWeight: '700' },
   guideBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' },
   guideBtnText: { color: C.mut, fontSize: 15, fontWeight: '700' },
 
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   sectRowText: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
   verTodasBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 8, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' },
   verTodasText: { color: C.mut, fontSize: 12, fontWeight: '600' },
-  card: { backgroundColor: C.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.line },
+  card: { backgroundColor: C.card, borderRadius: R.r, padding: 16, borderWidth: 1, borderColor: C.line },
 
   heatGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   heatCell: { width: '11.5%', aspectRatio: 1, borderRadius: 3 },

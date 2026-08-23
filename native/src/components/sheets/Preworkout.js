@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   crLabel: { color: C.txt, fontSize: 14, fontWeight: '600' },
   crVal: { color: C.txt, fontSize: 16, fontWeight: '700' },
   warn: { color: C.warn },
-  ptext: { color: C.mut, fontSize: 12.5, lineHeight: 18, marginTop: 8 },
+  ptext: { color: C.mut, fontSize: 13, lineHeight: 18, marginTop: 8 },
 
   btn: { backgroundColor: C.blue, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 6 },
   btnText: { color: C.txt, fontWeight: '700', fontSize: 15 },
@@ -148,5 +148,5 @@ const styles = StyleSheet.create({
   ghostBtnText: { color: C.txt, fontWeight: '700', fontSize: 14, textAlign: 'center' },
 
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  checkLabel: { color: C.mut, fontSize: 13.5, flexShrink: 1 },
+  checkLabel: { color: C.mut, fontSize: 13, flexShrink: 1 },
 });

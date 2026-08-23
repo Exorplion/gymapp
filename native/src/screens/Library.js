@@ -13,7 +13,7 @@ import { TEMPLATES, applyTemplate } from '../lib/templates.js';
 import {
   routineStats, routineName, applyLibRoutine, deleteLibRoutine, saveCurrentAsLib, startBlank,
 } from '../lib/rutina-logic.js';
-import { C } from '../theme';
+import { C, R } from '../theme';
 
 // Etapa 3 interceptaba openSheet('confirm', {...}) con un Alert.alert nativo
 // (no había sistema de sheets todavía). Etapa 5a Task 1/3 ya lo resuelve de
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   h3: { color: C.txt, fontSize: 15, fontWeight: '700', marginTop: 20, marginBottom: 8 },
   ghostBtn: { paddingVertical: 12, alignItems: 'center', borderRadius: 10, backgroundColor: C.line, marginBottom: 4 },
   ghostBtnText: { color: C.txt, fontSize: 13, fontWeight: '600' },
-  card: { backgroundColor: C.card, borderRadius: 14, padding: 6, borderWidth: 1, borderColor: C.line },
+  card: { backgroundColor: C.card, borderRadius: R.r, padding: 6, borderWidth: 1, borderColor: C.line },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 8 },
   rowGrow: { flex: 1 },
   rowTitle: { color: C.txt, fontSize: 14, fontWeight: '600' },
@@ -215,15 +215,15 @@ const styles = StyleSheet.create({
   rowSub: { color: C.mut, fontSize: 12, marginTop: 2 },
   miniBtnRed: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(248,113,113,.12)' },
   miniBtnRedText: { color: '#f87171', fontSize: 13, fontWeight: '700' },
-  tmplHint: { color: C.mut, fontSize: 12.5, marginBottom: 10 },
-  tmplCard: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 14, marginBottom: 10 },
+  tmplHint: { color: C.mut, fontSize: 13, marginBottom: 10 },
+  tmplCard: { backgroundColor: C.card, borderRadius: R.r, borderWidth: 1, borderColor: C.line, padding: 14, marginBottom: 10 },
   tmplRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   tmplName: { color: C.txt, fontSize: 17, fontWeight: '700' },
-  tmplMeta: { color: C.mut, fontSize: 12.5, marginTop: 2 },
+  tmplMeta: { color: C.mut, fontSize: 13, marginTop: 2 },
   tmplFreq: { color: C.blue2, fontSize: 12, marginTop: 3, fontWeight: '600' },
   useBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: C.line },
   useBtnText: { color: C.txt, fontSize: 13, fontWeight: '600' },
-  blankCard: { borderRadius: 14, borderWidth: 1, borderStyle: 'dashed', borderColor: C.line2, padding: 16, marginTop: 4 },
+  blankCard: { borderRadius: R.r, borderWidth: 1, borderStyle: 'dashed', borderColor: C.line2, padding: 16, marginTop: 4 },
   blankTitle: { color: C.txt, fontSize: 16, fontWeight: '700', marginBottom: 4 },
   blankSub: { color: C.mut, fontSize: 13, marginBottom: 12 },
   smallGhostBtn: { paddingVertical: 10, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: C.line2 },

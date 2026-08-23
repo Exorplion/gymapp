@@ -31,7 +31,7 @@ export default function Guide() {
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
   h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 12 },
-  h3: { color: C.txt, fontSize: 14.5, fontWeight: '700', marginTop: 14, marginBottom: 4 },
-  p: { color: C.mut, fontSize: 13.5, lineHeight: 19 },
+  h3: { color: C.txt, fontSize: 15, fontWeight: '700', marginTop: 14, marginBottom: 4 },
+  p: { color: C.mut, fontSize: 13, lineHeight: 19 },
   b: { color: C.mut, fontWeight: '700' },
 });

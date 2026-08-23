@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 12 },
   hint: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   hintIcon: { color: C.mut, fontSize: 16 },
-  hintText: { color: C.mut, fontSize: 12.5, flexShrink: 1 },
+  hintText: { color: C.mut, fontSize: 13, flexShrink: 1 },
 
   list: { marginTop: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line },

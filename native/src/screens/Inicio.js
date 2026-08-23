@@ -8,7 +8,7 @@ import { S, useStore, bump, openSheet } from '../lib/state.js';
 import { WDS, MO } from '../lib/format.js';
 import { pendingSlot, sessionForSlot } from '../lib/session.js';
 import { daysSinceAll, stalestGroups } from '../lib/muscle.js';
-import { C } from '../theme';
+import { C, T } from '../theme';
 
 export default function Inicio({ navigation }) {
   useStore();
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, padding: 18, justifyContent: 'center' },
   top: { marginBottom: 24 },
   eyebrow: { color: C.blue, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  title: { color: C.txt, fontSize: 34, fontWeight: '800', marginTop: 6 },
+  title: { color: C.txt, fontSize: T.display, fontWeight: '800', marginTop: 6 },
   sub: { color: C.mut, fontSize: 15, marginTop: 6 },
   stale: { color: '#ffb347', fontSize: 13, marginBottom: 24 },
   cta: { backgroundColor: C.blue, borderRadius: 16, paddingVertical: 18, alignItems: 'center' },
