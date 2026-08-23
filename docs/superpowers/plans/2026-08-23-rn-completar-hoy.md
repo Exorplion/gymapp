@@ -241,51 +241,51 @@ cd native && git add src/screens/ExerciseList.js && git commit -m "feat(rn): enr
 
 **Files:** Modify `native/src/screens/Hoy.js`, `native/src/components/SheetHost.js`
 
-- [ ] **Step 1**: Releer `web/src/components/screens/Hoy.jsx` completo
+- [x] **Step 1**: Releer `web/src/components/screens/Hoy.jsx` completo
   (407 líneas) — ya leído en el análisis, releer con foco en
   `ElapsedTimer`, la tarjeta de volumen muscular, y `SessStartInfo`.
 
-- [ ] **Step 2**: Agregar la tarjeta "Músculos esta semana"
+- [x] **Step 2**: Agregar la tarjeta "Músculos esta semana"
   (`muscleVolume(7)`, ya portado — barra de progreso por grupo,
   ordenada de mayor a menor, con el aviso de ejercicios sin grupo vía
   `uncategorized()`, ya portado).
 
-- [ ] **Step 3**: Agregar `ElapsedTimer` — cronómetro que tickea cada
+- [x] **Step 3**: Agregar `ElapsedTimer` — cronómetro que tickea cada
   segundo mientras la sesión está iniciada (`S.draft.start`), mismo
   patrón de aislar el tick a un solo componente pequeño que el
   original (evita re-renderizar toda la pantalla).
 
-- [ ] **Step 4**: Cambiar `ActiveHero`'s botones de completar/descartar
+- [x] **Step 4**: Cambiar `ActiveHero`'s botones de completar/descartar
   para abrir `openSheet('confirm', {...})` en vez de llamar
   `completeSession()`/`discardSession()` directo.
 
-- [ ] **Step 5**: Portar `SessStartInfo` como función exportada en
+- [x] **Step 5**: Portar `SessStartInfo` como función exportada en
   `Hoy.js`, registrarla en `SheetHost.js` como `'sess-start-info'`.
   Cambiar el CTA "Empezar entrenamiento" de `PreSessionHero` para que
   abra `openSheet('sess-start-info', {index})` en vez de llamar
   `startSession(index)` directo.
 
-- [ ] **Step 6**: Integrar `WarmupCard` (Task 3) — mostrarlo antes de
+- [x] **Step 6**: Integrar `WarmupCard` (Task 3) — mostrarlo antes de
   `ExerciseList` cuando `active && exCalentar && tocaCalentar(S.draft,
   exCalentar)`, con `onListo`/`onSaltar` llamando `saveDraft()` +
   `bump()` + (si `onListo`) `startRest(DESCANSO)` (de `rest.js`, ya
   portado en Etapa 6a).
 
-- [ ] **Step 7**: Pasar `wd={index}` a `ExerciseList` (para los
+- [x] **Step 7**: Pasar `wd={index}` a `ExerciseList` (para los
   `openSheet` de Task 4).
 
-- [ ] **Step 8**: Actualizar el comentario de cabecera de `Hoy.js`
+- [x] **Step 8**: Actualizar el comentario de cabecera de `Hoy.js`
   reflejando qué queda diferido (sólo `VoiceLogButton`/dictado por voz)
   en vez de la lista larga de recortes que ya no aplica.
 
-- [ ] **Step 9: Verificar**
+- [x] **Step 9: Verificar**
 
 Run: `cd native && npx jest` → sin cambios de lib.
 Run: `cd native && npx expo-doctor` → 21/21.
 Run: `cd native && npx expo export --platform android` → compila sin
 error.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 cd native && git add src/screens/Hoy.js src/components/SheetHost.js && git commit -m "feat(rn): completar Hoy.js (volumen muscular, cronómetro, confirmaciones, SessStartInfo, calentamiento)"
@@ -295,16 +295,49 @@ cd native && git add src/screens/Hoy.js src/components/SheetHost.js && git commi
 
 ## Revisión final de la etapa
 
-- [ ] `cd native && npx jest` — reportar número final.
-- [ ] `cd native && npx expo-doctor` — sin errores.
-- [ ] Bundler de Metro compila sin error.
-- [ ] `web/` sin ningún archivo modificado.
-- [ ] Confirmar que completar/descartar sesión y saltar un ejercicio
+- [x] `cd native && npx jest` — reportar número final.
+- [x] `cd native && npx expo-doctor` — sin errores.
+- [x] Bundler de Metro compila sin error.
+- [x] `web/` sin ningún archivo modificado.
+- [x] Confirmar que completar/descartar sesión y saltar un ejercicio
   ahora piden confirmación (no se ejecutan directo al tocar el botón).
-- [ ] Confirmar que `ElapsedTimer` no re-renderiza toda la pantalla de
+- [x] Confirmar que `ElapsedTimer` no re-renderiza toda la pantalla de
   Hoy cada segundo (aislado a su propio componente).
-- [ ] Confirmar que `WarmupCard` sólo aparece cuando corresponde
+- [x] Confirmar que `WarmupCard` sólo aparece cuando corresponde
   (`tocaCalentar` true) y que "Listo" arranca el descanso de
   calentamiento (`startRest(DESCANSO)`).
-- [ ] Confirmar que el comentario de cabecera de `Hoy.js` ya no lista
+- [x] Confirmar que el comentario de cabecera de `Hoy.js` ya no lista
   como "recortado" nada que se haya portado en esta etapa.
+
+### Resultado de la revisión final
+
+Un revisor final (opus) auditó la etapa completa (Tasks 1–5,
+commits hasta 87073f2) y no encontró ningún hallazgo Critical ni
+Important. Encontró 3 Minor reales, corregidos en un fix-wave
+separado antes de cerrar:
+
+1. **`ActiveHero` no usaba `exs`** — recibía la prop pero no la
+   consumía. Se agregaron los contadores `doneEx`/`nSkip` en la línea
+   del hero (ejercicios completados, series registradas, saltados) y
+   la caja de celebración 🎉 cuando `allDone`, igual que el original
+   (`web/Hoy.jsx` líneas ~219-220, 234, 239-246). De paso se agregó
+   también el empty-state "Este turno todavía no tiene ejercicios"
+   (`web/Hoy.jsx:135-147`), que faltaba en el puerto RN, y se corrigió
+   el comentario de cabecera de `Hoy.js` que sobreclamaba que "todo lo
+   demás del original ya está".
+2. **Faltaba el consejo de "primera vez en este equipo"** en
+   `ExerciseList.js` — se agregó el párrafo verbatim del original
+   (`web/ExerciseCarousel.jsx:269-273`) con `{reps}` interpolado.
+3. **`warmup.test.js` no cubría `warmupSets`** — se agregaron 4 tests:
+   redondeo al paso dado, piso `Math.max(paso, …)` con peso de trabajo
+   liviano, y el guard de `[]` cuando `top <= 0` o `paso <= 0`.
+
+Varios Nits cosméticos señalados por el revisor quedaron
+documentados pero sin corregir por estar fuera de alcance de este
+fix-wave (no bloqueantes).
+
+Verificación final tras el fix-wave:
+- `cd native && npx jest` → 376 tests, 29 suites, todos en verde.
+- `cd native && npx expo-doctor` → 21/21 checks.
+- `cd native && npx expo export --platform android` → compila sin
+  error (bundle de 5.5MB, 2365 módulos).

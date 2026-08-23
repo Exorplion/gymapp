@@ -7,16 +7,19 @@
 // (Etapas 5j/5n). El sheet de destino ('voice-log') ya está portado —
 // sólo falta el trigger.
 //
-// Todo lo demás del original ya está: volumen muscular semanal
+// Del resto del original ya está: volumen muscular semanal
 // (muscleVolume/uncategorized), cronómetro en vivo (ElapsedTimer, aislado
 // para no re-renderizar toda la pantalla cada segundo), confirmaciones de
 // completar/descartar sesión vía sheet 'confirm', sheet informativo
-// SessStartInfo antes de abrir sesión, y WarmupCard antes de la lista de
-// ejercicios cuando toca calentar.
+// SessStartInfo antes de abrir sesión, WarmupCard antes de la lista de
+// ejercicios cuando toca calentar, los contadores de ejercicios
+// completados/saltados y la caja de celebración al terminarlos todos
+// (ActiveHero), y el empty-state de "este turno todavía no tiene
+// ejercicios" cuando el día no tiene nada cargado.
 import { useEffect, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { S, useStore, bump, openSheet, closeSheet, saveDraft } from '../lib/state.js';
-import { pendingSlot, sessionForSlot, startSession, discardSession, completeSession, orderedExs, sessionExs, nextPending } from '../lib/session.js';
+import { pendingSlot, sessionForSlot, startSession, discardSession, completeSession, orderedExs, sessionExs, nextPending, isSkipped, setsDone, targetSets } from '../lib/session.js';
 import { dstr, fmtMMSS } from '../lib/format.js';
 import { muscleVolume, uncategorized } from '../lib/muscle.js';
 import { tocaCalentar, bloqueDe, DESCANSO } from '../lib/warmup.js';
@@ -117,7 +120,18 @@ export default function Hoy() {
           onSaltar={saltarCalentamiento}
         />
       )}
-      <ExerciseList exs={exs} wd={index} active={active} started={active && !!S.draft.start} curId={active ? S.draft.cur : null} nextEx={nextEx} />
+      {!exs.length ? (
+        <View style={styles.card}>
+          <Text style={styles.emptyText}>
+            Este turno todavía no tiene ejercicios.{'\n'}Configuralo en la pestaña Rutina.
+          </Text>
+          <Pressable style={styles.reorderBtn} onPress={() => { S.tab = 'rutina'; bump(); }}>
+            <Text style={styles.reorderBtnText}>Configurar rutina</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <ExerciseList exs={exs} wd={index} active={active} started={active && !!S.draft.start} curId={active ? S.draft.cur : null} nextEx={nextEx} />
+      )}
       {active && (
         <Pressable style={styles.reorderBtn} onPress={() => openSheet('ex-swap', { wd: index })}>
           <Text style={styles.reorderBtnText}>+ Agregar ejercicio a esta sesión</Text>
@@ -236,14 +250,26 @@ function ActiveHero({ slot, exs }) {
   const entries = S.draft?.entries || {};
   const nsets = Object.values(entries).reduce((a, e) => a + e.sets.length, 0);
   const started = !!S.draft?.start;
+  const doneEx = exs.filter(e => !isSkipped(e.id) && setsDone(e.id).length >= targetSets(e)).length;
+  const nSkip = exs.filter(e => isSkipped(e.id)).length;
+  const allDone = exs.length > 0 && doneEx + nSkip >= exs.length;
   return (
     <View style={styles.card}>
       <Text style={styles.eyebrow}>Sesión en curso</Text>
       <Text style={styles.heroDay}>{S.draft?.dayName || slot?.name || 'Entrenamiento'}</Text>
       <Text style={styles.mut}>
-        {started ? <ElapsedTimer start={S.draft.start} /> : 'El reloj arranca cuando inicies el primer ejercicio'}
-        {' · '}{nsets} serie{nsets === 1 ? '' : 's'} registrada{nsets === 1 ? '' : 's'}
+        {started
+          ? <><ElapsedTimer start={S.draft.start} />{' · '}{doneEx}/{exs.length - nSkip} ejercicios{' · '}{nsets} serie{nsets === 1 ? '' : 's'}{nSkip > 0 ? ` · ${nSkip} saltado${nSkip === 1 ? '' : 's'}` : ''}</>
+          : 'El reloj arranca cuando inicies el primer ejercicio'}
       </Text>
+      {allDone && (
+        <View style={styles.calcbox}>
+          <Text style={styles.calcboxText}>
+            🎉 Terminaste los {exs.length - nSkip} ejercicios que hiciste hoy.
+            {nSkip > 0 ? ` Saltaste ${nSkip}.` : ''} Cerrá la sesión para guardarla.
+          </Text>
+        </View>
+      )}
       <View style={styles.rowGap}>
         <Pressable style={[styles.smallBtn, styles.okBtn]} onPress={confirmSessDone}>
           <Text style={styles.smallBtnText}>✓ Completar sesión</Text>
@@ -296,6 +322,7 @@ const styles = StyleSheet.create({
   reorderBtn: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,.08)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, marginTop: 14 },
   reorderBtnText: { color: '#c7cdda', fontSize: 13, fontWeight: '600' },
   card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
+  emptyText: { color: '#8a93a6', fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 14 },
   eyebrow: { color: '#2e7dff', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   heroDay: { color: '#fff', fontSize: 26, fontWeight: '700', marginTop: 4 },
   mut: { color: '#8a93a6', fontSize: 13, marginTop: 6 },

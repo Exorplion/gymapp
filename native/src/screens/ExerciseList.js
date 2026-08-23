@@ -119,6 +119,11 @@ function ExerciseCard({ ex, wd, done, target, skipped, full, open, isNext, waiti
               Este ejercicio lo venís haciendo en {related.map(r => `${r.label} (${fmtNum(round1(r.w))}×${r.r})`).join(' · ')}.
             </Text>
           )}
+          <Text style={styles.firstSub}>
+            Ese número no se traslada: cada sistema mueve una carga distinta. Arrancá
+            claramente liviano y subí hasta que las {ex.reps} reps te queden con 2 en
+            reserva. Lo que anotes hoy queda como tu punto de partida acá.
+          </Text>
         </View>
       )}
       {full && <Text style={styles.stateOk}>✓ Completo · {done.length} de {target} series</Text>}

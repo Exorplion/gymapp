@@ -1,4 +1,4 @@
-import { tocaCalentar, bloqueDe, DESCANSO } from './warmup.js';
+import { tocaCalentar, bloqueDe, DESCANSO, warmupSets, RAMPA } from './warmup.js';
 
 describe('warmup.js', () => {
   test('DESCANSO es 165 segundos', () => {
@@ -37,5 +37,27 @@ describe('warmup.js', () => {
   test('ejercicio sin categoría reconocible no dispara calentamiento', () => {
     const draft = { warmBlocks: [] };
     expect(tocaCalentar(draft, { cat: 'Rareza' })).toBe(false);
+  });
+
+  test('warmupSets redondea cada peso al paso dado', () => {
+    const sets = warmupSets(83, 5);
+    expect(sets).toHaveLength(RAMPA.length);
+    expect(sets.map(s => s.w)).toEqual([40, 60, 75]);
+  });
+
+  test('warmupSets nunca baja del paso, aun con un peso de trabajo muy liviano', () => {
+    const sets = warmupSets(3, 2.5);
+    expect(sets.every(s => s.w >= 2.5)).toBe(true);
+  });
+
+  test('warmupSets devuelve [] si no hay peso de trabajo (top <= 0)', () => {
+    expect(warmupSets(0)).toEqual([]);
+    expect(warmupSets(-10)).toEqual([]);
+    expect(warmupSets(null)).toEqual([]);
+  });
+
+  test('warmupSets devuelve [] si el paso no es positivo', () => {
+    expect(warmupSets(100, 0)).toEqual([]);
+    expect(warmupSets(100, -2.5)).toEqual([]);
   });
 });
