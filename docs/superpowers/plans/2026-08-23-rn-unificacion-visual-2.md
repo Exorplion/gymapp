@@ -162,17 +162,18 @@ necesitaban un color plano legible (`heroEyebrow`, `wbarOn`,
 `Progreso.js`, `Rutina.js`, `Nutricion.js` (y `theme.js` si se agrega
 un token de stops).
 
-- [ ] **Step 1**: Leer `web/src/styles.css` para los stops exactos de
+- [x] **Step 1**: Leer `web/src/styles.css` para los stops exactos de
   `--grad`/`--grad2` (colores y ángulo/dirección).
 
-- [ ] **Step 2**: Grep de `backgroundColor: C.blue` en botones/CTAs de
+- [x] **Step 2**: Grep de `backgroundColor: C.blue` en botones/CTAs de
   las 5 pantallas para identificar todos los candidatos reales
   (excluir usos de `C.blue` que no sean CTA primario, ej. tints de
   ícono).
 
-- [ ] **Step 3**: Envolver cada CTA en `LinearGradient` con los stops
-  exactos, manteniendo el resto del estilo (padding, radio, texto)
-  igual.
+- [x] **Step 3**: Envolver cada CTA en gradiente, manteniendo el resto
+  del estilo (padding, radio, texto) igual — ver nota abajo, se usó
+  `react-native-svg` en vez de `LinearGradient` de `expo-linear-gradient`
+  (no instalado).
 
 - [x] **Step 4: Verificar** (mismo patrón).
 
