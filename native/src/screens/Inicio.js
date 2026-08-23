@@ -81,11 +81,14 @@ export default function Inicio({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, padding: 18, justifyContent: 'center' },
   top: { marginBottom: 24 },
-  eyebrow: { color: C.blue, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  title: { color: C.txt, fontSize: T.display, fontWeight: '800', marginTop: 6 },
-  sub: { color: C.mut, fontSize: 15, marginTop: 6 },
-  stale: { color: '#ffb347', fontSize: 13, marginBottom: 24 },
+  eyebrow: { color: C.blue, fontSize: T.sm, fontFamily: 'Barlow_700Bold', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  title: { color: C.txt, fontSize: T.display, fontFamily: 'BarlowCondensed_700Bold_Italic', fontWeight: '800', marginTop: 6 },
+  sub: { color: C.mut, fontSize: T.body, fontFamily: 'Barlow_400Regular', marginTop: 6 },
+  stale: { color: C.warn, fontSize: T.sm, fontFamily: 'Barlow_500Medium', marginBottom: 24 },
   cta: { backgroundColor: C.blue, borderRadius: 16, paddingVertical: 18, alignItems: 'center' },
-  ctaText: { color: C.txt, fontWeight: '800', fontSize: 17, letterSpacing: 0.5 },
-  ctaSubText: { color: C.txt, fontSize: 12, marginTop: 2 },
+  ctaText: { color: C.txt, fontFamily: 'Barlow_700Bold', fontWeight: '800', fontSize: 17, letterSpacing: 0.5 },
+  // ctaSubText: de-enfatizado respecto a ctaText — mismo blanco pero
+  // translúcido, no C.mut (ese tono está calibrado para leerse sobre el
+  // fondo oscuro C.bg, no sobre el azul sólido de este botón).
+  ctaSubText: { color: 'rgba(255,255,255,.75)', fontSize: T.micro, fontFamily: 'Barlow_500Medium', marginTop: 2 },
 });

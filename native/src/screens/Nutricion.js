@@ -36,9 +36,9 @@ import { logMeal, addMealFromFood } from '../lib/meal-logic.js';
 import { C, T, R } from '../theme';
 
 const BLUE = C.blue;
-const GREEN = '#1fbf75';
-const AMBER = '#e0a63a';
-const RED = '#e0505a';
+const GREEN = C.ok;
+const AMBER = C.warn;
+const RED = C.red;
 const MUT = C.mut;
 
 // 2*Math.PI*52 redondeado — mismo círculo (r=52) que el original, literal,
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   content: { padding: 18, paddingBottom: 40 },
   titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 16 },
-  title: { color: C.txt, fontSize: T.display, fontWeight: '700' },
+  title: { color: C.txt, fontSize: T.display, fontFamily: 'Barlow_700Bold', fontWeight: '700' },
   sub: { color: MUT, fontSize: 13 },
 
   grow: { flex: 1 },
@@ -321,11 +321,11 @@ const styles = StyleSheet.create({
   kcalTop: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   kcalRing: { width: 104, height: 104, alignItems: 'center', justifyContent: 'center' },
   krVal: { position: 'absolute', alignItems: 'center' },
-  krN: { color: C.txt, fontSize: 24, fontWeight: '700' },
-  krOf: { color: MUT, fontSize: 11 },
+  krN: { color: C.txt, fontSize: 24, fontFamily: 'BarlowCondensed_700Bold_Italic', fontWeight: '700', fontVariant: ['tabular-nums'] },
+  krOf: { color: MUT, fontSize: T.micro },
   kcalSide: { flex: 1 },
   heroEyebrow: { color: MUT, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
-  kcalBig: { color: C.txt, fontSize: 30, fontWeight: '700', marginTop: 2 },
+  kcalBig: { color: C.txt, fontSize: 30, fontFamily: 'BarlowCondensed_700Bold_Italic', fontWeight: '700', marginTop: 2, fontVariant: ['tabular-nums'] },
   kcalUnit: { fontSize: 14, color: MUT, fontWeight: '600' },
 
   macro3: { marginTop: 16, gap: 10 },

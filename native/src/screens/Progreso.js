@@ -37,7 +37,7 @@ import SessionCard from './SessionCard.js';
 import { C, T, R } from '../theme';
 
 const BLUE = C.blue;
-const GREEN = '#1fbf75';
+const GREEN = C.ok;
 
 export default function Progreso({ navigation }) {
   useStore();
@@ -130,7 +130,7 @@ function Heatmap({ heat }) {
   // Grilla de 7 columnas (semanas de 7 días) x 8 filas — misma info que el
   // `.heatmap.const` de la web (56 días), pintada con Views coloreados en
   // vez de una grilla CSS.
-  const colorOf = status => status === 'done' ? GREEN : status === 'miss' ? '#e0505a' : C.line;
+  const colorOf = status => status === 'done' ? GREEN : status === 'miss' ? C.red : C.line;
   return (
     <View style={styles.heatGrid}>
       {heat.days.map(d => (
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   content: { padding: 18, paddingBottom: 40 },
   titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 16 },
-  title: { color: C.txt, fontSize: T.display, fontWeight: '700' },
+  title: { color: C.txt, fontSize: T.display, fontFamily: 'Barlow_700Bold', fontWeight: '700' },
   sub: { color: C.mut, fontSize: 13 },
   addBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 16, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center' },
   addBtnText: { color: C.txt, fontSize: 13, fontWeight: '700' },
@@ -313,13 +313,13 @@ const styles = StyleSheet.create({
   heatCell: { width: '11.5%', aspectRatio: 1, borderRadius: 3 },
   constStats: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
   constStat: { alignItems: 'center' },
-  constNum: { color: C.txt, fontSize: 20, fontWeight: '700' },
-  constLabel: { color: C.mut, fontSize: 11, marginTop: 2 },
+  constNum: { color: C.txt, fontSize: 20, fontFamily: 'BarlowCondensed_700Bold_Italic', fontWeight: '700', fontVariant: ['tabular-nums'] },
+  constLabel: { color: C.mut, fontSize: T.micro, marginTop: 2 },
 
   statsRow: { flexDirection: 'row', gap: 24 },
   stat: { alignItems: 'center' },
-  statNum: { color: C.txt, fontSize: 20, fontWeight: '700' },
-  statLabel: { color: C.mut, fontSize: 11, marginTop: 2 },
+  statNum: { color: C.txt, fontSize: 20, fontFamily: 'BarlowCondensed_700Bold_Italic', fontWeight: '700', fontVariant: ['tabular-nums'] },
+  statLabel: { color: C.mut, fontSize: T.micro, marginTop: 2 },
 
   row: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line },
   rowTitle: { color: C.txt, fontSize: 14, fontWeight: '600' },
@@ -338,11 +338,11 @@ const styles = StyleSheet.create({
   chipTextOn: { color: C.txt },
 
   strengthFoot: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 6 },
-  strengthNum: { color: BLUE, fontSize: 22, fontWeight: '700', lineHeight: 24 },
+  strengthNum: { color: BLUE, fontSize: T.xl, fontFamily: 'BarlowCondensed_700Bold_Italic', fontWeight: '700', lineHeight: 24, fontVariant: ['tabular-nums'] },
   strengthUnit: { color: C.mut, fontSize: 10, letterSpacing: 1 },
   txtOk: { color: GREEN, fontSize: 12 },
   txtBlue: { color: BLUE, fontSize: 12 },
-  txtWarn: { color: '#e0a63a', fontSize: 12 },
+  txtWarn: { color: C.warn, fontSize: 12 },
 
   weekLabel: { color: C.mut, fontSize: 12, fontWeight: '700', marginBottom: 6, marginTop: 4 },
 });

@@ -55,7 +55,7 @@ export default function RestTimer() {
           <View style={styles.pillTop}>
             <View>
               <Text style={styles.pillLbl}>Descanso</Text>
-              <Text style={styles.pillTime}>{timeStr}</Text>
+              <Text style={[styles.pillTime, { fontVariant: ['tabular-nums'] }]}>{timeStr}</Text>
             </View>
             <View style={styles.pillBtns}>
               <Pressable style={styles.pillBtn} onPress={subTime}>
@@ -100,7 +100,7 @@ export default function RestTimer() {
                   transform="rotate(-90 100 100)"
                 />
               </Svg>
-              <Text style={[styles.ringTime, sonandoAhora && styles.ringTimeRinging]}>{sonandoAhora ? '¡YA!' : timeStr}</Text>
+              <Text style={[styles.ringTime, sonandoAhora && styles.ringTimeRinging, { fontVariant: ['tabular-nums'] }]}>{sonandoAhora ? '¡YA!' : timeStr}</Text>
             </View>
 
             {sonandoAhora ? (
@@ -149,8 +149,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   pillTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  pillLbl: { color: C.mut, fontSize: 11, fontWeight: '600', textTransform: 'uppercase' },
-  pillTime: { color: C.txt, fontSize: 20, fontWeight: '800', marginTop: 2 },
+  pillLbl: { color: C.mut, fontSize: 11, fontWeight: '600', textTransform: 'uppercase', fontFamily: 'Barlow_600SemiBold' },
+  pillTime: { color: C.txt, fontSize: 20, fontWeight: '800', marginTop: 2, fontFamily: 'BarlowCondensed_700Bold_Italic' },
   pillBtns: { flexDirection: 'row', gap: 8 },
   pillBtn: { backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
   pillBtnText: { color: C.txt, fontSize: 13, fontWeight: '700' },
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   lbl: { color: C.mut, fontSize: 15, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
   lblRinging: { color: C.warn },
   ringWrap: { alignItems: 'center', justifyContent: 'center' },
-  ringTime: { position: 'absolute', color: C.txt, fontSize: 40, fontWeight: '800' },
+  ringTime: { position: 'absolute', color: C.txt, fontSize: 40, fontWeight: '800', fontFamily: 'BarlowCondensed_700Bold_Italic' },
   ringTimeRinging: { color: C.warn },
 
   fsBtns: { flexDirection: 'row', gap: 10, marginTop: 26 },
@@ -180,10 +180,10 @@ const styles = StyleSheet.create({
   fsBtnDimText: { color: C.mut, fontSize: 14, fontWeight: '700' },
 
   // Sin lib de gradiente en RN acá: se aproxima el gradiente ámbar del
-  // original (#FFB454 -> #E07C1A) con el tono medio como color sólido, y
-  // texto oscuro (#2A1603) igual que el original, para mantener buen
-  // contraste sobre el ámbar.
-  pararBtn: { backgroundColor: '#F09A34', borderRadius: 18, paddingHorizontal: 48, paddingVertical: 18, marginTop: 26 },
+  // original (#FFB454 -> #E07C1A) con el tono medio del token C.warn como
+  // color sólido, y texto oscuro (#2A1603) igual que el original, para
+  // mantener buen contraste sobre el ámbar.
+  pararBtn: { backgroundColor: C.warn, borderRadius: 18, paddingHorizontal: 48, paddingVertical: 18, marginTop: 26 },
   pararBtnText: { color: '#2A1603', fontSize: 20, fontWeight: '800', letterSpacing: 1 },
 
   minBtn: { marginTop: 20, width: 40, height: 40, borderRadius: 20, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' },

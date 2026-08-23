@@ -28,12 +28,12 @@ import ExIcon from '../ExIcon.js';
 import { C } from '../../theme';
 
 // Colores del tema oscuro ya establecido en esta migración.
-// GOLD (PR) no tiene token equivalente en theme.js — se deja sin migrar
-// (decorativo, sin rol claro entre los tokens existentes).
+// GOLD (PR) se unifica a C.warn: es la misma familia ámbar que el resto de
+// hallazgos de esta migración (SessionCard.js usa el mismo criterio).
 const GREEN = C.ok;
 const WARN = C.warn;
 const BLUE = C.blue;
-const GOLD = '#e0b23a';
+const GOLD = C.warn;
 const MUT = C.mut;
 
 // Riel de color por veredicto: sube = mejora, baja = regresión, igual/nuevo =

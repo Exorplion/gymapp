@@ -11,6 +11,10 @@ import { WDS, fmtD } from '../lib/format.js';
 import { sessionPRs } from '../lib/session.js';
 import { C } from '../theme';
 
+// GOLD (PR) no tiene un token de rol equivalente en theme.js — se aproxima
+// con C.warn (mismo criterio que SessionView.js), es la familia ámbar más
+// cercana disponible.
+
 export default function SessionCard({ sess }) {
   const nsets = (sess.entries || []).reduce((a, e) => a + e.sets.length, 0);
   const vol = Math.round((sess.entries || []).reduce((a, e) => a + e.sets.reduce((b, s) => b + s.w * s.r, 0), 0));
@@ -43,7 +47,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden',
   },
   name: { color: C.txt, fontSize: 15, fontWeight: '700', flexShrink: 1 },
-  pr: { marginLeft: 'auto', color: '#f5b942', fontSize: 12, fontWeight: '700' },
+  pr: { marginLeft: 'auto', color: C.warn, fontSize: 12, fontWeight: '700' },
   meta: { color: C.mut, fontSize: 12, marginTop: 6 },
   metaStrong: { color: C.mut, fontSize: 12, fontWeight: '600', marginTop: 2 },
   exs: { color: C.mut, fontSize: 11, marginTop: 6 },

@@ -13,7 +13,7 @@ import { TEMPLATES, applyTemplate } from '../lib/templates.js';
 import {
   routineStats, routineName, applyLibRoutine, deleteLibRoutine, saveCurrentAsLib, startBlank,
 } from '../lib/rutina-logic.js';
-import { C, R } from '../theme';
+import { C, S as SP, T, R } from '../theme';
 
 // Etapa 3 interceptaba openSheet('confirm', {...}) con un Alert.alert nativo
 // (no había sistema de sheets todavía). Etapa 5a Task 1/3 ya lo resuelve de
@@ -201,20 +201,23 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   scrollContent: { padding: 18, paddingBottom: 40 },
   backBtn: { alignSelf: 'flex-start', marginBottom: 12 },
-  backBtnText: { color: C.mut, fontSize: 14, fontWeight: '600' },
-  title: { color: C.txt, fontSize: 24, fontWeight: '700' },
-  sub: { color: C.mut, fontSize: 13, marginTop: 6, marginBottom: 16, lineHeight: 18 },
-  h3: { color: C.txt, fontSize: 15, fontWeight: '700', marginTop: 20, marginBottom: 8 },
+  backBtnText: { color: C.mut, fontSize: 14, fontFamily: 'Barlow_600SemiBold', fontWeight: '600' },
+  title: { color: C.txt, fontSize: 24, fontFamily: 'Barlow_700Bold', fontWeight: '700' },
+  sub: { color: C.mut, fontSize: T.sm, marginTop: 6, marginBottom: 16, lineHeight: 18 },
+  h3: { color: C.txt, fontSize: T.body, fontWeight: '700', marginTop: 20, marginBottom: 8 },
   ghostBtn: { paddingVertical: 12, alignItems: 'center', borderRadius: 10, backgroundColor: C.line, marginBottom: 4 },
-  ghostBtnText: { color: C.txt, fontSize: 13, fontWeight: '600' },
-  card: { backgroundColor: C.card, borderRadius: R.r, padding: 6, borderWidth: 1, borderColor: C.line },
+  ghostBtnText: { color: C.txt, fontSize: T.sm, fontWeight: '600' },
+  // padding subido de 6 a S.s3 (12) para alinear con tmplCard/blankCard,
+  // ya migradas a R.r — quedaba desalineado, el único radio-18 con relleno
+  // de miniatura.
+  card: { backgroundColor: C.card, borderRadius: R.r, padding: SP.s3, borderWidth: 1, borderColor: C.line },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 8 },
   rowGrow: { flex: 1 },
   rowTitle: { color: C.txt, fontSize: 14, fontWeight: '600' },
-  tag: { color: '#a78bfa', fontSize: 11, fontWeight: '700' },
+  tag: { color: '#a78bfa', fontSize: T.micro, fontWeight: '700' },
   rowSub: { color: C.mut, fontSize: 12, marginTop: 2 },
   miniBtnRed: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(248,113,113,.12)' },
-  miniBtnRedText: { color: '#f87171', fontSize: 13, fontWeight: '700' },
+  miniBtnRedText: { color: C.red, fontSize: 13, fontWeight: '700' },
   tmplHint: { color: C.mut, fontSize: 13, marginBottom: 10 },
   tmplCard: { backgroundColor: C.card, borderRadius: R.r, borderWidth: 1, borderColor: C.line, padding: 14, marginBottom: 10 },
   tmplRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

@@ -17,7 +17,7 @@
 import { useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, Image, StyleSheet } from 'react-native';
 import { searchIllus, illusUrl } from '../lib/illustrations.js';
-import { C } from '../theme';
+import { C, T, R } from '../theme';
 
 export default function IllusPick({ exName = '', onPick, onClose }) {
   const [q, setQ] = useState(exName);
@@ -70,17 +70,18 @@ export default function IllusPick({ exName = '', onPick, onClose }) {
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  label: { color: C.txt, fontSize: 15, fontWeight: '700' },
+  label: { color: C.txt, fontSize: T.body, fontWeight: '700' },
   close: { color: C.mut, fontSize: 16, paddingHorizontal: 6 },
-  hint: { color: C.mut, fontSize: 13, marginTop: 2, marginBottom: 14 },
+  hint: { color: C.mut, fontSize: T.sm, marginTop: 2, marginBottom: 14 },
   input: {
-    color: C.txt, fontSize: 15, backgroundColor: C.line,
+    color: C.txt, fontSize: T.body, backgroundColor: C.card2,
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14,
+    borderWidth: 1, borderColor: C.line,
   },
-  empty: { padding: 18, alignItems: 'center', backgroundColor: C.line, borderRadius: 12 },
+  empty: { padding: 18, alignItems: 'center', backgroundColor: C.bg2, borderRadius: 12, borderWidth: 1, borderColor: C.line },
   emptyText: { color: C.mut, fontSize: 14, textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  opt: { width: '47%', backgroundColor: C.line, borderRadius: 12, padding: 8 },
-  optImg: { width: '100%', aspectRatio: 1, borderRadius: 8, backgroundColor: C.line },
-  optName: { color: C.mut, fontSize: 13, marginTop: 6, textAlign: 'center' },
+  opt: { width: '47%', backgroundColor: C.card2, borderRadius: 12, padding: 8, borderWidth: 1, borderColor: C.line },
+  optImg: { width: '100%', aspectRatio: 1, borderRadius: 8, backgroundColor: C.bg2 },
+  optName: { color: C.mut, fontSize: T.sm, marginTop: 6, textAlign: 'center' },
 });

@@ -13,7 +13,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, TextInput, StyleSheet } from 'react-native';
 import { S, wDisplay, wAlt, wStep, openSheet } from '../lib/state.js';
-import { C, R } from '../theme';
+import { C, T, R } from '../theme';
 import { round1, lb2kg, fmtNum } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
 import {
@@ -92,7 +92,7 @@ function ExerciseCard({ ex, wd, done, target, skipped, full, open, isNext, waiti
     <View style={[styles.card, open && styles.cardOpen, skipped && styles.cardSkipped]}>
       <View style={styles.headerRow}>
         <ExIcon icono={iconOf(ex)} size={34} />
-        <Text style={styles.doneCount}>{done.length}/{target}</Text>
+        <Text style={[styles.doneCount, { fontVariant: ['tabular-nums'] }]}>{done.length}/{target}</Text>
       </View>
       <View style={styles.nameRow}>
         <Text style={styles.exName}>{ex.name}</Text>
@@ -162,16 +162,16 @@ function ExerciseCard({ ex, wd, done, target, skipped, full, open, isNext, waiti
               <Text style={styles.stepLabel}>Peso ({S.cfg.unit === 'kg' ? 'kg' : 'lb'})</Text>
               <View style={styles.stepRow}>
                 <Pressable style={styles.stepBtn} onPress={() => stepW(-1)}><Text style={styles.stepBtnText}>−</Text></Pressable>
-                <TextInput style={styles.input} keyboardType="decimal-pad" value={w} onChangeText={onWChange} />
+                <TextInput style={[styles.input, { fontVariant: ['tabular-nums'] }]} keyboardType="decimal-pad" value={w} onChangeText={onWChange} />
                 <Pressable style={styles.stepBtn} onPress={() => stepW(1)}><Text style={styles.stepBtnText}>+</Text></Pressable>
               </View>
-              <Text style={styles.alt}>{wAlt(v.w)}</Text>
+              <Text style={[styles.alt, { fontVariant: ['tabular-nums'] }]}>{wAlt(v.w)}</Text>
             </View>
             <View style={styles.setCol}>
               <Text style={styles.stepLabel}>Reps</Text>
               <View style={styles.stepRow}>
                 <Pressable style={styles.stepBtn} onPress={() => stepR(-1)}><Text style={styles.stepBtnText}>−</Text></Pressable>
-                <TextInput style={styles.input} keyboardType="number-pad" value={r} onChangeText={onRChange} />
+                <TextInput style={[styles.input, { fontVariant: ['tabular-nums'] }]} keyboardType="number-pad" value={r} onChangeText={onRChange} />
                 <Pressable style={styles.stepBtn} onPress={() => stepR(1)}><Text style={styles.stepBtnText}>+</Text></Pressable>
               </View>
             </View>
@@ -186,7 +186,7 @@ function ExerciseCard({ ex, wd, done, target, skipped, full, open, isNext, waiti
         <View style={styles.chipsRow}>
           {done.map((s, i) => (
             <Pressable key={i} style={styles.chip} onPress={() => deleteSet(ex.id, i)}>
-              <Text style={styles.chipText}>{fmtNum(round1(s.w))}kg × {s.r} ✕</Text>
+              <Text style={[styles.chipText, { fontVariant: ['tabular-nums'] }]}>{fmtNum(round1(s.w))}kg × {s.r} ✕</Text>
             </Pressable>
           ))}
         </View>
@@ -212,41 +212,41 @@ const styles = StyleSheet.create({
   cardOpen: { borderColor: C.blue },
   cardSkipped: { opacity: 0.5 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  doneCount: { color: C.mut, fontSize: 12, fontWeight: '700' },
+  doneCount: { color: C.mut, fontSize: T.micro, fontFamily: 'Barlow_700Bold', fontWeight: '700' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  exName: { color: C.txt, fontSize: 18, fontWeight: '700' },
-  infoBtn: { width: 22, height: 22, borderRadius: 11, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' },
-  infoBtnText: { color: C.mut, fontSize: 13, fontWeight: '700' },
-  envez: { color: C.mut, fontSize: 12, marginTop: 2, fontStyle: 'italic' },
-  exTarget: { color: C.mut, fontSize: 13, marginTop: 4 },
-  progWarn: { color: '#ffb347', fontSize: 12, marginTop: 8, marginBottom: 4 },
-  uniChip: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.line, marginBottom: 8 },
+  exName: { color: C.txt, fontSize: 18, fontFamily: 'Barlow_700Bold', fontWeight: '700' },
+  infoBtn: { width: 22, height: 22, borderRadius: 11, backgroundColor: C.card2, alignItems: 'center', justifyContent: 'center' },
+  infoBtnText: { color: C.mut, fontSize: T.sm, fontWeight: '700' },
+  envez: { color: C.mut, fontSize: T.micro, marginTop: 2, fontStyle: 'italic', fontFamily: 'Barlow_400Regular' },
+  exTarget: { color: C.mut, fontSize: T.sm, marginTop: 4, fontFamily: 'Barlow_400Regular' },
+  progWarn: { color: C.warn, fontSize: T.micro, marginTop: 8, marginBottom: 4, fontFamily: 'Barlow_500Medium' },
+  uniChip: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.card2, marginBottom: 8 },
   uniChipOn: { backgroundColor: 'rgba(46,125,255,.28)' },
-  uniChipText: { color: C.txt, fontSize: 12, fontWeight: '600' },
-  firstBox: { marginTop: 8, padding: 10, borderRadius: 10, backgroundColor: C.line },
-  firstTitle: { color: C.txt, fontSize: 13, fontWeight: '700' },
-  firstSub: { color: C.mut, fontSize: 12, marginTop: 4 },
-  exLast: { color: C.mut, fontSize: 12, marginTop: 4 },
-  stateOk: { color: '#1fbf75', fontSize: 13, marginTop: 8, fontWeight: '600' },
-  stateMut: { color: C.mut, fontSize: 13, marginTop: 8 },
-  stateSkip: { color: '#ffb347', fontSize: 13, marginTop: 8 },
-  ghostBtn: { marginTop: 10, paddingVertical: 10, alignItems: 'center', borderRadius: 10, backgroundColor: C.line },
-  ghostBtnText: { color: C.txt, fontSize: 13, fontWeight: '600' },
+  uniChipText: { color: C.txt, fontSize: T.micro, fontWeight: '600', fontFamily: 'Barlow_600SemiBold' },
+  firstBox: { marginTop: 8, padding: 10, borderRadius: 10, backgroundColor: C.card2 },
+  firstTitle: { color: C.txt, fontSize: T.sm, fontWeight: '700', fontFamily: 'Barlow_700Bold' },
+  firstSub: { color: C.mut, fontSize: T.micro, marginTop: 4, fontFamily: 'Barlow_400Regular' },
+  exLast: { color: C.mut, fontSize: T.micro, marginTop: 4, fontFamily: 'Barlow_400Regular' },
+  stateOk: { color: C.ok, fontSize: T.sm, marginTop: 8, fontWeight: '600', fontFamily: 'Barlow_600SemiBold' },
+  stateMut: { color: C.mut, fontSize: T.sm, marginTop: 8, fontFamily: 'Barlow_400Regular' },
+  stateSkip: { color: C.warn, fontSize: T.sm, marginTop: 8, fontFamily: 'Barlow_500Medium' },
+  ghostBtn: { marginTop: 10, paddingVertical: 10, alignItems: 'center', borderRadius: 10, backgroundColor: C.card2 },
+  ghostBtnText: { color: C.txt, fontSize: T.sm, fontWeight: '600', fontFamily: 'Barlow_600SemiBold' },
   primaryBtn: { marginTop: 12, backgroundColor: C.blue, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  primaryBtnText: { color: C.txt, fontWeight: '700', fontSize: 14 },
-  hint: { color: C.mut, fontSize: 11, textAlign: 'center', marginTop: 6 },
+  primaryBtnText: { color: C.txt, fontWeight: '700', fontSize: 14, fontFamily: 'Barlow_700Bold' },
+  hint: { color: C.mut, fontSize: T.micro, textAlign: 'center', marginTop: 6, fontFamily: 'Barlow_400Regular' },
   setRows: { flexDirection: 'row', gap: 14, marginTop: 12 },
   setCol: { flex: 1 },
-  stepLabel: { color: C.mut, fontSize: 11, marginBottom: 6 },
+  stepLabel: { color: C.mut, fontSize: T.micro, marginBottom: 6, fontFamily: 'Barlow_500Medium' },
   stepRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  stepBtn: { width: 36, height: 36, borderRadius: 8, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' },
+  stepBtn: { width: 36, height: 36, borderRadius: 8, backgroundColor: C.card2, alignItems: 'center', justifyContent: 'center' },
   stepBtnText: { color: C.txt, fontSize: 18, fontWeight: '700' },
-  input: { flex: 1, color: C.txt, fontSize: 16, textAlign: 'center', backgroundColor: C.line, borderRadius: 8, paddingVertical: 8 },
-  alt: { color: C.mut, fontSize: 11, marginTop: 4, textAlign: 'center' },
+  input: { flex: 1, color: C.txt, fontSize: 16, textAlign: 'center', backgroundColor: C.card2, borderRadius: 8, paddingVertical: 8, fontFamily: 'BarlowCondensed_700Bold' },
+  alt: { color: C.mut, fontSize: T.micro, marginTop: 4, textAlign: 'center', fontFamily: 'Barlow_400Regular' },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   chip: { backgroundColor: 'rgba(46,125,255,.18)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
-  chipText: { color: '#6ea8ff', fontSize: 12, fontWeight: '600' },
+  chipText: { color: '#6ea8ff', fontSize: T.micro, fontWeight: '600', fontFamily: 'Barlow_600SemiBold' },
   actionsRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  actionBtn: { flex: 1, paddingVertical: 9, borderRadius: 9, backgroundColor: C.line, alignItems: 'center' },
-  actionBtnText: { color: C.txt, fontSize: 11, fontWeight: '600' },
+  actionBtn: { flex: 1, paddingVertical: 9, borderRadius: 9, backgroundColor: C.card2, alignItems: 'center' },
+  actionBtnText: { color: C.txt, fontSize: T.micro, fontWeight: '600', fontFamily: 'Barlow_600SemiBold' },
 });
