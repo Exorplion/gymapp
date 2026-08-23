@@ -38,6 +38,7 @@ import {
   ACTF, ACT_LABEL, ACT_HINT, GOALDELTA, GOAL_LABEL, GOAL_HINT,
 } from '../../lib/macros.js';
 import { toast } from '../../lib/toast.js';
+import { C } from '../../theme';
 
 function MacroRow({ label, hint, value }) {
   return (
@@ -145,7 +146,7 @@ export default function Profile() {
             style={styles.input}
             keyboardType="number-pad"
             placeholder="24"
-            placeholderTextColor="#5a6478"
+            placeholderTextColor={C.mut2}
             defaultValue={draft.age != null ? String(draft.age) : ''}
             onChangeText={t => setNumField('age', t)}
           />
@@ -156,7 +157,7 @@ export default function Profile() {
             style={styles.input}
             keyboardType="number-pad"
             placeholder="179"
-            placeholderTextColor="#5a6478"
+            placeholderTextColor={C.mut2}
             defaultValue={draft.height != null ? String(draft.height) : ''}
             onChangeText={t => setNumField('height', t)}
           />
@@ -177,7 +178,7 @@ export default function Profile() {
           style={styles.input}
           keyboardType="decimal-pad"
           placeholder="74"
-          placeholderTextColor="#5a6478"
+          placeholderTextColor={C.mut2}
           defaultValue={draft.weightKg != null ? String(draft.weightKg) : ''}
           onChangeText={t => setNumField('weightKg', t)}
         />
@@ -223,9 +224,9 @@ export default function Profile() {
           step={1}
           value={Math.round((draft.proteinPref ?? 0.5) * 100)}
           onValueChange={v => setField('proteinPref', v / 100)}
-          minimumTrackTintColor="#2e7dff"
-          maximumTrackTintColor="rgba(255,255,255,.15)"
-          thumbTintColor="#2e7dff"
+          minimumTrackTintColor={C.blue}
+          maximumTrackTintColor={C.line2}
+          thumbTintColor={C.blue}
         />
       </View>
       <View style={styles.rangerow}>
@@ -239,9 +240,9 @@ export default function Profile() {
           step={1}
           value={Math.round((draft.fatPref ?? 0.5) * 100)}
           onValueChange={v => setField('fatPref', v / 100)}
-          minimumTrackTintColor="#2e7dff"
-          maximumTrackTintColor="rgba(255,255,255,.15)"
-          thumbTintColor="#2e7dff"
+          minimumTrackTintColor={C.blue}
+          maximumTrackTintColor={C.line2}
+          thumbTintColor={C.blue}
         />
       </View>
 
@@ -251,7 +252,7 @@ export default function Profile() {
           style={styles.input}
           keyboardType="number-pad"
           placeholder={m ? `calculado: ${m.tdeeCalc}` : 'kcal de mantenimiento real'}
-          placeholderTextColor="#5a6478"
+          placeholderTextColor={C.mut2}
           defaultValue={draft.tdeeEmpirical != null ? String(draft.tdeeEmpirical) : ''}
           onChangeText={t => setNumField('tdeeEmpirical', t)}
         />
@@ -275,58 +276,58 @@ export default function Profile() {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 4 },
-  h3: { color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginTop: 18, marginBottom: 8 },
-  sub: { color: '#8a93a6', fontSize: 13, lineHeight: 19, marginBottom: 10 },
-  optional: { color: '#8a93a6', fontWeight: '500', textTransform: 'none', fontSize: 12 },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 4 },
+  h3: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginTop: 18, marginBottom: 8 },
+  sub: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 10 },
+  optional: { color: C.mut, fontWeight: '500', textTransform: 'none', fontSize: 12 },
 
   seg: { flexDirection: 'row', gap: 8 },
   segBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
   },
-  segBtnOn: { backgroundColor: '#2e7dff', borderColor: '#2e7dff' },
-  segBtnText: { color: '#c7cdda', fontSize: 14, fontWeight: '600' },
-  segBtnTextOn: { color: '#fff' },
+  segBtnOn: { backgroundColor: C.blue, borderColor: C.blue },
+  segBtnText: { color: C.mut, fontSize: 14, fontWeight: '600' },
+  segBtnTextOn: { color: C.txt },
 
   row2: { flexDirection: 'row', gap: 10, marginTop: 14 },
   half: { flex: 1 },
   field: { marginTop: 14 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  label: { color: '#8a93a6', fontSize: 12, fontWeight: '600', marginBottom: 6 },
-  link: { color: '#2e7dff', fontSize: 12, fontWeight: '600' },
+  label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  link: { color: C.blue, fontSize: 12, fontWeight: '600' },
   input: {
-    backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
-    color: '#fff', fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
+    color: C.txt, fontSize: 15, borderWidth: 1, borderColor: C.line,
   },
-  hintText: { color: '#8a93a6', fontSize: 12, marginTop: 7, lineHeight: 17 },
+  hintText: { color: C.mut, fontSize: 12, marginTop: 7, lineHeight: 17 },
 
   chipList: { gap: 8 },
   chip: {
-    borderRadius: 12, padding: 12, backgroundColor: 'rgba(255,255,255,.06)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    borderRadius: 12, padding: 12, backgroundColor: C.line,
+    borderWidth: 1, borderColor: C.line,
   },
-  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: '#2e7dff' },
-  chipLabel: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  chipLabelOn: { color: '#5b9dff' },
-  chipHint: { color: '#8a93a6', fontSize: 12, marginTop: 2 },
+  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: C.blue },
+  chipLabel: { color: C.txt, fontSize: 14, fontWeight: '600' },
+  chipLabelOn: { color: C.blue2 },
+  chipHint: { color: C.mut, fontSize: 12, marginTop: 2 },
   chipHintOn: { color: '#a9c3ee' },
 
   rangerow: { marginTop: 14 },
   rlbl: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
-  rlblLabel: { color: '#c7cdda', fontSize: 13, fontWeight: '600' },
-  rlblVal: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  rlblLabel: { color: C.mut, fontSize: 13, fontWeight: '600' },
+  rlblVal: { color: C.txt, fontSize: 13, fontWeight: '700' },
 
-  calcbox: { backgroundColor: '#0e1626', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)', marginTop: 18 },
-  calcEmpty: { color: '#8a93a6', textAlign: 'center', fontSize: 13 },
+  calcbox: { backgroundColor: C.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.line, marginTop: 18 },
+  calcEmpty: { color: C.mut, textAlign: 'center', fontSize: 13 },
   cr: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 },
-  crLabel: { color: '#c7cdda', fontSize: 13.5 },
-  crMut: { color: '#5a6478', fontSize: 12 },
-  crVal: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  crBig: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,.08)', marginTop: 4, paddingTop: 10 },
-  crBigLabel: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  crBigVal: { color: '#2e7dff', fontSize: 17, fontWeight: '800' },
+  crLabel: { color: C.mut, fontSize: 13.5 },
+  crMut: { color: C.mut2, fontSize: 12 },
+  crVal: { color: C.txt, fontSize: 14, fontWeight: '700' },
+  crBig: { borderTopWidth: 1, borderTopColor: C.line, marginTop: 4, paddingTop: 10 },
+  crBigLabel: { color: C.txt, fontSize: 15, fontWeight: '700' },
+  crBigVal: { color: C.blue, fontSize: 17, fontWeight: '800' },
 
-  btn: { backgroundColor: '#2e7dff', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
-  btnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  btn: { backgroundColor: C.blue, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
+  btnText: { color: C.txt, fontSize: 14, fontWeight: '700' },
 });

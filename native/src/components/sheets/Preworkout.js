@@ -20,6 +20,7 @@ import { fmtNum, round1, dstr, uid, vibrate } from '../../lib/format.js';
 import { profileWeight } from '../../lib/macros.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
+import { C } from '../../theme';
 
 const PW = { meal: false, sensitive: false };
 
@@ -127,25 +128,25 @@ export default function Preworkout() {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 6 },
-  h3: { color: '#fff', fontSize: 15, fontWeight: '700', marginTop: 18, marginBottom: 8 },
-  mut: { color: '#8a93a6', fontSize: 14, lineHeight: 20, marginVertical: 10 },
-  sub: { color: '#8a93a6', fontSize: 13, lineHeight: 19, marginBottom: 16 },
-  blue: { color: '#2e7dff', fontWeight: '700' },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 6 },
+  h3: { color: C.txt, fontSize: 15, fontWeight: '700', marginTop: 18, marginBottom: 8 },
+  mut: { color: C.mut, fontSize: 14, lineHeight: 20, marginVertical: 10 },
+  sub: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 16 },
+  blue: { color: C.blue, fontWeight: '700' },
 
-  calcbox: { backgroundColor: '#0e1626', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
+  calcbox: { backgroundColor: C.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.line },
   cr: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  crLabel: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  crVal: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  warn: { color: '#e0a63a' },
-  ptext: { color: '#8a93a6', fontSize: 12.5, lineHeight: 18, marginTop: 8 },
+  crLabel: { color: C.txt, fontSize: 14, fontWeight: '600' },
+  crVal: { color: C.txt, fontSize: 16, fontWeight: '700' },
+  warn: { color: C.warn },
+  ptext: { color: C.mut, fontSize: 12.5, lineHeight: 18, marginTop: 8 },
 
-  btn: { backgroundColor: '#2e7dff', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 6 },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  btn: { backgroundColor: C.blue, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 6 },
+  btnText: { color: C.txt, fontWeight: '700', fontSize: 15 },
 
-  ghostBtn: { backgroundColor: 'rgba(255,255,255,.08)', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
-  ghostBtnText: { color: '#fff', fontWeight: '700', fontSize: 14, textAlign: 'center' },
+  ghostBtn: { backgroundColor: C.line, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
+  ghostBtnText: { color: C.txt, fontWeight: '700', fontSize: 14, textAlign: 'center' },
 
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  checkLabel: { color: '#c7cdda', fontSize: 13.5, flexShrink: 1 },
+  checkLabel: { color: C.mut, fontSize: 13.5, flexShrink: 1 },
 });

@@ -9,6 +9,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { openSheet } from '../lib/state.js';
 import { WDS, fmtD } from '../lib/format.js';
 import { sessionPRs } from '../lib/session.js';
+import { C } from '../theme';
 
 export default function SessionCard({ sess }) {
   const nsets = (sess.entries || []).reduce((a, e) => a + e.sets.length, 0);
@@ -33,17 +34,17 @@ export default function SessionCard({ sess }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#0e1626', borderRadius: 14, padding: 14, marginBottom: 8,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.card, borderRadius: 14, padding: 14, marginBottom: 8,
+    borderWidth: 1, borderColor: C.line,
   },
   top: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   badge: {
-    color: '#8a93a6', fontSize: 11, fontWeight: '700', backgroundColor: 'rgba(255,255,255,.06)',
+    color: C.mut, fontSize: 11, fontWeight: '700', backgroundColor: C.line,
     paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden',
   },
-  name: { color: '#fff', fontSize: 15, fontWeight: '700', flexShrink: 1 },
+  name: { color: C.txt, fontSize: 15, fontWeight: '700', flexShrink: 1 },
   pr: { marginLeft: 'auto', color: '#f5b942', fontSize: 12, fontWeight: '700' },
-  meta: { color: '#8a93a6', fontSize: 12, marginTop: 6 },
-  metaStrong: { color: '#c7cdda', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  exs: { color: '#8a93a6', fontSize: 11, marginTop: 6 },
+  meta: { color: C.mut, fontSize: 12, marginTop: 6 },
+  metaStrong: { color: C.mut, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  exs: { color: C.mut, fontSize: 11, marginTop: 6 },
 });

@@ -35,6 +35,7 @@ import { dstr, uid, round1, vibrate } from '../../lib/format.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
 import { pendingSlot } from '../../lib/session.js';
+import { C } from '../../theme';
 
 const FIELDS = [['sets', 'Series'], ['reps', 'Reps'], ['w', 'Peso kg']];
 
@@ -175,30 +176,30 @@ export default function VoiceLog({ items: initialItems, duration: initialDuratio
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 6 },
-  sub: { color: '#8a93a6', fontSize: 13, lineHeight: 19, marginBottom: 16 },
-  bold: { color: '#8a93a6', fontWeight: '700' },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 6 },
+  sub: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 16 },
+  bold: { color: C.mut, fontWeight: '700' },
 
-  card: { backgroundColor: '#0e1626', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)', marginBottom: 12 },
+  card: { backgroundColor: C.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.line, marginBottom: 12 },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   grow: { flex: 1 },
-  exName: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  exName: { color: C.txt, fontSize: 16, fontWeight: '700' },
   delBtn: { backgroundColor: 'rgba(224,60,60,.15)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },
-  delBtnText: { color: '#e05a5a', fontWeight: '700' },
+  delBtnText: { color: C.red, fontWeight: '700' },
 
   fieldsRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
   fieldCol: { flex: 1 },
-  stepLabel: { color: '#8a93a6', fontSize: 12, marginBottom: 6 },
-  stepLabelDur: { color: '#8a93a6', fontSize: 12, marginTop: 18 },
+  stepLabel: { color: C.mut, fontSize: 12, marginBottom: 6 },
+  stepLabelDur: { color: C.mut, fontSize: 12, marginTop: 18 },
 
-  step: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 12, overflow: 'hidden' },
+  step: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.line, borderRadius: 12, overflow: 'hidden' },
   stepBtn: { paddingHorizontal: 14, paddingVertical: 10 },
-  stepBtnText: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  stepBtnText: { color: C.txt, fontSize: 18, fontWeight: '700' },
   val: { flex: 1, alignItems: 'center' },
-  valInput: { color: '#fff', fontSize: 20, fontWeight: '700', textAlign: 'center', minWidth: 40, paddingVertical: 6 },
+  valInput: { color: C.txt, fontSize: 20, fontWeight: '700', textAlign: 'center', minWidth: 40, paddingVertical: 6 },
 
-  btn: { backgroundColor: '#2e7dff', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 16 },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  btnDim: { backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
-  btnDimText: { color: '#c7cdda', fontWeight: '700', fontSize: 14 },
+  btn: { backgroundColor: C.blue, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 16 },
+  btnText: { color: C.txt, fontWeight: '700', fontSize: 15 },
+  btnDim: { backgroundColor: C.line, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
+  btnDimText: { color: C.mut, fontWeight: '700', fontSize: 14 },
 });

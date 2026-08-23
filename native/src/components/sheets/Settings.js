@@ -30,6 +30,7 @@ import { S, bump, closeSheet, openSheet, saveCfg } from '../../lib/state.js';
 import { fmtMMSS } from '../../lib/format.js';
 import { computeMacros, applyComputedGoals } from '../../lib/macros.js';
 import { scheduleTomorrowReminder } from '../../lib/reminder.js';
+import { C } from '../../theme';
 
 function MacroPreview({ m }) {
   return (
@@ -252,47 +253,47 @@ export default function Settings() {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 6 },
-  h3: { color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginTop: 18, marginBottom: 8 },
-  mut: { color: '#8a93a6', fontSize: 13, lineHeight: 19, marginTop: 8 },
-  bold: { fontWeight: '700', color: '#c7cdda' },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 6 },
+  h3: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginTop: 18, marginBottom: 8 },
+  mut: { color: C.mut, fontSize: 13, lineHeight: 19, marginTop: 8 },
+  bold: { fontWeight: '700', color: C.mut },
 
   seg: { flexDirection: 'row', gap: 8 },
   segBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
   },
-  segBtnOn: { backgroundColor: '#2e7dff', borderColor: '#2e7dff' },
-  segBtnText: { color: '#c7cdda', fontSize: 14, fontWeight: '600' },
-  segBtnTextOn: { color: '#fff' },
+  segBtnOn: { backgroundColor: C.blue, borderColor: C.blue },
+  segBtnText: { color: C.mut, fontSize: 14, fontWeight: '600' },
+  segBtnTextOn: { color: C.txt },
 
-  step: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 12, overflow: 'hidden' },
+  step: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.line, borderRadius: 12, overflow: 'hidden' },
   stepBtn: { paddingHorizontal: 14, paddingVertical: 10 },
-  stepBtnText: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  stepBtnText: { color: C.txt, fontSize: 18, fontWeight: '700' },
   val: { flex: 1, alignItems: 'center', paddingVertical: 4 },
-  valText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  valAlt: { color: '#8a93a6', fontSize: 11, marginTop: 2 },
+  valText: { color: C.txt, fontSize: 16, fontWeight: '700' },
+  valAlt: { color: C.mut, fontSize: 11, marginTop: 2 },
 
-  calcbox: { backgroundColor: '#0e1626', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
-  calcEmpty: { color: '#8a93a6', textAlign: 'center', fontSize: 13 },
+  calcbox: { backgroundColor: C.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.line },
+  calcEmpty: { color: C.mut, textAlign: 'center', fontSize: 13 },
   cr: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 },
-  crLabel: { color: '#c7cdda', fontSize: 13.5 },
-  crMut: { color: '#5a6478', fontSize: 12 },
-  crVal: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  crBig: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,.08)', marginTop: 4, paddingTop: 10 },
-  crBigLabel: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  crBigVal: { color: '#2e7dff', fontSize: 17, fontWeight: '800' },
+  crLabel: { color: C.mut, fontSize: 13.5 },
+  crMut: { color: C.mut2, fontSize: 12 },
+  crVal: { color: C.txt, fontSize: 14, fontWeight: '700' },
+  crBig: { borderTopWidth: 1, borderTopColor: C.line, marginTop: 4, paddingTop: 10 },
+  crBigLabel: { color: C.txt, fontSize: 15, fontWeight: '700' },
+  crBigVal: { color: C.blue, fontSize: 17, fontWeight: '800' },
 
-  ghostBtn: { backgroundColor: 'rgba(255,255,255,.08)', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 10 },
-  ghostBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  ghostBtn: { backgroundColor: C.line, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 10 },
+  ghostBtnText: { color: C.txt, fontWeight: '700', fontSize: 13 },
 
   f4: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
   f4Item: { width: '47%' },
-  label: { color: '#8a93a6', fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
   input: {
-    backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
-    color: '#fff', fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
+    color: C.txt, fontSize: 15, borderWidth: 1, borderColor: C.line,
   },
 
-  version: { color: '#8a93a6', fontSize: 12, textAlign: 'center', marginTop: 24 },
+  version: { color: C.mut, fontSize: 12, textAlign: 'center', marginTop: 24 },
 });

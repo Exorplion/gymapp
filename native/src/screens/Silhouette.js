@@ -17,6 +17,7 @@ import { cuerpo } from '../lib/bodydata.js';
 import { groupStats, diasTexto } from '../lib/muscle.js';
 import { vibrate } from '../lib/format.js';
 import { S } from '../lib/state.js';
+import { C } from '../theme';
 
 /** Días → id del gradiente que le corresponde (ver <Defs> más abajo). */
 function tono(d) {
@@ -56,10 +57,10 @@ function Cara({ cara, days, etiqueta, sel, onPick }) {
           acá. */}
       <Defs>
         <LinearGradient id="sil-g0" x1="12%" y1="0%" x2="88%" y2="100%">
-          <Stop offset="0%" stopColor="#B9F8FF" /><Stop offset="45%" stopColor="#22D3EE" /><Stop offset="100%" stopColor="#0A6F88" />
+          <Stop offset="0%" stopColor="#B9F8FF" /><Stop offset="45%" stopColor={C.cyan} /><Stop offset="100%" stopColor="#0A6F88" />
         </LinearGradient>
         <LinearGradient id="sil-g1" x1="12%" y1="0%" x2="88%" y2="100%">
-          <Stop offset="0%" stopColor="#A9CEFF" /><Stop offset="45%" stopColor="#2E7DFF" /><Stop offset="100%" stopColor="#12315F" />
+          <Stop offset="0%" stopColor="#A9CEFF" /><Stop offset="45%" stopColor={C.blue} /><Stop offset="100%" stopColor="#12315F" />
         </LinearGradient>
         <LinearGradient id="sil-g2" x1="12%" y1="0%" x2="88%" y2="100%">
           <Stop offset="0%" stopColor="#5B7FB5" /><Stop offset="45%" stopColor="#2C4C86" /><Stop offset="100%" stopColor="#101E38" />
@@ -99,7 +100,7 @@ function Cara({ cara, days, etiqueta, sel, onPick }) {
             key={j}
             d={d}
             fill={`url(#${grad})`}
-            stroke={sel === z.cat ? '#2E7DFF' : 'rgba(2,5,12,.5)'}
+            stroke={sel === z.cat ? C.blue : 'rgba(2,5,12,.5)'}
             strokeWidth={sel === z.cat ? 4 : 1.4}
             strokeLinejoin="round"
           />
@@ -238,30 +239,30 @@ function MusclePop({ stats, onClose }) {
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center' },
   caja: { width: '100%', aspectRatio: 638 / 1260, maxHeight: 420 },
-  girar: { marginTop: 12, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 999, backgroundColor: '#0e1626' },
-  girarTexto: { color: '#8a93a6', fontSize: 13, fontWeight: '600' },
+  girar: { marginTop: 12, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 999, backgroundColor: C.card },
+  girarTexto: { color: C.mut, fontSize: 13, fontWeight: '600' },
 
   tapa: { flex: 1, backgroundColor: 'rgba(2,5,12,.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  pop: { width: '100%', maxWidth: 340, backgroundColor: '#0e1626', borderRadius: 16, padding: 16 },
+  pop: { width: '100%', maxWidth: 340, backgroundColor: C.card, borderRadius: 16, padding: 16 },
   popHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  popNombre: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  popCuando: { color: '#8a93a6', fontSize: 13, fontWeight: '600' },
-  popVacio: { color: '#8a93a6', fontSize: 13, lineHeight: 19 },
+  popNombre: { color: C.txt, fontSize: 18, fontWeight: '700' },
+  popCuando: { color: C.mut, fontSize: 13, fontWeight: '600' },
+  popVacio: { color: C.mut, fontSize: 13, lineHeight: 19 },
 
   popNums: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   popNum: { alignItems: 'center' },
-  popNumB: { color: '#fff', fontSize: 20, fontWeight: '700' },
-  popNumS: { color: '#8a93a6', fontSize: 11, marginTop: 2 },
+  popNumB: { color: C.txt, fontSize: 20, fontWeight: '700' },
+  popNumS: { color: C.mut, fontSize: 11, marginTop: 2 },
 
   popFibra: { marginBottom: 10 },
-  popFibraNombre: { color: '#fff', fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  popFibraNombre: { color: C.txt, fontSize: 13, fontWeight: '700', marginBottom: 4 },
   popRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-  popRowNombre: { color: '#8a93a6', fontSize: 13, flexShrink: 1, marginRight: 8 },
-  popRowN: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  popRowNombre: { color: C.mut, fontSize: 13, flexShrink: 1, marginRight: 8 },
+  popRowN: { color: C.txt, fontSize: 13, fontWeight: '600' },
 
-  popMejor: { color: '#8a93a6', fontSize: 12, marginTop: 8 },
-  popVolumen: { color: '#8a93a6', fontSize: 12, marginTop: 4 },
+  popMejor: { color: C.mut, fontSize: 12, marginTop: 8 },
+  popVolumen: { color: C.mut, fontSize: 12, marginTop: 4 },
 
   popCerrar: { marginTop: 14, alignSelf: 'flex-end', paddingVertical: 6, paddingHorizontal: 12 },
-  popCerrarTexto: { color: '#2E7DFF', fontSize: 13, fontWeight: '700' },
+  popCerrarTexto: { color: C.blue, fontSize: 13, fontWeight: '700' },
 });

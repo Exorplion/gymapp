@@ -7,6 +7,7 @@
 // el mismo campo `machine` de siempre, sólo una forma más fácil de llenarlo.
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { POLEA_FEEL } from '../lib/equip.js';
+import { C } from '../theme';
 
 export default function MachineField({ equip, machine, onChange }) {
   if (equip === 'polea') {
@@ -43,7 +44,7 @@ export default function MachineField({ equip, machine, onChange }) {
       <TextInput
         style={styles.input}
         placeholder="Life Fitness, Hammer, la del fondo…"
-        placeholderTextColor="#5a6478"
+        placeholderTextColor={C.mut2}
         value={machine}
         onChangeText={onChange}
       />
@@ -57,18 +58,18 @@ export default function MachineField({ equip, machine, onChange }) {
 
 const styles = StyleSheet.create({
   field: { marginTop: 16 },
-  label: { color: '#8a93a6', fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
   input: {
-    backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
-    color: '#fff', fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
+    color: C.txt, fontSize: 15, borderWidth: 1, borderColor: C.line,
   },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
   },
-  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: '#2e7dff' },
-  chipText: { color: '#c7cdda', fontSize: 13, fontWeight: '600' },
-  chipTextOn: { color: '#5b9dff' },
-  ptext: { color: '#8a93a6', fontSize: 13, lineHeight: 18, marginTop: 6 },
+  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: C.blue },
+  chipText: { color: C.mut, fontSize: 13, fontWeight: '600' },
+  chipTextOn: { color: C.blue2 },
+  ptext: { color: C.mut, fontSize: 13, lineHeight: 18, marginTop: 6 },
 });

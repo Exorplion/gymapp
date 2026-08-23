@@ -19,6 +19,7 @@ import { S, wDisplay, wStep } from '../lib/state.js';
 import { warmupSets, MOVILIDAD, DESCANSO, bloqueDe } from '../lib/warmup.js';
 import { lastDataFor } from '../lib/session.js';
 import { fmtMMSS } from '../lib/format.js';
+import { C } from '../theme';
 
 export default function WarmupCard({ ex, onListo, onSaltar }) {
   /* El peso de trabajo sale de lo que tengas cargado hoy y, si todavía no
@@ -81,19 +82,19 @@ export default function WarmupCard({ ex, onListo, onSaltar }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#0e1626',
+    backgroundColor: C.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,.08)',
+    borderColor: C.line,
     padding: 14,
     marginBottom: 12,
   },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  eyebrow: { color: '#8a93a6', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, flexShrink: 1 },
-  skip: { color: '#8a93a6', fontSize: 13, fontWeight: '700' },
+  eyebrow: { color: C.mut, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, flexShrink: 1 },
+  skip: { color: C.mut, fontSize: 13, fontWeight: '700' },
 
   mov: { marginBottom: 12 },
-  movItem: { color: '#c7cedd', fontSize: 13, lineHeight: 19 },
+  movItem: { color: C.mut, fontSize: 13, lineHeight: 19 },
 
   list: { marginBottom: 12 },
   row: {
@@ -102,27 +103,27 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,.06)',
+    borderBottomColor: C.line,
   },
   n: {
     width: 20, height: 20, borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,.08)',
-    color: '#fff', fontSize: 11, fontWeight: '800',
+    backgroundColor: C.line,
+    color: C.txt, fontSize: 11, fontWeight: '800',
     textAlign: 'center', lineHeight: 20,
   },
-  w: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  unit: { color: '#8a93a6', fontSize: 11, fontWeight: '600' },
-  x: { color: '#c7cedd', fontSize: 14, fontWeight: '600' },
-  pct: { color: '#8a93a6', fontSize: 12, fontWeight: '600', marginLeft: 'auto' },
+  w: { color: C.txt, fontSize: 16, fontWeight: '800' },
+  unit: { color: C.mut, fontSize: 11, fontWeight: '600' },
+  x: { color: C.mut, fontSize: 14, fontWeight: '600' },
+  pct: { color: C.mut, fontSize: 12, fontWeight: '600', marginLeft: 'auto' },
 
-  nota: { color: '#8a93a6', fontSize: 12.5, lineHeight: 18, marginBottom: 12 },
-  notaB: { color: '#fff', fontWeight: '700' },
+  nota: { color: C.mut, fontSize: 12.5, lineHeight: 18, marginBottom: 12 },
+  notaB: { color: C.txt, fontWeight: '700' },
 
   btn: {
-    backgroundColor: '#2e7dff',
+    backgroundColor: C.blue,
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
   },
-  btnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  btnText: { color: C.txt, fontSize: 14, fontWeight: '800' },
 });

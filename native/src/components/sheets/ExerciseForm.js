@@ -21,6 +21,7 @@ import { illusUrl } from '../../lib/illustrations.js';
 import IllusPick from '../IllusPick.js';
 import { norm } from '../../lib/format.js';
 import { recommendedExercises, saveExercise } from '../../lib/rutina-logic.js';
+import { C } from '../../theme';
 
 const CATALOG_CATS = [...new Set(EXCATALOG.map(e => e.c))];
 
@@ -74,7 +75,7 @@ export default function ExerciseForm({ wd, ex }) {
         value={name}
         onChangeText={handleNameChange}
         placeholder="Press banca"
-        placeholderTextColor="#5a6478"
+        placeholderTextColor={C.mut2}
         autoCorrect={false}
       />
       {acMatches.length > 0 && (
@@ -253,54 +254,54 @@ export default function ExerciseForm({ wd, ex }) {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 12 },
-  label: { color: '#8a93a6', fontSize: 12, fontWeight: '600', marginBottom: 6 },
-  mut: { color: '#8a93a6' },
-  warn: { color: '#e0a63a' },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 12 },
+  label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  mut: { color: C.mut },
+  warn: { color: C.warn },
   input: {
-    backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
-    color: '#fff', fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
+    color: C.txt, fontSize: 15, borderWidth: 1, borderColor: C.line,
   },
   acList: { marginTop: 4 },
   acItem: { paddingVertical: 8, paddingHorizontal: 4 },
-  acItemText: { color: '#c7cdda', fontSize: 14 },
-  eyebrow: { color: '#8a93a6', fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', marginTop: 16, marginBottom: 6 },
+  acItemText: { color: C.mut, fontSize: 14 },
+  eyebrow: { color: C.mut, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', marginTop: 16, marginBottom: 6 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingVertical: 7, paddingHorizontal: 13, borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
   },
-  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: '#2e7dff' },
+  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: C.blue },
   chipBlue: { borderColor: 'rgba(46,125,255,.5)' },
-  chipText: { color: '#c7cdda', fontSize: 13, fontWeight: '600' },
-  chipTextOn: { color: '#5b9dff' },
-  explorarLink: { color: '#5b9dff', fontSize: 13, fontWeight: '600' },
-  ptext: { color: '#8a93a6', fontSize: 12.5, lineHeight: 18, marginTop: 8 },
+  chipText: { color: C.mut, fontSize: 13, fontWeight: '600' },
+  chipTextOn: { color: C.blue2 },
+  explorarLink: { color: C.blue2, fontSize: 13, fontWeight: '600' },
+  ptext: { color: C.mut, fontSize: 12.5, lineHeight: 18, marginTop: 8 },
   row2: { flexDirection: 'row', gap: 12, marginTop: 14 },
   field: { flex: 1 },
   step: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   stepBtn: {
     width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
   },
-  stepBtnText: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  stepBtnText: { color: C.txt, fontSize: 18, fontWeight: '700' },
   stepVal: {
-    flex: 1, textAlign: 'center', color: '#fff', fontSize: 16, fontWeight: '700',
-    backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 10, paddingVertical: 8,
+    flex: 1, textAlign: 'center', color: C.txt, fontSize: 16, fontWeight: '700',
+    backgroundColor: C.line, borderRadius: 10, paddingVertical: 8,
   },
-  illusBox: { backgroundColor: 'rgba(255,255,255,.05)', borderRadius: 12, padding: 8, marginTop: 6 },
-  illusImg: { width: '100%', aspectRatio: 1.6, borderRadius: 8, backgroundColor: 'rgba(255,255,255,.06)' },
+  illusBox: { backgroundColor: C.line, borderRadius: 12, padding: 8, marginTop: 6 },
+  illusImg: { width: '100%', aspectRatio: 1.6, borderRadius: 8, backgroundColor: C.line },
   illusActs: { flexDirection: 'row', gap: 8, marginTop: 8 },
   ghostBtnSm: {
     paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line2,
   },
-  ghostBtnSmText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  ghostBtnSmText: { color: C.txt, fontSize: 13, fontWeight: '600' },
   ghostBtn: {
     marginTop: 6, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line2,
   },
-  ghostBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  saveBtn: { backgroundColor: '#2e7dff', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 20 },
-  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  ghostBtnText: { color: C.txt, fontSize: 14, fontWeight: '700' },
+  saveBtn: { backgroundColor: C.blue, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 20 },
+  saveBtnText: { color: C.txt, fontWeight: '700', fontSize: 15 },
 });

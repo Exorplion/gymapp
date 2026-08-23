@@ -33,12 +33,13 @@ import { computeMacros, GOAL_LABEL } from '../lib/macros.js';
 import { mealsOf, macroCls, nutriFeedback, frequentMeals, mealsBySlot, slotForTime } from '../lib/meals.js';
 import { idb } from '../lib/db.js';
 import { logMeal, addMealFromFood } from '../lib/meal-logic.js';
+import { C } from '../theme';
 
-const BLUE = '#2e7dff';
+const BLUE = C.blue;
 const GREEN = '#1fbf75';
 const AMBER = '#e0a63a';
 const RED = '#e0505a';
-const MUT = '#8a93a6';
+const MUT = C.mut;
 
 // 2*Math.PI*52 redondeado — mismo círculo (r=52) que el original, literal,
 // no fórmula (el original también lo tenía como "326.7" fijo).
@@ -140,11 +141,11 @@ export default function Nutricion() {
                   <Svg> separado sería invisible acá (ver docblock arriba). */}
               <Defs>
                 <LinearGradient id="kcalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <Stop offset="0%" stopColor="#5aa5ff" />
+                  <Stop offset="0%" stopColor={C.blue2} />
                   <Stop offset="100%" stopColor={BLUE} />
                 </LinearGradient>
               </Defs>
-              <Circle cx={60} cy={60} r={52} stroke="rgba(255,255,255,.08)" strokeWidth={10} fill="none" />
+              <Circle cx={60} cy={60} r={52} stroke={C.line} strokeWidth={10} fill="none" />
               <Circle
                 cx={60} cy={60} r={52}
                 stroke="url(#kcalGrad)" strokeWidth={10} fill="none"
@@ -291,79 +292,79 @@ function MacroBar({ label, val, goal, pct, color }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#05070d' },
+  container: { flex: 1, backgroundColor: C.bg },
   content: { padding: 18, paddingBottom: 40 },
   titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 16 },
-  title: { color: '#fff', fontSize: 28, fontWeight: '700' },
+  title: { color: C.txt, fontSize: 28, fontWeight: '700' },
   sub: { color: MUT, fontSize: 13 },
 
   grow: { flex: 1 },
   mutSm: { color: MUT, fontSize: 12.5 },
   mutXs: { color: MUT, fontSize: 11 },
 
-  profCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0e1626', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)', gap: 12, marginBottom: 12 },
+  profCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: C.line, gap: 12, marginBottom: 12 },
   pavatar: { fontSize: 26 },
-  pt: { color: '#fff', fontSize: 15, fontWeight: '700', marginBottom: 2 },
+  pt: { color: C.txt, fontSize: 15, fontWeight: '700', marginBottom: 2 },
   chev: { color: MUT, fontSize: 20 },
 
   datenav: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
-  miniBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#0e1626', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)', alignItems: 'center', justifyContent: 'center' },
+  miniBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
   miniBtnDisabled: { opacity: 0.4 },
   miniBtnSm: { width: 32, height: 32 },
   miniBtnActive: { borderColor: BLUE },
-  miniBtnText: { color: '#fff', fontSize: 18 },
+  miniBtnText: { color: C.txt, fontSize: 18 },
   miniBtnTextActive: { color: BLUE },
   dateMid: { flex: 1, alignItems: 'center' },
-  dateMidText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  dateMidText: { color: C.txt, fontSize: 15, fontWeight: '700' },
 
-  hero: { backgroundColor: '#0e1626', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)', marginBottom: 4 },
+  hero: { backgroundColor: C.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.line, marginBottom: 4 },
   kcalTop: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   kcalRing: { width: 104, height: 104, alignItems: 'center', justifyContent: 'center' },
   krVal: { position: 'absolute', alignItems: 'center' },
-  krN: { color: '#fff', fontSize: 24, fontWeight: '700' },
+  krN: { color: C.txt, fontSize: 24, fontWeight: '700' },
   krOf: { color: MUT, fontSize: 11 },
   kcalSide: { flex: 1 },
   heroEyebrow: { color: MUT, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
-  kcalBig: { color: '#fff', fontSize: 30, fontWeight: '700', marginTop: 2 },
+  kcalBig: { color: C.txt, fontSize: 30, fontWeight: '700', marginTop: 2 },
   kcalUnit: { fontSize: 14, color: MUT, fontWeight: '600' },
 
   macro3: { marginTop: 16, gap: 10 },
   mRow: {},
   mLbl: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  mLblText: { color: '#c7cdda', fontSize: 12.5 },
-  pbar: { height: 8, borderRadius: 5, backgroundColor: 'rgba(255,255,255,.08)', overflow: 'hidden' },
+  mLblText: { color: C.mut, fontSize: 12.5 },
+  pbar: { height: 8, borderRadius: 5, backgroundColor: C.line, overflow: 'hidden' },
   pbarFill: { height: '100%', borderRadius: 5 },
 
   fbRow: { flexDirection: 'row', gap: 8, marginTop: 14, alignItems: 'flex-start' },
   fdot: { width: 8, height: 8, borderRadius: 4, marginTop: 5 },
-  fbText: { color: '#c7cdda', fontSize: 13, lineHeight: 18 },
+  fbText: { color: C.mut, fontSize: 13, lineHeight: 18 },
   fbWarn: { color: AMBER, fontSize: 12.5, lineHeight: 17, marginTop: 2 },
 
   sect: { color: MUT, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 22, marginBottom: 8 },
   sectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 
   chipScroll: { marginBottom: 4 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: 'rgba(255,255,255,.06)', marginRight: 8 },
-  chipText: { color: '#c7cdda', fontSize: 13, fontWeight: '600' },
+  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: C.line, marginRight: 8 },
+  chipText: { color: C.mut, fontSize: 13, fontWeight: '600' },
   chipX: { color: MUT },
   chipBlue: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: 'rgba(46,125,255,.15)', borderWidth: 1, borderColor: 'rgba(46,125,255,.4)', marginRight: 8 },
   chipBlueText: { color: BLUE, fontSize: 13, fontWeight: '600' },
 
   addBtn: { marginTop: 18, backgroundColor: BLUE, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
-  addBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  addBtnText: { color: C.txt, fontSize: 15, fontWeight: '700' },
 
-  voiceBtn: { marginTop: 10, backgroundColor: '#0e1626', borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
-  voiceBtnText: { color: '#fff', fontSize: 15, fontWeight: '700', marginBottom: 2 },
+  voiceBtn: { marginTop: 10, backgroundColor: C.card, borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: C.line },
+  voiceBtnText: { color: C.txt, fontSize: 15, fontWeight: '700', marginBottom: 2 },
 
-  card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
+  card: { backgroundColor: C.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.line },
 
   slotBlock: { marginBottom: 12 },
   slotHead: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, paddingHorizontal: 2 },
-  slotLabel: { color: '#c7cdda', fontSize: 13, fontWeight: '700' },
+  slotLabel: { color: C.mut, fontSize: 13, fontWeight: '700' },
   slotKcal: { color: MUT, fontSize: 12.5 },
 
-  mealRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,.06)' },
-  mealName: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  mealRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line },
+  mealName: { color: C.txt, fontSize: 14, fontWeight: '600' },
   mealSub: { color: MUT, fontSize: 12, marginTop: 2 },
   mealItems: { color: '#6b7387', fontSize: 11.5, marginTop: 2 },
   mealDel: { paddingHorizontal: 8, paddingVertical: 4 },

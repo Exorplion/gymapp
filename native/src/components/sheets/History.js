@@ -10,6 +10,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { S, useStore } from '../../lib/state.js';
 import { groupSessionsByWeek } from '../../lib/session.js';
 import SessionCard from '../../screens/SessionCard.js';
+import { C } from '../../theme';
 
 export default function History() {
   useStore();
@@ -41,9 +42,9 @@ export default function History() {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  title: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  sub: { color: '#8a93a6', fontSize: 13, marginTop: 2, marginBottom: 14 },
-  card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
-  empty: { color: '#8a93a6', fontSize: 13 },
-  weekLabel: { color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginBottom: 6 },
+  title: { color: C.txt, fontSize: 18, fontWeight: '700' },
+  sub: { color: C.mut, fontSize: 13, marginTop: 2, marginBottom: 14 },
+  card: { backgroundColor: C.card, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: C.line },
+  empty: { color: C.mut, fontSize: 13 },
+  weekLabel: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginBottom: 6 },
 });

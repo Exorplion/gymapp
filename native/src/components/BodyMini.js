@@ -18,6 +18,7 @@ import Svg, { Path, G, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { cuerpo } from '../lib/bodydata.js';
 import { esGrupo, ZONA_DE } from '../lib/fibras.js';
 import { S } from '../lib/state.js';
+import { C } from '../theme';
 
 /** Las zonas que hay que encender para una lista de nombres.
 
@@ -126,5 +127,5 @@ const styles = StyleSheet.create({
   svgBox: { flex: 1, aspectRatio: 638 / 1260 },
   leyenda: { marginTop: 10, alignItems: 'center' },
   tagP: { color: '#B9F8FF', fontSize: 13, fontWeight: '700', textAlign: 'center' },
-  tagS: { color: '#8a93a6', fontSize: 12, marginTop: 2, textAlign: 'center' },
+  tagS: { color: C.mut, fontSize: 12, marginTop: 2, textAlign: 'center' },
 });

@@ -23,6 +23,7 @@ import { uid, dstr } from '../../lib/format.js';
 import { applyComputedGoals } from '../../lib/macros.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
+import { C } from '../../theme';
 
 export default function BodyForm() {
   const last = S.body[S.body.length - 1] || {};
@@ -73,7 +74,7 @@ export default function BodyForm() {
           style={styles.input}
           keyboardType="decimal-pad"
           placeholder={String(last.weight ?? '70.0')}
-          placeholderTextColor="#5a6478"
+          placeholderTextColor={C.mut2}
           value={weight}
           onChangeText={setWeight}
         />
@@ -86,7 +87,7 @@ export default function BodyForm() {
             style={styles.input}
             keyboardType="decimal-pad"
             placeholder={String(last.waist ?? '—')}
-            placeholderTextColor="#5a6478"
+            placeholderTextColor={C.mut2}
             value={waist}
             onChangeText={setWaist}
           />
@@ -97,7 +98,7 @@ export default function BodyForm() {
             style={styles.input}
             keyboardType="decimal-pad"
             placeholder={String(last.arm ?? '—')}
-            placeholderTextColor="#5a6478"
+            placeholderTextColor={C.mut2}
             value={arm}
             onChangeText={setArm}
           />
@@ -111,7 +112,7 @@ export default function BodyForm() {
             style={styles.input}
             keyboardType="decimal-pad"
             placeholder={String(last.chest ?? '—')}
-            placeholderTextColor="#5a6478"
+            placeholderTextColor={C.mut2}
             value={chest}
             onChangeText={setChest}
           />
@@ -122,7 +123,7 @@ export default function BodyForm() {
             style={styles.input}
             keyboardType="decimal-pad"
             placeholder={String(last.leg ?? '—')}
-            placeholderTextColor="#5a6478"
+            placeholderTextColor={C.mut2}
             value={leg}
             onChangeText={setLeg}
           />
@@ -138,21 +139,21 @@ export default function BodyForm() {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 14 },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 14 },
   field: { marginBottom: 14 },
   row2: { flexDirection: 'row', gap: 10 },
   half: { flex: 1 },
-  label: { color: '#8a93a6', fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
   input: {
-    backgroundColor: 'rgba(255,255,255,.06)',
+    backgroundColor: C.line,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 11,
-    color: '#fff',
+    color: C.txt,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,.08)',
+    borderColor: C.line,
   },
-  btn: { backgroundColor: '#2e7dff', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 6 },
-  btnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  btn: { backgroundColor: C.blue, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 6 },
+  btnText: { color: C.txt, fontSize: 14, fontWeight: '700' },
 });

@@ -10,12 +10,13 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { streakHeatmap, currentStreak, bestStreak } from '../../lib/streak.js';
 import { fmtDFull } from '../../lib/format.js';
+import { C } from '../../theme';
 
-const GREEN = '#1fbf75';
+const GREEN = C.ok;
 
 export default function StreakDetail() {
   const { days, pct } = streakHeatmap();
-  const colorOf = status => status === 'done' ? GREEN : status === 'miss' ? '#e0505a' : 'rgba(255,255,255,.08)';
+  const colorOf = status => status === 'done' ? GREEN : status === 'miss' ? C.red : C.line;
 
   return (
     <View style={styles.wrap}>
@@ -43,12 +44,12 @@ export default function StreakDetail() {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 14 },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 14 },
   stats: { flexDirection: 'row', justifyContent: 'space-between' },
   stat: { alignItems: 'center' },
-  n: { color: '#fff', fontSize: 22, fontWeight: '700' },
-  l: { color: '#8a93a6', fontSize: 11, marginTop: 2 },
+  n: { color: C.txt, fontSize: 22, fontWeight: '700' },
+  l: { color: C.mut, fontSize: 11, marginTop: 2 },
   heatGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 20 },
   cell: { width: '11.5%', aspectRatio: 1, borderRadius: 3 },
-  footer: { color: '#8a93a6', fontSize: 12, lineHeight: 17, marginTop: 14 },
+  footer: { color: C.mut, fontSize: 12, lineHeight: 17, marginTop: 14 },
 });

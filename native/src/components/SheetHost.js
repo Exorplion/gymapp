@@ -23,6 +23,7 @@ import { useCallback } from 'react';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Dimensions } from 'react-native';
 import { S, useStore, closeSheet } from '../lib/state.js';
+import { C } from '../theme';
 import Guide from './sheets/Guide.js';
 import StreakDetail from './sheets/StreakDetail.js';
 import ReorderHoy from './sheets/ReorderHoy.js';
@@ -114,8 +115,8 @@ export default function SheetHost() {
       enablePanDownToClose
       backdropComponent={renderBackdrop}
       onClose={handleClose}
-      backgroundStyle={{ backgroundColor: '#0e1626' }}
-      handleIndicatorStyle={{ backgroundColor: 'rgba(255,255,255,.3)' }}
+      backgroundStyle={{ backgroundColor: C.card }}
+      handleIndicatorStyle={{ backgroundColor: C.line2 }}
     >
       <BottomSheetScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         <SheetContent sheet={sheet} />

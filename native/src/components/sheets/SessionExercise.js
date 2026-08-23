@@ -19,6 +19,7 @@ import { recommendedExercises } from '../../lib/rutina-logic.js';
 import { EQUIP, isMachineBound } from '../../lib/equip.js';
 import MachineField from '../MachineField.js';
 import { toast } from '../../lib/toast.js';
+import { C } from '../../theme';
 
 export default function SessionExercise({ wd, exId = null }) {
   const esCambio = !!exId;
@@ -95,7 +96,7 @@ export default function SessionExercise({ wd, exId = null }) {
           value={name}
           onChangeText={setName}
           placeholder="Remo en polea"
-          placeholderTextColor="#5a6478"
+          placeholderTextColor={C.mut2}
           autoComplete="off"
           selectTextOnFocus
         />
@@ -193,39 +194,39 @@ export default function SessionExercise({ wd, exId = null }) {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 4 },
-  sub: { color: '#8a93a6', fontSize: 13, lineHeight: 19, marginBottom: 14 },
-  blue: { color: '#5b9dff', fontWeight: '700' },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 4 },
+  sub: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 14 },
+  blue: { color: C.blue2, fontWeight: '700' },
 
-  calcbox: { backgroundColor: '#0e1626', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)', marginBottom: 14 },
-  calcText: { color: '#c7cdda', fontSize: 13.5, lineHeight: 19 },
+  calcbox: { backgroundColor: C.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.line, marginBottom: 14 },
+  calcText: { color: C.mut, fontSize: 13.5, lineHeight: 19 },
 
   field: { marginTop: 14 },
-  label: { color: '#8a93a6', fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
   input: {
-    backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
-    color: '#fff', fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
+    color: C.txt, fontSize: 15, borderWidth: 1, borderColor: C.line,
   },
 
   f2: { flexDirection: 'row', gap: 12 },
   f2item: { flex: 1 },
 
   eyebrow: {
-    color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase',
+    color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase',
     letterSpacing: 0.4, marginTop: 18, marginBottom: 8,
   },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingVertical: 8, paddingHorizontal: 12, borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
   },
-  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: '#2e7dff' },
-  chipText: { color: '#c7cdda', fontSize: 13, fontWeight: '600' },
-  chipTextOn: { color: '#5b9dff' },
+  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: C.blue },
+  chipText: { color: C.mut, fontSize: 13, fontWeight: '600' },
+  chipTextOn: { color: C.blue2 },
 
-  btn: { backgroundColor: '#2e7dff', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
-  btnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  btnDim: { backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
-  btnDimText: { color: '#8a93a6', fontSize: 14, fontWeight: '600' },
+  btn: { backgroundColor: C.blue, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
+  btnText: { color: C.txt, fontSize: 14, fontWeight: '700' },
+  btnDim: { backgroundColor: C.line, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
+  btnDimText: { color: C.mut, fontSize: 14, fontWeight: '600' },
 });

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { subscribeToast } from '../lib/toast.js';
+import { C } from '../theme';
 
 export default function Toast() {
   const [state, setState] = useState(null);
@@ -32,14 +33,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     maxWidth: '90%',
-    backgroundColor: '#0e1626',
+    backgroundColor: C.card,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,.1)',
+    borderColor: C.line2,
   },
-  msg: { color: '#fff', fontSize: 13, fontWeight: '600', flexShrink: 1 },
+  msg: { color: C.txt, fontSize: 13, fontWeight: '600', flexShrink: 1 },
   action: { paddingVertical: 4, paddingHorizontal: 8 },
-  actionText: { color: '#5b9dff', fontSize: 13, fontWeight: '700' },
+  actionText: { color: C.blue2, fontSize: 13, fontWeight: '700' },
 });

@@ -32,6 +32,7 @@ import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
 import { searchFoods, macrosFor, defaultGrams } from '../../lib/foodsearch.js';
 import { SLOTS, slotForTime } from '../../lib/meals.js';
+import { C } from '../../theme';
 
 const ahora = () => new Date().toTimeString().slice(0, 5);
 
@@ -110,7 +111,7 @@ export default function MealForm({ slot: slotInicial }) {
           value={q}
           onChangeText={setQ}
           placeholder="🔍 Buscá un alimento"
-          placeholderTextColor="#5a6478"
+          placeholderTextColor={C.mut2}
           autoComplete="off"
         />
       </View>
@@ -221,19 +222,19 @@ function AlimentoNuevo({ nombre, onListo, onCancel }) {
       <View style={styles.f2}>
         <View style={[styles.field, styles.half]}>
           <Text style={styles.label}>Calorías</Text>
-          <TextInput style={styles.input} keyboardType="numeric" placeholder="0" placeholderTextColor="#5a6478" value={kcal} onChangeText={setKcal} />
+          <TextInput style={styles.input} keyboardType="numeric" placeholder="0" placeholderTextColor={C.mut2} value={kcal} onChangeText={setKcal} />
         </View>
         <View style={[styles.field, styles.half]}>
           <Text style={styles.label}>Proteína (g)</Text>
-          <TextInput style={styles.input} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#5a6478" value={prot} onChangeText={setProt} />
+          <TextInput style={styles.input} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={C.mut2} value={prot} onChangeText={setProt} />
         </View>
         <View style={[styles.field, styles.half]}>
           <Text style={styles.label}>Carbos (g)</Text>
-          <TextInput style={styles.input} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#5a6478" value={carbs} onChangeText={setCarbs} />
+          <TextInput style={styles.input} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={C.mut2} value={carbs} onChangeText={setCarbs} />
         </View>
         <View style={[styles.field, styles.half]}>
           <Text style={styles.label}>Grasa (g)</Text>
-          <TextInput style={styles.input} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#5a6478" value={fat} onChangeText={setFat} />
+          <TextInput style={styles.input} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={C.mut2} value={fat} onChangeText={setFat} />
         </View>
       </View>
       <Pressable style={styles.btn} onPress={crear}>
@@ -248,63 +249,63 @@ function AlimentoNuevo({ nombre, onListo, onCancel }) {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 14 },
-  sub: { color: '#8a93a6', fontSize: 13, lineHeight: 19, marginBottom: 14 },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 14 },
+  sub: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 14 },
 
-  seg: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,.05)', borderRadius: 12, padding: 4, marginBottom: 14 },
+  seg: { flexDirection: 'row', backgroundColor: C.line, borderRadius: 12, padding: 4, marginBottom: 14 },
   segBtn: { flex: 1, paddingVertical: 8, borderRadius: 9, alignItems: 'center' },
-  segBtnOn: { backgroundColor: '#2e7dff' },
-  segBtnText: { color: '#8a93a6', fontSize: 12.5, fontWeight: '600' },
-  segBtnTextOn: { color: '#fff' },
+  segBtnOn: { backgroundColor: C.blue },
+  segBtnText: { color: C.mut, fontSize: 12.5, fontWeight: '600' },
+  segBtnTextOn: { color: C.txt },
 
   field: { marginBottom: 14 },
-  label: { color: '#8a93a6', fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
   input: {
-    backgroundColor: 'rgba(255,255,255,.06)',
+    backgroundColor: C.line,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 11,
-    color: '#fff',
+    color: C.txt,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,.08)',
+    borderColor: C.line,
   },
 
   hits: { marginBottom: 6 },
   hit: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,.05)', borderRadius: 12,
+    backgroundColor: C.line, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8,
   },
   hitNuevo: { backgroundColor: 'rgba(46,125,255,.12)' },
   grow: { flex: 1 },
   hitNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  hitName: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  tag: { color: '#2e7dff', fontSize: 11, fontWeight: '700' },
-  hitSub: { color: '#8a93a6', fontSize: 12, marginLeft: 8 },
+  hitName: { color: C.txt, fontSize: 14, fontWeight: '600' },
+  tag: { color: C.blue, fontSize: 11, fontWeight: '700' },
+  hitSub: { color: C.mut, fontSize: 12, marginLeft: 8 },
 
-  sect: { color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 14, marginBottom: 8 },
-  card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
-  cartRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,.06)', gap: 8 },
-  cartName: { color: '#fff', fontSize: 13.5, fontWeight: '600', flex: 1 },
+  sect: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 14, marginBottom: 8 },
+  card: { backgroundColor: C.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.line },
+  cartRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line, gap: 8 },
+  cartName: { color: C.txt, fontSize: 13.5, fontWeight: '600', flex: 1 },
   cartInput: {
-    width: 56, backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 8,
-    paddingHorizontal: 8, paddingVertical: 6, color: '#fff', fontSize: 13,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,.08)', textAlign: 'right',
+    width: 56, backgroundColor: C.line, borderRadius: 8,
+    paddingHorizontal: 8, paddingVertical: 6, color: C.txt, fontSize: 13,
+    borderWidth: 1, borderColor: C.line, textAlign: 'right',
   },
-  cartUnit: { color: '#8a93a6', fontSize: 12 },
-  cartKcal: { color: '#8a93a6', fontSize: 12.5, minWidth: 56, textAlign: 'right' },
+  cartUnit: { color: C.mut, fontSize: 12 },
+  cartKcal: { color: C.mut, fontSize: 12.5, minWidth: 56, textAlign: 'right' },
   miniRed: { paddingHorizontal: 6, paddingVertical: 4 },
-  miniRedText: { color: '#e0505a', fontSize: 15 },
+  miniRedText: { color: C.red, fontSize: 15 },
   cartTotal: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 10 },
-  cartTotalLabel: { color: '#fff', fontSize: 13.5, fontWeight: '700' },
-  cartTotalKcal: { color: '#2e7dff', fontSize: 14.5, fontWeight: '700' },
-  cartMacros: { color: '#8a93a6', fontSize: 12.5, textAlign: 'right', marginTop: 2 },
+  cartTotalLabel: { color: C.txt, fontSize: 13.5, fontWeight: '700' },
+  cartTotalKcal: { color: C.blue, fontSize: 14.5, fontWeight: '700' },
+  cartMacros: { color: C.mut, fontSize: 12.5, textAlign: 'right', marginTop: 2 },
 
   f2: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   half: { flexBasis: '47%', flexGrow: 1 },
 
-  btn: { backgroundColor: '#2e7dff', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 6 },
-  btnDim: { backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
-  btnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  btn: { backgroundColor: C.blue, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 6 },
+  btnDim: { backgroundColor: C.line, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
+  btnText: { color: C.txt, fontSize: 14, fontWeight: '700' },
 });

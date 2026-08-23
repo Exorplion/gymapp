@@ -13,6 +13,7 @@ import { TEMPLATES, applyTemplate } from '../lib/templates.js';
 import {
   routineStats, routineName, applyLibRoutine, deleteLibRoutine, saveCurrentAsLib, startBlank,
 } from '../lib/rutina-logic.js';
+import { C } from '../theme';
 
 // Etapa 3 interceptaba openSheet('confirm', {...}) con un Alert.alert nativo
 // (no había sistema de sheets todavía). Etapa 5a Task 1/3 ya lo resuelve de
@@ -181,7 +182,7 @@ function LibrarySave({ onDone }) {
           value={name}
           onChangeText={setName}
           placeholder="Mi rutina"
-          placeholderTextColor="#8a93a6"
+          placeholderTextColor={C.mut}
         />
       </View>
       <View style={styles.btnRow}>
@@ -197,41 +198,41 @@ function LibrarySave({ onDone }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#05070d' },
+  container: { flex: 1, backgroundColor: C.bg },
   scrollContent: { padding: 18, paddingBottom: 40 },
   backBtn: { alignSelf: 'flex-start', marginBottom: 12 },
-  backBtnText: { color: '#8a93a6', fontSize: 14, fontWeight: '600' },
-  title: { color: '#fff', fontSize: 24, fontWeight: '700' },
-  sub: { color: '#8a93a6', fontSize: 13, marginTop: 6, marginBottom: 16, lineHeight: 18 },
-  h3: { color: '#fff', fontSize: 15, fontWeight: '700', marginTop: 20, marginBottom: 8 },
-  ghostBtn: { paddingVertical: 12, alignItems: 'center', borderRadius: 10, backgroundColor: 'rgba(255,255,255,.06)', marginBottom: 4 },
-  ghostBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  card: { backgroundColor: '#0e1626', borderRadius: 14, padding: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
+  backBtnText: { color: C.mut, fontSize: 14, fontWeight: '600' },
+  title: { color: C.txt, fontSize: 24, fontWeight: '700' },
+  sub: { color: C.mut, fontSize: 13, marginTop: 6, marginBottom: 16, lineHeight: 18 },
+  h3: { color: C.txt, fontSize: 15, fontWeight: '700', marginTop: 20, marginBottom: 8 },
+  ghostBtn: { paddingVertical: 12, alignItems: 'center', borderRadius: 10, backgroundColor: C.line, marginBottom: 4 },
+  ghostBtnText: { color: C.txt, fontSize: 13, fontWeight: '600' },
+  card: { backgroundColor: C.card, borderRadius: 14, padding: 6, borderWidth: 1, borderColor: C.line },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 8 },
   rowGrow: { flex: 1 },
-  rowTitle: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  rowTitle: { color: C.txt, fontSize: 14, fontWeight: '600' },
   tag: { color: '#a78bfa', fontSize: 11, fontWeight: '700' },
-  rowSub: { color: '#8a93a6', fontSize: 12, marginTop: 2 },
+  rowSub: { color: C.mut, fontSize: 12, marginTop: 2 },
   miniBtnRed: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(248,113,113,.12)' },
   miniBtnRedText: { color: '#f87171', fontSize: 13, fontWeight: '700' },
-  tmplHint: { color: '#8a93a6', fontSize: 12.5, marginBottom: 10 },
-  tmplCard: { backgroundColor: '#0e1626', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)', padding: 14, marginBottom: 10 },
+  tmplHint: { color: C.mut, fontSize: 12.5, marginBottom: 10 },
+  tmplCard: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 14, marginBottom: 10 },
   tmplRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  tmplName: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  tmplMeta: { color: '#8a93a6', fontSize: 12.5, marginTop: 2 },
-  tmplFreq: { color: '#5b9dff', fontSize: 12, marginTop: 3, fontWeight: '600' },
-  useBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: 'rgba(255,255,255,.08)' },
-  useBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  blankCard: { borderRadius: 14, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,.15)', padding: 16, marginTop: 4 },
-  blankTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  blankSub: { color: '#8a93a6', fontSize: 13, marginBottom: 12 },
-  smallGhostBtn: { paddingVertical: 10, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,.15)' },
-  smallGhostBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  tmplName: { color: C.txt, fontSize: 17, fontWeight: '700' },
+  tmplMeta: { color: C.mut, fontSize: 12.5, marginTop: 2 },
+  tmplFreq: { color: C.blue2, fontSize: 12, marginTop: 3, fontWeight: '600' },
+  useBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: C.line },
+  useBtnText: { color: C.txt, fontSize: 13, fontWeight: '600' },
+  blankCard: { borderRadius: 14, borderWidth: 1, borderStyle: 'dashed', borderColor: C.line2, padding: 16, marginTop: 4 },
+  blankTitle: { color: C.txt, fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  blankSub: { color: C.mut, fontSize: 13, marginBottom: 12 },
+  smallGhostBtn: { paddingVertical: 10, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: C.line2 },
+  smallGhostBtnText: { color: C.txt, fontSize: 13, fontWeight: '600' },
   field: { marginBottom: 16 },
-  fieldLabel: { color: '#8a93a6', fontSize: 12, fontWeight: '600', marginBottom: 6 },
-  fieldInput: { color: '#fff', fontSize: 15, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, backgroundColor: 'rgba(255,255,255,.06)' },
+  fieldLabel: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  fieldInput: { color: C.txt, fontSize: 15, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, backgroundColor: C.line },
   btnRow: { flexDirection: 'row', gap: 10 },
-  btn: { flex: 1, paddingVertical: 13, alignItems: 'center', borderRadius: 12, backgroundColor: 'rgba(255,255,255,.08)' },
-  btnGlass: { flex: 1, paddingVertical: 13, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,.15)' },
-  btnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  btn: { flex: 1, paddingVertical: 13, alignItems: 'center', borderRadius: 12, backgroundColor: C.line },
+  btnGlass: { flex: 1, paddingVertical: 13, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.line2 },
+  btnText: { color: C.txt, fontSize: 13, fontWeight: '600' },
 });

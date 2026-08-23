@@ -25,13 +25,16 @@ import { equipLabel, exKey } from '../../lib/equip.js';
 import { toast } from '../../lib/toast.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.js';
+import { C } from '../../theme';
 
 // Colores del tema oscuro ya establecido en esta migración.
-const GREEN = '#1fbf75';
-const WARN = '#e0a23a';
-const BLUE = '#2e7dff';
+// GOLD (PR) no tiene token equivalente en theme.js — se deja sin migrar
+// (decorativo, sin rol claro entre los tokens existentes).
+const GREEN = C.ok;
+const WARN = C.warn;
+const BLUE = C.blue;
 const GOLD = '#e0b23a';
-const MUT = '#8a93a6';
+const MUT = C.mut;
 
 // Riel de color por veredicto: sube = mejora, baja = regresión, igual/nuevo =
 // neutro, pr = récord. Los colores concretos son elección de esta migración;
@@ -324,12 +327,12 @@ function confirmDel(id) {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 4 },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 4 },
   sub: { color: MUT, fontSize: 13, marginBottom: 14 },
 
   stats: { flexDirection: 'row', justifyContent: 'space-between' },
   stat: { alignItems: 'center' },
-  n: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  n: { color: C.txt, fontSize: 20, fontWeight: '700' },
   l: { color: MUT, fontSize: 11, marginTop: 2 },
 
   prCard: {
@@ -338,15 +341,15 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(224,178,58,.3)',
   },
   prTroph: { fontSize: 26 },
-  prTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  prTitle: { color: C.txt, fontSize: 15, fontWeight: '700' },
   prText: { color: MUT, fontSize: 12, marginTop: 2 },
 
   pinBox: {
     marginTop: 16, backgroundColor: 'rgba(46,125,255,.1)', borderRadius: 14, padding: 14,
     borderWidth: 1, borderColor: 'rgba(46,125,255,.25)',
   },
-  pinText: { color: '#c7cdda', fontSize: 13, lineHeight: 19, marginBottom: 12 },
-  pinBold: { color: '#5b9dff', fontWeight: '700' },
+  pinText: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 12 },
+  pinBold: { color: C.blue2, fontWeight: '700' },
   btnRow: { flexDirection: 'row', gap: 10 },
 
   skipNote: { flexDirection: 'row', gap: 8, marginTop: 14, alignItems: 'flex-start' },
@@ -361,19 +364,19 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   chipBlue: {
     paddingVertical: 8, paddingHorizontal: 12, borderRadius: 16,
-    backgroundColor: 'rgba(46,125,255,.12)', borderWidth: 1, borderColor: '#2e7dff',
+    backgroundColor: 'rgba(46,125,255,.12)', borderWidth: 1, borderColor: C.blue,
   },
-  chipBlueText: { color: '#5b9dff', fontSize: 13, fontWeight: '600' },
+  chipBlueText: { color: C.blue2, fontSize: 13, fontWeight: '600' },
 
   btn: { backgroundColor: BLUE, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
   btnOk: { backgroundColor: GREEN },
-  btnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  btnText: { color: C.txt, fontSize: 14, fontWeight: '700' },
 
   btnGhost: {
     borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 14,
-    backgroundColor: 'rgba(255,255,255,.06)',
+    backgroundColor: C.line,
   },
-  btnGhostText: { color: '#c7cdda', fontSize: 14, fontWeight: '600' },
+  btnGhostText: { color: C.mut, fontSize: 14, fontWeight: '600' },
 
   ptextCenter: { color: MUT, fontSize: 12, textAlign: 'center', marginTop: 8 },
 
@@ -381,18 +384,18 @@ const styles = StyleSheet.create({
     borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 14,
     backgroundColor: 'rgba(224,80,90,.12)', borderWidth: 1, borderColor: 'rgba(224,80,90,.35)',
   },
-  btnDangerText: { color: '#e0505a', fontSize: 13, fontWeight: '700' },
+  btnDangerText: { color: C.red, fontSize: 13, fontWeight: '700' },
 
   btnGhostSm: {
     borderRadius: 10, paddingVertical: 9, paddingHorizontal: 12, alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,.06)', marginTop: 8,
+    backgroundColor: C.line, marginTop: 8,
   },
-  btnGhostSmText: { color: '#c7cdda', fontSize: 13, fontWeight: '600' },
+  btnGhostSmText: { color: C.mut, fontSize: 13, fontWeight: '600' },
   btnSm: { backgroundColor: BLUE, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14, alignItems: 'center' },
-  btnSmText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  btnSmText: { color: C.txt, fontSize: 13, fontWeight: '700' },
 
   entryCard: {
-    backgroundColor: 'rgba(255,255,255,.05)', borderRadius: 14, padding: 14, marginBottom: 12,
+    backgroundColor: C.line, borderRadius: 14, padding: 14, marginBottom: 12,
     borderLeftWidth: 4,
   },
   entryTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -401,43 +404,43 @@ const styles = StyleSheet.create({
   },
   eyebrowWarn: { color: WARN },
   eqTag: {
-    color: '#c7cdda', fontSize: 11, fontWeight: '600', backgroundColor: 'rgba(255,255,255,.08)',
+    color: C.mut, fontSize: 11, fontWeight: '600', backgroundColor: C.line,
     borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2,
   },
   entryPr: { fontSize: 15 },
 
   dcardHead: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 8 },
-  dcardTitle: { color: '#fff', fontSize: 15, fontWeight: '700', flex: 1 },
-  entryNameEdit: { color: '#fff', fontSize: 15, fontWeight: '700', flex: 1 },
+  dcardTitle: { color: C.txt, fontSize: 15, fontWeight: '700', flex: 1 },
+  entryNameEdit: { color: C.txt, fontSize: 15, fontWeight: '700', flex: 1 },
   pen: { color: MUT, fontSize: 12 },
 
   miniRed: {
     width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(224,80,90,.14)',
   },
-  miniRedText: { color: '#e0505a', fontSize: 12, fontWeight: '700' },
+  miniRedText: { color: C.red, fontSize: 12, fontWeight: '700' },
 
   setEdit: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   setEditI: { color: MUT, fontSize: 12, width: 16 },
   setEditInput: {
-    backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7,
-    color: '#fff', fontSize: 14, width: 64, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7,
+    color: C.txt, fontSize: 14, width: 64, borderWidth: 1, borderColor: C.line,
   },
   setEditU: { color: MUT, fontSize: 12 },
 
   loads: { marginTop: 10, gap: 10 },
   load: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  kg: { color: '#fff', fontSize: 20, fontWeight: '700', minWidth: 64 },
+  kg: { color: C.txt, fontSize: 20, fontWeight: '700', minWidth: 64 },
   kgSmall: { fontSize: 12, color: MUT, fontWeight: '600' },
   reps: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, flex: 1 },
   rep: { alignItems: 'center' },
   repS: { color: MUT, fontSize: 10 },
-  repR: { color: '#c7cdda', fontSize: 13, fontWeight: '700' },
+  repR: { color: C.mut, fontSize: 13, fontWeight: '700' },
   repRSmall: { fontSize: 10, color: MUT, fontWeight: '500' },
 
   dcardFoot: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12,
-    paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,.06)',
+    paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line,
   },
   dcardFootText: { color: MUT, fontSize: 12 },
   txtOk: { color: GREEN, fontSize: 12, fontWeight: '700' },

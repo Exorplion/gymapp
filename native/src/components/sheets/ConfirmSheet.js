@@ -6,6 +6,7 @@
 // 'confirm' directamente, sin interceptar nada.
 import { Text, View, Pressable, StyleSheet } from 'react-native';
 import { closeSheet } from '../../lib/state.js';
+import { C } from '../../theme';
 
 export default function ConfirmSheet({ title, body, confirmLabel, onConfirm, onCancel }) {
   function cancel() { if (onCancel) onCancel(); else closeSheet(); }
@@ -28,11 +29,11 @@ export default function ConfirmSheet({ title, body, confirmLabel, onConfirm, onC
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 10 },
-  body: { color: '#8a93a6', fontSize: 14, lineHeight: 20, marginBottom: 18 },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 10 },
+  body: { color: C.mut, fontSize: 14, lineHeight: 20, marginBottom: 18 },
   row: { flexDirection: 'row', gap: 10 },
-  ghostBtn: { flex: 1, paddingVertical: 13, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,.15)' },
-  ghostBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  dangerBtn: { flex: 1, paddingVertical: 13, alignItems: 'center', borderRadius: 12, backgroundColor: '#e0505a' },
-  dangerBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  ghostBtn: { flex: 1, paddingVertical: 13, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.line2 },
+  ghostBtnText: { color: C.txt, fontSize: 13, fontWeight: '600' },
+  dangerBtn: { flex: 1, paddingVertical: 13, alignItems: 'center', borderRadius: 12, backgroundColor: C.red },
+  dangerBtnText: { color: C.txt, fontSize: 13, fontWeight: '700' },
 });

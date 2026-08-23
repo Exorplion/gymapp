@@ -8,6 +8,7 @@ import { S, useStore, bump, openSheet } from '../lib/state.js';
 import { WDS, MO } from '../lib/format.js';
 import { pendingSlot, sessionForSlot } from '../lib/session.js';
 import { daysSinceAll, stalestGroups } from '../lib/muscle.js';
+import { C } from '../theme';
 
 export default function Inicio({ navigation }) {
   useStore();
@@ -78,13 +79,13 @@ export default function Inicio({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#05070d', padding: 18, justifyContent: 'center' },
+  container: { flex: 1, backgroundColor: C.bg, padding: 18, justifyContent: 'center' },
   top: { marginBottom: 24 },
-  eyebrow: { color: '#2e7dff', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  title: { color: '#fff', fontSize: 34, fontWeight: '800', marginTop: 6 },
-  sub: { color: '#8a93a6', fontSize: 15, marginTop: 6 },
+  eyebrow: { color: C.blue, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  title: { color: C.txt, fontSize: 34, fontWeight: '800', marginTop: 6 },
+  sub: { color: C.mut, fontSize: 15, marginTop: 6 },
   stale: { color: '#ffb347', fontSize: 13, marginBottom: 24 },
-  cta: { backgroundColor: '#2e7dff', borderRadius: 16, paddingVertical: 18, alignItems: 'center' },
-  ctaText: { color: '#fff', fontWeight: '800', fontSize: 17, letterSpacing: 0.5 },
-  ctaSubText: { color: 'rgba(255,255,255,.75)', fontSize: 12, marginTop: 2 },
+  cta: { backgroundColor: C.blue, borderRadius: 16, paddingVertical: 18, alignItems: 'center' },
+  ctaText: { color: C.txt, fontWeight: '800', fontSize: 17, letterSpacing: 0.5 },
+  ctaSubText: { color: C.txt, fontSize: 12, marginTop: 2 },
 });

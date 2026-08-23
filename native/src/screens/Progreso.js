@@ -34,8 +34,9 @@ import { groupSessionsByWeek } from '../lib/session.js';
 import { strengthReadout, project, filterByRange, RANGE_DAYS } from '../lib/charts.js';
 import Silhouette from './Silhouette.js';
 import SessionCard from './SessionCard.js';
+import { C } from '../theme';
 
-const BLUE = '#2e7dff';
+const BLUE = C.blue;
 const GREEN = '#1fbf75';
 
 export default function Progreso({ navigation }) {
@@ -129,7 +130,7 @@ function Heatmap({ heat }) {
   // Grilla de 7 columnas (semanas de 7 días) x 8 filas — misma info que el
   // `.heatmap.const` de la web (56 días), pintada con Views coloreados en
   // vez de una grilla CSS.
-  const colorOf = status => status === 'done' ? GREEN : status === 'miss' ? '#e0505a' : 'rgba(255,255,255,.08)';
+  const colorOf = status => status === 'done' ? GREEN : status === 'miss' ? '#e0505a' : C.line;
   return (
     <View style={styles.heatGrid}>
       {heat.days.map(d => (
@@ -156,7 +157,7 @@ function VolumeChart() {
             xKey="x"
             yKeys={['n']}
             domainPadding={{ left: 30, right: 30, top: 20 }}
-            axisOptions={{ labelColor: '#8a93a6', lineColor: 'rgba(255,255,255,.08)' }}
+            axisOptions={{ labelColor: C.mut, lineColor: C.line }}
           >
             {({ points, chartBounds }) => (
               <Bar points={points.n} chartBounds={chartBounds} color={BLUE} roundedCorners={{ topLeft: 6, topRight: 6 }} />
@@ -227,7 +228,7 @@ function StrengthChart() {
                     xKey="x"
                     yKeys={['y']}
                     domainPadding={{ left: 16, right: 16, top: 20, bottom: 10 }}
-                    axisOptions={{ labelColor: '#8a93a6', lineColor: 'rgba(255,255,255,.08)' }}
+                    axisOptions={{ labelColor: C.mut, lineColor: C.line }}
                   >
                     {({ points }) => (
                       <Line points={points.y} color={BLUE} strokeWidth={2.5} curveType="natural" />
@@ -285,63 +286,63 @@ function SesionesSection({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#05070d' },
+  container: { flex: 1, backgroundColor: C.bg },
   content: { padding: 18, paddingBottom: 40 },
   titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 16 },
-  title: { color: '#fff', fontSize: 28, fontWeight: '700' },
-  sub: { color: '#8a93a6', fontSize: 13 },
-  addBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 16, backgroundColor: '#2e7dff', alignItems: 'center', justifyContent: 'center' },
-  addBtnText: { color: '#fff', fontSize: 12.5, fontWeight: '700' },
-  guideBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,.08)', alignItems: 'center', justifyContent: 'center' },
-  guideBtnText: { color: '#8a93a6', fontSize: 15, fontWeight: '700' },
+  title: { color: C.txt, fontSize: 28, fontWeight: '700' },
+  sub: { color: C.mut, fontSize: 13 },
+  addBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 16, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center' },
+  addBtnText: { color: C.txt, fontSize: 12.5, fontWeight: '700' },
+  guideBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' },
+  guideBtnText: { color: C.mut, fontSize: 15, fontWeight: '700' },
 
-  seg: { flexDirection: 'row', backgroundColor: '#0e1626', borderRadius: 12, padding: 4, marginTop: 16, marginBottom: 4 },
+  seg: { flexDirection: 'row', backgroundColor: C.card, borderRadius: 12, padding: 4, marginTop: 16, marginBottom: 4 },
   segBtn: { flex: 1, paddingVertical: 8, borderRadius: 9, alignItems: 'center' },
   segBtnOn: { backgroundColor: BLUE },
-  segText: { color: '#8a93a6', fontSize: 13, fontWeight: '600' },
-  segTextOn: { color: '#fff' },
+  segText: { color: C.mut, fontSize: 13, fontWeight: '600' },
+  segTextOn: { color: C.txt },
 
-  sect: { color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 22, marginBottom: 8 },
+  sect: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 22, marginBottom: 8 },
   sectRow: { flexDirection: 'row', alignItems: 'center', marginTop: 22, marginBottom: 8 },
-  sectRowText: { color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
-  verTodasBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 8, backgroundColor: 'rgba(255,255,255,.08)', alignItems: 'center', justifyContent: 'center' },
-  verTodasText: { color: '#c7cdda', fontSize: 12, fontWeight: '600' },
-  card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
+  sectRowText: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
+  verTodasBtn: { marginLeft: 'auto', paddingHorizontal: 12, height: 32, borderRadius: 8, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' },
+  verTodasText: { color: C.mut, fontSize: 12, fontWeight: '600' },
+  card: { backgroundColor: C.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.line },
 
   heatGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   heatCell: { width: '11.5%', aspectRatio: 1, borderRadius: 3 },
   constStats: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
   constStat: { alignItems: 'center' },
-  constNum: { color: '#fff', fontSize: 20, fontWeight: '700' },
-  constLabel: { color: '#8a93a6', fontSize: 11, marginTop: 2 },
+  constNum: { color: C.txt, fontSize: 20, fontWeight: '700' },
+  constLabel: { color: C.mut, fontSize: 11, marginTop: 2 },
 
   statsRow: { flexDirection: 'row', gap: 24 },
   stat: { alignItems: 'center' },
-  statNum: { color: '#fff', fontSize: 20, fontWeight: '700' },
-  statLabel: { color: '#8a93a6', fontSize: 11, marginTop: 2 },
+  statNum: { color: C.txt, fontSize: 20, fontWeight: '700' },
+  statLabel: { color: C.mut, fontSize: 11, marginTop: 2 },
 
-  row: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,.06)' },
-  rowTitle: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  rowSub: { color: '#8a93a6', fontSize: 12, marginTop: 2 },
+  row: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line },
+  rowTitle: { color: C.txt, fontSize: 14, fontWeight: '600' },
+  rowSub: { color: C.mut, fontSize: 12, marginTop: 2 },
 
   barLabels: { marginTop: 10 },
   barLabelRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-  barLabelCat: { color: '#c7cdda', fontSize: 13 },
-  barLabelN: { color: '#8a93a6', fontSize: 12 },
-  mutSm: { color: '#8a93a6', fontSize: 12, lineHeight: 17, marginTop: 10 },
+  barLabelCat: { color: C.mut, fontSize: 13 },
+  barLabelN: { color: C.mut, fontSize: 12 },
+  mutSm: { color: C.mut, fontSize: 12, lineHeight: 17, marginTop: 10 },
 
   exChips: { marginBottom: 4 },
-  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, backgroundColor: 'rgba(255,255,255,.06)', marginRight: 8 },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, backgroundColor: C.line, marginRight: 8 },
   chipOn: { backgroundColor: BLUE },
-  chipText: { color: '#8a93a6', fontSize: 12, fontWeight: '600' },
-  chipTextOn: { color: '#fff' },
+  chipText: { color: C.mut, fontSize: 12, fontWeight: '600' },
+  chipTextOn: { color: C.txt },
 
   strengthFoot: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 6 },
   strengthNum: { color: BLUE, fontSize: 22, fontWeight: '700', lineHeight: 24 },
-  strengthUnit: { color: '#8a93a6', fontSize: 10, letterSpacing: 1 },
+  strengthUnit: { color: C.mut, fontSize: 10, letterSpacing: 1 },
   txtOk: { color: GREEN, fontSize: 12 },
   txtBlue: { color: BLUE, fontSize: 12 },
   txtWarn: { color: '#e0a63a', fontSize: 12 },
 
-  weekLabel: { color: '#8a93a6', fontSize: 12, fontWeight: '700', marginBottom: 6, marginTop: 4 },
+  weekLabel: { color: C.mut, fontSize: 12, fontWeight: '700', marginBottom: 6, marginTop: 4 },
 });

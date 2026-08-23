@@ -24,6 +24,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { S, closeSheet } from '../../lib/state.js';
 import { equipLabel, exKey } from '../../lib/equip.js';
 import { copyExercises, copySourceExercises } from '../../lib/rutina-logic.js';
+import { C } from '../../theme';
 
 // Nombre a mostrar para un turno de la secuencia actual.
 const slotLabel = i => S.routine[i]?.name || `Turno ${i + 1}`;
@@ -304,72 +305,72 @@ export default function CopyExercises({ mode = 'push', wd }) {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 4 },
-  sub: { color: '#8a93a6', fontSize: 13, lineHeight: 19, marginBottom: 14 },
-  blue: { color: '#5b9dff', fontWeight: '700' },
-  mut: { color: '#8a93a6' },
-  mutSmall: { color: '#8a93a6', fontSize: 13.5 },
-  warn: { color: '#f0b429' },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 4 },
+  sub: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 14 },
+  blue: { color: C.blue2, fontWeight: '700' },
+  mut: { color: C.mut },
+  mutSmall: { color: C.mut, fontSize: 13.5 },
+  warn: { color: C.warn },
 
   seg: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   segBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
   },
-  segBtnOn: { backgroundColor: '#2e7dff', borderColor: '#2e7dff' },
-  segBtnText: { color: '#c7cdda', fontSize: 14, fontWeight: '600' },
-  segBtnTextOn: { color: '#fff' },
+  segBtnOn: { backgroundColor: C.blue, borderColor: C.blue },
+  segBtnText: { color: C.mut, fontSize: 14, fontWeight: '600' },
+  segBtnTextOn: { color: C.txt },
 
   field: { marginBottom: 14 },
-  label: { color: '#8a93a6', fontSize: 12, fontWeight: '600', marginBottom: 8 },
+  label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 8 },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
   },
-  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: '#2e7dff' },
-  chipText: { color: '#c7cdda', fontSize: 13.5, fontWeight: '600' },
-  chipTextOn: { color: '#5b9dff' },
+  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: C.blue },
+  chipText: { color: C.mut, fontSize: 13.5, fontWeight: '600' },
+  chipTextOn: { color: C.blue2 },
 
   chipsCol: { gap: 8 },
   chipAncho: {
-    padding: 12, borderRadius: 12, backgroundColor: 'rgba(255,255,255,.06)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    padding: 12, borderRadius: 12, backgroundColor: C.line,
+    borderWidth: 1, borderColor: C.line,
   },
-  chipSub: { color: '#8a93a6', fontSize: 12, marginTop: 2 },
-  chipSubOn: { color: '#a9c3ee' },
+  chipSub: { color: C.mut, fontSize: 12, marginTop: 2 },
+  chipSubOn: { color: C.blue3 },
 
-  calcbox: { backgroundColor: '#0e1626', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)', marginBottom: 14 },
-  calcText: { color: '#c7cdda', fontSize: 13.5, lineHeight: 19, marginBottom: 8 },
-  calcBold: { color: '#fff', fontWeight: '700' },
+  calcbox: { backgroundColor: C.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.line, marginBottom: 14 },
+  calcText: { color: C.mut, fontSize: 13.5, lineHeight: 19, marginBottom: 8 },
+  calcBold: { color: C.txt, fontWeight: '700' },
   radioRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 6 },
-  radioOuter: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: 'rgba(255,255,255,.3)', alignItems: 'center', justifyContent: 'center', marginTop: 1 },
-  radioOuterOn: { borderColor: '#2e7dff' },
-  radioInner: { width: 9, height: 9, borderRadius: 4.5, backgroundColor: '#2e7dff' },
-  radioText: { color: '#c7cdda', fontSize: 13.5, flex: 1, lineHeight: 18 },
+  radioOuter: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: C.line2, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  radioOuterOn: { borderColor: C.blue },
+  radioInner: { width: 9, height: 9, borderRadius: 4.5, backgroundColor: C.blue },
+  radioText: { color: C.mut, fontSize: 13.5, flex: 1, lineHeight: 18 },
 
   sect: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 8 },
-  sectText: { color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
-  ghostSm: { marginLeft: 'auto', paddingHorizontal: 12, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,.06)' },
-  ghostSmText: { color: '#fff', fontSize: 12.5, fontWeight: '600' },
+  sectText: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
+  ghostSm: { marginLeft: 'auto', paddingHorizontal: 12, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: C.line },
+  ghostSmText: { color: C.txt, fontSize: 12.5, fontWeight: '600' },
 
-  card: { backgroundColor: '#0e1626', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)', padding: 16 },
-  emptyText: { color: '#8a93a6', fontSize: 13.5, textAlign: 'center' },
+  card: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 16 },
+  emptyText: { color: C.mut, fontSize: 13.5, textAlign: 'center' },
 
   pickList: { gap: 2 },
-  pickRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,.06)' },
+  pickRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line },
   pickRowDim: { opacity: 0.5 },
-  checkbox: { width: 20, height: 20, borderRadius: 6, borderWidth: 2, borderColor: 'rgba(255,255,255,.3)', alignItems: 'center', justifyContent: 'center' },
-  checkboxOn: { backgroundColor: '#2e7dff', borderColor: '#2e7dff' },
-  checkboxMark: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  pickIndex: { color: '#8a93a6', fontSize: 11, width: 16 },
+  checkbox: { width: 20, height: 20, borderRadius: 6, borderWidth: 2, borderColor: C.line2, alignItems: 'center', justifyContent: 'center' },
+  checkboxOn: { backgroundColor: C.blue, borderColor: C.blue },
+  checkboxMark: { color: C.txt, fontSize: 12, fontWeight: '700' },
+  pickIndex: { color: C.mut, fontSize: 11, width: 16 },
   pickGrow: { flex: 1 },
-  pickName: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  pickSub: { color: '#8a93a6', fontSize: 12, marginTop: 2 },
+  pickName: { color: C.txt, fontSize: 14, fontWeight: '600' },
+  pickSub: { color: C.mut, fontSize: 12, marginTop: 2 },
 
-  btn: { backgroundColor: '#2e7dff', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
+  btn: { backgroundColor: C.blue, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
   btnDisabled: { opacity: 0.4 },
-  btnDim: { backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
-  btnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  btnDim: { backgroundColor: C.line, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
+  btnText: { color: C.txt, fontSize: 14, fontWeight: '700' },
 });

@@ -10,6 +10,7 @@ import { S } from '../../lib/state.js';
 import { exInfo, rirScheme, isLowerBackLift } from '../../lib/exdb.js';
 import { fibrasDe } from '../../lib/fibras.js';
 import BodyMini from '../BodyMini.js';
+import { C } from '../../theme';
 
 export default function ExInfo({ name, exId }) {
   const info = exInfo(name);
@@ -89,20 +90,20 @@ export default function ExInfo({ name, exId }) {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 10 },
-  h3: { color: '#fff', fontSize: 14.5, fontWeight: '700', marginTop: 14, marginBottom: 4 },
-  body: { color: '#c7cdda', fontSize: 15, lineHeight: 22 },
-  bodyWhy: { color: '#c7cdda', fontSize: 14.5, lineHeight: 21 },
-  warn: { color: '#f59e0b' },
-  b: { color: '#c7cdda', fontWeight: '700' },
-  noInfo: { color: '#8a93a6', fontSize: 14, lineHeight: 20, marginVertical: 8 },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 10 },
+  h3: { color: C.txt, fontSize: 14.5, fontWeight: '700', marginTop: 14, marginBottom: 4 },
+  body: { color: C.mut, fontSize: 15, lineHeight: 22 },
+  bodyWhy: { color: C.mut, fontSize: 14.5, lineHeight: 21 },
+  warn: { color: C.warn },
+  b: { color: C.mut, fontWeight: '700' },
+  noInfo: { color: C.mut, fontSize: 14, lineHeight: 20, marginVertical: 8 },
   media: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  mediaImg: { flex: 1, aspectRatio: 1, borderRadius: 12, backgroundColor: 'rgba(255,255,255,.06)' },
+  mediaImg: { flex: 1, aspectRatio: 1, borderRadius: 12, backgroundColor: C.line },
   eqRow: { marginTop: 8 },
-  eqTag: { color: '#8a93a6', fontSize: 12.5, backgroundColor: 'rgba(255,255,255,.06)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, alignSelf: 'flex-start' },
+  eqTag: { color: C.mut, fontSize: 12.5, backgroundColor: C.line, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, alignSelf: 'flex-start' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
-  chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, backgroundColor: 'rgba(255,255,255,.08)' },
+  chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, backgroundColor: C.line2 },
   chipBlue: { backgroundColor: 'rgba(96,165,250,.18)' },
-  chipText: { color: '#fff', fontSize: 12.5, fontWeight: '600' },
-  ptext: { color: '#8a93a6', fontSize: 13, lineHeight: 19 },
+  chipText: { color: C.txt, fontSize: 12.5, fontWeight: '600' },
+  ptext: { color: C.mut, fontSize: 13, lineHeight: 19 },
 });

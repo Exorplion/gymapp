@@ -25,14 +25,16 @@
 // tenían scope de gradiente que cuidar.
 
 import Svg, { Line, Path, Circle, G } from 'react-native-svg';
+import { C as Colors } from '../theme';
 
 // Colores del tema oscuro ya establecido en esta migración (ver p.ej.
-// components/sheets/EntryEdit.js): '#c7cdda' como trazo principal, '#8a93a6'
-// como tono apagado para el aparato, y el mismo apagado para el piso.
-const COLOR_BODY = '#c7cdda'; // exi-b: el cuerpo, lo que se lee primero
-const COLOR_EQUIP = '#8a93a6'; // exi-e: el aparato, en tono apagado
-const COLOR_HEAD = '#c7cdda'; // exi-h: la cabeza, parte del cuerpo
-const COLOR_FLOOR = '#5b6377'; // exi-p: el piso, aún más de fondo
+// components/sheets/EntryEdit.js): Colors.mut como trazo principal, en tono
+// apagado para el aparato, y el mismo apagado para el piso. (Se usa el alias
+// `Colors` porque `C` ya nombra el componente "Circle" abreviado más abajo.)
+const COLOR_BODY = Colors.mut; // exi-b: el cuerpo, lo que se lee primero
+const COLOR_EQUIP = Colors.mut; // exi-e: el aparato, en tono apagado
+const COLOR_HEAD = Colors.mut; // exi-h: la cabeza, parte del cuerpo
+const COLOR_FLOOR = '#5b6377'; // exi-p: el piso, aún más de fondo — sin token exacto, dejado como decorativo
 
 /* Primitivas. La barra y la mancuerna aparecen en media docena de dibujos, así
    que se definen una vez: si cambia el grosor de los discos, cambia en todas. */

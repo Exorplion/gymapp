@@ -17,6 +17,7 @@
 import { useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, Image, StyleSheet } from 'react-native';
 import { searchIllus, illusUrl } from '../lib/illustrations.js';
+import { C } from '../theme';
 
 export default function IllusPick({ exName = '', onPick, onClose }) {
   const [q, setQ] = useState(exName);
@@ -69,17 +70,17 @@ export default function IllusPick({ exName = '', onPick, onClose }) {
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  label: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  close: { color: '#8a93a6', fontSize: 16, paddingHorizontal: 6 },
-  hint: { color: '#8a93a6', fontSize: 13, marginTop: 2, marginBottom: 14 },
+  label: { color: C.txt, fontSize: 15, fontWeight: '700' },
+  close: { color: C.mut, fontSize: 16, paddingHorizontal: 6 },
+  hint: { color: C.mut, fontSize: 13, marginTop: 2, marginBottom: 14 },
   input: {
-    color: '#fff', fontSize: 15, backgroundColor: 'rgba(255,255,255,.06)',
+    color: C.txt, fontSize: 15, backgroundColor: C.line,
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14,
   },
-  empty: { padding: 18, alignItems: 'center', backgroundColor: 'rgba(255,255,255,.04)', borderRadius: 12 },
-  emptyText: { color: '#8a93a6', fontSize: 14, textAlign: 'center' },
+  empty: { padding: 18, alignItems: 'center', backgroundColor: C.line, borderRadius: 12 },
+  emptyText: { color: C.mut, fontSize: 14, textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  opt: { width: '47%', backgroundColor: 'rgba(255,255,255,.05)', borderRadius: 12, padding: 8 },
-  optImg: { width: '100%', aspectRatio: 1, borderRadius: 8, backgroundColor: 'rgba(255,255,255,.06)' },
-  optName: { color: '#c7cdda', fontSize: 12.5, marginTop: 6, textAlign: 'center' },
+  opt: { width: '47%', backgroundColor: C.line, borderRadius: 12, padding: 8 },
+  optImg: { width: '100%', aspectRatio: 1, borderRadius: 8, backgroundColor: C.line },
+  optName: { color: C.mut, fontSize: 12.5, marginTop: 6, textAlign: 'center' },
 });

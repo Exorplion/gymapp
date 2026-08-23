@@ -19,6 +19,7 @@ import { EXCATALOG, MUSCLE_CATS, catOf } from '../../lib/muscle.js';
 import { EQUIP, isMachineBound } from '../../lib/equip.js';
 import { toast } from '../../lib/toast.js';
 import MachineField from '../MachineField.js';
+import { C } from '../../theme';
 
 export default function EntryEdit({ sessId, idx }) {
   const sess = S.sessions.find(s => s.id === sessId);
@@ -94,7 +95,7 @@ export default function EntryEdit({ sessId, idx }) {
           value={name}
           onChangeText={setName}
           autoComplete="off"
-          placeholderTextColor="#5a6478"
+          placeholderTextColor={C.mut2}
         />
       </View>
 
@@ -187,38 +188,38 @@ export default function EntryEdit({ sessId, idx }) {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 4 },
-  sub: { color: '#8a93a6', fontSize: 13, lineHeight: 19, marginBottom: 10 },
-  bold: { color: '#c7cdda', fontWeight: '700' },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 4 },
+  sub: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 10 },
+  bold: { color: C.mut, fontWeight: '700' },
 
   field: { marginTop: 14 },
-  label: { color: '#8a93a6', fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  label: { color: C.mut, fontSize: 12, fontWeight: '600', marginBottom: 6 },
   input: {
-    backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
-    color: '#fff', fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11,
+    color: C.txt, fontSize: 15, borderWidth: 1, borderColor: C.line,
   },
 
   eyebrow: {
-    color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase',
+    color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase',
     letterSpacing: 0.4, marginTop: 18, marginBottom: 8,
   },
-  autoHint: { color: '#8a93a6', fontWeight: '500', textTransform: 'none', letterSpacing: 0 },
+  autoHint: { color: C.mut, fontWeight: '500', textTransform: 'none', letterSpacing: 0 },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingVertical: 8, paddingHorizontal: 12, borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,.08)',
+    backgroundColor: C.line, borderWidth: 1, borderColor: C.line,
   },
-  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: '#2e7dff' },
-  chipBlue: { borderColor: '#2e7dff' },
-  chipText: { color: '#c7cdda', fontSize: 13, fontWeight: '600' },
-  chipTextOn: { color: '#5b9dff' },
-  chipMut: { color: '#5a6478', fontSize: 12, fontWeight: '500' },
+  chipOn: { backgroundColor: 'rgba(46,125,255,.16)', borderColor: C.blue },
+  chipBlue: { borderColor: C.blue },
+  chipText: { color: C.mut, fontSize: 13, fontWeight: '600' },
+  chipTextOn: { color: C.blue2 },
+  chipMut: { color: C.mut2, fontSize: 12, fontWeight: '500' },
 
-  ptext: { color: '#8a93a6', fontSize: 13, lineHeight: 18, marginTop: 12 },
+  ptext: { color: C.mut, fontSize: 13, lineHeight: 18, marginTop: 12 },
 
-  btn: { backgroundColor: '#2e7dff', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
-  btnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  btn: { backgroundColor: C.blue, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
+  btnText: { color: C.txt, fontSize: 14, fontWeight: '700' },
   btnDim: { backgroundColor: 'transparent', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
-  btnDimText: { color: '#8a93a6', fontSize: 14, fontWeight: '600' },
+  btnDimText: { color: C.mut, fontSize: 14, fontWeight: '600' },
 });

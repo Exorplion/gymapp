@@ -14,6 +14,7 @@ import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC } from '../lib/rest.js';
 import { useStore } from '../lib/state.js';
 import { fmtMMSS } from '../lib/format.js';
+import { C } from '../theme';
 
 export default function RestTimer() {
   useStore(); // se suscribe a bump(); T se lee directo (T.leftSec/T.pct/T.state) igual que S
@@ -85,14 +86,14 @@ export default function RestTimer() {
                     <Svg> separado sería invisible acá (ruling 7 del plan). */}
                 <Defs>
                   <LinearGradient id="restGrad" x1="0" y1="0" x2="1" y2="1">
-                    <Stop offset="0%" stopColor="#5EA2FF" />
-                    <Stop offset="100%" stopColor="#22d3ee" />
+                    <Stop offset="0%" stopColor={C.blue2} />
+                    <Stop offset="100%" stopColor={C.cyan} />
                   </LinearGradient>
                 </Defs>
-                <Circle cx={100} cy={100} r={88} stroke="rgba(255,255,255,.08)" strokeWidth={12} fill="none" />
+                <Circle cx={100} cy={100} r={88} stroke={C.line} strokeWidth={12} fill="none" />
                 <Circle
                   cx={100} cy={100} r={88}
-                  stroke={sonandoAhora ? '#FFB454' : 'url(#restGrad)'} strokeWidth={12} fill="none"
+                  stroke={sonandoAhora ? C.warn : 'url(#restGrad)'} strokeWidth={12} fill="none"
                   strokeDasharray={REST_CIRC}
                   strokeDashoffset={dashOffset}
                   strokeLinecap="round"
@@ -140,21 +141,21 @@ const styles = StyleSheet.create({
   pill: {
     position: 'absolute',
     left: 12, right: 12, bottom: 90,
-    backgroundColor: '#0e1626',
+    backgroundColor: C.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,.08)',
+    borderColor: C.line,
     padding: 12,
     overflow: 'hidden',
   },
   pillTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  pillLbl: { color: '#8a93a6', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' },
-  pillTime: { color: '#fff', fontSize: 20, fontWeight: '800', marginTop: 2 },
+  pillLbl: { color: C.mut, fontSize: 11, fontWeight: '600', textTransform: 'uppercase' },
+  pillTime: { color: C.txt, fontSize: 20, fontWeight: '800', marginTop: 2 },
   pillBtns: { flexDirection: 'row', gap: 8 },
-  pillBtn: { backgroundColor: 'rgba(255,255,255,.08)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
-  pillBtnText: { color: '#fff', fontSize: 12.5, fontWeight: '700' },
-  pillTrack: { height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,.08)', marginTop: 10, overflow: 'hidden' },
-  pillFill: { height: '100%', backgroundColor: '#2e7dff', borderRadius: 2 },
+  pillBtn: { backgroundColor: C.line, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
+  pillBtnText: { color: C.txt, fontSize: 12.5, fontWeight: '700' },
+  pillTrack: { height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 10, overflow: 'hidden' },
+  pillFill: { height: '100%', backgroundColor: C.blue, borderRadius: 2 },
 
   // Overlay de pantalla completa.
   overlay: {
@@ -166,17 +167,17 @@ const styles = StyleSheet.create({
     zIndex: 50,
   },
   inner: { alignItems: 'center', paddingHorizontal: 24 },
-  lbl: { color: '#8a93a6', fontSize: 15, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
-  lblRinging: { color: '#FFB454' },
+  lbl: { color: C.mut, fontSize: 15, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
+  lblRinging: { color: C.warn },
   ringWrap: { alignItems: 'center', justifyContent: 'center' },
-  ringTime: { position: 'absolute', color: '#fff', fontSize: 40, fontWeight: '800' },
-  ringTimeRinging: { color: '#FFB454' },
+  ringTime: { position: 'absolute', color: C.txt, fontSize: 40, fontWeight: '800' },
+  ringTimeRinging: { color: C.warn },
 
   fsBtns: { flexDirection: 'row', gap: 10, marginTop: 26 },
-  fsBtnGhost: { backgroundColor: 'rgba(255,255,255,.08)', borderRadius: 12, paddingHorizontal: 18, paddingVertical: 12 },
-  fsBtnGhostText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  fsBtnDim: { backgroundColor: 'rgba(255,255,255,.05)', borderRadius: 12, paddingHorizontal: 18, paddingVertical: 12 },
-  fsBtnDimText: { color: '#8a93a6', fontSize: 14, fontWeight: '700' },
+  fsBtnGhost: { backgroundColor: C.line, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 12 },
+  fsBtnGhostText: { color: C.txt, fontSize: 14, fontWeight: '700' },
+  fsBtnDim: { backgroundColor: C.line, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 12 },
+  fsBtnDimText: { color: C.mut, fontSize: 14, fontWeight: '700' },
 
   // Sin lib de gradiente en RN acá: se aproxima el gradiente ámbar del
   // original (#FFB454 -> #E07C1A) con el tono medio como color sólido, y
@@ -185,6 +186,6 @@ const styles = StyleSheet.create({
   pararBtn: { backgroundColor: '#F09A34', borderRadius: 18, paddingHorizontal: 48, paddingVertical: 18, marginTop: 26 },
   pararBtnText: { color: '#2A1603', fontSize: 20, fontWeight: '800', letterSpacing: 1 },
 
-  minBtn: { marginTop: 20, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,.08)', alignItems: 'center', justifyContent: 'center' },
-  minBtnText: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  minBtn: { marginTop: 20, width: 40, height: 40, borderRadius: 20, backgroundColor: C.line, alignItems: 'center', justifyContent: 'center' },
+  minBtnText: { color: C.txt, fontSize: 18, fontWeight: '700' },
 });

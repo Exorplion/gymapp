@@ -18,6 +18,7 @@ import { idb } from '../../lib/db.js';
 import { uid, fmtNum, round1, vibrate } from '../../lib/format.js';
 import { parseFoodSpeech, sumItems } from '../../lib/foodvoice.js';
 import { toast } from '../../lib/toast.js';
+import { C } from '../../theme';
 
 export default function FoodVoice() {
   const [text, setText] = useState('');
@@ -68,7 +69,7 @@ export default function FoodVoice() {
           style={styles.input}
           value={text}
           placeholder="dos huevos, 150 g de pollo…"
-          placeholderTextColor="#5a6178"
+          placeholderTextColor={C.mut2}
           onChangeText={reparse}
         />
       </View>
@@ -130,31 +131,31 @@ export default function FoodVoice() {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20 },
-  h2: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 6 },
-  mut: { color: '#8a93a6', fontSize: 13, lineHeight: 19, marginBottom: 14 },
+  h2: { color: C.txt, fontSize: 19, fontWeight: '700', marginBottom: 6 },
+  mut: { color: C.mut, fontSize: 13, lineHeight: 19, marginBottom: 14 },
 
-  disabledBtn: { backgroundColor: 'rgba(255,255,255,.05)', borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, opacity: 0.55 },
-  disabledBtnText: { color: '#fff', fontSize: 15, fontWeight: '700', textAlign: 'center' },
-  disabledBtnSub: { color: '#8a93a6', fontSize: 12, textAlign: 'center', marginTop: 4 },
+  disabledBtn: { backgroundColor: C.line, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, opacity: 0.55 },
+  disabledBtnText: { color: C.txt, fontSize: 15, fontWeight: '700', textAlign: 'center' },
+  disabledBtnSub: { color: C.mut, fontSize: 12, textAlign: 'center', marginTop: 4 },
 
   field: { marginTop: 16 },
-  label: { color: '#8a93a6', fontSize: 12.5, fontWeight: '600', marginBottom: 6 },
-  input: { backgroundColor: '#0e1626', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)', color: '#fff', fontSize: 15, paddingHorizontal: 14, paddingVertical: 12 },
+  label: { color: C.mut, fontSize: 12.5, fontWeight: '600', marginBottom: 6 },
+  input: { backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.line, color: C.txt, fontSize: 15, paddingHorizontal: 14, paddingVertical: 12 },
 
-  sect: { color: '#8a93a6', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 20, marginBottom: 8 },
-  card: { backgroundColor: '#0e1626', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,.08)' },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,.06)' },
+  sect: { color: C.mut, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginTop: 20, marginBottom: 8 },
+  card: { backgroundColor: C.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.line },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line },
   grow: { flex: 1 },
-  t: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  s: { color: '#8a93a6', fontSize: 12, marginTop: 2 },
-  tag: { color: '#2e7dff', fontSize: 11, fontWeight: '700' },
+  t: { color: C.txt, fontSize: 14, fontWeight: '600' },
+  s: { color: C.mut, fontSize: 12, marginTop: 2 },
+  tag: { color: C.blue, fontSize: 11, fontWeight: '700' },
   del: { paddingHorizontal: 8, paddingVertical: 4 },
-  delText: { color: '#8a93a6', fontSize: 16 },
-  totalRow: { borderBottomWidth: 0, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,.09)' },
-  totalKcal: { color: '#2e7dff', fontSize: 15, fontWeight: '700' },
+  delText: { color: C.mut, fontSize: 16 },
+  totalRow: { borderBottomWidth: 0, borderTopWidth: 1, borderTopColor: C.line2 },
+  totalKcal: { color: C.blue, fontSize: 15, fontWeight: '700' },
 
-  explain: { color: '#8a93a6', fontSize: 12.5, lineHeight: 18, marginBottom: 10 },
+  explain: { color: C.mut, fontSize: 12.5, lineHeight: 18, marginBottom: 10 },
 
-  confirmBtn: { backgroundColor: '#2e7dff', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 20 },
-  confirmBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  confirmBtn: { backgroundColor: C.blue, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 20 },
+  confirmBtnText: { color: C.txt, fontWeight: '700', fontSize: 15 },
 });
