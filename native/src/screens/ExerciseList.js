@@ -2,16 +2,29 @@
 // Puerto simplificado de web/src/components/ExerciseCarousel.jsx — lista
 // vertical (ScrollView), no carrusel deslizable. Inputs controlados
 // (useState), no refs — ver nota de alcance en el plan de esta etapa.
+//
+// Etapa "completar Hoy" (Task 4): se agregan las funciones del original que
+// no dependen de gestos de swipe — ícono, botón de info, esquema RIR, aviso
+// de progresión, nota de reemplazo, "primera vez en este equipo", toggle de
+// unilateral y botón de cambiar ejercicio, además de la confirmación antes
+// de saltar. `wd` (índice del día) se recibe como prop opcional — Hoy.js
+// todavía no lo pasa (Task 5 lo conecta); sin él los sheets que lo usan
+// simplemente reciben `wd: undefined`.
 import { useState } from 'react';
 import { View, Text, Pressable, TextInput, StyleSheet } from 'react-native';
-import { S, wDisplay, wAlt, wStep } from '../lib/state.js';
+import { S, wDisplay, wAlt, wStep, openSheet } from '../lib/state.js';
 import { round1, lb2kg, fmtNum } from '../lib/format.js';
+import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
 import {
   ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
   targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, dropSet,
+  reemplazaA, isUnilateral, toggleUnilateral,
 } from '../lib/session.js';
+import { relatedHistory, equipLabel } from '../lib/equip.js';
+import { iconOf } from '../lib/exicon.js';
+import ExIcon from '../components/ExIcon.js';
 
-export default function ExerciseList({ exs, active, started, curId, nextEx }) {
+export default function ExerciseList({ exs, wd, active, started, curId, nextEx }) {
   if (!exs.length) return null;
   return (
     <View style={[styles.list, { gap: 14 }]}>
@@ -26,7 +39,7 @@ export default function ExerciseList({ exs, active, started, curId, nextEx }) {
         return (
           <ExerciseCard
             key={ex.id}
-            ex={ex} done={done} target={target} skipped={skipped}
+            ex={ex} wd={wd} done={done} target={target} skipped={skipped}
             full={full} open={open} isNext={isNext} waiting={waiting} started={started}
           />
         );
@@ -35,7 +48,7 @@ export default function ExerciseList({ exs, active, started, curId, nextEx }) {
   );
 }
 
-function ExerciseCard({ ex, done, target, skipped, full, open, isNext, waiting, started }) {
+function ExerciseCard({ ex, wd, done, target, skipped, full, open, isNext, waiting, started }) {
   const v = ensureVals(ex);
   const last = lastDataFor(ex);
   const [w, setW] = useState(wDisplay(v.w));
@@ -54,13 +67,59 @@ function ExerciseCard({ ex, done, target, skipped, full, open, isNext, waiting, 
     if (!isNaN(num) && num > 0) v.r = num;
   }
 
+  // el esquema se arma sobre el objetivo de HOY (con series extra incluidas)
+  const scheme = rirScheme(target, ex.name);
+  const curSet = Math.min(done.length, target - 1);
+  const curRir = scheme[curSet];
+  const info = exInfo(ex.name);
+  // sin historial propio: primera vez en ESTE equipo
+  const related = last ? [] : relatedHistory(ex, S.sessions);
+  const uni = isUnilateral(ex);
+  const envez = reemplazaA(ex.id);
+  const progWarn = open ? progressionWarn(ex.name, v.w) : null;
+
+  function confirmarSalto() {
+    openSheet('confirm', {
+      title: `¿Saltar ${ex.name}?`,
+      body: 'Queda marcado como saltado y pasás al siguiente. Podés restablecerlo en cualquier momento y vuelve a su lugar.',
+      confirmLabel: 'Saltar',
+      onConfirm: () => skipExercise(ex.id),
+    });
+  }
+
   return (
     <View style={[styles.card, open && styles.cardOpen, skipped && styles.cardSkipped]}>
-      <Text style={styles.doneCount}>{done.length}/{target}</Text>
-      <Text style={styles.exName}>{ex.name}</Text>
-      <Text style={styles.exTarget}>Objetivo {target} × {ex.reps}</Text>
+      <View style={styles.headerRow}>
+        <ExIcon icono={iconOf(ex)} size={34} />
+        <Text style={styles.doneCount}>{done.length}/{target}</Text>
+      </View>
+      <View style={styles.nameRow}>
+        <Text style={styles.exName}>{ex.name}</Text>
+        {info && (
+          <Pressable style={styles.infoBtn} onPress={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}>
+            <Text style={styles.infoBtnText}>ⓘ</Text>
+          </Pressable>
+        )}
+      </View>
+      {envez && <Text style={styles.envez}>en vez de {envez}</Text>}
+      <Text style={styles.exTarget}>
+        Objetivo {target} × {ex.reps}
+        {open && (curRir === 0 ? ' · al fallo' : ` · RIR ${curRir}`)}
+      </Text>
       {last && (
-        <Text style={styles.exLast}>Última vez: {last.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg</Text>
+        <Text style={styles.exLast}>
+          Última vez: {last.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg{uni ? ' por lado' : ''}
+        </Text>
+      )}
+      {!last && equipLabel(ex) && (
+        <View style={styles.firstBox}>
+          <Text style={styles.firstTitle}>Primera vez en {equipLabel(ex)}</Text>
+          {related.length > 0 && (
+            <Text style={styles.firstSub}>
+              Este ejercicio lo venís haciendo en {related.map(r => `${r.label} (${fmtNum(round1(r.w))}×${r.r})`).join(' · ')}.
+            </Text>
+          )}
+        </View>
       )}
       {full && <Text style={styles.stateOk}>✓ Completo · {done.length} de {target} series</Text>}
       {waiting && <Text style={styles.stateMut}>En espera{done.length ? ` · ${done.length}/${target} series` : ''}</Text>}
@@ -83,11 +142,15 @@ function ExerciseCard({ ex, done, target, skipped, full, open, isNext, waiting, 
             <Text style={styles.primaryBtnText}>▶ Iniciar ejercicio</Text>
           </Pressable>
           <Text style={styles.hint}>Dale cuando estés en la máquina{!started ? ' — acá arranca el cronómetro' : ''}</Text>
-          <ExActions ex={ex} />
+          <ExActions ex={ex} wd={wd} onSkip={confirmarSalto} />
         </>
       )}
       {open && (
         <>
+          {progWarn && <Text style={styles.progWarn}>⚠ {progWarn}</Text>}
+          <Pressable style={[styles.uniChip, uni && styles.uniChipOn]} onPress={() => toggleUnilateral(ex.id)}>
+            <Text style={styles.uniChipText}>{uni ? '✓ Un lado por vez' : 'Un lado por vez'}</Text>
+          </Pressable>
           <View style={styles.setRows}>
             <View style={styles.setCol}>
               <Text style={styles.stepLabel}>Peso ({S.cfg.unit === 'kg' ? 'kg' : 'lb'})</Text>
@@ -110,7 +173,7 @@ function ExerciseCard({ ex, done, target, skipped, full, open, isNext, waiting, 
           <Pressable style={styles.primaryBtn} onPress={() => saveSet(ex.id)}>
             <Text style={styles.primaryBtnText}>✓ Terminé la serie {done.length + 1} de {target}</Text>
           </Pressable>
-          <ExActions ex={ex} />
+          <ExActions ex={ex} wd={wd} onSkip={confirmarSalto} />
         </>
       )}
       {done.length > 0 && (
@@ -126,12 +189,13 @@ function ExerciseCard({ ex, done, target, skipped, full, open, isNext, waiting, 
   );
 }
 
-function ExActions({ ex }) {
+function ExActions({ ex, wd, onSkip }) {
   return (
     <View style={styles.actionsRow}>
       <Pressable style={styles.actionBtn} onPress={() => dropSet(ex.id)}><Text style={styles.actionBtnText}>− Serie</Text></Pressable>
       <Pressable style={styles.actionBtn} onPress={() => addExtraSet(ex.id)}><Text style={styles.actionBtnText}>+ Serie</Text></Pressable>
-      <Pressable style={styles.actionBtn} onPress={() => skipExercise(ex.id)}><Text style={styles.actionBtnText}>Saltar</Text></Pressable>
+      <Pressable style={styles.actionBtn} onPress={() => openSheet('ex-swap', { wd, exId: ex.id })}><Text style={styles.actionBtnText}>Cambiar</Text></Pressable>
+      <Pressable style={styles.actionBtn} onPress={onSkip}><Text style={styles.actionBtnText}>Saltar</Text></Pressable>
     </View>
   );
 }
@@ -141,9 +205,21 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#0e1626', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,.06)' },
   cardOpen: { borderColor: '#2e7dff' },
   cardSkipped: { opacity: 0.5 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   doneCount: { color: '#8a93a6', fontSize: 12, fontWeight: '700' },
-  exName: { color: '#fff', fontSize: 18, fontWeight: '700', marginTop: 4 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  exName: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  infoBtn: { width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(255,255,255,.08)', alignItems: 'center', justifyContent: 'center' },
+  infoBtnText: { color: '#8a93a6', fontSize: 13, fontWeight: '700' },
+  envez: { color: '#8a93a6', fontSize: 12, marginTop: 2, fontStyle: 'italic' },
   exTarget: { color: '#8a93a6', fontSize: 13, marginTop: 4 },
+  progWarn: { color: '#ffb347', fontSize: 12, marginTop: 8, marginBottom: 4 },
+  uniChip: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: 'rgba(255,255,255,.08)', marginBottom: 8 },
+  uniChipOn: { backgroundColor: 'rgba(46,125,255,.28)' },
+  uniChipText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  firstBox: { marginTop: 8, padding: 10, borderRadius: 10, backgroundColor: 'rgba(255,255,255,.04)' },
+  firstTitle: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  firstSub: { color: '#8a93a6', fontSize: 12, marginTop: 4 },
   exLast: { color: '#8a93a6', fontSize: 12, marginTop: 4 },
   stateOk: { color: '#1fbf75', fontSize: 13, marginTop: 8, fontWeight: '600' },
   stateMut: { color: '#8a93a6', fontSize: 13, marginTop: 8 },
