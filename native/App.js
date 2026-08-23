@@ -4,8 +4,21 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useFonts } from 'expo-font';
+import {
+  Barlow_400Regular,
+  Barlow_500Medium,
+  Barlow_600SemiBold,
+  Barlow_700Bold,
+} from '@expo-google-fonts/barlow';
+import {
+  BarlowCondensed_600SemiBold,
+  BarlowCondensed_700Bold,
+  BarlowCondensed_700Bold_Italic,
+} from '@expo-google-fonts/barlow-condensed';
 import { S, loadAll, useStore, bump } from './src/lib/state.js';
 import { scheduleTomorrowReminder } from './src/lib/reminder.js';
+import { C } from './src/theme.js';
 import Inicio from './src/screens/Inicio.js';
 import Hoy from './src/screens/Hoy.js';
 import Rutina from './src/screens/Rutina.js';
@@ -42,6 +55,15 @@ export default function App() {
   // corría ahí; acá loadAll() ya no necesita idbOpenOnce por separado porque
   // AsyncStorage no tiene noción de "abrir conexión" (ver Task 2).
   const [ready, setReady] = useState(false);
+  const [fontsLoaded] = useFonts({
+    Barlow_400Regular,
+    Barlow_500Medium,
+    Barlow_600SemiBold,
+    Barlow_700Bold,
+    BarlowCondensed_600SemiBold,
+    BarlowCondensed_700Bold,
+    BarlowCondensed_700Bold_Italic,
+  });
   useEffect(() => {
     loadAll()
       .then(() => {
@@ -54,10 +76,10 @@ export default function App() {
       .catch(e => { console.error('loadAll() falló:', e); setReady(true); });
   }, []);
 
-  if (!ready) {
+  if (!ready || !fontsLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#05070d' }}>
-        <ActivityIndicator color="#2e7dff" />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
+        <ActivityIndicator color={C.blue} />
       </View>
     );
   }
@@ -65,7 +87,20 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
-        <Tab.Navigator screenOptions={{ headerShown: false, tabBarActiveTintColor: '#2e7dff' }}>
+        <Tab.Navigator
+          screenOptions={{
+            headerShown: false,
+            tabBarActiveTintColor: C.blue,
+            tabBarInactiveTintColor: C.mut,
+            tabBarStyle: {
+              backgroundColor: C.card,
+              borderTopWidth: 1,
+              borderTopColor: C.line,
+              elevation: 0,
+              shadowOpacity: 0,
+            },
+          }}
+        >
           <Tab.Screen
             name="Inicio"
             component={InicioTab}
