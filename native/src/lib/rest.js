@@ -14,7 +14,7 @@
 import { AppState } from 'react-native';
 import { S, bump } from './state.js';
 import { toast } from './toast.js';
-import { prepararAlarma, pedirPermiso, sonar, callar } from './alarm.js';
+import { prepararAlarma, pedirPermiso, sonar, callar, scheduleEndNotification, cancelScheduledNotification } from './alarm.js';
 
 export const T = { end: 0, total: 0, int: null, state: 'hidden', leftSec: 0, pct: 0 };
 
@@ -33,6 +33,7 @@ export function startRest(segs) {
   T.total = total; T.end = Date.now() + T.total * 1000;
   T.state = 'fullscreen';
   bump();
+  scheduleEndNotification(T.total, 'Ya pasaron tus ' + T.total + ' segundos. A la próxima serie.');
   if (!T.int) T.int = setInterval(tickRest, 250);
   tickRest();
 }
@@ -48,6 +49,10 @@ export function shiftRest(secs) {
   T.end = Math.max(piso, T.end + secs * 1000);
   // el total sube con el tiempo agregado para que el anillo no se pase de vuelta
   T.total = Math.max(T.total, Math.ceil((T.end - Date.now()) / 1000));
+  // el final se movió: la notificación programada para el horario viejo ya
+  // no corresponde, hay que cancelarla y programar una nueva para el nuevo
+  cancelScheduledNotification();
+  scheduleEndNotification(Math.max(0, Math.round((T.end - Date.now()) / 1000)), 'Ya pasaron tus ' + T.total + ' segundos. A la próxima serie.');
   tickRest();
 }
 
@@ -89,6 +94,7 @@ function terminar() {
 export function stopRest() {
   clearInterval(T.int); T.int = null;
   callar();
+  cancelScheduledNotification();
   T.state = 'hidden';
   bump();
 }
@@ -111,6 +117,9 @@ export function recuperarRest() {
 // que hace falta recalcular contra T.end. Registrado una sola vez a nivel de
 // módulo (como el original), vive todo el ciclo de vida de la app — no hace
 // falta guardar/limpiar la suscripción.
-const restAppStateSub = AppState.addEventListener('change', nextState => {
+// El resultado (una suscripción) no se guarda a propósito: vive todo el
+// ciclo de vida de la app, así que no hace falta una variable para
+// limpiarla más tarde.
+AppState.addEventListener('change', nextState => {
   if (nextState === 'active') recuperarRest();
 });

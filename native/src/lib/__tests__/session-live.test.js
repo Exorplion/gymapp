@@ -7,20 +7,30 @@ import {
 
 jest.mock('../db.js', () => ({ idb: { put: jest.fn(), del: jest.fn(), all: jest.fn(), clear: jest.fn() } }));
 jest.mock('../toast.js', () => ({ toast: jest.fn() }));
-// rest.js/carousel.js NO se mockean (mismo criterio que session.test.js): son
-// stubs no-op reales (Task 2) y ningún test de este archivo verifica llamadas
-// ni argumentos sobre ellos (nadie assertea sobre startRest/stopRest/
-// scrollCarouselTo), así que dejar que corran de verdad da el mismo resultado
-// que un jest.fn() sin usar. `confetti.js` tampoco existe en esta etapa —
+// rest.js SÍ se mockea acá, a diferencia de cuando era un stub no-op (Task
+// 2): desde Etapa 6a es una implementación real, y saveSet()/completeSession()
+// llaman startRest()/stopRest() de verdad. Sin este mock, startRest()
+// instala un setInterval real de 250ms (tickRest) que ningún test de este
+// archivo limpia — Jest queda con un timer vivo después de cada test y avisa
+// "Jest did not exit"/ReferenceError de import tras el teardown del entorno
+// (referenciando alarm.js, que lee AppState). Nada en este archivo assertea
+// sobre startRest/stopRest ni sobre T, así que un stub no-op alcanza.
+// carousel.js sigue sin mockearse: es un stub no-op real y nadie assertea
+// sobre scrollCarouselTo. `confetti.js` tampoco existe en esta etapa —
 // session.js no lo importa (ver el comentario en completeSession() sobre por
 // qué el confetti de PRs ya no se dispara ahí) — así que no hay nada que
-// mockear.
-//
-// Nota de alcance: el stub `startRest()` (rest.js, Task 2) es no-op y no
-// recibe el parámetro `segs` que tiene el real — ningún test de este archivo
-// depende de eso (no hay asserts sobre segmentos de descanso), así que no es
-// una limitación que este archivo de test exponga; queda documentada acá por
-// si una etapa futura porta tests de rest.js que sí lo necesiten.
+// mockear ahí.
+jest.mock('../rest.js', () => ({
+  startRest: jest.fn(),
+  stopRest: jest.fn(),
+  shiftRest: jest.fn(),
+  minimizeRest: jest.fn(),
+  expandRest: jest.fn(),
+  tickRest: jest.fn(),
+  recuperarRest: jest.fn(),
+  T: { end: 0, total: 0, int: null, state: 'hidden', leftSec: 0, pct: 0 },
+  REST_CIRC: 2 * Math.PI * 88,
+}));
 
 const ex = (id, name, sets = 3) => ({ id, name, sets, reps: 10 });
 

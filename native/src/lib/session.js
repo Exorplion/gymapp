@@ -1,9 +1,9 @@
 // Puerto verbatim de web/src/lib/session.js — JS puro, sin cambios.
 //
-// startRest/stopRest/pedirPermiso/scrollCarouselTo son stubs no-op en esta
-// etapa (ver Task 2) — el timer de descanso real y las notificaciones llegan
-// en una etapa futura; esta migración no pierde esa funcionalidad, la
-// pospone a propósito.
+// startRest/stopRest (rest.js) y pedirPermiso (alarm.js) son implementaciones
+// reales desde Etapa 6a: el timer de descanso, la alarma y la notificación
+// programada por el SO ya funcionan de punta a punta. scrollCarouselTo sigue
+// siendo el único stub no-op de este grupo.
 import { S, bump, saveDraft, saveCfg, wBoth, closeSheet } from './state.js';
 import { dstr, uid, round1, fmtD, vibrate } from './format.js';
 import { idb } from './db.js';

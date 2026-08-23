@@ -1,3 +1,21 @@
+// rest.js ya es una implementación real desde Etapa 6a (timer con setInterval
+// real de 250ms vía tickRest). Sin mockearlo, cualquier test de este archivo
+// que dispare startRest() (indirectamente, vía session.js) dejaría un timer
+// real corriendo después de terminar el test — Jest no sale limpio y avisa
+// "did not exit"/import-tras-teardown. Nada en este archivo assertea sobre
+// startRest/stopRest, así que un stub no-op alcanza.
+jest.mock('../rest.js', () => ({
+  startRest: jest.fn(),
+  stopRest: jest.fn(),
+  shiftRest: jest.fn(),
+  minimizeRest: jest.fn(),
+  expandRest: jest.fn(),
+  tickRest: jest.fn(),
+  recuperarRest: jest.fn(),
+  T: { end: 0, total: 0, int: null, state: 'hidden', leftSec: 0, pct: 0 },
+  REST_CIRC: 2 * Math.PI * 88,
+}));
+
 import { S } from '../state.js';
 import { weekStart, sessionForSlot, sessionPRs, groupSessionsByWeek } from '../session.js';
 

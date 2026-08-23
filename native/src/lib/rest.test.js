@@ -7,11 +7,13 @@ jest.mock('./alarm.js', () => ({
   pedirPermiso: jest.fn(),
   sonar: jest.fn(),
   callar: jest.fn(),
+  scheduleEndNotification: jest.fn(),
+  cancelScheduledNotification: jest.fn(),
 }));
 
 import { S } from './state.js';
-import { T, startRest, stopRest, shiftRest, tickRest, minimizeRest, expandRest } from './rest.js';
-import { callar } from './alarm.js';
+import { T, startRest, stopRest, shiftRest, tickRest, minimizeRest, expandRest, recuperarRest } from './rest.js';
+import { callar, sonar } from './alarm.js';
 
 describe('rest.js', () => {
   let now;
@@ -63,11 +65,29 @@ describe('rest.js', () => {
     expect(T.end).toBe(now + 5000);
   });
 
-  it('shiftRest(+N) sube T.total cuando corresponde', () => {
+  it('shiftRest(+N) sube T.total cuando el nuevo restante supera al total original', () => {
     startRest(90);
     now += 80000; // quedan 10s, total sigue en 90
-    shiftRest(60); // suma 60s -> quedan 70s
-    expect(T.total).toBeGreaterThanOrEqual(70);
+    shiftRest(60); // quedan 10+60=70s, que es MENOS que 90 -> total no debería subir
+    expect(T.total).toBe(90);
+    shiftRest(60); // ahora quedan 70+60=130s, que SÍ supera el total (90) -> debe subir
+    expect(T.total).toBe(130);
+  });
+
+  it('recuperarRest() dispara terminar() si el tiempo ya venció mientras estaba en segundo plano', () => {
+    startRest(90);
+    now += 200000; // muy pasado el final
+    recuperarRest();
+    expect(T.state).toBe('ringing');
+    expect(sonar).toHaveBeenCalled();
+  });
+
+  it('el alCallar de sonar() (tope de 2 min) deja T.state en hidden', () => {
+    sonar.mockImplementationOnce((_texto, alCallar) => { if (alCallar) alCallar(); });
+    startRest(90);
+    now += 90000;
+    tickRest(); // dispara terminar() -> sonar() -> mock invoca alCallar sincrónico
+    expect(T.state).toBe('hidden');
   });
 
   it('minimizeRest/expandRest alternan el estado', () => {

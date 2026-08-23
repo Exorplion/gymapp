@@ -19,7 +19,7 @@
 // LÍMITE HONESTO: si el sistema mata el proceso de la app del todo, no suena
 // nada más que la notificación del sistema operativo. Eso es esperable y es
 // el mismo límite que el original documenta para Android/navegador.
-import { AppState, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { Audio } from 'expo-av';
 import * as Notifications from 'expo-notifications';
 import { vibrate } from './format.js';
@@ -66,7 +66,7 @@ const CICLO = 2000;
 
 const asset = require('../../assets/sounds/rest-alarm.wav');
 
-const A = { sound: null, int: null, desde: 0, notifId: null, sonando: false };
+const A = { sound: null, int: null, desde: 0, notifId: null, sonando: false, scheduledNotifId: null };
 
 /**
  * Deja el sonido de la alarma pre-cargado, sin gesto del usuario.
@@ -92,6 +92,41 @@ export async function prepararAlarma() {
 export const sonando = () => A.sonando;
 
 /**
+ * Programa la notificación local para el instante exacto en que el
+ * descanso termina, dejando que el sistema operativo la dispare — no este
+ * código JS. Esto es lo que hace que funcione con la app en segundo plano
+ * o la pantalla bloqueada: si dependiera de que sonar() corra en el
+ * momento justo, el caso que más importa cubrir (JS congelado) es
+ * exactamente el que no la dispararía.
+ */
+export async function scheduleEndNotification(secondsFromNow, body) {
+  try {
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Descanso terminado',
+        body,
+        ...(Platform.OS === 'android' ? { channelId: 'descanso' } : {}),
+      },
+      trigger: { seconds: Math.max(1, Math.round(secondsFromNow)), ...(Platform.OS === 'android' ? { channelId: 'descanso' } : {}) },
+    });
+    A.scheduledNotifId = id;
+    return id;
+  } catch {
+    // sin notificaciones queda el sonido/vibración en primer plano
+    return null;
+  }
+}
+
+/** Cancela la notificación programada por scheduleEndNotification(), si
+    hay una pendiente. No-op si no hay nada programado. */
+export function cancelScheduledNotification() {
+  if (!A.scheduledNotifId) return;
+  const id = A.scheduledNotifId;
+  A.scheduledNotifId = null;
+  Notifications.cancelScheduledNotificationAsync(id).catch(() => {});
+}
+
+/**
  * Arranca la alarma: suena y vibra en loop hasta que la cortan.
  *
  * `alCallar` se llama cuando se calla sola por el tope, para que quien la
@@ -104,40 +139,43 @@ export async function sonar(texto, alCallar) {
   A.sonando = true;
   A.desde = Date.now();
 
+  let sound = null;
   try {
     if (!A.sound) await prepararAlarma();
-    if (A.sound) {
-      await A.sound.setIsLoopingAsync(true);
-      await A.sound.setPositionAsync(0);
-      await A.sound.playAsync();
+    sound = A.sound;
+  } catch {
+    // sin permiso/hardware de audio quedan la vibración y la notificación
+  }
+
+  // Entre los `await`s de arriba, callar() pudo haber corrido (p.ej. el
+  // usuario tocó PARAR justo cuando la alarma estaba arrancando). Si eso
+  // pasó, A.sonando ya está en false: hay que abortar acá, ANTES de tocar
+  // sonido/vibración/intervalo, para que la alarma nunca arranque después
+  // de que ya le dijeron que pare.
+  if (!A.sonando) {
+    if (sound) sound.stopAsync().catch(() => {});
+    return;
+  }
+
+  try {
+    if (sound) {
+      await sound.setIsLoopingAsync(true);
+      await sound.setPositionAsync(0);
+      await sound.playAsync();
     }
   } catch {
     // sin permiso/hardware de audio quedan la vibración y la notificación
   }
 
+  // Mismo re-chequeo después de la segunda tanda de awaits (setIsLooping/
+  // setPosition/playAsync también son asincrónicos).
+  if (!A.sonando) {
+    if (sound) sound.stopAsync().catch(() => {});
+    return;
+  }
+
   const pulso = () => vibrate([400, 200, 400, 200, 400]);
   pulso();
-
-  // Notificación local inmediata (trigger: null): esto se dispara justo
-  // cuando la alarma empieza a sonar, no antes. Se gatea a AppState !==
-  // 'active' porque acá, a diferencia del navegador, una notificación en
-  // primer plano SÍ muestra un banner del sistema — sería redundante con la
-  // alarma sonora/UI ya visible en pantalla. Si la app está en segundo
-  // plano o bloqueada es exactamente el caso que hace falta cubrir.
-  try {
-    if (AppState.currentState !== 'active') {
-      Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Descanso terminado',
-          body: texto,
-          ...(Platform.OS === 'android' ? { channelId: 'descanso' } : {}),
-        },
-        trigger: null,
-      }).then(id => { A.notifId = id; }).catch(() => {});
-    }
-  } catch {
-    // sin notificaciones queda el sonido/vibración
-  }
 
   A.int = setInterval(() => {
     if (Date.now() - A.desde >= TOPE) {
@@ -156,12 +194,19 @@ export function callar() {
   A.sonando = false;
   if (A.sound) {
     A.sound.stopAsync().catch(() => {});
+    // Se descarta acá: esta alarma se crea y se corta una vez por cada
+    // descanso a lo largo de toda la vida de la app, así que no puede
+    // asumirse un único objeto de sonido eterno — sonar() lo vuelve a crear
+    // (vía prepararAlarma()) la próxima vez que haga falta.
+    A.sound.unloadAsync().catch(() => {});
+    A.sound = null;
   }
   vibrate(0);
+  // Sólo se apunta a la notificación de ESTA alarma, nunca a un
+  // dismiss-all: eso se llevaría por delante cualquier otra notificación
+  // que la app tenga por su cuenta, sin relación con el descanso.
   if (A.notifId) {
     Notifications.dismissNotificationAsync(A.notifId).catch(() => {});
     A.notifId = null;
-  } else {
-    Notifications.dismissAllNotificationsAsync().catch(() => {});
   }
 }

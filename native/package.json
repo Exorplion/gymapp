@@ -52,8 +52,7 @@
       "reactNativeDirectoryCheck": {
         "exclude": [
           "expo-av"
-        ],
-        "listUnknownPackages": false
+        ]
       }
     }
   }
