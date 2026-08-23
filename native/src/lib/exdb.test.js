@@ -1,4 +1,5 @@
-import { EXDB, exInfo, LOWBACK, isLowerBackLift, rirScheme } from './exdb.js';
+import { EXDB, exInfo, LOWBACK, isLowerBackLift, rirScheme, sessionMaxW, progressionWarn } from './exdb.js';
+import { S } from './state.js';
 
 describe('exdb', () => {
   test('EXDB is a non-empty array of entries with k/m/w', () => {
@@ -61,6 +62,63 @@ describe('exdb', () => {
 
     test('at least 1 set even if nSets is 0', () => {
       expect(rirScheme(0, 'press banca')).toHaveLength(1);
+    });
+  });
+
+  describe('sessionMaxW', () => {
+    test('finds the max weight for an exercise across its sets in a session', () => {
+      const session = {
+        entries: [
+          { name: 'Press banca', sets: [{ w: 60 }, { w: 65 }, { w: 62.5 }] },
+          { name: 'Sentadilla', sets: [{ w: 100 }] },
+        ],
+      };
+      expect(sessionMaxW(session, 'press banca')).toBe(65);
+    });
+
+    test('returns null when the exercise is not in the session', () => {
+      const session = { entries: [{ name: 'Sentadilla', sets: [{ w: 100 }] }] };
+      expect(sessionMaxW(session, 'press banca')).toBeNull();
+    });
+
+    test('returns null when the exercise has no sets', () => {
+      const session = { entries: [{ name: 'Press banca', sets: [] }] };
+      expect(sessionMaxW(session, 'press banca')).toBeNull();
+    });
+  });
+
+  describe('progressionWarn', () => {
+    afterEach(() => { S.sessions = []; });
+
+    test('warns when current weight is below the last session\'s max (which was a raise over the prior one)', () => {
+      S.sessions = [
+        { entries: [{ name: 'Press banca', sets: [{ w: 65 }] }] }, // last (más reciente, index 0)
+        { entries: [{ name: 'Press banca', sets: [{ w: 60 }] }] }, // prev
+      ];
+      const warn = progressionWarn('press banca', 62.5);
+      expect(warn).not.toBeNull();
+      expect(warn).toMatch(/65/);
+    });
+
+    test('does not warn when current weight equals the last max', () => {
+      S.sessions = [
+        { entries: [{ name: 'Press banca', sets: [{ w: 65 }] }] },
+        { entries: [{ name: 'Press banca', sets: [{ w: 60 }] }] },
+      ];
+      expect(progressionWarn('press banca', 65)).toBeNull();
+    });
+
+    test('does not warn when current weight is above the last max', () => {
+      S.sessions = [
+        { entries: [{ name: 'Press banca', sets: [{ w: 65 }] }] },
+        { entries: [{ name: 'Press banca', sets: [{ w: 60 }] }] },
+      ];
+      expect(progressionWarn('press banca', 70)).toBeNull();
+    });
+
+    test('does not warn when there is not enough history', () => {
+      S.sessions = [{ entries: [{ name: 'Press banca', sets: [{ w: 65 }] }] }];
+      expect(progressionWarn('press banca', 60)).toBeNull();
     });
   });
 });

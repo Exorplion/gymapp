@@ -1,13 +1,8 @@
-// Puerto de web/src/lib/exdb.js — base educativa de ejercicios + esquema RIR.
-//
-// NOTA (ver ruling 1 de docs/superpowers/plans/2026-08-22-rn-etapa5c-exinfo.md):
-// el archivo web también tiene sessionMaxW/progressionWarn al final (usadas
-// por Hoy para el banner de progresión, dependen de S.sessions). Esta etapa
-// NO las porta: ninguna pantalla de Hoy en RN tiene todavía ese banner
-// (grep confirmado, cero referencias en native/src/). Se agregan a ESTE
-// mismo archivo cuando se porte ese banner, para no duplicar EXDB/exInfo/
-// rirScheme/isLowerBackLift en dos lugares.
-import { norm } from './format.js';
+// Puerto de web/src/lib/exdb.js — base educativa de ejercicios + esquema RIR
+// + sessionMaxW/progressionWarn (banner de progresión de Hoy, dependen de
+// S.sessions — ver ruling de docs/superpowers/plans/2026-08-23-rn-completar-hoy.md).
+import { norm, fmtNum, round1 } from './format.js';
+import { S } from './state.js';
 
 /** Cada ejercicio: keywords para matchear, músculos, y por qué elegirlo */
 export const EXDB = [
@@ -54,4 +49,24 @@ export const isLowerBackLift = name => { const n = norm(name); return LOWBACK.so
 export function rirScheme(nSets, name) {
   const cap = isLowerBackLift(name) ? 1 : 0;
   return Array.from({ length: Math.max(1, nSets) }, (_, i) => cap + (nSets - 1 - i));
+}
+
+// --- sessionMaxW/progressionWarn (index.html "Alerta de progresión doble")
+// — a diferencia de todo lo de arriba, estas SÍ dependen de S.sessions
+// (historial real de entrenamiento). Se agregan al mismo archivo que
+// EXDB/exInfo/rirScheme/isLowerBackLift para no duplicarlos (ver nota de
+// cabecera y ruling de docs/superpowers/plans/2026-08-23-rn-completar-hoy.md).
+export function sessionMaxW(session, name) {
+  const e = (session.entries || []).find(en => norm(en.name) === norm(name));
+  if (!e || !e.sets.length) return null;
+  return Math.max(...e.sets.map(s => s.w));
+}
+
+export function progressionWarn(name, w) {
+  const hist = S.sessions.map(s => sessionMaxW(s, name)).filter(x => x != null); // desc por fecha
+  if (hist.length < 2) return null;
+  const last = hist[0], prev = hist[1];
+  if (last > prev + 0.01 && w < last - 0.01)
+    return `Subiste a ${fmtNum(round1(last))} kg la última vez. No vuelvas atrás: quédate en ${fmtNum(round1(last))} y reconstruye reps (caer a 5-6 es normal y esperado).`;
+  return null;
 }
