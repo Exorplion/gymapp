@@ -116,24 +116,43 @@ tocaron. expo-doctor 21/21, export limpio.
 
 **Files:** Modify `native/src/screens/Rutina.js`, `native/src/theme.js`
 
-- [ ] **Step 1**: Leer `web/src/styles.css` para encontrar el valor
+- [x] **Step 1**: Leer `web/src/styles.css` para encontrar el valor
   EXACTO del violeta de Rutina (buscar comentario "Hoy azul, Rutina
   violeta" o el selector correspondiente a la pantalla de rutina) — no
   asumir el valor citado de memoria en el survey.
 
-- [ ] **Step 2**: Agregar el token a `theme.js` (ej.
+- [x] **Step 2**: Agregar el token a `theme.js` (ej.
   `C.violet`/`C.violetLine`) con el valor exacto encontrado.
 
-- [ ] **Step 3**: Reemplazar `#a78bfa` (y cualquier variante) en
+- [x] **Step 3**: Reemplazar `#a78bfa` (y cualquier variante) en
   `Rutina.js` por el token nuevo.
 
-- [ ] **Step 4: Verificar** (mismo patrón).
+- [x] **Step 4: Verificar** (mismo patrón).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd native && git add -A && git commit -m "style(rn): corregir violeta de Rutina a la familia azul-violeta translúcida del original"
 ```
+
+Resultado (commit `a2e8de1`): valor exacto transcrito de
+`web/src/styles.css:1372-1374` (`.card.hero.hero-plan`, comentario en
+1370-1371 "Hoy azul, Rutina violeta"):
+`background:linear-gradient(158deg,rgba(108,92,255,.24),rgba(255,255,255,.03) 60%),var(--card)`
+y `border-color:rgba(140,150,255,.22)`. El CSS no ofrece un tono plano
+equivalente para eyebrow/barra activa/badge (esos elementos genéricos
+—`.hero-eyebrow`, `.weekbars .wbar.on .b`, `.day-badge`— son azules en
+el original, compartidos con Hoy, no violetas), así que se agregaron 3
+tokens a `theme.js`: `C.violetBg` (`rgba(108,92,255,.24)`, fondo del
+hero) y `C.violetLine` (`rgba(140,150,255,.22)`, borde del hero,
+reemplaza el `rgba(139,92,246,.25)` inline que ya traía `heroCard` —
+mismo matiz, valor corregido al exacto del CSS) — ambos transcritos
+literales — más `C.violet` (`#6C5CFF`, versión sólida del mismo
+rgb(108,92,255), documentada en el propio `theme.js` como extensión
+razonada, no transcripción literal) para los 3 usos que en `Rutina.js`
+necesitaban un color plano legible (`heroEyebrow`, `wbarOn`,
+`dayBadge`) donde el CSS original no da uno. jest 376/376, expo-doctor
+21/21, `expo export --platform android` limpio.
 
 ---
 
