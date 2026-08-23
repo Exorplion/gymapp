@@ -9,6 +9,7 @@ import { WDS, MO } from '../lib/format.js';
 import { pendingSlot, sessionForSlot } from '../lib/session.js';
 import { daysSinceAll, stalestGroups } from '../lib/muscle.js';
 import { C, T } from '../theme';
+import GradientButton from '../components/GradientButton';
 
 export default function Inicio({ navigation }) {
   useStore();
@@ -70,10 +71,10 @@ export default function Inicio({ navigation }) {
         </Text>
       )}
 
-      <Pressable style={styles.cta} onPress={onCta}>
+      <GradientButton style={styles.cta} radius={16} onPress={onCta}>
         <Text style={styles.ctaText}>{ctaLabel}</Text>
         {ctaSub && <Text style={styles.ctaSubText}>{ctaSub}</Text>}
-      </Pressable>
+      </GradientButton>
     </View>
   );
 }
@@ -85,7 +86,7 @@ const styles = StyleSheet.create({
   title: { color: C.txt, fontSize: T.display, fontFamily: 'BarlowCondensed_700Bold_Italic', fontWeight: '800', marginTop: 6 },
   sub: { color: C.mut, fontSize: T.body, fontFamily: 'Barlow_400Regular', marginTop: 6 },
   stale: { color: C.warn, fontSize: T.sm, fontFamily: 'Barlow_500Medium', marginBottom: 24 },
-  cta: { backgroundColor: C.blue, borderRadius: 16, paddingVertical: 18, alignItems: 'center' },
+  cta: { borderRadius: 16, paddingVertical: 18, alignItems: 'center' },
   ctaText: { color: C.txt, fontFamily: 'Barlow_700Bold', fontWeight: '800', fontSize: 17, letterSpacing: 0.5 },
   // ctaSubText: de-enfatizado respecto a ctaText — mismo blanco pero
   // translúcido, no C.mut (ese tono está calibrado para leerse sobre el

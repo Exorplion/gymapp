@@ -24,6 +24,7 @@ import {
 import { relatedHistory, equipLabel } from '../lib/equip.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from '../components/ExIcon.js';
+import GradientButton from '../components/GradientButton';
 
 export default function ExerciseList({ exs, wd, active, started, curId, nextEx }) {
   if (!exs.length) return null;
@@ -144,9 +145,9 @@ function ExerciseCard({ ex, wd, done, target, skipped, full, open, isNext, waiti
       )}
       {isNext && (
         <>
-          <Pressable style={styles.primaryBtn} onPress={() => startExercise(ex)}>
+          <GradientButton style={styles.primaryBtn} radius={12} onPress={() => startExercise(ex)}>
             <Text style={styles.primaryBtnText}>▶ Iniciar ejercicio</Text>
-          </Pressable>
+          </GradientButton>
           <Text style={styles.hint}>Dale cuando estés en la máquina{!started ? ' — acá arranca el cronómetro' : ''}</Text>
           <ExActions ex={ex} wd={wd} onSkip={confirmarSalto} />
         </>
@@ -176,9 +177,9 @@ function ExerciseCard({ ex, wd, done, target, skipped, full, open, isNext, waiti
               </View>
             </View>
           </View>
-          <Pressable style={styles.primaryBtn} onPress={() => saveSet(ex.id)}>
+          <GradientButton style={styles.primaryBtn} radius={12} onPress={() => saveSet(ex.id)}>
             <Text style={styles.primaryBtnText}>✓ Terminé la serie {done.length + 1} de {target}</Text>
-          </Pressable>
+          </GradientButton>
           <ExActions ex={ex} wd={wd} onSkip={confirmarSalto} />
         </>
       )}
@@ -232,7 +233,7 @@ const styles = StyleSheet.create({
   stateSkip: { color: C.warn, fontSize: T.sm, marginTop: 8, fontFamily: 'Barlow_500Medium' },
   ghostBtn: { marginTop: 10, paddingVertical: 10, alignItems: 'center', borderRadius: 10, backgroundColor: C.card2 },
   ghostBtnText: { color: C.txt, fontSize: T.sm, fontWeight: '600', fontFamily: 'Barlow_600SemiBold' },
-  primaryBtn: { marginTop: 12, backgroundColor: C.blue, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  primaryBtn: { marginTop: 12, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   primaryBtnText: { color: C.txt, fontWeight: '700', fontSize: 14, fontFamily: 'Barlow_700Bold' },
   hint: { color: C.mut, fontSize: T.micro, textAlign: 'center', marginTop: 6, fontFamily: 'Barlow_400Regular' },
   setRows: { flexDirection: 'row', gap: 14, marginTop: 12 },

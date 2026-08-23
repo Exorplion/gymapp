@@ -27,6 +27,7 @@ import { startRest } from '../lib/rest.js';
 import ExerciseList from './ExerciseList.js';
 import WarmupCard from '../components/WarmupCard.js';
 import { C, T, R } from '../theme';
+import GradientButton from '../components/GradientButton';
 
 export default function Hoy() {
   useStore();
@@ -221,9 +222,9 @@ function PreSessionHero({ slot, index }) {
         <View style={styles.stat}><Text style={styles.statNum}>~{estMin}</Text><Text style={styles.statLabel}>Minutos</Text></View>
       </View>
       {exs.length > 0 && (
-        <Pressable style={styles.ctaBtn} onPress={() => openSheet('sess-start-info', { index })}>
+        <GradientButton style={styles.ctaBtn} radius={14} onPress={() => openSheet('sess-start-info', { index })}>
           <Text style={styles.ctaBtnText}>Empezar entrenamiento</Text>
-        </Pressable>
+        </GradientButton>
       )}
     </View>
   );
@@ -304,9 +305,9 @@ export function SessStartInfo({ index }) {
       <View style={styles.calcbox}>
         <Text style={styles.calcboxText}>✓ Vas de a un ejercicio: al llegar a las series objetivo se cierra solo y pasás al siguiente.</Text>
       </View>
-      <Pressable style={styles.ctaBtn} onPress={() => { closeSheet(); startSession(index); }}>
+      <GradientButton style={styles.ctaBtn} radius={14} onPress={() => { closeSheet(); startSession(index); }}>
         <Text style={styles.ctaBtnText}>Abrir sesión</Text>
-      </Pressable>
+      </GradientButton>
       <Pressable style={[styles.smallBtn, styles.dimBtn, { marginTop: 10 }]} onPress={closeSheet}>
         <Text style={styles.smallBtnText}>Cancelar</Text>
       </Pressable>
@@ -332,7 +333,7 @@ const styles = StyleSheet.create({
   stat: { alignItems: 'center' },
   statNum: { color: C.txt, fontSize: T.xl, fontFamily: 'BarlowCondensed_700Bold_Italic', fontWeight: '700', fontVariant: ['tabular-nums'] },
   statLabel: { color: C.mut, fontSize: T.micro, fontFamily: 'Barlow_500Medium', marginTop: 2 },
-  ctaBtn: { backgroundColor: C.blue, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
+  ctaBtn: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
   ctaBtnText: { color: C.txt, fontFamily: 'Barlow_700Bold', fontWeight: '700', fontSize: T.body },
   rowGap: { flexDirection: 'row', gap: 10, marginTop: 14 },
   smallBtn: { flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },

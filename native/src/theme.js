@@ -24,6 +24,22 @@ export const C = {
   red: '#FF5D73',
 };
 
+// Stops del gradiente de los CTAs primarios, transcritos de
+// web/src/styles.css:23 — `--grad2:linear-gradient(112deg,#4FA8FF 0%,#22D3EE 58%,#7FD1FF 100%)`.
+// No hay expo-linear-gradient instalado en este proyecto (a pesar de lo que
+// dice el plan) — se pinta con react-native-svg (ya usado en Silhouette.js/
+// BodyMini.js/RestTimer.js para otros gradientes), ver GradientButton.js.
+export const GRAD_PRIMARY = {
+  stops: [
+    { offset: '0%', color: '#4FA8FF' },
+    { offset: '58%', color: '#22D3EE' },
+    { offset: '100%', color: '#7FD1FF' },
+  ],
+  // Aproximación de la dirección 112deg del CSS en coordenadas x1/y1/x2/y2
+  // de objectBoundingBox (derecha, levemente hacia abajo).
+  x1: '0%', y1: '0%', x2: '100%', y2: '37%',
+};
+
 // escala de espaciado: seis pasos, sin márgenes sueltos.
 export const S = {
   s1: 4,
@@ -51,4 +67,4 @@ export const R = {
   pill: 999,
 };
 
-export default { C, S, T, R };
+export default { C, S, T, R, GRAD_PRIMARY };
