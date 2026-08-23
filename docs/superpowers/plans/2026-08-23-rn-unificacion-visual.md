@@ -273,6 +273,109 @@ cd native && git add -A && git commit -m "style(rn): unificar jerarquía tipogr�
 
 ### Resultado de la revisión final
 
+**Actualización tras revisión de un segundo agente (opus):** el cierre
+original de esta sección (más abajo) daba la etapa por terminada, pero una
+revisión final encontró que el trabajo NO estaba limpio. Hallazgos reales,
+y qué se hizo con cada uno en el fix-wave (commit `f494cc2`):
+
+1. **CRÍTICO — fuentes cargadas pero nunca usadas.** `App.js` cargaba 7
+   variantes de Barlow/Barlow Condensed vía `useFonts`, pero
+   `grep -r fontFamily native/src` no encontraba ningún resultado, y no
+   había ningún `fontVariant: ['tabular-nums']`. Arreglado: `fontFamily` en
+   los estilos principales de las 5 pantallas de tabs
+   (Hoy/Inicio/Progreso/Rutina/Nutricion), más `ExerciseList.js`,
+   `Library.js`, `IllusPick.js` y `RestTimer.js` — Barlow (regular/medium/
+   semibold/bold según el peso que ya tenía cada estilo) para texto de
+   cuerpo/label, `BarlowCondensed_700Bold_Italic` para números "hero"
+   (`heroDay`, `heroName`, `statNum`, `kcalBig`, `krN`, `constNum`,
+   `statNum` de Progreso, `pillTime`/`ringTime` del RestTimer). `fontVariant:
+   ['tabular-nums']` agregado a todo contador que cambia en vivo:
+   `ElapsedTimer` de Hoy.js, el peso/reps de `ExerciseList.js` (input y su
+   valor alterno), el timer de `RestTimer.js` (pill y overlay), y los
+   números de calorías/estadísticas de Nutricion.js/Progreso.js.
+
+2. **IMPORTANTE — `C.line` (token de BORDE) usado como fondo,** colapsando 3
+   niveles de superficie en uno. En `ExerciseList.js` (`firstBox`,
+   `ghostBtn`, `stepBtn`, `input`, `actionBtn`, `infoBtn`, `uniChip`) y en
+   `IllusPick.js` (`input`, `empty`, `opt`, `optImg`) el `rgba(255,255,255,
+   .08/.06/.04)` original se había reemplazado por `C.line` como
+   `backgroundColor`. Corregido a `C.card2`/`C.bg2` según el nivel de
+   superficie correspondiente, dejando `C.line` sólo en `borderColor`
+   (se agregó borde explícito donde antes el fondo hacía las veces de
+   límite visual, p.ej. `IllusPick.js`).
+
+3. **IMPORTANTE — `ExIcon.js` aplanó 3 roles de tono en uno.** Antes:
+   `COLOR_BODY`/`COLOR_HEAD` (claro) vs `COLOR_EQUIP` (apagado) — dos roles
+   distintos. Se habían igualado los tres a `Colors.mut`. Corregido:
+   cuerpo/cabeza → `Colors.txt` (tono claro, se lee primero), aparato →
+   `Colors.mut2` (más apagado, queda detrás en la lectura). Comentario de
+   la jerarquía de tonos actualizado para reflejar esto.
+
+4. **IMPORTANTE — Task 4 usó números sueltos en vez de tokens `T`/`R`,**
+   contradiciendo su propio objetivo. Se tokenizaron los `fontSize`
+   sueltos que calzaban exacto con un escalón de `T` (11→`T.micro`,
+   13→`T.sm`, 15→`T.body`, 18→`T.lg`, 22→`T.xl`) en las 5 pantallas de
+   tabs, `ExerciseList.js` y `Library.js`. No se forzó ningún `fontSize`
+   que no calzara con un escalón existente (p.ej. valores de 10/16/17/20
+   que no tienen equivalente en la escala se dejaron como están — forzarlos
+   habría sido inventar un valor nuevo, lo que el propio plan prohíbe).
+   Radios: no se encontró en esta pasada ningún radio de card 12/14/16
+   suelto fuera de los ya tokenizados por el fix-wave anterior; el único
+   caso real fue el padding de `Library.js` `card` (ver punto 7).
+
+5. **IMPORTANTE — familia ámbar/verde/rojo (hallazgo 6) no se había hecho.**
+   Unificados a `C.warn`/`C.ok`/`C.red`: `#ffb347`, `#e0a63a`, `#f5b942`,
+   `#e0b23a`, `#1fbf75`, `#e0505a`, `#f87171` en `Hoy.js`, `Inicio.js`,
+   `Nutricion.js`, `Progreso.js`, `Rutina.js`, `Library.js`, `SessionCard.js`
+   y `SessionView.js`. **Excepción documentada, a propósito:** el gradiente
+   de "heatmap" de `Silhouette.js` (`sil-g3`, stops `#F6C98B`/`#E39C43`)
+   NO se tocó — es un gradiente de 3 paradas (claro→medio→oscuro) que
+   representa intensidad, no un color de estado plano; mapear sus dos
+   paradas ámbar al mismo `C.warn` colapsaría el gradiente a un color
+   sólido y rompería el efecto visual que ese componente busca. Se deja
+   igual que los otros 4 gradientes hermanos del mismo archivo
+   (`sil-g0`/`g1`/`g2`/`gn`/`gne`/`gpelo`), ninguno de los cuales usa
+   tokens de `theme.js` tampoco, por consistencia interna del archivo.
+
+6. **MENOR — `Inicio.js` `ctaSubText` había perdido su des-énfasis** (era
+   `rgba(255,255,255,.75)`, quedó en `C.txt` opaco, igual que `ctaText` al
+   lado). Restaurado a `rgba(255,255,255,.75)` — se prefirió sobre `C.mut`
+   porque `C.mut` está calibrado para leerse sobre `C.bg`/`C.card` (fondo
+   oscuro), no sobre el azul sólido de este botón CTA; un blanco
+   translúcido es el criterio correcto ahí.
+
+7. **MENOR — `Library.js` `card`: radio subido a `R.r` (18) pero el
+   padding se había quedado en 6,** desalineado con `tmplCard`/`blankCard`
+   del mismo archivo (ya en `R.r` con más aire). Subido a `S.s3` (12) de
+   `theme.js`.
+
+**Pendiente, documentado explícitamente (no se resuelve en este
+fix-wave):**
+- `--tabs-h` de la tab bar: fuera de alcance de este pedido puntual, queda
+  para una pasada futura sobre el tab bar.
+- El gradiente ámbar de `Silhouette.js` (punto 5 arriba) — decisión
+  consciente de no forzarlo a un solo token, con la razón documentada en el
+  código y acá.
+- Los 3 hallazgos que el plan original ya había dejado fuera a propósito
+  siguen fuera: cian de eyebrows, violeta correcto de Rutina, gradientes en
+  CTAs (ver lista original más abajo).
+
+**Verificación tras el fix-wave:**
+- `npx jest` → 29 suites, 376 tests, todos passing (sin cambios).
+- `npx expo-doctor` → 21/21 checks passed.
+- `npx expo export --platform android` → bundlea sin error, `dist/`
+  generado y limpiado tras la verificación.
+- Commit del fix: `f494cc2` — "fix(rn): aplicar fuentes reales, corregir
+  uso de C.line como fondo, tonos de ExIcon, tokens T/R faltantes y
+  familia ámbar/verde/rojo".
+
+---
+
+**Cierre original de esta sección (antes de la revisión de opus, dejado
+como referencia histórica — algunas de sus afirmaciones quedaron
+invalidadas por los hallazgos de arriba, p.ej. "fuentes cargan sin
+bloquear" era cierto pero omitía que no se usaban en ningún estilo):**
+
 **Qué se unificó (Task 4):**
 - Título de pantalla: `Hoy.js`, `Progreso.js`, `Rutina.js`, `Nutricion.js`
   (28→`T.display` 34) e `Inicio.js` (34 literal→`T.display` token). Las 5
