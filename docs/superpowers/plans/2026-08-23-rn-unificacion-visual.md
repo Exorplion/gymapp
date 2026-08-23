@@ -415,3 +415,28 @@ dispositivo/emulador para juzgar el resultado):**
    del original.
 3. Gradientes en CTAs (hallazgo 10) — los botones primarios son color
    plano; el original usa gradiente.
+
+### Verificación independiente del fix-wave (re-review, commits f494cc2/c655e85)
+
+Un segundo revisor (sin confiar en el reporte del implementador)
+verificó con grep/diff los 7 puntos de arriba y confirmó los 7 reales
+en código: nombres de `fontFamily` usados son subconjunto exacto de lo
+que `App.js` carga vía `useFonts`, `tabular-nums` presente en los 3
+sitios pedidos, `C.line`→`C.card2`/`C.bg2` confirmado en
+`ExerciseList.js`/`IllusPick.js`, `ExIcon.js` con la jerarquía de tonos
+restaurada en el diff literal, familia ámbar/verde/rojo en 0
+apariciones sueltas, `ctaSubText` y padding de `Library.js`
+corregidos. jest 376/376, expo-doctor 21/21, export limpio — corridos
+de forma independiente, no repetidos del reporte anterior.
+
+**Hallazgo residual del re-review (Minor, no bloqueante, documentado
+para etapa futura):** el patrón de `C.line` usado como `backgroundColor`
+en vez de `borderColor` sigue vivo fuera de los 2 archivos corregidos —
+presente en todos los sheets de `native/src/components/sheets/`,
+`MachineField.js`, `WarmupCard.js`, y en varias pantallas
+(`Hoy.js`, `Rutina.js`, `Library.js`, `Progreso.js`, `Nutricion.js`). El
+fix-wave corrigió exactamente los 2 archivos que la revisión de opus
+había señalado explícitamente; el problema de fondo (colapso de
+niveles de superficie) es más amplio y queda para una etapa futura de
+continuación de unificación visual, junto con `--tabs-h` y los 3
+hallazgos ya excluidos arriba.
