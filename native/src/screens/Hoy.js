@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   reorderBtnText: { color: C.mut, fontSize: T.sm, fontFamily: 'Barlow_600SemiBold', fontWeight: '600' },
   card: { backgroundColor: C.card, borderRadius: R.r, padding: 20, borderWidth: 1, borderColor: C.line },
   emptyText: { color: C.mut, fontSize: 14, fontFamily: 'Barlow_400Regular', textAlign: 'center', lineHeight: 20, marginBottom: 14 },
-  eyebrow: { color: C.blue, fontSize: 12, fontFamily: 'Barlow_700Bold', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  eyebrow: { color: C.accent, fontSize: 12, fontFamily: 'Barlow_700Bold', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   heroDay: { color: C.txt, fontSize: T.hero, fontFamily: 'BarlowCondensed_700Bold_Italic', fontWeight: '700', marginTop: 4 },
   mut: { color: C.mut, fontSize: T.sm, fontFamily: 'Barlow_400Regular', marginTop: 6 },
   elapsed: { color: C.txt, fontFamily: 'Barlow_700Bold', fontWeight: '700' },

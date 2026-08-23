@@ -81,7 +81,7 @@ export default function Inicio({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, padding: 18, justifyContent: 'center' },
   top: { marginBottom: 24 },
-  eyebrow: { color: C.blue, fontSize: T.sm, fontFamily: 'Barlow_700Bold', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  eyebrow: { color: C.accent, fontSize: T.sm, fontFamily: 'Barlow_700Bold', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   title: { color: C.txt, fontSize: T.display, fontFamily: 'BarlowCondensed_700Bold_Italic', fontWeight: '800', marginTop: 6 },
   sub: { color: C.mut, fontSize: T.body, fontFamily: 'Barlow_400Regular', marginTop: 6 },
   stale: { color: C.warn, fontSize: T.sm, fontFamily: 'Barlow_500Medium', marginBottom: 24 },
