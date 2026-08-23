@@ -215,35 +215,35 @@ survey (`Hoy.js`, `Inicio.js`, `Progreso.js`, `Rutina.js`,
 `Nutricion.js`, `ExerciseList.js`, `Library.js`, y cualquier otra que
 el grep de Step 1 encuentre).
 
-- [ ] **Step 1**: Grep de `fontSize`/`borderRadius` en todo
+- [x] **Step 1**: Grep de `fontSize`/`borderRadius` en todo
   `native/src/` para el inventario completo (el survey ya listó los
   principales, confirmar que no falta ninguno).
 
-- [ ] **Step 2**: Unificar título de pantalla a un solo valor de `T`
+- [x] **Step 2**: Unificar título de pantalla a un solo valor de `T`
   (hoy 28 vs 34 mezclados en 5 pantallas).
 
-- [ ] **Step 3**: Subir los "hero" numbers a un valor de `T` cercano al
+- [x] **Step 3**: Subir los "hero" numbers a un valor de `T` cercano al
   original (26→~46 en Hoy, 22→~38 en Rutina) — usando `T.hero`/el
   escalón que corresponda de Task 1, no un número nuevo suelto.
 
-- [ ] **Step 4**: Unificar radios de card a `R.r` (18) en los archivos
+- [x] **Step 4**: Unificar radios de card a `R.r` (18) en los archivos
   que hoy tienen 16/14, salvo justificación real documentada.
 
-- [ ] **Step 5**: Redondear tamaños fraccionarios (12.5, 11.5) al
+- [x] **Step 5**: Redondear tamaños fraccionarios (12.5, 11.5) al
   escalón de `T` más cercano.
 
-- [ ] **Step 6**: Subir el contraste de `mut2`/equivalente
+- [x] **Step 6**: Subir el contraste de `mut2`/equivalente
   (`#5a6478`→valor con ratio ≥4.5:1, referencia el `mut2` del web) si
   Task 3 no lo dejó ya resuelto vía el token.
 
-- [ ] **Step 7: Verificar**
+- [x] **Step 7: Verificar**
 
 Run: `cd native && npx jest` → sin cambios.
 Run: `cd native && npx expo-doctor` → 21/21.
 Run: `cd native && npx expo export --platform android` → compila sin
 error.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 cd native && git add -A && git commit -m "style(rn): unificar jerarquía tipográfica y radios de card entre pantallas"
@@ -253,20 +253,62 @@ cd native && git add -A && git commit -m "style(rn): unificar jerarquía tipogr�
 
 ## Revisión final de la etapa
 
-- [ ] `cd native && npx jest` — sin cambios respecto al cierre de
+- [x] `cd native && npx jest` — sin cambios respecto al cierre de
   "Completar Hoy.js" (376).
-- [ ] `cd native && npx expo-doctor` — sin errores.
-- [ ] Bundler de Metro compila sin error.
-- [ ] `web/` sin ningún archivo modificado.
-- [ ] `theme.js` tiene los valores transcritos correctamente del `:root`
+- [x] `cd native && npx expo-doctor` — sin errores.
+- [x] Bundler de Metro compila sin error.
+- [x] `web/` sin ningún archivo modificado.
+- [x] `theme.js` tiene los valores transcritos correctamente del `:root`
   del web (comparar línea por línea, no de memoria).
-- [ ] Grep de verificación: cero literales de color viejos quedaron
+- [x] Grep de verificación: cero literales de color viejos quedaron
   sueltos fuera de los casos documentados como excepción.
-- [ ] Tab bar tiene estilo propio (no el default de React Navigation).
-- [ ] Las fuentes cargan sin bloquear el arranque de la app (pantalla
+- [x] Tab bar tiene estilo propio (no el default de React Navigation).
+- [x] Las fuentes cargan sin bloquear el arranque de la app (pantalla
   de carga o fallback razonable mientras `useFonts` resuelve).
-- [ ] Ningún archivo quedó con un radio/tamaño de fuente huérfano fuera
+- [x] Ningún archivo quedó con un radio/tamaño de fuente huérfano fuera
   de la escala de `T`/`R` sin justificación.
-- [ ] Documentar en el reporte final los 3 hallazgos dejados fuera a
+- [x] Documentar en el reporte final los 3 hallazgos dejados fuera a
   propósito (cian de eyebrows, violeta de Rutina, gradientes en CTAs) —
   no se pierden, quedan para una etapa futura con dispositivo.
+
+### Resultado de la revisión final
+
+**Qué se unificó (Task 4):**
+- Título de pantalla: `Hoy.js`, `Progreso.js`, `Rutina.js`, `Nutricion.js`
+  (28→`T.display` 34) e `Inicio.js` (34 literal→`T.display` token). Las 5
+  pantallas principales quedan en el mismo escalón tipográfico.
+  `Library.js` (título 24) se dejó sin tocar a propósito: es una pantalla
+  secundaria (navegada, no un tab principal), no de las 5 nombradas por el
+  survey como "mezcladas entre 28 y 34".
+- Números "hero": `Hoy.js` `heroDay` 26→`T.hero` (44); `Rutina.js`
+  `heroName` 22→`T.display` (34, escalón alto pero no el tope `hero`
+  porque es un nombre de texto, no una cifra destacada como `heroDay`).
+- Radios de card a `R.r` (18): `ExerciseList.js` `card` (16→18),
+  `Library.js` `card`/`tmplCard`/`blankCard` (14→18), `Rutina.js`
+  `dayCard`/`editCard` (14→18); `Hoy.js`, `Progreso.js`, `Rutina.js`
+  `card`/`heroCard` ya estaban en 18 y quedaron tokenizados a `R.r`.
+- Tamaños fraccionarios (12.5/11.5/13.5/14.5) redondeados en los ~20
+  archivos donde aparecían (no sólo los 3 nombrados por el survey):
+  12.5→13 (`T.sm`), 11.5→11 (`T.micro`), 13.5→13 (`T.sm`), 14.5→15
+  (`T.body`) — el escalón de `T` más cercano en cada caso.
+- Contraste `mut2`: ya resuelto por Task 3 (`#64749A`, ratio ≥4.5:1
+  sobre `C.bg`/`C.card`); grep confirma cero apariciones de `#5a6478` o
+  variantes fuera de `theme.js`.
+
+**Verificación final:**
+- `npx jest` → 29 suites, 376 tests, todos passing (sin cambios).
+- `npx expo-doctor` → 21/21 checks passed.
+- `npx expo export --platform android` → bundlea sin error (2419
+  módulos, `dist/` generado y limpiado tras la verificación).
+- Commit: `3ac34a6` — "style(rn): unificar jerarquía tipográfica y
+  radios de card entre pantallas".
+
+**Hallazgos dejados fuera a propósito (etapa futura, con
+dispositivo/emulador para juzgar el resultado):**
+1. Acento cian en eyebrows (hallazgo 5) — hoy usan el azul de botón
+   primario en vez de `C.accent`/`C.cyan`.
+2. Violeta correcto de Rutina (hallazgo 9) — usa violeta plano de
+   Tailwind (`#a78bfa`) en vez de la familia azul-violeta translúcida
+   del original.
+3. Gradientes en CTAs (hallazgo 10) — los botones primarios son color
+   plano; el original usa gradiente.
