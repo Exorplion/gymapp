@@ -7,7 +7,8 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 
 // Mocks de expo-av y expo-notifications para tests (jest) — igual que
 // AsyncStorage arriba, sus módulos nativos no existen en el entorno de
-// test. Sólo se mockean las funciones que src/lib/alarm.js usa.
+// test. Se mockean las funciones que usan src/lib/alarm.js (Etapa 6a) y
+// src/lib/reminder.js (Etapa 6b, agrega el trigger DATE).
 jest.mock('expo-av', () => ({
   Audio: {
     Sound: {
@@ -27,7 +28,7 @@ jest.mock('expo-av', () => ({
 
 jest.mock('expo-notifications', () => ({
   AndroidImportance: { HIGH: 4 },
-  SchedulableTriggerInputTypes: { TIME_INTERVAL: 'timeInterval' },
+  SchedulableTriggerInputTypes: { TIME_INTERVAL: 'timeInterval', DATE: 'date' },
   setNotificationChannelAsync: jest.fn(() => Promise.resolve(null)),
   requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
   scheduleNotificationAsync: jest.fn(() => Promise.resolve('mock-notif-id')),
