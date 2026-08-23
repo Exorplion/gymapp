@@ -66,7 +66,7 @@ const CICLO = 2000;
 
 const asset = require('../../assets/sounds/rest-alarm.wav');
 
-const A = { sound: null, int: null, desde: 0, notifId: null, sonando: false, scheduledNotifId: null };
+const A = { sound: null, int: null, desde: 0, sonando: false, scheduledNotifId: null, gen: 0 };
 
 /**
  * Deja el sonido de la alarma pre-cargado, sin gesto del usuario.
@@ -77,11 +77,27 @@ const A = { sound: null, int: null, desde: 0, notifId: null, sonando: false, sch
  * vez sale de un gesto). Acá esta función se usa para precargar el asset de
  * audio de antemano, así sonar() no tiene que esperar el createAsync() en el
  * momento exacto en que termina el descanso.
+ *
+ * `A.gen` es un contador de "generación" que evita una fuga de sonido: si
+ * callar() corre mientras el createAsync() de acá abajo todavía está en
+ * vuelo, A.sound sigue en null en ese momento (callar() no tiene nada que
+ * descargar), pero cuando la promesa se resuelve DESPUÉS terminaría
+ * asignando un sonido cargado que ya nadie va a soltar. Por eso se guarda la
+ * generación vigente al arrancar la carga y, si cambió para cuando termina
+ * (porque callar() la incrementó), se descarta el sonido recién creado en
+ * vez de guardarlo en A.sound.
  */
 export async function prepararAlarma() {
   if (A.sound) return;
+  const gen = A.gen;
   try {
     const { sound } = await Audio.Sound.createAsync(asset, { isLooping: true, shouldPlay: false });
+    if (gen !== A.gen) {
+      // callar() corrió mientras createAsync() estaba en vuelo: este sonido
+      // ya no corresponde a ningún intento vigente, se descarta sin asignar.
+      sound.unloadAsync().catch(() => {});
+      return;
+    }
     A.sound = sound;
   } catch {
     // sin audio queda la vibración y la notificación
@@ -107,7 +123,11 @@ export async function scheduleEndNotification(secondsFromNow, body) {
         body,
         ...(Platform.OS === 'android' ? { channelId: 'descanso' } : {}),
       },
-      trigger: { seconds: Math.max(1, Math.round(secondsFromNow)), ...(Platform.OS === 'android' ? { channelId: 'descanso' } : {}) },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(1, Math.round(secondsFromNow)),
+        ...(Platform.OS === 'android' ? { channelId: 'descanso' } : {}),
+      },
     });
     A.scheduledNotifId = id;
     return id;
@@ -138,6 +158,7 @@ export async function sonar(texto, alCallar) {
   if (A.sonando) return;
   A.sonando = true;
   A.desde = Date.now();
+  A.gen++;
 
   let sound = null;
   try {
@@ -192,6 +213,12 @@ export async function sonar(texto, alCallar) {
 export function callar() {
   if (A.int) { clearInterval(A.int); A.int = null; }
   A.sonando = false;
+  // Se incrementa la generación acá, no sólo en sonar(): así, si hay un
+  // prepararAlarma() en vuelo (createAsync() todavía sin resolver) en este
+  // preciso instante, su continuación lo va a notar (ver comentario en
+  // prepararAlarma()) y va a descargar el sonido recién creado en vez de
+  // dejarlo huérfano en A.sound.
+  A.gen++;
   if (A.sound) {
     A.sound.stopAsync().catch(() => {});
     // Se descarta acá: esta alarma se crea y se corta una vez por cada
@@ -202,11 +229,17 @@ export function callar() {
     A.sound = null;
   }
   vibrate(0);
-  // Sólo se apunta a la notificación de ESTA alarma, nunca a un
+  // Sólo se apunta a la notificación de ESTE descanso, nunca a un
   // dismiss-all: eso se llevaría por delante cualquier otra notificación
-  // que la app tenga por su cuenta, sin relación con el descanso.
-  if (A.notifId) {
-    Notifications.dismissNotificationAsync(A.notifId).catch(() => {});
-    A.notifId = null;
+  // que la app tenga por su cuenta, sin relación con el descanso. Se usa el
+  // mismo id que scheduleEndNotification() devolvió: sirve tanto para
+  // cancelar la notificación si todavía no se disparó (pendiente) como para
+  // descartarla de la bandeja si ya se disparó (entregada) — desde JS no se
+  // puede distinguir cuál de los dos casos es, así que se intentan ambos.
+  if (A.scheduledNotifId) {
+    const id = A.scheduledNotifId;
+    A.scheduledNotifId = null;
+    Notifications.cancelScheduledNotificationAsync(id).catch(() => {});
+    Notifications.dismissNotificationAsync(id).catch(() => {});
   }
 }

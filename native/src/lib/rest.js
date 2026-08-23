@@ -16,7 +16,7 @@ import { S, bump } from './state.js';
 import { toast } from './toast.js';
 import { prepararAlarma, pedirPermiso, sonar, callar, scheduleEndNotification, cancelScheduledNotification } from './alarm.js';
 
-export const T = { end: 0, total: 0, int: null, state: 'hidden', leftSec: 0, pct: 0 };
+export const T = { end: 0, total: 0, start: 0, int: null, state: 'hidden', leftSec: 0, pct: 0 };
 
 export const REST_CIRC = 2 * Math.PI * 88;
 
@@ -30,7 +30,7 @@ export function startRest(segs) {
   if (!total) return;
   prepararAlarma();  // precargar el audio con el mismo gesto que arranca el descanso
   pedirPermiso();
-  T.total = total; T.end = Date.now() + T.total * 1000;
+  T.total = total; T.start = Date.now(); T.end = T.start + T.total * 1000;
   T.state = 'fullscreen';
   bump();
   scheduleEndNotification(T.total, 'Ya pasaron tus ' + T.total + ' segundos. A la próxima serie.');
@@ -52,7 +52,14 @@ export function shiftRest(secs) {
   // el final se movió: la notificación programada para el horario viejo ya
   // no corresponde, hay que cancelarla y programar una nueva para el nuevo
   cancelScheduledNotification();
-  scheduleEndNotification(Math.max(0, Math.round((T.end - Date.now()) / 1000)), 'Ya pasaron tus ' + T.total + ' segundos. A la próxima serie.');
+  // El texto no puede usar T.total: ese campo es el total "de anillo" (sólo
+  // sube, nunca baja, para que el círculo de progreso no se pase de vuelta)
+  // y con un -30s puede quedar más alto que lo que realmente va a transcurrir
+  // hasta que la notificación se dispare. Lo que hay que anunciar es cuánto
+  // tiempo real pasa entre que arrancó ESTE descanso (T.start) y el nuevo
+  // final (T.end) — eso es lo que efectivamente transcurrió cuando suene.
+  const duracionReal = Math.max(0, Math.round((T.end - T.start) / 1000));
+  scheduleEndNotification(Math.max(0, Math.round((T.end - Date.now()) / 1000)), 'Ya pasaron tus ' + duracionReal + ' segundos. A la próxima serie.');
   tickRest();
 }
 
@@ -86,7 +93,7 @@ function terminar() {
   toast('⏱ ¡Descanso terminado!');
   // Si se calla sola por el tope, hay que sacar la pantalla de "sonando" o
   // quedaría pidiendo que pares algo que ya no suena.
-  sonar('Ya pasaron tus ' + T.total + ' segundos. A la próxima serie.', () => {
+  sonar('Ya pasaron tus ' + Math.max(0, Math.round((T.end - T.start) / 1000)) + ' segundos. A la próxima serie.', () => {
     if (T.state === 'ringing') { T.state = 'hidden'; bump(); }
   });
 }
@@ -117,9 +124,6 @@ export function recuperarRest() {
 // que hace falta recalcular contra T.end. Registrado una sola vez a nivel de
 // módulo (como el original), vive todo el ciclo de vida de la app — no hace
 // falta guardar/limpiar la suscripción.
-// El resultado (una suscripción) no se guarda a propósito: vive todo el
-// ciclo de vida de la app, así que no hace falta una variable para
-// limpiarla más tarde.
 AppState.addEventListener('change', nextState => {
   if (nextState === 'active') recuperarRest();
 });

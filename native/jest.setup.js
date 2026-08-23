@@ -27,9 +27,11 @@ jest.mock('expo-av', () => ({
 
 jest.mock('expo-notifications', () => ({
   AndroidImportance: { HIGH: 4 },
+  SchedulableTriggerInputTypes: { TIME_INTERVAL: 'timeInterval' },
   setNotificationChannelAsync: jest.fn(() => Promise.resolve(null)),
   requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
   scheduleNotificationAsync: jest.fn(() => Promise.resolve('mock-notif-id')),
+  cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
   dismissNotificationAsync: jest.fn(() => Promise.resolve()),
   dismissAllNotificationsAsync: jest.fn(() => Promise.resolve()),
 }));
