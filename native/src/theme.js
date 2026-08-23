@@ -22,6 +22,15 @@ export const C = {
   ok: '#2EE6A8',
   warn: '#FFB454',
   red: '#FF5D73',
+  // Familia azul-violeta translúcida usada para distinguir Rutina de Hoy
+  // (Hoy azul, Rutina violeta), transcrita de web/src/styles.css:1372-1374
+  // (.card.hero.hero-plan): fondo rgba(108,92,255,.24), borde
+  // rgba(140,150,255,.22). violet es la versión sólida rgb(108,92,255) del
+  // mismo matiz, para texto/rellenos donde el CSS original no ofrece un tono
+  // plano equivalente (eyebrow, barra activa, badge de día).
+  violet: '#6C5CFF',
+  violetBg: 'rgba(108,92,255,.24)',
+  violetLine: 'rgba(140,150,255,.22)',
 };
 
 // Stops del gradiente de los CTAs primarios, transcritos de
