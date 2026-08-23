@@ -1,14 +1,28 @@
 // native/src/screens/Hoy.js
-// Puerto de web/src/components/screens/Hoy.jsx — SIN el carrusel
-// deslizable, calentamiento, pre-workout, registro por voz ni barra de
-// volumen muscular (recortado a propósito, ver el plan de esta etapa).
-// La lista de ejercicios se agrega en Task 2; acá sólo van los tres
-// estados base de la tarjeta principal.
+// Puerto de web/src/components/screens/Hoy.jsx.
+//
+// Diferido a propósito: sólo `VoiceLogButton` (registro retroactivo por
+// voz) — requiere reconocimiento de voz nativo, no instalado, sin
+// dispositivo para probar. Mismo criterio que FoodVoice/ExerciseForm
+// (Etapas 5j/5n). El sheet de destino ('voice-log') ya está portado —
+// sólo falta el trigger.
+//
+// Todo lo demás del original ya está: volumen muscular semanal
+// (muscleVolume/uncategorized), cronómetro en vivo (ElapsedTimer, aislado
+// para no re-renderizar toda la pantalla cada segundo), confirmaciones de
+// completar/descartar sesión vía sheet 'confirm', sheet informativo
+// SessStartInfo antes de abrir sesión, y WarmupCard antes de la lista de
+// ejercicios cuando toca calentar.
+import { useEffect, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { S, useStore, bump, openSheet } from '../lib/state.js';
+import { S, useStore, bump, openSheet, closeSheet, saveDraft } from '../lib/state.js';
 import { pendingSlot, sessionForSlot, startSession, discardSession, completeSession, orderedExs, sessionExs, nextPending } from '../lib/session.js';
-import { dstr } from '../lib/format.js';
+import { dstr, fmtMMSS } from '../lib/format.js';
+import { muscleVolume, uncategorized } from '../lib/muscle.js';
+import { tocaCalentar, bloqueDe, DESCANSO } from '../lib/warmup.js';
+import { startRest } from '../lib/rest.js';
 import ExerciseList from './ExerciseList.js';
+import WarmupCard from '../components/WarmupCard.js';
 
 export default function Hoy() {
   useStore();
@@ -20,6 +34,32 @@ export default function Hoy() {
   const hecha = slot ? sessionForSlot(slot.id) : null;
   const exs = active ? sessionExs(index) : orderedExs(index, slot?.exercises || []);
   const nextEx = active ? nextPending(exs) : null;
+  // El próximo ejercicio a hacer decide qué calentamiento corresponde — no
+  // necesariamente el primero del día: puede ser el primero de un bloque
+  // nuevo (ver lib/warmup.js).
+  const exCalentar = active ? (nextEx || exs[0]) : null;
+
+  /* El calentamiento se marca hecho por BLOQUE en el borrador y no en un
+     estado local: así sobrevive a cerrar la app en el medio, que es
+     exactamente cuando pasa —dejás el teléfono, calentás, volvés—. Si
+     viviera en React, al volver te lo ofrecería otra vez. */
+  async function cerrarCalentamiento(conDescanso) {
+    if (!S.draft || !exCalentar) return;
+    const bloque = bloqueDe(exCalentar);
+    if (bloque) {
+      if (!Array.isArray(S.draft.warmBlocks)) S.draft.warmBlocks = [];
+      if (!S.draft.warmBlocks.includes(bloque)) S.draft.warmBlocks.push(bloque);
+    }
+    await saveDraft();
+    bump();
+    if (conDescanso) startRest(DESCANSO);
+  }
+  const terminarCalentamiento = () => cerrarCalentamiento(true);
+  const saltarCalentamiento = () => cerrarCalentamiento(false);
+
+  const mv = muscleVolume(7);
+  const mvCats = Object.entries(mv).sort((a, b) => b[1] - a[1]);
+  const maxv = mvCats.length ? mvCats[0][1] : 0;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.containerContent} keyboardShouldPersistTaps="handled">
@@ -28,7 +68,7 @@ export default function Hoy() {
       </Pressable>
       <Text style={styles.title}>Hoy</Text>
       {active ? (
-        <ActiveHero slot={slot} />
+        <ActiveHero slot={slot} exs={exs} />
       ) : slot?.type === 'rest' ? (
         <RestHero />
       ) : hecha ? (
@@ -36,6 +76,30 @@ export default function Hoy() {
       ) : (
         <PreSessionHero slot={slot} index={index} />
       )}
+
+      {mvCats.length > 0 && (
+        <>
+          <Text style={styles.sect}>Músculos esta semana</Text>
+          <View style={styles.card}>
+            {mvCats.map(([c, n]) => (
+              <View key={c} style={{ marginBottom: 14 }}>
+                <View style={styles.mvRow}>
+                  <Text style={styles.mvCat}>{c}</Text>
+                  <Text style={styles.mvNum}>{n} series</Text>
+                </View>
+                <View style={styles.pbar}>
+                  <View style={[styles.pbarFill, { width: `${Math.round(n / maxv * 100)}%` }]} />
+                </View>
+              </View>
+            ))}
+            <Text style={styles.mvNote}>
+              10–20 series semanales por grupo es el rango habitual para ganar masa.
+            </Text>
+            <SinGrupoAviso />
+          </View>
+        </>
+      )}
+
       {exs.length > 1 && (
         <Pressable style={styles.reorderBtn} onPress={() => openSheet('reorder-hoy')}>
           <Text style={styles.reorderBtnText}>↕ Reordenar</Text>
@@ -46,7 +110,14 @@ export default function Hoy() {
           <Text style={styles.reorderBtnText}>⚡ Pre-workout</Text>
         </Pressable>
       )}
-      <ExerciseList exs={exs} active={active} started={active && !!S.draft.start} curId={active ? S.draft.cur : null} nextEx={nextEx} />
+      {active && exCalentar && tocaCalentar(S.draft, exCalentar) && (
+        <WarmupCard
+          ex={exCalentar}
+          onListo={terminarCalentamiento}
+          onSaltar={saltarCalentamiento}
+        />
+      )}
+      <ExerciseList exs={exs} wd={index} active={active} started={active && !!S.draft.start} curId={active ? S.draft.cur : null} nextEx={nextEx} />
       {active && (
         <Pressable style={styles.reorderBtn} onPress={() => openSheet('ex-swap', { wd: index })}>
           <Text style={styles.reorderBtnText}>+ Agregar ejercicio a esta sesión</Text>
@@ -58,6 +129,33 @@ export default function Hoy() {
       </View>
     </ScrollView>
   );
+}
+
+/** Los ejercicios sin grupo muscular no suman en esta tarjeta. Antes se
+    descartaban en silencio; ahora se dicen y se pueden asignar. */
+function SinGrupoAviso() {
+  const sin = uncategorized();
+  if (!sin.length) return null;
+  return (
+    <Pressable style={styles.sinGrupo} onPress={() => { S.tab = 'rutina'; S.rutMode = 'edit'; bump(); }}>
+      <Text style={styles.sinGrupoT}>
+        {sin.length} ejercicio{sin.length === 1 ? '' : 's'} sin grupo muscular · no suma{sin.length === 1 ? '' : 'n'} acá
+      </Text>
+      <Text style={styles.sinGrupoS}>{sin.slice(0, 4).map(e => e.name).join(' · ')}{sin.length > 4 ? ` +${sin.length - 4}` : ''}</Text>
+      <Text style={styles.sinGrupoA}>Asignar →</Text>
+    </Pressable>
+  );
+}
+
+/** Cronómetro en vivo de la sesión — aislado en su propio componente con
+    su propio tick de 1s, así no re-renderiza toda la pantalla de Hoy. */
+function ElapsedTimer({ start }) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <Text style={styles.elapsed}>{fmtMMSS(Math.floor((Date.now() - start) / 1000))}</Text>;
 }
 
 function WeekHistory() {
@@ -108,7 +206,7 @@ function PreSessionHero({ slot, index }) {
         <View style={styles.stat}><Text style={styles.statNum}>~{estMin}</Text><Text style={styles.statLabel}>Minutos</Text></View>
       </View>
       {exs.length > 0 && (
-        <Pressable style={styles.ctaBtn} onPress={() => startSession(index)}>
+        <Pressable style={styles.ctaBtn} onPress={() => openSheet('sess-start-info', { index })}>
           <Text style={styles.ctaBtnText}>Empezar entrenamiento</Text>
         </Pressable>
       )}
@@ -116,22 +214,75 @@ function PreSessionHero({ slot, index }) {
   );
 }
 
-function ActiveHero({ slot }) {
+function confirmSessDone() {
+  openSheet('confirm', {
+    title: 'Completar sesión',
+    body: '¿Completar y guardar la sesión?',
+    confirmLabel: 'Completar',
+    onConfirm: () => completeSession(),
+  });
+}
+
+function confirmSessDiscard() {
+  openSheet('confirm', {
+    title: 'Descartar sesión',
+    body: '¿Descartar la sesión en curso? Se pierde todo lo registrado.',
+    confirmLabel: 'Descartar',
+    onConfirm: () => discardSession(),
+  });
+}
+
+function ActiveHero({ slot, exs }) {
   const entries = S.draft?.entries || {};
   const nsets = Object.values(entries).reduce((a, e) => a + e.sets.length, 0);
+  const started = !!S.draft?.start;
   return (
     <View style={styles.card}>
       <Text style={styles.eyebrow}>Sesión en curso</Text>
       <Text style={styles.heroDay}>{S.draft?.dayName || slot?.name || 'Entrenamiento'}</Text>
-      <Text style={styles.mut}>{nsets} serie{nsets === 1 ? '' : 's'} registrada{nsets === 1 ? '' : 's'}</Text>
+      <Text style={styles.mut}>
+        {started ? <ElapsedTimer start={S.draft.start} /> : 'El reloj arranca cuando inicies el primer ejercicio'}
+        {' · '}{nsets} serie{nsets === 1 ? '' : 's'} registrada{nsets === 1 ? '' : 's'}
+      </Text>
       <View style={styles.rowGap}>
-        <Pressable style={[styles.smallBtn, styles.okBtn]} onPress={() => completeSession()}>
+        <Pressable style={[styles.smallBtn, styles.okBtn]} onPress={confirmSessDone}>
           <Text style={styles.smallBtnText}>✓ Completar sesión</Text>
         </Pressable>
-        <Pressable style={[styles.smallBtn, styles.dimBtn]} onPress={() => discardSession()}>
+        <Pressable style={[styles.smallBtn, styles.dimBtn]} onPress={confirmSessDiscard}>
           <Text style={styles.smallBtnText}>Descartar</Text>
         </Pressable>
       </View>
+    </View>
+  );
+}
+
+/** Sheet informativo previo a abrir la sesión — registrado en SheetHost.js
+    como 'sess-start-info'. Separado de startSession(), que arranca cuando
+    se toca "Abrir sesión" acá adentro. */
+export function SessStartInfo({ index }) {
+  const day = S.routine[index];
+  const n = day?.exercises?.length || 0;
+  return (
+    <View style={styles.sheetWrap}>
+      <Text style={styles.sheetH2}>Iniciar entrenamiento</Text>
+      <Text style={styles.sheetSub}>
+        Vas a abrir la sesión de <Text style={styles.sheetB}>{day?.name || 'Entrenamiento'}</Text> · {n} ejercicio{n === 1 ? '' : 's'}.
+      </Text>
+      <View style={styles.calcbox}>
+        <Text style={styles.calcboxText}>⏱ El cronómetro arranca cuando toques "Iniciar ejercicio", no ahora. Así el tiempo mide lo que entrenaste y no lo que tardaste en cambiarte, calentar y llegar a la máquina.</Text>
+      </View>
+      <View style={styles.calcbox}>
+        <Text style={styles.calcboxText}>↕ Antes de arrancar podés reacomodar el orden con el botón "Reordenar", por si la máquina está ocupada.</Text>
+      </View>
+      <View style={styles.calcbox}>
+        <Text style={styles.calcboxText}>✓ Vas de a un ejercicio: al llegar a las series objetivo se cierra solo y pasás al siguiente.</Text>
+      </View>
+      <Pressable style={styles.ctaBtn} onPress={() => { closeSheet(); startSession(index); }}>
+        <Text style={styles.ctaBtnText}>Abrir sesión</Text>
+      </Pressable>
+      <Pressable style={[styles.smallBtn, styles.dimBtn, { marginTop: 10 }]} onPress={closeSheet}>
+        <Text style={styles.smallBtnText}>Cancelar</Text>
+      </Pressable>
     </View>
   );
 }
@@ -148,6 +299,7 @@ const styles = StyleSheet.create({
   eyebrow: { color: '#2e7dff', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   heroDay: { color: '#fff', fontSize: 26, fontWeight: '700', marginTop: 4 },
   mut: { color: '#8a93a6', fontSize: 13, marginTop: 6 },
+  elapsed: { color: '#fff', fontWeight: '700' },
   statsRow: { flexDirection: 'row', gap: 20, marginTop: 16 },
   stat: { alignItems: 'center' },
   statNum: { color: '#fff', fontSize: 22, fontWeight: '700' },
@@ -163,4 +315,20 @@ const styles = StyleSheet.create({
   histRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,.06)' },
   histTitle: { color: '#fff', fontSize: 14 },
   histDate: { color: '#8a93a6', fontSize: 13 },
+  mvRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
+  mvCat: { color: '#c7cdda', fontSize: 13 },
+  mvNum: { color: '#8a93a6', fontSize: 13, fontWeight: '600' },
+  pbar: { height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,.08)', overflow: 'hidden' },
+  pbarFill: { height: '100%', borderRadius: 3, backgroundColor: '#2e7dff' },
+  mvNote: { color: '#8a93a6', fontSize: 12.5, lineHeight: 18, marginTop: 4 },
+  sinGrupo: { marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: 'rgba(255,179,71,.1)' },
+  sinGrupoT: { color: '#ffb347', fontSize: 12.5, fontWeight: '700' },
+  sinGrupoS: { color: '#8a93a6', fontSize: 11.5, marginTop: 4 },
+  sinGrupoA: { color: '#ffb347', fontSize: 12, fontWeight: '700', marginTop: 6 },
+  sheetWrap: { paddingHorizontal: 20 },
+  sheetH2: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 8 },
+  sheetSub: { color: '#8a93a6', fontSize: 14, lineHeight: 20, marginBottom: 14 },
+  sheetB: { color: '#6ea8ff', fontWeight: '700' },
+  calcbox: { backgroundColor: 'rgba(255,255,255,.05)', borderRadius: 12, padding: 12, marginTop: 10 },
+  calcboxText: { color: '#c7cdda', fontSize: 14, lineHeight: 20 },
 });

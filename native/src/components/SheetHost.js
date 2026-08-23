@@ -41,6 +41,7 @@ import MealForm from './sheets/MealForm.js';
 import SessionView from './sheets/SessionView.js';
 import ExerciseForm from './sheets/ExerciseForm.js';
 import Settings from './sheets/Settings.js';
+import { SessStartInfo } from '../screens/Hoy.js';
 
 // type (string) -> Component. Task 2 registró los primeros 3 sheets reales
 // (Guide/StreakDetail/ReorderHoy); Task 3 agrega 'confirm' — el resto
@@ -65,6 +66,7 @@ export const SHEET_REGISTRY = {
   'session-view': SessionView,
   'ex-form': ExerciseForm,
   settings: Settings,
+  'sess-start-info': SessStartInfo,
 };
 
 function SheetContent({ sheet }) {
