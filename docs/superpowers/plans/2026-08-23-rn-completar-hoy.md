@@ -198,11 +198,11 @@ isUnilateral, toggleUnilateral` (`session.js` — confirmar que existen,
 si no agregarlos como parte de esta task leyendo
 `web/src/lib/session.js` para su lógica exacta).
 
-- [ ] **Step 1**: Releer `web/src/components/ExerciseCarousel.jsx`
+- [x] **Step 1**: Releer `web/src/components/ExerciseCarousel.jsx`
   completo (367 líneas) con foco en `ExerciseSlide` (líneas 152-366) —
   es la fuente de todo lo que falta portar a `ExerciseCard`.
 
-- [ ] **Step 2**: Agregar a cada tarjeta: ícono (`ExIcon`+`iconOf`),
+- [x] **Step 2**: Agregar a cada tarjeta: ícono (`ExIcon`+`iconOf`),
   botón ⓘ que abre `openSheet('ex-info', {name, wd, exId})` si
   `exInfo(ex.name)` existe, esquema RIR mostrado junto al objetivo
   cuando la tarjeta está abierta, aviso de progresión
@@ -213,23 +213,23 @@ si no agregarlos como parte de esta task leyendo
   abierto, botón "Cambiar" (Swap → `openSheet('ex-swap', {wd, exId})`)
   junto al de Saltar.
 
-- [ ] **Step 3**: Cambiar el botón "Saltar" para que abra
+- [x] **Step 3**: Cambiar el botón "Saltar" para que abra
   `openSheet('confirm', {...})` en vez de llamar `skipExercise(ex.id)`
   directo — mismo texto que el original ("¿Saltar {nombre}?").
 
-- [ ] **Step 4**: `ExerciseList`/`ExerciseCard` necesita recibir `wd`
+- [x] **Step 4**: `ExerciseList`/`ExerciseCard` necesita recibir `wd`
   (índice del día) como prop para los `openSheet` que lo requieren —
   confirmar que `Hoy.js` ya se lo pasa (hoy no lo hace, agregar en Task
   5 si hace falta).
 
-- [ ] **Step 5: Verificar**
+- [x] **Step 5: Verificar**
 
 Run: `cd native && npx jest` → sin cambios de lib (esta task es UI).
 Run: `cd native && npx expo-doctor` → 21/21.
 Run: `cd native && npx expo export --platform android` → compila sin
 error.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd native && git add src/screens/ExerciseList.js && git commit -m "feat(rn): enriquecer ExerciseList con ícono, info, RIR, progresión, unilateral y confirmación de saltar"
