@@ -212,48 +212,135 @@ directamente. jest 376/376, expo-doctor 21/21, export limpio.
 `Progreso.js`, `Nutricion.js`) — correr DESPUÉS de Task 2 si ambas
 tocan `Rutina.js`.
 
-- [ ] **Step 1**: Grep de `backgroundColor: C.line` (o el nombre real
+- [x] **Step 1**: Grep de `backgroundColor: C.line` (o el nombre real
   de la variable importada) en todo `native/src/` para el inventario
   completo.
 
-- [ ] **Step 2**: Archivo por archivo, reemplazar por `C.card2`
+- [x] **Step 2**: Archivo por archivo, reemplazar por `C.card2`
   (superficie de card sobre fondo) o `C.bg2` (superficie de fondo
   secundario) según el nivel de anidamiento visual del elemento —
   mismo criterio aplicado en `ExerciseList.js`/`IllusPick.js` la etapa
   anterior. Documentar cualquier caso ambiguo sin forzar.
 
-- [ ] **Step 3**: Grep de verificación — cero `backgroundColor: C.line`
+- [x] **Step 3**: Grep de verificación — cero `backgroundColor: C.line`
   sueltos fuera de excepciones documentadas.
 
-- [ ] **Step 4: Verificar**
+- [x] **Step 4: Verificar**
 
 Run: `cd native && npx jest` → sin cambios.
 Run: `cd native && npx expo-doctor` → 21/21.
 Run: `cd native && npx expo export --platform android` → compila sin
 error.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd native && git add -A && git commit -m "style(rn): corregir C.line usado como fondo en el resto de la app (sheets, WarmupCard, MachineField, pantallas)"
 ```
 
+Resultado (commit `36ce285`): el grep sobre el estado actual del árbol
+(post Tasks 1-3) encontró 24 archivos con `backgroundColor: C.line`,
+más que la lista parcial citada en el plan — se agregaron
+`SessionCard.js`, `RestTimer.js`, `ExInfo.js`, `Preworkout.js`,
+`SessionExercise.js`, `FoodVoice.js`, `EntryEdit.js`, `BodyForm.js` a
+los ya previstos. `SheetHost.js` apareció en el grep amplio pero su
+único match real era `backgroundColor: C.line2` (indicador de arrastre
+del sheet) — no `C.line` — así que quedó fuera de alcance, sin
+modificar. En total 68 líneas cambiadas en 23 archivos (un caso por
+línea, sin duplicados por archivo). Criterio aplicado, siguiendo
+`ExerciseList.js`/`IllusPick.js`: `C.card2` para elementos
+interactivos/de contenido apoyados sobre el fondo del sheet o pantalla
+— botones, inputs, chips, badges, segmented controls, entryCard de
+`SessionView.js`; `C.bg2` para superficies planas/decorativas —
+track de barra de progreso (`Rutina.js:wbarFill`, `Hoy.js:pbar`,
+`Nutricion.js:pbar`, `RestTimer.js:pillTrack`) y placeholders de imagen
+(`ExInfo.js:mediaImg`, `ExerciseForm.js:illusImg`), igual que
+`optImg`/`empty` en `IllusPick.js`. Ningún caso ambiguo real de "2
+roles distintos en el mismo archivo" — el patrón fue consistente en
+todos los sheets (mismo tipo de elemento, mismo criterio). `borderColor:
+C.line` se dejó intacto en todos lados (es su uso correcto). jest
+376/376 sin cambios, expo-doctor 21/21, `expo export --platform
+android` compiló sin error (bundle Android, 2420 módulos). `git diff
+--stat` confirmó cero archivos de `web/` tocados.
+
 ---
 
 ## Revisión final de la etapa
 
-- [ ] `cd native && npx jest` — sin cambios (376).
-- [ ] `cd native && npx expo-doctor` — sin errores.
-- [ ] Bundler de Metro compila sin error.
-- [ ] `web/` sin ningún archivo modificado.
-- [ ] Eyebrows usan `C.accent`, no `C.blue`, en todos los sitios
+- [x] `cd native && npx jest` — sin cambios (376).
+- [x] `cd native && npx expo-doctor` — sin errores (21/21).
+- [x] Bundler de Metro compila sin error (`expo export --platform
+  android` completó, bundle Android de 2420 módulos).
+- [x] `web/` sin ningún archivo modificado (confirmado en `git status`
+  y `git diff --stat` a lo largo de las 4 tasks; ningún commit de esta
+  etapa tocó `web/`).
+- [x] Eyebrows usan `C.accent`, no `C.blue`, en todos los sitios
   encontrados por el grep (no sólo los 2 originales del survey).
-- [ ] Violeta de Rutina transcrito del CSS real, no del valor citado de
+- [x] Violeta de Rutina transcrito del CSS real, no del valor citado de
   memoria en el survey — confirmar con cita de línea del CSS.
-- [ ] Gradiente de CTAs con los stops exactos del original, no
+- [x] Gradiente de CTAs con los stops exactos del original, no
   inventados.
-- [ ] Cero `backgroundColor: C.line` sueltos fuera de excepciones
+- [x] Cero `backgroundColor: C.line` sueltos fuera de excepciones
   documentadas.
-- [ ] Nota explícita en el cierre: esta etapa restaura lenguaje visual
+- [x] Nota explícita en el cierre: esta etapa restaura lenguaje visual
   no verificado en pantalla real — Enzo debe confirmar visualmente con
   la app corriendo (Expo Go / web) antes de darla por definitiva.
+
+## Cierre
+
+Los 4 pendientes documentados a propósito al cerrar "Unificación
+visual" (commit `85e758c`) quedaron resueltos:
+
+1. **Eyebrows cian** (commit `9ba2998`) — `C.accent` en vez de
+   `C.blue` en `Hoy.js`/`Inicio.js`, únicos 2 sitios reales
+   encontrados por el grep.
+2. **Violeta de Rutina** (commit `a2e8de1`) — familia azul-violeta
+   translúcida transcrita literal de `web/src/styles.css:1372-1374`
+   (`rgba(108,92,255,.24)` de fondo, `rgba(140,150,255,.22)` de borde),
+   con 3 tokens nuevos en `theme.js` (`C.violetBg`, `C.violetLine`,
+   `C.violet`).
+3. **Gradientes en CTAs** (commit `22343b3`) — `GradientButton.js`
+   sobre `react-native-svg` (no había `expo-linear-gradient`
+   instalado, ajuste documentado sobre el plan original), stops
+   exactos de `--grad2` (`web/src/styles.css:23`) en 4 CTAs reales de
+   `Inicio.js`/`Hoy.js`/`ExerciseList.js`.
+4. **`C.line` residual** (commit `36ce285`, esta sesión) — 24 archivos
+   detectados por grep amplio (más que la lista parcial del plan),
+   `backgroundColor: C.line` reemplazado por `C.card2`/`C.bg2` según
+   nivel de superficie, 68 líneas en 23 archivos (`SheetHost.js`
+   quedó sin tocar, su único match era `C.line2`, ya correcto).
+
+jest 376/376, expo-doctor 21/21 y `expo export --platform android`
+verdes en cada task y en el cierre. Igual que la etapa anterior, esta
+ronda es 100% restauración de lenguaje visual (violeta, gradientes,
+superficies) sin poder verificarse en pantalla real de este lado (sin
+emulador/dispositivo) — **Enzo debe confirmar visualmente con la app
+corriendo (Expo Go o `web`) antes de dar esta segunda parte de
+unificación visual por definitiva**, en particular el violeta de
+Rutina y el gradiente de los CTAs, que son los cambios de mayor riesgo
+perceptual.
+
+### Revisión final (opus) + fix, commit `fd6728c`
+
+Revisión final encontró 1 Important real: `C.violetBg` estaba definido
+en `theme.js` pero nunca se usaba — `heroCard` de `Rutina.js` sólo
+aplicaba el borde (`C.violetLine`), dejando el fondo en `C.card` plano,
+igual que el hero de Hoy. El punto central de Task 2 ("Hoy azul,
+Rutina violeta") quedaba resuelto sólo a medias (un borde de 1px, sin
+el gradiente de fondo que el original usa para distinguir la pantalla
+de un vistazo). Corregido con `GradientCard.js` (mismo patrón
+`react-native-svg` de `GradientButton.js`, pero para un `View` no
+presionable), pintando las 2 capas del gradiente original
+(`web/src/styles.css:1372-1374`) sobre `heroCard`.
+
+También se corrigieron 2 hallazgos Minor/Nit del mismo revisor: import
+de `Pressable` sin usar en `Inicio.js` (quedó huérfano tras
+convertirse el único CTA a `GradientButton` en la ronda anterior), y un
+`#a78bfa` residual en `Library.js:217` (`tag`) que había quedado fuera
+del alcance literal de Task 2 — cambiado a `C.violet`.
+
+Verificado tras el fix: jest 376/376, expo-doctor 21/21, `expo export
+--platform android` limpio. El resto de la revisión (theme.js fiel al
+CSS, `GradientButton` sin fugas de props/accesibilidad, radios
+coincidentes, `C.line` residual en cero, `web/` intacto) salió CLEAN
+en el primer pase, sin necesidad de corrección.
