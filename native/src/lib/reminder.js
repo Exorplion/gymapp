@@ -40,21 +40,29 @@ async function asegurarCanal() {
   }
 }
 
-/** Id de la notificación de "mañana" programada actualmente, si hay una.
-    Se guarda en memoria del proceso (no persiste entre reinicios de la
-    app) porque scheduleTomorrowReminder() se vuelve a llamar en cada
-    arranque de todos modos — no hace falta persistirlo. */
-const R = { scheduledNotifId: null };
+/** Identifier ESTABLE de la notificación de recordatorio — no un id generado
+    dinámicamente. Programar con este mismo identifier vía
+    scheduleNotificationAsync({ identifier, ... }) REEMPLAZA cualquier
+    notificación pendiente con ese identifier, tanto en Android como en iOS
+    (confirmado leyendo node_modules/expo-notifications/build/
+    scheduleNotificationAsync.js: usa `request.identifier ?? uuid.v4()` como
+    id nativo). Esto reemplaza el tracking en memoria de proceso
+    (R.scheduledNotifId) que se perdía en cada cold-start de la app y
+    causaba recordatorios duplicados sin cancelar entre reinicios. */
+const REMINDER_NOTIFICATION_ID = 'recordatorio-diario';
 
-/** Cancela la notificación de recordatorio programada, si hay una. No-op
-    si no hay nada programado. Envuelta en try/catch: es un efecto
-    secundario no crítico, no debe romper el flujo que la llama. */
+/** Cancela la notificación de recordatorio programada, si hay una.
+    Incondicional: no depende de ningún estado en memoria (ya no existe
+    R.scheduledNotifId) — cancelar un identifier que no tiene nada
+    programado es un no-op seguro en ambas plataformas (confirmado en
+    node_modules/expo-notifications/build/cancelScheduledNotificationAsync.js:
+    "resolves once the scheduled notification is successfully canceled OR IF
+    THERE IS NO SCHEDULED NOTIFICATION for a given identifier"). Envuelta en
+    try/catch: es un efecto secundario no crítico, no debe romper el flujo
+    que la llama. */
 export function cancelReminder() {
-  if (!R.scheduledNotifId) return;
-  const id = R.scheduledNotifId;
-  R.scheduledNotifId = null;
   try {
-    Notifications.cancelScheduledNotificationAsync(id).catch(() => {});
+    Notifications.cancelScheduledNotificationAsync(REMINDER_NOTIFICATION_ID).catch(() => {});
   } catch {
     // no crítico
   }
@@ -108,6 +116,7 @@ export async function scheduleTomorrowReminder() {
 
   try {
     const id = await Notifications.scheduleNotificationAsync({
+      identifier: REMINDER_NOTIFICATION_ID,
       content: {
         title: 'Hora de entrenar',
         body: slot.name || 'Tu rutina',
@@ -119,7 +128,6 @@ export async function scheduleTomorrowReminder() {
         ...(Platform.OS === 'android' ? { channelId: 'recordatorios' } : {}),
       },
     });
-    R.scheduledNotifId = id;
     return id;
   } catch {
     // sin notificaciones no hay recordatorio, pero no debe romper el arranque
