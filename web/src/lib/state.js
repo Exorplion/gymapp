@@ -17,6 +17,7 @@ export const S = {
     seqIndex: 0,        // posición pendiente en S.routine
     seqIndexDate: null, // 'YYYY-MM-DD': desde cuándo seqIndex está en este valor
     profile: { sex: 'm', age: null, height: null, weightKg: null, activity: 'moderate', goal: 'deficit_mod', tdeeEmpirical: null, proteinPref: 0.5, fatPref: 0.5 },
+    activeGym: null,    // id de S.gyms, o null (sin gym activo)
   },
   draft: null,          // sesión en curso
   tab: 'inicio',        // la portada; 'hoy' sigue existiendo, pero se entra desde acá
@@ -26,7 +27,9 @@ export const S = {
   // secuencia (S.rutOpen pasa a ser un índice o null, ver Task 9).
   rutOpen: null,
   rutMode: 'view',      // 'view' = resumen de la semana · 'edit' = editor
+  rutTab: 'semana',     // 'semana' = tu plan · 'ejercicios' = Mis ejercicios (transitorio, no persiste)
   lib: [],              // rutinas guardadas por el usuario
+  gyms: [],             // [{id, name, equip: {nombreEjercicioNorm: {equip, machine}}}]
   nutriDate: dstr(),
   foodEdit: false,
   histOpen: false,
@@ -67,6 +70,7 @@ export async function loadAll() {
     if (kv.key === 'cfg') S.cfg = { ...S.cfg, ...kv.value, goals: { ...S.cfg.goals, ...(kv.value.goals || {}) }, profile: { ...S.cfg.profile, ...(kv.value.profile || {}) } };
     if (kv.key === 'draft') S.draft = kv.value;
     if (kv.key === 'lib') S.lib = kv.value || [];
+    if (kv.key === 'gyms') S.gyms = kv.value || [];
   });
   S.ready = true;
   await resolveAutoRest();

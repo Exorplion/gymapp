@@ -16,6 +16,7 @@ import { S, bump, useStore, openSheet } from '../../lib/state.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
 import { equipLabel } from '../../lib/equip.js';
 import { catOf } from '../../lib/muscle.js';
+import { gymEquipFor } from '../../lib/gyms.js';
 import { flipSort } from '../../lib/drag.js';
 import {
   routineStats, routineName,
@@ -53,7 +54,66 @@ async function handleMoveEx(index, exId, dir) {
 
 export default function Rutina() {
   useStore();
-  return S.rutMode !== 'edit' ? <RutinaView /> : <RutinaEdit />;
+  if (S.rutMode === 'edit') return <RutinaEdit />;
+  return (
+    <>
+      <div className="vtitle"><h1>Rutina</h1><span className="sub">{S.rutTab === 'ejercicios' ? 'tus ejercicios' : 'tu semana'}</span></div>
+      <div className="seg" style={{ margin: 'var(--s2) 0 var(--s3)' }}>
+        <button type="button" className={S.rutTab !== 'ejercicios' ? 'on' : ''} onClick={() => { S.rutTab = 'semana'; bump(); }}>Mi semana</button>
+        <button type="button" className={S.rutTab === 'ejercicios' ? 'on' : ''} onClick={() => { S.rutTab = 'ejercicios'; bump(); }}>Mis ejercicios</button>
+      </div>
+      {S.rutTab === 'ejercicios' ? <MisEjercicios /> : <RutinaView />}
+    </>
+  );
+}
+
+/** Cada ejercicio distinto que aparece en tu rutina, una sola vez —el mismo
+    lugar de siempre para ver/editar qué trabaja (ex-info) y, si tenés un
+    gimnasio activo (lib/gyms.js), con qué equipo lo hacés AHÍ. No es un
+    catálogo separado: sale de S.routine, así que nunca puede desincronizarse
+    de lo que de verdad estás entrenando. */
+function MisEjercicios() {
+  const vistos = new Map();
+  for (const slot of S.routine) {
+    for (const ex of slot.exercises || []) {
+      const k = ex.name.trim().toLowerCase();
+      if (!vistos.has(k)) vistos.set(k, ex);
+    }
+  }
+  const exs = [...vistos.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  const gym = S.gyms.find(g => g.id === S.cfg.activeGym);
+
+  if (!exs.length) {
+    return <div className="txt-mut" style={{ fontSize: 13.5, marginTop: 8 }}>Armá tu rutina primero — acá van a aparecer sus ejercicios.</div>;
+  }
+
+  return (
+    <>
+      <button type="button" className="btn sm ghost" style={{ marginBottom: 12 }} onClick={() => openSheet('gyms')}>
+        🏋 {gym ? `Gimnasio: ${gym.name}` : 'Sin gimnasio activo'}
+      </button>
+      <div className="day-exs" style={{ background: 'transparent', padding: 0 }}>
+        {exs.map(ex => {
+          const ov = gym ? gymEquipFor(gym.id, ex.name) : null;
+          return (
+            <div className="day-ex" key={ex.id} style={{ alignItems: 'center' }}>
+              <button type="button" className="grow" style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 0, textAlign: 'left', padding: 0 }} onClick={() => openSheet('ex-info', { name: ex.name, exId: ex.id })}>
+                <span className="grow">
+                  <span className="t">{ex.name}</span>
+                  <span className="s">{catOf(ex) || 'Sin grupo'}{equipLabel(ex) ? ` · ${equipLabel(ex)}` : ''}</span>
+                </span>
+              </button>
+              {gym && (
+                <button type="button" className={`gym-eq-btn${ov ? ' on' : ''}`} onClick={() => openSheet('gym-equip', { gymId: gym.id, gymName: gym.name, exName: ex.name })}>
+                  {ov ? '✓ propio' : '+ equipo'}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
 }
 
 function RutinaView() {
@@ -63,7 +123,6 @@ function RutinaView() {
   if (!st.workoutCount) {
     return (
       <>
-        <div className="vtitle"><h1>Rutina</h1><span className="sub">tu semana de un vistazo</span></div>
         <div className="card"><div className="empty">
           <RutinaVacia className="big" />
           <p>Todavía no tenés rutina.<br />Elegí una <b>plantilla</b> lista o armá tu split turno por turno.</p>
@@ -85,8 +144,6 @@ function RutinaView() {
 
   return (
     <>
-      <div className="vtitle"><h1>Rutina</h1><span className="sub">tu semana</span></div>
-
       {/* Tarjeta del plan. El mockup le da a cada pantalla un matiz propio:
           Hoy es azul, Rutina es violeta. */}
       <div className="card hero hero-plan">

@@ -20,7 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import { S, useStore, bump, openSheet, closeSheet, saveDraft } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS } from '../../lib/format.js';
 import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession, moveBlock } from '../../lib/session.js';
-import { muscleVolume, uncategorized, blocksOf, MUSCLE_CATS } from '../../lib/muscle.js';
+import { muscleVolume, uncategorized, blocksOf, catOf, MUSCLE_CATS } from '../../lib/muscle.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
 import WarmupCard from '../WarmupCard.jsx';
@@ -86,7 +86,7 @@ export default function Hoy() {
       </div>
 
       {active ? (
-        <ActiveHero day={day} exs={exs} started={started} allDone={allDone} />
+        <ActiveHero day={day} exs={exs} started={started} allDone={allDone} activeEx={nextEx || (curId ? exs.find(e => e.id === curId) : null)} />
       ) : day?.type === 'rest' ? (
         <RestHero />
       ) : (
@@ -211,10 +211,11 @@ function ElapsedTimer({ start }) {
   return <span id="hoy-elapsed" data-start={start}>{fmtMMSS(Math.floor((Date.now() - start) / 1000))}</span>;
 }
 
-function ActiveHero({ day, exs, started, allDone }) {
+function ActiveHero({ day, exs, started, allDone, activeEx }) {
   const nsets = Object.values(S.draft.entries).reduce((a, e) => a + e.sets.length, 0);
   const doneEx = exs.filter(e => !isSkipped(e.id) && setsDone(e.id).length >= targetSets(e)).length;
   const nSkip = exs.filter(e => isSkipped(e.id)).length;
+  const cat = activeEx ? catOf(activeEx) : null;
   return (
     <div className="card hero">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -232,6 +233,11 @@ function ActiveHero({ day, exs, started, allDone }) {
               : 'Sesión abierta · el reloj arranca cuando inicies el primer ejercicio'}
           </div>
         </div>
+        {/* El cuerpo se reenciende en vivo con el grupo del ejercicio que
+            estás a punto de hacer — no un vistazo fijo del día entero (eso
+            ya lo viste antes de arrancar, en BlockList): acá importa "qué
+            estoy por trabajar AHORA", así que cambia ejercicio a ejercicio. */}
+        {cat && <div className="active-body-mini"><Silhouette days={{ [cat]: 0 }} interactivo={false} /></div>}
       </div>
       {allDone && (
         <div className="calcbox" style={{ marginTop: 12 }}>
