@@ -842,6 +842,16 @@ body.dragging-on .card.day.drop-target{filter:none}
 .mini.red{color:var(--red)}
 .mini:disabled{opacity:.25}
 
+/* Botón de "Mis ejercicios" (Rutina.jsx) para asignar equipo en el gym
+   activo — a diferencia de .mini (ícono cuadrado de 40px) éste lleva texto,
+   así que necesita su propio ancho automático y sin wrap. */
+.gym-eq-btn{
+  flex:none;padding:8px 12px;border-radius:11px;white-space:nowrap;
+  background:var(--card2);border:1px solid var(--line);color:var(--mut);font-size:12px;font-weight:600;
+}
+.gym-eq-btn.on{color:#22D3EE;border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.08)}
+.gym-eq-btn:active{border-color:var(--line2)}
+
 /* ---------- rutina: resumen de la semana ---------- */
 /* la semana entera en una tira de 7: se lee de un vistazo, sin scrollear */
 .wkstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:var(--s4)}
@@ -1321,6 +1331,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    Cada bloque es una fila con su nombre, cuántos ejercicios tiene, y ▲▼
    para moverlo ENTERO — nunca ejercicios sueltos entre grupos. */
 .block-body{display:flex;height:104px;margin-bottom:10px}
+.active-body-mini{display:flex;height:52px;width:34px;flex:none}
 .block-list{margin-bottom:var(--s3)}
 .block-head{
   display:flex;align-items:center;gap:8px;padding:10px 12px;margin-bottom:6px;

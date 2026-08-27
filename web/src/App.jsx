@@ -42,6 +42,8 @@ import BodyForm from './components/sheets/BodyForm.jsx';
 import Guide from './components/sheets/Guide.jsx';
 import Settings from './components/sheets/Settings.jsx';
 import BodyMap from './components/sheets/BodyMap.jsx';
+import Gyms from './components/sheets/Gyms.jsx';
+import GymEquip from './components/sheets/GymEquip.jsx';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
 // globales en index.html). No es uno de los 5 sheets nombrados en el plan de
@@ -97,6 +99,8 @@ function SheetContent({ sheet }) {
     case 'guide': return <Guide {...sheet.props} />;
     case 'settings': return <Settings {...sheet.props} />;
     case 'body-map': return <BodyMap {...sheet.props} />;
+    case 'gyms': return <Gyms {...sheet.props} />;
+    case 'gym-equip': return <GymEquip {...sheet.props} />;
     default: return null;
   }
 }
