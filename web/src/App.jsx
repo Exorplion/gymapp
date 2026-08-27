@@ -6,7 +6,6 @@ import { initDragListeners } from './lib/drag.js';
 import { currentStreak } from './lib/streak.js';
 import { sessionExs } from './lib/session.js';
 import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
-import { empiezaExcluido, clasificarSwipe, pintaHorizontal } from './lib/swipe.js';
 import { vibrate } from './lib/format.js';
 import { aplicarPaleta } from './lib/theme.js';
 import Header from './components/Header.jsx';
@@ -105,22 +104,15 @@ function SheetContent({ sheet }) {
   }
 }
 
-/* Orden de las pantallas, para saber hacia qué lado entra la nueva.
+/* Orden de las pantallas, para saber hacia qué lado entra la nueva al
+   cambiar de pestaña (con la barra de abajo — el swipe de pantalla completa
+   se sacó: cualquier gesto horizontal, en cualquier parte, terminaba
+   cambiando de pestaña sin querer).
 
    "Hoy" va pegado a Inicio porque se entra desde ahí: yendo a Hoy la pantalla
    avanza, y al volver retrocede. La barra de abajo no lo muestra como pestaña,
-   pero el movimiento tiene que contar la misma historia que el gesto. */
+   pero el movimiento tiene que contar la misma historia. */
 const ORDEN = ['inicio', 'hoy', 'rutina', 'nutri', 'prog'];
-
-/* Las cuatro pestañas reales de la barra — no las cinco de ORDEN. "Hoy" no
-   tiene su propio lugar acá porque no es una pestaña propia (se entra desde
-   Inicio), pero SÍ participa del gesto: un swipe estando en Hoy cuenta desde
-   la posición de Inicio (ver el uso de SWIPE_ORDEN más abajo). El carrusel
-   de ejercicios de Hoy queda protegido aparte, por selector, en
-   empiezaExcluido (lib/swipe.js) — no hacía falta apagar la pantalla
-   entera, y apagarla dejaba sin swipe justo la pantalla donde más tiempo
-   se pasa. */
-const SWIPE_ORDEN = ORDEN.filter(t => t !== 'hoy');
 
 /* Qué componente va para cada pestaña — la usan tanto la pantalla activa
    como la saliente (Task de transición), así que vive aparte del JSX del
@@ -138,7 +130,6 @@ function pantallaDe(tab) {
 
 export default function App() {
   const store = useStore();
-  const mainRef = useRef(null);
 
   /* La animación de deslizamiento ya estaba en la hoja de estilos —slideR y
      slideL— y la usaba la app original; se perdió al migrar a React y las
@@ -198,93 +189,6 @@ export default function App() {
     initDragListeners();
   }, []);
 
-  /* El gesto de deslizar entre pantallas. Se registra una sola vez —igual que
-     initDragListeners()— y lee S.tab en el momento del toque en vez de
-     depender de un valor cerrado por la closure, porque la pestaña puede
-     haber cambiado (por la barra, por código) entre el pointerdown y el
-     pointerup sin que este efecto se vuelva a montar.
-
-     No sigue el dedo en vivo: mide el gesto completo y recién al soltar
-     decide si fue un swipe. Ver lib/swipe.js para el porqué. */
-  useEffect(() => {
-    const main = mainRef.current;
-    if (!main) return;
-    let inicio = null;    // {x,y} del pointerdown, o null si este gesto no cuenta
-    let reclamado = false; // ya le pedimos al navegador que no haga scroll con este toque
-
-    function onDown(e) {
-      if (e.pointerType === 'mouse' && e.button !== 0) return;
-      if (empiezaExcluido(e.target)) return;
-      inicio = { x: e.clientX, y: e.clientY };
-      reclamado = false;
-    }
-    /* Con touch real el navegador arranca a scrollear (y cancela el gesto,
-       ver onCancel) con MUY poco movimiento — bastante antes de que
-       clasificarSwipe tenga los 60px que necesita para decidir. Por eso acá,
-       apenas se nota que el gesto pinta horizontal (pintaHorizontal, umbral
-       mucho más chico), se llama preventDefault: eso es lo que le dice al
-       navegador "este toque lo manejo yo", y sin eso el swipe queda muerto
-       en cualquier pantalla que scrollee (o sea, casi todas salvo Inicio).
-
-       Tiene que ser un listener de touchmove, NO de pointermove: probado a
-       mano, preventDefault sobre el PointerEvent no frena el scroll nativo
-       (el pointercancel llega igual) — sólo el TouchEvent de verdad tiene ese
-       poder. onDown/onUp siguen en pointerdown/pointerup porque ahí sí sirven
-       (y así el gesto también funciona con mouse, para probarlo en desktop). */
-    function onTouchMove(e) {
-      if (!inicio) return;
-      if (reclamado) { e.preventDefault(); return; }
-      const t = e.touches[0];
-      if (!t) return;
-      const dx = t.clientX - inicio.x, dy = t.clientY - inicio.y;
-      const horizontal = pintaHorizontal(dx, dy);
-      if (horizontal === null) return;   // todavía poco movimiento, esperar
-      if (horizontal) { e.preventDefault(); reclamado = true; }
-      else inicio = null;   // pinta vertical: que scrollee normal, listo
-    }
-    function onUp(e) {
-      if (!inicio) return;
-      const dx = e.clientX - inicio.x, dy = e.clientY - inicio.y;
-      inicio = null;
-      const paso = clasificarSwipe(dx, dy);
-      if (!paso) return;
-      /* "Hoy" no es una pestaña propia de SWIPE_ORDEN —se entra desde
-         Inicio, TabBar ya la trata como si fuera Inicio para la píldora
-         activa (ver más abajo, active={store.tab==='hoy'?'inicio':...}—
-         así que un swipe ahí cuenta desde la posición de Inicio. Antes esto
-         se resolvía excluyendo TODO Hoy del gesto (ver empiezaExcluido, que
-         ya protege el carrusel de ejercicios en particular): eso apagaba el
-         swipe en la pantalla donde más tiempo se pasa, que es exactamente
-         donde alguien lo prueba primero. */
-      const i = SWIPE_ORDEN.indexOf(S.tab === 'hoy' ? 'inicio' : S.tab);
-      if (i < 0) return;
-      const j = i + paso;
-      if (j < 0 || j >= SWIPE_ORDEN.length) return;   // en las puntas no rebota
-      S.tab = SWIPE_ORDEN[j];
-      bump();
-      vibrate(8);
-    }
-    function onCancel() { inicio = null; }
-
-    main.addEventListener('pointerdown', onDown, { passive: true });
-    // No pasivo a propósito: preventDefault (ver onTouchMove) no hace nada
-    // si el listener es passive.
-    main.addEventListener('touchmove', onTouchMove, { passive: false });
-    main.addEventListener('pointerup', onUp, { passive: true });
-    main.addEventListener('pointercancel', onCancel, { passive: true });
-    return () => {
-      main.removeEventListener('pointerdown', onDown);
-      main.removeEventListener('touchmove', onTouchMove);
-      main.removeEventListener('pointerup', onUp);
-      main.removeEventListener('pointercancel', onCancel);
-    };
-    // `store.ready` y no []: el componente devuelve null hasta que carga
-    // (más abajo, `if (!store.ready) return null`), así que <main> ni existe
-    // en el primer render — con [] este efecto correría una sola vez contra
-    // mainRef.current === null y el gesto quedaría muerto para siempre.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.ready]);
-
   // El aviso de "sesión en curso" en la barra del teléfono.
   //
   // Va acá, atado a si HAY sesión, en vez de encenderlo en startSession() y
@@ -333,7 +237,7 @@ export default function App() {
       />
       {/* Inicio no scrollea: necesita que main deje de reservar el colchón
           inferior que sí usan las pantallas largas. */}
-      <main className={store.tab === 'inicio' ? 'full' : ''} ref={mainRef}>
+      <main className={store.tab === 'inicio' ? 'full' : ''}>
         {/* La saliente va PRIMERO en el DOM (así la entrante, montada después,
             queda arriba en el stacking normal) y con pointer-events:none —
             es puramente decorativa mientras se termina de ir. */}
