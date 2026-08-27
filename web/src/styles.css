@@ -1855,7 +1855,8 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    chicas (racha / grupo flojo) se reparten la fila siguiente — un grid
    asimétrico, no la grilla uniforme de cualquier dashboard genérico. */
 .ini-grid{
-  display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"body body" "racha stale";
+  display:grid;grid-template-columns:1fr 1fr;
+  grid-template-areas:"body body" "racha stale" "macros weight";
   gap:10px;flex:none;
 }
 .ini-tile{
@@ -1894,6 +1895,28 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-tile-stale-days{font-size:11.5px;color:var(--warn)}
 .ini-tile-ok{grid-area:stale;align-items:center;justify-content:center;text-align:center;
   font-size:12.5px;color:var(--mut);}
+
+.ini-tile-macros{grid-area:macros;gap:5px}
+.ini-tile-weight{grid-area:weight;gap:5px}
+.ini-tile-num.sm{font-size:24px}
+.ini-tile-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:2px}
+.ini-tile-bar i{display:block;height:100%;background:var(--grad2);border-radius:3px}
+
+/* La tira de turnos: no es un calendario de fechas —es la secuencia de
+   Fierro, de largo variable— así que flexea y no fuerza 7 columnas como
+   .weekbars de Rutina. El turno de hoy lleva el anillo cian encendido; los
+   demás son sólo un vistazo (abren 'day-peek', no mueven el puntero real). */
+.ini-strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;flex:none;margin-bottom:2px}
+.ini-strip-i{
+  flex:0 0 30px;display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:6px 0 4px;border-radius:10px;background:transparent;border:1px solid transparent;color:var(--mut2);
+}
+.ini-strip-i .b{width:14px;border-radius:4px;background:var(--card2);display:block}
+.ini-strip-i.on .b{background:linear-gradient(180deg,var(--blue3),var(--blue))}
+.ini-strip-i .n{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700}
+.ini-strip-i.hoy{border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.07)}
+.ini-strip-i.hoy .n{color:#22D3EE}
+.ini-strip-i.hoy .b{background:linear-gradient(180deg,#22D3EE,var(--blue));box-shadow:0 0 10px rgba(34,211,238,.5)}
 
 /* Sheet 'body-map': el cuerpo completo e interactivo, con la altura fija que
    .sil-pair (flex:1;min-height:0) necesita para saber cuánto medir —el
