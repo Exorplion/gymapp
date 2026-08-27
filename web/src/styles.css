@@ -1805,17 +1805,12 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 
 /* ---------- la pantalla de inicio ----------
-   Compuesta, no scrolleable: entra entera en un teléfono. Por eso la silueta
-   es flex:1 y se encoge antes que el resto. */
-/* La altura se calcula a mano y no con height:100% porque main tiene altura
-   automática: un porcentaje contra un padre auto no resuelve, cae a auto, y el
-   flex:1 de la silueta se queda sin espacio que repartir. Los 75px son el
-   header (59) más el padding superior de main (16). */
+   Un panel de mando: la tarjeta de estado arriba, el grid de tarjetas abajo.
+   El cuerpo entero (Silhouette interactiva) se mudó al sheet 'body-map' —
+   acá sólo queda un vistazo quieto, así el resto del grid tiene lugar para
+   respirar en vez de competir por el espacio que antes se llevaba entero. */
 main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
-.inicio{
-  display:flex;flex-direction:column;min-height:0;
-  min-height:calc(100dvh - 75px - var(--tabs-h));
-}
+.inicio{display:flex;flex-direction:column;gap:var(--s3)}
 .ini-top{flex:none}
 .ini-eyebrow{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-micro);font-weight:700;
@@ -1855,6 +1850,56 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-cta.pulse{animation:pulse 2s infinite}
 .ini-wk{margin-top:10px;flex:none}
 @media (prefers-reduced-motion:reduce){.ini-cta.pulse{animation:none}}
+
+/* El panel de abajo: la tarjeta del cuerpo ocupa las dos columnas y las dos
+   chicas (racha / grupo flojo) se reparten la fila siguiente — un grid
+   asimétrico, no la grilla uniforme de cualquier dashboard genérico. */
+.ini-grid{
+  display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"body body" "racha stale";
+  gap:10px;flex:none;
+}
+.ini-tile{
+  background:linear-gradient(180deg,rgba(12,19,34,.9),rgba(12,19,34,.74));
+  border:1px solid var(--glass-border);border-radius:var(--r);
+  padding:14px 16px;text-align:left;color:var(--txt);font:inherit;
+  display:flex;flex-direction:column;
+}
+.ini-tile-lbl{
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);
+}
+
+/* Tu cuerpo: el vistazo de Silhouette se encoge a una franja quieta —
+   interactivo=false ya apaga el arrastre y el tocar músculos, así que sólo
+   hace falta darle una caja fija (flex+height) para que el SVG se encaje
+   adentro, igual que en el sheet grande. */
+.ini-tile-body{grid-area:body;position:relative;overflow:hidden}
+.ini-tile-body::before{content:"";position:absolute;top:-40px;right:-30px;width:150px;height:150px;
+  background:radial-gradient(circle,rgba(34,211,238,.22),transparent 66%);pointer-events:none}
+.ini-tile-go{color:#22D3EE;text-transform:none;letter-spacing:0;font-weight:600;font-size:11.5px}
+.ini-tile-thumb{display:flex;height:112px;margin:4px 0 2px;position:relative;z-index:1}
+.ini-tile-hint{font-size:11.5px;color:var(--mut);margin-top:2px}
+
+.ini-tile-racha{grid-area:racha;align-items:center;justify-content:center;gap:4px}
+.ini-tile-num{
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;
+  font-size:34px;line-height:1;background:var(--grad2);-webkit-background-clip:text;
+  background-clip:text;color:transparent;
+}
+.ini-tile-num small{font-size:12px;font-weight:600;font-style:normal;color:var(--mut);margin-left:4px;-webkit-text-fill-color:var(--mut)}
+
+.ini-tile-stale{grid-area:stale;justify-content:center;gap:3px}
+.ini-tile-stale-name{font-size:14.5px;font-weight:700}
+.ini-tile-stale-days{font-size:11.5px;color:var(--warn)}
+.ini-tile-ok{grid-area:stale;align-items:center;justify-content:center;text-align:center;
+  font-size:12.5px;color:var(--mut);}
+
+/* Sheet 'body-map': el cuerpo completo e interactivo, con la altura fija que
+   .sil-pair (flex:1;min-height:0) necesita para saber cuánto medir —el
+   mismo cálculo que usaba .inicio entera cuando el cuerpo vivía ahí. */
+.bodymap-sheet{display:flex;flex-direction:column}
+.bodymap-stage{display:flex;height:min(52vh,420px);margin:6px 0 10px}
 
 /* Hoy dejó de ser pestaña: se entra desde Inicio, así que necesita su salida. */
 .back-btn{

@@ -41,6 +41,7 @@ import Profile from './components/sheets/Profile.jsx';
 import BodyForm from './components/sheets/BodyForm.jsx';
 import Guide from './components/sheets/Guide.jsx';
 import Settings from './components/sheets/Settings.jsx';
+import BodyMap from './components/sheets/BodyMap.jsx';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
 // globales en index.html). No es uno de los 5 sheets nombrados en el plan de
@@ -95,6 +96,7 @@ function SheetContent({ sheet }) {
     case 'body-form': return <BodyForm {...sheet.props} />;
     case 'guide': return <Guide {...sheet.props} />;
     case 'settings': return <Settings {...sheet.props} />;
+    case 'body-map': return <BodyMap {...sheet.props} />;
     default: return null;
   }
 }
