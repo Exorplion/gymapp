@@ -17,9 +17,11 @@
 // HistDetail vivía acá hasta que SessionView (components/sheets/) unificó las
 // dos vistas de una sesión — la del historial y la del cierre.
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { S, useStore, bump, openSheet, closeSheet, saveDraft } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS } from '../../lib/format.js';
 import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession, moveBlock } from '../../lib/session.js';
+import { flipSort } from '../../lib/drag.js';
 import { blocksOf, catOf, MUSCLE_CATS } from '../../lib/muscle.js';
 import { equipLabel } from '../../lib/equip.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
@@ -295,13 +297,25 @@ function BlockList({ index, exs }) {
   // pregunta que trajo a alguien a esta pantalla — no una lista cerrada
   // que hay que aprender a abrir.
   const [openCat, setOpenCat] = useState(blocks[0]?.cat ?? null);
+  /* Mueve el bloque y RECIÉN DESPUÉS pinta el nuevo orden adentro de
+     flipSort: así flipSort mide el "antes" con el DOM viejo, deja que
+     flushSync(bump) pinte el "después" de un tirón, y anima la diferencia
+     con un transform — el mismo truco que ya usa Rutina.jsx para sus
+     flechas ↑/↓ (handleMoveEx, drag.js). Sin esto el bloque cambia de
+     posición de un salto: sólo el texto se ve distinto, nunca el
+     movimiento. */
+  async function mover(cat, dir) {
+    await moveBlock(index, blocks, cat, dir);
+    flipSort(() => flushSync(() => bump()));
+  }
+
   return (
-    <div className="block-list">
+    <div className="block-list" data-sort="hoy-blocks">
       <BodyPreview cats={blocks.map(b => b.cat)} />
       {blocks.map((b, i) => {
         const open = openCat === b.cat;
         return (
-          <div className="block-card" key={b.cat}>
+          <div className="block-card" data-sid={b.cat} key={b.cat}>
             <button
               type="button"
               className="block-head"
@@ -313,8 +327,8 @@ function BlockList({ index, exs }) {
               <span className="s">{b.exs.length} ejercicio{b.exs.length === 1 ? '' : 's'}</span>
               {blocks.length > 1 && (
                 <span className="block-move" onClick={e => e.stopPropagation()}>
-                  <button type="button" disabled={i === 0} aria-label={`Mover ${b.cat} antes`} onClick={() => { moveBlock(index, blocks, b.cat, -1).then(bump); }}>▲</button>
-                  <button type="button" disabled={i === blocks.length - 1} aria-label={`Mover ${b.cat} después`} onClick={() => { moveBlock(index, blocks, b.cat, 1).then(bump); }}>▼</button>
+                  <button type="button" disabled={i === 0} aria-label={`Mover ${b.cat} antes`} onClick={() => mover(b.cat, -1)}>▲</button>
+                  <button type="button" disabled={i === blocks.length - 1} aria-label={`Mover ${b.cat} después`} onClick={() => mover(b.cat, 1)}>▼</button>
                 </span>
               )}
             </button>
