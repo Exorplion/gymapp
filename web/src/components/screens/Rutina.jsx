@@ -20,7 +20,7 @@ import { gymEquipFor } from '../../lib/gyms.js';
 import { flipSort } from '../../lib/drag.js';
 import {
   routineStats, routineName,
-  enterEditMode, exitEditMode, toggleSlotOpen, removeSlot, insertWorkout, insertRest,
+  enterEditMode, exitEditMode, toggleSlotOpen, addWorkoutDay, removeWorkoutDay, weekdayProjection,
   deleteExercise, moveEx,
 } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
@@ -231,6 +231,15 @@ function RutinaView() {
 }
 
 function RutinaEdit() {
+  // El editor ya no muestra descansos: sólo los turnos de entrenamiento, en
+  // su orden real dentro de S.routine (necesario para que `index` siga
+  // sirviendo para ex-info/moveEx/data-wd, que indexan S.routine directo,
+  // no la lista filtrada) más un número de posición sólo para mostrar.
+  const dow = weekdayProjection();
+  const workouts = S.routine
+    .map((slot, i) => ({ slot, i }))
+    .filter(x => x.slot.type === 'workout');
+
   return (
     <>
       <div className="vtitle"><h1>Editar</h1><span className="sub">{routineName()}</span></div>
@@ -245,46 +254,41 @@ function RutinaEdit() {
           💾 Guardar como…
         </button>
       </div>
-      {S.routine.length > 1 && (
-        <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un turno y soltalo para reordenarlo.</span></div>
+
+      <WeekProjection dow={dow} />
+
+      {workouts.length > 1 && (
+        <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un entrenamiento y soltalo para reordenarlo — el descanso se acomoda solo.</span></div>
       )}
       <div data-sort="seq">
-        {S.routine.map((slot, i) => <SlotCard key={slot.id} slot={slot} index={i} />)}
+        {workouts.map(({ slot, i }, pos) => <SlotCard key={slot.id} slot={slot} index={i} n={pos + 1} />)}
       </div>
-      <div style={{ display: 'flex', gap: 10, marginTop: 'var(--s3)' }}>
-        <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={() => insertWorkout(S.routine.length)}>+ Entrenamiento</button>
-        <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={() => insertRest(S.routine.length)}>+ Descanso</button>
-      </div>
+      <button type="button" className="btn sm ghost" style={{ marginTop: 'var(--s3)' }} onClick={addWorkoutDay}>+ Entrenamiento</button>
     </>
   );
 }
-function SlotCard({ slot, index }) {
-  const exs = slot.type === 'workout' ? (slot.exercises || []) : [];
-  const open = S.rutOpen === index && slot.type === 'workout';
+
+/** Tira horizontal: qué día de la semana le tocaría a cada turno si
+    arrancaras un lunes (weekdayProjection, rutina-logic.js) — descansos
+    incluidos, apagados, para que se vea DÓNDE caen sin poder tocarlos. */
+function WeekProjection({ dow }) {
+  return (
+    <div className="week-proj">
+      {S.routine.map((slot, i) => (
+        <div key={slot.id} className={`week-proj-d ${slot.type === 'rest' ? 'off' : ''}`}>
+          <span className="wd">{dow[i]}</span>
+          <span className="t">{slot.type === 'rest' ? '—' : (slot.name || 'Sin nombre')}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SlotCard({ slot, index, n }) {
+  const exs = slot.exercises || [];
+  const open = S.rutOpen === index;
   // referencia del riel: el ejercicio con más series del turno
   const maxSets = Math.max(1, ...exs.map(e => e.sets || 0));
-
-  // Turno de descanso: una tarjeta fina, sin cuerpo. Sigue siendo arrastrable
-  // — es un turno más de la secuencia, sólo que sin contenido. No tiene
-  // "asignar" nada acá: para volverlo un turno de entrenamiento se lo borra y
-  // se agrega uno nuevo con "+ Entrenamiento", o se le pone nombre desde el
-  // sheet "✎ Turno" (ver SlotEdit.jsx), que lo convierte automáticamente.
-  if (slot.type === 'rest') {
-    return (
-      <div className="card day rest" data-sid={slot.id}>
-        <div className="day-headrow">
-          <span className="mini day-handle" title="Arrastrar">✥</span>
-          <div className="day-head" style={{ flex: 1 }}>
-            <div className="day-txt">
-              <span className="day-wd">Turno {index + 1}</span>
-              <span className="day-name off">Descanso</span>
-            </div>
-          </div>
-          <button type="button" className="mini red" title="Quitar turno" onClick={() => removeSlot(index)}>✕</button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={`card day ${open ? 'open' : ''}`} data-sid={slot.id}>
@@ -292,12 +296,12 @@ function SlotCard({ slot, index }) {
         <span className="mini day-handle" title="Arrastrar a otra posición">✥</span>
         <button type="button" className="day-head" onClick={() => toggleSlotOpen(index)}>
           <div className="day-txt">
-            <span className="day-wd">Turno {index + 1}</span>
+            <span className="day-wd">Entrenamiento {n}</span>
             <span className={`day-name ${slot.name ? '' : 'off'}`}>{slot.name || 'Sin nombre'}</span>
           </div>
           <span className="day-meta">{exs.length ? `${exs.length} ej.` : ''}<span className="chev">›</span></span>
         </button>
-        <button type="button" className="mini red" title="Quitar turno" onClick={() => removeSlot(index)}>✕</button>
+        <button type="button" className="mini red" title="Quitar turno" onClick={() => removeWorkoutDay(slot.id)}>✕</button>
       </div>
       <div className="day-body"><div className="dbi">
         {exs.length > 1 && (
