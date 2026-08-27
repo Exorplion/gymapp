@@ -20,7 +20,8 @@ import { useEffect, useRef, useState } from 'react';
 import { S, useStore, bump, openSheet, closeSheet, saveDraft } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS } from '../../lib/format.js';
 import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession, moveBlock } from '../../lib/session.js';
-import { muscleVolume, uncategorized, blocksOf, catOf, MUSCLE_CATS } from '../../lib/muscle.js';
+import { blocksOf, catOf, MUSCLE_CATS } from '../../lib/muscle.js';
+import { equipLabel } from '../../lib/equip.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
 import WarmupCard from '../WarmupCard.jsx';
@@ -70,11 +71,6 @@ export default function Hoy() {
   const terminarCalentamiento = () => cerrarCalentamiento(true);
   const saltarCalentamiento = () => cerrarCalentamiento(false);
 
-  const mv = muscleVolume(7);
-  const mvCats = Object.entries(mv).sort((a, b) => b[1] - a[1]);
-  const maxv = mvCats.length ? mvCats[0][1] : 0;
-
-
   return (
     <>
       {/* Hoy dejó de ser pestaña: se entra desde Inicio, así que necesita su
@@ -92,30 +88,6 @@ export default function Hoy() {
       ) : (
         <PreSessionHero day={day} index={index} exs={exs} />
       )}
-      {mvCats.length > 0 && (
-        <>
-        {/* En el mockup el encabezado va FUERA de la tarjeta, con su línea
-            hasta el borde — no como etiqueta interna. */}
-        <div className="sect">Músculos esta semana</div>
-        <div className="card">
-          {mvCats.map(([c, n]) => (
-            <div key={c} style={{ marginBottom: 'var(--s2)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--t-sm)', marginBottom: 3 }}>
-                <span>{c}</span><span className="num">{n} series</span>
-              </div>
-              <div className="pbar">
-                <i style={{ width: `${Math.round(n / maxv * 100)}%`, animation: 'rise .5s var(--ease) backwards' }}></i>
-              </div>
-            </div>
-          ))}
-          <div className="ptext sm" style={{ marginTop: 12 }}>
-            10–20 series semanales por grupo es el rango habitual para ganar masa.
-          </div>
-          <SinGrupoAviso />
-        </div>
-        </>
-      )}
-
       {/* el pre-workout se toma 30-60 min ANTES: durante la sesión ya no sirve de
           nada y solo compite con las tarjetas de ejercicio */}
       {!active && exs.length > 0 && (
@@ -141,19 +113,25 @@ export default function Hoy() {
             Configurar rutina
           </button>
         </div></div>
-      ) : (
+      ) : !active ? (
+        // Antes de arrancar: sólo los bloques, editables y desplegables — el
+        // carrusel es de EJECUCIÓN (serie, descanso, cronómetro), no tiene
+        // nada que hacer en la etapa de "mirar y planear qué toca hoy".
         <>
-          {!active && <BlockList index={index} exs={exs} />}
+          <BlockList index={index} exs={exs} />
           {exs.length > 1 && (
             <button type="button" className="btn sm ghost" style={{ marginBottom: 'var(--s3)' }} onClick={() => openSheet('reorder-hoy')}>
               ↕ Reordenar dentro de un bloque
             </button>
           )}
+        </>
+      ) : (
+        <>
           {/* El calentamiento va antes del carrusel, sobre el próximo ejercicio
               a hacer — no fijo en el primero del día: reaparece cada vez que
               ese próximo ejercicio cae en un bloque muscular que todavía no
               calentaste (ver lib/warmup.js). */}
-          {active && exCalentar && tocaCalentar(S.draft, exCalentar) && (
+          {exCalentar && tocaCalentar(S.draft, exCalentar) && (
             <WarmupCard
               ex={exCalentar}
               onListo={terminarCalentamiento}
@@ -163,37 +141,13 @@ export default function Hoy() {
           <ExerciseCarousel exs={exs} wd={index} active={active} started={started} curId={curId} nextEx={nextEx} />
           {/* Decidiste hacer algo que no estaba en el plan. Vale sólo para hoy;
               al cerrar la sesión se ofrece dejarlo fijo. */}
-          {active && (
-            <button type="button" className="btn sm ghost" style={{ marginTop: 'var(--s2)' }} onClick={() => openSheet('ex-swap', { wd: index })}>
-              + Agregar ejercicio a esta sesión
-            </button>
-          )}
+          <button type="button" className="btn sm ghost" style={{ marginTop: 'var(--s2)' }} onClick={() => openSheet('ex-swap', { wd: index })}>
+            + Agregar ejercicio a esta sesión
+          </button>
         </>
       )}
 
     </>
-  );
-}
-
-/** Los ejercicios sin grupo muscular no suman en esta tarjeta. Antes se
-    descartaban en silencio, así que el resumen se veía completo cuando no lo
-    estaba — de 22 ejercicios reales, 18 no contaban y no había forma de
-    saberlo. Ahora se dicen y se pueden asignar. */
-function SinGrupoAviso() {
-  const sin = uncategorized();
-  if (!sin.length) return null;
-  return (
-    <button
-      type="button"
-      className="sin-grupo"
-      onClick={() => { S.tab = 'rutina'; S.rutMode = 'edit'; bump(); }}
-    >
-      <span className="t">
-        {sin.length} ejercicio{sin.length === 1 ? '' : 's'} sin grupo muscular · no suma{sin.length === 1 ? '' : 'n'} acá
-      </span>
-      <span className="s">{sin.slice(0, 4).map(e => e.name).join(' · ')}{sin.length > 4 ? ` +${sin.length - 4}` : ''}</span>
-      <span className="a">Asignar →</span>
-    </button>
   );
 }
 
@@ -329,27 +283,62 @@ function PreSessionHero({ day, index, exs }) {
 }
 
 /** Los ejercicios de hoy agrupados por bloque muscular, con un vistazo del
-    cuerpo arriba (qué grupos se encienden hoy) y controles ▲▼ para mover
-    BLOQUES enteros — nunca ejercicios sueltos, así un grupo nunca queda a
-    medio mezclar con otro. Sólo antes de arrancar: una vez que el reloj
-    corre, orderedExs() ya no admite reacomodo (ver su comentario en
+    cuerpo arriba (qué grupos se encienden hoy), controles ▲▼ para mover
+    BLOQUES enteros —nunca ejercicios sueltos, así un grupo nunca queda a
+    medio mezclar con otro— y cada bloque desplegable para ver y editar sus
+    ejercicios sin salir de Hoy. Sólo antes de arrancar: una vez que el
+    reloj corre, orderedExs() ya no admite reacomodo (ver su comentario en
     session.js), así que este bloque ni se muestra con sesión activa. */
 function BlockList({ index, exs }) {
   const blocks = blocksOf(exs);
-  if (blocks.length < 2) return null; // un solo grupo: no hay nada que reordenar entre bloques
+  // El primer bloque arranca desplegado: es "qué toca primero", la
+  // pregunta que trajo a alguien a esta pantalla — no una lista cerrada
+  // que hay que aprender a abrir.
+  const [openCat, setOpenCat] = useState(blocks[0]?.cat ?? null);
   return (
     <div className="block-list">
       <BodyPreview cats={blocks.map(b => b.cat)} />
-      {blocks.map((b, i) => (
-        <div className="block-head" key={b.cat}>
-          <span className="t">{b.cat}</span>
-          <span className="s">{b.exs.length} ejercicio{b.exs.length === 1 ? '' : 's'}</span>
-          <span className="block-move">
-            <button type="button" disabled={i === 0} aria-label={`Mover ${b.cat} antes`} onClick={() => { moveBlock(index, blocks, b.cat, -1).then(bump); }}>▲</button>
-            <button type="button" disabled={i === blocks.length - 1} aria-label={`Mover ${b.cat} después`} onClick={() => { moveBlock(index, blocks, b.cat, 1).then(bump); }}>▼</button>
-          </span>
-        </div>
-      ))}
+      {blocks.map((b, i) => {
+        const open = openCat === b.cat;
+        return (
+          <div className="block-card" key={b.cat}>
+            <button
+              type="button"
+              className="block-head"
+              aria-expanded={open}
+              onClick={() => setOpenCat(open ? null : b.cat)}
+            >
+              <span className="chev">{open ? '⌄' : '›'}</span>
+              <span className="t">{b.cat}</span>
+              <span className="s">{b.exs.length} ejercicio{b.exs.length === 1 ? '' : 's'}</span>
+              {blocks.length > 1 && (
+                <span className="block-move" onClick={e => e.stopPropagation()}>
+                  <button type="button" disabled={i === 0} aria-label={`Mover ${b.cat} antes`} onClick={() => { moveBlock(index, blocks, b.cat, -1).then(bump); }}>▲</button>
+                  <button type="button" disabled={i === blocks.length - 1} aria-label={`Mover ${b.cat} después`} onClick={() => { moveBlock(index, blocks, b.cat, 1).then(bump); }}>▼</button>
+                </span>
+              )}
+            </button>
+            <div className={`block-collapse${open ? ' open' : ''}`}>
+              <div className="block-collapse-inner">
+                <div className="block-exs">
+                  {b.exs.map(ex => (
+                    <div className="block-ex-row" key={ex.id}>
+                      <button type="button" className="grow" onClick={() => openSheet('ex-info', { name: ex.name, exId: ex.id })}>
+                        <span className="t">{ex.name}</span>
+                        <span className="s">{equipLabel(ex) ? `${equipLabel(ex)} · ` : ''}{ex.sets}×{ex.reps}</span>
+                      </button>
+                      <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}>✎</button>
+                    </div>
+                  ))}
+                  <button type="button" className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => openSheet('ex-form', { wd: index, ex: null })}>
+                    + Agregar ejercicio
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
