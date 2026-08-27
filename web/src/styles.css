@@ -1447,6 +1447,23 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 @keyframes rise-y{from{height:8px !important}}
 .weekbars span{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--mut2)}
+
+/* Editor de Rutina: proyección de días de la semana (Rutina.jsx:
+   WeekProjection) — asume que la secuencia arranca un lunes, sólo para
+   dar contexto de "¿esto me deja entrenando el fin de semana?" mientras
+   reordenás. No es arrastrable: los descansos (.off) sólo se muestran,
+   se recalculan solos alrededor de los entrenamientos. */
+.week-proj{display:flex;gap:6px;overflow-x:auto;margin:14px 0;padding-bottom:2px}
+.week-proj-d{
+  flex:0 0 64px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:9px 4px;border-radius:12px;background:var(--card2);border:1px solid var(--line);
+}
+.week-proj-d .wd{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;color:#22D3EE;text-transform:uppercase}
+.week-proj-d .t{font-size:10.5px;color:var(--mut);text-align:center;line-height:1.25;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.week-proj-d.off{background:transparent;border-style:dashed;border-color:var(--line2)}
+.week-proj-d.off .wd{color:var(--mut2)}
+.week-proj-d.off .t{opacity:.6}
 .weekbars .wbar.on span{color:var(--accent)}
 
 /* Par de botones del mockup: uno lleno y uno de vidrio, no dos fantasma. */

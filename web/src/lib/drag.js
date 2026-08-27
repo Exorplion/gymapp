@@ -5,13 +5,12 @@
 // DOM que arrastrar, por eso Task 3 sólo verifica que el módulo importe
 // limpio y que las firmas exportadas sean correctas (ver task-3-brief.md).
 import { S, bump } from './state.js';
-import { idb } from './db.js';
 import { vibrate } from './format.js';
 import { setExOrder } from './session.js';
 // Task 5 completa lo que Task 3 dejó en TODO (ver comentarios más abajo):
 // rutina-logic.js no importa nada de este archivo, así que este import es
 // unidireccional — no hay ciclo drag.js<->rutina-logic.js.
-import { pushHistory, persistSlot } from './rutina-logic.js';
+import { pushHistory, persistSlot, applyWorkoutOrder } from './rutina-logic.js';
 // El único uso de React en este módulo: colapsar el día abierto antes de medir
 // los rects tiene que estar pintado ANTES de medir, y sólo flushSync lo
 // garantiza. Ver dragStart.
@@ -185,17 +184,12 @@ export function keepScroll(fn) {
 
 export async function commitSort(kind, wd, ids) {
   if (kind === 'hoy') return setExOrder(S.cfg.seqIndex, ids);
-  if (kind === 'seq') {
-    const by = new Map(S.routine.map(s => [s.id, s]));
-    const out = [];
-    ids.forEach(id => { if (by.has(id)) { out.push(by.get(id)); by.delete(id); } });
-    by.forEach(s => out.push(s));
-    out.forEach((s, i) => { s.order = i; });
-    S.routine = out;
-    await idb.clear('routine');
-    await Promise.all(S.routine.map(s => idb.put('routine', s)));
-    return;
-  }
+  // El editor de Rutina sólo arrastra turnos de ENTRENAMIENTO (los
+  // descansos ya no viven en el DOM arrastrable, ver Rutina.jsx) — así que
+  // `ids` acá es siempre la lista de entrenamientos en su orden nuevo, y
+  // applyWorkoutOrder (rutina-logic.js) recalcula los descansos alrededor
+  // en vez de intentar preservar los que había en las posiciones viejas.
+  if (kind === 'seq') return applyWorkoutOrder(ids);
   const d = S.routine[+wd];
   if (!d || !d.exercises) return;
   pushHistory('Ejercicios reordenados');

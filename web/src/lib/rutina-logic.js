@@ -7,9 +7,9 @@
 // del original se reemplazan por `bump()`/`openSheet(type,props)` (Task 1/5,
 // ver state.js) en todos los casos.
 import { S, bump, openSheet, closeSheet, saveCfg } from './state.js';
-import { dstr, uid, norm, vibrate } from './format.js';
+import { dstr, uid, norm, vibrate, WDS } from './format.js';
 import { idb } from './db.js';
-import { EXCATALOG } from './muscle.js';
+import { EXCATALOG, catOf } from './muscle.js';
 import { exKey } from './equip.js';
 import { toast } from './toast.js';
 
@@ -325,6 +325,93 @@ export async function removeSlot(index) {
     (estable), no por índice: si reordenás mientras hay una sesión abierta,
     sigue detectándola correctamente. */
 export function hasOpenSession(index) { return !!S.draft && S.draft.slotId === S.routine[index]?.id; }
+
+/* ---------- descanso automático ----------
+   El editor deja de manejar descansos a mano: antes había que agregar y
+   quitar turnos de "Descanso" vos mismo entre los de entrenamiento, y
+   reordenar la secuencia mezclando los dos tipos era confuso —a Enzo le
+   pasó justo eso reorganizando Posterior A/B. Ahora el editor sólo
+   muestra los turnos de ENTRENAMIENTO (qué grupos, en qué orden) y la app
+   calcula sola dónde va cada descanso, con esta regla:
+
+     · nunca más de RACHA_MAX entrenamientos seguidos sin un franco;
+     · un turno que entrena pierna pide un franco después SIEMPRE, aunque
+       la racha recién arranque — pierna castiga más que el resto.
+
+   No es la única regla posible ni la ciencia del deporte definitiva —es
+   un punto de partida razonable, documentado acá para poder discutirlo—.
+   Si un día el descanso automático cae mal y de verdad querés entrenar,
+   "Entrenar igual" (Inicio/Hoy) ya cubre ese caso sin tocar la secuencia:
+   el franco calculado se queda, simplemente no lo usás esa vez. */
+const RACHA_MAX = 3;
+
+function pideDescanso(slot, racha) {
+  if (racha >= RACHA_MAX) return true;
+  const cats = new Set((slot.exercises || []).map(catOf).filter(Boolean));
+  return cats.has('Pierna');
+}
+
+/** Reconstruye TODA la secuencia a partir del orden de turnos de
+    entrenamiento dado (sus ids) — los descansos no se preservan de la
+    secuencia vieja, se recalculan siempre con `pideDescanso`. El turno
+    pendiente (S.cfg.seqIndex) se seguía por ID, no por posición: si el
+    turno que estaba pendiente sigue existiendo, el puntero lo sigue
+    adonde haya quedado. */
+export async function applyWorkoutOrder(ids) {
+  const idPendiente = S.routine[S.cfg.seqIndex]?.id;
+  const porId = new Map(S.routine.filter(s => s.type === 'workout').map(s => [s.id, s]));
+  const ordenados = ids.map(id => porId.get(id)).filter(Boolean);
+
+  const out = [];
+  let racha = 0;
+  ordenados.forEach((slot, i) => {
+    out.push(slot);
+    racha++;
+    const esUltimo = i === ordenados.length - 1;
+    if (!esUltimo && pideDescanso(slot, racha)) {
+      out.push({ id: uid(), type: 'rest' });
+      racha = 0;
+    }
+  });
+
+  S.routine = out;
+  reindex();
+  const nuevoIdx = S.routine.findIndex(s => s.id === idPendiente);
+  S.cfg.seqIndex = nuevoIdx >= 0 ? nuevoIdx : 0;
+  await Promise.all([persistAll(), saveCfg()]);
+  bump();
+}
+
+/** Agrega un turno de entrenamiento nuevo al final de la secuencia de
+    entrenamientos (los descansos se recalculan solos alrededor). */
+export async function addWorkoutDay() {
+  const nuevo = { id: uid(), type: 'workout', name: '', exercises: [] };
+  S.routine.push(nuevo); // sólo para que applyWorkoutOrder lo encuentre por id
+  pushHistory('Entrenamiento agregado');
+  const ids = S.routine.filter(s => s.type === 'workout').map(s => s.id);
+  await applyWorkoutOrder(ids);
+  return nuevo;
+}
+
+/** Saca un turno de entrenamiento (por id, no por índice — la posición
+    puede haber cambiado) y recalcula los descansos con lo que queda. */
+export async function removeWorkoutDay(id) {
+  const idx = S.routine.findIndex(s => s.id === id);
+  if (idx < 0) return;
+  if (hasOpenSession(idx)) { toast('Hay una sesión abierta en este turno — terminala o descartala primero'); return; }
+  pushHistory('Turno eliminado');
+  const ids = S.routine.filter(s => s.type === 'workout' && s.id !== id).map(s => s.id);
+  await applyWorkoutOrder(ids);
+}
+
+/** Qué día de la semana le tocaría a cada turno de S.routine SI la semana
+    arrancara un lunes — un vistazo, no una promesa: la secuencia real
+    avanza por finalización (ver session.js), no por fecha calendario, así
+    que esto puede correrse si algún día se salta. Sirve para responder
+    "¿esto me deja entrenando en fin de semana?" de un vistazo al editar. */
+export function weekdayProjection() {
+  return S.routine.map((_, i) => WDS[(i + 1) % 7]);
+}
 
 export async function saveSlot(index, { name }) {
   const trimmed = (name || '').trim();
