@@ -116,6 +116,27 @@ export function catOf(ex) {
   return null;
 }
 
+/** Agrupa una lista de ejercicios YA ORDENADA en bloques contiguos por grupo
+    muscular — no reordena nada, sólo junta lo que ya está junto. Un
+    ejercicio sin grupo cae en 'Otros', al final, para no perderlo (mismo
+    espíritu que SinGrupoAviso: se dice, no se oculta).
+
+    El orden real de los ejercicios sigue viviendo donde ya vivía
+    (session.js: S.hoyOrder / S.draft.order) — esto es sólo una lectura para
+    pintar encabezados y agrupar los controles de reordenar POR BLOQUE
+    (moveBlock, session.js), nunca la fuente de verdad del orden. */
+export function blocksOf(exs) {
+  const out = [];
+  const byCat = new Map();
+  for (const ex of exs) {
+    const cat = catOf(ex) || 'Otros';
+    let b = byCat.get(cat);
+    if (!b) { b = { cat, exs: [] }; byCat.set(cat, b); out.push(b); }
+    b.exs.push(ex);
+  }
+  return out;
+}
+
 /** Series por grupo muscular en los últimos `days` días.
 
     Lee el `cat` que quedó guardado en cada entrada: sin eso el volumen

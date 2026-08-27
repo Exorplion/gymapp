@@ -18,9 +18,9 @@
 // dos vistas de una sesión — la del historial y la del cierre.
 import { useEffect, useRef, useState } from 'react';
 import { S, useStore, bump, openSheet, closeSheet, saveDraft } from '../../lib/state.js';
-import { WDS, MO, fmtMMSS, dstr, fmtDFull } from '../../lib/format.js';
-import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession } from '../../lib/session.js';
-import { muscleVolume, uncategorized } from '../../lib/muscle.js';
+import { WDS, MO, fmtMMSS } from '../../lib/format.js';
+import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession, moveBlock } from '../../lib/session.js';
+import { muscleVolume, uncategorized, blocksOf, MUSCLE_CATS } from '../../lib/muscle.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
 import WarmupCard from '../WarmupCard.jsx';
@@ -29,6 +29,7 @@ import { startRest } from '../../lib/rest.js';
 import { toast } from '../../lib/toast.js';
 import { Bolt, Mic, RecordDot } from '../Icon.jsx';
 import { HoySinPlan } from '../Illustration.jsx';
+import Silhouette from '../Silhouette.jsx';
 
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
 
@@ -91,11 +92,6 @@ export default function Hoy() {
       ) : (
         <PreSessionHero day={day} index={index} exs={exs} />
       )}
-      <div className="sect">Esta semana</div>
-      <div className="card">
-        <WeekHistory />
-      </div>
-
       {mvCats.length > 0 && (
         <>
         {/* En el mockup el encabezado va FUERA de la tarjeta, con su línea
@@ -147,9 +143,10 @@ export default function Hoy() {
         </div></div>
       ) : (
         <>
+          {!active && <BlockList index={index} exs={exs} />}
           {exs.length > 1 && (
             <button type="button" className="btn sm ghost" style={{ marginBottom: 'var(--s3)' }} onClick={() => openSheet('reorder-hoy')}>
-              ↕ Reordenar
+              ↕ Reordenar dentro de un bloque
             </button>
           )}
           {/* El calentamiento va antes del carrusel, sobre el próximo ejercicio
@@ -325,18 +322,41 @@ function PreSessionHero({ day, index, exs }) {
   );
 }
 
-/** Lista simple de las sesiones de los últimos 7 días — nunca inventa "días
-    futuros": si todavía no hiciste nada esta semana, dice eso. */
-function WeekHistory() {
-  const cutoff = dstr(new Date(Date.now() - 7 * 86400000));
-  const recent = S.sessions.filter(s => s.date >= cutoff);
-  if (!recent.length) return <div className="txt-mut" style={{ fontSize: 13 }}>Todavía no hay sesiones esta semana.</div>;
-  return recent.map(s => (
-    <div key={s.id} className="hist-row" onClick={() => openSheet('session-view', { id: s.id })}>
-      <span className="t">{s.dayName}</span>
-      <span className="s">{fmtDFull(s.date)}</span>
+/** Los ejercicios de hoy agrupados por bloque muscular, con un vistazo del
+    cuerpo arriba (qué grupos se encienden hoy) y controles ▲▼ para mover
+    BLOQUES enteros — nunca ejercicios sueltos, así un grupo nunca queda a
+    medio mezclar con otro. Sólo antes de arrancar: una vez que el reloj
+    corre, orderedExs() ya no admite reacomodo (ver su comentario en
+    session.js), así que este bloque ni se muestra con sesión activa. */
+function BlockList({ index, exs }) {
+  const blocks = blocksOf(exs);
+  if (blocks.length < 2) return null; // un solo grupo: no hay nada que reordenar entre bloques
+  return (
+    <div className="block-list">
+      <BodyPreview cats={blocks.map(b => b.cat)} />
+      {blocks.map((b, i) => (
+        <div className="block-head" key={b.cat}>
+          <span className="t">{b.cat}</span>
+          <span className="s">{b.exs.length} ejercicio{b.exs.length === 1 ? '' : 's'}</span>
+          <span className="block-move">
+            <button type="button" disabled={i === 0} aria-label={`Mover ${b.cat} antes`} onClick={() => { moveBlock(index, blocks, b.cat, -1).then(bump); }}>▲</button>
+            <button type="button" disabled={i === blocks.length - 1} aria-label={`Mover ${b.cat} después`} onClick={() => { moveBlock(index, blocks, b.cat, 1).then(bump); }}>▼</button>
+          </span>
+        </div>
+      ))}
     </div>
-  ));
+  );
+}
+
+/** El cuerpo con los grupos de HOY encendidos — mismo componente y mismos
+    colores que Inicio/BodyMap, pero acá "encendido" no es recencia (hace
+    cuántos días), es "está en el plan de hoy sí o no": por eso arma su
+    propio `days` en vez de reusar daysSinceAll(). */
+function BodyPreview({ cats }) {
+  const set = new Set(cats);
+  const days = {};
+  MUSCLE_CATS.forEach(c => { days[c] = set.has(c) ? 0 : null; });
+  return <div className="block-body"><Silhouette days={days} interactivo={false} /></div>;
 }
 
 /** Sheet informativo previo a abrir la sesión (data-act="sess-start" del

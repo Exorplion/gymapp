@@ -77,6 +77,21 @@ export async function setExOrder(index, ids) {
   else { S.hoyOrder = S.hoyOrder || {}; S.hoyOrder[slotId] = ids; }
 }
 
+/** Mueve un BLOQUE entero (todos los ejercicios de un grupo muscular, juntos)
+    un lugar antes o después del bloque vecino — no ejercicios sueltos, así
+    nunca se pueden mezclar dos grupos a la mitad. `exs` es el orden actual
+    (orderedExs), `blocksOf` (muscle.js) lo agrupa; acá sólo se swapean dos
+    bloques y se aplana de nuevo a una lista de ids para setExOrder, que ya
+    sabe dónde persistirla (S.hoyOrder o S.draft.order según haya sesión). */
+export async function moveBlock(index, blocks, cat, dir) {
+  const i = blocks.findIndex(b => b.cat === cat);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= blocks.length) return;
+  const next = blocks.slice();
+  [next[i], next[j]] = [next[j], next[i]];
+  await setExOrder(index, next.flatMap(b => b.exs.map(e => e.id)));
+}
+
 export function setsDone(exId) { return S.draft?.entries[exId]?.sets || []; }
 
 /** El lunes de la semana de `d`, en YYYY-MM-DD. La semana arranca el lunes
