@@ -358,7 +358,21 @@ function pideDescanso(slot, racha) {
     turno que estaba pendiente sigue existiendo, el puntero lo sigue
     adonde haya quedado. */
 export async function applyWorkoutOrder(ids) {
-  const idPendiente = S.routine[S.cfg.seqIndex]?.id;
+  // El puntero NO se sigue por el id del turno pendiente: si ese turno era
+  // un descanso, su id no sobrevive al recálculo (los descansos se generan
+  // de nuevo cada vez, no tienen identidad propia — ver el bucle de abajo).
+  // Seguirlo así lo perdía después de CUALQUIER edición y el puntero volvía
+  // a 0, que es el bug de "no calcula bien la secuencia" que reportó Enzo.
+  //
+  // Lo que sí es estable es CUÁNTOS entrenamientos ya se completaron en
+  // este ciclo — eso es lo que importa en una secuencia que avanza por
+  // finalización, no por fecha. Se cuenta antes de tocar nada, y después
+  // del recálculo el puntero se para en el mismo punto del ciclo.
+  let workoutsAntes = 0;
+  for (let i = 0; i < S.cfg.seqIndex && i < S.routine.length; i++) {
+    if (S.routine[i].type === 'workout') workoutsAntes++;
+  }
+
   const porId = new Map(S.routine.filter(s => s.type === 'workout').map(s => [s.id, s]));
   const ordenados = ids.map(id => porId.get(id)).filter(Boolean);
 
@@ -376,8 +390,22 @@ export async function applyWorkoutOrder(ids) {
 
   S.routine = out;
   reindex();
-  const nuevoIdx = S.routine.findIndex(s => s.id === idPendiente);
-  S.cfg.seqIndex = nuevoIdx >= 0 ? nuevoIdx : 0;
+
+  let contados = 0;
+  let nuevoIdx = Math.max(0, S.routine.length - 1);
+  for (let i = 0; i < S.routine.length; i++) {
+    if (contados === workoutsAntes) { nuevoIdx = i; break; }
+    if (S.routine[i].type === 'workout') contados++;
+  }
+  S.cfg.seqIndex = nuevoIdx;
+
+  // La tarjeta abierta en el editor se guarda como índice absoluto
+  // (S.rutOpen): tras el recálculo esa posición puede corresponder a otro
+  // turno, y dejarla "abierta" mostraría el ejercicio equivocado un
+  // instante — el parpadeo raro que reportó Enzo. Se cierra: es mejor un
+  // colapso limpio que un contenido mal atribuido.
+  S.rutOpen = null;
+
   await Promise.all([persistAll(), saveCfg()]);
   bump();
 }

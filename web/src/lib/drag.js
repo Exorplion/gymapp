@@ -159,9 +159,17 @@ export function dragEnd(commit) {
     clean();
     refreshSortArrows(box);
     await saved;
-    /* Hoy sí necesita recalcular cuál es el próximo ejercicio; lo hace sobre un
-       DOM que ya está en el orden final, así que no se mueve nada */
-    if (kind === 'hoy') keepScroll(() => bump()); // originalmente keepScroll(renderHoy)
+    /* 'hoy' y 'seq' necesitan un bump real después del commit: no son sólo
+       un reorden de nodos iguales. 'hoy' recalcula cuál es el próximo
+       ejercicio; 'seq' (Rutina) además recalcula descansos automáticos,
+       mueve S.cfg.seqIndex y cierra la tarjeta abierta (applyWorkoutOrder,
+       rutina-logic.js) — sin este bump, el DOM se quedaba mostrando el
+       resultado del reorden a mano de arriba mientras el estado real ya
+       tenía descansos distintos, y recién se sincronizaba con el próximo
+       render de OTRA cosa: eso se sentía como un parpadeo y como que "no
+       calculaba bien la secuencia". 'rut' (ejercicios dentro de un día) sí
+       sigue sin bump: ahí un reorden es sólo eso, reorden. */
+    if (kind === 'hoy' || kind === 'seq') keepScroll(() => bump());
   }, 300);
 }
 
