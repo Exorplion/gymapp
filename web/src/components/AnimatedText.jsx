@@ -17,7 +17,7 @@
 // aria-label lleva el texto completo y los <span> individuales van
 // aria-hidden: un lector de pantalla no tiene por qué escuchar palabra por
 // palabra lo que para el ojo es una sola frase.
-import { useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 
 export default function AnimatedText({ text, as: Tag = 'span', className, style }) {
@@ -42,9 +42,17 @@ export default function AnimatedText({ text, as: Tag = 'span', className, style 
   return (
     <Tag ref={ref} className={className} style={style} aria-label={text}>
       {palabras.map((w, i) => (
-        <span key={i} aria-hidden="true" style={{ display: 'inline-block' }}>
-          {w}{i < palabras.length - 1 ? ' ' : ''}
-        </span>
+        // El espacio va COMO HERMANO del span, no adentro: un espacio al
+        // final del contenido de un inline-block cae justo en el borde de su
+        // propio mini-formato de línea, y el navegador lo recorta igual que
+        // recortaría un espacio al final de cualquier línea — eso era lo que
+        // pegaba las palabras ("Nuevarutina"). Afuera, como texto plano del
+        // contenedor (que es inline normal, no inline-block), el espacio no
+        // toca ningún borde y se ve.
+        <Fragment key={i}>
+          <span aria-hidden="true" style={{ display: 'inline-block' }}>{w}</span>
+          {i < palabras.length - 1 ? ' ' : ''}
+        </Fragment>
       ))}
     </Tag>
   );
