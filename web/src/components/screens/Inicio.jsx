@@ -21,6 +21,8 @@
 // reutilizada acá: cada turno es su posición en la secuencia, no un día
 // calendario, y tocar cualquiera que no sea "hoy" abre una vista previa
 // (mismo sheet 'day-peek' que usa Rutina) sin tocar el puntero real.
+import { useEffect, useRef } from 'react';
+import gsap from 'gsap';
 import { S, useStore, bump, openSheet } from '../../lib/state.js';
 import { WDS, MO, dstr, fmtD } from '../../lib/format.js';
 import { pendingSlot, sessionForSlot } from '../../lib/session.js';
@@ -31,6 +33,26 @@ import Silhouette from '../Silhouette.jsx';
 
 export default function Inicio() {
   useStore();
+  const gridRef = useRef(null);
+  // Entrada en cascada de las tarjetas del bento al llegar a Inicio — sólo al
+  // MONTAR (deps []): Inicio se remonta entero cada vez que volvés a esta
+  // pestaña (App.jsx la desmonta al cambiar de tab, key={store.tab}), así que
+  // esto corre una vez por visita y no en cada bump() de S. GSAP anima el DOM
+  // directo, fuera del ciclo de render de React — no reemplaza nada de cómo
+  // ya se pinta el grid, sólo lo anima al aparecer.
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const tiles = gridRef.current?.querySelectorAll('.ini-tile');
+    if (!tiles?.length) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        tiles,
+        { opacity: 0, y: 16, scale: 0.96 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.06, ease: 'power3.out' },
+      );
+    });
+    return () => ctx.revert();
+  }, []);
   const hoy = new Date();
   const slot = pendingSlot();
   const hecha = slot ? sessionForSlot(slot.id) : null;
@@ -99,7 +121,7 @@ export default function Inicio() {
 
       {cta}
 
-      <div className="ini-grid">
+      <div className="ini-grid" ref={gridRef}>
         <BodyTile dias={dias} viejos={viejos} />
         <RachaTile racha={racha} />
         <StaleTile grupos={viejos} dias={dias} />

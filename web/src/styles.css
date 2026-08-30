@@ -1995,6 +1995,13 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-strip-i.hoy .n{color:#22D3EE}
 .ini-strip-i.hoy .b{background:linear-gradient(180deg,#22D3EE,var(--blue));box-shadow:0 0 10px rgba(34,211,238,.5)}
 
+/* Paso 1→2 del asistente de rutina (RoutineWizard.jsx) usa
+   document.startViewTransition(): sin esto el navegador cruza los dos
+   estados con su fundido por defecto (280ms, ease genérico) — acá se afina
+   la duración para que se sienta igual de rápido que el resto de la app en
+   vez de un poco más lento. */
+::view-transition-old(root),::view-transition-new(root){animation-duration:.22s}
+
 /* Sheet 'body-map': el cuerpo completo e interactivo, con la altura fija que
    .sil-pair (flex:1;min-height:0) necesita para saber cuánto medir —el
    mismo cálculo que usaba .inicio entera cuando el cuerpo vivía ahí. */

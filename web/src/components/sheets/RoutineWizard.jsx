@@ -6,6 +6,7 @@
 // no se le imponga nada: ej. pecho puede arrancar con plano o con inclinado,
 // y elige la persona).
 import { useState } from 'react';
+import { flushSync } from 'react-dom';
 import { closeSheet } from '../../lib/state.js';
 import { MUSCLE_CATS, EXCATALOG } from '../../lib/muscle.js';
 import { createWorkoutFromWizard } from '../../lib/rutina-logic.js';
@@ -25,10 +26,24 @@ export default function RoutineWizard() {
       ? cs.filter(e => e.name !== n)
       : [...cs, { name: n, cat }]);
   }
+  // Cambia de paso con View Transitions API cuando el navegador la soporta
+  // (Chrome/Edge, Safari reciente) y no hay "reducir movimiento": el sheet
+  // entero hace un crossfade suave en vez del salto seco de siempre. Sin
+  // soporte, cae directo al setStep de toda la vida — mismo resultado, sin
+  // el efecto.
+  function cambiarPaso(fn) {
+    const puedeVT = typeof document.startViewTransition === 'function'
+      && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // startViewTransition necesita el DOM ya actualizado ANTES de tomar la
+    // foto del "después" — flushSync fuerza ese render sincrónico; sin él,
+    // React batchea el setState y la librería fotografía el estado viejo dos
+    // veces (nunca se ve el cambio).
+    if (puedeVT) document.startViewTransition(() => flushSync(fn));
+    else fn();
+  }
   function irAEjercicios() {
     if (!cats.length) { toast('Elegí al menos un grupo'); return; }
-    setName(cats.join(' / '));
-    setStep(2);
+    cambiarPaso(() => { setName(cats.join(' / ')); setStep(2); });
   }
   async function crear() {
     if (!chosen.length) { toast('Elegí al menos un ejercicio'); return; }
@@ -100,7 +115,7 @@ export default function RoutineWizard() {
         {chosen.length} ejercicio{chosen.length === 1 ? '' : 's'} elegido{chosen.length === 1 ? '' : 's'} · series y repeticiones se pueden ajustar después, ejercicio por ejercicio.
       </div>
       <button type="button" className="btn" onClick={crear}>Crear día</button>
-      <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={() => setStep(1)}>Volver</button>
+      <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={() => cambiarPaso(() => setStep(1))}>Volver</button>
     </>
   );
 }

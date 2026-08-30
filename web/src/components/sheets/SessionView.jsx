@@ -19,6 +19,11 @@ import { toast } from '../../lib/toast.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
 import { Skip } from '../Icon.jsx';
+// lottie-react 3.x no tiene export default: el componente es `Lottie`
+// nombrado, y el prop del JSON pasó a llamarse `src` (antes `animationData`
+// en 1.x/2.x, la versión que documentan la mayoría de los tutoriales viejos).
+import { Lottie } from 'lottie-react';
+import prBurst from '../../assets/lottie/pr-burst.json';
 
 export default function SessionView({ id, justFinished = false }) {
   useStore();
@@ -92,7 +97,12 @@ export default function SessionView({ id, justFinished = false }) {
 
       {hasPR && (
         <div className="card pr-card" style={{ marginTop: 18, animation: justFinished ? 'flash 1.2s ease 2' : undefined }}>
-          <div className="pr-troph">🏆</div>
+          {/* El burst animado sólo se reproduce al cerrar LA sesión que generó
+              el récord — reabrir una sesión vieja con PR no debería repetir el
+              festejo cada vez, así que ahí se queda el trofeo fijo de siempre. */}
+          {justFinished
+            ? <Lottie src={prBurst} autoplay loop={false} style={{ width: 44, height: 44, flex: 'none' }} />
+            : <div className="pr-troph">🏆</div>}
           <div className="grow">
             <div className="cond" style={{ fontSize: 'var(--t-lg)', fontWeight: 700 }}>
               {justFinished ? '¡Nuevo récord!' : `${prs.length} récord${prs.length === 1 ? '' : 's'} en esta sesión`}

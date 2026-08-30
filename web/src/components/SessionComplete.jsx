@@ -8,6 +8,7 @@
 // usa el overlay de descanso (#rest-fs en RestTimer.jsx) — position:fixed
 // propio, sin pasar por el sistema de S.sheet.
 import { useEffect, useRef, useState } from 'react';
+import gsap from 'gsap';
 import { S, useStore, openSheet } from '../lib/state.js';
 import { currentStreak } from '../lib/streak.js';
 import { catsDeSesion } from '../lib/muscle.js';
@@ -45,6 +46,10 @@ export default function SessionComplete() {
   const timerRef = useRef(null);
   const beatTimersRef = useRef([]);
   const [beatActual, setBeatActual] = useState(1);
+  const streakRef = useRef(null);
+  const ejRef = useRef(null);
+  const serRef = useRef(null);
+  const kgRef = useRef(null);
 
   /* Con "reducir movimiento" activado, styles.css apaga la animación de
      .sc-beat (el fade+scale) — pero los tres beats están montados unos
@@ -98,6 +103,35 @@ export default function SessionComplete() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sess?.id]);
 
+  // Cuenta ascendente de los números del resumen con GSAP, sincronizada con
+  // los mismos delays que ya usan los beats (BEAT2_DELAY). Se salta entera
+  // bajo "reducir movimiento" — mismo criterio que el resto de esta
+  // pantalla: sin eso, contar de 0 a N ES movimiento, y el usuario pidió que
+  // no lo haya. gsap.to() sobre un objeto plano (no un elemento del DOM):
+  // el onUpdate escribe el número en el ref a mano, así el conteo no pasa
+  // por un re-render de React en cada frame.
+  useEffect(() => {
+    if (!sess || reducido) return;
+    const { ejercicios, series, kg } = resumenDe(sess);
+    const streakVal = currentStreak();
+    const o1 = { v: 0 };
+    const t1 = gsap.to(o1, {
+      v: streakVal, duration: 0.7, ease: 'power2.out',
+      onUpdate: () => { if (streakRef.current) streakRef.current.textContent = Math.round(o1.v); },
+    });
+    const o2 = { ej: 0, ser: 0, kg: 0 };
+    const t2 = gsap.to(o2, {
+      ej: ejercicios, ser: series, kg: round1(kg), duration: 0.8, delay: BEAT2_DELAY / 1000, ease: 'power2.out',
+      onUpdate: () => {
+        if (ejRef.current) ejRef.current.textContent = Math.round(o2.ej);
+        if (serRef.current) serRef.current.textContent = Math.round(o2.ser);
+        if (kgRef.current) kgRef.current.textContent = fmtNum(round1(o2.kg));
+      },
+    });
+    return () => { t1.kill(); t2.kill(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sess?.id]);
+
   if (!sess) return null;
 
   const { ejercicios, series, kg } = resumenDe(sess);
@@ -123,14 +157,14 @@ export default function SessionComplete() {
     <div id="session-complete" role="status" aria-label="Entrenamiento completo" onClick={cerrar}>
       <div className="sc-beat b1" style={estiloDe(1)}>
         <Flame size={56} className="sc-flame" />
-        <div className="sc-streak-n">{streak}</div>
+        <div className="sc-streak-n" ref={streakRef}>{reducido ? streak : 0}</div>
         <div className="sc-lbl">{streak === 1 ? 'día de racha' : 'días de racha'}</div>
       </div>
       <div className="sc-beat b2" style={estiloDe(2)}>
         <div className="sc-resumen">
-          <div><b>{ejercicios}</b><span>ejercicios</span></div>
-          <div><b>{series}</b><span>series</span></div>
-          <div><b>{fmtNum(round1(kg))}</b><span>kg movidos</span></div>
+          <div><b ref={ejRef}>{reducido ? ejercicios : 0}</b><span>ejercicios</span></div>
+          <div><b ref={serRef}>{reducido ? series : 0}</b><span>series</span></div>
+          <div><b ref={kgRef}>{reducido ? fmtNum(round1(kg)) : 0}</b><span>kg movidos</span></div>
         </div>
       </div>
       <div className="sc-beat b3" style={estiloDe(3)}>
