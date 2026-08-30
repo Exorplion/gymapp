@@ -2022,6 +2022,12 @@ main{view-transition-name:app-main}
 :root[data-tdir="l"] ::view-transition-old(app-main){animation:vt-main-out-r .34s var(--ease) forwards}
 :root[data-tdir="l"] ::view-transition-new(app-main){animation:vt-main-in-l .34s var(--spring)}
 
+/* RoutineWizard.jsx: barra de progreso arriba del sheet, estilo onboarding
+   (referencia visual: Liftoff — el mecanismo, no la identidad: acá es el
+   gradiente cian/azul de Fierro, no el elefante). */
+.wiz-progress{height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:var(--s3)}
+.wiz-progress i{display:block;height:100%;background:var(--grad2);border-radius:4px;transition:width .4s var(--spring)}
+
 /* Sheet 'body-map': el cuerpo completo e interactivo, con la altura fija que
    .sil-pair (flex:1;min-height:0) necesita para saber cuánto medir —el
    mismo cálculo que usaba .inicio entera cuando el cuerpo vivía ahí. */

@@ -49,15 +49,6 @@ export default function ExerciseForm({ wd, ex }) {
   const nameRef = useRef(null);
   const voiceRef = useRef(null);
 
-  /* El teclado se abre solo al CREAR, que es cuando lo primero que vas a hacer
-     es escribir un nombre. Al editar no: entrás a cambiar las series o el
-     equipo, y el teclado tapa media pantalla para un campo que no ibas a tocar.
-     Si querés cambiar el nombre, lo tocás. */
-  useEffect(() => {
-    if (ex) return;
-    const t = setTimeout(() => nameRef.current?.focus(), 80);
-    return () => clearTimeout(t);
-  }, [ex]);
   // Si queda un reconocimiento de voz corriendo al desmontar (cierre del
   // sheet a mitad de dictado), lo cortamos — el original nunca desmonta este
   // formulario mientras VOICE existe (es la misma pantalla), pero acá el

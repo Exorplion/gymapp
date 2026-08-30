@@ -7,7 +7,7 @@
 // Cambia sólo esa entrada de esa sesión. Si la RUTINA del día también tiene el
 // nombre viejo, lo ofrece con un botón: el historial y el plan son dos cosas, y
 // corregir un registro no debería reescribir el plan sin permiso.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { S, closeSheet, openSheet } from '../../lib/state.js';
 import { norm } from '../../lib/format.js';
 import { updateHistorySession } from '../../lib/session.js';
@@ -27,11 +27,6 @@ export default function EntryEdit({ sessId, idx }) {
   const [cat, setCat] = useState(entry?.cat || '');
   const [unilateral, setUnilateral] = useState(!!entry?.unilateral);
   const nameRef = useRef(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => nameRef.current?.focus(), 80);
-    return () => clearTimeout(t);
-  }, []);
 
   const q = norm(name);
   const sugeridos = useMemo(

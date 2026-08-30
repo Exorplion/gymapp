@@ -10,7 +10,7 @@
 // escalados: recalcular los gramos vuelve a llamar a macrosFor() sobre la
 // fuente, en vez de re-escalar un número ya escalado (que pierde precisión y
 // se rompe si los gramos pasan por cero).
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { S, bump, closeSheet } from '../../lib/state.js';
 import { uid, vibrate, round1 } from '../../lib/format.js';
 import { idb } from '../../lib/db.js';
@@ -49,11 +49,6 @@ export default function MealForm({ slot: slotInicial }) {
   const [carrito, setCarrito] = useState([]);
   const [nuevo, setNuevo] = useState(null);
   const buscarRef = useRef(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => buscarRef.current?.focus(), 80);
-    return () => clearTimeout(t);
-  }, []);
 
   const hits = useMemo(() => searchFoods(q, { slot, limit: 8 }), [q, slot]);
 

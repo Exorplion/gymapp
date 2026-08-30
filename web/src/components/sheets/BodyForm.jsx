@@ -11,7 +11,7 @@
 // campo en blanco al guardar significa "no registro este dato hoy", no
 // "repetí el valor de la vez pasada". saveBody() lo refleja con num():
 // parseFloat('') es NaN → null → esa columna queda null en el registro.
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { S, closeSheet, saveCfg } from '../../lib/state.js';
 import { uid, dstr } from '../../lib/format.js';
 import { applyComputedGoals } from '../../lib/macros.js';
@@ -26,11 +26,6 @@ export default function BodyForm() {
   const [chest, setChest] = useState('');
   const [leg, setLeg] = useState('');
   const weightRef = useRef(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => weightRef.current?.focus(), 80);
-    return () => clearTimeout(t);
-  }, []);
 
   async function save() {
     const num = raw => { const v = parseFloat(raw); return isNaN(v) ? null : v; };

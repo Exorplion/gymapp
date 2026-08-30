@@ -8,7 +8,7 @@
 //
 // Nada de esto toca S.routine: vive en el borrador. Al cerrar la sesión, el
 // resumen ofrece dejarlo fijo en la rutina del día.
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { S, closeSheet } from '../../lib/state.js';
 import { WD } from '../../lib/format.js';
 import { addSessionExercise, replaceSessionExercise, sessionExs } from '../../lib/session.js';
@@ -40,14 +40,6 @@ export default function SessionExercise({ wd, exId = null }) {
   // mensaje de confirmación no dice "cambiaste el equipo" cuando en realidad
   // cambiaste el ejercicio entero y de paso el equipo también cambió.
   const soloEquipo = esCambio && name.trim() === (original?.name || '').trim();
-
-  useEffect(() => {
-    // seleccionado y no sólo enfocado: si vas a cambiar sólo el equipo, el
-    // nombre precargado no estorba; si vas a escribir uno nuevo, la primera
-    // tecla lo reemplaza entero en vez de meterse al final del viejo.
-    const t = setTimeout(() => nameRef.current?.select(), 80);
-    return () => clearTimeout(t);
-  }, []);
 
   // Sugerencias del catálogo para el grupo del día, sin los que ya están en la
   // sesión: cambiar de máquina es el caso normal y escribir el nombre entero

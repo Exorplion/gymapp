@@ -8,12 +8,52 @@
 // biblioteca (S.lib) al terminar — nunca toca el split activo ni pide
 // vaciarlo. Aplicar la rutina guardada (con su propio confirm de reemplazo)
 // es un paso aparte, el de siempre en "Mis rutinas".
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import gsap from 'gsap';
 import { closeSheet } from '../../lib/state.js';
 import { MUSCLE_CATS, EXCATALOG } from '../../lib/muscle.js';
 import { saveWizardRoutine } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
+import AnimatedText from '../AnimatedText.jsx';
+
+const TOTAL_PASOS = 3;
+
+/** Barra de progreso arriba del sheet — el mismo lenguaje que ya usaban las
+    referencias de onboarding que pidió Enzo (Liftoff): una barra que se
+    llena paso a paso, no un texto "paso 2 de 3". El estilo visual es el de
+    Fierro (gradiente cian/azul), no una copia literal de la referencia. */
+function WizardProgress({ step }) {
+  const pct = Math.round((step / TOTAL_PASOS) * 100);
+  return (
+    <div className="wiz-progress" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={TOTAL_PASOS}>
+      <i style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
+/** Entrada en cascada de los chips de un paso: corre cada vez que `step`
+    cambia (grupos -> ejercicios -> guardar), sobre lo que haya adentro del
+    contenedor en ESE momento — no hace falta un ref por chip, uno solo al
+    contenedor y GSAP encuentra los hijos. */
+function useStepReveal(step) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    const targets = el.querySelectorAll('.chip, .field, .card.sub');
+    if (!targets.length) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        targets,
+        { opacity: 0, y: 12, scale: 0.94 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.4, stagger: 0.035, ease: 'power2.out', delay: 0.05 },
+      );
+    });
+    return () => ctx.revert();
+  }, [step]);
+  return ref;
+}
 
 export default function RoutineWizard() {
   const [step, setStep] = useState(1); // 1: grupos del día actual, 2: ejercicios del día actual, 3: nombre y guardar
@@ -22,6 +62,7 @@ export default function RoutineWizard() {
   const [chosen, setChosen] = useState([]); // [{name, cat}] del día en curso
   const [dayName, setDayName] = useState('');
   const [routineName, setRoutineName] = useState('');
+  const revealRef = useStepReveal(step);
 
   function toggleCat(c) {
     setCats(cs => cs.includes(c) ? cs.filter(x => x !== c) : [...cs, c]);
@@ -82,14 +123,16 @@ export default function RoutineWizard() {
   }
 
   if (step === 1) {
+    const titulo1 = days.length ? `Día ${days.length + 1} · grupos musculares` : 'Nueva rutina · grupos musculares';
     return (
       <>
-        <h2>{days.length ? `Día ${days.length + 1} · grupos musculares` : 'Nueva rutina · grupos musculares'}</h2>
+        <WizardProgress step={1} />
+        <h2><AnimatedText text={titulo1} /></h2>
         <div className="sheet-sub">
           ¿Qué vas a trabajar este día? Podés elegir más de uno — por ejemplo Pecho, Hombro y Tríceps para un día de empuje.
           {days.length > 0 && ` Ya tenés ${days.length} día${days.length === 1 ? '' : 's'} armado${days.length === 1 ? '' : 's'} en esta rutina.`}
         </div>
-        <div className="chips" style={{ marginTop: 'var(--s2)' }}>
+        <div className="chips" style={{ marginTop: 'var(--s2)' }} ref={revealRef}>
           {MUSCLE_CATS.map(c => (
             <button
               key={c}
@@ -113,10 +156,12 @@ export default function RoutineWizard() {
   if (step === 2) {
     return (
       <>
-        <h2>Elegí los ejercicios</h2>
+        <WizardProgress step={2} />
+        <h2><AnimatedText text="Elegí los ejercicios" /></h2>
         <div className="sheet-sub">
           Tocá los que quieras incluir. Son sugerencias — nada se agrega solo.
         </div>
+        <div ref={revealRef}>
         <div className="field">
           <label htmlFor="wiz-dia-nombre">Nombre de este día</label>
           <input id="wiz-dia-nombre" value={dayName} onChange={e => setDayName(e.target.value)} placeholder="Push" />
@@ -145,6 +190,7 @@ export default function RoutineWizard() {
         <div className="txt-mut" style={{ fontSize: 12.5, margin: '4px 0 var(--s3)' }}>
           {chosen.length} ejercicio{chosen.length === 1 ? '' : 's'} elegido{chosen.length === 1 ? '' : 's'} · series y repeticiones se pueden ajustar después, ejercicio por ejercicio.
         </div>
+        </div>
         <button type="button" className="btn" onClick={irAGuardar}>
           {days.length ? 'Terminar y guardar rutina' : 'Guardar rutina'}
         </button>
@@ -159,10 +205,12 @@ export default function RoutineWizard() {
   // step === 3: nombre de la rutina entera y guardado en la biblioteca.
   return (
     <>
-      <h2>Guardar en tu biblioteca</h2>
+      <WizardProgress step={3} />
+      <h2><AnimatedText text="Guardar en tu biblioteca" /></h2>
       <div className="sheet-sub">
         Queda en "Mis rutinas" para probarla cuando quieras — tu split activo no cambia.
       </div>
+      <div ref={revealRef}>
       <div className="field">
         <label htmlFor="wiz-nombre">Nombre de la rutina</label>
         <input id="wiz-nombre" value={routineName} onChange={e => setRoutineName(e.target.value)} placeholder="Mi rutina de prueba" />
@@ -176,6 +224,7 @@ export default function RoutineWizard() {
             </div>
           </div>
         ))}
+      </div>
       </div>
       <button type="button" className="btn" onClick={guardar}>Guardar en mi biblioteca</button>
       <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={() => setStep(2)}>Volver</button>

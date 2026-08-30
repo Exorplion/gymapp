@@ -34,6 +34,7 @@
 //
 // Este componente no calcula estadísticas: pide groupStats() cuando tocás.
 import { useState, useRef, useEffect, useCallback } from 'react';
+import gsap from 'gsap';
 import { cuerpo } from '../lib/bodydata.js';
 import { groupStats, diasTexto } from '../lib/muscle.js';
 import { vibrate } from '../lib/format.js';
@@ -185,6 +186,21 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
     vibrate(8);
     setAng(destino * 180);
   };
+
+  // Entrada del cuerpo al aparecer en pantalla (Inicio, BodyMap, el vistazo
+  // de Hoy, la pantalla de sesión completa): un fade+scale suave, una sola
+  // vez al montar — nunca en cada bump() de S, por eso deps []. No compite
+  // con el giro (rotateY, más abajo): anima el contenedor entero, no
+  // sil-flip.
+  useEffect(() => {
+    const el = caja.current;
+    if (!el || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(el, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.6, ease: 'power3.out' });
+    });
+    return () => ctx.revert();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Escape cierra. Se registra sólo mientras hay algo abierto.
   useEffect(() => {

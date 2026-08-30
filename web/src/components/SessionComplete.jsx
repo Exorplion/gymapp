@@ -47,6 +47,7 @@ export default function SessionComplete() {
   const beatTimersRef = useRef([]);
   const [beatActual, setBeatActual] = useState(1);
   const streakRef = useRef(null);
+  const flameRef = useRef(null);
   const ejRef = useRef(null);
   const serRef = useRef(null);
   const kgRef = useRef(null);
@@ -114,6 +115,13 @@ export default function SessionComplete() {
     if (!sess || reducido) return;
     const { ejercicios, series, kg } = resumenDe(sess);
     const streakVal = currentStreak();
+    if (flameRef.current) {
+      gsap.fromTo(
+        flameRef.current,
+        { opacity: 0, scale: 0.3, rotate: -25 },
+        { opacity: 1, scale: 1, rotate: 0, duration: 0.6, ease: 'elastic.out(1, 0.5)' },
+      );
+    }
     const o1 = { v: 0 };
     const t1 = gsap.to(o1, {
       v: streakVal, duration: 0.7, ease: 'power2.out',
@@ -156,7 +164,7 @@ export default function SessionComplete() {
   return (
     <div id="session-complete" role="status" aria-label="Entrenamiento completo" onClick={cerrar}>
       <div className="sc-beat b1" style={estiloDe(1)}>
-        <Flame size={56} className="sc-flame" />
+        <span ref={flameRef} style={{ display: 'inline-block' }}><Flame size={56} className="sc-flame" /></span>
         <div className="sc-streak-n" ref={streakRef}>{reducido ? streak : 0}</div>
         <div className="sc-lbl">{streak === 1 ? 'día de racha' : 'días de racha'}</div>
       </div>

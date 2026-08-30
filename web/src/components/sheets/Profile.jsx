@@ -21,7 +21,7 @@
 // botón "usar último registrado" sobre el campo de peso — eso sí es
 // aceptable porque el usuario no tecleó ese valor, lo pidió con un tap
 // (mismo criterio que los steppers +/- de VoiceLog.jsx/ExerciseForm.jsx).
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { S, closeSheet, saveCfg } from '../../lib/state.js';
 import { fmtNum, round1, vibrate } from '../../lib/format.js';
 import {
@@ -48,12 +48,6 @@ export default function Profile() {
   const [draft, setDraft] = useState({ ...p0 });
   const weightRef = useRef(null);
   const ageRef = useRef(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => { if (!p0.age) ageRef.current?.focus(); }, 80);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Sugerencia de peso desde Progreso — sólo si el perfil no tiene peso
   // propio todavía, calculada una vez sobre el perfil REAL (no el borrador),

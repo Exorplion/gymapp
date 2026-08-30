@@ -30,6 +30,7 @@ import { daysSinceAll, stalestGroups } from '../../lib/muscle.js';
 import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
 import Silhouette from '../Silhouette.jsx';
+import AnimatedText from '../AnimatedText.jsx';
 
 export default function Inicio() {
   useStore();
@@ -115,7 +116,7 @@ export default function Inicio() {
 
       <div className="ini-top">
         <div className="ini-eyebrow">{eyebrow}</div>
-        <div className="ini-title">{titulo}</div>
+        <AnimatedText as="div" className="ini-title" text={titulo} />
         <div className="ini-sub">{sub}</div>
       </div>
 

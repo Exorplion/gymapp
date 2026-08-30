@@ -2,7 +2,7 @@
 // distintas en el original (dos llamadas a openSheet con HTML distinto) que
 // acá se unifican en un componente con dos modos, porque el plan de Task 5
 // sólo prevé un archivo Library.jsx para ambas.
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { S, openSheet, closeSheet } from '../../lib/state.js';
 import { fmtD } from '../../lib/format.js';
 import { TEMPLATES, applyTemplate } from '../../lib/templates.js';
@@ -97,11 +97,6 @@ function LibraryList() {
 function LibrarySave({ initialName }) {
   const [name, setName] = useState(initialName ?? (routineName() === 'Rutina personalizada' ? '' : routineName()));
   const inputRef = useRef(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => inputRef.current?.focus(), 80);
-    return () => clearTimeout(t);
-  }, []);
 
   return (
     <>
