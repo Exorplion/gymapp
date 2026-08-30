@@ -76,7 +76,14 @@ function LibraryList() {
         <div className="txt-mut" style={{ fontSize: 13, marginBottom: 12 }}>
           Empezá de cero y armá tu propio split día por día.
         </div>
-        <button type="button" className="btn sm ghost" onClick={startBlank}>Empezar en blanco</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {/* Onboarding: primero grupos musculares, después ejercicios
+              recomendados de cada uno — la persona elige, la app no impone. */}
+          <button type="button" className="btn sm" style={{ flex: 1 }} onClick={() => openSheet('routine-wizard')}>
+            Armar con asistente
+          </button>
+          <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={startBlank}>Empezar en blanco</button>
+        </div>
       </div>
     </>
   );

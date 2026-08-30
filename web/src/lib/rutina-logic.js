@@ -476,6 +476,23 @@ export function recommendedExercises(wd) {
   return pool.filter(e => !existing.has(norm(e.n))).slice(0, 8);
 }
 
+/** Crea un turno de entrenamiento nuevo a partir del asistente de grupos
+    musculares (RoutineWizard.jsx): agrega el turno (addWorkoutDay ya calcula
+    los descansos alrededor) y lo llena con los ejercicios que la persona
+    eligió — nunca los que la app "decidió", sólo lo que tocó en el paso 2. */
+export async function createWorkoutFromWizard(name, exercises) {
+  const nuevo = await addWorkoutDay();
+  const index = S.routine.findIndex(s => s.id === nuevo.id);
+  const d = S.routine[index];
+  d.name = (name || '').trim();
+  d.exercises = (exercises || []).map(e => ({
+    id: uid(), name: e.name, sets: 4, reps: 10, cat: e.cat || undefined,
+  }));
+  await persistSlot(index);
+  bump();
+  return index;
+}
+
 /* ---------- acciones del editor (antes handlers sueltos del ACT{} global) ---------- */
 export function enterEditMode() { S.rutMode = 'edit'; bump(); scrollTo({ top: 0, behavior: 'instant' }); }
 export function exitEditMode() { S.rutMode = 'view'; clearHistory(); bump(); scrollTo({ top: 0, behavior: 'instant' }); }

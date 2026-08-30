@@ -31,6 +31,10 @@ export default function SessionExercise({ wd, exId = null }) {
   const [equip, setEquip] = useState(original?.equip || '');
   const [machine, setMachine] = useState(original?.machine || '');
   const [unilateral, setUnilateral] = useState(!!original?.unilateral);
+  // Dónde va el ejercicio nuevo. null = al final (comportamiento de siempre);
+  // un id = justo después de ese ejercicio. Sólo aplica al agregar: al
+  // cambiar, addSessionExercise ya lo inserta detrás del original (session.js).
+  const [afterExId, setAfterExId] = useState(null);
   const nameRef = useRef(null);
   // Sólo cuenta como "sólo cambié el equipo" si nada del resto se tocó: así el
   // mensaje de confirmación no dice "cambiaste el equipo" cuando en realidad
@@ -55,7 +59,7 @@ export default function SessionExercise({ wd, exId = null }) {
     const n = name.trim();
     if (!n) { toast('Ponle nombre al ejercicio'); return; }
     const datos = { name: n, sets, reps, equip, machine: equip && machine ? machine : undefined, unilateral };
-    const r = esCambio ? await replaceSessionExercise(exId, datos) : await addSessionExercise(datos);
+    const r = esCambio ? await replaceSessionExercise(exId, datos) : await addSessionExercise(datos, afterExId);
     if (!r) { toast('No se pudo agregar'); return; }
     closeSheet();
     if (soloEquipo) toast(`${n} → ahora con ${(EQUIP.find(e => e.id === equip)?.label || 'sin equipo').toLowerCase()}`);
@@ -82,6 +86,33 @@ export default function SessionExercise({ wd, exId = null }) {
         <label htmlFor="sessex-nombre">Ejercicio</label>
         <input id="sessex-nombre" ref={nameRef} value={name} onChange={e => setName(e.target.value)} placeholder="Remo en polea" autoComplete="off" />
       </div>
+
+      {!esCambio && sessionExs(+wd).length > 0 && (
+        <div className="field">
+          <label>Dónde va</label>
+          <div className="chips">
+            <button
+              type="button"
+              className={`chip ${afterExId === null ? 'on' : ''}`}
+              aria-pressed={afterExId === null}
+              onClick={() => setAfterExId(null)}
+            >
+              Al final
+            </button>
+            {sessionExs(+wd).map(e => (
+              <button
+                key={e.id}
+                type="button"
+                className={`chip ${afterExId === e.id ? 'on' : ''}`}
+                aria-pressed={afterExId === e.id}
+                onClick={() => setAfterExId(e.id)}
+              >
+                Después de {e.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {sugeridos.length > 0 && (
         <div className="field">

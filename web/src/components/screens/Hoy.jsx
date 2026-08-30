@@ -141,11 +141,21 @@ export default function Hoy() {
             />
           )}
           <ExerciseCarousel exs={exs} wd={index} active={active} started={started} curId={curId} nextEx={nextEx} />
-          {/* Decidiste hacer algo que no estaba en el plan. Vale sólo para hoy;
-              al cerrar la sesión se ofrece dejarlo fijo. */}
-          <button type="button" className="btn sm ghost" style={{ marginTop: 'var(--s2)' }} onClick={() => openSheet('ex-swap', { wd: index })}>
-            + Agregar ejercicio a esta sesión
-          </button>
+          <div style={{ display: 'flex', gap: 8, marginTop: 'var(--s2)' }}>
+            {/* Decidiste hacer algo que no estaba en el plan. Vale sólo para hoy;
+                al cerrar la sesión se ofrece dejarlo fijo. */}
+            <button type="button" className="btn sm ghost" style={{ flex: 2 }} onClick={() => openSheet('ex-swap', { wd: index })}>
+              + Agregar ejercicio
+            </button>
+            {/* Antes sólo se podía reacomodar el orden ANTES de arrancar
+                (BlockList, más arriba): un ejercicio agregado en vivo quedaba
+                pegado al final sin forma de moverlo. commitSort() ya escribe en
+                S.draft.order cuando hay sesión abierta (setExOrder, session.js),
+                así que ReorderHoy funciona igual acá que antes de arrancar. */}
+            <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={() => openSheet('reorder-hoy')}>
+              ↕ Reordenar
+            </button>
+          </div>
         </>
       )}
 

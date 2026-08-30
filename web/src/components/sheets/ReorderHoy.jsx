@@ -4,11 +4,13 @@
 // kind="hoy" (que commitSort() ya distingue de "days"/"rut"): drag.js sólo
 // necesita el markup correcto, no hace falta ninguna lógica nueva.
 import { S, closeSheet } from '../../lib/state.js';
-import { orderedExs } from '../../lib/session.js';
+import { orderedExs, sessionExs } from '../../lib/session.js';
 
 export default function ReorderHoy() {
   const index = S.cfg.seqIndex;
-  const exs = orderedExs(index, S.routine[index]?.exercises || []);
+  // Con sesión abierta se reordena sobre la lista de la sesión (incluye lo
+  // agregado en vivo); si no hay sesión, sobre la rutina del turno.
+  const exs = S.draft ? sessionExs(index) : orderedExs(index, S.routine[index]?.exercises || []);
 
   return (
     <>

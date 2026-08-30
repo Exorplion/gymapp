@@ -43,6 +43,7 @@ import Settings from './components/sheets/Settings.jsx';
 import BodyMap from './components/sheets/BodyMap.jsx';
 import Gyms from './components/sheets/Gyms.jsx';
 import GymEquip from './components/sheets/GymEquip.jsx';
+import RoutineWizard from './components/sheets/RoutineWizard.jsx';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
 // globales en index.html). No es uno de los 5 sheets nombrados en el plan de
@@ -81,6 +82,7 @@ function SheetContent({ sheet }) {
     case 'entry-edit': return <EntryEdit {...sheet.props} />;
     case 'ex-form': return <ExerciseForm {...sheet.props} />;
     case 'library': return <Library {...sheet.props} />;
+    case 'routine-wizard': return <RoutineWizard {...sheet.props} />;
     case 'day-peek': return <DayPeek {...sheet.props} />;
     case 'ex-info': return <ExInfo {...sheet.props} />;
     case 'confirm': return <ConfirmSheet {...sheet.props} />;
