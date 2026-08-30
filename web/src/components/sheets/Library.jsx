@@ -18,6 +18,18 @@ function LibraryList() {
       <div className="sheet-sub">
         Guardá el split que estés usando para volver a él cuando quieras, o cargá una plantilla.
       </div>
+      {/* Primera opción, arriba de todo: onboarding por grupos musculares →
+          ejercicios recomendados. Guarda una rutina de PRUEBA directo en la
+          biblioteca, sin tocar el split activo — por eso va antes de
+          "Guardadas"/"Plantillas", no escondida al final junto a "Empezar en
+          blanco" (que sí edita el split en uso). */}
+      <div className="card" style={{ marginBottom: 16, borderColor: 'var(--blue2)' }}>
+        <div className="cond" style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Armar rutina con asistente</div>
+        <div className="txt-mut" style={{ fontSize: 13, marginBottom: 12 }}>
+          Elegís qué grupos musculares trabajar y qué ejercicios de cada uno — queda guardada para probarla, tu split activo no cambia.
+        </div>
+        <button type="button" className="btn sm" onClick={() => openSheet('routine-wizard')}>Empezar</button>
+      </div>
       {st.workoutCount > 0 && (
         <button
           type="button"
@@ -76,14 +88,7 @@ function LibraryList() {
         <div className="txt-mut" style={{ fontSize: 13, marginBottom: 12 }}>
           Empezá de cero y armá tu propio split día por día.
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {/* Onboarding: primero grupos musculares, después ejercicios
-              recomendados de cada uno — la persona elige, la app no impone. */}
-          <button type="button" className="btn sm" style={{ flex: 1 }} onClick={() => openSheet('routine-wizard')}>
-            Armar con asistente
-          </button>
-          <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={startBlank}>Empezar en blanco</button>
-        </div>
+        <button type="button" className="btn sm ghost" onClick={startBlank}>Empezar en blanco</button>
       </div>
     </>
   );

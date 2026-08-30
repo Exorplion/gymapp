@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { idbOpenOnce } from './lib/db.js';
-import { S, useStore, bump, loadAll, closeSheet, openSheet } from './lib/state.js';
+import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT } from './lib/state.js';
 import { applyComputedGoals } from './lib/macros.js';
 import { initDragListeners } from './lib/drag.js';
 import { currentStreak } from './lib/streak.js';
 import { sessionExs } from './lib/session.js';
 import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
-import { vibrate } from './lib/format.js';
 import { aplicarPaleta } from './lib/theme.js';
 import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
@@ -113,8 +112,11 @@ function SheetContent({ sheet }) {
 
    "Hoy" va pegado a Inicio porque se entra desde ahí: yendo a Hoy la pantalla
    avanza, y al volver retrocede. La barra de abajo no lo muestra como pestaña,
-   pero el movimiento tiene que contar la misma historia. */
-const ORDEN = ['inicio', 'hoy', 'rutina', 'nutri', 'prog'];
+   pero el movimiento tiene que contar la misma historia.
+
+   Vive en state.js (TAB_ORDEN) y no acá: changeTab() necesita el mismo orden
+   para calcular la dirección ANTES de que exista ningún componente montado. */
+const ORDEN = TAB_ORDEN;
 
 /* Qué componente va para cada pestaña — la usan tanto la pantalla activa
    como la saliente (Task de transición), así que vive aparte del JSX del
@@ -160,6 +162,7 @@ export default function App() {
   const salienteTimer = useRef(null);
   useEffect(() => {
     if (store.tab === tabPrevio.current) return;
+    if (lastTabChangeUsedVT) { tabPrevio.current = store.tab; return; }
     setSaliente({ tab: tabPrevio.current, dir });
     tabPrevio.current = store.tab;
     clearTimeout(salienteTimer.current);
@@ -231,8 +234,7 @@ export default function App() {
         onOpenStreak={() => openSheet('streak-detail')}
         onOpenSettings={() => openSheet('settings')}
         onOpenSessions={() => {
-          S.tab = 'prog';
-          bump();
+          changeTab('prog');
           // el scroll espera a que Progreso esté pintado
           setTimeout(() => document.getElementById('sesiones')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
         }}
@@ -258,11 +260,10 @@ export default function App() {
           moveTabIndicator() (TabBar.jsx) busca `button.on`: sin encontrarlo
           deja la píldora colgada donde estaba. Hoy se entra desde Inicio, así
           que mientras estás ahí Inicio sigue siendo la pestaña activa. */}
-      {/* Mismo vibrate(8) que ya usa el swipe (más abajo, onUp): tocar la
-          barra y deslizar llevan al mismo lugar, así que tienen que sentirse
-          igual — antes sólo el swipe vibraba y tocar la pestaña se sentía
-          "más apagado" que deslizar hasta ahí. */}
-      <TabBar active={store.tab === 'hoy' ? 'inicio' : store.tab} onChange={t => { S.tab = t; bump(); vibrate(8); }} />
+      {/* changeTab() (state.js) ya vibra y calcula la dirección del
+          deslizamiento — es el mismo camino que usan los demás botones que
+          cambian de pestaña en toda la app (Hoy, Inicio, BodyMap). */}
+      <TabBar active={store.tab === 'hoy' ? 'inicio' : store.tab} onChange={changeTab} />
       <Toast />
       <Sheet open={!!store.sheet} onClose={closeSheet}>
         <SheetContent sheet={store.sheet} />

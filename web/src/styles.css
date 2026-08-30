@@ -2002,6 +2002,26 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    vez de un poco más lento. */
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.22s}
 
+/* Cambio de pestaña con View Transitions API (changeTab(), state.js).
+   `main` recibe su propio nombre para que la foto de "antes/después" no
+   incluya Header/TabBar/RestTimer/Sheet. */
+main{view-transition-name:app-main}
+::view-transition-group(app-main){animation-duration:.34s}
+/* root sin animación, pero SÓLO durante un cambio de pestaña ([data-tdir],
+   que changeTab pone y saca en state.js): lo único que cambiaría ahí es la
+   píldora activa de TabBar (ya se mueve sola vía JS, TabBar.jsx) — animar el
+   root ADEMÁS la duplicaría. Sin el scope a [data-tdir] esto apagaría
+   también el crossfade que sí usa RoutineWizard (regla de arriba). */
+:root[data-tdir] ::view-transition-old(root),:root[data-tdir] ::view-transition-new(root){animation:none}
+@keyframes vt-main-in-r{from{transform:translateX(100%)}to{transform:none}}
+@keyframes vt-main-in-l{from{transform:translateX(-100%)}to{transform:none}}
+@keyframes vt-main-out-l{to{transform:translateX(-100%)}}
+@keyframes vt-main-out-r{to{transform:translateX(100%)}}
+:root[data-tdir="r"] ::view-transition-old(app-main){animation:vt-main-out-l .34s var(--ease) forwards}
+:root[data-tdir="r"] ::view-transition-new(app-main){animation:vt-main-in-r .34s var(--spring)}
+:root[data-tdir="l"] ::view-transition-old(app-main){animation:vt-main-out-r .34s var(--ease) forwards}
+:root[data-tdir="l"] ::view-transition-new(app-main){animation:vt-main-in-l .34s var(--spring)}
+
 /* Sheet 'body-map': el cuerpo completo e interactivo, con la altura fija que
    .sil-pair (flex:1;min-height:0) necesita para saber cuánto medir —el
    mismo cálculo que usaba .inicio entera cuando el cuerpo vivía ahí. */

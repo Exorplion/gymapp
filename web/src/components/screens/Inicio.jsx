@@ -23,7 +23,7 @@
 // (mismo sheet 'day-peek' que usa Rutina) sin tocar el puntero real.
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { S, useStore, bump, openSheet } from '../../lib/state.js';
+import { S, useStore, bump, openSheet, changeTab } from '../../lib/state.js';
 import { WDS, MO, dstr, fmtD } from '../../lib/format.js';
 import { pendingSlot, sessionForSlot } from '../../lib/session.js';
 import { daysSinceAll, stalestGroups } from '../../lib/muscle.js';
@@ -67,7 +67,7 @@ export default function Inicio() {
   // secuencia, no el día de la semana).
   const fecha = `${WDS[hoy.getDay()]} ${hoy.getDate()} ${MO[hoy.getMonth()]}`;
 
-  const irAHoy = () => { S.tab = 'hoy'; bump(); };
+  const irAHoy = () => changeTab('hoy');
 
   // Los cuatro estados de la misma pantalla. El título usa el nombre real
   // del turno pendiente —"Anterior A", no "Toca entrenar"— así la tarjeta
@@ -106,7 +106,7 @@ export default function Inicio() {
     sub = hayRutina ? 'Hoy no toca entrenar' : 'Armá tu split para empezar';
     cta = hayRutina
       ? <button type="button" className="ini-cta dim" onClick={irAHoy}>ENTRENAR IGUAL</button>
-      : <button type="button" className="ini-cta" onClick={() => { S.tab = 'rutina'; bump(); }}>ARMAR MI RUTINA</button>;
+      : <button type="button" className="ini-cta" onClick={() => changeTab('rutina')}>ARMAR MI RUTINA</button>;
   }
 
   return (
@@ -152,7 +152,7 @@ function SeqStrip() {
             type="button"
             key={slot.id}
             className={`ini-strip-i ${on ? 'on' : ''} ${hoy ? 'hoy' : ''}`}
-            onClick={() => hoy ? (S.tab = 'hoy', bump()) : openSheet('day-peek', { wd: i })}
+            onClick={() => hoy ? changeTab('hoy') : openSheet('day-peek', { wd: i })}
             aria-label={`${on ? (slot.name || 'Turno') : 'Descanso'}${hoy ? ', hoy' : ''}`}
             aria-current={hoy ? 'date' : undefined}
           >
@@ -216,7 +216,7 @@ function MacrosTile() {
   const goal = S.cfg.goals?.kcal || 0;
   if (!goal) {
     return (
-      <button type="button" className="ini-tile ini-tile-macros" onClick={() => { S.tab = 'nutri'; bump(); }}>
+      <button type="button" className="ini-tile ini-tile-macros" onClick={() => changeTab('nutri')}>
         <div className="ini-tile-lbl">Calorías</div>
         <div className="ini-tile-hint" style={{ marginTop: 6 }}>Calculá tu objetivo en Comida</div>
       </button>
@@ -224,7 +224,7 @@ function MacrosTile() {
   }
   const restantes = Math.max(0, goal - kcal);
   return (
-    <button type="button" className="ini-tile ini-tile-macros" onClick={() => { S.tab = 'nutri'; bump(); }}>
+    <button type="button" className="ini-tile ini-tile-macros" onClick={() => changeTab('nutri')}>
       <div className="ini-tile-lbl">Calorías</div>
       <div className="ini-tile-num sm">{restantes}<small>kcal restantes</small></div>
       <div className="ini-tile-bar"><i style={{ width: `${Math.min(100, Math.round(kcal / goal * 100))}%` }}></i></div>
@@ -241,14 +241,14 @@ function WeightTile() {
   const ultimo = registros[registros.length - 1];
   if (!ultimo) {
     return (
-      <button type="button" className="ini-tile ini-tile-weight" onClick={() => { S.tab = 'prog'; bump(); }}>
+      <button type="button" className="ini-tile ini-tile-weight" onClick={() => changeTab('prog')}>
         <div className="ini-tile-lbl">Peso</div>
         <div className="ini-tile-hint" style={{ marginTop: 6 }}>Todavía no registraste</div>
       </button>
     );
   }
   return (
-    <button type="button" className="ini-tile ini-tile-weight" onClick={() => { S.tab = 'prog'; bump(); }}>
+    <button type="button" className="ini-tile ini-tile-weight" onClick={() => changeTab('prog')}>
       <div className="ini-tile-lbl">Peso</div>
       <div className="ini-tile-num sm">{ultimo.weight}<small>kg</small></div>
       <div className="ini-tile-hint">{ultimo.date === dstr() ? 'hoy' : fmtD(ultimo.date)}</div>

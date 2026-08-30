@@ -476,21 +476,48 @@ export function recommendedExercises(wd) {
   return pool.filter(e => !existing.has(norm(e.n))).slice(0, 8);
 }
 
-/** Crea un turno de entrenamiento nuevo a partir del asistente de grupos
-    musculares (RoutineWizard.jsx): agrega el turno (addWorkoutDay ya calcula
-    los descansos alrededor) y lo llena con los ejercicios que la persona
-    eligió — nunca los que la app "decidió", sólo lo que tocó en el paso 2. */
-export async function createWorkoutFromWizard(name, exercises) {
-  const nuevo = await addWorkoutDay();
-  const index = S.routine.findIndex(s => s.id === nuevo.id);
-  const d = S.routine[index];
-  d.name = (name || '').trim();
-  d.exercises = (exercises || []).map(e => ({
-    id: uid(), name: e.name, sets: 4, reps: 10, cat: e.cat || undefined,
+/** Guarda una rutina armada con el asistente de grupos musculares
+    (RoutineWizard.jsx) directo en la biblioteca (S.lib) — NUNCA toca
+    S.routine ni S.cfg.routineName. "Armar con asistente" es para probar una
+    rutina nueva sin arriesgar la que ya estás usando: pedirle a la persona
+    que confirme vaciar su split actual para poder armar una de prueba no
+    tiene sentido, así que este camino ni siquiera pasa cerca de esa lógica
+    (esa sigue viviendo en startBlank(), para cuando de verdad se quiere
+    reemplazar el split en uso).
+
+    `days` es un array de {name, exercises:[{name,cat}]} — mismo formato que
+    routineSnapshot()/applyDays(), así que una vez guardada se aplica igual
+    que cualquier otra rutina de la biblioteca (applyLibRoutine ya pregunta
+    ahí si querés reemplazar tu split, que es el único momento en que
+    reemplazar tiene sentido). */
+export function saveWizardRoutine(name, days) {
+  name = (name || '').trim();
+  if (!name) { toast('Ingresá un nombre'); return false; }
+  if (!days?.length) { toast('Agregá al menos un día'); return false; }
+  const snapshot = days.map(d => ({
+    type: 'workout',
+    name: d.name || '',
+    exercises: (d.exercises || []).map(e => ({ name: e.name, sets: 4, reps: 10, cat: e.cat || undefined })),
   }));
-  await persistSlot(index);
-  bump();
-  return index;
+  const prev = S.lib.find(r => norm(r.name) === norm(name));
+  const doSave = async () => {
+    if (prev) { prev.days = snapshot; prev.savedAt = dstr(); }
+    else S.lib.unshift({ id: uid(), name, days: snapshot, savedAt: dstr() });
+    await saveLib();
+    closeSheet(); bump(); vibrate(15);
+    toast(`"${name}" guardada en tu biblioteca`);
+  };
+  if (prev) {
+    openSheet('confirm', {
+      title: `¿Reemplazar "${prev.name}"?`,
+      body: 'Ya tenés una rutina guardada con este nombre en tu biblioteca. Tu split activo no se toca en ningún caso.',
+      confirmLabel: 'Reemplazar',
+      onConfirm: doSave,
+    });
+  } else {
+    doSave();
+  }
+  return true;
 }
 
 /* ---------- acciones del editor (antes handlers sueltos del ACT{} global) ---------- */

@@ -18,7 +18,7 @@
 // dos vistas de una sesión — la del historial y la del cierre.
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { S, useStore, bump, openSheet, closeSheet, saveDraft } from '../../lib/state.js';
+import { S, useStore, bump, openSheet, closeSheet, saveDraft, changeTab } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS } from '../../lib/format.js';
 import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession, moveBlock } from '../../lib/session.js';
 import { flipSort } from '../../lib/drag.js';
@@ -78,7 +78,7 @@ export default function Hoy() {
       {/* Hoy dejó de ser pestaña: se entra desde Inicio, así que necesita su
           propia salida. */}
       <div className="vtitle">
-        <button type="button" className="back-btn" aria-label="Volver a Inicio" onClick={() => { S.tab = 'inicio'; bump(); }}>‹</button>
+        <button type="button" className="back-btn" aria-label="Volver a Inicio" onClick={() => changeTab('inicio')}>‹</button>
         <h1>Hoy</h1>
         <span className="sub">{WDS[today.getDay()]} {today.getDate()} {MO[today.getMonth()]}</span>
       </div>
@@ -110,7 +110,7 @@ export default function Hoy() {
             type="button"
             className="btn sm ghost"
             style={{ maxWidth: 240, margin: '0 auto' }}
-            onClick={() => { S.tab = 'rutina'; bump(); }}
+            onClick={() => changeTab('rutina')}
           >
             Configurar rutina
           </button>

@@ -7,7 +7,7 @@
 // acá desde Hoy.jsx: es un dato sobre TU CUERPO en la semana, no sobre el
 // turno de hoy en particular — este sheet es su lugar natural, junto al
 // mapa de recuperación con el que ya comparte los mismos nueve grupos.
-import { S, bump, closeSheet } from '../../lib/state.js';
+import { S, closeSheet, changeTab } from '../../lib/state.js';
 import { daysSinceAll, stalestGroups, muscleVolume, uncategorized } from '../../lib/muscle.js';
 import Silhouette from '../Silhouette.jsx';
 
@@ -69,7 +69,7 @@ function SinGrupoAviso() {
     <button
       type="button"
       className="sin-grupo"
-      onClick={() => { closeSheet(); S.tab = 'rutina'; S.rutMode = 'edit'; bump(); }}
+      onClick={() => { closeSheet(); changeTab('rutina', () => { S.rutMode = 'edit'; }); }}
     >
       <span className="t">
         {sin.length} ejercicio{sin.length === 1 ? '' : 's'} sin grupo muscular · no suma{sin.length === 1 ? '' : 'n'} acá

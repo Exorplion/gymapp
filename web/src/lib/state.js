@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { flushSync } from 'react-dom';
 import { idb, STORES } from './db.js';
 import { dstr, fmtNum, round1, kg2lb, KG2LB, vibrate } from './format.js';
 
@@ -138,3 +139,42 @@ export function wStep() {
 // algo que ya elegiste dejar de mirar.
 export function openSheet(type, props = {}) { S.sheet = { type, props }; bump(); vibrate(6); }
 export function closeSheet() { S.sheet = null; bump(); }
+
+/* Orden de las pantallas — App.jsx lo usa para calcular la dirección del
+   deslizamiento; vive acá (y no ahí) para que changeTab() pueda calcular la
+   misma dirección sin depender de un componente. */
+export const TAB_ORDEN = ['inicio', 'hoy', 'rutina', 'nutri', 'prog'];
+
+/** Marca, para el useEffect de transición de App.jsx, si el último cambio de
+    pestaña ya se animó con View Transitions API — así ese efecto no arma
+    ADEMÁS su propio par saliente/entrante. Señal efímera, no persistida. */
+export let lastTabChangeUsedVT = false;
+
+/** Cambia de pestaña. Con View Transitions API disponible y sin "reducir
+    movimiento", el cambio queda envuelto en document.startViewTransition()
+    (ver styles.css: <main> tiene su propio view-transition-name, aislado de
+    Header/TabBar/overlays). flushSync fuerza el commit sincrónico que la
+    librería necesita para fotografiar el "después" real.
+
+    `extra` corre en el mismo instante que S.tab (BodyMap.jsx lo usa para
+    fijar S.rutMode='edit' junto con el cambio, no después). */
+export function changeTab(t, extra) {
+  if (S.tab === t) return;
+  const antes = TAB_ORDEN.indexOf(S.tab);
+  const ahora = TAB_ORDEN.indexOf(t);
+  const dir = ahora < antes ? 'l' : 'r';
+  const puedeVT = typeof document !== 'undefined'
+    && typeof document.startViewTransition === 'function'
+    && !(typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const aplicar = () => { S.tab = t; extra?.(); bump(); };
+  if (puedeVT) {
+    lastTabChangeUsedVT = true;
+    document.documentElement.dataset.tdir = dir;
+    const vt = document.startViewTransition(() => flushSync(aplicar));
+    vt.finished.finally(() => delete document.documentElement.dataset.tdir);
+  } else {
+    lastTabChangeUsedVT = false;
+    aplicar();
+  }
+  vibrate(8);
+}

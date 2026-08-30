@@ -135,7 +135,13 @@ function RutinaView() {
             Ver rutinas y plantillas
           </button>
         </div></div>
-        <button type="button" className="btn ghost" style={{ marginTop: 'var(--s3)' }} onClick={enterEditMode}>
+        {/* Entrada directa al onboarding, sin pasar por "Mis rutinas" primero
+            — este es el primer momento en que alguien sin rutina ve la
+            pantalla, así que es donde más sentido tiene ofrecer el asistente. */}
+        <button type="button" className="btn sm ghost" style={{ marginTop: 'var(--s3)' }} onClick={() => openSheet('routine-wizard')}>
+          Armar con asistente
+        </button>
+        <button type="button" className="btn ghost" style={{ marginTop: 'var(--s2)' }} onClick={enterEditMode}>
           ✎ Armar mi rutina
         </button>
       </>
