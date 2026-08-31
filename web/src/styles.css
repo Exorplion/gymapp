@@ -2028,6 +2028,40 @@ main{view-transition-name:app-main}
 .wiz-progress{height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:var(--s3)}
 .wiz-progress i{display:block;height:100%;background:var(--grad2);border-radius:4px;transition:width .4s var(--spring)}
 
+/* El cuerpo interactivo del asistente: se enciende en vivo con los grupos
+   que se van tocando (WizardBody, RoutineWizard.jsx) — mismo mecanismo que
+   BodyPreview en Hoy.jsx, más grande porque acá es el protagonista del paso,
+   no un vistazo chico al costado. */
+.wiz-body{display:flex;height:168px;margin:var(--s2) 0 var(--s3);position:relative}
+.wiz-body::before{content:"";position:absolute;top:-20px;left:50%;translate:-50% 0;width:200px;height:200px;
+  background:radial-gradient(circle,rgba(34,211,238,.16),transparent 70%);pointer-events:none}
+
+/* Tarjetas de grupo muscular: reemplazan los chips chicos de antes — más
+   aire, más fáciles de tocar, con el mismo glass que el resto de Fierro
+   (.ini-tile) en vez del chip plano de formulario. */
+.wiz-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wiz-groupcard{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  min-height:56px;padding:14px 16px;border-radius:16px;
+  background:linear-gradient(155deg,rgba(46,125,255,.10),rgba(12,19,34,.7) 60%);
+  border:1px solid var(--line2);color:var(--txt);font-size:15px;font-weight:700;
+  font-family:'Barlow Condensed',sans-serif;letter-spacing:.02em;
+}
+.wiz-groupcard.on{
+  background:var(--grad2);color:var(--on-grad);border-color:transparent;
+  box-shadow:0 10px 24px -12px rgba(34,211,238,.5);
+}
+.wiz-groupcard .check{position:absolute;top:8px;right:10px;font-size:13px;font-weight:800}
+
+/* Checklist de cobertura de fibra (coverage.js): cubierto/falta, nunca un
+   porcentaje — ver el comentario de coverage.js sobre por qué. */
+.wiz-coverage{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.wiz-fiber{
+  font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;
+  background:rgba(255,255,255,.05);border:1px solid var(--line2);color:var(--mut);
+}
+.wiz-fiber.on{background:rgba(46,230,168,.14);border-color:rgba(46,230,168,.4);color:var(--ok)}
+
 /* Sheet 'body-map': el cuerpo completo e interactivo, con la altura fija que
    .sil-pair (flex:1;min-height:0) necesita para saber cuánto medir —el
    mismo cálculo que usaba .inicio entera cuando el cuerpo vivía ahí. */

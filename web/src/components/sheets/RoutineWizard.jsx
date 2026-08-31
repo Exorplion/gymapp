@@ -1,8 +1,15 @@
 // Asistente de creación de rutina por onboarding: primero pregunta qué
-// grupos musculares va a trabajar cada día (un toque, sin escribir nada) y
-// después muestra ejercicios recomendados de cada grupo para que la persona
-// elija cuáles quiere — nunca los que la app "decide" (ej. pecho puede
-// arrancar con plano o con inclinado, y elige la persona).
+// grupos musculares va a trabajar cada día (tocando tarjetas grandes, el
+// cuerpo se enciende en vivo con lo que vas eligiendo) y después muestra
+// ejercicios recomendados de cada grupo para que la persona elija cuáles
+// quiere — nunca los que la app "decide" (ej. pecho puede arrancar con
+// plano o con inclinado, y elige la persona).
+//
+// La "cobertura de fibra" que se ve en el paso 2 (coverage.js) es
+// deliberadamente un checklist cubierto/falta, NO un porcentaje: se
+// investigó (fuentes reales, ver fibras.js y coverage.js) y ningún estudio
+// EMG da un reparto tipo "70/30" entre ejercicios que sume 100% — inventar
+// ese número sería mostrar una precisión que no existe.
 //
 // Arma una rutina de PRUEBA: uno o más días, guardados directo en la
 // biblioteca (S.lib) al terminar — nunca toca el split activo ni pide
@@ -13,9 +20,11 @@ import { flushSync } from 'react-dom';
 import gsap from 'gsap';
 import { closeSheet } from '../../lib/state.js';
 import { MUSCLE_CATS, EXCATALOG } from '../../lib/muscle.js';
+import { coberturaDe } from '../../lib/coverage.js';
 import { saveWizardRoutine } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
 import AnimatedText from '../AnimatedText.jsx';
+import Silhouette from '../Silhouette.jsx';
 
 const TOTAL_PASOS = 3;
 
@@ -32,16 +41,30 @@ function WizardProgress({ step }) {
   );
 }
 
-/** Entrada en cascada de los chips de un paso: corre cada vez que `step`
-    cambia (grupos -> ejercicios -> guardar), sobre lo que haya adentro del
-    contenedor en ESE momento — no hace falta un ref por chip, uno solo al
-    contenedor y GSAP encuentra los hijos. */
+/** El cuerpo reacciona en vivo a lo que se va eligiendo: los grupos de
+    `cats` se encienden como "hoy" (tono más brillante), el resto queda
+    neutro — mismo mecanismo que BodyPreview en Hoy.jsx. No interactivo: acá
+    el cuerpo informa, no se toca ni se gira. */
+function WizardBody({ cats }) {
+  const set = new Set(cats);
+  const days = {};
+  MUSCLE_CATS.forEach(c => { days[c] = set.has(c) ? 0 : null; });
+  return (
+    <div className="wiz-body">
+      <Silhouette days={days} interactivo={false} />
+    </div>
+  );
+}
+
+/** Entrada en cascada de los chips/tarjetas de un paso: corre cada vez que
+    `step` cambia (grupos -> ejercicios -> guardar), sobre lo que haya
+    adentro del contenedor en ESE momento. */
 function useStepReveal(step) {
   const ref = useRef(null);
   useEffect(() => {
     const el = ref.current;
     if (!el || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
-    const targets = el.querySelectorAll('.chip, .field, .card.sub');
+    const targets = el.querySelectorAll('.chip, .field, .card.sub, .wiz-groupcard');
     if (!targets.length) return;
     const ctx = gsap.context(() => {
       gsap.fromTo(
@@ -53,6 +76,23 @@ function useStepReveal(step) {
     return () => ctx.revert();
   }, [step]);
   return ref;
+}
+
+/** Checklist de cobertura de fibra para un grupo, debajo de sus ejercicios
+    elegidos. null (coberturaDe) = el grupo no tiene porciones distinguibles
+    con evidencia real — no se muestra nada en vez de fabricar una. */
+function CoverageStrip({ cat, nombres }) {
+  const cob = coberturaDe(cat, nombres);
+  if (!cob) return null;
+  return (
+    <div className="wiz-coverage">
+      {cob.fibras.map(f => (
+        <span key={f} className={`wiz-fiber ${cob.cubiertas.includes(f) ? 'on' : ''}`}>
+          {cob.cubiertas.includes(f) ? '✓ ' : ''}{f}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 export default function RoutineWizard() {
@@ -132,16 +172,18 @@ export default function RoutineWizard() {
           ¿Qué vas a trabajar este día? Podés elegir más de uno — por ejemplo Pecho, Hombro y Tríceps para un día de empuje.
           {days.length > 0 && ` Ya tenés ${days.length} día${days.length === 1 ? '' : 's'} armado${days.length === 1 ? '' : 's'} en esta rutina.`}
         </div>
-        <div className="chips" style={{ marginTop: 'var(--s2)' }} ref={revealRef}>
+        <WizardBody cats={cats} />
+        <div className="wiz-grid" ref={revealRef}>
           {MUSCLE_CATS.map(c => (
             <button
               key={c}
               type="button"
-              className={`chip ${cats.includes(c) ? 'on' : ''}`}
+              className={`wiz-groupcard ${cats.includes(c) ? 'on' : ''}`}
               aria-pressed={cats.includes(c)}
               onClick={() => toggleCat(c)}
             >
-              {c}
+              <span className="t">{c}</span>
+              {cats.includes(c) && <span className="check">✓</span>}
             </button>
           ))}
         </div>
@@ -161,6 +203,7 @@ export default function RoutineWizard() {
         <div className="sheet-sub">
           Tocá los que quieras incluir. Son sugerencias — nada se agrega solo.
         </div>
+        <WizardBody cats={cats} />
         <div ref={revealRef}>
         <div className="field">
           <label htmlFor="wiz-dia-nombre">Nombre de este día</label>
@@ -168,6 +211,7 @@ export default function RoutineWizard() {
         </div>
         {cats.map(c => {
           const pool = EXCATALOG.filter(e => e.c === c);
+          const elegidosDeC = chosen.filter(x => x.cat === c).map(x => x.name);
           return (
             <div key={c} className="field">
               <label>{c}</label>
@@ -184,6 +228,7 @@ export default function RoutineWizard() {
                   </button>
                 ))}
               </div>
+              <CoverageStrip cat={c} nombres={elegidosDeC} />
             </div>
           );
         })}

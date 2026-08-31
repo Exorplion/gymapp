@@ -49,10 +49,10 @@ describe('fibrasDe', () => {
     expect(fibrasDe('Curl inverso').p).toEqual(['Braquiorradial']);
   });
 
-  // Según el criterio de Enzo (ver la nota en fibras.js): overhead reparte
-  // distinto que la extensión con el brazo pegado al cuerpo.
+  // Overhead prioriza la cabeza larga (Maeo et al. 2022; Boehler 2011 — ver
+  // la nota en fibras.js), a diferencia de la extensión con el codo pegado.
   it('distingue la extensión de tríceps overhead de la que va con el brazo pegado', () => {
-    expect(fibrasDe('Extensión sobre cabeza').p).toEqual(['Tríceps medial-lateral']);
+    expect(fibrasDe('Extensión sobre cabeza').p).toEqual(['Tríceps cabeza larga']);
     expect(fibrasDe('Extensión tríceps polea').p).toEqual(['Tríceps']);
     expect(fibrasDe('JM press').p).toEqual(['Tríceps']);
   });
@@ -100,7 +100,7 @@ describe('las porciones que nombra se pueden pintar', () => {
   it('todo grupo tiene a qué zona del cuerpo corresponde', () => {
     for (const g of [
       'Bíceps', 'Bíceps braquial', 'Braquiorradial',
-      'Tríceps', 'Tríceps medial-lateral',
+      'Tríceps', 'Tríceps cabeza larga',
       'Hombro', 'Glúteo', 'Gemelos', 'Femoral', 'Aductores',
     ]) {
       expect(esGrupo(g), g).toBe(true);

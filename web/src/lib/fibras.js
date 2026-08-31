@@ -120,13 +120,23 @@ const TABLA = [
   // (sección de pierna, más arriba): moverlo con el resto haría que "Curl
   // femoral" cayera clasificado como bíceps.
   ['curl', { p: ['Bíceps braquial'] }],
-  // Tríceps: según el criterio de Enzo, la extensión con el brazo pegado al
-  // cuerpo reparte entre las tres cabezas, y la que se hace con el brazo
-  // arriba (overhead) carga más medial y lateral — es su lectura, no una cita
-  // de un estudio, y queda anotada así para poder revisarla si cambia de
-  // opinión. Ver LÍMITE HONESTO arriba: esto ya era una guía, no una medición.
+  // Tríceps: corregido con estudios reales — antes decía lo contrario y
+  // estaba anotado como "lectura propia, no una cita" (ver commit previo).
+  // La cabeza LARGA se origina en la escápula, así que se estira más con el
+  // brazo elevado (overhead), y un músculo más estirado en el punto de
+  // máxima tensión crece más: Maeo et al. 2022 (European Journal of Sport
+  // Science) midieron +28.5% de crecimiento en la cabeza larga con extensión
+  // overhead contra +19.6% con pushdown (codo pegado al cuerpo) en 12
+  // semanas — las cabezas lateral+medial subieron parejo entre ejercicios
+  // (+14.6% vs +10.5%), la diferencia grande está en la larga. Boehler 2011
+  // (EMG, n=15) encontró que el pushdown activa más la cabeza LATERAL en
+  // relación a la larga que las variantes overhead. JM press, skullcrusher y
+  // dips no tienen estudio que los mida cabeza por cabeza — quedan en el
+  // genérico 'Tríceps', sin inventar cuál cabeza priorizan.
   ['jm press', { p: ['Tríceps'] }],
-  ['extension sobre cabeza', { p: ['Tríceps medial-lateral'] }],
+  ['skullcrusher', { p: ['Tríceps'] }],
+  ['overhead', { p: ['Tríceps cabeza larga'] }],
+  ['extension sobre cabeza', { p: ['Tríceps cabeza larga'] }],
   ['tricep', { p: ['Tríceps'] }],
   ['pushdown', { p: ['Tríceps'] }],
 
@@ -160,14 +170,14 @@ export function fibrasDe(ex) {
    enteros, y se pintan como tales. Tenerlos acá explícitos evita que un typo
    ("Gluteo" sin tilde) se convierta en una zona que nunca se pinta.
 
-   Bíceps braquial, Braquiorradial y Tríceps medial-lateral entran acá por lo
+   Bíceps braquial, Braquiorradial y Tríceps cabeza larga entran acá por lo
    mismo que Femoral: son un músculo (o una porción) real, pero la lámina no
    tiene un parche propio para ellos — brazo es una sola forma sin costuras.
    Se pintan con el grupo entero (Bíceps/Tríceps) y el texto es el que lleva
    la precisión que el dibujo no puede. */
 const GRUPOS = new Set([
   'Bíceps', 'Bíceps braquial', 'Braquiorradial',
-  'Tríceps', 'Tríceps medial-lateral',
+  'Tríceps', 'Tríceps cabeza larga',
   'Hombro', 'Glúteo', 'Gemelos', 'Femoral', 'Aductores',
 ]);
 
@@ -188,7 +198,7 @@ export const ZONA_DE = {
   'Bíceps braquial': 'Bíceps',
   Braquiorradial: 'Bíceps',
   Tríceps: 'Tríceps',
-  'Tríceps medial-lateral': 'Tríceps',
+  'Tríceps cabeza larga': 'Tríceps',
   Hombro: 'Hombro',
   Glúteo: 'Glúteo',
   Gemelos: 'Gemelos',
