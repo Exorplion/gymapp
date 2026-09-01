@@ -17,12 +17,15 @@ import { T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC } from '../
 import { useStore } from '../lib/state.js';
 import { fmtMMSS } from '../lib/format.js';
 import { ChevronDown } from './Icon.jsx';
-import { animateRing } from '../lib/motion.js';
+import { animateRing, impactBurst, squashStretch } from '../lib/motion.js';
 
 export default function RestTimer() {
   useStore(); // se suscribe a bump(); T se lee directo (T.leftSec/T.pct/T.state) igual que S
 
   const ringRef = useRef(null);
+  const ringBoxRef = useRef(null);
+  const timeFsRef = useRef(null);
+  const sonabaAntes = useRef(false);
   const sonandoAhora = T.state === 'ringing';
   const timeStr = fmtMMSS(T.leftSec);
   const pctClamped = Math.max(0, Math.min(1, T.pct));
@@ -36,6 +39,21 @@ export default function RestTimer() {
     animateRing(ringRef.current, sonandoAhora ? 1 : pctClamped);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [Math.round(pctClamped * 1000), sonandoAhora]);
+
+  // Momento de logro sin celebración: terminar el descanso no tenía ningún
+  // "hit" — a diferencia del PR (confetti) o la serie (impactBurst en el
+  // botón). Se dispara UNA vez en la transición a "sonando" (no en cada
+  // render mientras suena), con la misma técnica de "juice" que el resto:
+  // ráfaga de partículas en el punto exacto del anillo + squash & stretch
+  // en el "¡YA!".
+  useEffect(() => {
+    if (sonandoAhora && !sonabaAntes.current) {
+      const box = ringBoxRef.current?.getBoundingClientRect();
+      if (box) impactBurst(box.left + box.width / 2, box.top + box.height / 2, { count: 10, distance: 60 });
+      squashStretch(timeFsRef.current);
+    }
+    sonabaAntes.current = sonandoAhora;
+  }, [sonandoAhora]);
 
   // El dispatcher original resolvía un solo data-act por click (closest()
   // se detiene en el ancestro más cercano), así que clickear +30s/Saltar no
@@ -100,7 +118,7 @@ export default function RestTimer() {
       <div id="rest-fs" className={T.state === 'fullscreen' || sonandoAhora ? 'show' : ''}>
         <div className={`rfs-inner${sonandoAhora ? ' ringing' : ''}`}>
           <div className="rfs-lbl">{sonandoAhora ? '¡Dale!' : 'Descanso'}</div>
-          <div className="rfs-ring">
+          <div className="rfs-ring" ref={ringBoxRef}>
             <svg viewBox="0 0 200 200">
               <circle className="rfs-track" cx="100" cy="100" r="88" />
               <circle
@@ -113,7 +131,7 @@ export default function RestTimer() {
                 data-circumference={REST_CIRC}
               />
             </svg>
-            <div className="rfs-time" id="rfs-time">{sonandoAhora ? '¡YA!' : timeStr}</div>
+            <div className="rfs-time" id="rfs-time" ref={timeFsRef}>{sonandoAhora ? '¡YA!' : timeStr}</div>
           </div>
           {sonandoAhora ? (
             /* Un solo botón, ancho y sin vecinos: está sonando y lo único que
