@@ -132,7 +132,7 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar }) {
             tabIndex={activa ? 0 : -1}
             aria-label={`${z.cat}, ${diasTexto(days[z.cat])}. Ver estadísticas.`}
             aria-pressed={activo}
-            onClick={e => onPick(z.cat, e.currentTarget)}
+            onClick={e => onPick(z.cat, e.currentTarget, e.clientX, e.clientY)}
             onKeyDown={e => {
               if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(z.cat, e.currentTarget); }
             }}
@@ -234,7 +234,7 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
       El globo va debajo del músculo, salvo que no entre — entonces va arriba.
       Y se recorta a los bordes de la caja para que nunca se salga por un
       costado. */
-  const tocar = (cat, el) => {
+  const tocar = (cat, el, clientX, clientY) => {
     // Si el dedo venía girando el cuerpo, el click de cierre no es un toque:
     // soltar sobre un músculo no es lo mismo que elegirlo.
     if (gesto.current?.giro) { gesto.current = null; return; }
@@ -244,11 +244,12 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
     if (!c) return;
     const cx = m.left + m.width / 2 - c.left;
     // Face-ID-style: un anillo real superpuesto que expande desde el punto
-    // tocado, feedback inmediato de "te escuché" antes de que el globo
-    // termine de posicionarse. No se anima el <g> del músculo: en SVG,
-    // scale() transforma desde el origen del viewBox, no desde el centro del
-    // elemento, así que el pulso salía deformado en vez de expandirse in situ.
-    tapRing(caja.current, cx, m.top + m.height / 2 - c.top);
+    // tocado. Usa clientX/clientY del evento y no el centro de `el`: un
+    // grupo bilateral (hombro, pantorrilla) es UN <g> con las piezas de
+    // ambos lados adentro, así que su bounding box cae en el medio del
+    // torso, no en el lado que tocaste. Sin coordenadas de puntero (Enter/
+    // Espacio desde teclado) cae al centro del elemento como respaldo.
+    tapRing(clientX ?? (m.left + m.width / 2), clientY ?? (m.top + m.height / 2));
     const media = ANCHO_POP / 2;
     const abajo = m.bottom - c.top + 8;
     const arriba = abajo + 190 > c.height;

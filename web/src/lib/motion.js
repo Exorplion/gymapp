@@ -77,29 +77,79 @@ export function animateRing(circleEl, progress, { duration = 900 } = {}) {
   );
 }
 
-// Anillo de escaneo (expande + fade) en un punto de pantalla. Ref: Face ID.
+// Anillo de escaneo (expande + fade) en un punto de PANTALLA. Ref: Face ID.
 //
 // No anima el elemento tocado directamente: sobre un <g> de SVG, scale()
 // transforma desde el origen del viewBox (esquina), no desde el centro del
 // músculo — el "pulso" salía desplazado/deformado en vez de expandirse desde
-// el punto de toque. En su lugar crea un anillo HTML real, posicionado en
-// coordenadas de `container` (que debe tener position:relative), y se
-// autodestruye al terminar — mismo patrón imperativo que fireConfetti().
-export function tapRing(container, x, y, { size = 14, color = 'var(--cyan)' } = {}) {
-  if (!container) return;
+// el punto de toque. Tampoco se posiciona contra el bounding box del <g>
+// tocado: un grupo bilateral (hombros, pantorrillas) es UN solo <g> con las
+// piezas de ambos lados adentro, así que su centro cae en el medio del
+// torso, no en el lado que tocaste. La única coordenada confiable es la del
+// evento (clientX/clientY) — por eso este helper toma directamente un punto
+// de pantalla, no un elemento ni un contenedor.
+//
+// position:fixed + document.body: no depende de que ningún ancestro tenga
+// position:relative, e ignora cualquier transform 3D de un padre (el cuerpo
+// gira con rotateY) porque cuelga fuera de ese árbol. Se autodestruye al
+// terminar — mismo patrón imperativo que fireConfetti().
+export function tapRing(x, y, { size = 26, color = 'var(--cyan)' } = {}) {
   const ring = document.createElement('span');
-  ring.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${size}px;height:${size}px;` +
+  ring.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:${size}px;height:${size}px;` +
     `margin:${-size / 2}px 0 0 ${-size / 2}px;border-radius:50%;border:2px solid ${color};` +
-    'pointer-events:none;z-index:5;box-sizing:border-box;';
-  container.appendChild(ring);
+    'pointer-events:none;z-index:9999;box-sizing:border-box;';
+  document.body.appendChild(ring);
   const anim = ring.animate(
     [
       { transform: 'scale(1)', opacity: .9 },
-      { transform: 'scale(3.2)', opacity: 0 },
+      { transform: 'scale(2.4)', opacity: 0 },
     ],
-    { duration: 600, easing: 'cubic-bezier(.4,0,.2,1)' },
+    { duration: 550, easing: 'cubic-bezier(.4,0,.2,1)' },
   );
   anim.onfinish = () => ring.remove();
+}
+
+// "Juice" de videojuego: squash & stretch — comprime al recibir el toque y
+// estira al soltar, en vez de un escalado uniforme. Es la técnica que más
+// vida le da a una interacción según el game design clásico (los 12
+// principios de animación de Disney, adoptados por juegos). Para el botón
+// de acción más repetido de la app: marcar una serie.
+export function squashStretch(el) {
+  if (!el?.animate) return;
+  el.animate(
+    [
+      { transform: 'scale(1,1)' },
+      { transform: 'scale(1.12,.86)', offset: .35 },
+      { transform: 'scale(.94,1.08)', offset: .62 },
+      { transform: 'scale(1,1)' },
+    ],
+    { duration: 380, easing: 'cubic-bezier(.34,1.56,.64,1)' },
+  );
+}
+
+// Ráfaga de partículas en el punto de contacto (screen-space, position:fixed
+// como tapRing). Ref: el combo "hit-stop + shake + partículas" de feedback
+// de impacto en videojuegos — acá sólo la parte de partículas, sin sacudir
+// la pantalla (haría perder de vista dónde estabas parado en un formulario).
+// Para momentos de logro: serie completada, PR nuevo.
+export function impactBurst(x, y, { count = 6, color = 'var(--cyan)', distance = 26 } = {}) {
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5;
+    const dx = Math.cos(angle) * distance * (0.7 + Math.random() * 0.5);
+    const dy = Math.sin(angle) * distance * (0.7 + Math.random() * 0.5);
+    const p = document.createElement('span');
+    p.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;` +
+      `border-radius:50%;background:${color};pointer-events:none;z-index:9999;`;
+    document.body.appendChild(p);
+    const anim = p.animate(
+      [
+        { transform: 'translate(0,0) scale(1)', opacity: 1 },
+        { transform: `translate(${dx}px, ${dy}px) scale(.3)`, opacity: 0 },
+      ],
+      { duration: 460 + Math.random() * 140, easing: 'cubic-bezier(.2,.8,.4,1)' },
+    );
+    anim.onfinish = () => p.remove();
+  }
 }
 
 // Cuenta ascendente/descendente de un número (peso, series, calorías, kcal).
