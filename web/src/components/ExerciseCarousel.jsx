@@ -31,7 +31,7 @@ import {
   isUnilateral, toggleUnilateral,
 } from '../lib/session.js';
 import { jumpToSlide, scrollToSlideEl, slideCenterDist } from '../lib/carousel.js';
-import { staggerReveal } from '../lib/motion.js';
+import { staggerReveal, squashStretch, impactBurst } from '../lib/motion.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
@@ -344,7 +344,21 @@ function ExerciseSlide({ m, wd, started }) {
                 </div>
               </div>
             </div>
-            <button type="button" className="btn" onClick={() => saveSet(ex.id)}>
+            <button
+              type="button"
+              className="btn"
+              onClick={e => {
+                // "Juice" de videojuego: squash & stretch en el botón + una
+                // ráfaga de partículas en el punto de toque, sobre la acción
+                // más repetida de toda la app — el equivalente a un "hit"
+                // en un juego. saveSet() se llama después de disparar el
+                // feedback: la animación es puramente visual y no bloquea
+                // ni depende del resultado.
+                squashStretch(e.currentTarget);
+                impactBurst(e.clientX, e.clientY, { color: 'var(--ok)' });
+                saveSet(ex.id);
+              }}
+            >
               ✓ Terminé la serie {done.length + 1} de {target}
             </button>
             <ExActions ex={ex} wd={wd} />
