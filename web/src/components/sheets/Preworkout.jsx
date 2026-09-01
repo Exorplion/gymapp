@@ -14,20 +14,24 @@
 // posterior), así que este botón cerraba el sheet con un toast explicativo
 // en su lugar; ahora que Profile.jsx existe y está registrado en el switch
 // de App.jsx, abre el formulario real.
+import { useEffect, useRef } from 'react';
 import { S, bump, closeSheet, openSheet } from '../../lib/state.js';
 import { fmtNum, round1, dstr, uid, vibrate } from '../../lib/format.js';
 import { profileWeight } from '../../lib/macros.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
+import { bloomOpen } from '../../lib/motion.js';
 
 const PW = { meal: false, sensitive: false };
 
 export default function Preworkout() {
   const w = profileWeight();
+  const rootRef = useRef(null);
+  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
 
   if (!w) {
     return (
-      <>
+      <div ref={rootRef}>
         <h2>Pre-workout</h2>
         <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5, margin: '6px 0 16px' }}>
           Necesito tu peso para calcular las dosis. Complétalo en tu perfil.
@@ -35,7 +39,7 @@ export default function Preworkout() {
         <button type="button" className="btn" onClick={() => openSheet('profile')}>
           Ir al perfil
         </button>
-      </>
+      </div>
     );
   }
 
@@ -62,7 +66,7 @@ export default function Preworkout() {
   function toggleSens() { PW.sensitive = !PW.sensitive; bump(); }
 
   return (
-    <>
+    <div ref={rootRef}>
       <h2>Pre-workout</h2>
       <div className="sheet-sub">
         Calculado para tu peso de <b className="txt-blue">{fmtNum(round1(w))} kg</b>. Tómalo ~30-60 min antes de entrenar.
@@ -104,6 +108,6 @@ export default function Preworkout() {
       <h3>Ajustes</h3>
       <label className="check"><input type="checkbox" checked={PW.meal} onChange={toggleMeal} /> Comí una comida completa 60-90 min antes</label>
       <label className="check"><input type="checkbox" checked={PW.sensitive} onChange={toggleSens} /> Soy sensible a la cafeína</label>
-    </>
+    </div>
   );
 }

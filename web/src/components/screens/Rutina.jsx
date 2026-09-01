@@ -11,8 +11,10 @@
 // variable (S.routine[i]), así que ni la vista ni el editor recorren
 // WEEK_ORDER — recorren S.routine directo, y cada turno se identifica por su
 // posición (i) en vez de por el día de la semana que le tocaba.
+import { useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { S, bump, useStore, openSheet } from '../../lib/state.js';
+import { staggerReveal } from '../../lib/motion.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
 import { equipLabel } from '../../lib/equip.js';
 import { catOf } from '../../lib/muscle.js';
@@ -84,20 +86,20 @@ function MisEjercicios() {
   const gym = S.gyms.find(g => g.id === S.cfg.activeGym);
 
   if (!exs.length) {
-    return <div className="txt-mut" style={{ fontSize: 13.5, marginTop: 8 }}>Armá tu rutina primero — acá van a aparecer sus ejercicios.</div>;
+    return <div className="text-mut text-[13.5px] mt-2">Armá tu rutina primero — acá van a aparecer sus ejercicios.</div>;
   }
 
   return (
     <>
-      <button type="button" className="btn sm ghost" style={{ marginBottom: 12 }} onClick={() => openSheet('gyms')}>
+      <button type="button" className="btn sm ghost mb-3" onClick={() => openSheet('gyms')}>
         🏋 {gym ? `Gimnasio: ${gym.name}` : 'Sin gimnasio activo'}
       </button>
-      <div className="day-exs" style={{ background: 'transparent', padding: 0 }}>
+      <div className="day-exs bg-transparent p-0">
         {exs.map(ex => {
           const ov = gym ? gymEquipFor(gym.id, ex.name) : null;
           return (
-            <div className="day-ex" key={ex.id} style={{ alignItems: 'center' }}>
-              <button type="button" className="grow" style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 0, textAlign: 'left', padding: 0 }} onClick={() => openSheet('ex-info', { name: ex.name, exId: ex.id })}>
+            <div className="day-ex items-center" key={ex.id}>
+              <button type="button" className="grow flex items-center gap-2.5 bg-none border-0 text-left p-0" onClick={() => openSheet('ex-info', { name: ex.name, exId: ex.id })}>
                 <span className="grow">
                   <span className="t">{ex.name}</span>
                   <span className="s">{catOf(ex) || 'Sin grupo'}{equipLabel(ex) ? ` · ${equipLabel(ex)}` : ''}</span>
@@ -119,6 +121,12 @@ function MisEjercicios() {
 function RutinaView() {
   const st = routineStats();
   const maxSets = Math.max(1, ...S.routine.map(slot => slot.type === 'workout' ? (slot.exercises || []).reduce((a, e) => a + e.sets, 0) : 0));
+  const cardsRef = useRef(null);
+  // Reveal escalonado de las tarjetas de turno al entrar a Rutina.
+  useEffect(() => {
+    const cards = cardsRef.current?.querySelectorAll(':scope > .day-card');
+    if (cards?.length) staggerReveal(cards);
+  }, []);
 
   if (!st.workoutCount) {
     return (
@@ -128,8 +136,7 @@ function RutinaView() {
           <p>Todavía no tenés rutina.<br />Elegí una <b>plantilla</b> lista o armá tu split turno por turno.</p>
           <button
             type="button"
-            className="btn sm"
-            style={{ maxWidth: 260, margin: '0 auto' }}
+            className="btn sm max-w-[260px] mx-auto"
             onClick={() => openSheet('library')}
           >
             Ver rutinas y plantillas
@@ -138,10 +145,10 @@ function RutinaView() {
         {/* Entrada directa al onboarding, sin pasar por "Mis rutinas" primero
             — este es el primer momento en que alguien sin rutina ve la
             pantalla, así que es donde más sentido tiene ofrecer el asistente. */}
-        <button type="button" className="btn sm ghost" style={{ marginTop: 'var(--s3)' }} onClick={() => openSheet('routine-wizard')}>
+        <button type="button" className="btn sm ghost mt-[var(--s3)]" onClick={() => openSheet('routine-wizard')}>
           Armar con asistente
         </button>
-        <button type="button" className="btn ghost" style={{ marginTop: 'var(--s2)' }} onClick={enterEditMode}>
+        <button type="button" className="btn ghost mt-[var(--s2)]" onClick={enterEditMode}>
           ✎ Armar mi rutina
         </button>
       </>
@@ -155,7 +162,7 @@ function RutinaView() {
       <div className="card hero hero-plan">
         <div className="hero-eyebrow">Plan activo</div>
         <div className="hero-day">{routineName()}</div>
-        <div className="txt-mut" style={{ fontSize: 13, marginTop: 4 }}>
+        <div className="text-mut text-[13px] mt-1">
           {st.workoutCount} turno{st.workoutCount === 1 ? '' : 's'} de entrenamiento · {st.ex} ejercicios · {st.sets} series por ciclo
         </div>
         {/* Barras proporcionales a las series del turno: la secuencia se lee de
@@ -181,7 +188,7 @@ function RutinaView() {
 
       {/* Cada turno es una tarjeta que se despliega en el lugar, con sus
           ejercicios numerados — en el original abría un sheet aparte. */}
-      <div className="day-cards">
+      <div className="day-cards" ref={cardsRef}>
         {S.routine.map((slot, i) => {
           const on = slot.type === 'workout' && !!slot.exercises?.length;
           const sets = on ? slot.exercises.reduce((a, e) => a + e.sets, 0) : 0;
@@ -249,12 +256,11 @@ function RutinaEdit() {
   return (
     <>
       <div className="vtitle"><h1>Editar</h1><span className="sub">{routineName()}</span></div>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 'var(--s4)' }}>
-        <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={exitEditMode}>‹ Listo</button>
+      <div className="flex gap-2.5 mb-[var(--s4)]">
+        <button type="button" className="btn sm ghost flex-1" onClick={exitEditMode}>‹ Listo</button>
         <button
           type="button"
-          className="btn sm ghost"
-          style={{ flex: 1 }}
+          className="btn sm ghost flex-1"
           onClick={openLibSaveSheet}
         >
           💾 Guardar como…
@@ -269,7 +275,7 @@ function RutinaEdit() {
       <div data-sort="seq">
         {workouts.map(({ slot, i }, pos) => <SlotCard key={slot.id} slot={slot} index={i} n={pos + 1} />)}
       </div>
-      <button type="button" className="btn sm ghost" style={{ marginTop: 'var(--s3)' }} onClick={addWorkoutDay}>+ Entrenamiento</button>
+      <button type="button" className="btn sm ghost mt-[var(--s3)]" onClick={addWorkoutDay}>+ Entrenamiento</button>
     </>
   );
 }
@@ -372,11 +378,11 @@ function SlotCard({ slot, index, n }) {
             </div>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-          <button type="button" className="btn sm ghost" style={{ flex: 2 }} onClick={() => openSheet('ex-form', { wd: index, ex: null })}>
+        <div className="flex gap-2.5 mt-3">
+          <button type="button" className="btn sm ghost flex-[2]" onClick={() => openSheet('ex-form', { wd: index, ex: null })}>
             + Ejercicio
           </button>
-          <button type="button" className="btn sm dim" style={{ flex: 1 }} onClick={() => openSheet('slot-edit', { index })}>
+          <button type="button" className="btn sm dim flex-1" onClick={() => openSheet('slot-edit', { index })}>
             ✎ Turno
           </button>
         </div>
@@ -385,15 +391,15 @@ function SlotCard({ slot, index, n }) {
             corrección otras dos. Botones siempre visibles y no un aviso al
             salir del editor — un cartel cada vez que terminás de editar se
             vuelve ruido y termina en que lo cerrás sin leer. */}
-        <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+        <div className="flex gap-2.5 mt-2.5">
           <button
-            type="button" className="btn sm dim" style={{ flex: 1 }}
+            type="button" className="btn sm dim flex-1"
             disabled={!exs.length}
             onClick={() => openSheet('copy-exs', { mode: 'push', wd: index })}
           >
             ⧉ Copiar a otro turno
           </button>
-          <button type="button" className="btn sm dim" style={{ flex: 1 }} onClick={() => openSheet('copy-exs', { mode: 'pull', wd: index })}>
+          <button type="button" className="btn sm dim flex-1" onClick={() => openSheet('copy-exs', { mode: 'pull', wd: index })}>
             ⤓ Traer de otro turno
           </button>
         </div>

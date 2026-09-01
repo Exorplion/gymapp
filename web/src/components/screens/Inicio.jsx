@@ -31,6 +31,7 @@ import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
 import Silhouette from '../Silhouette.jsx';
 import AnimatedText from '../AnimatedText.jsx';
+import { countTo } from '../../lib/motion.js';
 
 export default function Inicio() {
   useStore();
@@ -182,10 +183,17 @@ function BodyTile({ dias, viejos }) {
 }
 
 function RachaTile({ racha }) {
+  // Cuenta ascendente del número de racha al montar Inicio — el mismo touch
+  // que Apple Fitness/Duolingo usan para que un número quieto se sienta vivo.
+  const numRef = useRef(null);
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { if (numRef.current) numRef.current.textContent = racha; return; }
+    if (numRef.current) countTo(numRef.current, racha);
+  }, [racha]);
   return (
     <div className="ini-tile ini-tile-racha">
       <div className="ini-tile-lbl">Racha</div>
-      <div className="ini-tile-num">{racha}<small>{racha === 1 ? 'día' : 'días'}</small></div>
+      <div className="ini-tile-num"><span ref={numRef}>{racha}</span><small>{racha === 1 ? 'día' : 'días'}</small></div>
     </div>
   );
 }

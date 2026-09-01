@@ -12,9 +12,11 @@
 // Se dibujan las dos caras siempre, aunque el ejercicio trabaje sólo una: un
 // cuerpo al que le falta la espalda se lee como un error, no como "acá no hay
 // nada". La cara sin nada marcado se ve apagada, que ya dice lo suyo.
+import { useEffect, useRef } from 'react';
 import { cuerpo } from '../lib/bodydata.js';
 import { esGrupo, ZONA_DE } from '../lib/fibras.js';
 import { S } from '../lib/state.js';
+import { bloomOpen } from '../lib/motion.js';
 
 /** Las zonas que hay que encender para una lista de nombres.
 
@@ -72,10 +74,14 @@ export default function BodyMini({ fibras }) {
   const { frente, espalda } = cuerpo(S.cfg.bodySex || S.cfg.profile?.sex);
   const p = fibras?.p || [];
   const s = fibras?.s || [];
+  const ref = useRef(null);
+
+  useEffect(() => { if (p.length || s.length) bloomOpen(ref.current); }, [p.length, s.length]);
+
   if (!p.length && !s.length) return null;
 
   return (
-    <div className="bodymini">
+    <div className="bodymini" ref={ref}>
       {/* Degradados propios y no los de Silhouette: esta ficha se abre desde
           Rutina, donde la silueta de Inicio NO está montada. Referenciar sus
           defs dejaría los músculos pintados de negro. */}

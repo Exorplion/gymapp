@@ -6,11 +6,15 @@
 // era una línea de texto (día · duración · series) y había que abrirla para
 // saber si valía la pena. Acá el volumen, los récords y qué ejercicios
 // hiciste se leen sin entrar.
+import { useEffect, useRef } from 'react';
 import { openSheet } from '../lib/state.js';
 import { WDS, fmtD } from '../lib/format.js';
 import { sessionPRs } from '../lib/session.js';
+import { Badge } from './ui/primitives.jsx';
+import { bloomOpen } from '../lib/motion.js';
 
 export default function SessionCard({ sess }) {
+  const ref = useRef(null);
   const nsets = (sess.entries || []).reduce((a, e) => a + e.sets.length, 0);
   const vol = Math.round((sess.entries || []).reduce((a, e) => a + e.sets.reduce((b, s) => b + s.w * s.r, 0), 0));
   const nprs = sessionPRs(sess).length;
@@ -20,12 +24,14 @@ export default function SessionCard({ sess }) {
   // en sesiones viejas y nuevas por igual, así que es la fuente confiable.
   const wd = new Date(sess.date + 'T12:00:00').getDay();
 
+  useEffect(() => { bloomOpen(ref.current); }, [sess.id]);
+
   return (
-    <button type="button" className="sess-card" onClick={() => openSheet('session-view', { id: sess.id })}>
+    <button ref={ref} type="button" className="sess-card" onClick={() => openSheet('session-view', { id: sess.id })}>
       <div className="sc-top">
         <span className="hist-badge">{WDS[wd]}</span>
         <span className="sc-name">{sess.dayName || 'Entrenamiento'}</span>
-        {nprs > 0 && <span className="sc-pr">🏆{nprs}</span>}
+        {nprs > 0 && <Badge tone="warn">🏆{nprs}</Badge>}
       </div>
       <div className="sc-meta">{fmtD(sess.date)} · {sess.duration} min</div>
       <div className="sc-meta strong">{nsets} series · {vol.toLocaleString('es')} kg de volumen</div>

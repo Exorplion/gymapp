@@ -1,6 +1,37 @@
 /* ============================================================
    FIERRO — dark steel & electric blue
    ============================================================ */
+@import "tailwindcss";
+
+/* Tailwind v4 (CSS-first config): expone los mismos tokens de --root abajo
+   como utilidades (bg-card, text-accent, etc.) para los componentes shadcn/ui
+   en components/ui/. No reemplaza los --root de abajo: ambos leen el mismo
+   valor para que el look no cambie al migrar un componente a Tailwind. */
+@theme {
+  --color-bg: #04070F;
+  --color-bg2: #0A0F1A;
+  --color-card: #0C1322;
+  --color-card2: #111B30;
+  --color-line: rgba(102,145,255,.10);
+  --color-line2: rgba(102,145,255,.20);
+  --color-txt: #EEF4FF;
+  --color-mut: #93A4C8;
+  --color-mut2: #64749A;
+  --color-accent: #7FD1FF;
+  --color-deep: #2540E8;
+  --color-blue: #2E7DFF;
+  --color-blue2: #5EA2FF;
+  --color-blue3: #8FC2FF;
+  --color-cyan: #22D3EE;
+  --color-ok: #2EE6A8;
+  --color-warn: #FFB454;
+  --color-red: #FF5D73;
+  --radius-r: 18px;
+  --radius-r-lg: 26px;
+  --font-cond: 'Barlow Condensed', sans-serif;
+  --font-body: 'Barlow', system-ui, sans-serif;
+}
+
 :root{
   --bg:#04070F;
   --bg2:#0A0F1A;

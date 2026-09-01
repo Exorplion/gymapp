@@ -27,12 +27,13 @@
 // reutilice el nodo DOM de una fila borrada para la fila siguiente (lo que
 // dejaría un <input> no controlado mostrando el valor tecleado de OTRO
 // ejercicio). Se genera una vez, al sembrar el estado inicial.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { S, bump, saveCfg, wStep, closeSheet } from '../../lib/state.js';
 import { dstr, uid, round1, vibrate } from '../../lib/format.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
 import { pendingSlot } from '../../lib/session.js';
+import { staggerReveal } from '../../lib/motion.js';
 
 const FIELDS = [['sets', 'Series'], ['reps', 'Reps'], ['w', 'Peso kg']];
 
@@ -41,6 +42,15 @@ export default function VoiceLog({ items: initialItems, duration: initialDuratio
   const [duration, setDuration] = useState(initialDuration);
   const fieldRefs = useRef({}); // `${_id}-${f}` -> <input>
   const durRef = useRef(null);
+  const listRef = useRef(null);
+
+  // Entrada en cascada de las tarjetas al abrir el sheet, una sola vez (no en
+  // cada tecla): confirma que "esto es lo que entendí" con un gesto, no un
+  // salto seco de 11 tarjetas iguales.
+  useEffect(() => {
+    if (listRef.current) staggerReveal(listRef.current.children);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function stepField(id, f, d) {
     setItems(prev => prev.map(it => {
@@ -109,6 +119,7 @@ export default function VoiceLog({ items: initialItems, duration: initialDuratio
       <div className="sheet-sub">
         Esto es lo que entendí. <b>Revisá los pesos</b>: el dictado casi nunca los capta bien, así que van con lo que levantaste la última vez.
       </div>
+      <div ref={listRef}>
       {items.map(it => (
         <div className="card sub" style={{ marginBottom: 'var(--s2)' }} key={it._id}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
@@ -136,6 +147,7 @@ export default function VoiceLog({ items: initialItems, duration: initialDuratio
           </div>
         </div>
       ))}
+      </div>
       <div className="steplabel" style={{ marginTop: 'var(--s4)' }}>Duración (min)</div>
       <div className="step" style={{ marginTop: 'var(--s1)' }}>
         <button type="button" onClick={() => stepDuration(-5)}>−</button>

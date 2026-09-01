@@ -3,20 +3,30 @@
 // data-sort/data-sid) que ya usa Rutina.jsx para días/ejercicios — acá con
 // kind="hoy" (que commitSort() ya distingue de "days"/"rut"): drag.js sólo
 // necesita el markup correcto, no hace falta ninguna lógica nueva.
+import { useEffect, useRef } from 'react';
 import { S, closeSheet } from '../../lib/state.js';
 import { orderedExs, sessionExs } from '../../lib/session.js';
+import { staggerReveal } from '../../lib/motion.js';
 
 export default function ReorderHoy() {
   const index = S.cfg.seqIndex;
   // Con sesión abierta se reordena sobre la lista de la sesión (incluye lo
   // agregado en vivo); si no hay sesión, sobre la rutina del turno.
   const exs = S.draft ? sessionExs(index) : orderedExs(index, S.routine[index]?.exercises || []);
+  const listRef = useRef(null);
+
+  // Sólo la entrada inicial de las filas se anima (mount) — nunca se toca el
+  // reordenamiento en sí, que sigue siendo enteramente cosa de drag.js
+  // (data-sort/data-sid intactos).
+  useEffect(() => {
+    if (listRef.current) staggerReveal(listRef.current.children);
+  }, []);
 
   return (
     <>
       <h2>Reordenar</h2>
       <div className="drag-hint tight"><span>↕</span><span>Mantené presionado y arrastrá para cambiar el orden.</span></div>
-      <div data-sort="hoy">
+      <div data-sort="hoy" ref={listRef}>
         {exs.map(ex => (
           <div className="row" data-sid={ex.id} key={ex.id}>
             <div className="grow">

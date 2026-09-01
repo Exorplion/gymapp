@@ -6,7 +6,9 @@
 //
 // Muestra hechos medidos y ninguna recomendación. La app sabe cuántas series
 // hiciste; no sabe si son pocas.
+import { useEffect, useRef } from 'react';
 import { diasTexto } from '../lib/muscle.js';
+import { bloomOpen } from '../lib/motion.js';
 
 /** Volumen en kg, corto: 12.4k en vez de 12380. */
 function kilos(v) {
@@ -18,9 +20,14 @@ function kilos(v) {
 export default function MusclePop({ stats, pos, onClose }) {
   const { cat, dias, sets, sesiones, porSemana, volumen, mejor, top, fibras, ventana } = stats;
   const nunca = dias === null;
+  const popRef = useRef(null);
+
+  // Bloom-open al aparecer pegado al músculo: sale de él, no salta de golpe.
+  useEffect(() => { bloomOpen(popRef.current); }, []);
 
   return (
     <div
+      ref={popRef}
       className={`mpop ${pos.arriba ? 'arriba' : 'abajo'}`}
       style={{ left: `${pos.x}px`, top: `${pos.y}px` }}
       role="dialog"

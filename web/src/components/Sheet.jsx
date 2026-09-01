@@ -11,6 +11,7 @@
 // en un foco muerto, ni visible ni anunciado), y al cerrar el foco vuelve a
 // lo que lo abrió en vez de perderse en <body>.
 import { useEffect, useRef, useState } from 'react';
+import { bloomOpen } from '../lib/motion.js';
 
 const FOCUSABLES = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 const CIERRE_MS = 220; // mismo tiempo que .panel usa para abrir (shup .22s)
@@ -39,6 +40,11 @@ export default function Sheet({ open, onClose, children }) {
     if (open) {
       clearTimeout(closeTimer.current);
       setClosing(false);
+      // Bloom-open (WAAPI) sobre el .panel, encima de la transición CSS
+      // (shup .22s) que ya hace styles.css — mismo lenguaje que Notion al
+      // abrir una página. No reemplaza el open/closing de CSS: sólo agrega
+      // un pop de escala+fade que ese slide no tenía.
+      bloomOpen(panelRef.current);
       abiertoAntes.current = true;
       return;
     }

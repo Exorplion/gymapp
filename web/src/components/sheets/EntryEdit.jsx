@@ -7,7 +7,7 @@
 // Cambia sólo esa entrada de esa sesión. Si la RUTINA del día también tiene el
 // nombre viejo, lo ofrece con un botón: el historial y el plan son dos cosas, y
 // corregir un registro no debería reescribir el plan sin permiso.
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { S, closeSheet, openSheet } from '../../lib/state.js';
 import { norm } from '../../lib/format.js';
 import { updateHistorySession } from '../../lib/session.js';
@@ -15,7 +15,15 @@ import { renameRoutineExercise } from '../../lib/rutina-logic.js';
 import { EXCATALOG, MUSCLE_CATS, catOf } from '../../lib/muscle.js';
 import { EQUIP, isMachineBound } from '../../lib/equip.js';
 import { toast } from '../../lib/toast.js';
+import { bloomOpen } from '../../lib/motion.js';
+import { cn } from '../../lib/utils.js';
+import { Button } from '../ui/primitives.jsx';
 import MachineField from '../MachineField.jsx';
+
+const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-[15px] text-txt outline-none transition-colors focus-visible:border-blue2';
+const eyebrowCls = 'mt-4 mb-2 block text-[11px] font-semibold uppercase tracking-wide text-mut';
+const chipBase = 'inline-flex items-center rounded-full border border-line2 px-3.5 py-2 text-[13px] font-medium transition-colors';
+const chip = (on, tone = 'on') => cn(chipBase, on ? (tone === 'blue' ? 'border-transparent bg-blue2 text-[var(--on-grad)]' : 'border-transparent bg-[image:var(--grad)] font-bold text-[var(--on-grad)]') : 'bg-card2 text-txt hover:border-line');
 
 export default function EntryEdit({ sessId, idx }) {
   const sess = S.sessions.find(s => s.id === sessId);
@@ -27,6 +35,9 @@ export default function EntryEdit({ sessId, idx }) {
   const [cat, setCat] = useState(entry?.cat || '');
   const [unilateral, setUnilateral] = useState(!!entry?.unilateral);
   const nameRef = useRef(null);
+  const rootRef = useRef(null);
+
+  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   const q = norm(name);
   const sugeridos = useMemo(
@@ -71,41 +82,41 @@ export default function EntryEdit({ sessId, idx }) {
   }
 
   return (
-    <>
-      <h2>Cambiar ejercicio</h2>
-      <div className="sheet-sub">
-        Corrige qué fue <b>{original}</b> en esta sesión. Los pesos y las series
+    <div ref={rootRef}>
+      <h2 className="font-cond text-2xl font-bold text-txt">Cambiar ejercicio</h2>
+      <div className="mt-1 mb-4 text-[13px] leading-relaxed text-mut">
+        Corrige qué fue <b className="text-txt">{original}</b> en esta sesión. Los pesos y las series
         que anotaste no se tocan.
       </div>
 
-      <div className="field">
-        <label htmlFor="entryedit-nombre">Qué ejercicio fue</label>
-        <input id="entryedit-nombre" ref={nameRef} value={name} onChange={e => setName(e.target.value)} autoComplete="off" />
+      <div className="mb-3">
+        <label htmlFor="entryedit-nombre" className="mb-1.5 block text-[13px] font-medium text-mut">Qué ejercicio fue</label>
+        <input id="entryedit-nombre" ref={nameRef} className={inputCls} value={name} onChange={e => setName(e.target.value)} autoComplete="off" />
       </div>
 
       {sugeridos.length > 0 && (
-        <div className="field">
-          <label>De la base</label>
-          <div className="chips">
+        <div className="mb-3">
+          <label className="mb-1.5 block text-[13px] font-medium text-mut">De la base</label>
+          <div className="flex flex-wrap gap-2">
             {sugeridos.map(e => (
-              <button key={e.n} type="button" className="chip" onClick={() => { setName(e.n); setCat(''); }}>
-                {e.n} <span className="txt-mut">· {e.c}</span>
+              <button key={e.n} type="button" className={chip(false)} onClick={() => { setName(e.n); setCat(''); }}>
+                {e.n} <span className="ml-1 text-mut">· {e.c}</span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      <label className="eyebrow lbl-block" style={{ marginTop: 'var(--s4)' }}>
+      <label className={eyebrowCls}>
         Qué grupo entrena
-        {!cat && auto && <span className="txt-mut" style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}> · detecté {auto}</span>}
+        {!cat && auto && <span className="text-[11px] font-medium normal-case tracking-normal text-mut"> · detecté {auto}</span>}
       </label>
-      <div className="chips">
+      <div className="flex flex-wrap gap-2">
         {MUSCLE_CATS.map(c => (
           <button
             key={c}
             type="button"
-            className={`chip ${cat === c ? 'on' : (!cat && auto === c ? 'blue' : '')}`}
+            className={chip(cat === c || (!cat && auto === c), cat === c ? 'on' : 'blue')}
             aria-pressed={cat === c}
             onClick={() => setCat(cat === c ? '' : c)}
           >
@@ -114,13 +125,13 @@ export default function EntryEdit({ sessId, idx }) {
         ))}
       </div>
 
-      <label className="eyebrow lbl-block" style={{ marginTop: 'var(--s4)' }}>Con qué lo hiciste</label>
-      <div className="chips">
+      <label className={eyebrowCls}>Con qué lo hiciste</label>
+      <div className="flex flex-wrap gap-2">
         {EQUIP.map(e => (
           <button
             key={e.id}
             type="button"
-            className={`chip ${equip === e.id ? 'on' : ''}`}
+            className={chip(equip === e.id)}
             aria-pressed={equip === e.id}
             onClick={() => setEquip(equip === e.id ? '' : e.id)}
           >
@@ -132,16 +143,16 @@ export default function EntryEdit({ sessId, idx }) {
         <MachineField equip={equip} machine={machine} onChange={setMachine} />
       )}
 
-      <p className="ptext sm" style={{ marginTop: 'var(--s3)' }}>
+      <p className="mt-3 text-[13px] leading-relaxed text-mut">
         El equipo es lo que decide contra qué historial se compara: el mismo
         ejercicio en dos máquinas distintas no mueve la misma carga.
       </p>
 
-      <label className="eyebrow lbl-block" style={{ marginTop: 'var(--s4)' }}>Cómo se hizo</label>
-      <div className="chips">
+      <label className={eyebrowCls}>Cómo se hizo</label>
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className={`chip ${unilateral ? 'on' : ''}`}
+          className={chip(unilateral)}
           aria-pressed={unilateral}
           onClick={() => setUnilateral(u => !u)}
         >
@@ -149,8 +160,8 @@ export default function EntryEdit({ sessId, idx }) {
         </button>
       </div>
 
-      <button type="button" className="btn" style={{ marginTop: 'var(--s4)' }} onClick={guardar}>Guardar</button>
-      <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={closeSheet}>Cancelar</button>
-    </>
+      <Button type="button" className="mt-4 w-full" onClick={guardar}>Guardar</Button>
+      <Button type="button" variant="ghost" className="mt-2.5 w-full" onClick={closeSheet}>Cancelar</Button>
+    </div>
   );
 }

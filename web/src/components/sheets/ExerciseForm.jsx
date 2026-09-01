@@ -17,9 +17,17 @@ import { EXCATALOG } from '../../lib/muscle.js';
 import { recommendedExercises, saveExercise } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
 import { Mic, RecordDot } from '../Icon.jsx';
+import { bloomOpen } from '../../lib/motion.js';
+import { cn } from '../../lib/utils.js';
+import { Button } from '../ui/primitives.jsx';
 
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
 const CATALOG_CATS = [...new Set(EXCATALOG.map(e => e.c))];
+
+const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-[15px] text-txt outline-none transition-colors focus-visible:border-blue2';
+const eyebrowCls = 'mt-4 mb-2 block text-[11px] font-semibold uppercase tracking-wide text-mut';
+const chipBase = 'inline-flex items-center rounded-full border border-line2 px-3.5 py-2 text-[13px] font-medium transition-colors';
+const chip = (on, tone = 'on') => cn(chipBase, on ? (tone === 'blue' ? 'border-transparent bg-blue2 text-[var(--on-grad)]' : 'border-transparent bg-[image:var(--grad)] font-bold text-[var(--on-grad)]') : 'bg-card2 text-txt hover:border-line');
 
 export default function ExerciseForm({ wd, ex }) {
   const [name, setName] = useState(ex ? ex.name : '');
@@ -33,6 +41,9 @@ export default function ExerciseForm({ wd, ex }) {
   const [illus, setIllus] = useState(ex?.illus || '');
   const [picking, setPicking] = useState(false);
   const photoRef = useRef(null);
+  const rootRef = useRef(null);
+
+  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   async function onPhoto(e) {
     const file = e.target.files?.[0];
@@ -84,67 +95,67 @@ export default function ExerciseForm({ wd, ex }) {
   function handleSave() { saveExercise(wd, ex ? ex.id : null, { name, sets, reps, equip, machine, photo, illus, cat, unilateral }); }
 
   return (
-    <>
-      <h2>{ex ? 'Editar' : 'Nuevo'} ejercicio</h2>
-      <div className="field">
-        <label htmlFor="exform-nombre">Nombre</label>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+    <div ref={rootRef}>
+      <h2 className="font-cond text-2xl font-bold text-txt">{ex ? 'Editar' : 'Nuevo'} ejercicio</h2>
+      <div className="mt-3">
+        <label htmlFor="exform-nombre" className="mb-1.5 block text-[13px] font-medium text-mut">Nombre</label>
+        <div className="flex items-center gap-2">
           <input
             id="exform-nombre"
             ref={nameRef}
+            className={cn(inputCls, 'flex-1')}
             value={name}
             onChange={e => handleNameChange(e.target.value)}
             placeholder="Press banca"
             autoComplete="off"
-            style={{ flex: 1 }}
           />
           {!ex && SR_CLASS && (
             <button
               type="button"
-              className={`icon-btn${recording ? ' accent' : ''}`}
+              className={cn(
+                'grid h-11 w-11 flex-none place-items-center rounded-[13px] border border-white/10 text-mut',
+                recording && 'bg-accent/15 text-accent',
+              )}
               id="ex-voice-btn"
               aria-label="Dictar por voz"
-              style={{ flex: 'none' }}
               onClick={toggleVoice}
             >
               {recording ? <RecordDot /> : <Mic />}
             </button>
           )}
         </div>
-        <div id="ex-autocomplete">
-          {acMatches.length > 0 && (
-            <div className="ac-list">
-              {acMatches.map(e => (
-                <button key={e.n} type="button" className="ac-item" onClick={() => pickName(e.n)}>
-                  {e.n} <span className="txt-mut" style={{ fontSize: 11.5 }}>· {e.c}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {acMatches.length > 0 && (
+          <div className="mt-1.5 flex flex-col gap-1 rounded-[var(--radius-r)] border border-line2 bg-card2 p-1.5">
+            {acMatches.map(e => (
+              <button key={e.n} type="button" className="rounded-[10px] px-2.5 py-1.5 text-left text-[13.5px] text-txt hover:bg-white/5" onClick={() => pickName(e.n)}>
+                {e.n} <span className="text-[11.5px] text-mut">· {e.c}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       {suggestions.length > 0 && (
         <>
-          <div className="txt-mut" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', margin: '4px 0 6px' }}>
+          <div className="mt-3 mb-1.5 text-[11px] uppercase tracking-wide text-mut">
             Sugeridos para hoy
           </div>
-          <div className="chips">
+          <div className="flex flex-wrap gap-2">
             {suggestions.map(e => (
-              <button key={e.n} type="button" className="chip" onClick={() => pickName(e.n)}>{e.n}</button>
+              <button key={e.n} type="button" className={chip(false)} onClick={() => pickName(e.n)}>{e.n}</button>
             ))}
           </div>
         </>
       )}
       {!ex && (
-        <details style={{ marginTop: 10 }}>
-          <summary className="txt-blue" style={{ fontSize: 13, fontWeight: 600 }}>📚 Explorar toda la base de ejercicios</summary>
-          <div style={{ marginTop: 8 }}>
+        <details className="mt-2.5">
+          <summary className="cursor-pointer text-[13px] font-semibold text-blue">📚 Explorar toda la base de ejercicios</summary>
+          <div className="mt-2">
             {CATALOG_CATS.map(c => (
               <div key={c}>
-                <div className="txt-mut" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', margin: '10px 0 6px' }}>{c}</div>
-                <div className="chips">
+                <div className="mt-2.5 mb-1.5 text-[11px] uppercase tracking-wide text-mut">{c}</div>
+                <div className="flex flex-wrap gap-2">
                   {EXCATALOG.filter(e => e.c === c).map(e => (
-                    <button key={e.n} type="button" className="chip" onClick={() => pickName(e.n)}>{e.n}</button>
+                    <button key={e.n} type="button" className={chip(false)} onClick={() => pickName(e.n)}>{e.n}</button>
                   ))}
                 </div>
               </div>
@@ -152,40 +163,38 @@ export default function ExerciseForm({ wd, ex }) {
           </div>
         </details>
       )}
-      <div className="f2" style={{ marginTop: 14 }}>
-        <div className="field">
-          <label htmlFor="exform-series">Series objetivo</label>
-          <div className="step">
-            <button type="button" onClick={() => step(setSets, -1)}>−</button>
-            <div className="val"><input id="exform-series" type="number" inputMode="numeric" value={sets} onChange={e => setSets(e.target.value)} /></div>
-            <button type="button" onClick={() => step(setSets, 1)}>+</button>
+      <div className="mt-3.5 grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="exform-series" className="mb-1.5 block text-[13px] font-medium text-mut">Series objetivo</label>
+          <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line2 bg-card2">
+            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" onClick={() => step(setSets, -1)}>−</button>
+            <div className="flex-1 text-center"><input id="exform-series" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-[15px] text-txt outline-none" value={sets} onChange={e => setSets(e.target.value)} /></div>
+            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" onClick={() => step(setSets, 1)}>+</button>
           </div>
         </div>
-        <div className="field">
-          <label htmlFor="exform-reps">Reps objetivo</label>
-          <div className="step">
-            <button type="button" onClick={() => step(setReps, -1)}>−</button>
-            <div className="val"><input id="exform-reps" type="number" inputMode="numeric" value={reps} onChange={e => setReps(e.target.value)} /></div>
-            <button type="button" onClick={() => step(setReps, 1)}>+</button>
+        <div>
+          <label htmlFor="exform-reps" className="mb-1.5 block text-[13px] font-medium text-mut">Reps objetivo</label>
+          <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line2 bg-card2">
+            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" onClick={() => step(setReps, -1)}>−</button>
+            <div className="flex-1 text-center"><input id="exform-reps" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-[15px] text-txt outline-none" value={reps} onChange={e => setReps(e.target.value)} /></div>
+            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" onClick={() => step(setReps, 1)}>+</button>
           </div>
         </div>
       </div>
 
       {/* El grid de dos columnas de arriba es sólo para Series/Reps: cierra acá
           y a propósito. Todo lo de abajo (grupo, equipo, unilateral, foto) es
-          contenido a ancho completo — meterlo dentro del mismo .f2 lo aplastaba
-          a la mitad de la pantalla, porque el grid ubica CUALQUIER hijo directo
-          en una de sus dos columnas, sea o no un .field. */}
+          contenido a ancho completo. */}
 
       {/* Unilateral: un lado por vez. Cambia sólo cómo se lee lo que anotás en
           la sesión —"20 kg × 12 por lado" y no "20 kg × 12" a secas— no cómo se
           guarda. Va como chip solo y no en el nombre porque "curl unilateral"
           es texto libre que el resto de la app no puede leer: esto sí. */}
-      <label className="eyebrow lbl-block" style={{ marginTop: 'var(--s4)' }}>Cómo se hace</label>
-      <div className="chips">
+      <label className={eyebrowCls}>Cómo se hace</label>
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className={`chip ${unilateral ? 'on' : ''}`}
+          className={chip(unilateral)}
           aria-pressed={unilateral}
           onClick={() => setUnilateral(u => !u)}
         >
@@ -193,7 +202,7 @@ export default function ExerciseForm({ wd, ex }) {
         </button>
       </div>
       {unilateral && (
-        <div className="ptext sm" style={{ marginTop: 6 }}>
+        <div className="mt-1.5 text-[13px] text-mut">
           El peso y las reps que anotes en la sesión van a leerse como "por lado".
         </div>
       )}
@@ -203,17 +212,17 @@ export default function ExerciseForm({ wd, ex }) {
           una salida manual, y por eso se muestra qué dedujo antes de tocarla.
           Sin grupo, las series de este ejercicio no cuentan en "Músculos esta
           semana". */}
-      <label className="eyebrow lbl-block" style={{ marginTop: 'var(--s4)' }}>
+      <label className={eyebrowCls}>
         Qué grupo entrena
-        {!cat && auto && <span className="txt-mut" style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}> · detecté {auto}</span>}
-        {!cat && !auto && name.trim() && <span className="txt-warn" style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}> · no lo reconozco, elegilo</span>}
+        {!cat && auto && <span className="text-[11px] font-medium normal-case tracking-normal text-mut"> · detecté {auto}</span>}
+        {!cat && !auto && name.trim() && <span className="text-[11px] font-medium normal-case tracking-normal text-warn"> · no lo reconozco, elegilo</span>}
       </label>
-      <div className="chips">
+      <div className="flex flex-wrap gap-2">
         {MUSCLE_CATS.map(c => (
           <button
             key={c}
             type="button"
-            className={`chip ${cat === c ? 'on' : (!cat && auto === c ? 'blue' : '')}`}
+            className={chip(cat === c || (!cat && auto === c), cat === c ? 'on' : 'blue')}
             aria-pressed={cat === c}
             onClick={() => setCat(cat === c ? '' : c)}
           >
@@ -224,13 +233,13 @@ export default function ExerciseForm({ wd, ex }) {
 
       {/* Con qué se hace el ejercicio. Es lo que permite que el historial no
           mezcle números que no son comparables — ver lib/equip.js. */}
-      <label className="eyebrow lbl-block" style={{ marginTop: 'var(--s4)' }}>Con qué lo hacés</label>
-      <div className="chips">
+      <label className={eyebrowCls}>Con qué lo hacés</label>
+      <div className="flex flex-wrap gap-2">
         {EQUIP.map(e => (
           <button
             key={e.id}
             type="button"
-            className={`chip ${equip === e.id ? 'on' : ''}`}
+            className={chip(equip === e.id)}
             aria-pressed={equip === e.id}
             onClick={() => setEquip(equip === e.id ? '' : e.id)}
           >
@@ -239,7 +248,7 @@ export default function ExerciseForm({ wd, ex }) {
         ))}
       </div>
       {equip && (
-        <div className="ptext sm" style={{ marginTop: 8 }}>
+        <div className="mt-2 text-[13px] text-mut">
           {EQUIP_HINT[equip]}
         </div>
       )}
@@ -250,30 +259,30 @@ export default function ExerciseForm({ wd, ex }) {
       {/* Foto de la máquina: sacada por vos, guardada en el ejercicio. Es más
           útil que una ilustración genérica porque reconocés ESA máquina. */}
       {equip && (
-        <div style={{ marginTop: 'var(--s3)' }}>
-          <label>Foto de la máquina</label>
+        <div className="mt-3">
+          <label className="mb-1.5 block text-[13px] font-medium text-mut">Foto de la máquina</label>
           <input
             ref={photoRef}
             type="file"
             accept="image/*"
             capture="environment"
-            style={{ display: 'none' }}
+            className="hidden"
             onChange={onPhoto}
           />
           {photo ? (
-            <div className="mach-photo">
-              <img src={photo} alt="" />
-              <div className="mach-photo-acts">
-                <button type="button" className="btn sm ghost" onClick={() => photoRef.current?.click()}>Cambiar</button>
-                <button type="button" className="btn sm ghost" onClick={() => setPhoto('')}>Quitar</button>
+            <div className="overflow-hidden rounded-[var(--radius-r-lg)] border border-line2">
+              <img src={photo} alt="" className="block w-full" />
+              <div className="flex gap-2 p-2">
+                <Button type="button" variant="ghost" size="sm" onClick={() => photoRef.current?.click()}>Cambiar</Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setPhoto('')}>Quitar</Button>
               </div>
             </div>
           ) : (
             <>
-              <button type="button" className="btn ghost" onClick={() => photoRef.current?.click()}>
+              <Button type="button" variant="secondary" className="w-full" onClick={() => photoRef.current?.click()}>
                 📷 Sacar o elegir foto
-              </button>
-              <div className="ptext sm" style={{ marginTop: 6 }}>
+              </Button>
+              <div className="mt-1.5 text-[13px] text-mut">
                 Para reconocerla al llegar. Se guarda reducida en tu teléfono, nunca se sube a ningún lado.
               </div>
             </>
@@ -284,22 +293,22 @@ export default function ExerciseForm({ wd, ex }) {
       {/* Ilustración del movimiento (free-exercise-db, dominio público). Se
           elige a mano una vez: la base es en inglés y adivinar automáticamente
           pondría la imagen equivocada más de una vez. */}
-      <div style={{ marginTop: 'var(--s3)' }}>
-        <label>Ilustración del movimiento</label>
+      <div className="mt-3">
+        <label className="mb-1.5 block text-[13px] font-medium text-mut">Ilustración del movimiento</label>
         {illus ? (
-          <div className="mach-photo">
-            <img src={illusUrl(illus)} alt="" />
-            <div className="mach-photo-acts">
-              <button type="button" className="btn sm ghost" onClick={() => setPicking(true)}>Cambiar</button>
-              <button type="button" className="btn sm ghost" onClick={() => setIllus('')}>Quitar</button>
+          <div className="overflow-hidden rounded-[var(--radius-r-lg)] border border-line2">
+            <img src={illusUrl(illus)} alt="" className="block w-full" />
+            <div className="flex gap-2 p-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setPicking(true)}>Cambiar</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setIllus('')}>Quitar</Button>
             </div>
           </div>
         ) : (
           <>
-            <button type="button" className="btn ghost" onClick={() => setPicking(true)}>
+            <Button type="button" variant="secondary" className="w-full" onClick={() => setPicking(true)}>
               🖼 Buscar ilustración
-            </button>
-            <div className="ptext sm" style={{ marginTop: 6 }}>
+            </Button>
+            <div className="mt-1.5 text-[13px] text-mut">
               Para ver cómo se hace el movimiento. Se descarga la primera vez y queda guardada.
             </div>
           </>
@@ -308,7 +317,7 @@ export default function ExerciseForm({ wd, ex }) {
           <IllusPick exName={name} onPick={setIllus} onClose={() => setPicking(false)} />
         )}
       </div>
-      <button type="button" className="btn" style={{ marginTop: 14 }} onClick={handleSave}>Guardar</button>
-    </>
+      <Button type="button" className="mt-3.5 w-full" onClick={handleSave}>Guardar</Button>
+    </div>
   );
 }

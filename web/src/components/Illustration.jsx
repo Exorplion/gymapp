@@ -3,15 +3,27 @@
 // ya tienen contexto de sobra alrededor). Mismo lenguaje que Icon.jsx —
 // trazo fino, currentColor — pero a una escala más grande y compuesta, no
 // un glifo suelto. Reemplazan a los emoji 🏗️/🏋️ que hacían de placeholder.
+import { useEffect, useRef } from 'react';
+import { bloomOpen } from '../lib/motion.js';
+
 const base = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' };
+
+/** Fade+scale suave al aparecer — el mismo bloom que usan sheets/paneles, para
+    que un estado vacío no aparezca de golpe. Una sola vez al montar. */
+function useBloom() {
+  const ref = useRef(null);
+  useEffect(() => { bloomOpen(ref.current); }, []);
+  return ref;
+}
 
 /** Rutina sin armar: la semana en tira, vacía, con el día de hoy invitando a
     tocar — la misma metáfora que ya usa la pantalla real debajo (WD1, los
     siete días en fila), así la ilustración no inventa un ícono nuevo, señala
     a la propia interfaz. */
 export function RutinaVacia({ size = 84, className }) {
+  const ref = useBloom();
   return (
-    <svg width={size} height={size * 0.6} viewBox="0 0 100 60" className={className} aria-hidden="true">
+    <svg ref={ref} width={size} height={size * 0.6} viewBox="0 0 100 60" className={className} aria-hidden="true">
       <g {...base} opacity="0.4">
         <rect x="4" y="20" width="11" height="24" rx="3" />
         <rect x="19" y="20" width="11" height="24" rx="3" />
@@ -31,8 +43,9 @@ export function RutinaVacia({ size = 84, className }) {
     de "en pausa/descansando", sin caer en un emoji de luna que no pega con
     el resto del ícono set. */
 export function HoySinPlan({ size = 84, className }) {
+  const ref = useBloom();
   return (
-    <svg width={size} height={size * 0.6} viewBox="0 0 100 60" className={className} aria-hidden="true">
+    <svg ref={ref} width={size} height={size * 0.6} viewBox="0 0 100 60" className={className} aria-hidden="true">
       <g {...base}>
         <line x1="18" y1="42" x2="82" y2="42" />
         <circle cx="24" cy="42" r="11" />

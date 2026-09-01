@@ -296,11 +296,13 @@ const DIBUJOS = {
  * reconoce, cae en el genérico en vez de dejar un hueco: una tarjeta sin dibujo
  * al lado de otras que sí lo tienen se ve rota, no vacía.
  */
+import { cn } from '../lib/utils.js';
+
 export default function ExIcon({ icono, size = 34, className = '' }) {
   const Dibujo = DIBUJOS[icono] || DIBUJOS.generico;
   return (
     <svg
-      className={`exi ${className}`}
+      className={cn('exi', className)}
       viewBox="0 0 48 48"
       width={size}
       height={size}

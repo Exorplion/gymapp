@@ -20,11 +20,22 @@
 // haya un bump por medio.
 import { useEffect, useRef } from 'react';
 import { drawChart, pickChartPoint } from '../lib/charts.js';
+import { bloomOpen } from '../lib/motion.js';
+import { cn } from '../lib/utils.js';
 
 export default function Chart({ pts, opts, id }) {
   const cvRef = useRef(null);
   const latest = useRef({ pts, opts });
+  const mounted = useRef(false);
   latest.current = { pts, opts };
+
+  // Bloom sutil sólo la primera vez que el canvas recibe datos reales — no en
+  // cada redraw por tecla/resize, para no "parpadear" el gráfico en cada bump.
+  useEffect(() => {
+    if (mounted.current || !pts?.length) return;
+    mounted.current = true;
+    bloomOpen(cvRef.current);
+  }, [pts]);
 
   useEffect(() => {
     const cv = cvRef.current;
@@ -51,5 +62,5 @@ export default function Chart({ pts, opts, id }) {
     drawChart(cv, cv._pts, cv._opts || {});
   }
 
-  return <canvas className="chart" id={id} ref={cvRef} onClick={onClick} />;
+  return <canvas className={cn('chart', 'rounded-r')} id={id} ref={cvRef} onClick={onClick} />;
 }

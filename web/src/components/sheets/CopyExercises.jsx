@@ -7,17 +7,27 @@
 //
 // Anterior A y Anterior B son la misma rutina: hasta ahora armarlas era cargar
 // nueve ejercicios a mano dos veces, y cada corrección otras dos.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { S, closeSheet } from '../../lib/state.js';
 import { equipLabel, exKey } from '../../lib/equip.js';
 import { copyExercises, copySourceExercises } from '../../lib/rutina-logic.js';
+import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { cn } from '../../lib/utils.js';
+import { Button, Card } from '../ui/primitives.jsx';
 
 // Nombre a mostrar para un turno de la secuencia actual.
 const slotLabel = i => S.routine[i]?.name || `Turno ${i + 1}`;
 
+const chipBase = 'inline-flex items-center rounded-full border border-line2 px-3.5 py-2 text-[13px] font-medium transition-colors';
+const chip = on => cn(chipBase, on ? 'border-transparent bg-blue2 font-bold text-[var(--on-grad)]' : 'bg-card2 text-txt hover:border-line');
+
 export default function CopyExercises({ mode = 'push', index }) {
   const propio = +index;
   const esPush = mode === 'push';
+  const rootRef = useRef(null);
+  const listRef = useRef(null);
+
+  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   // Turnos con ejercicios, que son los únicos que sirven de origen.
   const conEjercicios = S.routine.map((s, i) => i).filter(i => S.routine[i]?.exercises?.length);
@@ -56,6 +66,10 @@ export default function CopyExercises({ mode = 'push', index }) {
   const disponibles = copySourceExercises(src);
   const idDe = e => e.id ?? e.name;
 
+  useEffect(() => {
+    if (listRef.current) staggerReveal(listRef.current.children);
+  }, [disponibles.length, src]);
+
   const destino = esPush ? destinoIndex : propio;
   const exsDestino = destino != null ? (S.routine[destino]?.exercises || []) : [];
   const destinoOcupado = exsDestino.length > 0;
@@ -89,32 +103,32 @@ export default function CopyExercises({ mode = 'push', index }) {
     : slotLabel(esPush ? propio : origenIndex);
 
   return (
-    <>
-      <h2>{esPush ? 'Copiar a otro turno' : 'Traer de otro turno'}</h2>
-      <div className="sheet-sub">
+    <div ref={rootRef}>
+      <h2 className="font-cond text-2xl font-bold text-txt">{esPush ? 'Copiar a otro turno' : 'Traer de otro turno'}</h2>
+      <div className="mt-1 mb-4 text-[13px] text-mut">
         {esPush
-          ? <>Desde <b className="txt-blue">{nombreOrigen}</b>. El historial de cada ejercicio viaja con él.</>
-          : <>Hacia <b className="txt-blue">{slotLabel(propio)}</b>. El historial de cada ejercicio viaja con él.</>}
+          ? <>Desde <b className="text-blue">{nombreOrigen}</b>. El historial de cada ejercicio viaja con él.</>
+          : <>Hacia <b className="text-blue">{slotLabel(propio)}</b>. El historial de cada ejercicio viaja con él.</>}
       </div>
 
       {/* ---- de dónde (sólo pull) ---- */}
       {!esPush && (
         <>
           {S.lib.length > 0 && (
-            <div className="seg" style={{ marginBottom: 'var(--s3)' }}>
-              <button type="button" className={fuente === 'actual' ? 'on' : ''} aria-pressed={fuente === 'actual'} onClick={() => { setFuente('actual'); setSel(null); }}>Mi rutina</button>
-              <button type="button" className={fuente === 'lib' ? 'on' : ''} aria-pressed={fuente === 'lib'} onClick={() => { setFuente('lib'); setSel(null); }}>Mis rutinas</button>
+            <div className="mb-3 inline-flex rounded-[var(--radius-r)] border border-line2 bg-card2 p-1">
+              <button type="button" className={cn('rounded-[calc(var(--radius-r)-4px)] px-3.5 py-1.5 text-[13px] font-medium', fuente === 'actual' ? 'bg-blue2 text-[var(--on-grad)]' : 'text-mut')} aria-pressed={fuente === 'actual'} onClick={() => { setFuente('actual'); setSel(null); }}>Mi rutina</button>
+              <button type="button" className={cn('rounded-[calc(var(--radius-r)-4px)] px-3.5 py-1.5 text-[13px] font-medium', fuente === 'lib' ? 'bg-blue2 text-[var(--on-grad)]' : 'text-mut')} aria-pressed={fuente === 'lib'} onClick={() => { setFuente('lib'); setSel(null); }}>Mis rutinas</button>
             </div>
           )}
           {fuente === 'actual' ? (
-            <div className="field">
-              <label>¿De qué turno?</label>
+            <div className="mb-3">
+              <label className="mb-1.5 block text-[13px] font-medium text-mut">¿De qué turno?</label>
               {!otros.length ? (
-                <div className="txt-mut" style={{ fontSize: 13.5 }}>No hay otro turno con ejercicios todavía.</div>
+                <div className="text-[13.5px] text-mut">No hay otro turno con ejercicios todavía.</div>
               ) : (
-                <div className="chips">
+                <div className="flex flex-wrap gap-2">
                   {otros.map(i => (
-                    <button key={i} type="button" className={`chip ${i === origenIndex ? 'blue' : ''}`} aria-pressed={i === origenIndex} onClick={() => { setOrigenIndex(i); setSel(null); }}>
+                    <button key={i} type="button" className={chip(i === origenIndex)} aria-pressed={i === origenIndex} onClick={() => { setOrigenIndex(i); setSel(null); }}>
                       {slotLabel(i)}
                     </button>
                   ))}
@@ -123,18 +137,18 @@ export default function CopyExercises({ mode = 'push', index }) {
             </div>
           ) : (
             <>
-              <div className="field">
-                <label htmlFor="copyex-rutina">¿De qué rutina?</label>
-                <select id="copyex-rutina" value={libId ?? ''} onChange={e => { setLibId(e.target.value); setLibIndex(null); setSel(null); }}>
+              <div className="mb-3">
+                <label htmlFor="copyex-rutina" className="mb-1.5 block text-[13px] font-medium text-mut">¿De qué rutina?</label>
+                <select id="copyex-rutina" className="h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-[15px] text-txt outline-none" value={libId ?? ''} onChange={e => { setLibId(e.target.value); setLibIndex(null); setSel(null); }}>
                   {S.lib.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               </div>
               {diasLib.length > 0 && (
-                <div className="field">
-                  <label>¿De qué turno de esa rutina?</label>
-                  <div className="chips">
+                <div className="mb-3">
+                  <label className="mb-1.5 block text-[13px] font-medium text-mut">¿De qué turno de esa rutina?</label>
+                  <div className="flex flex-wrap gap-2">
                     {diasLib.map(i => (
-                      <button key={i} type="button" className={`chip ${i === libIndexActivo ? 'blue' : ''}`} aria-pressed={i === libIndexActivo} onClick={() => { setLibIndex(i); setSel(null); }}>
+                      <button key={i} type="button" className={chip(i === libIndexActivo)} aria-pressed={i === libIndexActivo} onClick={() => { setLibIndex(i); setSel(null); }}>
                         {rutinaLib.days[i].name || `Turno ${i + 1}`}
                       </button>
                     ))}
@@ -157,9 +171,9 @@ export default function CopyExercises({ mode = 'push', index }) {
            es justamente cómo se estrena una rutina nueva; van al final y
            dicen "libre", para que se lean como otra cosa. */}
       {esPush && (
-        <div className="field">
-          <label>¿A qué rutina?</label>
-          <div className="chips col">
+        <div className="mb-3">
+          <label className="mb-1.5 block text-[13px] font-medium text-mut">¿A qué rutina?</label>
+          <div className="flex flex-col gap-2">
             {destinos.map(i => {
               const turno = S.routine[i];
               const ocupado = !!turno?.exercises?.length;
@@ -167,12 +181,15 @@ export default function CopyExercises({ mode = 'push', index }) {
                 <button
                   key={i}
                   type="button"
-                  className={`chip ancho ${i === destinoIndex ? 'blue' : ''}`}
+                  className={cn(
+                    'flex flex-col items-start rounded-[var(--radius-r)] border px-3.5 py-2.5 text-left transition-colors',
+                    i === destinoIndex ? 'border-transparent bg-blue2 text-[var(--on-grad)]' : 'border-line2 bg-card2 text-txt hover:border-line',
+                  )}
                   aria-pressed={i === destinoIndex}
                   onClick={() => { setDestinoIndex(i); setSel(null); }}
                 >
-                  <span className="chip-nom">{turno?.name || `Turno ${i + 1}`}</span>
-                  <span className="chip-sub">
+                  <span className="text-[14px] font-semibold">{turno?.name || `Turno ${i + 1}`}</span>
+                  <span className={cn('text-[12.5px]', i === destinoIndex ? 'opacity-80' : 'text-mut')}>
                     {ocupado ? `${turno.exercises.length} ejercicios` : 'libre'}
                   </span>
                 </button>
@@ -184,50 +201,46 @@ export default function CopyExercises({ mode = 'push', index }) {
 
       {/* ---- qué hacer con lo que ya está ---- */}
       {destino != null && destinoOcupado && (
-        <div className="calcbox" style={{ marginBottom: 'var(--s3)' }}>
-          <div style={{ fontSize: 13.5, lineHeight: 1.5, marginBottom: 8 }}>
+        <Card className="mb-3">
+          <div className="mb-2 text-[13.5px] leading-relaxed text-txt">
             {slotLabel(destino)} ya tiene <b>{`${exsDestino.length} ejercicios`}</b>.
           </div>
-          <label className="check-row" style={{ marginTop: 0 }}>
+          <label className="flex items-center gap-2.5 text-[13.5px] text-txt">
             <input type="radio" name="modo-copia" checked={modo === 'merge'} onChange={() => { setModo('merge'); setSel(null); }} />
-            <span>Sumar los que falten <span className="txt-mut">— no borra nada</span></span>
+            <span>Sumar los que falten <span className="text-mut">— no borra nada</span></span>
           </label>
-          <label className="check-row">
+          <label className="mt-2 flex items-center gap-2.5 text-[13.5px] text-txt">
             <input type="radio" name="modo-copia" checked={modo === 'replace'} onChange={() => { setModo('replace'); setSel(null); }} />
-            <span>Reemplazar todo <span className="txt-mut">— el turno queda igual al origen</span></span>
+            <span>Reemplazar todo <span className="text-mut">— el turno queda igual al origen</span></span>
           </label>
-        </div>
+        </Card>
       )}
 
       {/* ---- cuáles ---- */}
-      <div className="sect">
+      <div className="mb-2 flex items-center text-[13px] font-semibold uppercase tracking-wide text-mut">
         Qué ejercicios
-        <button
-          type="button" className="btn sm ghost"
-          style={{ width: 'auto', padding: '0 12px', height: 30, marginLeft: 'auto' }}
-          onClick={alternarTodos}
-        >
+        <Button type="button" variant="ghost" size="sm" className="ml-auto h-[30px] w-auto px-3" onClick={alternarTodos}>
           {todosPuestos ? 'Ninguno' : 'Todos'}
-        </button>
+        </Button>
       </div>
       {!disponibles.length ? (
-        <div className="card"><div className="empty" style={{ padding: 16 }}>
-          <p style={{ margin: 0 }}>Ese turno no tiene ejercicios.</p>
-        </div></div>
+        <Card><div className="p-4 text-center text-mut">
+          <p className="m-0">Ese turno no tiene ejercicios.</p>
+        </div></Card>
       ) : (
-        <div className="pick-list">
+        <div ref={listRef} className="flex flex-col gap-2">
           {disponibles.map((e, i) => {
             const repetido = modo === 'merge' && destinoOcupado && yaHay.has(exKey(e));
             return (
-              <label key={idDe(e)} className={`pick-row ${repetido ? 'dim' : ''}`}>
+              <label key={idDe(e)} className={cn('flex items-center gap-2.5 rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 py-2.5', repetido && 'opacity-50')}>
                 <input type="checkbox" checked={seleccion.has(idDe(e))} onChange={() => toggle(e)} />
-                <span className="i">{i + 1}</span>
+                <span className="w-5 flex-none text-[13px] text-mut">{i + 1}</span>
                 <span className="grow">
-                  <span className="t">{e.name}</span>
-                  <span className="s">
-                    {equipLabel(e) && <span className="eq-tag">{equipLabel(e)}</span>}
+                  <span className="block text-[14.5px] text-txt">{e.name}</span>
+                  <span className="text-[13px] text-mut">
+                    {equipLabel(e) && <span className="mr-1.5 inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-mut">{equipLabel(e)}</span>}
                     {e.sets}×{e.reps}
-                    {repetido && <span className="txt-warn"> · ya está</span>}
+                    {repetido && <span className="text-warn"> · ya está</span>}
                   </span>
                 </span>
               </label>
@@ -236,15 +249,15 @@ export default function CopyExercises({ mode = 'push', index }) {
         </div>
       )}
 
-      <button type="button" className="btn" style={{ marginTop: 'var(--s3)' }} disabled={destino == null || !elegidos.length} onClick={confirmar}>
+      <Button type="button" className="mt-4 w-full" disabled={destino == null || !elegidos.length} onClick={confirmar}>
         {destino == null
           ? (esPush ? 'Elegí a dónde' : 'Elegí un turno')
           /* El destino se nombra por su rutina y no por el número de turno,
              igual que en la lista de arriba: "al Posterior A" es lo que uno
              tiene en la cabeza, "al turno 3" te obliga a traducir. */
           : `${esPush ? 'Copiar' : 'Traer'} ${elegidos.length} ejercicio${elegidos.length === 1 ? '' : 's'}${esPush ? ` a ${slotLabel(destino)}` : ''}`}
-      </button>
-      <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={closeSheet}>Cancelar</button>
-    </>
+      </Button>
+      <Button type="button" variant="ghost" className="mt-2.5 w-full" onClick={closeSheet}>Cancelar</Button>
+    </div>
   );
 }

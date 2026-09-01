@@ -10,13 +10,14 @@
 // escalados: recalcular los gramos vuelve a llamar a macrosFor() sobre la
 // fuente, en vez de re-escalar un número ya escalado (que pierde precisión y
 // se rompe si los gramos pasan por cero).
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { S, bump, closeSheet } from '../../lib/state.js';
 import { uid, vibrate, round1 } from '../../lib/format.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
 import { searchFoods, macrosFor, defaultGrams } from '../../lib/foodsearch.js';
 import { SLOTS, slotForTime } from '../../lib/meals.js';
+import { bloomOpen, staggerReveal } from '../../lib/motion.js';
 
 const ahora = () => new Date().toTimeString().slice(0, 5);
 
@@ -49,8 +50,13 @@ export default function MealForm({ slot: slotInicial }) {
   const [carrito, setCarrito] = useState([]);
   const [nuevo, setNuevo] = useState(null);
   const buscarRef = useRef(null);
+  const hitsRef = useRef(null);
 
   const hits = useMemo(() => searchFoods(q, { slot, limit: 8 }), [q, slot]);
+
+  useEffect(() => {
+    if (hitsRef.current) staggerReveal(hitsRef.current.children, { delayStep: 30 });
+  }, [hits]);
 
   const total = carrito.reduce((a, i) => ({
     kcal: a.kcal + i.kcal, p: round1(a.p + i.p), c: round1(a.c + i.c), f: round1(a.f + i.f),
@@ -107,7 +113,7 @@ export default function MealForm({ slot: slotInicial }) {
         />
       </div>
 
-      <div className="food-hits">
+      <div className="food-hits" ref={hitsRef}>
         {hits.map(f => (
           <button key={f.key} type="button" className="food-hit" onClick={() => agregar(f)}>
             <span className="grow">
@@ -164,6 +170,8 @@ function AlimentoNuevo({ nombre, onListo, onCancel }) {
   const [prot, setProt] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
+  const rootRef = useRef(null);
+  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
 
   async function crear() {
     const trimmed = name.trim();
@@ -186,7 +194,7 @@ function AlimentoNuevo({ nombre, onListo, onCancel }) {
   }
 
   return (
-    <>
+    <div ref={rootRef}>
       <h2>Alimento nuevo</h2>
       <div className="sheet-sub">
         No lo tengo en la base, así que no me lo invento. Poné sus macros una vez
@@ -204,6 +212,6 @@ function AlimentoNuevo({ nombre, onListo, onCancel }) {
       </div>
       <button type="button" className="btn" onClick={crear}>Guardar y agregar</button>
       <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={onCancel}>Cancelar</button>
-    </>
+    </div>
   );
 }

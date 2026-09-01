@@ -31,7 +31,7 @@
 // sólo hace falta mientras Ajustes está abierto, así que vive local a este
 // componente — mismo comportamiento (mismo <input hidden> disparado por
 // "Importar JSON"), distinto lugar en el árbol.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { S, bump, closeSheet, openSheet, saveCfg } from '../../lib/state.js';
 import { fmtMMSS, vibrate } from '../../lib/format.js';
 import { computeMacros, applyComputedGoals } from '../../lib/macros.js';
@@ -40,6 +40,7 @@ import { exportJSON, importJSON, wipeAll } from '../../lib/backup.js';
 import { exportFoodsMD, importFoodsMD } from '../../lib/foodmd.js';
 import { toast } from '../../lib/toast.js';
 import { aplicarPaleta, paletaDesde, COLOR_DEFECTO } from '../../lib/theme.js';
+import { bloomOpen } from '../../lib/motion.js';
 
 function MacroPreview({ m }) {
   return (
@@ -60,7 +61,10 @@ export default function Settings() {
   const nSeed = seedCount();
   const importRef = useRef(null);
   const mdRef = useRef(null);
+  const rootRef = useRef(null);
   const [buscando, setBuscando] = useState(false);
+
+  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
 
   const colorActual = S.cfg.themeColor || COLOR_DEFECTO;
   const paleta = paletaDesde(colorActual) || {};
@@ -228,7 +232,7 @@ export default function Settings() {
   }
 
   return (
-    <>
+    <div ref={rootRef}>
       <h2>Ajustes</h2>
 
       <h3>Color</h3>
@@ -342,6 +346,6 @@ export default function Settings() {
       </button>
 
       <div className="txt-mut" style={{ fontSize: 12, textAlign: 'center', marginTop: 16 }}>FIERRO v1 · datos 100% en tu dispositivo</div>
-    </>
+    </div>
   );
 }

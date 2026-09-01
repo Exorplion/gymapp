@@ -31,6 +31,7 @@ import {
   isUnilateral, toggleUnilateral,
 } from '../lib/session.js';
 import { jumpToSlide, scrollToSlideEl, slideCenterDist } from '../lib/carousel.js';
+import { staggerReveal } from '../lib/motion.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
@@ -84,6 +85,10 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
     if (!yaHuboSalto.current) {
       jumpToSlide(car, idx);
       yaHuboSalto.current = true;
+      // Reveal escalonado sólo la primera vez que se pinta el carrusel de
+      // este día — no en cada bump (avanzar de ejercicio no debe volver a
+      // animar las tarjetas ya visibles).
+      staggerReveal(car.children);
     } else if (idx > 0) {
       // jumpToSlide ignora idx<=0 a propósito (no hace falta reposicionar
       // hacia el primer slide) — se preserva el mismo criterio acá.
