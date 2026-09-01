@@ -7,6 +7,7 @@ import { startRest, stopRest } from './rest.js';
 import { pedirPermiso } from './alarm.js';
 import { scrollCarouselTo } from './carousel.js';
 import { exKey } from './equip.js';
+import { currentStreak, bestStreak } from './streak.js';
 
 /** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
     ejercicio completo; un string sigue funcionando y se compara sólo por
@@ -51,9 +52,12 @@ export async function toggleUnilateral(exId) {
 export function ensureVals(ex) {
   if (!S.hoyVals[ex.id]) {
     const last = lastDataFor(ex);
-    if (last) { const ls = last[last.length - 1]; S.hoyVals[ex.id] = { w: ls.w, r: ls.r }; }
-    else S.hoyVals[ex.id] = { w: 20, r: ex.reps || 10 };
+    if (last) { const ls = last[last.length - 1]; S.hoyVals[ex.id] = { w: ls.w, r: ls.r, rpe: null }; }
+    else S.hoyVals[ex.id] = { w: 20, r: ex.reps || 10, rpe: null };
   }
+  // `rpe` puede faltar en un S.hoyVals guardado antes de que este campo
+  // existiera — se completa acá en vez de forzar una migración de datos.
+  if (S.hoyVals[ex.id].rpe === undefined) S.hoyVals[ex.id].rpe = null;
   return S.hoyVals[ex.id];
 }
 
@@ -180,6 +184,72 @@ export function entryDelta(sess, entry) {
     return { delta: round1(actual - anterior), anterior, actual };
   }
   return null;
+}
+
+/** "Tu Año Fierro" (Plan Fierro · Fase 3): recap de solo-lectura sobre los
+    últimos 365 días de S.sessions — mismo espíritu que Spotify Wrapped:
+    sintetiza lo ya guardado en una historia, sin pedir ningún dato nuevo.
+    null si no hay sesiones en la ventana. */
+export function yearRecap() {
+  const cutoff = Date.now() - 365 * 86400000;
+  const sess = S.sessions.filter(s => s.start >= cutoff);
+  if (!sess.length) return null;
+
+  let kg = 0, series = 0;
+  const porEjercicio = new Map();
+  const porDia = new Map(); // date -> kg del día
+  for (const s of sess) {
+    let kgDia = 0;
+    for (const e of s.entries || []) {
+      let kgEj = 0;
+      for (const st of e.sets || []) { const v = (st.w || 0) * (st.r || 0); kg += v; kgDia += v; kgEj += v; series++; }
+      porEjercicio.set(e.name, (porEjercicio.get(e.name) || 0) + kgEj);
+    }
+    porDia.set(s.date, (porDia.get(s.date) || 0) + kgDia);
+  }
+  const topEjercicio = [...porEjercicio.entries()].sort((a, b) => b[1] - a[1])[0];
+  const diaMasFuerte = [...porDia.entries()].sort((a, b) => b[1] - a[1])[0];
+  const prMasGrande = sess
+    .flatMap(s => (s.entries || []).flatMap(e => (e.sets || []).map(st => ({ name: e.name, w: st.w, date: s.date }))))
+    .sort((a, b) => b.w - a.w)[0];
+
+  return {
+    sesiones: sess.length,
+    kg: Math.round(kg),
+    series,
+    ejercicioTop: topEjercicio ? { name: topEjercicio[0], kg: Math.round(topEjercicio[1]) } : null,
+    diaMasFuerte: diaMasFuerte ? { date: diaMasFuerte[0], kg: Math.round(diaMasFuerte[1]) } : null,
+    prMasGrande: prMasGrande || null,
+    rachaMasLarga: bestStreak(),
+  };
+}
+
+/** Kg totales movidos en toda la historia registrada — cuenta pasiva que
+    crece con cada serie, sin depender de ninguna meta activa (Plan Fierro ·
+    Fase 1, "Tonelaje de por vida"). */
+export function lifetimeTonnage() {
+  let kg = 0;
+  for (const s of S.sessions) for (const e of s.entries || []) for (const st of e.sets || []) kg += (st.w || 0) * (st.r || 0);
+  return Math.round(kg);
+}
+
+/** Compara un ejercicio con lo que hiciste hace ~1 año (330-400 días, para no
+    depender de que caiga justo un año exacto). null si no hay nada que
+    comparar en esa ventana — nunca inventa una fecha. */
+export function recallYearAgo(exName) {
+  const key = exName.trim().toLowerCase();
+  const now = Date.now();
+  const MIN = 330 * 86400000, MAX = 400 * 86400000;
+  let best = null, bestDist = Infinity;
+  for (const s of S.sessions) {
+    const age = now - s.start;
+    if (age < MIN || age > MAX) continue;
+    const e = (s.entries || []).find(en => en.name.trim().toLowerCase() === key);
+    if (!e?.sets?.length) continue;
+    const dist = Math.abs(age - 365 * 86400000);
+    if (dist < bestDist) { bestDist = dist; best = { date: s.date, sets: e.sets }; }
+  }
+  return best;
 }
 
 /** Agrupa sesiones por semana calendario, conservando el orden de entrada. */
@@ -412,7 +482,11 @@ export async function saveSet(exId) {
      no tendría efecto. */
   const techo = targetSets(ex);
   if (cur.length >= techo) { toast(`${ex.name} ya está completo (${techo} series)`); return; }
-  cur.push({ w: round1(v.w), r: v.r, t: Date.now() });
+  // rpe (1-10, esfuerzo percibido) es opcional — v.rpe queda en null si no
+  // se tocó el selector. Es el campo que destraba ACWR y la recuperación
+  // muscular por esfuerzo (Plan Fierro · Fase 2).
+  cur.push({ w: round1(v.w), r: v.r, t: Date.now(), rpe: v.rpe ?? null });
+  v.rpe = null; // cada serie arranca sin RPE elegido; no se arrastra de la anterior
   if (!S.draft.start) S.draft.start = Date.now();
   const finished = cur.length >= techo;
   const exs = sessionExs(S.routine.findIndex(s => s.id === S.draft.slotId));
@@ -428,6 +502,18 @@ export async function saveSet(exId) {
   } else {
     toast(`Serie ${cur.length}/${ex.sets}: ${wBoth(v.w)} × ${v.r}`);
   }
+}
+
+/* Hitos raros, no diarios (Plan Fierro · Fase 1): confetti completo SOLO en
+   momentos que de verdad son un logro, para que la moneda no se devalúe
+   gastándose en cada serie. Se comparan sobre el estado ANTES de esta
+   sesión: cruzar el umbral, no simplemente estar arriba de él, es lo que
+   hace que sea un hito y no una racha de confetti en cada sesión siguiente. */
+const TONNAGE_MILESTONES = [10000, 25000, 50000, 100000, 250000, 500000, 1000000];
+const SESSION_MILESTONES = [10, 25, 50, 100, 250, 500];
+const STREAK_MILESTONES = [7, 30, 100, 365];
+function crossedMilestone(before, after, list) {
+  return list.find(m => before < m && after >= m) ?? null;
 }
 
 export async function completeSession() {
@@ -464,12 +550,25 @@ export async function completeSession() {
     ...(skipped.length ? { skipped } : {}),
     ...(added.length ? { added } : {}),
   };
+  // Snapshot ANTES de insertar la sesión — los tres milestones (tonelaje,
+  // sesiones, racha) se miden por si el umbral se CRUZA con esta sesión, no
+  // por si ya estabas arriba de él.
+  const tonnageBefore = lifetimeTonnage();
+  const sessionsBefore = S.sessions.length;
+  const streakBefore = currentStreak();
+
   await idb.put('sessions', sess);
   S.sessions.unshift(sess);
   // sessionPRs filtra por start < sess.start, así que la sesión recién
   // insertada se excluye sola: da lo mismo calcular antes o después de guardar.
   const prs = sessionPRs(sess);
   S.draft = null;
+
+  const milestone =
+    crossedMilestone(streakBefore, currentStreak(), STREAK_MILESTONES) && { type: 'racha', value: currentStreak() } ||
+    crossedMilestone(sessionsBefore, S.sessions.length, SESSION_MILESTONES) && { type: 'sesiones', value: S.sessions.length } ||
+    crossedMilestone(tonnageBefore, lifetimeTonnage(), TONNAGE_MILESTONES) && { type: 'tonelaje', value: lifetimeTonnage() } ||
+    null;
 
   // Avanza el puntero al turno siguiente al que se acaba de completar,
   // buscando por id (no por índice guardado): si reordenaste la secuencia
@@ -489,14 +588,14 @@ export async function completeSession() {
   // mientras el usuario todavía miraba racha/resumen, antes de que el PR
   // fuera visible. Se guarda si hubo PR junto con la sesión, y es
   // SessionComplete.jsx quien dispara fireConfetti() al abrir session-view.
-  S.sessionComplete = { ...sess, huboPR: prs.length > 0 };
+  S.sessionComplete = { ...sess, huboPR: prs.length > 0, milestone };
   bump();
 }
 
 /** Abre el borrador de sesión (weekday `wd`, con el orden ya reacomodado si
     hubo drag-to-reorder antes de arrancar). El cronómetro NO arranca acá —
     arranca en startExercise(), cuando de verdad estás en la máquina. */
-export async function startSession(index) {
+export async function startSession(index, precheckAdjust = 0) {
   const slot = S.routine[index];
   if (!slot?.exercises?.length) { toast('Este turno no tiene ejercicios'); return; }
   // Acá y no al terminar el primer descanso: abrir la sesión es un toque de
@@ -508,6 +607,9 @@ export async function startSession(index) {
     // lo que se puede cambiar sin tocar el plan: ver "modificar la sesión
     // mientras entrenás" más arriba
     skipped: [], extraSets: {}, extras: [],
+    // Chequeo de 3 preguntas (Plan Fierro · Fase 3): ±% sobre el peso
+    // sugerido de HOY, ver precheckAdjust() en Hoy.jsx. 0 = sin ajuste.
+    precheckAdjust,
   };
   await saveDraft();
   closeSheet();

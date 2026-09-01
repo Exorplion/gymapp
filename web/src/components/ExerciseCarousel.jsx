@@ -21,10 +21,12 @@
 // — nunca desde el propio onChange de ese input. Ver ExerciseSlide/
 // syncInputs() vs. syncDependents() más abajo, y task-6-report.md ("Fix
 // Round 1") para el bug real que esto corrige.
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { S, wDisplay, wAlt, wStep, openSheet } from '../lib/state.js';
 import { round1, fmtNum, lb2kg } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
+import { suggestedWeight } from '../lib/charts.js';
 import {
   ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
   targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, dropSet, reemplazaA,
@@ -154,6 +156,40 @@ function ExActions({ ex, wd }) {
   );
 }
 
+/** RPE opcional 1-10 por serie (Plan Fierro · Fase 2): el dato que destraba
+    ACWR, la recuperación muscular por esfuerzo y el ajuste de calorías por
+    bandas. Se guarda en v.rpe (leído por saveSet() al confirmar la serie) y
+    se resetea solo después de cada serie — nunca se arrastra a la
+    siguiente para no dar un dato viejo por accidente. Optativo de verdad:
+    no bloquea "Terminé la serie" si no se toca. */
+function RpeSelector({ v }) {
+  const [rpe, setRpe] = useState(v.rpe);
+  return (
+    <div className="mt-2.5">
+      <div className="steplabel">RPE (esfuerzo) · opcional</div>
+      <div className="flex gap-1 mt-1" role="group" aria-label="Esfuerzo percibido, 1 a 10">
+        {Array.from({ length: 10 }, (_, i) => i + 1).map(n => {
+          const on = rpe === n;
+          return (
+            <motion.button
+              key={n}
+              type="button"
+              aria-pressed={on}
+              className={`chip ${on ? 'on' : ''}`}
+              style={{ minWidth: 26, padding: '4px 0', textAlign: 'center', flex: 1 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ duration: 0.12 }}
+              onClick={() => { const next = on ? null : n; v.rpe = next; setRpe(next); }}
+            >
+              {n}
+            </motion.button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ExerciseSlide({ m, wd, started }) {
   const { ex, done, target, skipped, full, open, isNext, waiting } = m;
   const v = ensureVals(ex);
@@ -263,6 +299,20 @@ function ExerciseSlide({ m, wd, started }) {
             {uni && ' por lado'}
           </div>
         )}
+        {(() => {
+          const base = suggestedWeight(ex.name);
+          if (!base || !open) return null;
+          // El ajuste del chequeo de 3 preguntas (Plan Fierro · Fase 3) se
+          // aplica acá — S.draft.precheckAdjust queda en 0 si no se
+          // contestó nada, así que no cambia nada para quien no lo usa.
+          const adj = S.draft?.precheckAdjust || 0;
+          const sug = round1(base * (1 + adj));
+          return (
+            <div className="text-mut text-[12px] mt-1">
+              Sugerido hoy: ~{fmtNum(sug)} kg (80% de tu 1RM estimado{adj !== 0 ? `, ${adj > 0 ? '+' : ''}${Math.round(adj * 100)}% por tu chequeo` : ''})
+            </div>
+          );
+        })()}
         {!last && equipLabel(ex) && (
           <div className="ex-first">
             <div className="t">Primera vez en {equipLabel(ex)}</div>
@@ -344,6 +394,12 @@ function ExerciseSlide({ m, wd, started }) {
                 </div>
               </div>
             </div>
+            {/* key=done.length: saveSet() resetea v.rpe a null después de
+                cada serie, y el estado local de RpeSelector no puede
+                enterarse de una mutación sobre `v`. Remontarlo por serie
+                lo deja siempre en blanco para la que viene — mismo truco
+                que ya usa .ex-done-count más arriba. */}
+            <RpeSelector key={done.length} v={v} />
             <button
               type="button"
               className="btn"

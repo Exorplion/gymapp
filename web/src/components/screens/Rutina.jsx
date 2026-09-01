@@ -13,17 +13,17 @@
 // posición (i) en vez de por el día de la semana que le tocaba.
 import { useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
-import { S, bump, useStore, openSheet } from '../../lib/state.js';
+import { S, bump, useStore, openSheet, changeTab } from '../../lib/state.js';
 import { staggerReveal } from '../../lib/motion.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
 import { equipLabel } from '../../lib/equip.js';
-import { catOf } from '../../lib/muscle.js';
+import { catOf, stalestGroups, daysSinceAll, diasTexto } from '../../lib/muscle.js';
 import { gymEquipFor } from '../../lib/gyms.js';
 import { flipSort } from '../../lib/drag.js';
 import {
   routineStats, routineName,
   enterEditMode, exitEditMode, toggleSlotOpen, addWorkoutDay, removeWorkoutDay, weekdayProjection,
-  deleteExercise, moveEx,
+  deleteExercise, moveEx, deloadSuggestion,
 } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
 import { iconOf } from '../../lib/exicon.js';
@@ -186,6 +186,9 @@ function RutinaView() {
         <button type="button" className="btn glass" onClick={() => openSheet('library')}>Mis rutinas</button>
       </div>
 
+      <DeloadCard />
+      <ReforzarCard />
+
       {/* Cada turno es una tarjeta que se despliega en el lugar, con sus
           ejercicios numerados — en el original abría un sheet aparte. */}
       <div className="day-cards" ref={cardsRef}>
@@ -240,6 +243,42 @@ function RutinaView() {
         })}
       </div>
     </>
+  );
+}
+
+/** Aviso de deload automático (Plan Fierro · Fase 3): 3+ semanas seguidas
+    en el tope tolerable de volumen para un grupo. Es un aviso, no una
+    acción automática — reducir series a mano sigue siendo del usuario. */
+function DeloadCard() {
+  const grupos = deloadSuggestion();
+  if (!grupos.length) return null;
+  return (
+    <div className="card sub mb-[var(--s3)]" style={{ borderColor: 'var(--warn, #FFB454)' }}>
+      <div className="text-[13.5px] text-txt font-medium">⚠ Puede ser momento de una descarga</div>
+      <div className="s text-mut mt-1">
+        {grupos.join(', ')} llevan 3+ semanas en tu volumen máximo recuperable. Una semana con 40-50% menos series por grupo suele restaurar el progreso.
+      </div>
+    </div>
+  );
+}
+
+/** Ejercicios/grupos sin entrenar hace 10+ días (Plan Fierro · Fase 1,
+    "Reforzar: lo que se está enfriando") — stalestGroups() ya alimenta el
+    body-map de Inicio; acá se expone como una acción, no sólo como dato. */
+function ReforzarCard() {
+  const viejos = stalestGroups(10);
+  if (!viejos.length) return null;
+  const dias = daysSinceAll();
+  return (
+    <div className="card sub mb-[var(--s3)]">
+      <div className="sect" style={{ margin: 0, padding: 0 }}>Se está enfriando</div>
+      {viejos.slice(0, 3).map(c => (
+        <div key={c} className="row">
+          <div className="grow"><div className="t">{c}</div><div className="s">{diasTexto(dias[c])} sin entrenar</div></div>
+          <button type="button" className="btn sm ghost w-auto h-8 px-3" onClick={() => changeTab('hoy')}>+ Agregar a hoy</button>
+        </div>
+      ))}
+    </div>
   );
 }
 

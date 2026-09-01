@@ -75,6 +75,12 @@ export async function loadAll() {
   });
   S.ready = true;
   await resolveAutoRest();
+  // TDEE adaptativo continuo (Plan Fierro · Fase 3): se recalcula una vez
+  // por día de app abierta, no en cada render — ver macros.js. Import
+  // dinámico para no crear un ciclo state.js↔macros.js (macros.js ya
+  // importa saveCfg de acá).
+  const { refreshAdaptiveTDEE } = await import('./macros.js');
+  await refreshAdaptiveTDEE();
 }
 
 /** Si el turno pendiente es un descanso y quedó así desde ANTES de hoy,

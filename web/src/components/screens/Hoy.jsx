@@ -391,19 +391,77 @@ function BodyPreview({ cats }) {
   return <div className="block-body"><Silhouette days={days} interactivo={false} /></div>;
 }
 
+/** Las tres preguntas de autorregulación diaria (Plan Fierro · Fase 3, patrón
+    Juggernaut AI/Whoop): sin sensores, 3 taps que ajustan ±10% el peso
+    sugerido del día. Vive fuera del componente, mismo patrón que PW
+    (Preworkout.jsx) — mutable a nivel de módulo, no persistido, se resetea
+    solo al cerrar/reabrir el sheet. */
+const PRECHECK = { sleep: null, sore: null, motivation: null };
+function resetPrecheck() { PRECHECK.sleep = null; PRECHECK.sore = null; PRECHECK.motivation = null; }
+
+/** ±10% si dormiste mal o estás dolorido; sin marcar nada, sin ajuste. Se
+    guarda en S.draft.precheckAdjust al abrir la sesión — ExerciseCarousel lo
+    aplica sobre suggestedWeight(). */
+function precheckAdjust() {
+  let adj = 0;
+  if (PRECHECK.sleep === 'mal') adj -= 0.1;
+  if (PRECHECK.sore) adj -= 0.1;
+  if (PRECHECK.motivation === 'alta' && PRECHECK.sleep !== 'mal' && !PRECHECK.sore) adj += 0.05;
+  return Math.max(-0.15, Math.min(0.05, adj));
+}
+
 /** Sheet informativo previo a abrir la sesión (data-act="sess-start" del
     original) — separado de 'sess-start-go', que en el puerto es
     startSession() (session.js). */
 export function SessStartInfo({ index }) {
+  useStore();
   const day = S.routine[index];
   const n = day?.exercises?.length || 0;
+
+  function chip(field, value, label) {
+    const on = PRECHECK[field] === value;
+    return (
+      <button
+        type="button" className={`chip ${on ? 'on' : ''}`} aria-pressed={on}
+        onClick={() => { PRECHECK[field] = on ? null : value; bump(); }}
+      >
+        {label}
+      </button>
+    );
+  }
+
+  async function abrir() {
+    await startSession(index, precheckAdjust());
+    resetPrecheck();
+  }
+  function cancelar() { resetPrecheck(); closeSheet(); }
+
   return (
     <>
       <h2>Iniciar entrenamiento</h2>
       <div className="sheet-sub">
         Vas a abrir la sesión de <b className="txt-blue">{day?.name || 'Entrenamiento'}</b> · {n} ejercicio{n === 1 ? '' : 's'}.
       </div>
+
       <div className="calcbox">
+        <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 8 }}>¿Cómo dormiste?</div>
+        <div className="chips">{chip('sleep', 'bien', 'Bien')}{chip('sleep', 'regular', 'Regular')}{chip('sleep', 'mal', 'Mal')}</div>
+      </div>
+      <div className="calcbox" style={{ marginTop: 10 }}>
+        <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 8 }}>¿Estás dolorido de algo?</div>
+        <div className="chips">{chip('sore', true, 'Sí')}{chip('sore', false, 'No')}</div>
+      </div>
+      <div className="calcbox" style={{ marginTop: 10 }}>
+        <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 8 }}>¿Motivación de hoy?</div>
+        <div className="chips">{chip('motivation', 'baja', 'Baja')}{chip('motivation', 'normal', 'Normal')}{chip('motivation', 'alta', 'Alta')}</div>
+      </div>
+      {precheckAdjust() !== 0 && (
+        <div className="text-mut text-[12.5px] mt-2">
+          Ajuste sugerido hoy: {precheckAdjust() > 0 ? '+' : ''}{Math.round(precheckAdjust() * 100)}% sobre el peso sugerido
+        </div>
+      )}
+
+      <div className="calcbox" style={{ marginTop: 10 }}>
         <div style={{ fontSize: 14, lineHeight: 1.55 }}>
           ⏱ <b>El cronómetro arranca cuando toques "Iniciar ejercicio"</b>, no ahora. Así el tiempo mide lo que entrenaste y no lo que tardaste en cambiarte, calentar y llegar a la máquina.
         </div>
@@ -414,8 +472,8 @@ export function SessStartInfo({ index }) {
       <div className="calcbox" style={{ marginTop: 10 }}>
         <div style={{ fontSize: 14, lineHeight: 1.55 }}>✓ Vas de a un ejercicio: al llegar a las series objetivo se cierra solo y pasás al siguiente.</div>
       </div>
-      <button type="button" className="btn" style={{ marginTop: 16 }} onClick={() => startSession(index)}>Abrir sesión</button>
-      <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={closeSheet}>Cancelar</button>
+      <button type="button" className="btn" style={{ marginTop: 16 }} onClick={abrir}>Abrir sesión</button>
+      <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={cancelar}>Cancelar</button>
     </>
   );
 }

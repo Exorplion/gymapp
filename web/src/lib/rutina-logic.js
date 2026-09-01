@@ -9,7 +9,8 @@
 import { S, bump, openSheet, closeSheet, saveCfg } from './state.js';
 import { dstr, uid, norm, vibrate, WDS } from './format.js';
 import { idb } from './db.js';
-import { EXCATALOG, catOf } from './muscle.js';
+import { EXCATALOG, catOf, muscleVolume } from './muscle.js';
+import { VOLUME_BANDS } from './charts.js';
 import { exKey } from './equip.js';
 import { toast } from './toast.js';
 
@@ -47,6 +48,33 @@ export function routineStability(slotId) {
     stable++;
   }
   return { sessions: stable, last: sess[0].date };
+}
+
+/* ---------- deload automático (Plan Fierro · Fase 3) ----------
+   Si el volumen semanal de un grupo lleva 3+ semanas en su tope tolerable
+   (MRV, ver VOLUME_BANDS en charts.js), sugerir una semana de descarga.
+   Compara cada una de las últimas 3 semanas por separado (no un promedio
+   de 21 días, que diluiría una sola semana mala) — las tres tienen que
+   estar en o sobre MRV para que dispare. */
+export function deloadSuggestion() {
+  const semanas = [0, 1, 2].map(i => muscleVolume7For(i));
+  const grupos = new Set(semanas.flatMap(s => Object.keys(s)));
+  const excedidos = [...grupos].filter(cat => {
+    const mrv = (VOLUME_BANDS[cat] || { mrv: 22 }).mrv;
+    return semanas.every(s => (s[cat] || 0) >= mrv);
+  });
+  return excedidos;
+}
+/** Series por grupo en la semana que terminó hace `weeksAgo` semanas
+    (0 = los últimos 7 días). muscleVolume(days) sólo sabe contar "los
+    últimos N días desde hoy", así que se resta contando por diferencia. */
+function muscleVolume7For(weeksAgo) {
+  if (weeksAgo === 0) return muscleVolume(7);
+  const wide = muscleVolume(7 * (weeksAgo + 1));
+  const narrow = muscleVolume(7 * weeksAgo);
+  const out = {};
+  for (const cat of Object.keys(wide)) out[cat] = wide[cat] - (narrow[cat] || 0);
+  return out;
 }
 
 /* ================= RUTINA ================= */

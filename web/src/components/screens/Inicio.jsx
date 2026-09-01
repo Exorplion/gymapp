@@ -24,8 +24,8 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { S, useStore, bump, openSheet, changeTab } from '../../lib/state.js';
-import { WDS, MO, dstr, fmtD } from '../../lib/format.js';
-import { pendingSlot, sessionForSlot } from '../../lib/session.js';
+import { WDS, MO, dstr, fmtD, fmtNum, round1 } from '../../lib/format.js';
+import { pendingSlot, sessionForSlot, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
 import { daysSinceAll, stalestGroups } from '../../lib/muscle.js';
 import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
@@ -123,6 +123,8 @@ export default function Inicio() {
 
       {cta}
 
+      <MemoriaLine slot={slot} />
+
       <div className="ini-grid" ref={gridRef}>
         <BodyTile dias={dias} viejos={viejos} />
         <RachaTile racha={racha} />
@@ -163,6 +165,34 @@ function SeqStrip() {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** Narrativa temporal de la portada (Plan Fierro · Fase 1): "hace 1 año
+    hacías esto" — recall automático sin que nadie lo pida — y un contador
+    silencioso de tonelaje de por vida. Ningún dato nuevo: ambos leen
+    S.sessions, que ya existe. */
+function MemoriaLine({ slot }) {
+  const tonelaje = lifetimeTonnage();
+  let recall = null;
+  for (const ex of slot?.exercises || []) {
+    const r = recallYearAgo(ex.name);
+    if (r) { recall = { name: ex.name, ...r }; break; }
+  }
+  if (!recall && !tonelaje) return null;
+  return (
+    <div className="text-mut text-[12px] mt-2 leading-snug">
+      {recall && (
+        <div>Hace 1 año: {recall.name} {recall.sets.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg</div>
+      )}
+      {tonelaje > 0 && (
+        <div>
+          {fmtNum(tonelaje)} kg movidos en total
+          {' · '}
+          <button type="button" className="text-blue2 font-medium" onClick={() => openSheet('year-recap')}>Tu Año Fierro →</button>
+        </div>
+      )}
     </div>
   );
 }

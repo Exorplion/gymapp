@@ -43,6 +43,7 @@ import BodyMap from './components/sheets/BodyMap.jsx';
 import Gyms from './components/sheets/Gyms.jsx';
 import GymEquip from './components/sheets/GymEquip.jsx';
 import RoutineWizard from './components/sheets/RoutineWizard.jsx';
+import YearRecap from './components/sheets/YearRecap.jsx';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
 // globales en index.html). No es uno de los 5 sheets nombrados en el plan de
@@ -101,6 +102,7 @@ function SheetContent({ sheet }) {
     case 'body-map': return <BodyMap {...sheet.props} />;
     case 'gyms': return <Gyms {...sheet.props} />;
     case 'gym-equip': return <GymEquip {...sheet.props} />;
+    case 'year-recap': return <YearRecap {...sheet.props} />;
     default: return null;
   }
 }

@@ -16,7 +16,8 @@ import { fmtD, fmtDFull, fmtNum, kg2lb, round1 } from '../../lib/format.js';
 import { muscleVolume } from '../../lib/muscle.js';
 import { sessionsSince, routineStability } from '../../lib/rutina-logic.js';
 import { groupSessionsByWeek } from '../../lib/session.js';
-import { weeklyAvg, exerciseSeries, filterByRange, strengthReadout, project } from '../../lib/charts.js';
+import { weeklyAvg, exerciseSeries, filterByRange, strengthReadout, project, volumeBand, VOLUME_BANDS, strengthTier, acwr } from '../../lib/charts.js';
+import { profileWeight } from '../../lib/macros.js';
 import Chart from '../Chart.jsx';
 import SessionCard from '../SessionCard.jsx';
 import { Info } from '../Icon.jsx';
@@ -49,6 +50,10 @@ export default function Progreso() {
   const headNum = wk && wk.curAvg != null ? wk.curAvg : (lastW ? lastW.weight : null);
   const headLabel = wk && wk.curAvg != null ? `Peso · promedio ${wk.n} día${wk.n === 1 ? '' : 's'}` : 'Peso corporal';
   const wpts = filterByRange(weights.map(b => ({ date: b.date, y: round1(b.weight) })), S.progRange);
+  // Composición corporal (Plan Fierro · Fase 3): masa magra = peso ×
+  // (1-%grasa), a partir del último registro con %grasa — separa "bajar de
+  // peso" de "recomponer" sin inventar un dato que falta.
+  const lastBf = [...S.body].reverse().find(b => b.bodyfat != null);
 
   const tab = S.progTab;
   const exPts = (tab === 'carga' && S.progEx)
@@ -107,6 +112,11 @@ export default function Progreso() {
           ))}
         </div>
         <div className="mt-3"><Chart id="chartWeight" pts={wpts} opts={{ unit: 'kg' }} /></div>
+        {lastBf && (
+          <div className="text-mut text-[12.5px] mt-1.5">
+            {lastBf.bodyfat}% grasa · masa magra estimada {fmtNum(round1(lastBf.weight * (1 - lastBf.bodyfat / 100)))} kg
+          </div>
+        )}
         {Object.keys(lastVals).length > 0 && (
           <div className="stats" style={{ '--n': 4 }}>
             {Object.entries(lastVals).map(([k, v]) => (
@@ -266,28 +276,46 @@ function StrengthTab() {
   );
 }
 
+const BAND_COLOR = { bajo: 'var(--text-mut, #8B97B4)', efectivo: 'var(--ok, #2EE6A8)', 'cerca-max': 'var(--warn, #FFB454)', excedido: 'var(--danger, #FF5470)' };
+const BAND_LABEL = { bajo: 'Bajo mínimo', efectivo: 'Rango efectivo', 'cerca-max': 'Cerca del máximo', excedido: 'Excedido' };
+
 function VolumeTab() {
   const mv = muscleVolume(7);
   const cats = Object.entries(mv).sort((a, b) => b[1] - a[1]);
   if (!cats.length) return null;
-  const maxv = cats[0][1];
+  const risk = acwr();
   return (
     <>
+      {risk?.risk && (
+        <div className="card sub" style={{ borderColor: 'var(--warn, #FFB454)' }}>
+          <div className="text-[13.5px] text-txt font-medium">⚠ Volumen alto esta semana</div>
+          <div className="s text-mut mt-1">Tonelaje 7 días ({fmtNum(risk.acute)} kg) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
+        </div>
+      )}
       <div className="sect">Volumen por grupo · 7 días</div>
       <div className="card">
-        {cats.map(([c, n]) => (
-          <div key={c} className="mb-[var(--s3)]">
-            <div className="flex justify-between text-[length:var(--t-sm)] mb-[var(--s1)]"><span>{c}</span><span className="num">{n} series</span></div>
-            <div className="pbar"><i style={{ width: `${Math.round(n / maxv * 100)}%` }}></i></div>
-          </div>
-        ))}
-        <div className="text-mut text-[length:var(--t-sm)] leading-normal">Series registradas por grupo muscular. Como referencia, 10-20 series semanales por grupo es el rango habitual para ganar masa.</div>
+        {cats.map(([c, n]) => {
+          const band = volumeBand(c, n);
+          const b = VOLUME_BANDS[c];
+          const pct = b ? Math.min(100, Math.round((n / (b.mrv * 1.15)) * 100)) : Math.round(n / cats[0][1] * 100);
+          return (
+            <div key={c} className="mb-[var(--s3)]">
+              <div className="flex justify-between text-[length:var(--t-sm)] mb-[var(--s1)]">
+                <span>{c}</span>
+                <span className="num">{n} series · <span style={{ color: BAND_COLOR[band] }}>{BAND_LABEL[band]}</span></span>
+              </div>
+              <div className="pbar"><i style={{ width: `${pct}%`, background: BAND_COLOR[band] }}></i></div>
+            </div>
+          );
+        })}
+        <div className="text-mut text-[length:var(--t-sm)] leading-normal">Bandas de Renaissance Periodization (Mike Israetel): mínimo efectivo, rango que hace crecer y máximo recuperable — varían por grupo.</div>
       </div>
     </>
   );
 }
 
 function PRsList({ exNames }) {
+  const bw = profileWeight();
   const prs = exNames.map(n => {
     let maxW = 0, bestVol = 0, bestSet = null, dV = '';
     [...S.sessions].forEach(s => (s.entries || []).forEach(e => {
@@ -297,7 +325,7 @@ function PRsList({ exNames }) {
         if (st.w * st.r > bestVol) { bestVol = st.w * st.r; bestSet = st; dV = s.date; }
       });
     }));
-    return { n, maxW, bestSet, dV };
+    return { n, maxW, bestSet, dV, tier: strengthTier(n, maxW, bw) };
   }).filter(p => p.bestSet).sort((a, b) => b.maxW - a.maxW);
   const listRef = useRef(null);
   // Reveal escalonado de la lista de PRs al montar/cambiar de datos.
@@ -310,7 +338,8 @@ function PRsList({ exNames }) {
       {prs.map(p => (
         <div key={p.n} className="row">
           <div className="grow"><div className="t">{p.n}</div>
-            <div className="s">Mejor serie {fmtNum(round1(p.bestSet.w))} × {p.bestSet.r} · {fmtD(p.dV)}</div></div>
+            <div className="s">Mejor serie {fmtNum(round1(p.bestSet.w))} × {p.bestSet.r} · {fmtD(p.dV)}</div>
+            {p.tier && <div className="s text-blue2">{p.tier.label} · {p.tier.ratio}× tu peso corporal</div>}</div>
           <div className="text-right flex-none">
             <div className="pr-w">{fmtNum(round1(p.maxW))}<span className="text-[length:var(--t-sm)] text-mut"> kg</span></div>
             <div className="text-mut text-[length:var(--t-micro)]">{fmtNum(kg2lb(p.maxW))} lb</div>
