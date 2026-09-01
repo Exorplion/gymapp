@@ -9,7 +9,7 @@
 // mapa de recuperación con el que ya comparte los mismos nueve grupos.
 import { useEffect, useRef } from 'react';
 import { S, closeSheet, changeTab } from '../../lib/state.js';
-import { daysSinceAll, stalestGroups, muscleVolume, uncategorized } from '../../lib/muscle.js';
+import { daysSinceAll, stalestGroups, muscleVolume, uncategorized, recoveryPct } from '../../lib/muscle.js';
 import { staggerReveal } from '../../lib/motion.js';
 import Silhouette from '../Silhouette.jsx';
 
@@ -104,9 +104,14 @@ function SinGrupoAviso() {
 function StaleLine({ grupos, dias }) {
   const top = grupos.slice(0, 2);
   const d = dias[top[0]];
+  // recuperación estimada (Plan Fierro · Fase 2): con RPE registrado en esas
+  // series pesa el esfuerzo, no sólo los días — recoveryPct() ya hace esa
+  // cuenta; acá sólo se muestra si es un dato completo (100% = "listo").
+  const rec = recoveryPct(top[0]);
   return (
     <div className="mt-3 rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 py-2.5 text-[13.5px] text-mut">
       ⌁ {top.join(' y ')} hace {d} día{d === 1 ? '' : 's'}
+      {rec < 100 && <span> · recuperación estimada {rec}%</span>}
     </div>
   );
 }

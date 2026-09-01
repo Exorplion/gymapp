@@ -16,7 +16,7 @@ import { fmtD, fmtDFull, fmtNum, kg2lb, round1 } from '../../lib/format.js';
 import { muscleVolume } from '../../lib/muscle.js';
 import { sessionsSince, routineStability } from '../../lib/rutina-logic.js';
 import { groupSessionsByWeek } from '../../lib/session.js';
-import { weeklyAvg, exerciseSeries, filterByRange, strengthReadout, project, volumeBand, VOLUME_BANDS, strengthTier } from '../../lib/charts.js';
+import { weeklyAvg, exerciseSeries, filterByRange, strengthReadout, project, volumeBand, VOLUME_BANDS, strengthTier, acwr } from '../../lib/charts.js';
 import { profileWeight } from '../../lib/macros.js';
 import Chart from '../Chart.jsx';
 import SessionCard from '../SessionCard.jsx';
@@ -274,8 +274,15 @@ function VolumeTab() {
   const mv = muscleVolume(7);
   const cats = Object.entries(mv).sort((a, b) => b[1] - a[1]);
   if (!cats.length) return null;
+  const risk = acwr();
   return (
     <>
+      {risk?.risk && (
+        <div className="card sub" style={{ borderColor: 'var(--warn, #FFB454)' }}>
+          <div className="text-[13.5px] text-txt font-medium">⚠ Volumen alto esta semana</div>
+          <div className="s text-mut mt-1">Tonelaje 7 días ({fmtNum(risk.acute)} kg) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
+        </div>
+      )}
       <div className="sect">Volumen por grupo · 7 días</div>
       <div className="card">
         {cats.map(([c, n]) => {

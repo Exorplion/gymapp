@@ -21,7 +21,8 @@
 // — nunca desde el propio onChange de ese input. Ver ExerciseSlide/
 // syncInputs() vs. syncDependents() más abajo, y task-6-report.md ("Fix
 // Round 1") para el bug real que esto corrige.
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { S, wDisplay, wAlt, wStep, openSheet } from '../lib/state.js';
 import { round1, fmtNum, lb2kg } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
@@ -150,6 +151,40 @@ function ExActions({ ex, wd }) {
       <button type="button" onClick={() => addExtraSet(ex.id)}>+ Serie</button>
       <button type="button" onClick={() => openSheet('ex-swap', { wd, exId: ex.id })}><Swap /> Cambiar</button>
       <button type="button" onClick={confirmarSalto}><Skip /> Saltar</button>
+    </div>
+  );
+}
+
+/** RPE opcional 1-10 por serie (Plan Fierro · Fase 2): el dato que destraba
+    ACWR, la recuperación muscular por esfuerzo y el ajuste de calorías por
+    bandas. Se guarda en v.rpe (leído por saveSet() al confirmar la serie) y
+    se resetea solo después de cada serie — nunca se arrastra a la
+    siguiente para no dar un dato viejo por accidente. Optativo de verdad:
+    no bloquea "Terminé la serie" si no se toca. */
+function RpeSelector({ v }) {
+  const [rpe, setRpe] = useState(v.rpe);
+  return (
+    <div className="mt-2.5">
+      <div className="steplabel">RPE (esfuerzo) · opcional</div>
+      <div className="flex gap-1 mt-1" role="group" aria-label="Esfuerzo percibido, 1 a 10">
+        {Array.from({ length: 10 }, (_, i) => i + 1).map(n => {
+          const on = rpe === n;
+          return (
+            <motion.button
+              key={n}
+              type="button"
+              aria-pressed={on}
+              className={`chip ${on ? 'on' : ''}`}
+              style={{ minWidth: 26, padding: '4px 0', textAlign: 'center', flex: 1 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ duration: 0.12 }}
+              onClick={() => { const next = on ? null : n; v.rpe = next; setRpe(next); }}
+            >
+              {n}
+            </motion.button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -344,6 +379,7 @@ function ExerciseSlide({ m, wd, started }) {
                 </div>
               </div>
             </div>
+            <RpeSelector v={v} />
             <button
               type="button"
               className="btn"

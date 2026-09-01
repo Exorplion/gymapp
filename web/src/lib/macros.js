@@ -47,3 +47,43 @@ export function applyComputedGoals() {
   S.cfg.goals = { kcal: m.target, p: m.prot, c: m.carbs, f: m.fat };
   return true;
 }
+
+/* ---------- ajuste semanal por bandas (Plan Fierro · Fase 2) ----------
+   MVP del TDEE adaptativo: reglas discretas en vez de una regresión sobre
+   peso×calorías. Compara el cambio de peso semanal real contra el ritmo
+   esperado por el objetivo (GOALDELTA/7700 kcal por kg) y sugiere ±100kcal
+   si el ritmo real se aleja del esperado — "en rango" no toca nada. */
+const KCAL_PER_KG = 7700;
+
+/** Kg/semana esperados según el objetivo actual (negativo = bajar de peso). */
+export function expectedWeeklyRate() {
+  const p = S.cfg.profile;
+  const delta = GOALDELTA[p?.goal] ?? 0;
+  return (delta * 7) / KCAL_PER_KG;
+}
+
+/** Compara el cambio real de peso (últimos `weeks` × 7 días, por defecto 2)
+    contra el ritmo esperado del objetivo, y sugiere un ajuste de calorías
+    por bandas. null si no hay suficiente historial de peso todavía —
+    hacen falta al menos dos registros separados por varios días para que
+    "ritmo semanal" signifique algo. */
+export function weeklyBandAdjustment(weeks = 2) {
+  const ws = S.body.filter(b => b.weight != null);
+  if (ws.length < 2) return null;
+  const days = weeks * 7;
+  const end = ws[ws.length - 1];
+  const cutoff = +new Date(end.date + 'T12:00:00') - days * 86400000;
+  const start = ws.find(b => +new Date(b.date + 'T12:00:00') >= cutoff);
+  if (!start || start === end) return null;
+  const spanDays = (+new Date(end.date + 'T12:00:00') - +new Date(start.date + 'T12:00:00')) / 86400000;
+  if (spanDays < 5) return null; // ventana demasiado corta para que un ritmo semanal signifique algo
+  const actualWeekly = ((end.weight - start.weight) / spanDays) * 7;
+  const expected = expectedWeeklyRate();
+  // Zona muerta de ±0.1 kg/sem: el peso fluctúa por agua/glucógeno, así que
+  // sin margen el ajuste oscilaría de un día para el otro sin que cambiara nada real.
+  const diff = actualWeekly - expected;
+  let adjust = 0;
+  if (diff > 0.1) adjust = -100;       // bajando más lento (o subiendo más) de lo esperado → recortar
+  else if (diff < -0.1) adjust = 100;  // bajando más rápido (o subiendo menos) de lo esperado → sumar
+  return { actualWeekly: Math.round(actualWeekly * 100) / 100, expected: Math.round(expected * 100) / 100, adjust };
+}

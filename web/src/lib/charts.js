@@ -154,6 +154,28 @@ export function strengthTier(name, prWeight, bodyWeight) {
   return { label: TIER_LABELS[tier], ratio: Math.round(ratio * 100) / 100 };
 }
 
+/* ---------- ACWR: riesgo por salto brusco de volumen (Plan Fierro · Fase 2) ----------
+   Acute:Chronic Workload Ratio (Gabbett et al.): tonelaje de los últimos 7
+   días contra el promedio semanal de las últimas 4 semanas. ≥1.5 es la zona
+   de riesgo de sobreentrenamiento validada en literatura de prevención de
+   lesiones deportivas. */
+function tonnageInRange(fromMs, toMs) {
+  let kg = 0;
+  for (const s of S.sessions) {
+    if (s.start < fromMs || s.start >= toMs) continue;
+    for (const e of s.entries || []) for (const st of e.sets || []) kg += (st.w || 0) * (st.r || 0);
+  }
+  return kg;
+}
+/** null si todavía no hay 4 semanas de historial — nada con qué comparar. */
+export function acwr() {
+  const now = Date.now();
+  const acute = tonnageInRange(now - 7 * 86400000, now);
+  const chronicAvg = tonnageInRange(now - 28 * 86400000, now) / 4;
+  if (!chronicAvg) return null;
+  return { acute: Math.round(acute), chronicAvg: Math.round(chronicAvg), ratio: Math.round((acute / chronicAvg) * 100) / 100, risk: acute / chronicAvg >= 1.5 };
+}
+
 /* ================= gráfico canvas ================= */
 export const CHART_SEL = new WeakMap();
 export function drawChart(cv, pts, opts = {}) {

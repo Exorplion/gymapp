@@ -52,9 +52,12 @@ export async function toggleUnilateral(exId) {
 export function ensureVals(ex) {
   if (!S.hoyVals[ex.id]) {
     const last = lastDataFor(ex);
-    if (last) { const ls = last[last.length - 1]; S.hoyVals[ex.id] = { w: ls.w, r: ls.r }; }
-    else S.hoyVals[ex.id] = { w: 20, r: ex.reps || 10 };
+    if (last) { const ls = last[last.length - 1]; S.hoyVals[ex.id] = { w: ls.w, r: ls.r, rpe: null }; }
+    else S.hoyVals[ex.id] = { w: 20, r: ex.reps || 10, rpe: null };
   }
+  // `rpe` puede faltar en un S.hoyVals guardado antes de que este campo
+  // existiera — se completa acá en vez de forzar una migración de datos.
+  if (S.hoyVals[ex.id].rpe === undefined) S.hoyVals[ex.id].rpe = null;
   return S.hoyVals[ex.id];
 }
 
@@ -441,7 +444,11 @@ export async function saveSet(exId) {
      no tendría efecto. */
   const techo = targetSets(ex);
   if (cur.length >= techo) { toast(`${ex.name} ya está completo (${techo} series)`); return; }
-  cur.push({ w: round1(v.w), r: v.r, t: Date.now() });
+  // rpe (1-10, esfuerzo percibido) es opcional — v.rpe queda en null si no
+  // se tocó el selector. Es el campo que destraba ACWR y la recuperación
+  // muscular por esfuerzo (Plan Fierro · Fase 2).
+  cur.push({ w: round1(v.w), r: v.r, t: Date.now(), rpe: v.rpe ?? null });
+  v.rpe = null; // cada serie arranca sin RPE elegido; no se arrastra de la anterior
   if (!S.draft.start) S.draft.start = Date.now();
   const finished = cur.length >= techo;
   const exs = sessionExs(S.routine.findIndex(s => s.id === S.draft.slotId));

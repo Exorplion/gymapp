@@ -184,6 +184,33 @@ export function daysSinceAll() {
   return out;
 }
 
+/** % de recuperación estimado por grupo (0-100), a partir de los días desde
+    el último entreno Y el esfuerzo real (RPE promedio de esa última
+    sesión) — no sólo días, como daysSinceGroup(). Un RPE alto (serie hecha
+    al fallo o cerca) tarda más en recuperarse que uno bajo al mismo número
+    de días. Sin RPE registrado esa sesión, usa una recuperación "media" de
+    referencia (2 días) — sigue siendo mejor que ignorar el dato cuando SÍ
+    está.
+
+    100 = sin historial (nada que recuperar). Es una estimación, no una
+    medición fisiológica: por eso "estimado" en el nombre y no
+    "recuperación" a secas. */
+export function recoveryPct(cat) {
+  const dias = daysSinceGroup(cat);
+  if (dias === null) return 100;
+  let avgRpe = null;
+  for (const s of S.sessions) {
+    if (!(s.entries || []).some(e => catOf(e) === cat && e.sets?.length)) continue;
+    const rpes = (s.entries || [])
+      .filter(e => catOf(e) === cat)
+      .flatMap(e => (e.sets || []).map(st => st.rpe).filter(v => v != null));
+    if (rpes.length) avgRpe = rpes.reduce((a, b) => a + b, 0) / rpes.length;
+    break; // la sesión más reciente que tocó el grupo, tenga RPE o no
+  }
+  const diasParaRecuperar = avgRpe != null ? 1 + (avgRpe / 10) * 2 : 2;
+  return Math.min(100, Math.round((dias / diasParaRecuperar) * 100));
+}
+
 /** Los grupos que llevan `min` días o más sin entrenar, del más viejo al más
     nuevo. Sólo los que TIENEN historial. */
 export function stalestGroups(min = 7) {

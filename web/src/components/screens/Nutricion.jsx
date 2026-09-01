@@ -20,7 +20,7 @@
 // find() y delega en logMeal().
 import { S, useStore, bump, openSheet } from '../../lib/state.js';
 import { dstr, fmtDFull, fmtNum, round1 } from '../../lib/format.js';
-import { computeMacros, GOAL_LABEL } from '../../lib/macros.js';
+import { computeMacros, GOAL_LABEL, weeklyBandAdjustment } from '../../lib/macros.js';
 import { mealsOf, macroCls, nutriFeedback, frequentMeals, mealsBySlot, slotForTime } from '../../lib/meals.js';
 import { idb } from '../../lib/db.js';
 import { logMeal, addMealFromFood } from '../sheets/MealForm.jsx';
@@ -73,6 +73,7 @@ export default function Nutricion() {
   const kc = Math.round(tot.kcal), tp = Math.round(tot.p), tc = Math.round(tot.c), tf = Math.round(tot.f);
   const kcalOff = KCAL_CIRC * (1 - Math.min(1, g.kcal ? kc / g.kcal : 0));
   const freq = frequentMeals();
+  const band = m ? weeklyBandAdjustment() : null;
 
   // Cuenta ascendente del número grande de kcal consumidas al cambiar de
   // día/comida — el anillo ya anima vía strokeDashoffset (CSS transition),
@@ -166,6 +167,17 @@ export default function Nutricion() {
         </div>
         <div className="nutri-fb" dangerouslySetInnerHTML={{ __html: nutriFeedback(kc, tp, tf, g, m) }} />
       </div>
+
+      {band?.adjust !== 0 && band && (
+        <div className="card sub">
+          <div className="text-[13.5px] text-txt font-medium">
+            {band.adjust > 0 ? '↑' : '↓'} Ajuste sugerido: {band.adjust > 0 ? '+' : ''}{band.adjust} kcal
+          </div>
+          <div className="s text-mut mt-1">
+            Tu ritmo real es {band.actualWeekly > 0 ? '+' : ''}{band.actualWeekly} kg/sem vs. {band.expected > 0 ? '+' : ''}{band.expected} kg/sem esperado para {GOAL_LABEL[S.cfg.profile.goal]?.toLowerCase()}.
+          </div>
+        </div>
+      )}
 
       {freq.length > 0 && (
         <>
