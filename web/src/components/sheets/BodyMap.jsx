@@ -30,7 +30,7 @@ export default function BodyMap() {
       <h2 className="font-cond text-2xl font-bold text-txt">Tu cuerpo</h2>
       <div className="mt-1 mb-4 text-[13px] text-mut">Tocá un músculo para ver cuándo lo entrenaste.</div>
 
-      <div className="flex justify-center py-2">
+      <div className="flex h-[min(52vh,420px)] justify-center my-1.5">
         <Silhouette days={dias} />
       </div>
 
