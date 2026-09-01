@@ -2,16 +2,23 @@
 // distintas en el original (dos llamadas a openSheet con HTML distinto) que
 // acá se unifican en un componente con dos modos, porque el plan de Task 5
 // sólo prevé un archivo Library.jsx para ambas.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { S, openSheet, closeSheet } from '../../lib/state.js';
 import { fmtD } from '../../lib/format.js';
 import { TEMPLATES, applyTemplate } from '../../lib/templates.js';
 import {
   routineStats, routineName, applyLibRoutine, deleteLibRoutine, saveCurrentAsLib, startBlank,
 } from '../../lib/rutina-logic.js';
+import { bloomOpen, staggerReveal } from '../../lib/motion.js';
 
 function LibraryList() {
   const st = routineStats();
+  const tmplRef = useRef(null);
+
+  useEffect(() => {
+    if (tmplRef.current) staggerReveal(tmplRef.current.children);
+  }, []);
+
   return (
     <>
       <h2>Mis rutinas</h2>
@@ -65,6 +72,7 @@ function LibraryList() {
       <div className="txt-mut" style={{ fontSize: 13, margin: '-4px 0 12px' }}>
         Reemplazan tu split actual. Después las editás a gusto.
       </div>
+      <div ref={tmplRef}>
       {TEMPLATES.map(t => (
         <div
           key={t.id}
@@ -83,6 +91,7 @@ function LibraryList() {
           </div>
         </div>
       ))}
+      </div>
       <div className="card" style={{ borderStyle: 'dashed', borderColor: 'var(--line2)' }}>
         <div className="cond" style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Personalizada</div>
         <div className="txt-mut" style={{ fontSize: 13, marginBottom: 12 }}>
@@ -97,9 +106,12 @@ function LibraryList() {
 function LibrarySave({ initialName }) {
   const [name, setName] = useState(initialName ?? (routineName() === 'Rutina personalizada' ? '' : routineName()));
   const inputRef = useRef(null);
+  const rootRef = useRef(null);
+
+  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
 
   return (
-    <>
+    <div ref={rootRef}>
       <h2>Guardar rutina</h2>
       <div className="field">
         <label htmlFor="lib-nombre">Nombre</label>
@@ -109,7 +121,7 @@ function LibrarySave({ initialName }) {
         <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={closeSheet}>Cancelar</button>
         <button type="button" className="btn sm" style={{ flex: 1 }} onClick={() => saveCurrentAsLib(name)}>Guardar</button>
       </div>
-    </>
+    </div>
   );
 }
 

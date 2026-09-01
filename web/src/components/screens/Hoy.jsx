@@ -18,6 +18,8 @@
 // dos vistas de una sesión — la del historial y la del cierre.
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { staggerReveal, bloomOpen } from '../../lib/motion.js';
+import { cn } from '../../lib/utils.js';
 import { S, useStore, bump, openSheet, closeSheet, saveDraft, changeTab } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS } from '../../lib/format.js';
 import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession, moveBlock } from '../../lib/session.js';
@@ -73,6 +75,12 @@ export default function Hoy() {
   const terminarCalentamiento = () => cerrarCalentamiento(true);
   const saltarCalentamiento = () => cerrarCalentamiento(false);
 
+  // Bloom-open sutil para la tarjeta vacía "sin ejercicios hoy" al montar.
+  const emptyCardRef = useRef(null);
+  useEffect(() => {
+    if (emptyCardRef.current) bloomOpen(emptyCardRef.current);
+  }, [emptyCardRef.current]);
+
   return (
     <>
       {/* Hoy dejó de ser pestaña: se entra desde Inicio, así que necesita su
@@ -95,7 +103,7 @@ export default function Hoy() {
       {!active && exs.length > 0 && (
         <button type="button" className="pw-btn" onClick={() => openSheet('preworkout')}>
           <Bolt size={20} className="pwi" /><span className="pwt">Pre-workout</span>
-          <span className="txt-mut" style={{ fontSize: 12.5, fontWeight: 500 }}>fluidos · carbos · cafeína</span>
+          <span className="text-mut text-[12.5px] font-medium">fluidos · carbos · cafeína</span>
           <span className="chev">›</span>
         </button>
       )}
@@ -103,13 +111,12 @@ export default function Hoy() {
       {!active && SR_CLASS && <VoiceLogButton />}
 
       {!exs.length ? (
-        <div className="card"><div className="empty">
+        <div className="card" ref={emptyCardRef}><div className="empty">
           <HoySinPlan className="big" />
           <p>Este turno todavía no tiene ejercicios.<br />Configuralo en la pestaña Rutina.</p>
           <button
             type="button"
-            className="btn sm ghost"
-            style={{ maxWidth: 240, margin: '0 auto' }}
+            className="btn sm ghost max-w-[240px] mx-auto"
             onClick={() => changeTab('rutina')}
           >
             Configurar rutina
@@ -122,7 +129,7 @@ export default function Hoy() {
         <>
           <BlockList index={index} exs={exs} />
           {exs.length > 1 && (
-            <button type="button" className="btn sm ghost" style={{ marginBottom: 'var(--s3)' }} onClick={() => openSheet('reorder-hoy')}>
+            <button type="button" className="btn sm ghost mb-[var(--s3)]" onClick={() => openSheet('reorder-hoy')}>
               ↕ Reordenar dentro de un bloque
             </button>
           )}
@@ -141,10 +148,10 @@ export default function Hoy() {
             />
           )}
           <ExerciseCarousel exs={exs} wd={index} active={active} started={started} curId={curId} nextEx={nextEx} />
-          <div style={{ display: 'flex', gap: 8, marginTop: 'var(--s2)' }}>
+          <div className="flex gap-2 mt-[var(--s2)]">
             {/* Decidiste hacer algo que no estaba en el plan. Vale sólo para hoy;
                 al cerrar la sesión se ofrece dejarlo fijo. */}
-            <button type="button" className="btn sm ghost" style={{ flex: 2 }} onClick={() => openSheet('ex-swap', { wd: index })}>
+            <button type="button" className="btn sm ghost flex-[2]" onClick={() => openSheet('ex-swap', { wd: index })}>
               + Agregar ejercicio
             </button>
             {/* Antes sólo se podía reacomodar el orden ANTES de arrancar
@@ -152,7 +159,7 @@ export default function Hoy() {
                 pegado al final sin forma de moverlo. commitSort() ya escribe en
                 S.draft.order cuando hay sesión abierta (setExOrder, session.js),
                 así que ReorderHoy funciona igual acá que antes de arrancar. */}
-            <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={() => openSheet('reorder-hoy')}>
+            <button type="button" className="btn sm ghost flex-1" onClick={() => openSheet('reorder-hoy')}>
               ↕ Reordenar
             </button>
           </div>
@@ -184,16 +191,16 @@ function ActiveHero({ day, exs, started, allDone, activeEx }) {
   const cat = activeEx ? catOf(activeEx) : null;
   return (
     <div className="card hero">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{
-          width: 9, height: 9, borderRadius: 5,
-          background: started ? 'var(--ok)' : 'var(--warn)',
-          boxShadow: `0 0 12px ${started ? 'var(--ok)' : 'var(--warn)'}`,
-          animation: 'pulse 1.5s infinite',
-        }}></span>
-        <div className="grow" style={{ flex: 1 }}>
-          <div className="cond" style={{ fontSize: 20, fontWeight: 700 }}>{day?.name || 'Entrenamiento'}</div>
-          <div className="txt-mut" style={{ fontSize: 13 }}>
+      <div className="flex items-center gap-2.5">
+        <span
+          className={cn(
+            'w-[9px] h-[9px] rounded-[5px] animate-pulse',
+            started ? 'bg-ok shadow-[0_0_12px_var(--ok)]' : 'bg-warn shadow-[0_0_12px_var(--warn)]',
+          )}
+        ></span>
+        <div className="grow flex-1">
+          <div className="cond text-xl font-bold">{day?.name || 'Entrenamiento'}</div>
+          <div className="text-mut text-[13px]">
             {started
               ? <><ElapsedTimer start={S.draft.start} /> · {doneEx}/{exs.length - nSkip} ejercicios · {nsets} serie{nsets === 1 ? '' : 's'}{nSkip > 0 ? ` · ${nSkip} saltado${nSkip === 1 ? '' : 's'}` : ''}</>
               : 'Sesión abierta · el reloj arranca cuando inicies el primer ejercicio'}
@@ -206,16 +213,16 @@ function ActiveHero({ day, exs, started, allDone, activeEx }) {
         {cat && <div className="active-body-mini"><Silhouette days={{ [cat]: 0 }} interactivo={false} /></div>}
       </div>
       {allDone && (
-        <div className="calcbox" style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 14, lineHeight: 1.5 }}>
+        <div className="calcbox mt-3">
+          <div className="text-sm leading-normal">
             🎉 Terminaste los {exs.length - nSkip} ejercicios que hiciste hoy.
             {nSkip > 0 && ` Saltaste ${nSkip}.`} Cerrá la sesión para guardarla.
           </div>
         </div>
       )}
-      <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-        <button type="button" className="btn sm ok" style={{ flex: 2 }} onClick={confirmSessDone}>✓ Completar sesión</button>
-        <button type="button" className="btn sm dim" style={{ flex: 1 }} onClick={confirmSessDiscard}>Descartar</button>
+      <div className="flex gap-2.5 mt-3.5">
+        <button type="button" className="btn sm ok flex-[2]" onClick={confirmSessDone}>✓ Completar sesión</button>
+        <button type="button" className="btn sm dim flex-1" onClick={confirmSessDiscard}>Descartar</button>
       </div>
     </div>
   );
@@ -248,7 +255,7 @@ function RestHero() {
     <div className="card hero">
       <div className="eyebrow">Hoy</div>
       <div className="hero-day">Descanso</div>
-      <div className="txt-mut" style={{ fontSize: 13, marginTop: 6 }}>
+      <div className="text-mut text-[13px] mt-1.5">
         Mañana seguís con el próximo turno de tu rutina.
       </div>
     </div>
@@ -264,8 +271,8 @@ function PreSessionHero({ day, index, exs }) {
   const estMin = Math.round(totalSets * ((S.cfg.rest || 90) + 40) / 60);
   return (
     <div className="card hero">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ width: 7, height: 7, borderRadius: 4, background: 'var(--cyan)', boxShadow: '0 0 8px var(--cyan)' }}></span>
+      <div className="flex items-center gap-2">
+        <span className="w-[7px] h-[7px] rounded-[4px] bg-cyan shadow-[0_0_8px_var(--cyan)]"></span>
         <div className="eyebrow">Toca hoy</div>
       </div>
       {/* 46px e itálica: en el mockup el nombre del día es el elemento más
@@ -307,6 +314,12 @@ function BlockList({ index, exs }) {
   // pregunta que trajo a alguien a esta pantalla — no una lista cerrada
   // que hay que aprender a abrir.
   const [openCat, setOpenCat] = useState(blocks[0]?.cat ?? null);
+  const listRef = useRef(null);
+  // Reveal escalonado de los bloques musculares del día al montar Hoy.
+  useEffect(() => {
+    const cards = listRef.current?.querySelectorAll(':scope > .block-card');
+    if (cards?.length) staggerReveal(cards);
+  }, []);
   /* Mueve el bloque y RECIÉN DESPUÉS pinta el nuevo orden adentro de
      flipSort: así flipSort mide el "antes" con el DOM viejo, deja que
      flushSync(bump) pinte el "después" de un tirón, y anima la diferencia
@@ -320,7 +333,7 @@ function BlockList({ index, exs }) {
   }
 
   return (
-    <div className="block-list" data-sort="hoy-blocks">
+    <div className="block-list" data-sort="hoy-blocks" ref={listRef}>
       <BodyPreview cats={blocks.map(b => b.cat)} />
       {blocks.map((b, i) => {
         const open = openCat === b.cat;

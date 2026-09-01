@@ -16,6 +16,7 @@ import { fmtNum, round1 } from '../lib/format.js';
 import { fireConfetti } from '../lib/confetti.js';
 import { Flame } from './Icon.jsx';
 import Silhouette from './Silhouette.jsx';
+import { cn } from '../lib/utils.js';
 
 // Los tres tiempos NO duran lo mismo (a propósito: racha y resumen son un
 // vistazo, el cuerpo necesita más para que el revelado por zona se note).
@@ -170,9 +171,9 @@ export default function SessionComplete() {
       </div>
       <div className="sc-beat b2" style={estiloDe(2)}>
         <div className="sc-resumen">
-          <div><b ref={ejRef}>{reducido ? ejercicios : 0}</b><span>ejercicios</span></div>
-          <div><b ref={serRef}>{reducido ? series : 0}</b><span>series</span></div>
-          <div><b ref={kgRef}>{reducido ? fmtNum(round1(kg)) : 0}</b><span>kg movidos</span></div>
+          <div className={cn('rounded-[var(--radius-r)] bg-white/5 px-4 py-3')}><b ref={ejRef}>{reducido ? ejercicios : 0}</b><span>ejercicios</span></div>
+          <div className={cn('rounded-[var(--radius-r)] bg-white/5 px-4 py-3')}><b ref={serRef}>{reducido ? series : 0}</b><span>series</span></div>
+          <div className={cn('rounded-[var(--radius-r)] bg-white/5 px-4 py-3')}><b ref={kgRef}>{reducido ? fmtNum(round1(kg)) : 0}</b><span>kg movidos</span></div>
         </div>
       </div>
       <div className="sc-beat b3" style={estiloDe(3)}>

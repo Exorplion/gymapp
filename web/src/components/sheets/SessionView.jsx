@@ -8,7 +8,7 @@
 // anterior — la vista donde uno mira "cómo me fue" no contestaba esa pregunta.
 // Ahora cada ejercicio es una .dcard con su grupo, sus series numeradas, su
 // volumen y cuánto cambió respecto de la última vez.
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { S, useStore, openSheet, closeSheet } from '../../lib/state.js';
 import { fmtDFull, fmtNum, round1, uid } from '../../lib/format.js';
 import { sessionPRs, deleteHistorySession, updateHistorySession, entryDelta, groupSets } from '../../lib/session.js';
@@ -19,6 +19,7 @@ import { toast } from '../../lib/toast.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
 import { Skip } from '../Icon.jsx';
+import { staggerReveal } from '../../lib/motion.js';
 // lottie-react 3.x no tiene export default: el componente es `Lottie`
 // nombrado, y el prop del JSON pasó a llamarse `src` (antes `animationData`
 // en 1.x/2.x, la versión que documentan la mayoría de los tutoriales viejos).
@@ -30,7 +31,13 @@ export default function SessionView({ id, justFinished = false }) {
   const [editando, setEditando] = useState(false);
   // La pregunta de fijar lo agregado se responde una vez y no vuelve
   const [pinResuelto, setPinResuelto] = useState(false);
+  const entriesRef = useRef(null);
   const s = S.sessions.find(x => x.id === id);
+
+  useEffect(() => {
+    if (entriesRef.current) staggerReveal(entriesRef.current.children);
+  }, [id]);
+
   if (!s) return null;
 
   const prs = sessionPRs(s);
@@ -144,6 +151,7 @@ export default function SessionView({ id, justFinished = false }) {
       )}
 
       <div className="sect">Lo que hiciste</div>
+      <div ref={entriesRef}>
       {entries.map((e, ei) => (
         <EntryCard
           key={ei}
@@ -154,6 +162,7 @@ export default function SessionView({ id, justFinished = false }) {
           onAgregarSerie={agregarSerie} onBorrarEjercicio={borrarEjercicio}
         />
       ))}
+      </div>
 
       {editando && delDia.length > 0 && (
         <>

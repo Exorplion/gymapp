@@ -12,21 +12,30 @@
 // Ambos bloques (pill minimizada y overlay de pantalla completa) viven en un
 // solo componente, igual que en el original: son mutuamente excluyentes
 // según T.state y comparten el mismo <defs> de gradiente SVG.
+import { useEffect, useRef } from 'react';
 import { T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC } from '../lib/rest.js';
 import { useStore } from '../lib/state.js';
 import { fmtMMSS } from '../lib/format.js';
 import { ChevronDown } from './Icon.jsx';
+import { animateRing } from '../lib/motion.js';
 
 export default function RestTimer() {
   useStore(); // se suscribe a bump(); T se lee directo (T.leftSec/T.pct/T.state) igual que S
 
+  const ringRef = useRef(null);
   const sonandoAhora = T.state === 'ringing';
   const timeStr = fmtMMSS(T.leftSec);
   const pctClamped = Math.max(0, Math.min(1, T.pct));
   const fillPct = pctClamped * 100;
-  // Sonando el anillo se cierra entero: pasa de ser cuenta regresiva a ser el
-  // aviso. Va acá y no en el CSS porque el style inline le gana a la hoja.
-  const dashOffset = sonandoAhora ? 0 : REST_CIRC * (1 - pctClamped);
+  // El anillo del overlay de pantalla completa se anima con animateRing()
+  // (Apple Fitness) en vez de un style inline recalculado en cada render:
+  // así el "cierre" entre un tick y el siguiente es una transición suave de
+  // ~900ms, no un salto de un dashoffset fijo a otro. Sonando, el anillo se
+  // cierra entero: pasa de ser cuenta regresiva a ser el aviso.
+  useEffect(() => {
+    animateRing(ringRef.current, sonandoAhora ? 1 : pctClamped);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Math.round(pctClamped * 1000), sonandoAhora]);
 
   // El dispatcher original resolvía un solo data-act por click (closest()
   // se detiene en el ancestro más cercano), así que clickear +30s/Saltar no
@@ -94,7 +103,15 @@ export default function RestTimer() {
           <div className="rfs-ring">
             <svg viewBox="0 0 200 200">
               <circle className="rfs-track" cx="100" cy="100" r="88" />
-              <circle className="rfs-prog" id="rfs-prog" cx="100" cy="100" r="88" style={{ strokeDashoffset: dashOffset }} />
+              <circle
+                ref={ringRef}
+                className="rfs-prog"
+                id="rfs-prog"
+                cx="100"
+                cy="100"
+                r="88"
+                data-circumference={REST_CIRC}
+              />
             </svg>
             <div className="rfs-time" id="rfs-time">{sonandoAhora ? '¡YA!' : timeStr}</div>
           </div>

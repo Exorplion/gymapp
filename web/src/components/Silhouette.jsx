@@ -38,6 +38,7 @@ import gsap from 'gsap';
 import { cuerpo } from '../lib/bodydata.js';
 import { groupStats, diasTexto } from '../lib/muscle.js';
 import { vibrate } from '../lib/format.js';
+import { scanPulse } from '../lib/motion.js';
 import { S } from '../lib/state.js';
 import MusclePop from './MusclePop.jsx';
 
@@ -238,6 +239,9 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
     // soltar sobre un músculo no es lo mismo que elegirlo.
     if (gesto.current?.giro) { gesto.current = null; return; }
     if (sel?.cat === cat) return cerrar();
+    // Face-ID-style: un pulso que expande desde el músculo tocado, feedback
+    // inmediato de "te escuché" antes de que el globo termine de posicionarse.
+    scanPulse(el);
     const c = caja.current?.getBoundingClientRect();
     const m = el.getBoundingClientRect();
     if (!c) return;

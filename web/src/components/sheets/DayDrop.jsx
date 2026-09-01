@@ -7,9 +7,11 @@
 //
 // El "no volver a preguntar" guarda la elección en S.cfg.dayDrop; se cambia
 // después desde Ajustes.
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { S, closeSheet, saveCfg, bump } from '../../lib/state.js';
 import { WD } from '../../lib/format.js';
+import { bloomOpen } from '../../lib/motion.js';
+import { Button } from '../ui/primitives.jsx';
 // TEMP verification-only stub (task 9) — applyDayDrop/nextFreeDay no longer
 // exist; DayDrop.jsx is now orphaned dead code, a known separate gap not
 // fixed here.
@@ -25,6 +27,9 @@ export default function DayDrop({ fromWd, toWd }) {
   // Con la semana llena no hay adónde correrlo: la única salida es el
   // intercambio, así que se ofrece esa sola en vez de una opción que mentiría.
   const canShift = parked !== null && parked !== from;
+  const rootRef = useRef(null);
+
+  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   async function choose(mode) {
     closeSheet();
@@ -33,33 +38,33 @@ export default function DayDrop({ fromWd, toWd }) {
   }
 
   return (
-    <>
-      <h2>El {WD[to].toLowerCase()} ya está ocupado</h2>
-      <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 18 }}>
-        Estás moviendo <b>{moving}</b> al {WD[to].toLowerCase()}, que hoy tiene <b>{sitting}</b>. ¿Qué hago con {sitting}?
+    <div ref={rootRef}>
+      <h2 className="font-cond text-2xl font-bold text-txt">El {WD[to].toLowerCase()} ya está ocupado</h2>
+      <div className="mb-[18px] text-[14px] leading-relaxed text-mut">
+        Estás moviendo <b className="text-txt">{moving}</b> al {WD[to].toLowerCase()}, que hoy tiene <b className="text-txt">{sitting}</b>. ¿Qué hago con {sitting}?
       </div>
 
-      <div style={{ display: 'grid', gap: 10 }}>
+      <div className="grid gap-2.5">
         {canShift && (
-          <button type="button" className="btn stack" onClick={() => choose('shift')}>
-            Correrlo al {WD[parked].toLowerCase()}
-            <span className="btn-sub">el primer día libre · el {WD[from].toLowerCase()} queda de descanso</span>
-          </button>
+          <Button type="button" className="h-auto flex-col items-start gap-0.5 py-3 text-left" onClick={() => choose('shift')}>
+            <span>Correrlo al {WD[parked].toLowerCase()}</span>
+            <span className="text-[12.5px] font-normal opacity-80">el primer día libre · el {WD[from].toLowerCase()} queda de descanso</span>
+          </Button>
         )}
-        <button type="button" className="btn glass stack" onClick={() => choose('swap')}>
-          Intercambiarlos
-          <span className="btn-sub">{sitting} pasa al {WD[from].toLowerCase()}</span>
-        </button>
+        <Button type="button" variant="secondary" className="h-auto flex-col items-start gap-0.5 py-3 text-left" onClick={() => choose('swap')}>
+          <span>Intercambiarlos</span>
+          <span className="text-[12.5px] font-normal text-mut">{sitting} pasa al {WD[from].toLowerCase()}</span>
+        </Button>
       </div>
 
-      <label className="check-row">
+      <label className="mt-4 flex items-center gap-2.5 text-[13.5px] text-mut">
         <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
         <span>No volver a preguntar (se cambia en Ajustes)</span>
       </label>
 
-      <button type="button" className="btn sm ghost" style={{ marginTop: 'var(--s3)' }} onClick={closeSheet}>
+      <Button type="button" variant="ghost" size="sm" className="mt-3" onClick={closeSheet}>
         Cancelar
-      </button>
-    </>
+      </Button>
+    </div>
   );
 }

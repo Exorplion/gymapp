@@ -20,6 +20,9 @@ import { weeklyAvg, exerciseSeries, filterByRange, strengthReadout, project } fr
 import Chart from '../Chart.jsx';
 import SessionCard from '../SessionCard.jsx';
 import { Info } from '../Icon.jsx';
+import { useEffect, useRef } from 'react';
+import { countTo, staggerReveal } from '../../lib/motion.js';
+import { cn } from '../../lib/utils.js';
 
 const BODY_LABELS = { waist: 'Cintura', arm: 'Brazo', chest: 'Pecho', leg: 'Pierna' };
 
@@ -60,25 +63,35 @@ export default function Progreso() {
   const oldest = S.sessions.length ? S.sessions[S.sessions.length - 1].start : null;
   const weeksTracked = oldest ? Math.max(1, Math.round((Date.now() - oldest) / 6048e5)) : 0;
 
+  // Cuenta ascendente del número grande de peso/promedio del hero al montar
+  // o al cambiar de dato — mismo touch que el resto de la app (Inicio,
+  // Comida) para que un número frío sienta que "llegó".
+  const headNumRef = useRef(null);
+  useEffect(() => {
+    if (headNum == null) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { if (headNumRef.current) headNumRef.current.textContent = fmtNum(round1(headNum)); return; }
+    if (headNumRef.current) countTo(headNumRef.current, headNum, { duration: 500, format: n => fmtNum(round1(n)) });
+  }, [headNum]);
+
   return (
     <>
       <div className="vtitle">
         <h1>Progreso</h1>
         <span className="sub">{weeksTracked} semana{weeksTracked === 1 ? '' : 's'}</span>
-        <button type="button" className="icon-btn" style={{ marginLeft: 'auto' }} aria-label="Guía" onClick={() => openSheet('guide')}><Info /></button>
+        <button type="button" className="icon-btn ml-auto" aria-label="Guía" onClick={() => openSheet('guide')}><Info /></button>
       </div>
 
       <div className="card hero hero-prog">
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10 }}>
+        <div className="flex items-end justify-between gap-2.5">
           <div>
             <div className="hero-eyebrow">{headLabel}</div>
-            <div className="bignum">{headNum != null ? fmtNum(round1(headNum)) : '—'}<small> kg</small></div>
+            <div className="bignum">{headNum != null ? <span ref={headNumRef}>{fmtNum(round1(headNum))}</span> : '—'}<small> kg</small></div>
             {lastW && (
-              <div className="txt-mut" style={{ fontSize: 13, marginTop: 3 }}>
+              <div className="text-mut text-[13px] mt-[3px]">
                 {wk && wk.curAvg != null ? `último ${fmtNum(round1(lastW.weight))} kg · ` : `${fmtNum(kg2lb(lastW.weight))} lb · `}
                 {fmtDFull(lastW.date)}
                 {wk && wk.delta != null && (
-                  <> · <b className={wk.delta <= 0 ? 'txt-ok' : 'txt-blue'}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></>
+                  <> · <b className={wk.delta <= 0 ? 'text-ok' : 'text-blue2'}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></>
                 )}
               </div>
             )}
@@ -86,14 +99,14 @@ export default function Progreso() {
           <button type="button" className="reg-btn" onClick={() => openSheet('body-form')}>+ Registro</button>
         </div>
         {wk && wk.curAvg != null && (
-          <div className="txt-mut" style={{ fontSize: 11.5, marginTop: 8, lineHeight: 1.4 }}>El peso fluctúa 1-2 kg por día; el promedio semanal es la métrica que importa.</div>
+          <div className="text-mut text-[11.5px] mt-2 leading-snug">El peso fluctúa 1-2 kg por día; el promedio semanal es la métrica que importa.</div>
         )}
-        <div className="seg" style={{ marginTop: 12 }}>
+        <div className="seg mt-3">
           {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['all', 'Todo']].map(([r, label]) => (
             <button key={r} type="button" className={(S.progRange || 'all') === r ? 'on' : ''} aria-pressed={(S.progRange || 'all') === r} onClick={() => { S.progRange = r; bump(); }}>{label}</button>
           ))}
         </div>
-        <div style={{ marginTop: 12 }}><Chart id="chartWeight" pts={wpts} opts={{ unit: 'kg' }} /></div>
+        <div className="mt-3"><Chart id="chartWeight" pts={wpts} opts={{ unit: 'kg' }} /></div>
         {Object.keys(lastVals).length > 0 && (
           <div className="stats" style={{ '--n': 4 }}>
             {Object.entries(lastVals).map(([k, v]) => (
@@ -108,7 +121,7 @@ export default function Progreso() {
 
       <SesionesSection />
 
-      <div className="seg" style={{ margin: 'var(--s3) 0' }}>
+      <div className="seg my-[var(--s3)]">
         {[['carga', 'Carga'], ['1rm', '1RM'], ['volumen', 'Volumen']].map(([k, label]) => (
           <button key={k} type="button" className={tab === k ? 'on' : ''} aria-pressed={tab === k} onClick={() => { S.progTab = k; bump(); }}>{label}</button>
         ))}
@@ -116,16 +129,16 @@ export default function Progreso() {
 
       {tab === 'carga' && (
         !exNames.length ? (
-          <div className="card"><div className="empty" style={{ padding: 18 }}><p style={{ margin: 0 }}>Completa sesiones para ver la progresión<br />de tu mejor serie (peso × reps).</p></div></div>
+          <div className="card"><div className="empty p-[18px]"><p className="m-0">Completa sesiones para ver la progresión<br />de tu mejor serie (peso × reps).</p></div></div>
         ) : (
           <div className="card">
-            <div className="field" style={{ marginBottom: 10 }}>
+            <div className="field mb-2.5">
               <select aria-label="Elegir ejercicio" value={S.progEx || ''} onChange={e => { S.progEx = e.target.value; bump(); }}>
                 {exNames.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
             <Chart id="chartEx" pts={exPts} opts={{ unit: 'kg' }} />
-            <div className="txt-mut" style={{ fontSize: 12, textAlign: 'center', marginTop: 6 }}>Peso de tu mejor serie por sesión · tocá un punto para ver las reps</div>
+            <div className="text-mut text-xs text-center mt-1.5">Peso de tu mejor serie por sesión · tocá un punto para ver las reps</div>
           </div>
         )
       )}
@@ -162,7 +175,7 @@ export default function Progreso() {
       <div className="sect">Constancia · 8 semanas</div>
       <div className="card">
         <div className="heatmap const">
-          {heat.days.map(d => <div key={d.date} className={`cell ${d.status}`} title={d.date}></div>)}
+          {heat.days.map(d => <div key={d.date} className={cn('cell', d.status)} title={d.date}></div>)}
         </div>
         <div className="const-stats">
           <div><div className="cond">{currentStreak()}</div><span>Racha actual</span></div>
@@ -173,7 +186,7 @@ export default function Progreso() {
 
       <div className="sect">PRs · Récords personales</div>
       {!exNames.length ? (
-        <div className="card sub"><div className="empty" style={{ padding: 18 }}><p style={{ margin: 0 }}>Aquí brillarán tus mejores marcas. 🏆</p></div></div>
+        <div className="card sub"><div className="empty p-[18px]"><p className="m-0">Aquí brillarán tus mejores marcas. 🏆</p></div></div>
       ) : (
         <PRsList exNames={exNames} />
       )}
@@ -189,13 +202,12 @@ export default function Progreso() {
 function SesionesSection() {
   const recientes = S.sessions.slice(0, 8);
   return (
-    <div id="sesiones" style={{ scrollMarginTop: 70 }}>
+    <div id="sesiones" className="scroll-mt-[70px]">
       <div className="sect">
         Tus sesiones
         {S.sessions.length > 8 && (
           <button
-            type="button" className="btn sm ghost"
-            style={{ width: 'auto', padding: '0 12px', height: 32, marginLeft: 'auto' }}
+            type="button" className="btn sm ghost w-auto h-8 px-3 ml-auto"
             onClick={() => openSheet('history')}
           >
             Ver todas
@@ -203,8 +215,8 @@ function SesionesSection() {
         )}
       </div>
       {!recientes.length ? (
-        <div className="card"><div className="empty" style={{ padding: 18 }}>
-          <p style={{ margin: 0 }}>Cuando cierres tu primera sesión va a aparecer acá.</p>
+        <div className="card"><div className="empty p-[18px]">
+          <p className="m-0">Cuando cierres tu primera sesión va a aparecer acá.</p>
         </div></div>
       ) : (
         groupSessionsByWeek(recientes).map(g => (
@@ -226,28 +238,28 @@ function StrengthTab() {
     <>
       <div className="sect">Fuerza · 1RM estimado</div>
       {!readout.length ? (
-        <div className="card sub"><div className="empty" style={{ padding: 18 }}><p style={{ margin: 0 }}>Registrá un ejercicio en dos sesiones para empezar a ver su tendencia.</p></div></div>
+        <div className="card sub"><div className="empty p-[18px]"><p className="m-0">Registrá un ejercicio en dos sesiones para empezar a ver su tendencia.</p></div></div>
       ) : (
         <div className="card">
           {readout.slice(0, 10).map(x => {
             const pr = project(x.t, 4);
-            let cls = 'txt-mut', tag = '';
+            let cls = 'text-mut', tag = '';
             if (!x.t) tag = `${x.pts.length} sesion${x.pts.length === 1 ? '' : 'es'} · faltan datos para calcular tendencia`;
-            else if (pr) { cls = 'txt-ok'; tag = `+${fmtNum(round1(pr.perWeek))} kg/sem · en 4 semanas ≈ ${fmtNum(round1(pr.value))} kg${pr.capped ? ' (ritmo acotado)' : ''}`; }
-            else if (x.t.slope > 0) { cls = 'txt-blue'; tag = 'subiendo pero irregular · sin señal suficiente para proyectar'; }
-            else if (x.t.slope === 0) { cls = 'txt-warn'; tag = `plano en las últimas ${x.t.n} sesiones · probá variar reps, series o ejercicio`; }
-            else { cls = 'txt-warn'; tag = `bajando en las últimas ${x.t.n} sesiones · revisá descanso y alimentación`; }
+            else if (pr) { cls = 'text-ok'; tag = `+${fmtNum(round1(pr.perWeek))} kg/sem · en 4 semanas ≈ ${fmtNum(round1(pr.value))} kg${pr.capped ? ' (ritmo acotado)' : ''}`; }
+            else if (x.t.slope > 0) { cls = 'text-blue2'; tag = 'subiendo pero irregular · sin señal suficiente para proyectar'; }
+            else if (x.t.slope === 0) { cls = 'text-warn'; tag = `plano en las últimas ${x.t.n} sesiones · probá variar reps, series o ejercicio`; }
+            else { cls = 'text-warn'; tag = `bajando en las últimas ${x.t.n} sesiones · revisá descanso y alimentación`; }
             return (
               <div key={x.name} className="row">
                 <div className="grow"><div className="t">{x.name}</div><div className="s"><span className={cls}>{tag}</span></div></div>
-                <div style={{ textAlign: 'right', flex: 'none' }}>
-                  <div className="num" style={{ fontSize: 'var(--t-xl)', color: 'var(--blue3)', lineHeight: 1 }}>{fmtNum(round1(x.last))}</div>
-                  <div className="txt-mut" style={{ fontSize: 'var(--t-micro)', letterSpacing: '.08em' }}>KG 1RM</div>
+                <div className="text-right flex-none">
+                  <div className="num text-[length:var(--t-xl)] text-blue3 leading-none">{fmtNum(round1(x.last))}</div>
+                  <div className="text-mut text-[length:var(--t-micro)] tracking-[.08em]">KG 1RM</div>
                 </div>
               </div>
             );
           })}
-          <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginTop: 'var(--s3)' }}>Calculado con la fórmula de Epley sobre tu mejor serie de cada sesión (se ignoran las de más de 12 reps, donde la fórmula se desvía). La proyección supone que mantenés el ritmo y se limita a 1 %/semana: la fuerza no sube en línea recta.</div>
+          <div className="text-mut text-[length:var(--t-sm)] leading-normal mt-[var(--s3)]">Calculado con la fórmula de Epley sobre tu mejor serie de cada sesión (se ignoran las de más de 12 reps, donde la fórmula se desvía). La proyección supone que mantenés el ritmo y se limita a 1 %/semana: la fuerza no sube en línea recta.</div>
         </div>
       )}
     </>
@@ -264,12 +276,12 @@ function VolumeTab() {
       <div className="sect">Volumen por grupo · 7 días</div>
       <div className="card">
         {cats.map(([c, n]) => (
-          <div key={c} style={{ marginBottom: 'var(--s3)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--t-sm)', marginBottom: 'var(--s1)' }}><span>{c}</span><span className="num">{n} series</span></div>
+          <div key={c} className="mb-[var(--s3)]">
+            <div className="flex justify-between text-[length:var(--t-sm)] mb-[var(--s1)]"><span>{c}</span><span className="num">{n} series</span></div>
             <div className="pbar"><i style={{ width: `${Math.round(n / maxv * 100)}%` }}></i></div>
           </div>
         ))}
-        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5 }}>Series registradas por grupo muscular. Como referencia, 10-20 series semanales por grupo es el rango habitual para ganar masa.</div>
+        <div className="text-mut text-[length:var(--t-sm)] leading-normal">Series registradas por grupo muscular. Como referencia, 10-20 series semanales por grupo es el rango habitual para ganar masa.</div>
       </div>
     </>
   );
@@ -287,15 +299,21 @@ function PRsList({ exNames }) {
     }));
     return { n, maxW, bestSet, dV };
   }).filter(p => p.bestSet).sort((a, b) => b.maxW - a.maxW);
+  const listRef = useRef(null);
+  // Reveal escalonado de la lista de PRs al montar/cambiar de datos.
+  useEffect(() => {
+    const rows = listRef.current?.querySelectorAll(':scope > .row');
+    if (rows?.length) staggerReveal(rows);
+  }, [prs.length]);
   return (
-    <div className="card">
+    <div className="card" ref={listRef}>
       {prs.map(p => (
         <div key={p.n} className="row">
           <div className="grow"><div className="t">{p.n}</div>
             <div className="s">Mejor serie {fmtNum(round1(p.bestSet.w))} × {p.bestSet.r} · {fmtD(p.dV)}</div></div>
-          <div style={{ textAlign: 'right', flex: 'none' }}>
-            <div className="pr-w">{fmtNum(round1(p.maxW))}<span style={{ fontSize: 'var(--t-sm)', color: 'var(--mut)' }}> kg</span></div>
-            <div className="txt-mut" style={{ fontSize: 'var(--t-micro)' }}>{fmtNum(kg2lb(p.maxW))} lb</div>
+          <div className="text-right flex-none">
+            <div className="pr-w">{fmtNum(round1(p.maxW))}<span className="text-[length:var(--t-sm)] text-mut"> kg</span></div>
+            <div className="text-mut text-[length:var(--t-micro)]">{fmtNum(kg2lb(p.maxW))} lb</div>
           </div>
         </div>
       ))}

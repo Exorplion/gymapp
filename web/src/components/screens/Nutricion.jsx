@@ -24,6 +24,9 @@ import { computeMacros, GOAL_LABEL } from '../../lib/macros.js';
 import { mealsOf, macroCls, nutriFeedback, frequentMeals, mealsBySlot, slotForTime } from '../../lib/meals.js';
 import { idb } from '../../lib/db.js';
 import { logMeal, addMealFromFood } from '../sheets/MealForm.jsx';
+import { useEffect, useRef } from 'react';
+import { countTo } from '../../lib/motion.js';
+import { cn } from '../../lib/utils.js';
 
 // El botón de voz sólo aparece si el navegador reconoce voz — mismo criterio
 // que el registro por voz de sesiones en Hoy.jsx.
@@ -71,6 +74,15 @@ export default function Nutricion() {
   const kcalOff = KCAL_CIRC * (1 - Math.min(1, g.kcal ? kc / g.kcal : 0));
   const freq = frequentMeals();
 
+  // Cuenta ascendente del número grande de kcal consumidas al cambiar de
+  // día/comida — el anillo ya anima vía strokeDashoffset (CSS transition),
+  // esto le da el mismo trato al número que acompaña.
+  const kcalNumRef = useRef(null);
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { if (kcalNumRef.current) kcalNumRef.current.textContent = kc; return; }
+    if (kcalNumRef.current) countTo(kcalNumRef.current, kc, { duration: 500 });
+  }, [kc]);
+
   return (
     <>
       <div className="vtitle"><h1>Comida</h1><span className="sub">{fmtDFull(S.nutriDate)}</span></div>
@@ -80,27 +92,27 @@ export default function Nutricion() {
           <div className="pavatar">👤</div>
           <div className="grow">
             <div className="pt">{GOAL_LABEL[S.cfg.profile.goal]} · {m.target} kcal</div>
-            <div className="txt-mut" style={{ fontSize: 12.5 }}>
+            <div className="text-mut text-[12.5px]">
               {S.cfg.profile.sex === 'f' ? 'Mujer' : 'Hombre'} · {fmtNum(round1(m.weight))} kg · P {m.protMin}-{m.protMax} · G {m.fatMin}-{m.fatMax} · C {m.carbs}g
             </div>
           </div>
           <button type="button" className="icon-btn accent" aria-label="Ver / modificar mis datos" onClick={() => openSheet('profile')}>✎</button>
         </div>
       ) : (
-        <button type="button" className="card profcard" style={{ borderColor: 'var(--line2)' }} onClick={() => openSheet('profile')}>
+        <button type="button" className="card profcard border-line2" onClick={() => openSheet('profile')}>
           <div className="pavatar">🎯</div>
           <div className="grow">
             <div className="pt">Calcular mis macros</div>
-            <div className="txt-mut" style={{ fontSize: 12.5 }}>Perfil → TDEE → target y rangos automáticos{S.cfg.goalsAuto ? '' : ' (usando metas manuales)'}</div>
+            <div className="text-mut text-[12.5px]">Perfil → TDEE → target y rangos automáticos{S.cfg.goalsAuto ? '' : ' (usando metas manuales)'}</div>
           </div>
           <span className="chev">›</span>
         </button>
       )}
 
       <div className="datenav">
-        <button type="button" className="mini" style={{ width: 44, height: 44 }} onClick={() => shiftNutriDate(-1)}>‹</button>
+        <button type="button" className="mini w-11 h-11" onClick={() => shiftNutriDate(-1)}>‹</button>
         <div
-          className="d" style={{ textAlign: 'center' }}
+          className="d text-center"
           role={isToday ? undefined : 'button'}
           onClick={isToday ? undefined : () => { S.nutriDate = dstr(); bump(); }}
         >
@@ -109,7 +121,7 @@ export default function Nutricion() {
           {isToday ? 'Hoy' : fmtDFull(date)}
           {!isToday && <small>toca para volver a hoy</small>}
         </div>
-        <button type="button" className="mini" style={{ width: 44, height: 44 }} disabled={isToday} onClick={() => shiftNutriDate(1)}>›</button>
+        <button type="button" className="mini w-11 h-11" disabled={isToday} onClick={() => shiftNutriDate(1)}>›</button>
       </div>
 
       <div className="card hero hero-kcal">
@@ -120,7 +132,7 @@ export default function Nutricion() {
               <circle className="kr-prog" cx="60" cy="60" r="52" style={{ strokeDashoffset: kcalOff }} />
             </svg>
             <div className="kr-val">
-              <div className="kr-n">{kc}</div>
+              <div className="kr-n" ref={kcalNumRef}>{kc}</div>
               <div className="kr-of">de {g.kcal}</div>
             </div>
           </div>
@@ -132,7 +144,7 @@ export default function Nutricion() {
             <div className="kcal-big">
               {kc > g.kcal ? kc - g.kcal : Math.max(0, g.kcal - kc)}<span>kcal</span>
             </div>
-            <div className="txt-mut" style={{ fontSize: 12.5, marginTop: 2 }}>
+            <div className="text-mut text-[12.5px] mt-0.5">
               {GOAL_LABEL[S.cfg.profile.goal]}
               {S.cfg.profile.weightKg ? ` · ${fmtNum(round1(S.cfg.profile.weightKg))} kg` : ''}
             </div>
@@ -161,7 +173,7 @@ export default function Nutricion() {
           <div className="chip-scroll">
             {freq.map((f, i) => (
               <button key={i} type="button" className="chip blue" onClick={() => logMeal(f)}>
-                ＋ {f.name} <span className="txt-mut" style={{ fontWeight: 500 }}>{f.kcal}</span>
+                ＋ {f.name} <span className="text-mut font-medium">{f.kcal}</span>
               </button>
             ))}
           </div>
@@ -172,8 +184,8 @@ export default function Nutricion() {
         Frecuentes
         {S.foods.length > 0 && (
           <button
-            type="button" className="mini"
-            style={{ width: 32, height: 32, fontSize: 13, ...(S.foodEdit ? { color: 'var(--blue2)', borderColor: 'var(--line2)' } : {}) }}
+            type="button"
+            className={cn('mini w-8 h-8 text-[13px]', S.foodEdit && 'text-blue2 border-line2')}
             aria-pressed={S.foodEdit}
             aria-label="Editar la lista de frecuentes"
             onClick={() => { S.foodEdit = !S.foodEdit; bump(); }}
@@ -186,12 +198,12 @@ export default function Nutricion() {
             <button key={f.id} type="button" className="chip" aria-label={`Borrar ${f.name} de frecuentes`} onClick={() => deleteFood(f.id)}>{f.name}<span className="x">✕</span></button>
           ) : (
             <button key={f.id} type="button" className="chip blue" onClick={() => addMealFromFood(f.id)}>
-              ＋ {f.name} <span className="txt-mut" style={{ fontWeight: 500 }}>{f.kcal}</span>
+              ＋ {f.name} <span className="text-mut font-medium">{f.kcal}</span>
             </button>
           ))}
         </div>
       ) : (
-        <div className="txt-mut" style={{ fontSize: 14, margin: '4px 2px 8px' }}>
+        <div className="text-mut text-sm my-1 mx-0.5">
           Al agregar una comida, márcala como <b>frecuente</b> y quedará aquí para sumarla con un tap.
         </div>
       )}
@@ -204,16 +216,16 @@ export default function Nutricion() {
         + Agregar comida
       </button>
       {SR_FOOD && (
-        <button type="button" className="pw-btn" style={{ marginTop: 'var(--s3)' }} onClick={() => openSheet('food-voice')}>
+        <button type="button" className="pw-btn mt-[var(--s3)]" onClick={() => openSheet('food-voice')}>
           <span className="pwi">🎙</span><span className="pwt">Registrar por voz</span>
-          <span className="txt-mut" style={{ fontSize: 12.5, fontWeight: 500 }}>decí qué comiste</span>
+          <span className="text-mut text-[12.5px] font-medium">decí qué comiste</span>
           <span className="chev">›</span>
         </button>
       )}
 
       <div className="sect">Comidas de {isToday ? 'hoy' : 'este día'}</div>
       {!meals.length ? (
-        <div className="card"><div className="empty" style={{ padding: 16 }}><p style={{ margin: 0 }}>Nada registrado {isToday ? 'hoy' : 'este día'}.</p></div></div>
+        <div className="card"><div className="empty p-4"><p className="m-0">Nada registrado {isToday ? 'hoy' : 'este día'}.</p></div></div>
       ) : (
         mealsBySlot(date).map(b => (
           <div key={b.k} className="slot-block">
@@ -225,7 +237,7 @@ export default function Nutricion() {
                     <div className="t">{meal.name}</div>
                     <div className="s">{meal.kcal} kcal · P {meal.p} · C {meal.c} · G {meal.f}</div>
                     {meal.items?.length > 1 && (
-                      <div className="s" style={{ color: 'var(--mut2)' }}>
+                      <div className="s text-mut2">
                         {meal.items.map(i => `${i.name} ${i.grams}g`).join(' · ')}
                       </div>
                     )}

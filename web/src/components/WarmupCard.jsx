@@ -12,12 +12,17 @@
 // Muestra los pesos ya calculados en vez del porcentaje. "50%" te obliga a
 // hacer la cuenta parado frente a la barra; "42.5 kg × 5" se carga y se levanta.
 // El porcentaje va igual, chiquito, para el que quiera ver de dónde sale.
+import { useEffect, useRef } from 'react';
 import { S, wDisplay, wStep } from '../lib/state.js';
 import { warmupSets, MOVILIDAD, DESCANSO, bloqueDe } from '../lib/warmup.js';
 import { lastDataFor } from '../lib/session.js';
 import { fmtMMSS } from '../lib/format.js';
+import { cn } from '../lib/utils.js';
+import { Button } from './ui/primitives.jsx';
+import { staggerReveal } from '../lib/motion.js';
 
 export default function WarmupCard({ ex, onListo, onSaltar }) {
+  const listRef = useRef(null);
   /* El peso de trabajo sale de lo que tengas cargado hoy y, si todavía no
      tocaste nada, de la última vez que lo hiciste.
 
@@ -35,8 +40,15 @@ export default function WarmupCard({ ex, onListo, onSaltar }) {
   // sería una lista suelta sin conexión con lo que vas a levantar.
   if (!series.length) return null;
 
+  // Reveal escalonado de las series de la rampa al montar la tarjeta —
+  // Ref: Airbnb/Notion. Sólo el <ol>, no la movilidad (esa es texto plano,
+  // no una progresión que valga la pena escalonar).
+  useEffect(() => {
+    if (listRef.current) staggerReveal(listRef.current.children);
+  }, [ex.id]);
+
   return (
-    <div className="warmup">
+    <div className={cn('warmup')}>
       <div className="warmup-top">
         <span className="eyebrow">Calentamiento · {ex.name}</span>
         <button type="button" className="warmup-skip" onClick={onSaltar}>Saltar</button>
@@ -48,7 +60,7 @@ export default function WarmupCard({ ex, onListo, onSaltar }) {
         </ul>
       )}
 
-      <ol className="warmup-list">
+      <ol className="warmup-list" ref={listRef}>
         {series.map((s, i) => (
           <li key={i}>
             <span className="n">{i + 1}</span>
@@ -63,9 +75,9 @@ export default function WarmupCard({ ex, onListo, onSaltar }) {
         Las tres seguidas, sin descanso. Después <b>{fmtMMSS(DESCANSO)}</b> y vas a tu primera serie.
       </p>
 
-      <button type="button" className="btn sm" onClick={onListo}>
+      <Button type="button" size="sm" onClick={onListo}>
         Listo · arrancar el descanso
-      </button>
+      </Button>
     </div>
   );
 }

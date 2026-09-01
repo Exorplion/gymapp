@@ -5,9 +5,28 @@
 // currentStreak() (streak.js, Task 2) y abre el sheet 'streak-detail'
 // (StreakDetail.jsx) al tocar el botón, igual que 'streak-open' en el ACT{}
 // original.
+import { useEffect, useRef } from 'react';
 import { Flame } from './Icon.jsx';
+import { pulseLike, countTo } from '../lib/motion.js';
 
 export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenStreak = () => {}, onOpenSessions = () => {} }) {
+  const flameRef = useRef(null);
+  const nRef = useRef(null);
+  const prevStreak = useRef(streak);
+
+  // Cuando la racha SUBE (se cerró un día más), la llama pega un bounce
+  // (Instagram/Spotify) y el número cuenta hasta el nuevo valor en vez de
+  // saltar de golpe. Si baja/reinicia no anima — no hay nada que celebrar.
+  useEffect(() => {
+    if (streak > prevStreak.current) {
+      pulseLike(flameRef.current);
+      countTo(nRef.current, streak, { from: prevStreak.current });
+    } else if (nRef.current) {
+      nRef.current.textContent = String(streak);
+    }
+    prevStreak.current = streak;
+  }, [streak]);
+
   return (
     <header className="top">
       <div className="brand">
@@ -18,8 +37,8 @@ export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenSt
       </div>
       <div className="header-actions">
         <button className="icon-btn streak-btn" id="streak-btn" aria-label="Racha" onClick={onOpenStreak}>
-          <Flame className="streak-flame" />
-          <span className="streak-n" id="streak-n">{streak}</span>
+          <Flame ref={flameRef} className="streak-flame" />
+          <span className="streak-n" id="streak-n" ref={nRef}>{streak}</span>
         </button>
         {/* El reloj del mockup. Antes abría el historial como sheet; ahora
             lleva a la sección "Tus sesiones" de Progreso, que es donde vive. */}

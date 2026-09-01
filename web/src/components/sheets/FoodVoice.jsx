@@ -11,6 +11,8 @@ import { idb } from '../../lib/db.js';
 import { uid, fmtNum, round1, vibrate } from '../../lib/format.js';
 import { parseFoodSpeech, sumItems } from '../../lib/foodvoice.js';
 import { toast } from '../../lib/toast.js';
+import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { Button, Card } from '../ui/primitives.jsx';
 
 const SR_CLASS = typeof window !== 'undefined'
   ? (window.SpeechRecognition || window.webkitSpeechRecognition || null)
@@ -21,10 +23,18 @@ export default function FoodVoice() {
   const [items, setItems] = useState([]);
   const [recording, setRecording] = useState(false);
   const recRef = useRef(null);
+  const rootRef = useRef(null);
+  const knownRef = useRef(null);
+
+  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   // Se corta el reconocimiento si el sheet se cierra a mitad de dictado:
   // sin esto el micrófono seguiría abierto.
   useEffect(() => () => { try { recRef.current?.stop(); } catch (e) { /* ya detenido */ } }, []);
+
+  useEffect(() => {
+    if (knownRef.current) staggerReveal(knownRef.current.children);
+  }, [items]);
 
   function listen() {
     if (!SR_CLASS) { toast('Tu navegador no reconoce voz'); return; }
@@ -70,27 +80,23 @@ export default function FoodVoice() {
   }
 
   return (
-    <>
-      <h2 className="sheet-title">Registrar por voz</h2>
-      <div className="txt-mut" style={{ fontSize: 13, marginTop: 2, marginBottom: 14 }}>
+    <div ref={rootRef}>
+      <h2 className="font-cond text-2xl font-bold text-txt">Registrar por voz</h2>
+      <div className="mt-0.5 mb-3.5 text-[13px] text-mut">
         Decí lo que comiste, con cantidades si las sabés. Por ejemplo:
         «200 gramos de pollo y una taza de arroz».
       </div>
 
-      <button
-        type="button"
-        className={`btn ${recording ? 'ghost' : ''}`}
-        onClick={listen}
-        disabled={recording}
-      >
+      <Button type="button" variant={recording ? 'ghost' : 'primary'} className="w-full" onClick={listen} disabled={recording}>
         {recording ? '🎙 Escuchando…' : '🎙 Dictar'}
-      </button>
+      </Button>
 
-      <div className="field" style={{ marginTop: 'var(--s3)' }}>
-        <label htmlFor="foodvoice-texto">O escribilo</label>
+      <div className="mt-3">
+        <label htmlFor="foodvoice-texto" className="mb-1.5 block text-[13px] font-medium text-mut">O escribilo</label>
         <input
           id="foodvoice-texto"
           type="text"
+          className="h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-[15px] text-txt outline-none transition-colors focus-visible:border-blue2"
           value={text}
           placeholder="dos huevos, 150 g de pollo…"
           onChange={e => reparse(e.target.value)}
@@ -99,49 +105,51 @@ export default function FoodVoice() {
 
       {known.length > 0 && (
         <>
-          <div className="sect">Reconocido</div>
-          <div className="card">
-            {known.map((i, n) => (
-              <div className="row" key={n}>
-                <div className="grow">
-                  <div className="t">{i.name}</div>
-                  <div className="s">
-                    {i.grams ? `${i.grams} g · ` : ''}{i.kcal} kcal · P {fmtNum(round1(i.p))} · C {fmtNum(round1(i.c))} · G {fmtNum(round1(i.f))}
-                    {i.source === 'mine' && <span className="eq-tag" style={{ marginLeft: 7 }}>tuyo</span>}
+          <div className="mx-0.5 mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wide text-mut">Reconocido</div>
+          <Card className="p-0 divide-y divide-white/5">
+            <div ref={knownRef}>
+              {known.map((i, n) => (
+                <div className="flex items-center gap-2.5 px-4 py-2.5" key={n}>
+                  <div className="grow">
+                    <div className="text-[14.5px] text-txt">{i.name}</div>
+                    <div className="text-[13px] text-mut">
+                      {i.grams ? `${i.grams} g · ` : ''}{i.kcal} kcal · P {fmtNum(round1(i.p))} · C {fmtNum(round1(i.c))} · G {fmtNum(round1(i.f))}
+                      {i.source === 'mine' && <span className="ml-1.5 inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-mut">tuyo</span>}
+                    </div>
                   </div>
+                  <button type="button" className="grid h-8 w-8 flex-none place-items-center rounded-full text-mut hover:text-txt" onClick={() => setItems(items.filter(x => x !== i))}>✕</button>
                 </div>
-                <button type="button" className="meal-del" onClick={() => setItems(items.filter(x => x !== i))}>✕</button>
-              </div>
-            ))}
-            <div className="row" style={{ borderTop: '1px solid rgba(255,255,255,.09)' }}>
-              <div className="grow"><div className="t">Total</div></div>
-              <div className="num" style={{ color: 'var(--accent)' }}>{total.kcal} kcal</div>
+              ))}
             </div>
-          </div>
+            <div className="flex items-center gap-2.5 border-t border-white/[.09] px-4 py-2.5">
+              <div className="grow"><div className="text-[14.5px] text-txt">Total</div></div>
+              <div className="font-cond font-bold text-accent">{total.kcal} kcal</div>
+            </div>
+          </Card>
         </>
       )}
 
       {unknown.length > 0 && (
         <>
-          <div className="sect">No lo reconozco</div>
-          <div className="card">
-            <div className="txt-mut" style={{ fontSize: 12.5, lineHeight: 1.5, marginBottom: 10 }}>
+          <div className="mx-0.5 mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wide text-mut">No lo reconozco</div>
+          <Card>
+            <div className="mb-2.5 text-[12.5px] leading-relaxed text-mut">
               No le invento macros a lo que no conozco. Agregalo una vez con
               «+ Agregar comida» y marcalo como frecuente: desde entonces lo
               reconozco cuando lo dictes.
             </div>
             {unknown.map((i, n) => (
-              <div className="row" key={n}><div className="grow"><div className="t">{i.name}</div></div></div>
+              <div className="py-1.5" key={n}><div className="text-[14.5px] text-txt">{i.name}</div></div>
             ))}
-          </div>
+          </Card>
         </>
       )}
 
       {known.length > 0 && (
-        <button type="button" className="btn" style={{ marginTop: 'var(--s4)' }} onClick={confirm}>
+        <Button type="button" className="mt-4 w-full" onClick={confirm}>
           Agregar {known.length === 1 ? 'la comida' : `las ${known.length} comidas`}
-        </button>
+        </Button>
       )}
-    </>
+    </div>
   );
 }

@@ -21,7 +21,7 @@
 // botón "usar último registrado" sobre el campo de peso — eso sí es
 // aceptable porque el usuario no tecleó ese valor, lo pidió con un tap
 // (mismo criterio que los steppers +/- de VoiceLog.jsx/ExerciseForm.jsx).
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { S, closeSheet, saveCfg } from '../../lib/state.js';
 import { fmtNum, round1, vibrate } from '../../lib/format.js';
 import {
@@ -29,6 +29,7 @@ import {
   ACTF, ACT_LABEL, ACT_HINT, GOALDELTA, GOAL_LABEL, GOAL_HINT,
 } from '../../lib/macros.js';
 import { toast } from '../../lib/toast.js';
+import { bloomOpen } from '../../lib/motion.js';
 
 function MacroPreview({ m }) {
   return (
@@ -48,6 +49,9 @@ export default function Profile() {
   const [draft, setDraft] = useState({ ...p0 });
   const weightRef = useRef(null);
   const ageRef = useRef(null);
+  const rootRef = useRef(null);
+
+  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
 
   // Sugerencia de peso desde Progreso — sólo si el perfil no tiene peso
   // propio todavía, calculada una vez sobre el perfil REAL (no el borrador),
@@ -91,7 +95,7 @@ export default function Profile() {
   }
 
   return (
-    <>
+    <div ref={rootRef}>
       <h2>Perfil y macros</h2>
       <div className="sheet-sub">Todo se recalcula desde estos datos. Nada queda fijo.</div>
 
@@ -163,6 +167,6 @@ export default function Profile() {
       </div>
 
       <button type="button" className="btn" style={{ marginTop: 14 }} onClick={save}>Guardar y usar estas metas</button>
-    </>
+    </div>
   );
 }
