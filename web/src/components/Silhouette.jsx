@@ -38,7 +38,7 @@ import gsap from 'gsap';
 import { cuerpo } from '../lib/bodydata.js';
 import { groupStats, diasTexto } from '../lib/muscle.js';
 import { vibrate } from '../lib/format.js';
-import { scanPulse } from '../lib/motion.js';
+import { tapRing } from '../lib/motion.js';
 import { S } from '../lib/state.js';
 import MusclePop from './MusclePop.jsx';
 
@@ -239,13 +239,16 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
     // soltar sobre un músculo no es lo mismo que elegirlo.
     if (gesto.current?.giro) { gesto.current = null; return; }
     if (sel?.cat === cat) return cerrar();
-    // Face-ID-style: un pulso que expande desde el músculo tocado, feedback
-    // inmediato de "te escuché" antes de que el globo termine de posicionarse.
-    scanPulse(el);
     const c = caja.current?.getBoundingClientRect();
     const m = el.getBoundingClientRect();
     if (!c) return;
     const cx = m.left + m.width / 2 - c.left;
+    // Face-ID-style: un anillo real superpuesto que expande desde el punto
+    // tocado, feedback inmediato de "te escuché" antes de que el globo
+    // termine de posicionarse. No se anima el <g> del músculo: en SVG,
+    // scale() transforma desde el origen del viewBox, no desde el centro del
+    // elemento, así que el pulso salía deformado en vez de expandirse in situ.
+    tapRing(caja.current, cx, m.top + m.height / 2 - c.top);
     const media = ANCHO_POP / 2;
     const abajo = m.bottom - c.top + 8;
     const arriba = abajo + 190 > c.height;

@@ -77,16 +77,29 @@ export function animateRing(circleEl, progress, { duration = 900 } = {}) {
   );
 }
 
-// Anillo de escaneo (expande + fade). Ref: Face ID.
-export function scanPulse(el) {
-  if (!el?.animate) return;
-  el.animate(
+// Anillo de escaneo (expande + fade) en un punto de pantalla. Ref: Face ID.
+//
+// No anima el elemento tocado directamente: sobre un <g> de SVG, scale()
+// transforma desde el origen del viewBox (esquina), no desde el centro del
+// músculo — el "pulso" salía desplazado/deformado en vez de expandirse desde
+// el punto de toque. En su lugar crea un anillo HTML real, posicionado en
+// coordenadas de `container` (que debe tener position:relative), y se
+// autodestruye al terminar — mismo patrón imperativo que fireConfetti().
+export function tapRing(container, x, y, { size = 14, color = 'var(--cyan)' } = {}) {
+  if (!container) return;
+  const ring = document.createElement('span');
+  ring.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${size}px;height:${size}px;` +
+    `margin:${-size / 2}px 0 0 ${-size / 2}px;border-radius:50%;border:2px solid ${color};` +
+    'pointer-events:none;z-index:5;box-sizing:border-box;';
+  container.appendChild(ring);
+  const anim = ring.animate(
     [
       { transform: 'scale(1)', opacity: .9 },
-      { transform: 'scale(1.6)', opacity: 0 },
+      { transform: 'scale(3.2)', opacity: 0 },
     ],
-    { duration: 700, easing: 'cubic-bezier(.4,0,.2,1)' },
+    { duration: 600, easing: 'cubic-bezier(.4,0,.2,1)' },
   );
+  anim.onfinish = () => ring.remove();
 }
 
 // Cuenta ascendente/descendente de un número (peso, series, calorías, kcal).
