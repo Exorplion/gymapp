@@ -97,6 +97,63 @@ export function strengthReadout() {
   }).filter(x => x.pts.length >= 2).sort((a, b) => b.last - a.last);
 }
 
+/* ---------- bandas de volumen (Plan Fierro · Fase 1) ----------
+   Umbrales de Renaissance Periodization (Mike Israetel): MEV (mínimo
+   efectivo), MAV (rango que de verdad hace crecer) y MRV (máximo
+   recuperable), en series semanales por grupo. Varían por grupo porque no
+   todos los músculos toleran ni necesitan el mismo volumen — Pecho y
+   Espalda aguantan mucho más que Abs o Gemelos. */
+export const VOLUME_BANDS = {
+  Pecho: { mev: 8, mav: 16, mrv: 22 },
+  Espalda: { mev: 10, mav: 18, mrv: 25 },
+  Hombro: { mev: 8, mav: 18, mrv: 24 },
+  Bíceps: { mev: 6, mav: 16, mrv: 22 },
+  Tríceps: { mev: 6, mav: 14, mrv: 20 },
+  Pierna: { mev: 8, mav: 16, mrv: 22 },
+  Glúteo: { mev: 4, mav: 12, mrv: 18 },
+  Gemelos: { mev: 6, mav: 14, mrv: 20 },
+  Abs: { mev: 0, mav: 12, mrv: 20 },
+};
+
+/** En qué banda cae un volumen semanal (series) para un grupo: 'bajo' (por
+    debajo del mínimo efectivo), 'efectivo' (MEV-MAV, el rango que hace
+    crecer), 'cerca-max' (MAV-MRV, cerca del techo recuperable) o
+    'excedido' (MRV o más). Un grupo sin tabla propia usa un genérico
+    razonable en vez de fallar. */
+export function volumeBand(cat, sets) {
+  const b = VOLUME_BANDS[cat] || { mev: 8, mav: 16, mrv: 22 };
+  if (sets < b.mev) return 'bajo';
+  if (sets < b.mav) return 'efectivo';
+  if (sets < b.mrv) return 'cerca-max';
+  return 'excedido';
+}
+
+/* ---------- fuerza en contexto: ratio contra peso corporal ----------
+   Tiers aproximados de Strength Level / Symmetric Strength para los cuatro
+   levantamientos con estándares ampliamente publicados y reconocibles por
+   nombre, como múltiplo del peso corporal (1RM estimado ÷ peso). */
+const STRENGTH_MOVES = [
+  { key: 'sentadilla', match: n => /sentadilla|squat/i.test(n) && !/hack|leg\s*press/i.test(n), tiers: [0.75, 1.25, 1.75, 2.25] },
+  { key: 'peso muerto', match: n => /(peso muerto|deadlift)/i.test(n) && !/(rumano|sldl|rdl)/i.test(n), tiers: [1.0, 1.5, 2.0, 2.5] },
+  { key: 'press banca', match: n => /(press banca|bench)/i.test(n) && !/(inclinado|declinado|incline|decline)/i.test(n), tiers: [0.5, 0.9, 1.25, 1.5] },
+  { key: 'press militar', match: n => /(press militar|overhead press|military press)/i.test(n), tiers: [0.35, 0.55, 0.75, 1.0] },
+];
+const TIER_LABELS = ['Principiante', 'Intermedio', 'Avanzado', 'Élite'];
+
+/** Si `name` es uno de los cuatro grandes, el tier de fuerza y el ratio (PR
+    ÷ peso corporal) — null si no es uno de esos cuatro, o si falta el peso
+    corporal para calcularlo. Ningún dato nuevo: es una división sobre lo
+    que ya se registra. */
+export function strengthTier(name, prWeight, bodyWeight) {
+  if (!(prWeight > 0) || !(bodyWeight > 0)) return null;
+  const move = STRENGTH_MOVES.find(m => m.match(name));
+  if (!move) return null;
+  const ratio = prWeight / bodyWeight;
+  let tier = 0;
+  for (let i = 0; i < move.tiers.length; i++) if (ratio >= move.tiers[i]) tier = i;
+  return { label: TIER_LABELS[tier], ratio: Math.round(ratio * 100) / 100 };
+}
+
 /* ================= gráfico canvas ================= */
 export const CHART_SEL = new WeakMap();
 export function drawChart(cv, pts, opts = {}) {

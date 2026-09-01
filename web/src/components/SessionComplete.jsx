@@ -32,6 +32,14 @@ const BEAT3_DELAY = 1300;
 const STAGGER_ZONA = 120;
 const DUR_TOTAL = 2400; // 1300 (arranca beat 3) + 1100 (dura beat 3)
 
+function milestoneTexto(m) {
+  if (!m) return null;
+  if (m.type === 'racha') return `🔥 ${m.value} días de racha`;
+  if (m.type === 'sesiones') return `🏋 Sesión #${m.value}`;
+  if (m.type === 'tonelaje') return `💪 ${m.value.toLocaleString('es')} kg movidos en total`;
+  return null;
+}
+
 function resumenDe(sess) {
   let series = 0, kg = 0;
   for (const e of sess.entries) {
@@ -80,7 +88,7 @@ export default function SessionComplete() {
     // (session.js) para el porqué del cambio. cerrar() es el único camino de
     // salida de esta pantalla —lo mismo si el timer la cierra sola que si la
     // tocás para saltarla— así que cubre los dos casos sin nada extra.
-    if (actual.huboPR) fireConfetti();
+    if (actual.huboPR || actual.milestone) fireConfetti();
   }
 
   useEffect(() => {
@@ -168,6 +176,7 @@ export default function SessionComplete() {
         <span ref={flameRef} style={{ display: 'inline-block' }}><Flame size={56} className="sc-flame" /></span>
         <div className="sc-streak-n" ref={streakRef}>{reducido ? streak : 0}</div>
         <div className="sc-lbl">{streak === 1 ? 'día de racha' : 'días de racha'}</div>
+        {sess.milestone && <div className="sc-lbl" style={{ marginTop: 6 }}>{milestoneTexto(sess.milestone)}</div>}
       </div>
       <div className="sc-beat b2" style={estiloDe(2)}>
         <div className="sc-resumen">

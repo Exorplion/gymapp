@@ -7,6 +7,7 @@ import { startRest, stopRest } from './rest.js';
 import { pedirPermiso } from './alarm.js';
 import { scrollCarouselTo } from './carousel.js';
 import { exKey } from './equip.js';
+import { currentStreak } from './streak.js';
 
 /** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
     ejercicio completo; un string sigue funcionando y se compara sólo por
@@ -180,6 +181,34 @@ export function entryDelta(sess, entry) {
     return { delta: round1(actual - anterior), anterior, actual };
   }
   return null;
+}
+
+/** Kg totales movidos en toda la historia registrada — cuenta pasiva que
+    crece con cada serie, sin depender de ninguna meta activa (Plan Fierro ·
+    Fase 1, "Tonelaje de por vida"). */
+export function lifetimeTonnage() {
+  let kg = 0;
+  for (const s of S.sessions) for (const e of s.entries || []) for (const st of e.sets || []) kg += (st.w || 0) * (st.r || 0);
+  return Math.round(kg);
+}
+
+/** Compara un ejercicio con lo que hiciste hace ~1 año (330-400 días, para no
+    depender de que caiga justo un año exacto). null si no hay nada que
+    comparar en esa ventana — nunca inventa una fecha. */
+export function recallYearAgo(exName) {
+  const key = exName.trim().toLowerCase();
+  const now = Date.now();
+  const MIN = 330 * 86400000, MAX = 400 * 86400000;
+  let best = null, bestDist = Infinity;
+  for (const s of S.sessions) {
+    const age = now - s.start;
+    if (age < MIN || age > MAX) continue;
+    const e = (s.entries || []).find(en => en.name.trim().toLowerCase() === key);
+    if (!e?.sets?.length) continue;
+    const dist = Math.abs(age - 365 * 86400000);
+    if (dist < bestDist) { bestDist = dist; best = { date: s.date, sets: e.sets }; }
+  }
+  return best;
 }
 
 /** Agrupa sesiones por semana calendario, conservando el orden de entrada. */
@@ -430,6 +459,18 @@ export async function saveSet(exId) {
   }
 }
 
+/* Hitos raros, no diarios (Plan Fierro · Fase 1): confetti completo SOLO en
+   momentos que de verdad son un logro, para que la moneda no se devalúe
+   gastándose en cada serie. Se comparan sobre el estado ANTES de esta
+   sesión: cruzar el umbral, no simplemente estar arriba de él, es lo que
+   hace que sea un hito y no una racha de confetti en cada sesión siguiente. */
+const TONNAGE_MILESTONES = [10000, 25000, 50000, 100000, 250000, 500000, 1000000];
+const SESSION_MILESTONES = [10, 25, 50, 100, 250, 500];
+const STREAK_MILESTONES = [7, 30, 100, 365];
+function crossedMilestone(before, after, list) {
+  return list.find(m => before < m && after >= m) ?? null;
+}
+
 export async function completeSession() {
   if (!S.draft) return;
   const d = S.draft;
@@ -464,12 +505,25 @@ export async function completeSession() {
     ...(skipped.length ? { skipped } : {}),
     ...(added.length ? { added } : {}),
   };
+  // Snapshot ANTES de insertar la sesión — los tres milestones (tonelaje,
+  // sesiones, racha) se miden por si el umbral se CRUZA con esta sesión, no
+  // por si ya estabas arriba de él.
+  const tonnageBefore = lifetimeTonnage();
+  const sessionsBefore = S.sessions.length;
+  const streakBefore = currentStreak();
+
   await idb.put('sessions', sess);
   S.sessions.unshift(sess);
   // sessionPRs filtra por start < sess.start, así que la sesión recién
   // insertada se excluye sola: da lo mismo calcular antes o después de guardar.
   const prs = sessionPRs(sess);
   S.draft = null;
+
+  const milestone =
+    crossedMilestone(streakBefore, currentStreak(), STREAK_MILESTONES) && { type: 'racha', value: currentStreak() } ||
+    crossedMilestone(sessionsBefore, S.sessions.length, SESSION_MILESTONES) && { type: 'sesiones', value: S.sessions.length } ||
+    crossedMilestone(tonnageBefore, lifetimeTonnage(), TONNAGE_MILESTONES) && { type: 'tonelaje', value: lifetimeTonnage() } ||
+    null;
 
   // Avanza el puntero al turno siguiente al que se acaba de completar,
   // buscando por id (no por índice guardado): si reordenaste la secuencia
@@ -489,7 +543,7 @@ export async function completeSession() {
   // mientras el usuario todavía miraba racha/resumen, antes de que el PR
   // fuera visible. Se guarda si hubo PR junto con la sesión, y es
   // SessionComplete.jsx quien dispara fireConfetti() al abrir session-view.
-  S.sessionComplete = { ...sess, huboPR: prs.length > 0 };
+  S.sessionComplete = { ...sess, huboPR: prs.length > 0, milestone };
   bump();
 }
 
