@@ -186,7 +186,13 @@ function MemoriaLine({ slot }) {
       {recall && (
         <div>Hace 1 año: {recall.name} {recall.sets.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg</div>
       )}
-      {tonelaje > 0 && <div>{fmtNum(tonelaje)} kg movidos en total</div>}
+      {tonelaje > 0 && (
+        <div>
+          {fmtNum(tonelaje)} kg movidos en total
+          {' · '}
+          <button type="button" className="text-blue2 font-medium" onClick={() => openSheet('year-recap')}>Tu Año Fierro →</button>
+        </div>
+      )}
     </div>
   );
 }

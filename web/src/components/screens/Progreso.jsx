@@ -50,6 +50,10 @@ export default function Progreso() {
   const headNum = wk && wk.curAvg != null ? wk.curAvg : (lastW ? lastW.weight : null);
   const headLabel = wk && wk.curAvg != null ? `Peso · promedio ${wk.n} día${wk.n === 1 ? '' : 's'}` : 'Peso corporal';
   const wpts = filterByRange(weights.map(b => ({ date: b.date, y: round1(b.weight) })), S.progRange);
+  // Composición corporal (Plan Fierro · Fase 3): masa magra = peso ×
+  // (1-%grasa), a partir del último registro con %grasa — separa "bajar de
+  // peso" de "recomponer" sin inventar un dato que falta.
+  const lastBf = [...S.body].reverse().find(b => b.bodyfat != null);
 
   const tab = S.progTab;
   const exPts = (tab === 'carga' && S.progEx)
@@ -108,6 +112,11 @@ export default function Progreso() {
           ))}
         </div>
         <div className="mt-3"><Chart id="chartWeight" pts={wpts} opts={{ unit: 'kg' }} /></div>
+        {lastBf && (
+          <div className="text-mut text-[12.5px] mt-1.5">
+            {lastBf.bodyfat}% grasa · masa magra estimada {fmtNum(round1(lastBf.weight * (1 - lastBf.bodyfat / 100)))} kg
+          </div>
+        )}
         {Object.keys(lastVals).length > 0 && (
           <div className="stats" style={{ '--n': 4 }}>
             {Object.entries(lastVals).map(([k, v]) => (

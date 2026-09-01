@@ -23,7 +23,7 @@ import { flipSort } from '../../lib/drag.js';
 import {
   routineStats, routineName,
   enterEditMode, exitEditMode, toggleSlotOpen, addWorkoutDay, removeWorkoutDay, weekdayProjection,
-  deleteExercise, moveEx,
+  deleteExercise, moveEx, deloadSuggestion,
 } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
 import { iconOf } from '../../lib/exicon.js';
@@ -186,6 +186,7 @@ function RutinaView() {
         <button type="button" className="btn glass" onClick={() => openSheet('library')}>Mis rutinas</button>
       </div>
 
+      <DeloadCard />
       <ReforzarCard />
 
       {/* Cada turno es una tarjeta que se despliega en el lugar, con sus
@@ -242,6 +243,22 @@ function RutinaView() {
         })}
       </div>
     </>
+  );
+}
+
+/** Aviso de deload automático (Plan Fierro · Fase 3): 3+ semanas seguidas
+    en el tope tolerable de volumen para un grupo. Es un aviso, no una
+    acción automática — reducir series a mano sigue siendo del usuario. */
+function DeloadCard() {
+  const grupos = deloadSuggestion();
+  if (!grupos.length) return null;
+  return (
+    <div className="card sub mb-[var(--s3)]" style={{ borderColor: 'var(--warn, #FFB454)' }}>
+      <div className="text-[13.5px] text-txt font-medium">⚠ Puede ser momento de una descarga</div>
+      <div className="s text-mut mt-1">
+        {grupos.join(', ')} llevan 3+ semanas en tu volumen máximo recuperable. Una semana con 40-50% menos series por grupo suele restaurar el progreso.
+      </div>
+    </div>
   );
 }
 

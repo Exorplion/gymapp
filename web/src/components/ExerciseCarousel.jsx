@@ -26,6 +26,7 @@ import { motion } from 'framer-motion';
 import { S, wDisplay, wAlt, wStep, openSheet } from '../lib/state.js';
 import { round1, fmtNum, lb2kg } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
+import { suggestedWeight } from '../lib/charts.js';
 import {
   ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
   targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, dropSet, reemplazaA,
@@ -298,6 +299,20 @@ function ExerciseSlide({ m, wd, started }) {
             {uni && ' por lado'}
           </div>
         )}
+        {(() => {
+          const base = suggestedWeight(ex.name);
+          if (!base || !open) return null;
+          // El ajuste del chequeo de 3 preguntas (Plan Fierro · Fase 3) se
+          // aplica acá — S.draft.precheckAdjust queda en 0 si no se
+          // contestó nada, así que no cambia nada para quien no lo usa.
+          const adj = S.draft?.precheckAdjust || 0;
+          const sug = round1(base * (1 + adj));
+          return (
+            <div className="text-mut text-[12px] mt-1">
+              Sugerido hoy: ~{fmtNum(sug)} kg (80% de tu 1RM estimado{adj !== 0 ? `, ${adj > 0 ? '+' : ''}${Math.round(adj * 100)}% por tu chequeo` : ''})
+            </div>
+          );
+        })()}
         {!last && equipLabel(ex) && (
           <div className="ex-first">
             <div className="t">Primera vez en {equipLabel(ex)}</div>
@@ -379,7 +394,12 @@ function ExerciseSlide({ m, wd, started }) {
                 </div>
               </div>
             </div>
-            <RpeSelector v={v} />
+            {/* key=done.length: saveSet() resetea v.rpe a null después de
+                cada serie, y el estado local de RpeSelector no puede
+                enterarse de una mutación sobre `v`. Remontarlo por serie
+                lo deja siempre en blanco para la que viene — mismo truco
+                que ya usa .ex-done-count más arriba. */}
+            <RpeSelector key={done.length} v={v} />
             <button
               type="button"
               className="btn"

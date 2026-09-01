@@ -154,6 +154,18 @@ export function strengthTier(name, prWeight, bodyWeight) {
   return { label: TIER_LABELS[tier], ratio: Math.round(ratio * 100) / 100 };
 }
 
+/* ---------- peso sugerido por % de 1RM (Plan Fierro · Fase 3) ----------
+   Patrón de 5/3/1 y plataformas VBT: programar por porcentaje del máximo
+   ACTUAL (el e1RM más reciente), no un número fijo que envejece. RIR 2-3
+   (esfuerzo cómodo, series de trabajo normales) ronda 75-85% del 1RM —
+   se usa 80% como punto medio razonable por defecto. */
+export function suggestedWeight(name, pct = 0.8) {
+  const pts = e1rmSeries(name);
+  if (!pts.length) return null;
+  const last = pts[pts.length - 1].y;
+  return Math.round(last * pct * 4) / 4; // redondeo a 0.25kg, ajustable con discos chicos
+}
+
 /* ---------- ACWR: riesgo por salto brusco de volumen (Plan Fierro · Fase 2) ----------
    Acute:Chronic Workload Ratio (Gabbett et al.): tonelaje de los últimos 7
    días contra el promedio semanal de las últimas 4 semanas. ≥1.5 es la zona

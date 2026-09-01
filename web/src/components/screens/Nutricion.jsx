@@ -22,6 +22,7 @@ import { S, useStore, bump, openSheet } from '../../lib/state.js';
 import { dstr, fmtDFull, fmtNum, round1 } from '../../lib/format.js';
 import { computeMacros, GOAL_LABEL, weeklyBandAdjustment } from '../../lib/macros.js';
 import { mealsOf, macroCls, nutriFeedback, frequentMeals, mealsBySlot, slotForTime } from '../../lib/meals.js';
+import { lowMicros } from '../../lib/micronutrients.js';
 import { idb } from '../../lib/db.js';
 import { logMeal, addMealFromFood } from '../sheets/MealForm.jsx';
 import { useEffect, useRef } from 'react';
@@ -46,6 +47,25 @@ function shiftNutriDate(days) {
   if (s > dstr()) return;
   S.nutriDate = s;
   bump();
+}
+
+/** Nudge blando de proteína post-entreno (Plan Fierro · Fase 2): la primera
+    vez que Rutina y Nutrición se hablan. Si cerraste una sesión y en las 2
+    horas siguientes no hay ninguna comida con proteína registrada, se dice
+    — acá, en el resumen del día, NUNCA como notificación push. */
+function postWorkoutProteinPending() {
+  const ultima = S.sessions[0];
+  if (!ultima?.end) return false;
+  const desde = ultima.end;
+  const transcurrido = Date.now() - desde;
+  // Sólo dentro de la ventana de 2h: pasado eso ya no es accionable y
+  // recordarlo sería regaño, no ayuda.
+  if (transcurrido < 0 || transcurrido > 2 * 3600e3) return false;
+  return !S.meals.some(mm => {
+    if (!(mm.p > 0)) return false;
+    const t = new Date(`${mm.date}T${mm.t || '00:00'}:00`).getTime();
+    return t >= desde;
+  });
 }
 
 async function deleteMeal(id) {
@@ -74,6 +94,8 @@ export default function Nutricion() {
   const kcalOff = KCAL_CIRC * (1 - Math.min(1, g.kcal ? kc / g.kcal : 0));
   const freq = frequentMeals();
   const band = m ? weeklyBandAdjustment() : null;
+  const bajos = isToday ? lowMicros() : [];
+  const proteinaPendiente = isToday ? postWorkoutProteinPending() : false;
 
   // Cuenta ascendente del número grande de kcal consumidas al cambiar de
   // día/comida — el anillo ya anima vía strokeDashoffset (CSS transition),
@@ -167,6 +189,23 @@ export default function Nutricion() {
         </div>
         <div className="nutri-fb" dangerouslySetInnerHTML={{ __html: nutriFeedback(kc, tp, tf, g, m) }} />
       </div>
+
+      {proteinaPendiente && (
+        <div className="card sub">
+          <div className="text-[13.5px] text-txt font-medium">🥩 Entrenaste hace poco</div>
+          <div className="s text-mut mt-1">Todavía no registraste una comida con proteína. No es una regla dura, pero es el mejor momento para una.</div>
+        </div>
+      )}
+
+      {bajos.length > 0 && (
+        <div className="card sub">
+          <div className="text-[13.5px] text-txt font-medium">Micronutrientes bajos esta semana</div>
+          <div className="s text-mut mt-1">
+            {bajos.map(b => `${b.label} (${b.dias} de 7 días)`).join(' · ')}
+          </div>
+          <div className="s text-mut2 mt-1">Estimado desde la tabla de alimentos — sirve para ver una tendencia, no para diagnosticar nada.</div>
+        </div>
+      )}
 
       {band?.adjust !== 0 && band && (
         <div className="card sub">

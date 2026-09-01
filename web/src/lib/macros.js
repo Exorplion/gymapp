@@ -1,7 +1,8 @@
 // Motor de macros — puerto verbatim de index.html. Nada hardcodeado: todo se
 // deriva del perfil real del usuario (S.cfg.profile / S.body).
-import { S } from './state.js';
-import { KG2LB } from './format.js';
+import { S, saveCfg } from './state.js';
+import { KG2LB, dstr } from './format.js';
+import { mealsOf } from './meals.js';
 
 export const ACTF = { sedentary: 1.2, light: 1.375, moderate: 1.55, high: 1.725 };
 export const ACT_LABEL = { sedentary: 'Sedentario', light: 'Ligero', moderate: 'Moderado', high: 'Alto' };
@@ -86,4 +87,78 @@ export function weeklyBandAdjustment(weeks = 2) {
   if (diff > 0.1) adjust = -100;       // bajando más lento (o subiendo más) de lo esperado → recortar
   else if (diff < -0.1) adjust = 100;  // bajando más rápido (o subiendo menos) de lo esperado → sumar
   return { actualWeekly: Math.round(actualWeekly * 100) / 100, expected: Math.round(expected * 100) / 100, adjust };
+}
+
+/* ---------- TDEE adaptativo continuo (Plan Fierro · Fase 3) ----------
+   El algoritmo de referencia (MacroFactor): en vez de ADIVINAR el gasto con
+   una fórmula (Mifflin-St Jeor, siempre igual sea cual sea tu metabolismo
+   real), lo DESPEJA al revés desde el resultado real —
+   TDEE = intake_promedio − (Δpeso × 7700kcal/kg) — usando lo que la app YA
+   tiene registrado en ambos lados: S.body y S.meals. */
+
+/** Kcal promedio realmente registradas entre `fromDate` y `toDate`
+    (inclusive), sólo contando los días que SÍ tienen al menos una comida —
+    un día sin registrar no cuenta como "cero calorías", cuenta como "sin
+    dato", así que no distorsiona el promedio hacia abajo. */
+function avgIntake(fromDate, toDate) {
+  let day = new Date(fromDate + 'T12:00:00');
+  const end = new Date(toDate + 'T12:00:00');
+  let total = 0, days = 0;
+  while (day <= end) {
+    const ds = dstr(day);
+    const meals = mealsOf(ds);
+    if (meals.length) { total += meals.reduce((a, m) => a + m.kcal, 0); days++; }
+    day.setDate(day.getDate() + 1);
+  }
+  return days ? { avg: total / days, days } : null;
+}
+
+/** Recalcula el TDEE empírico comparando el peso promedio de la semana
+    ACTUAL contra la semana ANTERIOR (weeklyAvg() ya hace esa comparación en
+    charts.js — acá se reimplementa sólo lo del peso para no crear una
+    dependencia circular macros.js↔charts.js) contra las calorías realmente
+    registradas en esa misma ventana de 7 días.
+
+    Devuelve null si falta cualquiera de los dos lados: sin al menos 2
+    semanas de peso Y comidas registradas en la ventana reciente, no hay con
+    qué despejar nada — mejor no calcular que inventar un número. */
+export function computeAdaptiveTDEE() {
+  const ws = S.body.filter(b => b.weight != null);
+  if (ws.length < 2) return null;
+  const end = new Date(ws[ws.length - 1].date + 'T12:00:00');
+  const daysAgo = d => (end - new Date(d + 'T12:00:00')) / 86400000;
+  const cur = ws.filter(b => { const g = daysAgo(b.date); return g >= 0 && g < 7; });
+  const prev = ws.filter(b => { const g = daysAgo(b.date); return g >= 7 && g < 14; });
+  if (!cur.length || !prev.length) return null;
+  const avg = a => a.reduce((s, b) => s + b.weight, 0) / a.length;
+  const deltaKg = avg(cur) - avg(prev);
+
+  const toDate = ws[ws.length - 1].date;
+  const fromDate = dstr(new Date(+end - 6 * 86400000));
+  const intake = avgIntake(fromDate, toDate);
+  // Menos de 4 días con comidas registradas en la semana: el promedio de
+  // intake no es confiable todavía (un solo día atípico pesaría demasiado).
+  if (!intake || intake.days < 4) return null;
+
+  const tdee = Math.round(intake.avg - (deltaKg * KCAL_PER_KG) / 7);
+  return { tdee, deltaKg: Math.round(deltaKg * 100) / 100, intakeAvg: Math.round(intake.avg), daysWithData: intake.days };
+}
+
+/** Corre computeAdaptiveTDEE() y, si da un resultado, lo guarda en
+    S.cfg.profile.tdeeEmpirical — el campo que ya existía en el schema pero
+    nunca se auto-calculaba (Plan Fierro, "la oportunidad más grande de todo
+    el análisis"). Se llama una vez por semana desde loadAll() (state.js),
+    no en cada render: recorrer S.sessions/S.meals no es gratis y el número
+    no cambia sesión a sesión. */
+export async function refreshAdaptiveTDEE() {
+  const today = dstr();
+  if (S.cfg.tdeeCheckedDate === today) return false; // ya se corrió hoy
+  const r = computeAdaptiveTDEE();
+  S.cfg.tdeeCheckedDate = today;
+  if (r) {
+    S.cfg.profile.tdeeEmpirical = r.tdee;
+    applyComputedGoals();
+  }
+  await saveCfg();
+  return !!r;
 }

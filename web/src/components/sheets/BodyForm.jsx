@@ -30,6 +30,7 @@ export default function BodyForm() {
   const [arm, setArm] = useState('');
   const [chest, setChest] = useState('');
   const [leg, setLeg] = useState('');
+  const [bodyfat, setBodyfat] = useState('');
   const weightRef = useRef(null);
   const rootRef = useRef(null);
 
@@ -37,8 +38,8 @@ export default function BodyForm() {
 
   async function save() {
     const num = raw => { const v = parseFloat(raw); return isNaN(v) ? null : v; };
-    const rec = { id: uid(), date: dstr(), weight: num(weight), waist: num(waist), arm: num(arm), chest: num(chest), leg: num(leg) };
-    if (rec.weight == null && rec.waist == null && rec.arm == null && rec.chest == null && rec.leg == null) {
+    const rec = { id: uid(), date: dstr(), weight: num(weight), waist: num(waist), arm: num(arm), chest: num(chest), leg: num(leg), bodyfat: num(bodyfat) };
+    if (rec.weight == null && rec.waist == null && rec.arm == null && rec.chest == null && rec.leg == null && rec.bodyfat == null) {
       toast('Ingresa al menos un dato');
       return;
     }
@@ -83,6 +84,10 @@ export default function BodyForm() {
           <label htmlFor="body-pierna" className={labelCls}>Pierna (cm)</label>
           <input id="body-pierna" type="number" inputMode="decimal" step="any" className={inputCls} placeholder={last.leg ?? '—'} value={leg} onChange={e => setLeg(e.target.value)} />
         </div>
+      </div>
+      <div className="mb-4">
+        <label htmlFor="body-grasa" className={labelCls}>% de grasa corporal (opcional)</label>
+        <input id="body-grasa" type="number" inputMode="decimal" step="any" min="3" max="60" className={inputCls} placeholder={last.bodyfat ?? 'balanza o calibre'} value={bodyfat} onChange={e => setBodyfat(e.target.value)} />
       </div>
       <Button type="button" className="w-full" onClick={save}>Guardar registro</Button>
     </div>

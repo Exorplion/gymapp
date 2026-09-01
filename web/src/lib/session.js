@@ -7,7 +7,7 @@ import { startRest, stopRest } from './rest.js';
 import { pedirPermiso } from './alarm.js';
 import { scrollCarouselTo } from './carousel.js';
 import { exKey } from './equip.js';
-import { currentStreak } from './streak.js';
+import { currentStreak, bestStreak } from './streak.js';
 
 /** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
     ejercicio completo; un string sigue funcionando y se compara sólo por
@@ -184,6 +184,44 @@ export function entryDelta(sess, entry) {
     return { delta: round1(actual - anterior), anterior, actual };
   }
   return null;
+}
+
+/** "Tu Año Fierro" (Plan Fierro · Fase 3): recap de solo-lectura sobre los
+    últimos 365 días de S.sessions — mismo espíritu que Spotify Wrapped:
+    sintetiza lo ya guardado en una historia, sin pedir ningún dato nuevo.
+    null si no hay sesiones en la ventana. */
+export function yearRecap() {
+  const cutoff = Date.now() - 365 * 86400000;
+  const sess = S.sessions.filter(s => s.start >= cutoff);
+  if (!sess.length) return null;
+
+  let kg = 0, series = 0;
+  const porEjercicio = new Map();
+  const porDia = new Map(); // date -> kg del día
+  for (const s of sess) {
+    let kgDia = 0;
+    for (const e of s.entries || []) {
+      let kgEj = 0;
+      for (const st of e.sets || []) { const v = (st.w || 0) * (st.r || 0); kg += v; kgDia += v; kgEj += v; series++; }
+      porEjercicio.set(e.name, (porEjercicio.get(e.name) || 0) + kgEj);
+    }
+    porDia.set(s.date, (porDia.get(s.date) || 0) + kgDia);
+  }
+  const topEjercicio = [...porEjercicio.entries()].sort((a, b) => b[1] - a[1])[0];
+  const diaMasFuerte = [...porDia.entries()].sort((a, b) => b[1] - a[1])[0];
+  const prMasGrande = sess
+    .flatMap(s => (s.entries || []).flatMap(e => (e.sets || []).map(st => ({ name: e.name, w: st.w, date: s.date }))))
+    .sort((a, b) => b.w - a.w)[0];
+
+  return {
+    sesiones: sess.length,
+    kg: Math.round(kg),
+    series,
+    ejercicioTop: topEjercicio ? { name: topEjercicio[0], kg: Math.round(topEjercicio[1]) } : null,
+    diaMasFuerte: diaMasFuerte ? { date: diaMasFuerte[0], kg: Math.round(diaMasFuerte[1]) } : null,
+    prMasGrande: prMasGrande || null,
+    rachaMasLarga: bestStreak(),
+  };
 }
 
 /** Kg totales movidos en toda la historia registrada — cuenta pasiva que
@@ -557,7 +595,7 @@ export async function completeSession() {
 /** Abre el borrador de sesión (weekday `wd`, con el orden ya reacomodado si
     hubo drag-to-reorder antes de arrancar). El cronómetro NO arranca acá —
     arranca en startExercise(), cuando de verdad estás en la máquina. */
-export async function startSession(index) {
+export async function startSession(index, precheckAdjust = 0) {
   const slot = S.routine[index];
   if (!slot?.exercises?.length) { toast('Este turno no tiene ejercicios'); return; }
   // Acá y no al terminar el primer descanso: abrir la sesión es un toque de
@@ -569,6 +607,9 @@ export async function startSession(index) {
     // lo que se puede cambiar sin tocar el plan: ver "modificar la sesión
     // mientras entrenás" más arriba
     skipped: [], extraSets: {}, extras: [],
+    // Chequeo de 3 preguntas (Plan Fierro · Fase 3): ±% sobre el peso
+    // sugerido de HOY, ver precheckAdjust() en Hoy.jsx. 0 = sin ajuste.
+    precheckAdjust,
   };
   await saveDraft();
   closeSheet();
