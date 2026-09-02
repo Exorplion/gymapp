@@ -175,6 +175,17 @@ Si Enzo quiere seguir, los candidatos en orden de valor/esfuerzo son:
 
 ---
 
+## Reglas de trabajo acordadas
+
+- **Compactar al 41% de la ventana de contexto.** Al llegar ahí: correr
+  `/ecc:save-session` **primero**, después avisarle a Enzo que tipee `/compact`
+  (Claude no puede ejecutar `/compact`, es un comando del CLI). El orden importa:
+  compactar sin guardar pierde el "qué falló y por qué", que no se reconstruye
+  después. No esperar al aviso del hook `strategic-compact`, que llega al ~43-45%.
+- **Cadencia de guardado:** `/ecc:save-session` en el día a día (rápido, local a
+  esta PC en `~/.claude/session-data/`). Este `HANDOFF.md` sólo en hitos grandes —
+  es lo único que viaja en git y sobrevive un cambio de máquina o el chat web.
+
 ## Entorno y comandos
 
 ```bash
