@@ -52,6 +52,19 @@ export function exInfo(name) {
   return best;
 }
 
+/** Si buscás "bench" tiene que aparecer "Press banca": el nombre del catálogo
+ * no contiene la palabra en inglés, pero sus sinónimos en EXDB[].k sí la
+ * tienen. Sin esto la búsqueda sólo matcheaba substring literal del nombre. */
+export function exMatchesQuery(name, query) {
+  const nq = norm(query);
+  if (!nq) return true;
+  const nn = norm(name);
+  if (nn.includes(nq)) return true;
+  const info = exInfo(name);
+  if (!info) return false;
+  return info.k.some(kw => { const nk = norm(kw); return nk.includes(nq) || nq.includes(nk); });
+}
+
 export const LOWBACK = ['rumano', 'rdl', 'sldl', 'peso muerto', 'buenos dias', 'good morning', 'hiperext', 'rigidas'];
 export const isLowerBackLift = name => { const n = norm(name); return LOWBACK.some(k => n.includes(k)); };
 

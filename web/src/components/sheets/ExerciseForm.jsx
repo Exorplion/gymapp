@@ -14,6 +14,7 @@ import { illusUrl } from '../../lib/illustrations.js';
 import IllusPick from './IllusPick.jsx';
 import { norm } from '../../lib/format.js';
 import { EXCATALOG } from '../../lib/muscle.js';
+import { exMatchesQuery } from '../../lib/exdb.js';
 import { recommendedExercises, saveExercise } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
 import { Mic, RecordDot } from '../Icon.jsx';
@@ -68,9 +69,15 @@ export default function ExerciseForm({ wd, ex }) {
 
   const suggestions = ex ? [] : recommendedExercises(wd);
   const nq = norm(name);
-  const acMatches = acOpen && nq ? EXCATALOG.filter(e => norm(e.n).includes(nq)).slice(0, 6) : [];
+  const acMatches = acOpen && nq ? EXCATALOG.filter(e => exMatchesQuery(e.n, nq)).slice(0, 6) : [];
 
-  function pickName(n) { setName(n); setAcOpen(false); }
+  // Al crear (no editar), arrancamos mostrando sugerencias/catálogo por
+  // chips — tocar es más rápido que escribir. El campo de texto libre queda
+  // detrás de "Escribir otro", y sólo se abre solo si ya hay algo tipeado
+  // (edición) o si no hay ninguna sugerencia para el día.
+  const [writingFree, setWritingFree] = useState(!!ex || (!suggestions.length && !name));
+
+  function pickName(n) { setName(n); setAcOpen(false); setWritingFree(true); }
   function handleNameChange(v) { setName(v); setAcOpen(true); }
 
   function step(setter, d) { setter(v => Math.max(1, (parseInt(v) || 0) + d)); }
@@ -97,71 +104,89 @@ export default function ExerciseForm({ wd, ex }) {
   return (
     <div ref={rootRef}>
       <h2 className="font-cond text-2xl font-bold text-txt">{ex ? 'Editar' : 'Nuevo'} ejercicio</h2>
-      <div className="mt-3">
-        <label htmlFor="exform-nombre" className="mb-1.5 block text-[13px] font-medium text-mut">Nombre</label>
-        <div className="flex items-center gap-2">
-          <input
-            id="exform-nombre"
-            ref={nameRef}
-            className={cn(inputCls, 'flex-1')}
-            value={name}
-            onChange={e => handleNameChange(e.target.value)}
-            placeholder="Press banca"
-            autoComplete="off"
-          />
-          {!ex && SR_CLASS && (
-            <button
-              type="button"
-              className={cn(
-                'grid h-11 w-11 flex-none place-items-center rounded-[13px] border border-white/10 text-mut',
-                recording && 'bg-accent/15 text-accent',
-              )}
-              id="ex-voice-btn"
-              aria-label="Dictar por voz"
-              onClick={toggleVoice}
-            >
-              {recording ? <RecordDot /> : <Mic />}
+
+      {/* Tocar es más rápido que escribir: si hay sugerencias, arrancamos acá
+          y el nombre elegido queda fijado por el chip. El texto libre queda
+          detrás de "Escribir otro" — para el caso real de un ejercicio que
+          no está en ninguna lista. */}
+      {!writingFree && (
+        <>
+          {suggestions.length > 0 && (
+            <>
+              <div className="mt-3 mb-1.5 text-[11px] uppercase tracking-wide text-mut">
+                Sugeridos para hoy
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {suggestions.map(e => (
+                  <button key={e.n} type="button" className={chip(false)} onClick={() => pickName(e.n)}>{e.n}</button>
+                ))}
+              </div>
+            </>
+          )}
+          <details className="mt-2.5" open={!suggestions.length}>
+            <summary className="cursor-pointer text-[13px] font-semibold text-blue">📚 Explorar toda la base de ejercicios</summary>
+            <div className="mt-2">
+              {CATALOG_CATS.map(c => (
+                <div key={c}>
+                  <div className="mt-2.5 mb-1.5 text-[11px] uppercase tracking-wide text-mut">{c}</div>
+                  <div className="flex flex-wrap gap-2">
+                    {EXCATALOG.filter(e => e.c === c).map(e => (
+                      <button key={e.n} type="button" className={chip(false)} onClick={() => pickName(e.n)}>{e.n}</button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </details>
+          <Button type="button" variant="ghost" className="mt-3 w-full" onClick={() => { setWritingFree(true); setTimeout(() => nameRef.current?.focus(), 0); }}>
+            ✏️ Escribir otro
+          </Button>
+        </>
+      )}
+
+      {writingFree && (
+        <div className="mt-3">
+          <label htmlFor="exform-nombre" className="mb-1.5 block text-[13px] font-medium text-mut">Nombre</label>
+          <div className="flex items-center gap-2">
+            <input
+              id="exform-nombre"
+              ref={nameRef}
+              className={cn(inputCls, 'flex-1')}
+              value={name}
+              onChange={e => handleNameChange(e.target.value)}
+              placeholder="Press banca"
+              autoComplete="off"
+            />
+            {!ex && SR_CLASS && (
+              <button
+                type="button"
+                className={cn(
+                  'grid h-11 w-11 flex-none place-items-center rounded-[13px] border border-white/10 text-mut',
+                  recording && 'bg-accent/15 text-accent',
+                )}
+                id="ex-voice-btn"
+                aria-label="Dictar por voz"
+                onClick={toggleVoice}
+              >
+                {recording ? <RecordDot /> : <Mic />}
+              </button>
+            )}
+          </div>
+          {acMatches.length > 0 && (
+            <div className="mt-1.5 flex flex-col gap-1 rounded-[var(--radius-r)] border border-line2 bg-card2 p-1.5">
+              {acMatches.map(e => (
+                <button key={e.n} type="button" className="rounded-[10px] px-2.5 py-1.5 text-left text-[13.5px] text-txt hover:bg-white/5" onClick={() => pickName(e.n)}>
+                  {e.n} <span className="text-[11.5px] text-mut">· {e.c}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {!ex && (
+            <button type="button" className="mt-1.5 text-[13px] font-medium text-blue" onClick={() => setWritingFree(false)}>
+              ← Volver a sugerencias
             </button>
           )}
         </div>
-        {acMatches.length > 0 && (
-          <div className="mt-1.5 flex flex-col gap-1 rounded-[var(--radius-r)] border border-line2 bg-card2 p-1.5">
-            {acMatches.map(e => (
-              <button key={e.n} type="button" className="rounded-[10px] px-2.5 py-1.5 text-left text-[13.5px] text-txt hover:bg-white/5" onClick={() => pickName(e.n)}>
-                {e.n} <span className="text-[11.5px] text-mut">· {e.c}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      {suggestions.length > 0 && (
-        <>
-          <div className="mt-3 mb-1.5 text-[11px] uppercase tracking-wide text-mut">
-            Sugeridos para hoy
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {suggestions.map(e => (
-              <button key={e.n} type="button" className={chip(false)} onClick={() => pickName(e.n)}>{e.n}</button>
-            ))}
-          </div>
-        </>
-      )}
-      {!ex && (
-        <details className="mt-2.5">
-          <summary className="cursor-pointer text-[13px] font-semibold text-blue">📚 Explorar toda la base de ejercicios</summary>
-          <div className="mt-2">
-            {CATALOG_CATS.map(c => (
-              <div key={c}>
-                <div className="mt-2.5 mb-1.5 text-[11px] uppercase tracking-wide text-mut">{c}</div>
-                <div className="flex flex-wrap gap-2">
-                  {EXCATALOG.filter(e => e.c === c).map(e => (
-                    <button key={e.n} type="button" className={chip(false)} onClick={() => pickName(e.n)}>{e.n}</button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </details>
       )}
       <div className="mt-3.5 grid grid-cols-2 gap-3">
         <div>
