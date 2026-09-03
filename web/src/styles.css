@@ -1717,9 +1717,24 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    horizontal: el dedo puede girar el cuerpo sin pelearse con la página. */
 .sil-stage{
   flex:1;min-height:0;width:100%;position:relative;
-  perspective:1400px;touch-action:pan-y;cursor:grab;
+  touch-action:pan-y;cursor:grab;
 }
 .sil-stage.girando{cursor:grabbing}
+
+/* El zoom al músculo tocado (ver Silhouette.jsx's tocar()): un wrapper aparte
+   de .sil-flip porque scale() y el rotateY del giro son dos gestos
+   independientes que no deben pelearse por el mismo transform. perspective
+   vive acá y no en .sil-stage porque tiene que estar en el padre DIRECTO del
+   elemento con preserve-3d para que el giro se siga viendo igual de bien
+   agrandado que en tamaño normal. transform-origin en el punto tocado (en %,
+   ver --sil-org) es lo que hace que el zoom vaya HACIA el músculo elegido en
+   vez de agrandar el cuerpo entero desde el centro. */
+.sil-zoom{
+  position:absolute;inset:0;perspective:1400px;
+  transform-origin:var(--sil-org,50% 50%);
+  transition:transform .28s var(--ease);will-change:transform;
+}
+.sil-zoom.on{transform:scale(1.55)}
 
 /* Las capas ocupan el stage entero y el dibujo se centra adentro con su propio
    preserveAspectRatio. Es a propósito: pedirle a la caja que tome la forma del
@@ -1820,23 +1835,22 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .sil-pair:has(.sil-sel) .sil-z:not(.sil-sel){opacity:.42}
 
 /* ---------- el globo de estadísticas ---------- */
-/* Sale pegado al músculo y no como hoja desde abajo: la pregunta es "¿y este de
-   acá?", y una hoja que tapa media pantalla te saca de vista el cuerpo justo
-   cuando lo estás mirando. */
+/* Ahora es una hoja anclada siempre al borde inferior de .sil-pair, nunca al
+   punto tocado (ver MusclePop.jsx para el porqué del cambio: la versión
+   anterior se salía de cuadro cerca del borde superior). El cuerpo hace zoom
+   hacia el músculo elegido (.sil-zoom más arriba) así seguís viéndolo aunque
+   la ficha ya no esté pegada a él. */
 .sil-tapa{position:absolute;inset:0;z-index:4;border:0;background:transparent;padding:0}
 .mpop{
-  position:absolute;z-index:5;width:208px;transform-origin:var(--org,50% 0);
-  padding:11px 12px 9px;border-radius:14px;
+  position:absolute;left:0;right:0;bottom:0;z-index:5;
+  margin:0 auto;max-width:min(340px,calc(100% - 24px));
+  padding:12px 16px 14px;border-radius:18px 18px 0 0;
   background:linear-gradient(158deg,rgba(255,255,255,.1),rgba(255,255,255,.04)),rgba(10,16,29,.97);
-  border:1px solid var(--line2);
-  box-shadow:0 20px 44px -16px rgba(0,0,0,.85),0 0 0 1px rgba(0,0,0,.35);
-  animation:mpop-in .19s var(--spring) both;
+  border:1px solid var(--line2);border-bottom:0;
+  box-shadow:0 -20px 44px -16px rgba(0,0,0,.85),0 0 0 1px rgba(0,0,0,.35);
+  animation:mpop-in .22s var(--spring) both;
 }
-.mpop.abajo{--org:50% 0;transform:translateX(-50%)}
-.mpop.arriba{--org:50% 100%;transform:translate(-50%,-100%)}
-@keyframes mpop-in{from{opacity:0;transform:translateX(-50%) scale(.88)}}
-.mpop.arriba{animation-name:mpop-in-up}
-@keyframes mpop-in-up{from{opacity:0;transform:translate(-50%,-100%) scale(.88)}}
+@keyframes mpop-in{from{opacity:0;transform:translateY(16px)}}
 
 .mpop-head{display:flex;align-items:center;gap:7px;margin-bottom:9px}
 .mpop-name{
@@ -1901,6 +1915,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   .sil-z{transition:none}
   .mpop{animation:none}
   .sil-flip.suave{transition:none}
+  .sil-zoom{transition:none}
 }
 
 /* ---------- la pantalla de inicio ----------
