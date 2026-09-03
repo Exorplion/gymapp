@@ -187,6 +187,29 @@ alcance a propósito (ver abajo).
   2026-09-03 en `~/.claude/settings.json` (`ECC_DISABLED_HOOKS` ahora incluye
   `pre:edit-write:gateguard-fact-force`), a pedido explícito de Enzo con
   autorización de admin. El de Bash ya estaba desactivado desde antes.
+- **Revisión UX de gestos/animaciones/botones — completada (2026-09-03):** 4
+  pasos, en orden de implementación acordado con Enzo, todos mergeados a
+  `main` y publicados:
+  1. Modelo muscular (`Silhouette.jsx`/`MusclePop.jsx`) — zoom + ficha
+     anclada al borde inferior en vez de clamp por coordenada (PR #23).
+  2. Vitalidad de botones — `Button` de shadcn (`primitives.jsx`) usaba
+     `--grad` (azul apagado) sin el brillo `sweep` que sí tenía `.btn` en
+     `styles.css`; ahora ambos usan `--grad2` + sweep animado (PR #24).
+  3. Selección de ejercicio — chips (sugeridos + catálogo) primero en
+     `ExerciseForm.jsx`, texto libre detrás de "✏️ Escribir otro". Fix de
+     búsqueda: `exMatchesQuery()` en `exdb.js` matchea también contra
+     `EXDB[].k` (sinónimos), no sólo el nombre — "bench" ya encuentra
+     "Press banca" (PR #24).
+  4. Selector de rueda por gestos — `ReelPicker.jsx` + `lib/reel.js`
+     (mismo patrón sin dependencias que `carousel.js`) reemplaza los
+     steppers +/- de peso/reps en `ExerciseCarousel.jsx`; scroll-snap
+     nativo, sin spring/rAF en JS (PR #24).
+  348/348 tests, build limpio, oxlint sin warnings nuevos. No se pudo
+  verificar el paso 4 en navegador real desde este job (background, sin
+  extensión de Chrome) — Enzo dio autorización explícita para publicar de
+  todas formas ("termina todo y publica para verlo en mi celular"); queda
+  pendiente que confirme en el celular que la rueda se siente bien al
+  gesto (no sólo que compile).
 - **Limpieza de la raíz del repo (2026-09-03):** `Plan Fierro.pdf` se movió a
   `docs/archivo/` (el plan que documenta ya está implementado). El material de
   investigación/redisño suelto (`inspiraciones/`, `Imagenes LIFTOFF/`,
