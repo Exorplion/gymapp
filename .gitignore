@@ -2,6 +2,7 @@
 .claude/
 .agents/
 .superpowers/
+.worktrees/
 
 # instalación temporal de Playwright para verificación manual en la raíz
 # (la app vainilla no tiene package.json propio; web/ sí y no debe ignorarse)

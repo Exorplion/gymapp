@@ -75,16 +75,16 @@ export const FOOD_TABLE = [
   { n: 'espinaca',         a: ['espinacas'],                                          kcal: 23,  p: 2.9,  c: 3.6,  f: 0.4, u: 100 },
 
   // ── Platos preparados (macros de la porción típica, vía `u`) ───────────
-  { n: 'arroz con pollo',  a: [],                                                     kcal: 155, p: 9,    c: 20,   f: 4.5, u: 350 },
-  { n: 'lomo saltado',     a: ['saltado'],                                            kcal: 145, p: 9,    c: 15,   f: 5.5, u: 400 },
-  { n: 'ceviche',          a: ['cebiche'],                                            kcal: 85,  p: 13,   c: 5,    f: 1.5, u: 300 },
-  { n: 'ají de gallina',   a: ['aji de gallina'],                                     kcal: 165, p: 9,    c: 13,   f: 8,   u: 350 },
-  { n: 'causa',            a: ['causa limeña'],                                       kcal: 130, p: 4,    c: 18,   f: 4.5, u: 250 },
-  { n: 'tallarín saltado', a: ['tallarin saltado'],                                   kcal: 150, p: 8,    c: 19,   f: 4.5, u: 400 },
-  { n: 'sopa',             a: ['caldo'],                                              kcal: 40,  p: 3,    c: 4,    f: 1.2, u: 350 },
-  { n: 'sándwich de pollo', a: ['sandwich de pollo', 'sanguche de pollo'],            kcal: 200, p: 14,   c: 22,   f: 6,   u: 180 },
-  { n: 'hamburguesa',      a: [],                                                     kcal: 250, p: 13,   c: 21,   f: 12,  u: 220 },
-  { n: 'pizza',            a: ['porción de pizza'],                                   kcal: 266, p: 11,   c: 33,   f: 10,  u: 110 },
+  { n: 'arroz con pollo',  a: [],                                                     kcal: 155, p: 9,    c: 20,   f: 4.5, u: 350, mn: { fe: 1,   zn: 0.6, b12: 0.2, mg: 15, k: 140 } },
+  { n: 'lomo saltado',     a: ['saltado'],                                            kcal: 145, p: 9,    c: 15,   f: 5.5, u: 400, mn: { fe: 1.8, zn: 2.5, b12: 1.2, mg: 15, k: 230 } },
+  { n: 'ceviche',          a: ['cebiche'],                                            kcal: 85,  p: 13,   c: 5,    f: 1.5, u: 300, mn: { omega3: 0.15, vitd: 2, b12: 1, fe: 0.3, zn: 0.4, mg: 20, k: 250 } },
+  { n: 'ají de gallina',   a: ['aji de gallina'],                                     kcal: 165, p: 9,    c: 13,   f: 8,   u: 350, mn: { fe: 0.6, zn: 0.8, b12: 0.2, ca: 40, mg: 15, k: 160 } },
+  { n: 'causa',            a: ['causa limeña'],                                       kcal: 130, p: 4,    c: 18,   f: 4.5, u: 250, mn: { fe: 0.4, mg: 18, k: 300 } },
+  { n: 'tallarín saltado', a: ['tallarin saltado'],                                   kcal: 150, p: 8,    c: 19,   f: 4.5, u: 400, mn: { fe: 1.2, zn: 1.5, b12: 0.7, mg: 12, k: 150 } },
+  { n: 'sopa',             a: ['caldo'],                                              kcal: 40,  p: 3,    c: 4,    f: 1.2, u: 350, mn: { fe: 0.3, mg: 8, k: 120 } },
+  { n: 'sándwich de pollo', a: ['sandwich de pollo', 'sanguche de pollo'],            kcal: 200, p: 14,   c: 22,   f: 6,   u: 180, mn: { fe: 0.5, zn: 0.5, b12: 0.15, mg: 12, k: 100 } },
+  { n: 'hamburguesa',      a: [],                                                     kcal: 250, p: 13,   c: 21,   f: 12,  u: 220, mn: { fe: 1.3, zn: 1.8, b12: 0.6, ca: 40, mg: 13, k: 140 } },
+  { n: 'pizza',            a: ['porción de pizza'],                                   kcal: 266, p: 11,   c: 33,   f: 10,  u: 110, mn: { ca: 110, fe: 0.8, zn: 0.7, mg: 15, k: 110 } },
 ];
 
 /** Unidades de medida reconocidas al dictar, con su peso en gramos. */
