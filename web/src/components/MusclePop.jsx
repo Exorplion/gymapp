@@ -1,8 +1,19 @@
 // El globo que sale al tocar un músculo en Inicio.
 //
-// Sale pegado al músculo que tocaste y no como hoja desde abajo: la pregunta
-// que estás haciendo es "¿y este de acá?", y una hoja que tapa media pantalla
-// te hace perder de vista el cuerpo justo cuando lo estás mirando.
+// Antes salía pegado al músculo (ancla x/y contra el punto tocado): la
+// pregunta que estás haciendo es "¿y este de acá?", y una hoja que tapa media
+// pantalla te hace perder de vista el cuerpo justo cuando lo estás mirando.
+// El problema: la ventanita median por aproximación (190px fijos) contra una
+// altura real de 280-330px según cuántas fibras mostrara, y sólo se
+// clampeaba contra el borde X — con un músculo cerca de arriba del cuerpo
+// (pecho, deltoides, trapecio) la cabecera con el nombre y la × de cerrar
+// quedaba con `top` negativo, invisible.
+//
+// Ahora Silhouette.jsx hace zoom al músculo tocado (así seguís viéndolo, sólo
+// que agrandado) y esta ficha se ancla siempre al borde inferior de
+// `.sil-pair` (el contenedor de la silueta, ya contenido en pantalla): no
+// depende de ninguna coordenada de toque, así que no hay forma de que se
+// salga de cuadro.
 //
 // Muestra hechos medidos y ninguna recomendación. La app sabe cuántas series
 // hiciste; no sabe si son pocas.
@@ -17,19 +28,18 @@ function kilos(v) {
   return String(v);
 }
 
-export default function MusclePop({ stats, pos, onClose }) {
+export default function MusclePop({ stats, onClose }) {
   const { cat, dias, sets, sesiones, porSemana, volumen, mejor, top, fibras, ventana } = stats;
   const nunca = dias === null;
   const popRef = useRef(null);
 
-  // Bloom-open al aparecer pegado al músculo: sale de él, no salta de golpe.
+  // Bloom-open al aparecer como hoja desde abajo: sale del borde, no salta de golpe.
   useEffect(() => { bloomOpen(popRef.current); }, []);
 
   return (
     <div
       ref={popRef}
-      className={`mpop ${pos.arriba ? 'arriba' : 'abajo'}`}
-      style={{ left: `${pos.x}px`, top: `${pos.y}px` }}
+      className="mpop"
       role="dialog"
       aria-label={`Estadísticas de ${cat}`}
     >

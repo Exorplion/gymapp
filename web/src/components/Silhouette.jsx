@@ -42,8 +42,6 @@ import { tapRing } from '../lib/motion.js';
 import { S } from '../lib/state.js';
 import MusclePop from './MusclePop.jsx';
 
-const ANCHO_POP = 208;
-
 /** Ancho al que se dibuja el cuerpo dentro de su caja.
 
     No es el ancho de la caja: el SVG se encaja adentro con su proporción y deja
@@ -150,7 +148,7 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar }) {
 }
 
 export default function Silhouette({ days = {}, interactivo = true, revelar = null }) {
-  const [sel, setSel] = useState(null);   // { cat, x, y, arriba }
+  const [sel, setSel] = useState(null);   // { cat, ox, oy } — ox/oy en % del stage
   const [ang, setAng] = useState(0);      // grados; los múltiplos pares de 180 son la frente
   const [quieto, setQuieto] = useState(true);   // ni girando ni cayendo: se puede tocar
   const [tirando, setTirando] = useState(false); // el dedo manda: sin transición, el giro sigue la mano
@@ -226,39 +224,45 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quieto, tirando, ang]);
 
-  /** Ancla el globo al músculo tocado, en coordenadas de la caja.
+  /** Hace zoom al músculo tocado y abre su ficha de estadísticas.
 
-      Se mide con getBoundingClientRect y no con el bbox del SVG porque el SVG
-      escala: el bbox está en unidades del viewBox y acá hacen falta píxeles.
-
-      El globo va debajo del músculo, salvo que no entre — entonces va arriba.
-      Y se recorta a los bordes de la caja para que nunca se salga por un
-      costado. */
+      Antes el globo de estadísticas se anclaba al punto tocado (ver historial
+      de este archivo) y con un músculo cerca del borde superior se salía del
+      cuadro — la ventanita medía sólo por aproximación (190px fijos) contra
+      una altura real de 280-330px según cuántas fibras tuviera la ficha, y el
+      clamp sólo cubría el eje X, nunca el Y. Ahora el cuerpo hace zoom sobre
+      el músculo elegido (transform-origin = el punto tocado, en % del stage
+      para que no dependa de measurements en píxeles) y la ficha se ancla
+      siempre al borde inferior de `.sil-pair` (el contenedor entero de la
+      silueta) — no puede salirse de cuadro porque ya no se posiciona contra
+      una coordenada de toque, es un layout fijo dentro de un padre que ya
+      estaba contenido en pantalla. */
   const tocar = (cat, el, clientX, clientY) => {
     // Si el dedo venía girando el cuerpo, el click de cierre no es un toque:
     // soltar sobre un músculo no es lo mismo que elegirlo.
     if (gesto.current?.giro) { gesto.current = null; return; }
     if (sel?.cat === cat) return cerrar();
-    const c = caja.current?.getBoundingClientRect();
+    const s = stage.current?.getBoundingClientRect();
     const m = el.getBoundingClientRect();
-    if (!c) return;
-    const cx = m.left + m.width / 2 - c.left;
+    if (!s) return;
     // Face-ID-style: un anillo real superpuesto que expande desde el punto
     // tocado. Usa clientX/clientY del evento y no el centro de `el`: un
     // grupo bilateral (hombro, pantorrilla) es UN <g> con las piezas de
     // ambos lados adentro, así que su bounding box cae en el medio del
     // torso, no en el lado que tocaste. Sin coordenadas de puntero (Enter/
     // Espacio desde teclado) cae al centro del elemento como respaldo.
-    tapRing(clientX ?? (m.left + m.width / 2), clientY ?? (m.top + m.height / 2));
-    const media = ANCHO_POP / 2;
-    const abajo = m.bottom - c.top + 8;
-    const arriba = abajo + 190 > c.height;
+    const px = clientX ?? (m.left + m.width / 2);
+    const py = clientY ?? (m.top + m.height / 2);
+    tapRing(px, py);
+    // Clampeado a 25-75%: un origen muy cerca del borde del stage deja el
+    // músculo pegado al borde de la pantalla incluso agrandado, que es
+    // justo lo que queríamos evitar.
+    const clamp = (n) => Math.max(25, Math.min(75, n));
     vibrate(8);
     setSel({
       cat,
-      x: Math.max(media + 2, Math.min(cx, c.width - media - 2)),
-      y: arriba ? m.top - c.top - 8 : abajo,
-      arriba,
+      ox: clamp(((px - s.left) / s.width) * 100),
+      oy: clamp(((py - s.top) / s.height) * 100),
     });
   };
 
@@ -320,15 +324,20 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
         } : {})}
       >
         <div
-          className={`sil-flip ${tirando ? '' : 'suave'}`}
-          style={{ transform: `rotateY(${ang}deg)` }}
-          onTransitionEnd={asentar}
+          className={`sil-zoom ${sel ? 'on' : ''}`}
+          style={sel ? { '--sil-org': `${sel.ox}% ${sel.oy}%` } : undefined}
         >
-          <div className={`sil-face ${atras ? '' : 'on'}`}>
-            <Cara cara={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={interactivo ? tocar : undefined} activa={!atras} revelar={revelar} />
-          </div>
-          <div className={`sil-face atras ${atras ? 'on' : ''}`}>
-            <Cara cara={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={interactivo ? tocar : undefined} activa={atras} revelar={revelar} />
+          <div
+            className={`sil-flip ${tirando ? '' : 'suave'}`}
+            style={{ transform: `rotateY(${ang}deg)` }}
+            onTransitionEnd={asentar}
+          >
+            <div className={`sil-face ${atras ? '' : 'on'}`}>
+              <Cara cara={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={interactivo ? tocar : undefined} activa={!atras} revelar={revelar} />
+            </div>
+            <div className={`sil-face atras ${atras ? 'on' : ''}`}>
+              <Cara cara={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={interactivo ? tocar : undefined} activa={atras} revelar={revelar} />
+            </div>
           </div>
         </div>
       </div>
@@ -347,7 +356,7 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
       {interactivo && sel && (
         <>
           <button type="button" className="sil-tapa" onClick={cerrar} aria-label="Cerrar estadísticas" />
-          <MusclePop stats={groupStats(sel.cat)} pos={sel} onClose={cerrar} />
+          <MusclePop stats={groupStats(sel.cat)} onClose={cerrar} />
         </>
       )}
 
