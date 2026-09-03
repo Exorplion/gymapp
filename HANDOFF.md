@@ -1,9 +1,13 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-01
+**Última actualización:** 2026-09-03
 **Proyecto:** `Exorplion/gymapp` — FIERRO, PWA local de entrenamiento + nutrición
 **Sitio:** https://exorplion.github.io/gymapp/ (GitHub Pages, sirve la raíz de `main`)
-**Estado:** Plan Fierro (Fases 1-3) implementado, testeado, mergeado (PR #17) y publicado
+**Estado:** Plan Fierro (Fases 1-3) implementado, testeado, mergeado (PR #17) y publicado.
+`mn` ya cubre los 55 alimentos de `foodtable.js` (2026-09-03). Además, `main` local
+tiene 2 commits de planificación de una **migración a React Native** (spec de 7
+etapas + plan de Etapa 1 "andamiaje") que **todavía no están pusheados a origin** —
+ver "Blockers" más abajo.
 
 Este archivo existe para que otra sesión pueda retomar sin volver a leer todo el
 historial. Si vas a seguir el roadmap, empezá por **Próximo paso exacto** al final.
@@ -72,9 +76,12 @@ alcance a propósito (ver abajo).
 - **Colorear la silueta (`Silhouette.jsx`) por `recoveryPct` en vez de por días** —
   se evaluó y se descartó por ahora: `tono()` está muy acoplado a CSS y a varios
   consumidores. `recoveryPct` se expuso como texto en `BodyMap.jsx` en su lugar.
-- **Micronutrientes en el resto de `foodtable.js`** — sólo ~30 de los ~55 alimentos
-  tienen datos `mn`. Los platos preparados peruanos (arroz con pollo, lomo saltado,
-  ceviche…) no los tienen. Ampliarlos mejoraría la cobertura de `lowMicros()`.
+- ~~Micronutrientes en el resto de `foodtable.js`~~ — **hecho el 2026-09-03**: los 10
+  platos preparados que faltaban (arroz con pollo, lomo saltado, ceviche, ají de
+  gallina, causa, tallarín saltado, sopa, sándwich de pollo, hamburguesa, pizza) ya
+  tienen `mn`. Son estimaciones de tabla (no hay USDA directo para platos compuestos
+  peruanos) — razonables pero sin la misma trazabilidad que un alimento simple; si
+  algún valor se ve raro en la práctica, ajustar ahí mismo.
 
 ---
 
@@ -90,7 +97,7 @@ alcance a propósito (ver abajo).
 | `macros.js` | Completo | `expectedWeeklyRate()`, `weeklyBandAdjustment()`, `computeAdaptiveTDEE()`, `refreshAdaptiveTDEE()` |
 | `micronutrients.js` | Completo (nuevo) | `MICROS`, `microsOfDay()`, `lowMicros()` |
 | `rutina-logic.js` | Completo | `deloadSuggestion()` — 3+ semanas en MRV |
-| `foodtable.js` | Parcial | campo `mn` en ~30 alimentos; faltan los platos preparados |
+| `foodtable.js` | Completo | campo `mn` en los 55 alimentos, incluidos los 10 platos preparados |
 | `state.js` | Completo | `loadAll()` llama `refreshAdaptiveTDEE()` 1×/día (import dinámico para evitar ciclo) |
 
 ### UI
@@ -152,26 +159,46 @@ alcance a propósito (ver abajo).
 - **Costo:** esta sesión llegó a ~$118. Tenerlo en cuenta antes de correr harnesses caros.
 - **La racha muestra 0 días** en la app con los datos actuales — la última sesión fue
   hace 32 días, así que es correcto, pero vale confirmarlo con Enzo si le parece raro.
+- **Migración a React Native:** en `main` local (checkout de la PC de Enzo) hay 2
+  commits (`132659d` spec de 7 etapas, `97320cd` plan de Etapa 1 "andamiaje") que NO
+  están en `origin/main`. Existe además un worktree en `.worktrees/rn-etapa1` (rama
+  `feat/rn-etapa1-andamiaje`) con `node_modules` instalados — parece el punto de
+  partida para ejecutar la Etapa 1. Nadie confirmó todavía si se sigue por ahí o si
+  el foco sigue siendo la PWA web.
+- **Gate de fact-forcing de GateGuard (edit/write) desactivado globalmente** el
+  2026-09-03 en `~/.claude/settings.json` (`ECC_DISABLED_HOOKS` ahora incluye
+  `pre:edit-write:gateguard-fact-force`), a pedido explícito de Enzo con
+  autorización de admin. El de Bash ya estaba desactivado desde antes.
+- **Limpieza de la raíz del repo (2026-09-03):** `Plan Fierro.pdf` se movió a
+  `docs/archivo/` (el plan que documenta ya está implementado). El material de
+  investigación/redisño suelto (`inspiraciones/`, `Imagenes LIFTOFF/`,
+  `fierro-rediseno.html`, `explicaciones app.txt`) se movió a
+  `docs/referencias-sueltas/` sin borrar nada — quedó pendiente confirmar con Enzo
+  si ese material de redisño todavía se usa o si se puede borrar. Se agregó
+  `.worktrees/` a `.gitignore` (era un worktree de git legítimo que aparecía como
+  "untracked"). Los worktrees en `.claude/worktrees/` (`agent-a943ba54c7a038d69`,
+  `fierro-inicio-grid`, `logical-gathering-dragonfly`, `publish-build`) no se
+  tocaron — podrían ser trabajo activo de otras sesiones/agentes en paralelo.
 
 ---
 
 ## Próximo paso exacto
 
-No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas.
+No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
+`mn` en `foodtable.js` ya se completó (2026-09-03).
 
 Si Enzo quiere seguir, los candidatos en orden de valor/esfuerzo son:
 
-1. **Ampliar `mn` en `foodtable.js`** a los platos preparados peruanos (arroz con pollo,
-   lomo saltado, ceviche, ají de gallina, causa, tallarín saltado, sopa, sándwich,
-   hamburguesa, pizza). Es la mejora más barata: `lowMicros()` hoy descarta días con
-   `coverage < 0.5`, y esos platos son justo lo que más se come. Sólo hay que agregar
-   el objeto `mn` a cada entrada — el resto de la maquinaria ya existe y está testeada.
-2. **Simetría izquierda/derecha en unilaterales** — el único ítem del plan que quedó sin
+1. **Simetría izquierda/derecha en unilaterales** — el único ítem del plan que quedó sin
    hacer de las Fases 1-3 (estaba listado como impacto medio). `isUnilateral()`/
    `toggleUnilateral()` ya existen en `session.js`; falta el campo "lado" en el set y
    una tarjeta comparativa que avise si la diferencia sostenida supera 10-15%.
-3. **Empezar la migración gradual a TypeScript** por `lib/charts.js` y `lib/macros.js`,
+2. **Empezar la migración gradual a TypeScript** por `lib/charts.js` y `lib/macros.js`,
    que son los que más lógica numérica concentran.
+3. **Decidir el rumbo de la migración a React Native** — hay spec y plan de Etapa 1
+   ya escritos (ver "Blockers" arriba) pero sin confirmar si se ejecuta. Si se sigue,
+   el primer paso real es pushear esos 2 commits a `origin/main` y arrancar sobre el
+   worktree `.worktrees/rn-etapa1`.
 
 ---
 
