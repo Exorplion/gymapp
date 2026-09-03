@@ -13,6 +13,7 @@ import { norm } from '../../lib/format.js';
 import { updateHistorySession } from '../../lib/session.js';
 import { renameRoutineExercise } from '../../lib/rutina-logic.js';
 import { EXCATALOG, MUSCLE_CATS, catOf } from '../../lib/muscle.js';
+import { exMatchesQuery } from '../../lib/exdb.js';
 import { EQUIP, isMachineBound } from '../../lib/equip.js';
 import { toast } from '../../lib/toast.js';
 import { bloomOpen } from '../../lib/motion.js';
@@ -41,7 +42,7 @@ export default function EntryEdit({ sessId, idx }) {
 
   const q = norm(name);
   const sugeridos = useMemo(
-    () => (q ? EXCATALOG.filter(e => norm(e.n).includes(q) && norm(e.n) !== q).slice(0, 6) : []),
+    () => (q ? EXCATALOG.filter(e => exMatchesQuery(e.n, q) && norm(e.n) !== q).slice(0, 6) : []),
     [q],
   );
 

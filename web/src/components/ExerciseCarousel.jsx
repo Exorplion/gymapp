@@ -37,6 +37,7 @@ import { staggerReveal, squashStretch, impactBurst } from '../lib/motion.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
+import ReelPicker from './ReelPicker.jsx';
 import { Info, Skip, Swap } from './Icon.jsx';
 
 export default function ExerciseCarousel({ exs, wd, active, started, curId, nextEx }) {
@@ -238,8 +239,10 @@ function ExerciseSlide({ m, wd, started }) {
     if (rRef.current) rRef.current.value = v.r;
     syncDependents();
   }
-  function stepW(d) { v.w = Math.max(0, round1(v.w + d * wStep())); syncInputs(); }
-  function stepR(d) { v.r = Math.max(1, v.r + d); syncInputs(); }
+  // La rueda de gestos entrega un valor absoluto (el diente donde frenó el
+  // scroll) — reemplazó a los steppers +/- de toque repetido.
+  function setW(newW) { v.w = Math.max(0, round1(newW)); syncInputs(); }
+  function setR(newR) { v.r = Math.max(1, Math.round(newR)); syncInputs(); }
   function onWChange(e) {
     const num = parseFloat(e.target.value);
     if (!isNaN(num) && num >= 0) v.w = S.cfg.unit === 'kg' ? num : lb2kg(num);
@@ -376,21 +379,33 @@ function ExerciseSlide({ m, wd, started }) {
             <div className="setrows">
               <div>
                 <div className="steplabel">Peso ({S.cfg.unit === 'kg' ? 'kg' : 'lb'}){uni ? ' por lado' : ''}</div>
-                <div className="step">
-                  <button type="button" onClick={() => stepW(-1)}>−</button>
+                <ReelPicker
+                  key={`w-${done.length}`}
+                  value={v.w}
+                  step={wStep()}
+                  fmt={n => wDisplay(n)}
+                  onChange={setW}
+                  label="Peso"
+                />
+                <div className="step" style={{ marginTop: 6 }}>
                   <div className="val">
                     <input ref={wRef} type="number" inputMode="decimal" step="any" defaultValue={wDisplay(v.w)} onChange={onWChange} />
                     <span className="alt" ref={altRef}>{wAlt(v.w)}</span>
                   </div>
-                  <button type="button" onClick={() => stepW(1)}>+</button>
                 </div>
               </div>
               <div>
                 <div className="steplabel">Reps</div>
-                <div className="step">
-                  <button type="button" onClick={() => stepR(-1)}>−</button>
+                <ReelPicker
+                  key={`r-${done.length}`}
+                  value={v.r}
+                  step={1}
+                  min={1}
+                  onChange={setR}
+                  label="Reps"
+                />
+                <div className="step" style={{ marginTop: 6 }}>
                   <div className="val"><input ref={rRef} type="number" inputMode="numeric" defaultValue={v.r} onChange={onRChange} /></div>
-                  <button type="button" onClick={() => stepR(1)}>+</button>
                 </div>
               </div>
             </div>

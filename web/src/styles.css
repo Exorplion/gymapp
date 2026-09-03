@@ -343,6 +343,27 @@ main{
 .step .val .alt{font-size:12px;color:var(--mut);letter-spacing:.05em;display:block;margin-top:-4px}
 .steplabel{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
 
+/* ---------- rueda de gestos (peso/reps) ---------- */
+/* Scroll-snap nativo, igual que .carousel — el gesto lo maneja el navegador,
+   nada de spring en JS/rAF (ver la nota de esta sesión en reel.js). */
+.reel{position:relative;height:64px;border-radius:16px;background:var(--card2);border:1px solid var(--line2);overflow:hidden}
+.reel-track{
+  display:flex;align-items:center;height:100%;overflow-x:auto;
+  scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;
+  padding:0 calc(50% - 26px);
+}
+.reel-track::-webkit-scrollbar{display:none}
+.reel-tooth{
+  flex:none;width:52px;scroll-snap-align:center;text-align:center;
+  font-family:'Barlow Condensed';font-weight:600;font-size:17px;color:var(--mut);
+  font-variant-numeric:tabular-nums;transition:color .15s,font-size .15s,font-weight .15s;
+}
+.reel-tooth.on{color:var(--txt);font-size:26px;font-weight:800}
+.reel-indicator{
+  position:absolute;left:50%;top:6px;bottom:6px;width:52px;transform:translateX(-50%);
+  border-radius:12px;background:var(--grad2);opacity:.14;pointer-events:none;
+}
+
 /* ---------- chips ---------- */
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{
