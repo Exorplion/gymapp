@@ -159,12 +159,30 @@ alcance a propósito (ver abajo).
 - **Costo:** esta sesión llegó a ~$118. Tenerlo en cuenta antes de correr harnesses caros.
 - **La racha muestra 0 días** en la app con los datos actuales — la última sesión fue
   hace 32 días, así que es correcto, pero vale confirmarlo con Enzo si le parece raro.
-- **Migración a React Native:** en `main` local (checkout de la PC de Enzo) hay 2
-  commits (`132659d` spec de 7 etapas, `97320cd` plan de Etapa 1 "andamiaje") que NO
-  están en `origin/main`. Existe además un worktree en `.worktrees/rn-etapa1` (rama
-  `feat/rn-etapa1-andamiaje`) con `node_modules` instalados — parece el punto de
-  partida para ejecutar la Etapa 1. Nadie confirmó todavía si se sigue por ahí o si
-  el foco sigue siendo la PWA web.
+- **Migración a React Native — CORRECCIÓN (2026-09-03):** una entrada anterior de
+  este mismo archivo subestimaba mucho el avance real. Auditado en detalle: la rama
+  `feat/rn-etapa1-andamiaje` (worktree `.worktrees/rn-etapa1`) tiene **336 commits**
+  y cubre, del mapa de 7 etapas de
+  `docs/superpowers/specs/2026-08-18-migracion-react-native-design.md`:
+  - Etapa 1 (andamiaje) — completa y superada.
+  - Etapa 2 (núcleo: Hoy/Inicio/Rutina) — completa (2a/2b/2c).
+  - Etapa 3 (editor de rutina) — completa.
+  - Etapa 4 (Nutrición + Progreso, con charts) — completa (4a/4b).
+  - Etapa 5 (sheets restantes) — completa, 16 sheets/modales portados (5a-5p).
+  - Etapa 6 (funciones nativas) — parcial: rest timer y recordatorio de entrenar
+    hechos (6a/6b); sensores no evaluados aún (el spec los marca como "si siguen
+    siendo prioridad después de probar las etapas anteriores").
+  - Dos rondas de "unificación visual" completas (la última con 28/28 ítems).
+  - **Etapa 7 (migración de datos + publicación a Play Store) — NO empezada.**
+  `native/src/` tiene 75+ archivos; `npx jest` corre **376/376 verde**, working tree
+  limpio en el commit `190eea4`. `main` local (checkout de Enzo) tiene además 2
+  commits de documentación (`132659d` spec, `97320cd` plan de Etapa 1) que no están
+  en `origin/main` — son solo docs, no bloquean nada.
+  **Pendiente de confirmar con Enzo:** si "seguir la migración" significa retomar
+  Etapa 6 (sensores) o directamente Etapa 7 (exportar datos + ficha de Play Store +
+  `eas submit`) — y en cualquier caso, la Etapa 7 implica volver a tocar el pipeline
+  de EAS/Play Store, que está pausado (ver blocker de abajo) y consume la cuota de
+  Expo de Enzo, así que no se debería arrancar sin su login/confirmación explícita.
 - **Gate de fact-forcing de GateGuard (edit/write) desactivado globalmente** el
   2026-09-03 en `~/.claude/settings.json` (`ECC_DISABLED_HOOKS` ahora incluye
   `pre:edit-write:gateguard-fact-force`), a pedido explícito de Enzo con
