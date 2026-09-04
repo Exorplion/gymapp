@@ -1,6 +1,6 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-03
+**Última actualización:** 2026-09-04
 **Proyecto:** `Exorplion/gymapp` — FIERRO, PWA local de entrenamiento + nutrición
 **Sitio:** https://exorplion.github.io/gymapp/ (GitHub Pages, sirve la raíz de `main`)
 **Estado:** Plan Fierro (Fases 1-3) implementado, testeado, mergeado (PR #17) y publicado.
@@ -228,27 +228,49 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
-**Hecho el 2026-09-04** (sin publicar todavía — commits `23eda74` y `5fceb9b` en la
-rama `worktree-handoff-cleanup-foodtable`, esperando confirmación para el build/push):
+**Hecho y publicado el 2026-09-04** (PR #26 y PR #27, ambos mergeados a `main`):
 
 - **Simetría izquierda/derecha en unilaterales** — completo. `session.js` guarda
   `side` en cada set unilateral y alterna automáticamente; `lib/symmetry.js`
   (nuevo) calcula el desbalance de peso máx entre lados en las últimas 3 sesiones
   y devuelve `null` sin datos de ambos lados (nunca 0); `ExerciseCarousel.jsx`
   muestra el selector de lado y una tarjeta de aviso sólo si el desbalance
-  sostenido supera 12%. 7 tests nuevos, 355/355 en verde.
+  sostenido supera 12%. 7 tests nuevos.
 - **Migración a TypeScript arrancada** — `charts.js`/`macros.js` migrados a
   `.ts` con tipos reales (no JSDoc/checkJs: Enzo eligió migración real). Primera
   vez que el repo tiene `typescript` instalado y `tsconfig.json`; el resto del
-  código sigue en `.js`/`.jsx` (`allowJs: true`). `npx tsc --noEmit` limpio,
-  build y lint sin warnings nuevos.
-- De paso, se agregó un token de easing `--ease-out: cubic-bezier(.2,.8,.3,1)` en
-  `styles.css` (inspirado en un análisis de la fluidez de moneditaapp.com),
-  centralizando 5 usos repetidos de la misma curva.
+  código sigue en `.js`/`.jsx` (`allowJs: true`). De paso se corrigió un bug real:
+  `S.sessions`/`S.body` quedaban capturados como referencia congelada al importar,
+  y los tests reasignan esos arrays (`S.sessions = [...]`) en vez de mutarlos —
+  rompía 8 tests en silencio antes del fix.
+- Token de easing `--ease-out: cubic-bezier(.2,.8,.3,1)` en `styles.css`
+  (inspirado en un análisis de la fluidez de moneditaapp.com), centralizando 5
+  usos repetidos de la misma curva.
+- **Auditoría de cobertura de animación en toda la app** — Enzo pidió "mejorá
+  mucho más las animaciones de toda la app". La premisa de que faltaban en todos
+  lados era incorrecta: el proyecto ya tiene `staggerReveal`/`bloomOpen`/`countTo`
+  (Web Animations API nativa en `lib/motion.js`, NO Framer Motion para esto — GSAP
+  sólo en `Inicio.jsx` como excepción) aplicado en 3/4 pantallas y 26/27 sheets.
+  Sólo faltaban dos: `Nutricion.jsx` (pantalla, ya tiene `staggerReveal` sobre sus
+  `.slot-block`) y la grilla de chips de `GymEquip.jsx` (ya tiene `staggerReveal`).
+- **Bug real corregido: `WarmupCard.jsx`.** Enzo reportó "cuando cambias de
+  pestaña abajo sale como un bloque una tarjeta" — la tarjeta de calentamiento
+  tenía un `return null` condicional ANTES de su `useEffect` de `staggerReveal`.
+  Cuando `series.length` cambiaba entre renders (típico al cambiar de pestaña y
+  volver con otro ejercicio activo), React desincronizaba el orden de hooks y el
+  efecto de animación no corría — la tarjeta aparecía de golpe, sin animar. Se
+  movió el hook antes del early return. De paso desapareció el error de lint
+  `react-hooks(rules-of-hooks)` que estaba marcado como preexistente en este
+  mismo archivo — **ya no hay ningún warning/error preexistente conocido**, si
+  aparece uno nuevo es de la sesión que lo introdujo.
+- 355/355 tests en verde en todo momento, `tsc --noEmit` limpio, build limpio.
 
-Si Enzo quiere seguir, el candidato que queda es:
+Si Enzo quiere seguir, los candidatos que quedan son:
 
-1. **Decidir el rumbo de la migración a React Native.** Ojo: la entrada vieja de
+1. **Seguir la migración a TypeScript** al resto de `lib/` (sólo `charts.ts`/
+   `macros.ts` están migrados por ahora) — infraestructura ya lista
+   (`tsconfig.json`, `typescript` instalado), sin decisión nueva que tomar.
+2. **Decidir el rumbo de la migración a React Native.** Ojo: la entrada vieja de
    este handoff que decía "2 commits sin ejecutar" estaba desactualizada — el
    estado real (auditado, ver [[migracion-react-native-estado]] en memoria) es
    mucho más avanzado: la rama `feat/rn-etapa1-andamiaje` tiene 336 commits y
@@ -279,7 +301,7 @@ Si Enzo quiere seguir, el candidato que queda es:
 cd web
 npm run dev          # dev server en localhost:5173
 npm run test         # 348 tests (vitest)
-npm run lint         # oxlint — el error de WarmupCard.jsx es PREEXISTENTE, no lo rompiste vos
+npm run lint         # oxlint — sin warnings preexistentes conocidos (el de WarmupCard.jsx se arregló el 2026-09-04, ver "Próximo paso exacto")
 npm run build        # vite build + copia web/dist a la raíz del repo (publish-root.mjs)
 ```
 
