@@ -30,8 +30,9 @@ import { suggestedWeight } from '../lib/charts.js';
 import {
   ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
   targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, dropSet, reemplazaA,
-  isUnilateral, toggleUnilateral,
+  isUnilateral, toggleUnilateral, setSide,
 } from '../lib/session.js';
+import { sideImbalance } from '../lib/symmetry.js';
 import { jumpToSlide, scrollToSlideEl, slideCenterDist } from '../lib/carousel.js';
 import { staggerReveal, squashStretch, impactBurst } from '../lib/motion.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
@@ -207,6 +208,9 @@ function ExerciseSlide({ m, wd, started }) {
   // "Un lado por vez": lo que dice la rutina, salvo que la máquina de HOY te
   // haya obligado a cambiarlo (ver isUnilateral en session.js).
   const uni = isUnilateral(ex);
+  // Aviso raro, no diario (mismo criterio que lowMicros): sólo si el
+  // desbalance izq/der es un patrón sostenido en varias sesiones.
+  const imbalance = uni ? sideImbalance(ex) : null;
 
   const wRef = useRef(null), rRef = useRef(null), altRef = useRef(null), pwRef = useRef(null);
 
@@ -376,6 +380,33 @@ function ExerciseSlide({ m, wd, started }) {
             >
               {uni ? '✓ Un lado por vez' : 'Un lado por vez'}
             </button>
+            {uni && (
+              <div className="setrows" style={{ marginBottom: 8 }}>
+                <button
+                  type="button"
+                  className={`chip ${v.side === 'left' ? 'on' : ''}`}
+                  aria-pressed={v.side === 'left'}
+                  onClick={() => setSide(ex.id, 'left')}
+                >
+                  Izquierda
+                </button>
+                <button
+                  type="button"
+                  className={`chip ${v.side === 'right' ? 'on' : ''}`}
+                  aria-pressed={v.side === 'right'}
+                  onClick={() => setSide(ex.id, 'right')}
+                >
+                  Derecha
+                </button>
+              </div>
+            )}
+            {imbalance && (
+              <div className="prog-warn" style={{ marginBottom: 8 }}>
+                ⚠ {imbalance.strongerSide === 'left' ? 'Izquierda' : 'Derecha'} viene
+                {' '}~{imbalance.pct}% más fuerte que el otro lado, sostenido en las
+                últimas sesiones.
+              </div>
+            )}
             <div className="setrows">
               <div>
                 <div className="steplabel">Peso ({S.cfg.unit === 'kg' ? 'kg' : 'lb'}){uni ? ' por lado' : ''}</div>

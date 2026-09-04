@@ -72,6 +72,7 @@
   --t-display:34px; --t-hero:44px;
   --ease:cubic-bezier(.22,.9,.28,1);
   --spring:cubic-bezier(.34,1.56,.64,1);
+  --ease-out:cubic-bezier(.2,.8,.3,1);
   font-synthesis:none;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -980,19 +981,19 @@ body.dragging-on .card.day.drop-target{filter:none}
    renderRutina() y hacía parpadear la configuración de ejercicios. */
 .day-body{
   display:grid;grid-template-rows:0fr;margin-top:0;opacity:0;visibility:hidden;
-  transition:grid-template-rows .34s cubic-bezier(.2,.8,.3,1),margin-top .34s cubic-bezier(.2,.8,.3,1),opacity .24s ease,visibility 0s .34s;
+  transition:grid-template-rows .34s var(--ease-out),margin-top .34s var(--ease-out),opacity .24s ease,visibility 0s .34s;
 }
 .day-body>.dbi{overflow:hidden;min-height:0}
 .day.open .day-body{
   grid-template-rows:1fr;margin-top:8px;opacity:1;visibility:visible;
-  transition:grid-template-rows .34s cubic-bezier(.2,.8,.3,1),margin-top .34s cubic-bezier(.2,.8,.3,1),opacity .24s ease,visibility 0s;
+  transition:grid-template-rows .34s var(--ease-out),margin-top .34s var(--ease-out),opacity .24s ease,visibility 0s;
 }
 
 /* ---------- barras de progreso (nutrición) ---------- */
 .pbar{height:8px;border-radius:5px;background:rgba(255,255,255,.05);overflow:hidden}
 .pbar>i{display:block;height:100%;border-radius:5px;
   background:linear-gradient(90deg,var(--deep),var(--blue2) 60%,var(--cyan));
-  transition:width .5s cubic-bezier(.2,.8,.3,1)}
+  transition:width .5s var(--ease-out)}
 .pbar>i.over{background:linear-gradient(135deg,#E8A21D,#FFB454)}
 .macro3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
 .macro3 .m .lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);font-weight:600;margin-bottom:5px}
@@ -1130,7 +1131,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   background:linear-gradient(140deg,#0E1B38,#0A1220);
   border:1px solid rgba(46,125,255,.45);border-radius:20px;
   padding:12px 16px;box-shadow:0 10px 40px -8px rgba(46,125,255,.5);
-  transform:translateY(140%);opacity:0;transition:.3s cubic-bezier(.2,.8,.3,1);
+  transform:translateY(140%);opacity:0;transition:.3s var(--ease-out);
   max-width:492px;margin:0 auto;
 }
 #restbar.show{transform:none;opacity:1}
@@ -1212,7 +1213,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
    que gana en la cascada sin necesitar !important. */
 @keyframes shdown{to{transform:translateY(60%)}}
 @keyframes fdout{to{opacity:0}}
-#sheet.closing .panel{animation:shdown .22s cubic-bezier(.2,.8,.3,1) forwards}
+#sheet.closing .panel{animation:shdown .22s var(--ease-out) forwards}
 #sheet.closing .bk{animation:fdout .15s forwards}
 /* La regla global de arriba (*{animation-duration:.01ms!important}) acorta
    shdown pero no toca animation-fill-mode:forwards: bajo movimiento
