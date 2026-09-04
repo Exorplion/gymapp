@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { closeSheet } from '../../lib/state.js';
 import { EQUIP, EQUIP_HINT, isMachineBound } from '../../lib/equip.js';
 import { setGymEquip, gymEquipFor } from '../../lib/gyms.js';
-import { bloomOpen } from '../../lib/motion.js';
+import { bloomOpen, staggerReveal } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 import { Button } from '../ui/primitives.jsx';
 
@@ -19,8 +19,10 @@ export default function GymEquip({ gymId, gymName, exName }) {
   const [equip, setEquip] = useState(actual?.equip || '');
   const [machine, setMachine] = useState(actual?.machine || '');
   const rootRef = useRef(null);
+  const chipsRef = useRef(null);
 
   useEffect(() => { bloomOpen(rootRef.current); }, []);
+  useEffect(() => { if (chipsRef.current) staggerReveal(chipsRef.current.children); }, []);
 
   function guardar() {
     setGymEquip(gymId, exName, equip, machine);
@@ -35,7 +37,7 @@ export default function GymEquip({ gymId, gymName, exName }) {
     <div ref={rootRef}>
       <h2 className="font-cond text-2xl font-bold text-txt">{exName}</h2>
       <div className="mt-1 mb-3 text-[13px] text-mut">Equipo en <b className="text-blue">{gymName}</b> — no cambia el equipo por defecto de la rutina.</div>
-      <div className="mt-1 flex flex-wrap gap-2">
+      <div ref={chipsRef} className="mt-1 flex flex-wrap gap-2">
         {EQUIP.map(e => (
           <button
             type="button"

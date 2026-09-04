@@ -26,7 +26,7 @@ import { lowMicros } from '../../lib/micronutrients.js';
 import { idb } from '../../lib/db.js';
 import { logMeal, addMealFromFood } from '../sheets/MealForm.jsx';
 import { useEffect, useRef } from 'react';
-import { countTo } from '../../lib/motion.js';
+import { countTo, staggerReveal } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 
 // El botón de voz sólo aparece si el navegador reconoce voz — mismo criterio
@@ -105,6 +105,16 @@ export default function Nutricion() {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) { if (kcalNumRef.current) kcalNumRef.current.textContent = kc; return; }
     if (kcalNumRef.current) countTo(kcalNumRef.current, kc, { duration: 500 });
   }, [kc]);
+
+  // Reveal escalonado de los bloques de comidas al entrar a Nutrición —
+  // sólo al MONTAR (deps []), como Rutina/Hoy/Progreso: cambiar de día con
+  // shiftNutriDate() no remonta la pantalla (bump() en vez de key={tab}), así
+  // que agregar o borrar una comida no vuelve a animar la lista entera.
+  const mealsRef = useRef(null);
+  useEffect(() => {
+    const blocks = mealsRef.current?.querySelectorAll(':scope > .slot-block');
+    if (blocks?.length) staggerReveal(blocks);
+  }, []);
 
   return (
     <>
@@ -278,7 +288,8 @@ export default function Nutricion() {
       {!meals.length ? (
         <div className="card"><div className="empty p-4"><p className="m-0">Nada registrado {isToday ? 'hoy' : 'este día'}.</p></div></div>
       ) : (
-        mealsBySlot(date).map(b => (
+        <div ref={mealsRef}>
+        {mealsBySlot(date).map(b => (
           <div key={b.k} className="slot-block">
             <div className="slot-head"><span>{b.label}</span><span className="num">{b.kcal} kcal</span></div>
             <div className="card">
@@ -298,7 +309,8 @@ export default function Nutricion() {
               ))}
             </div>
           </div>
-        ))
+        ))}
+        </div>
       )}
     </>
   );
