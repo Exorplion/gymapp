@@ -58,7 +58,20 @@ export function ensureVals(ex) {
   // `rpe` puede faltar en un S.hoyVals guardado antes de que este campo
   // existiera — se completa acá en vez de forzar una migración de datos.
   if (S.hoyVals[ex.id].rpe === undefined) S.hoyVals[ex.id].rpe = null;
+  // `side` (izquierda/derecha) sólo importa en unilaterales; en el resto
+  // queda en null y saveSet ni lo guarda en el set.
+  if (S.hoyVals[ex.id].side === undefined) S.hoyVals[ex.id].side = null;
   return S.hoyVals[ex.id];
+}
+
+/** Fija el lado de HOY para un ejercicio unilateral (ver isUnilateral). No
+    valida que el ejercicio sea unilateral: elegirlo sin serlo no rompe nada,
+    simplemente saveSet no lo va a guardar. */
+export function setSide(exId, side) {
+  const ex = findEx(exId); if (!ex) return;
+  const v = ensureVals(ex);
+  v.side = side;
+  bump();
 }
 
 /** Orden de ejercicios de la sesión: se puede reacomodar mientras el reloj no
@@ -485,8 +498,12 @@ export async function saveSet(exId) {
   // rpe (1-10, esfuerzo percibido) es opcional — v.rpe queda en null si no
   // se tocó el selector. Es el campo que destraba ACWR y la recuperación
   // muscular por esfuerzo (Plan Fierro · Fase 2).
-  cur.push({ w: round1(v.w), r: v.r, t: Date.now(), rpe: v.rpe ?? null });
+  const uni = isUnilateral(ex);
+  cur.push({ w: round1(v.w), r: v.r, t: Date.now(), rpe: v.rpe ?? null, side: uni ? (v.side || null) : null });
   v.rpe = null; // cada serie arranca sin RPE elegido; no se arrastra de la anterior
+  // alterna el lado solo — así la próxima serie ya arranca del otro sin que
+  // haya que tocar el selector a mano
+  if (uni && v.side) v.side = v.side === 'left' ? 'right' : 'left';
   if (!S.draft.start) S.draft.start = Date.now();
   const finished = cur.length >= techo;
   const exs = sessionExs(S.routine.findIndex(s => s.id === S.draft.slotId));

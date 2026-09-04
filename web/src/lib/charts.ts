@@ -7,39 +7,55 @@
 import { S } from './state.js';
 import { round1, fmtNum, fmtD, norm } from './format.js';
 
+interface BodyEntry { date: string; weight: number | null; }
+interface SetEntry { w: number; r: number; }
+interface SessionEntry { name: string; sets: SetEntry[]; }
+interface Session { date: string; start: number; entries?: SessionEntry[]; }
+
+const sessions = (): Session[] => S.sessions as Session[];
+const body = (): BodyEntry[] => S.body as BodyEntry[];
+
 /* ================= peso: promedio semanal (Sección 20) ================= */
-export function weeklyAvg() {
-  const ws = S.body.filter(b => b.weight != null);
+export interface WeeklyAvg {
+  curAvg: number | null;
+  prevAvg: number | null;
+  n: number;
+  delta: number | null;
+  last: BodyEntry;
+}
+export function weeklyAvg(): WeeklyAvg | null {
+  const ws = body().filter(b => b.weight != null);
   if (!ws.length) return null;
   const end = new Date(ws[ws.length - 1].date + 'T12:00:00');
-  const daysAgo = d => (end - new Date(d + 'T12:00:00')) / 86400000;
+  const daysAgo = (d: string) => (end.getTime() - new Date(d + 'T12:00:00').getTime()) / 86400000;
   const cur = ws.filter(b => { const g = daysAgo(b.date); return g >= 0 && g < 7; });
   const prev = ws.filter(b => { const g = daysAgo(b.date); return g >= 7 && g < 14; });
-  const avg = a => a.length ? a.reduce((s, b) => s + b.weight, 0) / a.length : null;
+  const avg = (a: BodyEntry[]): number | null => a.length ? a.reduce((s, b) => s + (b.weight as number), 0) / a.length : null;
   const curAvg = avg(cur), prevAvg = avg(prev);
   return { curAvg, prevAvg, n: cur.length, delta: (curAvg != null && prevAvg != null) ? round1(curAvg - prevAvg) : null, last: ws[ws.length - 1] };
 }
 
 /* ================= PROGRESO ================= */
-export function exerciseSeries() {
+export interface SeriesPoint { date: string; best: number; maxW: number; w: number; r: number; }
+export function exerciseSeries(): Record<string, SeriesPoint[]> {
   // nombre -> [{date, best(vol), maxW, w, r}] ascendente
-  const map = {};
-  [...S.sessions].sort((a, b) => a.start - b.start).forEach(s => {
+  const map: Record<string, SeriesPoint[]> = {};
+  [...sessions()].sort((a, b) => a.start - b.start).forEach(s => {
     (s.entries || []).forEach(e => {
-      let best = 0, maxW = 0, bestSet = null;
+      let best = 0, maxW = 0, bestSet: SetEntry | null = null;
       e.sets.forEach(st => {
         if (st.w * st.r > best) { best = st.w * st.r; bestSet = st; }
         maxW = Math.max(maxW, st.w);
       });
-      if (!best) return;
+      if (!best || !bestSet) return;
       const key = e.name.trim();
-      (map[key] = map[key] || []).push({ date: s.date, best, maxW, w: bestSet.w, r: bestSet.r });
+      (map[key] = map[key] || []).push({ date: s.date, best, maxW, w: (bestSet as SetEntry).w, r: (bestSet as SetEntry).r });
     });
   });
   return map;
 }
-export const RANGE_DAYS = { '1m': 30, '3m': 90, '6m': 180 };
-export function filterByRange(pts, range) {
+export const RANGE_DAYS: Record<string, number> = { '1m': 30, '3m': 90, '6m': 180 };
+export function filterByRange<T extends { date: string }>(pts: T[], range?: string | null): T[] {
   if (!range || range === 'all') return pts;
   const cutoff = Date.now() - RANGE_DAYS[range] * 86400000;
   return pts.filter(p => +new Date(p.date + 'T00:00:00') >= cutoff);
@@ -48,11 +64,13 @@ export function filterByRange(pts, range) {
 /* ---------- análisis de fuerza (Sección 21) ----------
    1RM estimado con Epley. La fórmula se desvía con series largas, así que las
    de más de 12 reps no entran en la tendencia. */
-export const e1rm = (w, r) => r <= 1 ? w : w * (1 + r / 30);
+export const e1rm = (w: number, r: number): number => r <= 1 ? w : w * (1 + r / 30);
+
+export interface E1rmPoint { date: string; y: number; }
 /* mejor 1RM estimado por sesión, en orden cronológico (S.sessions viene al revés) */
-export function e1rmSeries(name) {
-  const key = norm(name), out = [];
-  [...S.sessions].reverse().forEach(s => {
+export function e1rmSeries(name: string): E1rmPoint[] {
+  const key = norm(name), out: E1rmPoint[] = [];
+  [...sessions()].reverse().forEach(s => {
     let best = 0;
     (s.entries || []).forEach(e => {
       if (norm(e.name) !== key) return;
@@ -62,9 +80,11 @@ export function e1rmSeries(name) {
   });
   return out;
 }
+
+export interface Trend { slope: number; r2: number; n: number; last: number; days: number; }
 /* regresión lineal de kg contra días. Devuelve también R²: sin él no se puede
    distinguir una progresión real de una nube de puntos con ruido. */
-export function trend(pts) {
+export function trend(pts: E1rmPoint[]): Trend | null {
   if (pts.length < 4) return null;
   const t0 = new Date(pts[0].date + 'T12:00:00').getTime();
   const xs = pts.map(p => (new Date(p.date + 'T12:00:00').getTime() - t0) / 86400000), ys = pts.map(p => p.y);
@@ -78,19 +98,23 @@ export function trend(pts) {
   for (let i = 0; i < n; i++) res += (ys[i] - (intercept + slope * xs[i])) ** 2;
   return { slope, r2: ss ? 1 - res / ss : 0, n, last: ys[n - 1], days: xs[n - 1] };
 }
+
+export interface Projection { perWeek: number; measured: number; value: number; capped: boolean; }
 /* Proyección deliberadamente conservadora. Extrapolar la pendiente medida en
    línea recta da números de fantasía: 5 sesiones de novato dan +3 kg/semana, que
    a 4 semanas proyecta +13 kg. Ese ritmo no se sostiene. Se limita a 1 %/semana
    del 1RM actual (techo realista sostenido) y se exige una tendencia con señal
    (R² ≥ .5) sobre al menos 4 sesiones. */
-export function project(t, weeks) {
+export function project(t: Trend | null, weeks: number): Projection | null {
   if (!t || t.n < 4 || t.r2 < 0.5 || t.slope <= 0) return null;
   const cap = t.last * 0.01, measured = t.slope * 7, perWeek = Math.min(measured, cap);
   return { perWeek, measured, value: t.last + perWeek * weeks, capped: measured > cap };
 }
+
+export interface StrengthReadout { name: string; pts: E1rmPoint[]; t: Trend | null; last: number; }
 /* una línea honesta por ejercicio: subiendo / plano / bajando, y a qué ritmo */
-export function strengthReadout() {
-  const names = [...new Set(S.sessions.flatMap(s => (s.entries || []).map(e => e.name.trim())))];
+export function strengthReadout(): StrengthReadout[] {
+  const names = [...new Set(sessions().flatMap(s => (s.entries || []).map(e => e.name.trim())))];
   return names.map(n => {
     const pts = e1rmSeries(n), t = trend(pts);
     return { name: n, pts, t, last: pts.length ? pts[pts.length - 1].y : 0 };
@@ -103,7 +127,8 @@ export function strengthReadout() {
    recuperable), en series semanales por grupo. Varían por grupo porque no
    todos los músculos toleran ni necesitan el mismo volumen — Pecho y
    Espalda aguantan mucho más que Abs o Gemelos. */
-export const VOLUME_BANDS = {
+export interface VolumeBand { mev: number; mav: number; mrv: number; }
+export const VOLUME_BANDS: Record<string, VolumeBand> = {
   Pecho: { mev: 8, mav: 16, mrv: 22 },
   Espalda: { mev: 10, mav: 18, mrv: 25 },
   Hombro: { mev: 8, mav: 18, mrv: 24 },
@@ -115,12 +140,13 @@ export const VOLUME_BANDS = {
   Abs: { mev: 0, mav: 12, mrv: 20 },
 };
 
+export type VolumeBandLabel = 'bajo' | 'efectivo' | 'cerca-max' | 'excedido';
 /** En qué banda cae un volumen semanal (series) para un grupo: 'bajo' (por
     debajo del mínimo efectivo), 'efectivo' (MEV-MAV, el rango que hace
     crecer), 'cerca-max' (MAV-MRV, cerca del techo recuperable) o
     'excedido' (MRV o más). Un grupo sin tabla propia usa un genérico
     razonable en vez de fallar. */
-export function volumeBand(cat, sets) {
+export function volumeBand(cat: string, sets: number): VolumeBandLabel {
   const b = VOLUME_BANDS[cat] || { mev: 8, mav: 16, mrv: 22 };
   if (sets < b.mev) return 'bajo';
   if (sets < b.mav) return 'efectivo';
@@ -132,7 +158,8 @@ export function volumeBand(cat, sets) {
    Tiers aproximados de Strength Level / Symmetric Strength para los cuatro
    levantamientos con estándares ampliamente publicados y reconocibles por
    nombre, como múltiplo del peso corporal (1RM estimado ÷ peso). */
-const STRENGTH_MOVES = [
+interface StrengthMove { key: string; match: (n: string) => boolean; tiers: number[]; }
+const STRENGTH_MOVES: StrengthMove[] = [
   { key: 'sentadilla', match: n => /sentadilla|squat/i.test(n) && !/hack|leg\s*press/i.test(n), tiers: [0.75, 1.25, 1.75, 2.25] },
   { key: 'peso muerto', match: n => /(peso muerto|deadlift)/i.test(n) && !/(rumano|sldl|rdl)/i.test(n), tiers: [1.0, 1.5, 2.0, 2.5] },
   { key: 'press banca', match: n => /(press banca|bench)/i.test(n) && !/(inclinado|declinado|incline|decline)/i.test(n), tiers: [0.5, 0.9, 1.25, 1.5] },
@@ -140,11 +167,12 @@ const STRENGTH_MOVES = [
 ];
 const TIER_LABELS = ['Principiante', 'Intermedio', 'Avanzado', 'Élite'];
 
+export interface StrengthTier { label: string; ratio: number; }
 /** Si `name` es uno de los cuatro grandes, el tier de fuerza y el ratio (PR
     ÷ peso corporal) — null si no es uno de esos cuatro, o si falta el peso
     corporal para calcularlo. Ningún dato nuevo: es una división sobre lo
     que ya se registra. */
-export function strengthTier(name, prWeight, bodyWeight) {
+export function strengthTier(name: string, prWeight: number, bodyWeight: number): StrengthTier | null {
   if (!(prWeight > 0) || !(bodyWeight > 0)) return null;
   const move = STRENGTH_MOVES.find(m => m.match(name));
   if (!move) return null;
@@ -159,7 +187,7 @@ export function strengthTier(name, prWeight, bodyWeight) {
    ACTUAL (el e1RM más reciente), no un número fijo que envejece. RIR 2-3
    (esfuerzo cómodo, series de trabajo normales) ronda 75-85% del 1RM —
    se usa 80% como punto medio razonable por defecto. */
-export function suggestedWeight(name, pct = 0.8) {
+export function suggestedWeight(name: string, pct = 0.8): number | null {
   const pts = e1rmSeries(name);
   if (!pts.length) return null;
   const last = pts[pts.length - 1].y;
@@ -171,16 +199,17 @@ export function suggestedWeight(name, pct = 0.8) {
    días contra el promedio semanal de las últimas 4 semanas. ≥1.5 es la zona
    de riesgo de sobreentrenamiento validada en literatura de prevención de
    lesiones deportivas. */
-function tonnageInRange(fromMs, toMs) {
+function tonnageInRange(fromMs: number, toMs: number): number {
   let kg = 0;
-  for (const s of S.sessions) {
+  for (const s of sessions()) {
     if (s.start < fromMs || s.start >= toMs) continue;
     for (const e of s.entries || []) for (const st of e.sets || []) kg += (st.w || 0) * (st.r || 0);
   }
   return kg;
 }
+export interface Acwr { acute: number; chronicAvg: number; ratio: number; risk: boolean; }
 /** null si todavía no hay 4 semanas de historial — nada con qué comparar. */
-export function acwr() {
+export function acwr(): Acwr | null {
   const now = Date.now();
   const acute = tonnageInRange(now - 7 * 86400000, now);
   const chronicAvg = tonnageInRange(now - 28 * 86400000, now) / 4;
@@ -189,12 +218,17 @@ export function acwr() {
 }
 
 /* ================= gráfico canvas ================= */
-export const CHART_SEL = new WeakMap();
-export function drawChart(cv, pts, opts = {}) {
+interface ChartPoint { date: string; y: number; r?: number; }
+interface DrawChartOpts { unit?: string; }
+export const CHART_SEL = new WeakMap<HTMLCanvasElement, number>();
+
+type ChartCanvas = HTMLCanvasElement & { _pts?: ChartPoint[] | null; _X?: (d: string) => number };
+
+export function drawChart(cv: ChartCanvas, pts: ChartPoint[], opts: DrawChartOpts = {}): void {
   const dpr = devicePixelRatio || 1;
   const W = cv.clientWidth || 300, H = cv.clientHeight || 200;
   cv.width = W * dpr; cv.height = H * dpr;
-  const x = cv.getContext('2d'); x.scale(dpr, dpr);
+  const x = cv.getContext('2d')!; x.scale(dpr, dpr);
   x.clearRect(0, 0, W, H);
   if (pts.length < 2) {
     x.fillStyle = '#5C6885'; x.font = '500 14px Barlow, sans-serif'; x.textAlign = 'center';
@@ -209,8 +243,8 @@ export function drawChart(cv, pts, opts = {}) {
   const padY = (mx - mn) * .14; mn -= padY; mx += padY;
   const t0 = +new Date(pts[0].date + 'T00:00:00'), t1 = +new Date(pts[pts.length - 1].date + 'T00:00:00');
   const span = t1 - t0 || 1;
-  const X = d => P.l + (W - P.l - P.r) * ((+new Date(d + 'T00:00:00')) - t0) / span;
-  const Y = v => P.t + (H - P.t - P.b) * (1 - (v - mn) / (mx - mn));
+  const X = (d: string) => P.l + (W - P.l - P.r) * ((+new Date(d + 'T00:00:00')) - t0) / span;
+  const Y = (v: number) => P.t + (H - P.t - P.b) * (1 - (v - mn) / (mx - mn));
   if (opts.unit) { x.font = '600 10px Barlow, sans-serif'; x.fillStyle = '#8B97B4'; x.textAlign = 'left'; x.fillText(opts.unit, 2, 12); }
   x.font = '500 11px Barlow, sans-serif';
   x.strokeStyle = 'rgba(120,150,220,.13)'; x.lineWidth = 1;
@@ -225,11 +259,11 @@ export function drawChart(cv, pts, opts = {}) {
   const g = x.createLinearGradient(0, P.t, 0, H - P.b);
   g.addColorStop(0, 'rgba(62,150,255,.32)'); g.addColorStop(1, 'rgba(62,150,255,0)');
   x.beginPath();
-  pts.forEach((p, i) => { const px = X(p.date); i ? x.lineTo(px, Y(p.y)) : x.moveTo(px, Y(p.y)); });
+  pts.forEach((p, i) => { const px = X(p.date); if (i) x.lineTo(px, Y(p.y)); else x.moveTo(px, Y(p.y)); });
   x.lineTo(X(pts[pts.length - 1].date), H - P.b); x.lineTo(X(pts[0].date), H - P.b); x.closePath();
   x.fillStyle = g; x.fill();
   x.beginPath();
-  pts.forEach((p, i) => { const px = X(p.date); i ? x.lineTo(px, Y(p.y)) : x.moveTo(px, Y(p.y)); });
+  pts.forEach((p, i) => { const px = X(p.date); if (i) x.lineTo(px, Y(p.y)); else x.moveTo(px, Y(p.y)); });
   x.strokeStyle = '#3E96FF'; x.lineWidth = 2.5; x.lineJoin = 'round'; x.lineCap = 'round';
   x.shadowColor = 'rgba(62,150,255,.5)'; x.shadowBlur = 8;
   x.stroke(); x.shadowBlur = 0;
@@ -247,7 +281,7 @@ export function drawChart(cv, pts, opts = {}) {
   x.fillText(`${fmtD(sp.date)} · ${valTxt}`, spx, Math.max(14, Y(sp.y) - 14));
   cv._pts = pts; cv._X = X;
 }
-export function pickChartPoint(cv, clientX) {
+export function pickChartPoint(cv: ChartCanvas, clientX: number): void {
   const pts = cv._pts, X = cv._X; if (!pts || !X) return;
   const rect = cv.getBoundingClientRect();
   const px = clientX - rect.left;
