@@ -228,18 +228,37 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
-Si Enzo quiere seguir, los candidatos en orden de valor/esfuerzo son:
+**Hecho el 2026-09-04** (sin publicar todavía — commits `23eda74` y `5fceb9b` en la
+rama `worktree-handoff-cleanup-foodtable`, esperando confirmación para el build/push):
 
-1. **Simetría izquierda/derecha en unilaterales** — el único ítem del plan que quedó sin
-   hacer de las Fases 1-3 (estaba listado como impacto medio). `isUnilateral()`/
-   `toggleUnilateral()` ya existen en `session.js`; falta el campo "lado" en el set y
-   una tarjeta comparativa que avise si la diferencia sostenida supera 10-15%.
-2. **Empezar la migración gradual a TypeScript** por `lib/charts.js` y `lib/macros.js`,
-   que son los que más lógica numérica concentran.
-3. **Decidir el rumbo de la migración a React Native** — hay spec y plan de Etapa 1
-   ya escritos (ver "Blockers" arriba) pero sin confirmar si se ejecuta. Si se sigue,
-   el primer paso real es pushear esos 2 commits a `origin/main` y arrancar sobre el
-   worktree `.worktrees/rn-etapa1`.
+- **Simetría izquierda/derecha en unilaterales** — completo. `session.js` guarda
+  `side` en cada set unilateral y alterna automáticamente; `lib/symmetry.js`
+  (nuevo) calcula el desbalance de peso máx entre lados en las últimas 3 sesiones
+  y devuelve `null` sin datos de ambos lados (nunca 0); `ExerciseCarousel.jsx`
+  muestra el selector de lado y una tarjeta de aviso sólo si el desbalance
+  sostenido supera 12%. 7 tests nuevos, 355/355 en verde.
+- **Migración a TypeScript arrancada** — `charts.js`/`macros.js` migrados a
+  `.ts` con tipos reales (no JSDoc/checkJs: Enzo eligió migración real). Primera
+  vez que el repo tiene `typescript` instalado y `tsconfig.json`; el resto del
+  código sigue en `.js`/`.jsx` (`allowJs: true`). `npx tsc --noEmit` limpio,
+  build y lint sin warnings nuevos.
+- De paso, se agregó un token de easing `--ease-out: cubic-bezier(.2,.8,.3,1)` en
+  `styles.css` (inspirado en un análisis de la fluidez de moneditaapp.com),
+  centralizando 5 usos repetidos de la misma curva.
+
+Si Enzo quiere seguir, el candidato que queda es:
+
+1. **Decidir el rumbo de la migración a React Native.** Ojo: la entrada vieja de
+   este handoff que decía "2 commits sin ejecutar" estaba desactualizada — el
+   estado real (auditado, ver [[migracion-react-native-estado]] en memoria) es
+   mucho más avanzado: la rama `feat/rn-etapa1-andamiaje` tiene 336 commits y
+   cubre Etapas 1-5 completas + Etapa 6 parcial (rest timer + recordatorio de
+   entrenar; sensores sin evaluar). Sólo falta la **Etapa 7** (migración de datos
+   + publicación a Play Store), que no empezó. El pipeline de EAS/APK está
+   **pausado a propósito** desde el 2026-08-27 (2 builds seguidos no abrieron en
+   el celular real) — Enzo confirmó "todavía no hagamos lo del apk, mantengámoslo
+   como está". No tocar EAS/Play Store sin que lo confirme explícitamente
+   (consume su cuota de Expo y su login); preguntar primero qué alcance quiere.
 
 ---
 
