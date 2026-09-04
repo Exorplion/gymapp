@@ -34,18 +34,25 @@ export default function WarmupCard({ ex, onListo, onSaltar }) {
   const series = warmupSets(top, wStep());
   const movilidad = MOVILIDAD[bloqueDe(ex)] || [];
 
+  // Reveal escalonado de las series de la rampa al montar la tarjeta —
+  // Ref: Airbnb/Notion. Sólo el <ol>, no la movilidad (esa es texto plano,
+  // no una progresión que valga la pena escalonar).
+  //
+  // El hook va ANTES del early return de abajo a propósito: React exige que
+  // se llamen siempre los mismos hooks en el mismo orden en cada render. Si
+  // `series.length` cambia entre un render y otro (p. ej. al volver a esta
+  // pantalla con otro ejercicio activo), un `return null` antes del useEffect
+  // desincroniza el orden de hooks — el síntoma es que la tarjeta aparece de
+  // golpe, sin el stagger, porque el efecto directamente no llega a correr.
+  useEffect(() => {
+    if (series.length && listRef.current) staggerReveal(listRef.current.children);
+  }, [ex.id, series.length]);
+
   // Sin peso de trabajo no hay porcentaje que calcular. Es el caso de un
   // ejercicio estrenado hoy: mejor no mostrar nada que mostrar tres ceros.
   // La movilidad sola, sin ninguna rampa debajo, no sería un calentamiento —
   // sería una lista suelta sin conexión con lo que vas a levantar.
   if (!series.length) return null;
-
-  // Reveal escalonado de las series de la rampa al montar la tarjeta —
-  // Ref: Airbnb/Notion. Sólo el <ol>, no la movilidad (esa es texto plano,
-  // no una progresión que valga la pena escalonar).
-  useEffect(() => {
-    if (listRef.current) staggerReveal(listRef.current.children);
-  }, [ex.id]);
 
   return (
     <div className={cn('warmup')}>
