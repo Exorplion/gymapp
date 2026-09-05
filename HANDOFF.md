@@ -228,7 +228,48 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
-**Hecho y publicado el 2026-09-04** (PR #29, mergeado a `main`):
+**Hecho y publicado el 2026-09-04** (PR #33, mergeado a `main` — CORRIGE PR #29,
+ver abajo):
+
+- **Bug real de "aparece un botón abajo al cambiar de pestaña" — causa real
+  encontrada.** Enzo volvió a reportar el mismo bug después de PR #29
+  ("cuando cambias a nutricion aparece un boton en la part de abajo"). El fix
+  de PR #29 (`App.jsx`, `mainRef`/min-height) apuntaba al camino de
+  **respaldo en JS** (`.view.leave`/`.view.enter`), pero `changeTab()`
+  (`state.js`) usa **View Transitions API nativa** cuando el navegador la
+  soporta (la mayoría de Chrome/Android reales, incluido el celular de
+  Enzo) — en ese caso `lastTabChangeUsedVT=true` y el camino de `App.jsx`
+  NUNCA se ejecuta. El fix de PR #29 no estaba mal, pero no tocaba el código
+  que de verdad corre en su teléfono.
+  Causa real: `main` no tiene scroll propio (scrollea la página entera), así
+  que su alto real es el de TODO su contenido, no sólo la franja visible
+  entre el header y la barra de pestañas. La View Transition API saca una
+  foto de ESE alto completo (viejo y nuevo) y la pinta en el **top-layer**
+  del navegador — por encima de CUALQUIER z-index, incluida la barra de
+  pestañas fija (`z-index:50`). Durante los 340ms del deslizamiento, un botón
+  que en realidad está más abajo del pliegue visible (de la pantalla vieja o
+  la nueva) aparecía flotando sobre la barra.
+  Fix (PR #33): `changeTab()` mide, justo antes de `startViewTransition()`,
+  el alto real visible entre `main` y la barra de pestañas y lo guarda en
+  `--vt-clip-h`; `::view-transition-group(app-main)` (styles.css) apaga su
+  animación de alto/posición por defecto y usa ese alto fijo con
+  `overflow:hidden` en vez de interpolar entre los altos completos de ambas
+  pantallas.
+  **Lección para la próxima vez que se toque la animación de cambio de
+  pestaña:** `changeTab()` tiene DOS caminos (VT nativa vs. `.view.leave`/
+  `.enter` manual en `App.jsx`) — cualquier fix de este área tiene que
+  considerar los dos, no asumir cuál corre en el dispositivo real. `main`
+  tampoco tiene scroll propio (toda la página scrollea) — cualquier técnica
+  que dependa del alto de `main` (clipping, morphing, mediciones) tiene que
+  tener esto en cuenta.
+  No se pudo verificar visualmente en navegador real desde este job
+  (background, sin extensión de Chrome — ver [[chrome-extension-background-job]]).
+  Queda pendiente que Enzo confirme en el celular que ya no aparece nada
+  flotando sobre la barra al cambiar de pestaña.
+
+**Hecho y publicado el 2026-09-04** (PR #29, mergeado a `main` — ver arriba,
+esta parte del fix SÍ sigue siendo válida para el camino de respaldo sin VT,
+p. ej. con "reducir movimiento" activado):
 
 - **Bug real corregido: recorte de la pantalla saliente al cambiar de pestaña.**
   Enzo reportó "cuando cambio de rutina a nutrición hay un error en la parte de
