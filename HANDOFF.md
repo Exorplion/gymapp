@@ -228,6 +228,43 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
+**Hecho y publicado el 2026-09-04** (PR #41, mergeado a `main`):
+
+- **Rueda fina: se cierra sola al elegir.** Enzo: "ahora si funciona la
+  rueda pero si selecciono un numero no se actualiza en la rueda osea no se
+  nota el resultado de mi eleccion". La rueda fina (PR #37/#39) sólo se
+  cerraba tocando el backdrop; mientras seguía abierta, su propio backdrop
+  (dim + blur) tapaba la rueda gruesa de atrás, ocultando cualquier
+  actualización hasta cerrarla a mano. Fix: se cierra sola apenas el scroll
+  asienta en un valor (260ms de respiro para ver el dígito resaltado antes
+  de volver a la rueda gruesa ya actualizada).
+- **Transición de pestaña simplificada — referencia moneditaapp.com.**
+  Enzo: "hay un stagger de la pagina anterior cuando pasas a la nueva ...
+  como hace monedita app? arregla las animaciones" — confirmado como "ambas
+  cosas mezcladas" (la vieja deformándose Y la nueva con stagger, a la
+  vez). Causa: el deslizamiento lateral al 100% ("push/pop nativo") corría
+  AL MISMO TIEMPO que el `staggerReveal` propio de cada pantalla — dos
+  movimientos grandes superpuestos. Fix: se reemplaza el deslizamiento
+  lateral (View Transition nativa Y fallback JS de `App.jsx`) por el mismo
+  fundido+ascenso sin dirección que ya se había extraído del CSS real de
+  moneditaapp (`screenIn`: opacity + translateY(8px)) — así el
+  `staggerReveal` interno de cada pantalla ya no compite con un movimiento
+  más grande. **Se abandona a propósito la identidad "push/pop nativo" acá**
+  — decisión explícita de Enzo en este punto puntual, no aplica en general a
+  otras animaciones de la app sin que lo pida de nuevo.
+  355/355 tests, `tsc --noEmit` limpio, build limpio. No se pudo verificar
+  por tacto/vista real en celular desde este job (background, sin extensión
+  de Chrome — ver [[chrome-extension-background-job]]).
+  **Nota para la próxima vez que Enzo diga que el cambio de pestaña sigue
+  sintiéndose "movido":** el `staggerReveal` de cada pantalla (Rutina,
+  Nutrición, Progreso) sigue re-disparándose CADA VEZ que se visita esa
+  pestaña (no sólo la primera vez) — no se tocó en este pase, sólo se le
+  sacó competencia (el deslizamiento lateral). Si después de esto el cambio
+  de pestaña sigue sintiéndose ocupado, el próximo paso sería dejar de
+  re-staggerear las tarjetas en cada visita (sólo animarlas la primera vez
+  que se cargan, no en cada cambio de pestaña) — cambio más grande, afecta
+  varios archivos, no hacerlo sin que Enzo lo confirme primero.
+
 **Hecho y publicado el 2026-09-04** (PR #39, mergeado a `main` — CORRIGE PR #37,
 ver abajo):
 
