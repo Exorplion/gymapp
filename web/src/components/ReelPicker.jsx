@@ -173,13 +173,23 @@ export default function ReelPicker({
               </div>
             );
           }
+          // El diente centrado muestra `val` (el valor real elegido), NO
+          // `v` (el múltiplo de `step` de ESE diente en particular): si
+          // `val` vino de la rueda fina o de edición manual y no es un
+          // múltiplo exacto de `step` (82 entre dientes de 80/82.5), no
+          // existe ningún diente propio para 82 — el más cercano (82.5) se
+          // usa sólo para SABER dónde centrar el scroll, nunca para decidir
+          // qué número mostrar. Mostrar `v` ahí hacía que se viera "82.5"
+          // después de elegir 82 a mano (aunque el valor real ya estuviera
+          // guardado bien) — se leía como que el redondeo seguía sin
+          // arreglar.
           return (
             <div
               key={i}
               className={`reel-tooth${on ? ' on' : ''}`}
               {...(on ? { role: 'button', tabIndex: 0, onClick: openEdit } : {})}
             >
-              {fmt ? fmt(v) : v}
+              {on ? (fmt ? fmt(val) : val) : (fmt ? fmt(v) : v)}
             </div>
           );
         })}
