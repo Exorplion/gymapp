@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { hexToHsl, hslToHex, contrastRatio, paletaDesde, COLOR_DEFECTO } from '../theme.js';
+import {
+  hexToHsl, hslToHex, contrastRatio, paletaDesde,
+  COLOR_DEFECTO, BG, ON_GRAD_OSCURO, ON_GRAD_CLARO,
+} from '../theme.js';
 
 describe('hexToHsl / hslToHex', () => {
   it('convierte y vuelve al mismo color (redondeando)', () => {
@@ -42,17 +45,44 @@ describe('contrastRatio', () => {
 });
 
 describe('paletaDesde', () => {
-  it('con el azul de fábrica reproduce la paleta original', () => {
-    // El azul default (--blue) es el ancla de la receta (dh=0): la paleta
-    // que sale de él tiene que ser la que ya estaba en styles.css, no una
-    // aproximación — si no, "restablecer" y "elegir el azul de siempre a
-    // mano" darían resultados distintos.
+  /* Este test comprobaba que paletaDesde(COLOR_DEFECTO) reprodujera EXACTO
+     la paleta de styles.css, hex por hex. Ese invariante murió con la
+     reformulación "hierro y encendido", y no por un bug: la paleta de fábrica
+     dejó de ser una sola familia de matiz.
+
+     Ahora hay dos a propósito — naranja caliente para la ACCIÓN y azul para
+     los DATOS (series de gráfico) — mientras que la receta de este módulo, por
+     diseño, colapsa todos los roles en UNA familia rotada al matiz que elijas.
+     O sea que la receta no puede reproducir una paleta de dos familias, y
+     exigirlo sería pedirle al sistema de tema algo que nunca prometió.
+
+     Lo que SÍ se sigue exigiendo, porque es lo que de verdad protege contra
+     que theme.js y styles.css se separen en silencio: que el color de fábrica
+     sea el mismo matiz que el acento del CSS, y que la paleta derivada sea
+     coherente (todos los roles en la misma familia cálida). */
+  it('el color de fábrica ancla la receta en su propio matiz', () => {
     const p = paletaDesde(COLOR_DEFECTO);
-    expect(p.blue.toLowerCase()).toBe('#2e7dff');
-    expect(p.blue2.toLowerCase()).toBe('#5ea2ff');
-    expect(p.blue3.toLowerCase()).toBe('#8fc2ff');
-    expect(p.accent.toLowerCase()).toBe('#7fd1ff');
-    expect(p.cyan.toLowerCase()).toBe('#22d3ee');
+    const base = hexToHsl(COLOR_DEFECTO).h;
+
+    // `blue` es el ancla de la receta (dh=0): tiene que salir con el matiz
+    // exacto del color de entrada, no una aproximación.
+    expect(hexToHsl(p.blue).h).toBeCloseTo(base, 0);
+
+    // Y toda la paleta derivada queda en la misma familia: la receta corre el
+    // matiz entre -30 y +15 grados según el rol, nunca lo manda a otro lado.
+    for (const rol of ['deep', 'blue2', 'blue3', 'accent', 'cyan']) {
+      // distancia circular entre dos ángulos, en [0,180]
+      const dh = Math.abs(((hexToHsl(p[rol]).h - base + 540) % 360) - 180);
+      expect(dh).toBeLessThanOrEqual(30);
+    }
+  });
+
+  it('el color de fábrica es cálido, no el azul de la paleta vieja', () => {
+    // Guarda contra volver a #2E7DFF por accidente en un merge: el matiz de
+    // fábrica tiene que estar en el rango naranja (0-45 grados).
+    const h = hexToHsl(COLOR_DEFECTO).h;
+    expect(h).toBeGreaterThanOrEqual(0);
+    expect(h).toBeLessThanOrEqual(45);
   });
 
   it('con un color inválido no arma nada — null, no una paleta rota', () => {
@@ -85,16 +115,20 @@ describe('paletaDesde', () => {
     ];
     it.each(casos)('%s (%s)', (_nombre, hex) => {
       const p = paletaDesde(hex);
-      expect(contrastRatio(p.accent, '#04070F')).toBeGreaterThanOrEqual(MIN);
-      expect(contrastRatio(p.blue3, '#04070F')).toBeGreaterThanOrEqual(MIN);
+      expect(contrastRatio(p.accent, BG)).toBeGreaterThanOrEqual(MIN);
+      expect(contrastRatio(p.blue3, BG)).toBeGreaterThanOrEqual(MIN);
     });
   });
 
   it('onGrad elige, entre negro y blanco, el que de verdad da más contraste', () => {
     for (const hex of ['#0000FF', '#FFD700', '#8B0000', COLOR_DEFECTO]) {
       const p = paletaDesde(hex);
-      const negro = contrastRatio('#03121F', p.blue2), blanco = contrastRatio('#F5FAFF', p.blue2);
-      const ganador = negro >= blanco ? '#03121f' : '#f5faff';
+      // Los candidatos se IMPORTAN, no se repiten acá: cuando estaban
+      // escritos a mano, cambiar la paleta hacía fallar el test por
+      // duplicación desincronizada y no por un bug real.
+      const negro = contrastRatio(ON_GRAD_OSCURO, p.blue2);
+      const blanco = contrastRatio(ON_GRAD_CLARO, p.blue2);
+      const ganador = (negro >= blanco ? ON_GRAD_OSCURO : ON_GRAD_CLARO).toLowerCase();
       expect(p.onGrad.toLowerCase()).toBe(ganador);
     }
   });

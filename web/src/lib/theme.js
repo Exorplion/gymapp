@@ -107,8 +107,21 @@ function conContraste(h, s, l, fondoHex, minimo, subir = true) {
   return { l: actual, hex };   // el mejor que se pudo, aunque no llegue al mínimo
 }
 
-/** El fondo contra el que se miden accent/blue3 (usados como texto/ícono). */
-const BG = '#04070F';
+/** El fondo contra el que se miden accent/blue3 (usados como texto/ícono).
+    Tiene que seguir a --bg de styles.css: si acá quedara el fondo viejo, las
+    garantías de contraste de conContraste() se calcularían contra un color
+    que la app ya no pinta, y darían por bueno un tono que en pantalla no se
+    lee. Se actualizó junto con la paleta "hierro y encendido". */
+export const BG = '#0A0A0B';
+/* Los dos candidatos a texto ARRIBA del degradado. Se exportan para que los
+   tests no los repitan a mano: antes estaban escritos también en theme.test.js
+   y al cambiar la paleta el test falló por duplicación, no por un bug real. */
+/** Sigue a --on-grad de styles.css. Era #03121F (negro azulado de la paleta
+    vieja); con "hierro y encendido" es el marrón muy oscuro. */
+export const ON_GRAD_OSCURO = '#1A0E06';
+/** El claro se mantiene neutro, sin matiz. */
+export const ON_GRAD_CLARO = '#F7F7F8';
+
 /** Contraste mínimo para texto grande / íconos sobre fondo casi negro (AA
     large-text, que es el estándar que aplica: los números y etiquetas de
     esta app son grandes y en negrita, no párrafos chicos). */
@@ -147,7 +160,7 @@ export function paletaDesde(hex) {
   // prueba negro-azulado (como el original) y blanco, y gana el que dé más
   // contraste contra el tono del medio del degradado — así funciona tanto si
   // elegiste un azul oscuro como un amarillo casi blanco.
-  const negro = '#03121F', blanco = '#F5FAFF';
+  const negro = ON_GRAD_OSCURO, blanco = ON_GRAD_CLARO;
   const onGrad = contrastRatio(negro, tono.blue2) >= contrastRatio(blanco, tono.blue2) ? negro : blanco;
 
   return {
@@ -172,8 +185,10 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-/** El azul original, como valor por default y como para "restablecer". */
-export const COLOR_DEFECTO = '#2E7DFF';
+/** El color de fábrica, y lo que Ajustes muestra como "actual" mientras no
+    elijas otro. Era el azul #2E7DFF; ahora es el naranja de carga de la
+    paleta "hierro y encendido" (= --color-accent en styles.css). */
+export const COLOR_DEFECTO = '#FF5A1F';
 
 const VAR_DE = {
   accent: '--accent', deep: '--deep', blue: '--blue', blue2: '--blue2', blue3: '--blue3',
