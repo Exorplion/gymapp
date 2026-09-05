@@ -29,6 +29,7 @@ import { sideImbalance } from '../lib/symmetry.js';
 import { jumpToSlide, scrollToSlideEl, slideCenterDist } from '../lib/carousel.js';
 import { staggerRevealOnce, squashStretch, impactBurst } from '../lib/motion.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
+import { getPhoto, savePhoto } from '../lib/gyms.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
 import ReelPicker from './ReelPicker.jsx';
@@ -188,6 +189,66 @@ function RpeSelector({ v }) {
   );
 }
 
+/** Foto de "esta máquina, en este gym" (a pedido explícito de Enzo — ver el
+    comentario de cabecera de gyms.js sobre por qué es un ángulo propio y no
+    un catálogo tipo TRACKED): un campo más del registro equip[exKey], no
+    una pantalla aparte. Sólo aparece con un gym activo — sin eso no hay a
+    qué gym atar la foto. Sacarla/reemplazarla es el mismo botón: tocar la
+    miniatura reabre la cámara. */
+function GymPhoto({ gymId, exName }) {
+  const [url, setUrl] = useState(null);
+  const inputRef = useRef(null);
+  const urlRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPhoto(gymId, exName).then(blob => {
+      if (cancelled) return;
+      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+      const next = blob ? URL.createObjectURL(blob) : null;
+      urlRef.current = next;
+      setUrl(next);
+    });
+    return () => {
+      cancelled = true;
+      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+    };
+  }, [gymId, exName]);
+
+  async function onFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    await savePhoto(gymId, exName, file);
+    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+    const next = URL.createObjectURL(file);
+    urlRef.current = next;
+    setUrl(next);
+  }
+
+  return (
+    <div className="gym-photo">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={{ display: 'none' }}
+        onChange={onFile}
+      />
+      {url ? (
+        <button type="button" className="gym-photo-thumb" onClick={() => inputRef.current?.click()} aria-label="Cambiar foto de la máquina">
+          <img src={url} alt="" />
+        </button>
+      ) : (
+        <button type="button" className="chip" onClick={() => inputRef.current?.click()}>
+          📷 Foto de la máquina
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ExerciseSlide({ m, wd, started }) {
   const { ex, done, target, skipped, full, open, isNext, waiting } = m;
   const v = ensureVals(ex);
@@ -267,6 +328,7 @@ function ExerciseSlide({ m, wd, started }) {
             <> · serie {done.length + 1} → {curRir === 0 ? <b className="txt-blue">al fallo</b> : `RIR ${curRir}`}</>
           )}
         </div>
+        {open && S.cfg.activeGym && <GymPhoto gymId={S.cfg.activeGym} exName={ex.name} />}
         {last && (
           <div className="exlast">
             Última vez: {last.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg

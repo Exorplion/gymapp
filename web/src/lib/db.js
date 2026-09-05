@@ -1,8 +1,8 @@
 // Puerto verbatim del wrapper de IndexedDB de la app original (index.html).
 // Mismo nombre de base y mismos object stores: los datos de un usuario que
 // ya usaba la versión vainilla siguen siendo válidos acá.
-export const DB = { name: 'fierro', ver: 2, db: null };
-export const STORES = ['routine', 'sessions', 'meals', 'foods', 'body', 'settings'];
+export const DB = { name: 'fierro', ver: 3, db: null };
+export const STORES = ['routine', 'sessions', 'meals', 'foods', 'body', 'settings', 'gymPhotos'];
 
 // ver 1 -> 2: la rutina pasa de objeto indexado por weekday a una secuencia
 // ordenada (ver plan rutina-por-secuencia). WEEK_ORDER fija el orden en que
@@ -22,6 +22,10 @@ export function idbOpen() {
       if (!db.objectStoreNames.contains('foods')) db.createObjectStore('foods', { keyPath: 'id' });
       if (!db.objectStoreNames.contains('body')) db.createObjectStore('body', { keyPath: 'id' });
       if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
+      // ver 2 -> 3: foto de máquina/equipo por gym+ejercicio (gyms.js). Blob
+      // nativo, no base64 en 'settings' — evita inflar ese blob cada vez que
+      // se lee/escribe cualquier cosa de config.
+      if (!db.objectStoreNames.contains('gymPhotos')) db.createObjectStore('gymPhotos', { keyPath: 'id' });
 
       // ev.newVersion es la versión a la que se está abriendo esta conexión
       // (no necesariamente DB.ver=2 fijo: el test de migración fuerza
@@ -64,6 +68,7 @@ export function idbOpen() {
 
 export const idb = {
   all: st => new Promise((res, rej) => { const q = DB.db.transaction(st).objectStore(st).getAll(); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }),
+  get: (st, k) => new Promise((res, rej) => { const q = DB.db.transaction(st).objectStore(st).get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }),
   put: (st, v) => new Promise((res, rej) => { const t = DB.db.transaction(st, 'readwrite'); t.objectStore(st).put(v); t.oncomplete = res; t.onerror = () => rej(t.error); }),
   del: (st, k) => new Promise((res, rej) => { const t = DB.db.transaction(st, 'readwrite'); t.objectStore(st).delete(k); t.oncomplete = res; t.onerror = () => rej(t.error); }),
   clear: st => new Promise((res, rej) => { const t = DB.db.transaction(st, 'readwrite'); t.objectStore(st).clear(); t.oncomplete = res; t.onerror = () => rej(t.error); }),
