@@ -2074,7 +2074,26 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    `main` recibe su propio nombre para que la foto de "antes/después" no
    incluya Header/TabBar/RestTimer/Sheet. */
 main{view-transition-name:app-main}
-::view-transition-group(app-main){animation-duration:.34s}
+/* main no tiene scroll propio (scrollea la página entera): su alto real es
+   el de TODO su contenido, no sólo lo visible entre el header y la barra de
+   abajo. Sin esto, la animación por defecto del navegador para este grupo
+   (que interpola el alto del contenedor del alto viejo al nuevo) pinta esa
+   foto de alto completo en el top-layer —por encima de CUALQUIER z-index,
+   incluida la barra de pestañas fija— y durante el deslizamiento se ve un
+   botón de más abajo del pliegue flotando sobre la barra (bug reportado por
+   Enzo: "aparece un botón en la parte de abajo" al cambiar de pestaña).
+   `animation:none` apaga esa animación de alto/posición por defecto (acá no
+   hace falta: app-main no cambia de lugar en pantalla, sólo de contenido) y
+   se fija el alto a `--vt-clip-h` (medido en changeTab(), state.js, justo
+   antes de sacar la foto) en vez de dejar que interpole. */
+::view-transition-group(app-main){
+  animation:none;
+  height:var(--vt-clip-h,100dvh);
+  overflow:hidden;
+}
+::view-transition-old(app-main),::view-transition-new(app-main){
+  height:100%;object-fit:cover;object-position:top;
+}
 /* root sin animación, pero SÓLO durante un cambio de pestaña ([data-tdir],
    que changeTab pone y saca en state.js): lo único que cambiaría ahí es la
    píldora activa de TabBar (ya se mueve sola vía JS, TabBar.jsx) — animar el
