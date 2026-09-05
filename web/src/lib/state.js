@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { flushSync } from 'react-dom';
 import { idb, STORES } from './db.js';
-import { dstr, fmtNum, round1, kg2lb, KG2LB, vibrate } from './format.js';
+import { dstr, fmtNum, round1, kg2lb, lb2kg, KG2LB, vibrate } from './format.js';
 
 // S sigue siendo el mismo objeto mutable de la app original: todo el código
 // de negocio (session.js, streak.js, drag.js, etc.) lo lee y lo muta
@@ -131,6 +131,17 @@ export function wBoth(kg) {
 
 export function wStep() {
   return S.cfg.unit === 'kg' ? 2.5 : 5 / KG2LB;
+}
+
+/** kg → unidad que ve el usuario, y de vuelta — numéricos (sin formatear a
+    texto, eso es wDisplay()). Los usa ReelPicker.jsx (toUnit/fromUnit) para
+    que la rueda fina y la edición manual trabajen en la unidad que el
+    usuario ve, no en kg crudos. */
+export function wToUnit(kg) {
+  return S.cfg.unit === 'kg' ? kg : kg2lb(kg);
+}
+export function wFromUnit(n) {
+  return S.cfg.unit === 'kg' ? n : lb2kg(n);
 }
 
 // Reemplaza openSheet(html)/closeSheet() del original (que escribían un

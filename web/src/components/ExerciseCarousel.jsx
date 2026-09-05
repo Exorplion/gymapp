@@ -5,26 +5,19 @@
 // para por qué esa matemática vive en su propio módulo sin dependencias
 // (para no crear un ciclo session.js <-> ExerciseCarousel.jsx).
 //
-// Los inputs de peso/reps de la tarjeta abierta se mantienen NO controlados
-// (defaultValue inicial + refs) — el mismo rol que cumplía updExDisplays()
-// en el original, que tampoco disparaba un re-render completo por cada
-// tecla. Un <input value=…> controlado atado a bump() en cada tecla (o,
-// como se detectó en code review — ver ExerciseSlide más abajo — un input
-// no controlado que de todos modos reescribe su PROPIO .value en cada
-// tecla) pelea con lo que el usuario está escribiendo: borrar el campo para
-// tipear un número nuevo (parseFloat('') es NaN, la guarda no actualiza
-// v.w, pero si igual se reescribe el input vuelve el valor viejo) o tipear
-// un decimal como "62.5" carácter por carácter (parseFloat('62.') da 62, y
-// reescribir el input con wDisplay(62)="62" borra el "." recién tecleado).
-// Por eso el input de cada campo sólo se reescribe a mano desde los
-// steppers (w-/w+/r-/r+, que sí empujan un valor que el usuario no tecleó)
-// — nunca desde el propio onChange de ese input. Ver ExerciseSlide/
-// syncInputs() vs. syncDependents() más abajo, y task-6-report.md ("Fix
-// Round 1") para el bug real que esto corrige.
+// Peso/reps viven enteros dentro de ReelPicker.jsx (rueda gruesa + rueda
+// fina vertical de enteros vecinos, mantener presionado + edición manual
+// tocando el número — ver el comentario de cabecera de ese archivo). Antes
+// había un <input> de respaldo debajo de cada rueda; Enzo pidió sacarlo
+// (menos clutter, y el número editable tiene que vivir en la rueda, no
+// aparte) — lo único que sigue mostrándose acá afuera es la conversión de
+// unidad (`alt`, kg↔lb) y el aviso de progresión, ninguno de los dos
+// editable, así que el patrón de refs no controlados (`altRef`/`pwRef`) se
+// mantiene sólo para esos dos.
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { S, wDisplay, wAlt, wStep, openSheet } from '../lib/state.js';
-import { round1, fmtNum, lb2kg } from '../lib/format.js';
+import { S, wDisplay, wAlt, wStep, wToUnit, wFromUnit, openSheet } from '../lib/state.js';
+import { round1, fmtNum } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
 import { suggestedWeight } from '../lib/charts.js';
 import {
@@ -212,24 +205,12 @@ function ExerciseSlide({ m, wd, started }) {
   // desbalance izq/der es un patrón sostenido en varias sesiones.
   const imbalance = uni ? sideImbalance(ex) : null;
 
-  const wRef = useRef(null), rRef = useRef(null), altRef = useRef(null), pwRef = useRef(null);
+  const altRef = useRef(null), pwRef = useRef(null);
 
-  // FIX ROUND 1 (code review): syncInputs() used to run unconditionally from
-  // onWChange/onRChange too — i.e. on every keystroke, not just on blur like
-  // the original's native `change` listener. That reintroduced exactly the
-  // bug the header comment above says refs were meant to avoid: clearing the
-  // field to retype snapped back to the old value (parseFloat('') is NaN, so
-  // v.w was never updated, but the input's OWN value was still forced back
-  // to wDisplay(v.w)), and typing a decimal like "62.5" lost the "." the
-  // instant it was typed (parseFloat('62.') is 62, so v.w became 62 and the
-  // input got overwritten with "62"). The fix: only the input the user is
-  // NOT actively typing into gets its .value force-set. syncDependents()
-  // patches the alt-unit span and the progression banner (neither is the
-  // field being typed in), and is what onWChange/onRChange call. syncInputs()
-  // (which also rewrites wRef/rRef.value) is reserved for the stepper
-  // buttons, which — like updExDisplays() in the original — push a value the
-  // user did NOT type character-by-character, so overwriting the field is
-  // exactly what should happen there.
+  // altRef/pwRef siguen sin controlar (refs, no state) por la misma razón de
+  // siempre: son texto derivado que cambia con cada serie/peso y no vale la
+  // pena un bump() de toda la app por eso. Ya no hay ningún input que
+  // sincronizar acá — peso/reps viven enteros dentro de ReelPicker.jsx.
   function syncDependents() {
     if (altRef.current) altRef.current.textContent = wAlt(v.w);
     if (pwRef.current) {
@@ -238,27 +219,10 @@ function ExerciseSlide({ m, wd, started }) {
       pwRef.current.textContent = warn ? `⚠ ${warn}` : '';
     }
   }
-  function syncInputs() {
-    if (wRef.current) wRef.current.value = wDisplay(v.w);
-    if (rRef.current) rRef.current.value = v.r;
-    syncDependents();
-  }
-  // La rueda de gestos entrega un valor absoluto (el diente donde frenó el
-  // scroll) — reemplazó a los steppers +/- de toque repetido.
-  function setW(newW) { v.w = Math.max(0, round1(newW)); syncInputs(); }
-  function setR(newR) { v.r = Math.max(1, Math.round(newR)); syncInputs(); }
-  function onWChange(e) {
-    const num = parseFloat(e.target.value);
-    if (!isNaN(num) && num >= 0) v.w = S.cfg.unit === 'kg' ? num : lb2kg(num);
-    syncDependents();
-  }
-  function onRChange(e) {
-    const num = parseInt(e.target.value, 10);
-    if (!isNaN(num) && num > 0) v.r = num;
-    // Reps no tiene ninguna UI dependiente (el banner de progresión sólo
-    // depende del peso) — nada más que refrescar acá, y sobre todo: no tocar
-    // rRef.current.value mientras el usuario está tecleando en ese mismo input.
-  }
+  // La rueda (gesto, rueda fina o edición manual — ver ReelPicker.jsx)
+  // entrega siempre un valor absoluto en kg.
+  function setW(newW) { v.w = Math.max(0, round1(newW)); syncDependents(); }
+  function setR(newR) { v.r = Math.max(1, Math.round(newR)); }
 
   const pwarnInitial = open ? progressionWarn(ex.name, v.w) : null;
   const cls = [full ? 'full doneex' : '', open ? 'cur' : '', waiting ? 'wait' : '', skipped ? 'skipped' : ''].filter(Boolean).join(' ');
@@ -415,16 +379,12 @@ function ExerciseSlide({ m, wd, started }) {
                   value={v.w}
                   step={wStep()}
                   fmt={n => wDisplay(n)}
+                  toUnit={wToUnit}
+                  fromUnit={wFromUnit}
                   onChange={setW}
                   label="Peso"
-                  onTapValue={() => { wRef.current?.focus(); wRef.current?.select(); }}
                 />
-                <div className="step" style={{ marginTop: 6 }}>
-                  <div className="val">
-                    <input ref={wRef} type="number" inputMode="decimal" step="any" defaultValue={wDisplay(v.w)} onChange={onWChange} />
-                    <span className="alt" ref={altRef}>{wAlt(v.w)}</span>
-                  </div>
-                </div>
+                <div className="reel-alt" ref={altRef}>{wAlt(v.w)}</div>
               </div>
               <div>
                 <div className="steplabel">Reps</div>
@@ -435,11 +395,7 @@ function ExerciseSlide({ m, wd, started }) {
                   min={1}
                   onChange={setR}
                   label="Reps"
-                  onTapValue={() => { rRef.current?.focus(); rRef.current?.select(); }}
                 />
-                <div className="step" style={{ marginTop: 6 }}>
-                  <div className="val"><input ref={rRef} type="number" inputMode="numeric" defaultValue={v.r} onChange={onRChange} /></div>
-                </div>
               </div>
             </div>
             {/* key=done.length: saveSet() resetea v.rpe a null después de

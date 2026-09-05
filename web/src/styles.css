@@ -360,13 +360,48 @@ main{
   font-variant-numeric:tabular-nums;transition:color .15s,font-size .15s,font-weight .15s;
 }
 .reel-tooth.on{color:var(--txt);font-size:26px;font-weight:800}
-/* El diente centrado es tocable (ver onTapValue, ReelPicker.jsx): abre el
-   teclado numérico si el peso/reps que se quiere no está entre los que ya
-   generó la ventana de la rueda. cursor:pointer es la única pista visual
-   que hace falta —es el mismo número grande de siempre, no un botón nuevo. */
+/* El diente centrado es tocable (tap corto → edición manual; mantener
+   presionado → rueda fina, ver ReelPicker.jsx). cursor:pointer es la única
+   pista visual que hace falta —es el mismo número grande de siempre, no un
+   botón nuevo. */
 .reel-tooth.on[role="button"]{cursor:pointer}
+.reel-tooth.on.editing{width:auto;min-width:52px;padding:0 4px}
+.reel-tooth.on.editing input{
+  width:100%;min-width:52px;text-align:center;background:none;border:none;color:inherit;
+  font:inherit;font-variant-numeric:tabular-nums;
+}
 .reel-indicator{
   position:absolute;left:50%;top:6px;bottom:6px;width:52px;transform:translateX(-50%);
+  border-radius:12px;background:var(--grad2);opacity:.14;pointer-events:none;
+}
+
+/* Rueda fina vertical (mantener presionado): flota sobre la rueda gruesa en
+   vez de abrir un sheet completo —es una corrección rápida de un par de
+   dientes, no una pantalla propia. El backdrop translúcido es lo único que
+   la cierra (no hace falta un botón "listo": cada asentamiento de scroll ya
+   confirma el valor, igual que la rueda gruesa). */
+.reel-fine-backdrop{position:fixed;inset:0;z-index:60;background:rgba(5,7,13,.45);backdrop-filter:blur(2px)}
+.reel-fine{
+  position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%);
+  z-index:61;width:76px;height:168px;border-radius:18px;overflow:hidden;
+  background:var(--card2);border:1px solid var(--line2);
+  box-shadow:0 22px 50px -20px rgba(0,0,0,.8);
+  animation:zoom .18s var(--ease-out) backwards;
+}
+.reel-fine-track{
+  display:flex;flex-direction:column;align-items:center;height:100%;overflow-y:auto;
+  scroll-snap-type:y mandatory;scrollbar-width:none;-ms-overflow-style:none;
+  padding:calc(50% - 22px) 0;
+}
+.reel-fine-track::-webkit-scrollbar{display:none}
+.reel-tooth-v{
+  flex:none;height:44px;display:flex;align-items:center;justify-content:center;
+  scroll-snap-align:center;font-family:'Barlow Condensed';font-weight:600;font-size:17px;
+  color:var(--mut);font-variant-numeric:tabular-nums;transition:color .15s,font-size .15s,font-weight .15s;
+}
+.reel-tooth-v.on{color:var(--txt);font-size:24px;font-weight:800}
+.reel-fine-indicator{
+  position:absolute;top:50%;left:6px;right:6px;height:44px;transform:translateY(-50%);
   border-radius:12px;background:var(--grad2);opacity:.14;pointer-events:none;
 }
 
@@ -482,16 +517,11 @@ main{
    ocupaban 108px: al número le quedaba espacio negativo y se perdía dentro de
    la tarjeta. Apilados, cada número se queda con ~141px. */
 .setrows{display:flex;flex-direction:column;gap:var(--s3);margin:14px 0 12px}
-.setrows .step button{width:52px;height:52px}
-.setrows .step .val{position:relative}
-.setrows .step .val input{width:100%;text-align:center;font-size:44px}
-/* Las libras al lado del número y no debajo, así la fila no crece de alto —
-   pero FUERA del flujo: si ocuparan su lugar empujarían el input y el número
-   quedaría descentrado respecto de sus botones. */
-.setrows .step .val .alt{
-  position:absolute;right:2px;bottom:8px;
-  margin-top:0;font-size:13px;white-space:nowrap;pointer-events:none;
-}
+/* Conversión kg↔lb del peso: ya no vive pegada a un input de respaldo (se
+   sacó, ver ReelPicker.jsx) — es la única cosa que sigue afuera de la rueda,
+   así que se la trata como un dato propio, alineada a la derecha bajo la
+   rueda y un toque más grande que antes (era 13px, casi invisible). */
+.reel-alt{text-align:right;margin-top:6px;font-size:15px;color:var(--mut);letter-spacing:.03em}
 .setchips{margin-top:12px}
 /* durante la sesión sólo un ejercicio está "abierto". Los que faltan se apagan
    para que no parezca que podés saltear el orden a dedo. */
