@@ -228,7 +228,33 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
-**Hecho y publicado el 2026-09-05** (PR #47/#48, mergeados a `main`):
+**Hecho y publicado el 2026-09-05** (PR #50, mergeado a `main`):
+
+- **La rueda gruesa pisaba el valor exacto elegido con la rueda fina,
+  redondeándolo.** Enzo: "si selecciono un numero la app lo redondea al mas
+  cercano, el proposito de la rueda secundaria era para elegir los enteros
+  sin caer en eso de saltar de 80 a 82.5". Mismo patrón de bug que PR #47
+  (scroll programático confundido con un gesto real) pero en la rueda
+  GRUESA: al elegir 82 en la rueda fina, el recentrado de la rueda gruesa
+  (escribe `scrollLeft` a mano para mostrarla en el diente más cercano,
+  82.5) disparaba su propio `scroll` nativo, que `onScroll()` interpretaba
+  como un arrastre real hasta 82.5 y pisaba el 82 elegido — comparaba
+  contra `val` (el valor real) en vez de contra `onValue` (el diente al que
+  la rueda YA estaba centrada). Fix: comparar contra `onValue` — el eco del
+  propio recentrado ya no dispara nada, un arrastre real sigue funcionando
+  igual. 355/355 tests, `tsc --noEmit` limpio, build limpio.
+  **Patrón a tener en cuenta para cualquier futuro cambio en ReelPicker.jsx:**
+  cualquier `scroller.scrollLeft`/`scrollTop` escrito a mano (no por el
+  usuario) dispara un evento `scroll` nativo que entra por el mismo
+  `onScroll()` que confirma valores elegidos por gesto — si ese handler
+  compara contra el valor "real" en vez de contra "adónde ya está centrada
+  la rueda", el eco se lee como una elección nueva y pisa lo que el usuario
+  eligió por otro camino (edición manual, rueda fina, etc.). Ya van dos
+  bugs de este mismo patrón (PR #47 y este) — revisar ESTE archivo primero
+  si algo similar vuelve a aparecer.
+  No se pudo verificar por tacto real en celular desde este job
+  (background, sin extensión de Chrome). Queda pendiente que Enzo confirme
+  que elegir un entero exacto con la rueda fina ya no se redondea solo.
 
 - **Rueda fina: se cerraba sola apenas se abría, sin dejar elegir** (PR #47).
   Enzo: "si mantengo presionada la nueva rueda en la rutina en vivo se
