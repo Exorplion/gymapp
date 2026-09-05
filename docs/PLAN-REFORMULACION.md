@@ -4,11 +4,61 @@
 **Origen:** `AppDesign.jpeg` (framework del curso "How to Build Mobile Apps with
 Claude Code", 2026) + auditoría del código real de FIERRO.
 
-> **Nota de honestidad sobre la fuente:** la transcripción literal del video NO se
-> pudo obtener (YouTube no la sirve por fetch; el extractor devolvió 403). Lo que sí
-> está confirmado por dos fuentes independientes + el propio diagrama de la imagen es
-> el **framework de 5 pasos**. Si el video dice algo específico fuera del diagrama,
-> no está incorporado acá.
+> **Fuente completa.** Enzo subió la transcripción del video
+> (`Transcripción%20Video.md`, 1977 líneas) y se leyó entera. El framework se expone
+> en el capítulo 10 ("Designing a Successful App") y se re-aplica a otras dos apps
+> (CalTracker, Pomodoro). El curso es de Nick Saraev.
+
+## Antes de aplicar nada: qué es y qué no es este framework
+
+Leer la transcripción cambia cómo hay que usarlo. Cuatro cosas que el diagrama no
+deja ver:
+
+1. **Los dos números NO están justificados.** El "max 5-7 screens" **no aparece en
+   la explicación conceptual**: sale improvisado cuando le dicta el prompt a Claude,
+   sin ningún razonamiento. Y él mismo lo baja a "3-4" en CalTracker y a "2" en
+   Pomodoro. El "under 30 seconds" lo enuncia y sigue de largo; incluso admite que
+   un habit tracker no lo cumple tan tenso como un juego. **Son reglas de pulgar
+   heredadas de game design, no medidas.** Medirse contra "7" como si fuera una ley
+   sería un error.
+2. **El framework produce *scope para un prompt*, no diseño de producto.** Textual:
+   *"tenés como un scope"* para darle a Claude. Es una herramienta de encuadre
+   inicial, no un juicio sobre una app ya construida.
+3. **El paso 5 asume una app multi-usuario con adquisición y retención.** FIERRO es
+   de **un solo usuario, que es el propio autor**. El video nunca considera ese caso.
+   "Que la gente vuelva" significa otra cosa cuando el usuario sos vos.
+4. **En honestidad de datos, FIERRO ya es MÁS estricto que el video.** El curso
+   acepta estimaciones opacas sin marcarlas y llega a generar reflexiones con IA
+   sabiendo que casi no hay datos detrás. El criterio de FIERRO (`null` para "no
+   hay dato", `coverage` en micros, `acwr()` sin 4 semanas) es superior y **no se
+   toca**.
+
+### Lo que sí conviene tomar (y no está en el diagrama)
+
+- **El test real de surface area no es contar pantallas.** Es: *un solo recorrido
+  alcanza para aprender la app; no hace falta explicársela al usuario.* Eso es
+  verificable; "7" no.
+- **El core loop tiene que ser reversible.** Des-marcar es parte del loop, no una
+  excepción — porque a veces marcaste por error.
+- **El loop tiene que ganarle a la alternativa trivial.** Su test: *"podría usar el
+  timer del celular… ¿pero por qué no tocaría este botón y vería florecer un
+  arbolito?"*
+- **La recompensa evoluciona con la consistencia acumulada** (ejemplo Opal: la gema
+  se pone más vistosa a medida que sostenés la racha), no es constante.
+- **Nudge ≠ retrospectiva.** El nudge es título + una o dos líneas; la reflexión es
+  larga y periódica. Con ventana anti-repetición. Esa separación sí es aplicable.
+- **La recompensa debe ser sensorial (háptica, sonido, animación), no informativa.**
+  FIERRO ya hace esto bien en el loop de entrenar.
+
+### Lo que hay que resistir conscientemente
+
+El video pide notificaciones **una o dos veces por día**, *"golpeando su puerta
+consistentemente"*, y llama a esto **"dark patterns"** con todas las letras, sin
+más discusión ética que esa palabra. El `CLAUDE.md` de FIERRO dice lo contrario:
+**avisos raros, no diarios; confetti sólo en hitos reales, o la moneda se
+devalúa.** Ese criterio es de Enzo y es mejor para una app de un solo usuario.
+**No se adopta la cadencia del video.** Se toma el *mecanismo* (estado inconcluso),
+no la *frecuencia*.
 
 ---
 
@@ -41,8 +91,8 @@ primero, loop después — y eso es exactamente lo que la auditoría encuentra.
 | Core Function | **NO CUMPLE** | Son dos productos cosidos por la barra de pestañas |
 | Core Loop | **A MEDIAS** | El de entreno es excelente; el de comida no; y estaba **roto** |
 | Accessory Features | **NO CUMPLE** | El peso muerto se paga *dentro* del loop |
-| Surface Area | **NO CUMPLE** | 35 superficies contra un techo de 7 (5×) |
-| Retention Hook | **A MEDIAS** | Sólo hook intra-sesión; cero razón para volver mañana |
+| Surface Area | **NO CUMPLE** | 35 superficies; y falla el test real ("un recorrido basta") |
+| Retention Hook | **A MEDIAS** | Sólo hook intra-sesión — pero ver la salvedad de un solo usuario |
 
 ### 1. Core Function — no hay una frase
 
@@ -89,7 +139,7 @@ Fuera del loop: `fibras.js` (205 líneas), micronutrientes (que la propia UI
 admite que "no sirve para diagnosticar nada"), `YearRecap`, `IllusPick` (código
 muerto — no está registrado en `App.jsx`).
 
-### 4. Surface Area — 35 contra 7
+### 4. Surface Area — falla el test, más allá del número
 
 - **5** rutas de pantalla (la `TabBar` muestra 4; `hoy` es una quinta oculta)
 - **28** sheets/modales en el switch de `App.jsx:77-107`
@@ -99,6 +149,17 @@ muerto — no está registrado en `App.jsx`).
 `ExSwap`, `CopyExercises`, `SlotEdit`, `DayDrop`, `ReorderHoy`,
 `RoutineWizard`). Es una app de configuración adentro de la app de entrenar —
 y es donde está el 80% del recorte posible.
+
+**Pero el número no es el argumento.** Como el "5-7" del video es improvisado y
+él mismo lo viola, no tiene sentido perseguir un techo numérico. El test que sí
+sirve, y que FIERRO **falla**, es el otro: *¿un solo recorrido alcanza para
+aprender la app?* Hoy no — y hay dos pruebas dentro del propio código:
+`sheets/Guide.jsx` es documentación **dentro** del producto (si hace falta un
+manual, el test ya falló), y `SessStartInfo` dedica 3 de sus cajas a texto
+instructivo puro antes de dejarte entrenar. Además hay **tres lugares distintos
+para crear un gym** (`Gyms.jsx`, `GymEquip.jsx`, y el inline de
+`SessStartInfo`), que es exactamente el síntoma que el video describe: demasiadas
+rutas para lo mismo.
 
 ### 5. Retention Hook — la app se siente terminada cada día
 
@@ -169,14 +230,34 @@ que peso, reps y el botón de confirmar.
 | CORTAR | `voice-log` + `food-voice` | Rutas *alternativas* que compiten con el loop rápido |
 | BORRAR | `IllusPick` | Código muerto, no registrado en `App.jsx` |
 
-### Fase 4 — Retention hook real
+### Fase 4 — Retention hook, con criterio propio
 
-1. **Recordatorio programado de entrenar** — no existe ninguno hoy. Es la pieza
-   que más falta.
-2. **Matar el estado terminal.** *"Completado · hoy"* debería abrir la siguiente
-   tensión (lo que viene mañana), no cerrar el día.
+**Salvedad primero, porque cambia todo el paso:** FIERRO tiene **un solo usuario,
+que es Enzo**. El framework del video asume adquisición y retención de gente
+ajena, y su receta explícita es notificar 1-2 veces por día *"golpeando la
+puerta"* — algo que el propio autor llama "dark patterns". Eso **choca de frente**
+con el criterio ya escrito en `CLAUDE.md` ("avisos raros, no diarios; confetti
+sólo en hitos reales, o la moneda se devalúa"). Se toma el **mecanismo** (estado
+inconcluso), **no la cadencia**.
+
+1. **Un recordatorio de entrenar, en el día que la rutina dice que te toca.** Hoy
+   no existe ninguno: `notify.js` sólo tiene los tags de descanso y sesión en
+   curso. Esta es la pieza que falta — pero **uno, atado al turno real de la
+   rutina**, no un goteo diario.
+2. **Matar el estado terminal.** *"Completado · hoy"* (`Inicio.jsx:90-98`) cierra
+   el día. La idea aprovechable del video es que el estado inconcluso obligue a
+   **volver en otro momento** — acá eso es simplemente mostrar la tensión de lo
+   que viene, no inventar un challenge artificial.
 3. **Racha honesta en split con descansos** — `dayCompleted()` devuelve `null` en
-   día de descanso, así que la racha no acumula tensión visible.
+   día de descanso, así que la racha no acumula tensión visible aunque estés
+   cumpliendo la rutina al pie de la letra. Esto es un bug de honestidad, no de
+   retención: la app no está reflejando un logro real.
+4. **Loop reversible** (del video, y es una brecha real): des-marcar tiene que ser
+   parte natural del loop. `deleteSet()` existe, pero conviene revisar que
+   deshacer una serie mal cargada sea tan fácil como cargarla.
+5. **Si en algún momento se quiere un "nudge"**, respetar la distinción del video:
+   nudge = título + una o dos líneas; retrospectiva = larga y periódica. Con
+   ventana anti-repetición. Nunca los dos con la misma cadencia.
 
 ### Fase 5 — Decidir el Core Function
 
