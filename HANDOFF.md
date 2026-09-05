@@ -228,7 +228,62 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
-**Hecho y publicado el 2026-09-04** (PR #43, mergeado a `main`):
+**Hecho y publicado el 2026-09-04** (PR #45, mergeado a `main` — RESUELVE de
+verdad el bug que PR #43 creía haber arreglado, ver abajo):
+
+- **El fantasma de la pantalla anterior, arreglado de verdad — verificado
+  con Chromium real, no sólo lectura de código.** Después de publicar PR #43
+  (que parecía correcto por lectura de código: `opacity:0` estático en
+  `::view-transition-old(app-main)`), un stop-hook exigió confirmación real
+  de que las animaciones funcionaran antes de dar la tarea por terminada —
+  y no había forma de probarlo en un navegador real desde este job en
+  background (sin extensión de Chrome).
+  **Se instaló Chromium real vía Playwright** (`npm install playwright` en
+  un scratch dir aparte, `_pwscratch/` — NUNCA se tocó `package.json` ni el
+  lockfile del proyecto real; se instaló, usó y se borró por completo al
+  terminar) y se tomaron **screenshots reales** a los 40/90/150/220ms de un
+  cambio de pestaña real. Resultado: el fantasma seguía ahí, IDÉNTICO,
+  después de 3 intentos de arreglarlo con CSS (`opacity:0` estático,
+  `animation:none` explícito en el propio `old`, `mix-blend-mode:normal`,
+  hasta una animación de opacidad fija con `@keyframes`).
+  **Causa real**, confirmada con `document.getAnimations({subtree:true})`
+  durante una transición real: el contenido de `main` **nunca llega a armar
+  su propio grupo** `::view-transition-*(app-main)` pese a tener
+  `view-transition-name:app-main` puesto — cae dentro del crossfade POR
+  DEFECTO de ROOT (`-ua-view-transition-fade-in`/`-fade-out` +
+  `-ua-mix-blend-mode-plus-lighter`), que sigue activo pase lo que pase con
+  el CSS propio (ninguna regla llega siquiera a aplicarse, porque no hay
+  ningún pseudo-elemento con ese nombre que estilizar). Es un bug/límite
+  real de este motor de navegador para este caso de uso (pestañas con
+  contenido muy distinto entre sí), no algo que más CSS arregle.
+  **Fix:** se abandona View Transitions API para el cambio de pestaña por
+  completo. `changeTab()` (`state.js`) ya sólo usa el camino de respaldo en
+  JS (`.view.enter`/`.view.leave`, `App.jsx` + `screenIn`, `styles.css`),
+  que SÍ se verificó limpio con los mismos screenshots reales — cero
+  superposición en cualquier instante muestreado, en las 4 pestañas, tanto
+  en un build local (`vite preview`) como en el **sitio de producción real
+  ya publicado** (verificación final post-merge). Se limpió todo el
+  código/CSS que sólo servía para la API nativa (`--vt-clip-h`,
+  `main{view-transition-name:app-main}`, `::view-transition-*(app-main)`,
+  `lastTabChangeUsedVT` real, la medición de alto en `changeTab()`) —
+  quedaba muerto sin la API activa. `RoutineWizard.jsx` sigue usando View
+  Transitions para su propio paso a paso (sobre ROOT, sin nombre propio) —
+  eso no se tocó ni se vio afectado.
+  355/355 tests, `tsc --noEmit` limpio, lint sin warnings nuevos, build
+  limpio.
+  **Lección para la próxima vez que algo "debería funcionar por CSS" no se
+  vea bien en el navegador real:** `document.getAnimations({subtree:true})`
+  durante la transición es la herramienta correcta para confirmar QUÉ
+  pseudo-elemento/grupo está realmente animándose — mirar sólo el CSS fuente
+  (por más correcto que parezca) no alcanza cuando la API en cuestión es
+  tan nueva/frágil como View Transitions. Instalar Playwright en un scratch
+  dir aparte (nunca en el `package.json` real) es la forma de conseguir un
+  navegador real desde un job en background sin la extensión de Chrome
+  conectada.
+
+**Hecho y publicado el 2026-09-04** (PR #43, mergeado a `main` — el intento
+que parecía correcto por lectura de código pero NO lo estaba; ver PR #45
+arriba para la causa real y el fix que sí funciona):
 
 - **El "stagger" real: fantasma de la pantalla anterior al cambiar de
   pestaña — corregido.** Enzo aclaró después de PR #41 que "stagger" nunca
