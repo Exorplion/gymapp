@@ -85,7 +85,22 @@ export default function ReelPicker({
       if (idx < 0) return;
       const v = valuesRef.current[idx];
       reelCenter(scrollerRef.current, idx);
-      if (v !== val) commit(v);
+      // Comparar contra `onValue` (el múltiplo de step al que YA está
+      // centrada la rueda gruesa) y no contra `val` (el valor real, que
+      // puede no ser múltiplo de step si vino de la rueda fina o de
+      // edición manual): el useEffect de [val] más abajo recentra esta
+      // rueda al diente más cercano cada vez que `val` cambia por fuera de
+      // un scroll suyo — y ESE recentrado (reelCenter() escribiendo
+      // scrollLeft a mano) dispara su propio evento 'scroll', que entraba
+      // por acá. Comparar contra `val` hacía que ese eco se leyera como "el
+      // usuario arrastró hasta el diente redondeado" y pisaba el valor
+      // exacto elegido en la rueda fina con el múltiplo de step más
+      // cercano (Enzo: "si selecciono un numero la app lo redondea al mas
+      // cercano" — 82 elegido en la rueda fina volvía a 82.5 solo). Contra
+      // `onValue` el eco se ve igual a sí mismo (mismo diente ya centrado)
+      // y no dispara nada; un arrastre real SÍ cambia a un diente distinto
+      // del que ya estaba centrado, así que sigue commiteando bien.
+      if (v !== onValue) commit(v);
     }, 120);
   }
 
