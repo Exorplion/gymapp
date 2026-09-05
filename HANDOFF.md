@@ -228,6 +228,32 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
+**Hecho y publicado el 2026-09-05** (PR #52, mergeado a `main` — completa
+PR #50, ver abajo):
+
+- **La rueda mostraba el diente redondeado en vez del valor real elegido.**
+  Dos horas después de publicar PR #50, Enzo: "si selecciono 86 el numero
+  no se muestra sino el numero redondeado de la rueda principal... incluso
+  cuando escribí el numero no se actualizó". PR #50 corrigió que el valor
+  GUARDADO (`v.w`) dejara de pisarse con el redondeo, pero nunca tocó qué
+  número se MUESTRA en el diente centrado del `ReelPicker.jsx` — seguía
+  siendo `fmt(v)` (el múltiplo de `step` de ESE diente, ej. 82.5), nunca
+  `fmt(val)` (el valor real elegido, ej. 82). El dato ya estaba bien
+  guardado internamente, pero se seguía viendo mal — para Enzo, sin
+  evidencia visual, el bug seguía sin arreglar. Fix: el diente centrado
+  ahora muestra `val`, no `v` — el diente más cercano (82.5) sigue
+  sirviendo sólo para saber DÓNDE centrar el scroll (no hay diente propio
+  para 82 entre dientes de 2.5 en 2.5), nunca para decidir qué número
+  pintar. 355/355 tests, `tsc --noEmit` limpio, build limpio.
+  **Lección: cuando el dato interno ya está bien pero el usuario sigue
+  reportando el mismo bug, revisar primero si el problema es de DISPLAY,
+  no de estado** — un fix "correcto por lectura de código" (el valor SÍ se
+  guarda bien) puede seguir pareciendo roto si lo que se pinta en pantalla
+  no refleja ese valor. No se pudo verificar por vista real en celular
+  desde este job (background, sin extensión de Chrome). Queda pendiente
+  que Enzo confirme que elegir/tipear un entero exacto ahora SE VE
+  reflejado en la rueda.
+
 **Hecho y publicado el 2026-09-05** (PR #50, mergeado a `main`):
 
 - **La rueda gruesa pisaba el valor exacto elegido con la rueda fina,
