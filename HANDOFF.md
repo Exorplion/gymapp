@@ -228,6 +228,41 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
+**Hecho y publicado el 2026-09-05** (PR #47/#48, mergeados a `main`):
+
+- **Rueda fina: se cerraba sola apenas se abría, sin dejar elegir** (PR #47).
+  Enzo: "si mantengo presionada la nueva rueda en la rutina en vivo se
+  buguea y desaparece no me deja elegir". Causa: el montaje de la rueda fina
+  centra el valor inicial escribiendo `scrollTop` a mano, y eso dispara un
+  evento `scroll` nativo sin que el usuario haya tocado nada — ese scroll
+  programático entraba por el mismo `onScroll()` que agenda el cierre
+  automático (PR #41), sin distinguir un gesto real de la propia
+  inicialización. Fix: el cierre sólo se agenda cuando el asentamiento
+  cambia el valor de verdad.
+- **Elegir/crear gym antes de iniciar sesión + foto de máquina por gym**
+  (PR #48). Dos pedidos de Enzo en el mismo mensaje:
+  1. Confirmado como paso OBLIGATORIO (con "Sin gym" como salida válida).
+     Se agregó al sheet de "Iniciar entrenamiento" que ya existía
+     (`SessStartInfo`, `Hoy.jsx`) — chips + "Sin gym", crear uno nuevo con
+     un input inline sin sheet aparte encima. Aplica `setActiveGym()` al
+     confirmar si cambió, mismo camino que ya usa `GymEquip.jsx`.
+  2. `lib/gyms.js` documentaba explícitamente la decisión de NO agregar
+     fotos ("eso ofrece TRACKED, no es el problema real"). Enzo confirmó
+     que ahora sí lo quiere — se le pidió explícitamente un ángulo propio,
+     no clonar ese catálogo: la foto es un campo más del mismo registro
+     `equip[gymId][exKey]` que ya existía (`savePhoto`/`getPhoto`/
+     `deletePhoto`, `gyms.js`), no una galería aparte — una miniatura chica
+     junto al objetivo de la serie en `ExerciseCarousel` (`GymPhoto`), sólo
+     con un gym activo. Blob nativo en un store nuevo (`gymPhotos`,
+     `db.js` ver 2→3, no base64 en `settings`).
+  355/355 tests, `tsc --noEmit` limpio, lint sin warnings nuevos, build
+  limpio. No se pudo verificar por tacto/cámara real en celular desde este
+  job (background, sin extensión de Chrome — ver
+  [[chrome-extension-background-job]]). Queda pendiente que Enzo confirme
+  en el celular: (a) que mantener presionado ya deja elegir en la rueda
+  fina, (b) que el paso de gym aparece al iniciar sesión, (c) que la
+  cámara/rollo abre bien al tocar "📷 Foto de la máquina".
+
 **Hecho y publicado el 2026-09-04** (PR #45, mergeado a `main` — RESUELVE de
 verdad el bug que PR #43 creía haber arreglado, ver abajo):
 
