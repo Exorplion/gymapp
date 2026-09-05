@@ -27,6 +27,7 @@ import { flipSort } from '../../lib/drag.js';
 import { blocksOf, catOf, MUSCLE_CATS } from '../../lib/muscle.js';
 import { equipLabel } from '../../lib/equip.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
+import { createGym, setActiveGym } from '../../lib/gyms.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
 import WarmupCard from '../WarmupCard.jsx';
 import { tocaCalentar, bloqueDe, DESCANSO } from '../../lib/warmup.js';
@@ -432,7 +433,26 @@ export function SessStartInfo({ index }) {
     );
   }
 
+  // Paso obligatorio antes de abrir sesión (a pedido de Enzo): elegir con
+  // qué gym entrenás hoy, con "Sin gym" como salida válida (no todos los
+  // días hay uno, y no vale la pena bloquear la sesión por eso) y crear uno
+  // nuevo ahí mismo si hace falta —sin salir de esta pantalla, sin otro
+  // sheet encima. Arranca en el gym que ya estaba activo, no en "Sin gym":
+  // si ya elegiste uno la vez pasada, lo más probable es que sigas ahí.
+  const [selGym, setSelGym] = useState(S.cfg.activeGym || '');
+  const [addingGym, setAddingGym] = useState(false);
+  const [gymName, setGymName] = useState('');
+  function crearGym() {
+    const n2 = gymName.trim();
+    if (!n2) return;
+    const gym = createGym(n2);
+    if (gym) setSelGym(gym.id);
+    setGymName('');
+    setAddingGym(false);
+  }
+
   async function abrir() {
+    if (selGym !== (S.cfg.activeGym || '')) await setActiveGym(selGym || null);
     await startSession(index, precheckAdjust());
     resetPrecheck();
   }
@@ -446,6 +466,28 @@ export function SessStartInfo({ index }) {
       </div>
 
       <div className="calcbox">
+        <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 8 }}>¿Dónde entrenás hoy?</div>
+        <div className="chips">
+          <button type="button" className={`chip ${selGym === '' ? 'on' : ''}`} aria-pressed={selGym === ''} onClick={() => setSelGym('')}>Sin gym</button>
+          {S.gyms.map(g => (
+            <button key={g.id} type="button" className={`chip ${selGym === g.id ? 'on' : ''}`} aria-pressed={selGym === g.id} onClick={() => setSelGym(g.id)}>{g.name}</button>
+          ))}
+          <button type="button" className="chip" onClick={() => setAddingGym(v => !v)}>+ Nuevo gym</button>
+        </div>
+        {addingGym && (
+          <div className="flex gap-2 mt-2">
+            <input
+              type="text" placeholder="Nombre del gym" value={gymName}
+              onChange={e => setGymName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') crearGym(); }}
+              className="h-11 grow rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-[15px] text-txt outline-none transition-colors focus-visible:border-blue2"
+              autoFocus
+            />
+            <button type="button" className="btn sm" style={{ width: 'auto', padding: '0 16px' }} onClick={crearGym}>Crear</button>
+          </div>
+        )}
+      </div>
+      <div className="calcbox" style={{ marginTop: 10 }}>
         <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 8 }}>¿Cómo dormiste?</div>
         <div className="chips">{chip('sleep', 'bien', 'Bien')}{chip('sleep', 'regular', 'Regular')}{chip('sleep', 'mal', 'Mal')}</div>
       </div>

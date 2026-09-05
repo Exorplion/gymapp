@@ -9,10 +9,15 @@
 // según dónde estás).
 //
 // Lo que NO hace: no traduce pesos entre equipos (equip.js ya explica por
-// qué no se puede) y no arma un catálogo de gyms con fotos/mapa — eso es lo
-// que ofrece TRACKED y no es el problema real que Enzo tiene; acá el gym es
+// qué no se puede) y no arma un catálogo de gyms con mapa — eso es lo que
+// ofrece TRACKED y no es el problema real que Enzo tiene; acá el gym es
 // sólo una etiqueta con un mapa de "este ejercicio, en este lugar, con este
-// equipo".
+// equipo". La foto por máquina (más abajo) SÍ se agregó a pedido explícito
+// —pero con un ángulo propio, no un catálogo social tipo TRACKED: es un
+// campo más del mismo registro equip[exKey] que ya existía (una prueba
+// visual de "esta es la variante de la que hablás", no una galería aparte
+// para pasear) — se guarda como Blob nativo en su propio store
+// ('gymPhotos', db.js) para no inflar el blob de 'settings'.
 import { S, bump, saveCfg } from './state.js';
 import { idb } from './db.js';
 import { persistSlot } from './rutina-logic.js';
@@ -64,6 +69,29 @@ export function setGymEquip(gymId, exName, equip, machine) {
   else delete gym.equip[k];
   saveGyms();
   bump();
+}
+
+const photoId = (gymId, exName) => `${gymId}::${keyOf(exName)}`;
+
+/** Guarda/reemplaza la foto de "esta máquina, en este gym" — un campo más
+    del registro equip[exKey], no una galería aparte (ver comentario de
+    cabecera). `blob` es lo que entrega el <input type="file"> de la
+    cámara/rollo, tal cual, sin recodificar. */
+export async function savePhoto(gymId, exName, blob) {
+  await idb.put('gymPhotos', { id: photoId(gymId, exName), blob, ts: Date.now() });
+}
+
+/** Devuelve el Blob guardado o null. El caller arma su propio object URL
+    (URL.createObjectURL) y lo revoca al desmontar — acá no se cachea nada,
+    para no pelear con la limpieza de esas URLs. */
+export async function getPhoto(gymId, exName) {
+  if (!gymId) return null;
+  const row = await idb.get('gymPhotos', photoId(gymId, exName));
+  return row?.blob || null;
+}
+
+export async function deletePhoto(gymId, exName) {
+  await idb.del('gymPhotos', photoId(gymId, exName));
 }
 
 /** Activa un gym y aplica su equipo guardado a los ejercicios del turno de
