@@ -22,7 +22,7 @@ import Chart from '../Chart.jsx';
 import SessionCard from '../SessionCard.jsx';
 import { Info } from '../Icon.jsx';
 import { useEffect, useRef } from 'react';
-import { countTo, staggerReveal } from '../../lib/motion.js';
+import { countTo, staggerRevealOnce } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 
 const BODY_LABELS = { waist: 'Cintura', arm: 'Brazo', chest: 'Pecho', leg: 'Pierna' };
@@ -328,10 +328,14 @@ function PRsList({ exNames }) {
     return { n, maxW, bestSet, dV, tier: strengthTier(n, maxW, bw) };
   }).filter(p => p.bestSet).sort((a, b) => b.maxW - a.maxW);
   const listRef = useRef(null);
-  // Reveal escalonado de la lista de PRs al montar/cambiar de datos.
+  // Reveal escalonado de la lista de PRs — sólo la primera vez que ESTE
+  // conteo de PRs se ve en la sesión. La key incluye prs.length a propósito:
+  // remontar Progreso por un simple cambio de pestaña (key={store.tab} en
+  // App.jsx) no debe volver a animar la lista si nada cambió, pero un PR
+  // nuevo de verdad (prs.length distinto) sí tiene que revelarse.
   useEffect(() => {
     const rows = listRef.current?.querySelectorAll(':scope > .row');
-    if (rows?.length) staggerReveal(rows);
+    if (rows?.length) staggerRevealOnce(`progreso-prs-${prs.length}`, rows);
   }, [prs.length]);
   return (
     <div className="card" ref={listRef}>

@@ -26,7 +26,7 @@ import { lowMicros } from '../../lib/micronutrients.js';
 import { idb } from '../../lib/db.js';
 import { logMeal, addMealFromFood } from '../sheets/MealForm.jsx';
 import { useEffect, useRef } from 'react';
-import { countTo, staggerReveal } from '../../lib/motion.js';
+import { countTo, staggerRevealOnce } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 
 // El botón de voz sólo aparece si el navegador reconoce voz — mismo criterio
@@ -113,7 +113,7 @@ export default function Nutricion() {
   const mealsRef = useRef(null);
   useEffect(() => {
     const blocks = mealsRef.current?.querySelectorAll(':scope > .slot-block');
-    if (blocks?.length) staggerReveal(blocks);
+    if (blocks?.length) staggerRevealOnce('nutri', blocks);
   }, []);
 
   return (

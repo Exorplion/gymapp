@@ -59,6 +59,25 @@ export function staggerReveal(els, { delayStep = 45, distance = 14 } = {}) {
   });
 }
 
+// Las 5 pantallas (Hoy/Rutina/Nutrición/Progreso + el carrusel de Hoy) tienen
+// key={store.tab}/key={done.length} en App.jsx/ExerciseCarousel.jsx, así que
+// se REMONTAN cada vez que volvés a esa pestaña — no sólo la primera vez que
+// las ves. Antes eso significaba que staggerReveal() volvía a correr en
+// CADA visita, compitiendo con el fundido de cambio de pestaña (screenIn,
+// styles.css) y leyéndose como "caótico" (Enzo, 2026-09-04). Con
+// staggerRevealOnce() el reveal escalonado sólo pasa la primera vez que esa
+// pantalla aparece en la sesión — las visitas siguientes entran de una sola
+// vez junto con el fundido de la pantalla, sin el segundo movimiento
+// compitiendo encima. `revealed` vive en memoria (no localStorage): recargar
+// la app es "sesión nueva" y las tarjetas vuelven a hacer su primer reveal,
+// que es exactamente cuándo tiene sentido mostrarlo.
+const revealed = new Set();
+export function staggerRevealOnce(key, els, opts) {
+  if (revealed.has(key)) return;
+  revealed.add(key);
+  staggerReveal(els, opts);
+}
+
 // Cierre de anillo de progreso (0..1) sobre un <circle> con
 // data-circumference ya seteado. Ref: anillos de Apple Fitness.
 export function animateRing(circleEl, progress, { duration = 900 } = {}) {
