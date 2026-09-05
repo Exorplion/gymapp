@@ -228,6 +228,27 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
+**Hecho y publicado el 2026-09-04** (PR #39, mergeado a `main` — CORRIGE PR #37,
+ver abajo):
+
+- **La rueda fina vertical (PR #37) era invisible.** Enzo: "si mantengo
+  presionado no sale la otra rueda que te pedi, la pantalla solo hace un
+  blur y ya". Causa: `.reel-fine` es hija de `.reel` y flota por ARRIBA de
+  la rueda gruesa (`position:absolute; bottom:calc(100% + 10px)`), pero
+  `.reel` tenía `overflow:hidden` — la recortaba por completo. Sólo se veía
+  el backdrop translúcido (`position:fixed`, nada lo recorta), nunca la
+  rueda fina detrás. Fix: `overflow:hidden` se movió a `.reel-track` (que es
+  lo que en realidad necesita recortar el scroll horizontal contra las
+  esquinas redondeadas); `.reel` ya no recorta a sus hijos.
+  **Lección para la próxima vez que se agregue un overlay flotante dentro de
+  un componente:** revisar si algún ancestro tiene `overflow:hidden` — un
+  `position:absolute` hijo de un contenedor con overflow recortado queda
+  invisible aunque el z-index y el posicionamiento estén bien, y el único
+  síntoma visible puede ser "sólo veo el backdrop" (que si es `position:fixed`
+  no lo recorta nada, así que SÍ se ve, engañando sobre dónde está el bug).
+  355/355 tests, build limpio. No se pudo verificar por tacto real en
+  celular desde este job (background, sin extensión de Chrome).
+
 **Hecho y publicado el 2026-09-04** (PR #37, mergeado a `main` — REEMPLAZA el
 enfoque de PR #35, ver abajo):
 
