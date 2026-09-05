@@ -1,0 +1,415 @@
+<title>Reformulación de FIERRO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,800&family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root{
+  --bg:#F5F4F3; --surf:#FFFFFF; --surf-2:#FBFAF9;
+  --ink:#17181B; --ink-2:#53555C; --ink-3:#81848D;
+  --line:#E3E1DE; --line-2:#CFCCC8;
+  --hot:#C2410C; --hot-soft:rgba(194,65,12,.09);
+  --crit:#A32015; --crit-soft:rgba(163,32,21,.08);
+  --warn:#8A5300; --warn-soft:rgba(138,83,0,.09);
+  --ok:#15654A; --ok-soft:rgba(21,101,74,.09);
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 8px 24px -16px rgba(23,24,27,.25);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C0D0F; --surf:#151719; --surf-2:#1B1D20;
+    --ink:#F1F1F2; --ink-2:#A7A9AF; --ink-3:#7C7F87;
+    --line:#25272B; --line-2:#34373C;
+    --hot:#FF6A2B; --hot-soft:rgba(255,106,43,.13);
+    --crit:#FF6F5C; --crit-soft:rgba(255,111,92,.12);
+    --warn:#E0A02A; --warn-soft:rgba(224,160,42,.12);
+    --ok:#3DBE93; --ok-soft:rgba(61,190,147,.12);
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px -18px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C0D0F; --surf:#151719; --surf-2:#1B1D20;
+  --ink:#F1F1F2; --ink-2:#A7A9AF; --ink-3:#7C7F87;
+  --line:#25272B; --line-2:#34373C;
+  --hot:#FF6A2B; --hot-soft:rgba(255,106,43,.13);
+  --crit:#FF6F5C; --crit-soft:rgba(255,111,92,.12);
+  --warn:#E0A02A; --warn-soft:rgba(224,160,42,.12);
+  --ok:#3DBE93; --ok-soft:rgba(61,190,147,.12);
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px -18px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'Source Serif 4',Georgia,serif; font-size:17px; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:760px; margin:0 auto; padding:56px 24px 96px}
+
+h1,h2,h3,.eyebrow,.chip,.gate-name,th{font-family:'Barlow Condensed',Arial Narrow,sans-serif}
+h1{
+  font-size:clamp(42px,8vw,68px); line-height:.95; font-weight:800; font-style:italic;
+  text-transform:uppercase; letter-spacing:-.01em; margin:0; text-wrap:balance;
+}
+h2{
+  font-size:30px; line-height:1.1; font-weight:700; text-transform:uppercase;
+  letter-spacing:.02em; margin:0; text-wrap:balance;
+}
+h3{font-size:21px; line-height:1.2; font-weight:700; margin:0; text-wrap:balance}
+p{margin:0}
+a{color:var(--hot)}
+
+.eyebrow{
+  font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.18em;
+  color:var(--hot); margin:0;
+}
+.lede{font-size:20px; line-height:1.5; color:var(--ink-2)}
+.small{font-size:15px; color:var(--ink-2)}
+code,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:.87em}
+code{background:var(--surf-2); border:1px solid var(--line); border-radius:4px; padding:.08em .34em}
+strong{font-weight:600}
+
+header.top{display:flex; flex-direction:column; gap:18px; padding-bottom:32px}
+.meta{
+  display:flex; flex-wrap:wrap; gap:8px 20px; font-family:'IBM Plex Mono',monospace;
+  font-size:12.5px; color:var(--ink-3); border-top:1px solid var(--line); padding-top:14px;
+}
+main{display:flex; flex-direction:column; gap:56px}
+section{display:flex; flex-direction:column; gap:20px}
+.sec-head{display:flex; flex-direction:column; gap:6px; border-bottom:2px solid var(--ink); padding-bottom:10px}
+
+.card{
+  background:var(--surf); border:1px solid var(--line); border-radius:10px;
+  padding:22px 24px; display:flex; flex-direction:column; gap:12px; box-shadow:var(--shadow);
+}
+.card.crit{border-left:4px solid var(--crit)}
+.card.warn{border-left:4px solid var(--warn)}
+.card.ok{border-left:4px solid var(--ok)}
+.card.hot{border-left:4px solid var(--hot)}
+
+.chip{
+  display:inline-flex; align-items:center; gap:6px; align-self:flex-start;
+  font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.1em;
+  padding:4px 10px; border-radius:999px; border:1px solid currentColor;
+}
+.chip.crit{color:var(--crit); background:var(--crit-soft)}
+.chip.warn{color:var(--warn); background:var(--warn-soft)}
+.chip.ok{color:var(--ok); background:var(--ok-soft)}
+.chip.hot{color:var(--hot); background:var(--hot-soft)}
+
+.gates{display:flex; flex-direction:column; gap:10px}
+.gate{
+  display:grid; grid-template-columns:1fr auto; gap:6px 16px; align-items:center;
+  background:var(--surf); border:1px solid var(--line); border-radius:8px; padding:14px 18px;
+}
+.gate-name{font-size:19px; font-weight:700; text-transform:uppercase; letter-spacing:.02em}
+.gate-note{grid-column:1/-1; font-size:14.5px; color:var(--ink-2); line-height:1.5}
+
+.tbl-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:8px; background:var(--surf)}
+table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:420px}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line)}
+th{
+  font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.1em;
+  color:var(--ink-3); background:var(--surf-2);
+}
+tr:last-child td{border-bottom:0}
+td.num{font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; white-space:nowrap}
+.fail{color:var(--crit); font-weight:600}
+.pass{color:var(--ok); font-weight:600}
+
+.sw-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(128px,1fr)); gap:12px}
+.sw{border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--surf)}
+.sw-chip{height:56px}
+.sw-txt{padding:8px 10px; display:flex; flex-direction:column; gap:1px}
+.sw-name{font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:.06em}
+.sw-hex{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-3)}
+
+ul{margin:0; padding-left:1.15em; display:flex; flex-direction:column; gap:8px}
+li::marker{color:var(--hot)}
+
+.phase{display:grid; grid-template-columns:auto 1fr; gap:4px 16px}
+.phase-n{
+  font-family:'Barlow Condensed',sans-serif; font-size:34px; font-weight:800; font-style:italic;
+  line-height:1; color:var(--hot); font-variant-numeric:tabular-nums;
+}
+.phase-body{display:flex; flex-direction:column; gap:8px}
+
+.pull{
+  border-left:3px solid var(--hot); padding:2px 0 2px 18px; margin:0;
+  font-size:18.5px; line-height:1.5; color:var(--ink-2); font-style:italic;
+}
+footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line); font-size:14px; color:var(--ink-3)}
+:focus-visible{outline:2px solid var(--hot); outline-offset:3px; border-radius:4px}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Auditoría y plan · 5 de septiembre de 2026</p>
+  <h1>Reformulación<br>de FIERRO</h1>
+  <p class="lede">Cinco auditorías sobre la app real, contrastadas con el framework de diseño de producto del curso. Lo que se encontró, lo que ya se arregló, y la decisión que falta tomar.</p>
+  <div class="meta">
+    <span>PWA · React 19 · Vite · Tailwind v4</span>
+    <span>Un solo usuario · IndexedDB · sin backend</span>
+    <span>355 tests</span>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <div class="sec-head">
+    <p class="eyebrow">Lo primero</p>
+    <h2>El backup destruía tus datos</h2>
+  </div>
+
+  <div class="card crit">
+    <span class="chip crit">Corregido · publicado</span>
+    <p>La app guarda en <strong>siete</strong> almacenes. Al restaurar un respaldo, <code>importJSON()</code> los vaciaba <strong>los siete</strong> y después reponía <strong>seis claves</strong>. La diferencia no era menor: dentro de <code>settings</code> viven también <strong>tus rutinas guardadas</strong> y <strong>tus gimnasios con el mapa de equipamiento</strong>, y <code>gymPhotos</code> es un almacén entero de fotos de máquina. Ninguno de los tres se exportaba jamás.</p>
+    <p>O sea que restaurar un respaldo borraba rutinas, gimnasios, equipamiento y todas las fotos. Una función de recuperación que destruía datos.</p>
+    <p>Y había un segundo efecto, peor porque es invisible: la clave con la que se indexa el historial de cada ejercicio <strong>incluye el equipo</strong>. Al perder el mapa de gimnasios, «press en máquina Hammer» pasa a indexarse distinto — y los PRs, el «última vez» y las comparaciones <strong>dejan de encontrar el pasado</strong>. No falla nada; simplemente tu historial aparece partido en dos.</p>
+  </div>
+
+  <p class="small">El arreglo tiene dos mitades. Exportar todo lo que faltaba (formato v2, compatible en ambos sentidos con los respaldos viejos), e importar de forma quirúrgica: <strong>ya no se vacía un almacén del que el archivo no trae nada</strong>. Restaurar un respaldo viejo ahora <em>conserva</em> tus gimnasios y tus fotos en vez de barrerlos. Además queda registrada la fecha del último respaldo, y los mensajes de error dejaron de mentir: «archivo inválido» se valida antes de tocar nada, y una restauración cortada a mitad lo dice.</p>
+
+  <blockquote class="pull">Para una app 100% local, sin backend y sin sincronización, el archivo de respaldo es la única defensa que existe. Que estuviera roto pesaba más que cualquier funcionalidad nueva.</blockquote>
+</section>
+
+<section>
+  <div class="sec-head">
+    <p class="eyebrow">Puertas de calidad</p>
+    <h2>Qué significa «terminado»</h2>
+  </div>
+  <p class="small">«Nivel A1» no es verificable. Estas seis puertas sí: cada una tiene un criterio que se aprueba o no se aprueba, sin opinión de por medio. No son una secuencia — son dimensiones paralelas, y este es su estado real hoy.</p>
+
+  <div class="gates">
+    <div class="gate">
+      <span class="gate-name">Salud de código</span>
+      <span class="chip warn">Parcial</span>
+      <span class="gate-note">Se corrigió un crash de producción que mataba la tarjeta del ejercicio en curso. La caza sistemática del resto quedó a medias: el límite de sesión cortó al agente.</span>
+    </div>
+    <div class="gate">
+      <span class="gate-name">Accesibilidad</span>
+      <span class="chip ok">Aprobada en lo esencial</span>
+      <span class="gate-note">Contraste, movimiento reducido, anillo de foco y áreas táctiles, corregidos y publicados. Queda la capa semántica para lectores de pantalla.</span>
+    </div>
+    <div class="gate">
+      <span class="gate-name">Rendimiento</span>
+      <span class="chip crit">Sin empezar</span>
+      <span class="gate-note">Punto de partida medido: 1 743 KiB de precarga en 16 entradas. La auditoría no llegó a terminar.</span>
+    </div>
+    <div class="gate">
+      <span class="gate-name">Sistema visual</span>
+      <span class="chip warn">Diseñado, sin aplicar</span>
+      <span class="gate-note">Dirección completa propuesta y con contraste ya calculado. Falta ejecutarla.</span>
+    </div>
+    <div class="gate">
+      <span class="gate-name">Producto</span>
+      <span class="chip warn">Bloqueada por una decisión</span>
+      <span class="gate-note">Depende de definir cuál es la única cosa que hace la app.</span>
+    </div>
+    <div class="gate">
+      <span class="gate-name">Protección del dato</span>
+      <span class="chip ok">Aprobada</span>
+      <span class="gate-note">Respaldo completo y no destructivo, publicado.</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <p class="eyebrow">El framework, leído de verdad</p>
+    <h2>Qué es y qué no es</h2>
+  </div>
+  <p>Con la transcripción completa del curso en mano, el encuadre cambia respecto de lo que sugiere el diagrama suelto.</p>
+
+  <div class="card hot">
+    <h3>Los dos números no están justificados</h3>
+    <p class="small">El «máximo 5-7 pantallas» <strong>no aparece en la explicación conceptual</strong>: sale improvisado mientras le dicta el prompt a la IA, sin razonamiento. Y el propio autor lo baja a 3-4 en la segunda app y a 2 en la tercera. El «menos de 30 segundos» lo enuncia y sigue de largo. Son reglas de pulgar heredadas del diseño de videojuegos, no medidas. Medir a FIERRO contra el 7 como si fuera una ley era un error de mi lectura anterior.</p>
+  </div>
+
+  <div class="card">
+    <h3>El test que sí sirve</h3>
+    <p class="small">No es contar pantallas: es <strong>«un solo recorrido alcanza para aprender la app; no hace falta explicársela al usuario»</strong>. Eso es verificable. Y FIERRO lo falla, con dos pruebas dentro de su propio código: hay una pantalla de <em>guía</em> —documentación dentro del producto, que es la definición de haber fallado el test— y el paso previo a entrenar dedica cuatro bloques a texto instructivo que se repite sesión tras sesión. Además hay <strong>tres lugares distintos para crear un gimnasio</strong>, que es exactamente el síntoma que el curso describe: demasiadas rutas para lo mismo.</p>
+  </div>
+
+  <div class="card warn">
+    <h3>Lo que hay que resistir a propósito</h3>
+    <p class="small">El curso pide notificar <strong>una o dos veces por día</strong>, «golpeando la puerta consistentemente», y el propio autor lo llama <em>dark patterns</em> con todas las letras. Eso contradice el criterio ya escrito en el proyecto: avisos raros, no diarios. Y hay algo de fondo más importante: <strong>todo ese paso asume adquirir y retener usuarios ajenos.</strong> FIERRO tiene un solo usuario, que es su propio autor. Se toma el mecanismo — el estado inconcluso — y no la frecuencia.</p>
+  </div>
+
+  <p class="small">Un punto donde FIERRO ya está por encima del material de origen: <strong>honestidad del dato.</strong> El curso acepta estimaciones opacas sin marcarlas y llega a generar textos con IA sabiendo que casi no hay datos detrás. El criterio de FIERRO —cuando falta información se dice, no se rellena con un cero— es mejor y no se toca.</p>
+</section>
+
+<section>
+  <div class="sec-head">
+    <p class="eyebrow">Accesibilidad</p>
+    <h2>Lo que fallaba, con números</h2>
+  </div>
+  <p class="small">El token de casi todo el texto chico de la app —de 8,5 a 11,5 px— <strong>no alcanzaba el mínimo legal de 4,5:1 sobre ninguna superficie.</strong> Texto pequeño, contraste bajo y pantalla al sol del gimnasio es el peor caso posible.</p>
+
+  <div class="tbl-scroll">
+    <table>
+      <thead><tr><th>Texto tenue sobre</th><th>Antes</th><th>Ahora</th></tr></thead>
+      <tbody>
+        <tr><td>Fondo de página</td><td class="num fail">4.32:1</td><td class="num pass">≈5.9:1</td></tr>
+        <tr><td>Tarjeta</td><td class="num fail">3.98:1</td><td class="num pass">≈5.5:1</td></tr>
+        <tr><td>Tarjeta elevada</td><td class="num fail">3.68:1</td><td class="num pass">≈5.3:1</td></tr>
+        <tr><td>Barra de pestañas</td><td class="num fail">3.18:1</td><td class="num pass">≈5.9:1</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card ok">
+    <h3>Un arreglo que estaba escrito y muerto</h3>
+    <p class="small">La barra de pestañas tenía una regla que subía el color del texto, con un comentario explicando por qué hacía falta. La regla inmediatamente siguiente —misma especificidad, más abajo en la cascada— lo volvía a bajar. El arreglo existía, estaba documentado y <strong>nunca llegó a aplicarse</strong>.</p>
+  </div>
+
+  <div class="card hot">
+    <h3>La trampa del movimiento reducido</h3>
+    <p class="small">La regla global que neutraliza animaciones sólo alcanza a las de CSS. No toca las que corren por JavaScript, que son justamente todas las de esta app. Ahora se respeta la preferencia en la fuente, y no en los trece lugares que la invocan.</p>
+    <p class="small">Con un detalle que casi rompe la app: dos de esas funciones <strong>no son decorativas, producen el resultado final</strong>. Una dibuja el anillo de progreso; la otra <em>escribe</em> el número en pantalla. Un «no animes» a secas habría dejado el anillo vacío y el número en blanco. Esas dos saltan al valor final; sólo las decorativas no hacen nada.</p>
+  </div>
+
+  <ul>
+    <li><strong>Anillo de foco invisible.</strong> Sobre los botones de degradado claro daba 1,54:1 — el foco desaparecía justo sobre el botón más importante de cada pantalla. Ahora lleva un halo que garantiza contraste sobre cualquier fondo.</li>
+    <li><strong>Áreas táctiles.</strong> Se ampliaron sin mover un píxel del diseño. Excepto las flechas de mover bloque, que se agrandaron de verdad: están apiladas, y ampliar su zona sensible las habría hecho pisarse entre sí — tocarías la contraria.</li>
+    <li><strong>El idioma de la página decía inglés</strong> con la app entera en castellano, y el zoom estaba bloqueado, justo en la app donde hace falta acercar para leer con luz mala.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sec-head">
+    <p class="eyebrow">Dirección visual propuesta</p>
+    <h2>Hierro y encendido</h2>
+  </div>
+  <p>Hoy la app se ve como «app de datos deportivos, oscura y azul» — la categoría más poblada que existe. El problema de fondo: <strong>el 90% de la interfaz vive en una sola familia de color.</strong> Nada puede destacar, porque el color por defecto ya es el color de énfasis. El azul es simultáneamente marca, acción, énfasis, enlace y serie de gráfico: cinco papeles, ningún significado.</p>
+
+  <p class="small">La propuesta es un cuerpo de <strong>grafito neutro, sin tinte azul</strong>, con <strong>un solo acento caliente</strong>. La lógica es física: el gimnasio es hierro gris y goma negra; lo único con color son los discos, y el calor lo pone el cuerpo. Un neutro sin matiz hace que <em>cualquier</em> acento se lea como señal.</p>
+
+  <div class="sw-grid">
+    <div class="sw"><div class="sw-chip" style="background:#0A0A0B"></div><div class="sw-txt"><span class="sw-name">Fondo</span><span class="sw-hex">#0A0A0B</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:#1A1B1E"></div><div class="sw-txt"><span class="sw-name">Superficie</span><span class="sw-hex">#1A1B1E</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:#FF5A1F"></div><div class="sw-txt"><span class="sw-name">Carga</span><span class="sw-hex">#FF5A1F</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:#34D399"></div><div class="sw-txt"><span class="sw-name">Subiste</span><span class="sw-hex">#34D399</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:#F5A524"></div><div class="sw-txt"><span class="sw-name">Atención</span><span class="sw-hex">#F5A524</span></div></div>
+    <div class="sw"><div class="sw-chip" style="background:#4C9AFF"></div><div class="sw-txt"><span class="sw-name">Datos</span><span class="sw-hex">#4C9AFF</span></div></div>
+  </div>
+
+  <p class="small">El movimiento más importante es <strong>degradar el azul a «color de datos»</strong>: deja de ser la marca y pasa a significar una sola cosa, las series de un gráfico. Y el naranja nunca se confunde con un estado, porque verde, ámbar y rojo ya son semánticos.</p>
+
+  <div class="card">
+    <h3>La identidad no la lleva el color</h3>
+    <p class="small">La lleva la tipografía: la condensada itálica en versales que ya usa la app para números y nombres de turno. Es lo único de FIERRO que no se parece a nada más. La propuesta la protege quitándole competencia cromática, no agregándole efectos.</p>
+  </div>
+
+  <div class="tbl-scroll">
+    <table>
+      <thead><tr><th>Qué se reduce</th><th>Hoy</th><th>Propuesta</th></tr></thead>
+      <tbody>
+        <tr><td>Colores en uso</td><td class="num">49 sueltos</td><td class="num pass">13 tokens</td></tr>
+        <tr><td>Tamaños de letra</td><td class="num">36</td><td class="num pass">8</td></tr>
+        <tr><td>Radios de esquina</td><td class="num">21</td><td class="num pass">5</td></tr>
+        <tr><td>Sombras</td><td class="num">9+ sueltas</td><td class="num pass">4</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small">El sistema de diseño <em>existe</em> y está bien pensado; lo que pasa es que la capa que lo consume lo ignora. Hay siete pasos de escala tipográfica definidos y usados quince veces, contra treinta y seis tamaños escritos a mano. Un comentario del propio código dice que se creó la escala porque «había 18 tamaños, que es deriva, no jerarquía». Hoy hay 36.</p>
+</section>
+
+<section>
+  <div class="sec-head">
+    <p class="eyebrow">Producto</p>
+    <h2>El motor es mejor que su tablero</h2>
+  </div>
+  <p>FIERRO <strong>no tiene un déficit de funcionalidad analítica.</strong> Tiene bandas de volumen semanal por grupo muscular, razón de carga aguda/crónica para fatiga, estimación de una repetición máxima con regresión y bondad de ajuste, niveles de fuerza relativos al peso corporal, cobertura por tipo de fibra con citas de investigación, simetría entre lados, y calorías que se recalibran contra el peso real. Es más motor del que exponen sus referentes comerciales.</p>
+
+  <blockquote class="pull">Sus dos problemas reales son otros: el dato no estaba protegido, y la app describe pero casi nunca prescribe.</blockquote>
+
+  <p class="small">Mide volumen, fatiga, tendencia, simetría y cobertura — y después deja todas las decisiones en tu cabeza. Detecta que el volumen se disparó, y no ofrece descargar. Sabe cuántas repeticiones hiciste y con cuánto esfuerzo, y no te dice qué poner en la barra.</p>
+
+  <div class="card hot">
+    <h3>Las tres que más cambian el uso diario</h3>
+    <ul>
+      <li><strong>Doble progresión.</strong> «Completaste todas las series arriba del rango con esfuerzo bajo → hoy van 2,5 kg más.» El dato ya está guardado; la regla no existe en ningún archivo. Además <em>justifica</em> el esfuerzo de registrar el esfuerzo percibido, que hoy cuesta diez botones por serie y alimenta casi nada.</li>
+      <li><strong>Descarga accionable.</strong> Ya se detecta el riesgo por carga aguda/crónica y se muestra el aviso. Falta el botón que lo trate. Se diagnostica y no se cura.</li>
+      <li><strong>Cobertura de fibra en el volumen semanal.</strong> «Espalda · 18 series · dorsal bajo ✓ · dorsal alto falta.» Toma dos módulos ya escritos y probados y los pone donde se toman decisiones. Es un análisis que ninguna app comercial ofrece.</li>
+    </ul>
+  </div>
+
+  <p class="small">Y una que cuesta poco: <strong>notas por ejercicio</strong> —«asiento en 4, agarre ancho»— que es la configuración de la máquina, justo lo que se olvida entre semana.</p>
+</section>
+
+<section>
+  <div class="sec-head">
+    <p class="eyebrow">Orden de trabajo</p>
+    <h2>El plan</h2>
+  </div>
+
+  <div class="phase">
+    <span class="phase-n">0</span>
+    <div class="phase-body">
+      <h3>Parar la hemorragia <span class="chip ok" style="vertical-align:middle">Hecho</span></h3>
+      <p class="small">El crash del ejercicio en curso y el respaldo que destruía datos. Ambos publicados.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <span class="phase-n">1</span>
+    <div class="phase-body">
+      <h3>Devolverle el aire al núcleo</h3>
+      <p class="small">Sacar de la tarjeta del ejercicio en curso todo lo que no sea peso, repeticiones y confirmar. Hoy se le cobra peaje a la acción más repetida de la app: esfuerzo percibido, selector de lado, foto de máquina y tres preguntas previas. <strong>Criterio:</strong> registrar una serie no debe requerir mirar nada más que peso, repeticiones y el botón.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <span class="phase-n">2</span>
+    <div class="phase-body">
+      <h3>Aplicar la dirección visual</h3>
+      <p class="small">Primero unificar la fuente de verdad de los tokens, que hoy está duplicada a mano. Después el cambio de paleta, que por sí solo mueve el 70% de la app porque la mayoría del CSS ya usa variables. Riesgo controlado: son sustituciones uno a uno.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <span class="phase-n">3</span>
+    <div class="phase-body">
+      <h3>Prescribir, no sólo describir</h3>
+      <p class="small">Doble progresión, descarga accionable y cobertura de fibra donde se decide. La mayor parte de la lógica ya está escrita y probada.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <span class="phase-n">4</span>
+    <div class="phase-body">
+      <h3>Recortar superficie</h3>
+      <p class="small">Ocho de las pantallas emergentes existen sólo para editar la rutina: es una aplicación de configuración adentro de la aplicación de entrenar. Ahí está el grueso del recorte posible. <strong>Va después de la decisión de abajo</strong>, no antes.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <p class="eyebrow">Lo que no puedo decidir por vos</p>
+    <h2>¿Cuál es la única cosa?</h2>
+  </div>
+  <p>No hay una frase que describa FIERRO, y eso no es un detalle de redacción. Entrenamiento ocupa tres de cinco pestañas y nutrición una. Los modelos de datos son <strong>disjuntos</strong>: el archivo de sesiones no importa nada del de comidas. Hasta los ejes de tiempo son incompatibles — la rutina es una <em>secuencia</em> que sólo avanza entrenando, la nutrición es un <em>calendario</em> por fecha. El único puente real en todo el código es un aviso de proteína después de entrenar, que además es texto informativo, no accionable.</p>
+
+  <div class="card">
+    <h3>Tres caminos</h3>
+    <ul>
+      <li><strong>Entrenar.</strong> Nutrición se subordina: deja de ser pestaña y pasa a ser un paso del post-entreno. La frase sería «ejecutá tu entrenamiento, serie por serie».</li>
+      <li><strong>El ciclo completo.</strong> Hay que construir los puentes que hoy no existen: un solo eje de tiempo y datos que se crucen de verdad, no un aviso suelto.</li>
+      <li><strong>Dos herramientas en un contenedor.</strong> Válido si te sirve así — pero entonces el framework no aplica y no tiene sentido medirse contra él.</li>
+    </ul>
+  </div>
+
+  <p class="small">Recortar pantallas y diseñar el gancho de retención dependen de esta respuesta. Por eso van después.</p>
+</section>
+
+</main>
+
+<footer>
+  <p>Auditoría sobre el código real, no sobre la documentación. Todo lo marcado como corregido está publicado y verificado con 355 pruebas, verificación de tipos y compilación limpias — pero <strong>no verificado por vista ni tacto en el teléfono</strong>, que es donde la app se usa.</p>
+</footer>
+
+</div>
