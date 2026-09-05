@@ -1,6 +1,6 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-04
+**Última actualización:** 2026-09-05
 **Proyecto:** `Exorplion/gymapp` — FIERRO, PWA local de entrenamiento + nutrición
 **Sitio:** https://exorplion.github.io/gymapp/ (GitHub Pages, sirve la raíz de `main`)
 **Estado:** Plan Fierro (Fases 1-3) implementado, testeado, mergeado (PR #17) y publicado.
@@ -11,6 +11,27 @@ ver "Blockers" más abajo.
 
 Este archivo existe para que otra sesión pueda retomar sin volver a leer todo el
 historial. Si vas a seguir el roadmap, empezá por **Próximo paso exacto** al final.
+
+## Pendiente de confirmar con Enzo (2026-09-05, sesión de background)
+
+Todo esto está mergeado a `main` y publicado, pero **ninguno se pudo verificar
+por tacto/vista real en celular** desde este job (background, sin extensión de
+Chrome — ver [[chrome-extension-background-job]]). Si Enzo confirma que algo de
+esto sigue mal, empezar por leer la entrada correspondiente en "Próximo paso
+exacto" más abajo antes de tocar nada — ya hay contexto de qué se intentó y por
+qué falló las veces anteriores:
+
+- **Rueda de peso/reps (PR #47/#50/#52):** mantener presionado abre la rueda
+  fina y deja elegir sin cerrarse sola; elegir un entero exacto (ej. 82 entre
+  80/82.5) ya no se redondea ni en el dato guardado ni en lo que se ve.
+- **Cambio de pestaña (PR #45):** sin fantasma de la pantalla anterior — se
+  abandonó View Transitions API nativa por un bug real de navegador
+  (verificado con Chromium real vía Playwright), sólo queda el camino JS.
+- **Gym antes de iniciar sesión + foto de máquina por gym (PR #48):** paso
+  obligatorio en el sheet de "Iniciar entrenamiento", con "Sin gym" y crear
+  gym inline; foto de la máquina por gym en `ExerciseCarousel`.
+- **"Se está enfriando" (Rutina):** botón de acción cambiado a `.chip`, más
+  chico (Enzo decía que se veía "muy grande").
 
 ---
 
