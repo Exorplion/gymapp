@@ -77,12 +77,15 @@ describe('paletaDesde', () => {
     }
   });
 
-  it('el color de fábrica es cálido, no el azul de la paleta vieja', () => {
-    // Guarda contra volver a #2E7DFF por accidente en un merge: el matiz de
-    // fábrica tiene que estar en el rango naranja (0-45 grados).
+  it('el color de fábrica está en la familia fría de "acero"', () => {
+    // La paleta es un recorrido de matices VECINOS (índigo → azul → celeste →
+    // cian → verde azulado); el acento tiene que caer dentro de ese tramo.
+    // Guarda contra dos regresiones concretas: volver al azul plano de la
+    // paleta original, y volver al naranja del intento descartado —que era
+    // el OPUESTO de esta familia, y por eso chocaba.
     const h = hexToHsl(COLOR_DEFECTO).h;
-    expect(h).toBeGreaterThanOrEqual(0);
-    expect(h).toBeLessThanOrEqual(45);
+    expect(h).toBeGreaterThanOrEqual(170);
+    expect(h).toBeLessThanOrEqual(230);
   });
 
   it('con un color inválido no arma nada — null, no una paleta rota', () => {

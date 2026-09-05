@@ -16,43 +16,57 @@
      usos en los .jsx) seguían pintando el valor viejo que no pasaba WCAG.
      Con una sola lista, eso no puede volver a pasar.
 
-     ---- DIRECCIÓN: "hierro y encendido" -----------------------------------
-     Antes: navy azulado + cian, que es el uniforme del rubro (Strava, Whoop,
-     Garmin, Hevy). El problema de fondo no era el gusto sino que el 90% de la
-     interfaz vivía en UNA familia de matiz: nada podía destacar, porque el
-     color por defecto ya era el color de énfasis. El azul significaba a la vez
-     marca, acción, énfasis, enlace y serie de gráfico.
+     ---- DIRECCIÓN: "acero" (análogo frío sobre grafito) --------------------
+     El problema original no era el gusto sino que el 90% de la interfaz vivía
+     en UNA familia de matiz sin jerarquía: el azul significaba a la vez marca,
+     acción, énfasis, enlace y serie de gráfico. Nada podía destacar, porque el
+     color por defecto ya era el color de énfasis.
 
-     Ahora: cuerpo de grafito SIN matiz + un solo acento caliente. La lógica es
-     física — el gimnasio es hierro gris y goma negra; lo único con color son
-     los discos, y el calor lo pone el cuerpo. Un neutro sin hue hace que
-     cualquier acento se lea como señal.
+     Un intento anterior lo resolvió metiendo un acento naranja y degradando el
+     azul a "color de datos". Fallaba por una razón simple: naranja y azul son
+     OPUESTOS en la rueda, y lo opuesto produce tensión, no armonía. Se notaba
+     sobre todo contra el modelo anatómico, que es una superficie azul grande y
+     protagónica. Descartado por Enzo, con razón.
 
-     El movimiento más importante es que el azul deja de ser la marca y pasa a
-     significar UNA cosa: datos. Se usa en series de gráfico, no en interfaz.
+     Esta paleta busca la armonía donde de verdad está: en matices VECINOS. Es
+     un recorrido continuo —índigo → azul → celeste → cian → verde azulado— en
+     el que dos colores cualesquiera son adyacentes, así que CHOCAR ES
+     IMPOSIBLE POR CONSTRUCCIÓN. Hasta el verde de "subiste" es vecino del
+     cian, en vez de ser un color de otra familia pegado encima.
 
-     Contraste verificado sobre --card (#131416): txt 17:1 · mut 7.2:1 ·
-     mut2 5.5:1 · accent 6.0:1 · ok 9.7:1 · warn 9.2:1 · red 4.9:1 ·
-     blue 6.6:1. Ninguno queda por debajo de AA, que es donde el sistema
-     anterior fallaba. */
-  --color-bg: #0A0A0B;
-  --color-bg2: #121214;
-  --color-card: #131416;
-  --color-card2: #1A1B1E;
+     Lo que resuelve el problema original no es cambiar de matiz, entonces,
+     sino jerarquizar por LUMINOSIDAD y SATURACIÓN dentro de la familia: el
+     acento es el punto más claro y saturado del recorrido, y todo lo demás
+     baja desde ahí. El modelo anatómico y los gráficos ya viven en esta
+     familia, así que entran nativos.
+
+     El único color de afuera es el rojo de "bajaste", y aparece poco: un
+     color que rompe la armonía a propósito, y sólo cuando algo va mal, es
+     justamente lo que lo hace legible como alarma.
+
+     Contraste verificado sobre --card (#14161A): txt ~17:1 · mut 7.4:1 ·
+     mut2 5.5:1 · accent 8.4:1 · ok 9.7:1 · warn ~11:1 · red 6.6:1 ·
+     on-grad sobre accent 8.7:1. Ninguno por debajo de AA. */
+  --color-bg: #0A0B0D;
+  --color-bg2: #14161A;
+  --color-card: #14161A;
+  --color-card2: #1C1F25;
   --color-line: rgba(255,255,255,.07);
   --color-line2: rgba(255,255,255,.14);
-  --color-txt: #F4F4F5;
-  --color-mut: #A1A1A6;
-  --color-mut2: #8A8C93;
-  --color-accent: #FF5A1F;   /* CARGA: la acción. El único color caliente. */
-  --color-deep: #D9410F;     /* arranque de los gradientes calientes */
-  --color-blue: #4C9AFF;     /* DATOS: series de gráfico, y nada más */
-  --color-blue2: #7FB6FF;
-  --color-blue3: #A9CEFF;
-  --color-cyan: #FF8A3D;     /* el caliente claro (partículas, gradiente) */
-  --color-ok: #34D399;       /* subiste, PR, completado */
-  --color-warn: #F5A524;     /* atención, calentamiento — ámbar, no naranja */
-  --color-red: #F4364C;      /* bajaste, destructivo */
+  --color-txt: #F1F5F9;
+  --color-mut: #9CA7B5;
+  --color-mut2: #838E9E;
+  /* El recorrido, del más profundo al más claro. Cada uno es vecino del
+     siguiente: por eso combinan entre sí sin que haya que pensarlo. */
+  --color-deep: #2563EB;     /* índigo: arranque de los gradientes */
+  --color-blue: #3B82F6;
+  --color-blue2: #60A5FA;
+  --color-blue3: #93C5FD;
+  --color-accent: #38BDF8;   /* ACCIÓN: el punto más claro y saturado */
+  --color-cyan: #22D3EE;     /* verde azulado: el vecino del acento */
+  --color-ok: #34D399;       /* subiste, PR — vecino del cian, armoniza */
+  --color-warn: #FBBF24;     /* atención, calentamiento — usado poco */
+  --color-red: #F87171;      /* bajaste: el único de afuera, y es a propósito */
   --radius-r: 18px;
   --radius-r-lg: 26px;
   --font-cond: 'Barlow Condensed', sans-serif;
@@ -85,19 +99,29 @@
   --blue2:var(--color-blue2);
   --blue3:var(--color-blue3);
   --cyan:var(--color-cyan);
-  --grad:linear-gradient(135deg,#D9410F 0%,#FF7A3D 100%);
-  --grad2:linear-gradient(112deg,#FF5A1F,#FF8A3D 58%,#FFB176);
-  /* Texto SIEMPRE oscuro sobre el gradiente caliente, nunca blanco: blanco
-     sobre #FF5A1F da 3.12:1 (no pasa AA para texto normal); este marrón muy
-     oscuro da 6.74:1. */
-  --on-grad:#1A0E06;
+  /* Los dos gradientes recorren la familia de un extremo al otro (índigo →
+     acento → cian), así que son el mismo degradado que ya usa la app, sólo
+     que ordenado a propósito en vez de por acumulación. */
+  --grad:linear-gradient(135deg,var(--deep) 0%,var(--accent) 100%);
+  --grad2:linear-gradient(112deg,var(--deep),var(--accent) 58%,var(--cyan));
+  /* Gemelo ámbar de --grad2, para el CTA que vive dentro de la tarjeta de
+     calentamiento, que es cálida por diseño (calentar = calor). Un botón
+     frío ahí adentro vuelve a ser el cuerpo extraño que este gemelo vino a
+     evitar. El ámbar es un color de la paleta (--warn) y una sola tarjeta
+     cuenta como "usado poco". */
+  --grad-warn:linear-gradient(112deg,#E0A020,#FBBF24 58%,#FDE08A);
+  /* Texto SIEMPRE oscuro sobre el gradiente, nunca blanco: el acento es un
+     celeste muy claro, así que el blanco encima no llegaría a AA. Este azul
+     casi negro da 8.7:1 y se mantiene dentro de la familia fría. */
+  --on-grad:#04121C;
   --ok:var(--color-ok);
   --warn:var(--color-warn);
   --red:var(--color-red);
   --r:18px;
   --r-lg:26px;
   --tabs-h:91px;
-  --glow:0 16px 40px -14px rgba(255,90,31,.5);
+  --glow:0 16px 40px -14px rgba(56,189,248,.55);
+  --glow-warn:0 16px 40px -14px rgba(251,191,36,.5);
   --glass-blur:blur(22px) saturate(1.5);
   --glass-border:rgba(255,255,255,.12);
   --glass-hi:inset 0 1px 0 rgba(255,255,255,.16);
@@ -146,10 +170,11 @@ input,select,button,textarea{font-family:inherit;color:inherit}
 /* piso de calidad: foco visible para teclado, sin afectar el toque */
 /* El halo oscuro de box-shadow no es decorativo: sobre un CTA de gradiente
    claro el anillo azul daba 1.54:1 — o sea, el foco DESAPARECÍA justo sobre
-   el botón más importante de cada pantalla. Sigue haciendo falta con la
-   paleta caliente: --grad2 termina en #FFB176, y --blue2 sobre ese naranja
-   claro tampoco llega. WCAG 2.2 exige 3:1 (2.4.11 Focus Appearance); el halo
-   garantiza el contraste contra cualquier fondo. */
+   el botón más importante de cada pantalla. Con la paleta "acero" hace más
+   falta todavía: el anillo es --blue2 y el CTA es de la MISMA familia fría,
+   así que sin el halo el foco se confundiría con el propio botón. WCAG 2.2
+   exige 3:1 (2.4.11 Focus Appearance); el halo lo garantiza contra cualquier
+   fondo. */
 :focus-visible{outline:2px solid var(--blue2);outline-offset:2px;border-radius:8px;
   box-shadow:0 0 0 4px var(--bg)}
 
@@ -823,7 +848,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .load .reps{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap}
 .load .rep{
   display:flex;flex-direction:column;align-items:center;gap:1px;
-  background:rgba(255,90,31,.10);border:1px solid rgba(255,90,31,.22);
+  background:rgba(56,189,248,.10);border:1px solid rgba(56,189,248,.24);
   border-radius:10px;padding:3px 9px 4px;
 }
 .load .rep .s{

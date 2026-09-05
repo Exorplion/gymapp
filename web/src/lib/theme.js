@@ -112,15 +112,15 @@ function conContraste(h, s, l, fondoHex, minimo, subir = true) {
     garantías de contraste de conContraste() se calcularían contra un color
     que la app ya no pinta, y darían por bueno un tono que en pantalla no se
     lee. Se actualizó junto con la paleta "hierro y encendido". */
-export const BG = '#0A0A0B';
+export const BG = '#0A0B0D';
 /* Los dos candidatos a texto ARRIBA del degradado. Se exportan para que los
    tests no los repitan a mano: antes estaban escritos también en theme.test.js
    y al cambiar la paleta el test falló por duplicación, no por un bug real. */
-/** Sigue a --on-grad de styles.css. Era #03121F (negro azulado de la paleta
-    vieja); con "hierro y encendido" es el marrón muy oscuro. */
-export const ON_GRAD_OSCURO = '#1A0E06';
-/** El claro se mantiene neutro, sin matiz. */
-export const ON_GRAD_CLARO = '#F7F7F8';
+/** Sigue a --on-grad de styles.css: azul casi negro, dentro de la familia
+    fría de la paleta "acero". */
+export const ON_GRAD_OSCURO = '#04121C';
+/** El claro, apenas frío para no desentonar con la familia. */
+export const ON_GRAD_CLARO = '#F1F5F9';
 
 /** Contraste mínimo para texto grande / íconos sobre fondo casi negro (AA
     large-text, que es el estándar que aplica: los números y etiquetas de
@@ -186,9 +186,9 @@ function hexToRgba(hex, alpha) {
 }
 
 /** El color de fábrica, y lo que Ajustes muestra como "actual" mientras no
-    elijas otro. Era el azul #2E7DFF; ahora es el naranja de carga de la
-    paleta "hierro y encendido" (= --color-accent en styles.css). */
-export const COLOR_DEFECTO = '#FF5A1F';
+    elijas otro. Es el acento de la paleta "acero" (= --color-accent en
+    styles.css): el punto más claro y saturado del recorrido frío. */
+export const COLOR_DEFECTO = '#38BDF8';
 
 const VAR_DE = {
   accent: '--accent', deep: '--deep', blue: '--blue', blue2: '--blue2', blue3: '--blue3',
