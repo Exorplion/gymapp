@@ -18,7 +18,7 @@
 // para las series objetivo y no compiten por récords. Son preparación, no
 // entrenamiento, y contarlas ensuciaría todos los números de Progreso.
 import { round1 } from './format.js';
-import { catOf } from './muscle.js';
+import { catOf, type ExLike } from './muscle.js';
 
 /** La rampa: porcentaje del peso de trabajo y repeticiones. */
 export const RAMPA = [
@@ -33,6 +33,8 @@ export const RAMPA = [
     a esta altura la diferencia entre 150 y 180 no cambia nada. */
 export const DESCANSO = 165;
 
+export interface WarmupSet { pct: number; reps: number; w: number; }
+
 /**
  * Los pesos del calentamiento para un peso de trabajo dado.
  *
@@ -45,7 +47,7 @@ export const DESCANSO = 165;
  * porcentajes no significan nada, y mostrar tres ceros sería peor que no
  * mostrar nada.
  */
-export function warmupSets(topKg, paso = 2.5) {
+export function warmupSets(topKg: number | string, paso = 2.5): WarmupSet[] {
   const top = Number(topKg);
   if (!(top > 0) || !(paso > 0)) return [];
   return RAMPA.map(({ pct, reps }) => {
@@ -63,7 +65,7 @@ export function warmupSets(topKg, paso = 2.5) {
     así que terminar el bloque de arriba no deja nada "caliente" para el de
     abajo. Abs va con superior porque no es una zona de piernas — no necesita
     la movilidad de cadera que sí pide entrar a sentadilla o peso muerto. */
-const BLOQUE_DE = {
+const BLOQUE_DE: Record<string, 'superior' | 'inferior'> = {
   Pecho: 'superior', Espalda: 'superior', Hombro: 'superior',
   Bíceps: 'superior', Tríceps: 'superior', Abs: 'superior',
   Pierna: 'inferior', Glúteo: 'inferior', Gemelos: 'inferior',
@@ -72,8 +74,9 @@ const BLOQUE_DE = {
 /** El bloque (superior/inferior) de un ejercicio, o null si no se pudo
     clasificar — un ejercicio sin grupo reconocible no dispara nada, porque no
     hay manera honesta de saber qué articulación entra en juego. */
-export function bloqueDe(ex) {
-  return BLOQUE_DE[catOf(ex)] || null;
+export function bloqueDe(ex: ExLike | string | null | undefined): 'superior' | 'inferior' | null {
+  const cat = catOf(ex);
+  return (cat && BLOQUE_DE[cat]) || null;
 }
 
 /** Movilidad dinámica antes de la rampa numérica, específica del bloque al
@@ -81,10 +84,12 @@ export function bloqueDe(ex) {
     pero no la articulación entera; unos minutos de movilidad son lo que
     tapa esa diferencia, sobre todo en el primer ejercicio de piernas del día.
     Nada de esto se registra: es preparación, no series. */
-export const MOVILIDAD = {
+export const MOVILIDAD: Record<'superior' | 'inferior', string[]> = {
   superior: ['Círculos de hombro, 10 hacia cada lado', 'Remo con banda floja o pull-apart, 15', 'Rotación de tronco suave, 10 por lado'],
   inferior: ['Sentadilla con el propio peso, 10', 'Zancadas caminando, 8 por pierna', 'Balanceo de cadera (leg swings), 10 por lado'],
 };
+
+interface Draft { warmBlocks?: string[]; }
 
 /** ¿Corresponde ofrecer el calentamiento para ESTE ejercicio?
 
@@ -93,7 +98,7 @@ export const MOVILIDAD = {
     tren superior a inferior o viceversa a mitad de sesión. Dentro del MISMO
     bloque no se repite: ya lo dijo el módulo, nadie hace una simple al 90%
     antes de las elevaciones laterales si ya venía de press militar. */
-export function tocaCalentar(draft, ex) {
+export function tocaCalentar(draft: Draft | null | undefined, ex: ExLike | string | null | undefined): boolean {
   if (!draft || !ex) return false;
   const bloque = bloqueDe(ex);
   if (!bloque) return false;

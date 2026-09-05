@@ -52,6 +52,12 @@
   --cyan:#22D3EE;
   --grad:linear-gradient(135deg,#1D5CE8 0%,#3E96FF 100%);
   --grad2:linear-gradient(112deg,#4FA8FF,#22D3EE 58%,#7FD1FF);
+  /* Gemelo ámbar de --grad2, para el CTA que vive dentro de una tarjeta de
+     tono cálido (hoy: el calentamiento). Un botón --grad2 (cian) adentro de
+     .warmup —que es ámbar de punta a punta— leía como un cuerpo extraño: el
+     único elemento frío de un bloque cálido. Mismo ángulo y misma estructura
+     de 3 paradas que --grad2 para que el barrido de brillo se comporte igual. */
+  --grad-warn:linear-gradient(112deg,#F59E2C,#FFC46B 58%,#FFD79A);
   --on-grad:#03121F;
   --ok:#2EE6A8;
   --warn:#FFB454;
@@ -60,6 +66,7 @@
   --r-lg:26px;
   --tabs-h:91px;
   --glow:0 16px 40px -14px rgba(34,211,238,.6);
+  --glow-warn:0 16px 40px -14px rgba(245,158,44,.55);
   --glass-blur:blur(22px) saturate(1.5);
   --glass-border:rgba(255,255,255,.12);
   --glass-hi:inset 0 1px 0 rgba(255,255,255,.16);
@@ -429,6 +436,18 @@ main{
    cada re-render y la fila entera parpadeaba */
 .setchips .chip:last-child{animation:pop .2s cubic-bezier(.2,.8,.3,1.2)}
 .chip.blue{background:rgba(46,125,255,.14);border-color:rgba(46,125,255,.4);color:var(--blue3)}
+/* Tono ámbar para el chip que ACCIONA sobre un aviso cálido ("Se está
+   enfriando" → "+ Hoy"). El .chip pelado es el mismo gris que un chip
+   informativo, así que la única acción de esa tarjeta no se distinguía de una
+   etiqueta; el ámbar la ata al aviso que la origina sin volver al botón grande
+   que ya se había descartado por pesado. */
+.chip.warn{background:rgba(255,180,84,.14);border-color:rgba(255,180,84,.42);color:var(--warn)}
+/* Confirmación táctil al tocar cualquier chip: hasta ahora un chip se apretaba
+   y no devolvía nada hasta que la pantalla cambiaba. Mismo hundido que ya usa
+   el Button de primitives.jsx (active:scale-[.96]), para que el lenguaje de
+   "esto respondió" sea uno solo en toda la app. */
+.chip{transition:transform .12s var(--ease-out),background .15s,border-color .15s}
+.chip:active{transform:scale(.96)}
 /* La elección firme del usuario, y no una sugerencia del auto-detectado: por
    eso no es el mismo estilo que .blue (relleno tenue, "esto detecté") — hacía
    falta que se vieran distintos para poder confiar en cuál es cuál. Mismo

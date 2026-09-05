@@ -29,12 +29,19 @@ export const MICROS = [
   { k: 'ca', label: 'Calcio', unit: 'mg', rda: 1000 },
   { k: 'omega3', label: 'Omega-3', unit: 'g', rda: 1.6 },
   { k: 'b12', label: 'B12', unit: 'mcg', rda: 2.4 },
-];
+] as const;
+
+type MicroKey = typeof MICROS[number]['k'];
+
+interface MealItem { name: string; grams: number | null; kcal: number | null; }
+interface Meal { date: string; kcal: number | null; name: string; items?: MealItem[]; }
+
+interface FoodEntry { n: string; a?: string[]; kcal?: number; mn?: Partial<Record<MicroKey, number>>; }
 
 /* Índice nombre-normalizado -> entrada de la tabla, incluyendo alias. Se
    arma una vez al cargar el módulo: FOOD_TABLE es estática. */
-const BY_NAME = new Map();
-for (const it of FOOD_TABLE) {
+const BY_NAME = new Map<string, FoodEntry>();
+for (const it of FOOD_TABLE as FoodEntry[]) {
   BY_NAME.set(norm(it.n), it);
   for (const alias of it.a || []) BY_NAME.set(norm(alias), it);
 }
@@ -42,18 +49,24 @@ for (const it of FOOD_TABLE) {
 /** La entrada de tabla que corresponde a un nombre de comida registrado, o
     null. Busca exacto y después por inclusión (el nombre registrado puede
     traer adornos: "pollo a la plancha con ensalada"). */
-function tableEntry(name) {
+function tableEntry(name: string): FoodEntry | null {
   const n = norm(name);
   if (!n) return null;
   const exact = BY_NAME.get(n);
   if (exact) return exact;
   // La coincidencia más LARGA gana, por el mismo motivo que catOf()
   // (muscle.js): "arroz integral" tiene que ganarle a "arroz".
-  let best = null, bestLen = 0;
+  let best: FoodEntry | null = null, bestLen = 0;
   for (const [key, it] of BY_NAME) {
     if (key.length > bestLen && n.includes(key)) { best = it; bestLen = key.length; }
   }
   return best;
+}
+
+export interface MicrosOfDay {
+  total: Record<MicroKey, number>;
+  coverage: number;
+  hasMeals: boolean;
 }
 
 /** Micronutrientes totales de un día, más qué proporción de las calorías de
@@ -64,16 +77,16 @@ function tableEntry(name) {
     gramos, se estima desde las kcal registradas contra las kcal/100g de la
     tabla: es una aproximación, pero es la misma que ya hace toda la app al
     tratar una comida dictada como un total. */
-export function microsOfDay(date) {
-  const meals = S.meals.filter(m => m.date === date);
-  const total = Object.fromEntries(MICROS.map(m => [m.k, 0]));
+export function microsOfDay(date: string): MicrosOfDay {
+  const meals = (S.meals as Meal[]).filter(m => m.date === date);
+  const total = Object.fromEntries(MICROS.map(m => [m.k, 0])) as Record<MicroKey, number>;
   let kcalConDatos = 0, kcalTotal = 0;
 
   for (const meal of meals) {
     kcalTotal += meal.kcal || 0;
     // Comida registrada por voz con desglose: cada item por separado, que
     // es el caso preciso.
-    const items = meal.items?.length ? meal.items : [{ name: meal.name, grams: null, kcal: meal.kcal }];
+    const items: MealItem[] = meal.items?.length ? meal.items : [{ name: meal.name, grams: null, kcal: meal.kcal }];
     for (const it of items) {
       const entry = tableEntry(it.name);
       if (!entry?.mn) continue;
@@ -90,11 +103,13 @@ export function microsOfDay(date) {
   }
 
   return {
-    total: Object.fromEntries(MICROS.map(m => [m.k, Math.round(total[m.k] * 100) / 100])),
+    total: Object.fromEntries(MICROS.map(m => [m.k, Math.round(total[m.k] * 100) / 100])) as Record<MicroKey, number>,
     coverage: kcalTotal ? Math.min(1, kcalConDatos / kcalTotal) : 0,
     hasMeals: meals.length > 0,
   };
 }
+
+export interface LowMicro { k: MicroKey; label: string; unit: string; rda: number; dias: number; }
 
 /** Los micronutrientes que estuvieron por debajo del 70% de su RDA en 5 o
     más de los últimos 7 días. Devuelve [] si no hay suficientes días con
@@ -104,8 +119,8 @@ export function microsOfDay(date) {
     El umbral es 70% y no 100% a propósito: la RDA ya lleva margen de
     seguridad, y avisar por quedarse en el 95% sería exactamente el ruido
     diario que el plan pide evitar. */
-export function lowMicros() {
-  const cuenta = Object.fromEntries(MICROS.map(m => [m.k, 0]));
+export function lowMicros(): LowMicro[] {
+  const cuenta = Object.fromEntries(MICROS.map(m => [m.k, 0])) as Record<MicroKey, number>;
   let diasConDatos = 0;
 
   for (let i = 0; i < 7; i++) {
