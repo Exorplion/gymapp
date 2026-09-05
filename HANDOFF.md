@@ -228,6 +228,56 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
+**Hecho y publicado el 2026-09-04** (PR #43, mergeado a `main`):
+
+- **El "stagger" real: fantasma de la pantalla anterior al cambiar de
+  pestaña — corregido.** Enzo aclaró después de PR #41 que "stagger" nunca
+  quiso decir velocidad: "cuando uno cambia de pestaña aún se notan partes
+  de la anterior pestaña mientras cambias a la nueva". Causa real: el
+  crossfade de PR #41 desvanecía la pantalla VIEJA mientras la NUEVA
+  aparecía encima — dos capas de contenido DISTINTO semitransparentes en el
+  mismo lugar al mismo tiempo se leen mezcladas (a diferencia de crossfadear
+  el MISMO contenido, donde mezclarse no se nota). Fix: la pantalla saliente
+  (`.view.leave` en `App.jsx`, y `::view-transition-old(app-main)` en el
+  camino de View Transitions nativo) ahora desaparece YA —`opacity:0`
+  estático, sin animación ni desvanecido propio— apenas arranca la
+  transición; la entrante es lo único que se ve aparecer. Nunca hay dos
+  pantallas distintas visibles a la vez.
+- **`staggerRevealOnce()` (nuevo, `lib/motion.js`): el reveal escalonado de
+  cada pantalla ya no compite con el cambio de pestaña en cada visita.**
+  Causa de fondo: Rutina/Nutrición/Progreso/Hoy y el carrusel de Hoy se
+  REMONTAN cada vez que volvés a esa pestaña (`key={store.tab}` en
+  `App.jsx`), así que su `staggerReveal()` volvía a correr en cada visita,
+  no sólo la primera vez. Ahora sólo se revela una vez por sesión (en
+  memoria, no persiste — recargar la app cuenta como sesión nueva). Progreso
+  es la excepción cuidada: su key incluye `prs.length` para que un PR nuevo
+  de verdad siga revelándose sin que un simple cambio de pestaña lo dispare.
+- **Botón "+ Agregar a hoy" de "Se está enfriando" — más chico.** Enzo: "el
+  boton...es muy grande". Era un `.btn.sm.ghost` completo por fila (hasta
+  3), al lado de texto chico. Ahora es un `.chip` (mismo componente visual
+  que "Un toque"/"Frecuentes" en Nutrición).
+- **Investigación: ¿qué motor de animación usa moneditaapp?** Enzo lo pidió
+  puntualmente, con la premisa de que "esa app se ve fluida y la nuestra
+  no". Se bajó y analizó su JS de producción real (`curl` a
+  `assets/index-*.js`, 1.3MB, sin necesidad de browser tool): **no usa
+  Framer Motion, GSAP, react-spring, anime.js ni ninguna librería de
+  animación.** Es React + React Router v6 con su flag `viewTransition` en la
+  navegación — que internamente llama a `document.startViewTransition()`,
+  la MISMA API nativa del navegador que FIERRO ya usa (ver `changeTab()`,
+  `state.js`). El resto son clases CSS `@keyframes` simples (utilidades
+  Tailwind `animate-*`). **Conclusión: no hay un motor "mejor" para
+  adoptar — la fluidez de moneditaapp es de técnica (sin fantasma de
+  pantalla, curva de easing consistente, duraciones cortas), no de
+  herramienta.** FIERRO ya usa el mismo mecanismo de base; este PR corrige
+  la técnica (el fantasma de arriba) para que se comporte igual de limpio.
+  **Si Enzo vuelve a preguntar por un motor "mejor" para animaciones:** esta
+  investigación ya está hecha y el resultado es negativo — no hace falta
+  repetirla, el techo no es la herramienta.
+  355/355 tests, `tsc --noEmit` limpio, `npm run lint` sin warnings nuevos,
+  build limpio. No se pudo verificar por vista real en celular desde este
+  job (background, sin extensión de Chrome — ver
+  [[chrome-extension-background-job]]).
+
 **Hecho y publicado el 2026-09-04** (PR #41, mergeado a `main`):
 
 - **Rueda fina: se cierra sola al elegir.** Enzo: "ahora si funciona la
