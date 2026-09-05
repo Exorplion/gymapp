@@ -228,6 +228,27 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
+**Hecho y publicado el 2026-09-04** (PR #29, mergeado a `main`):
+
+- **Bug real corregido: recorte de la pantalla saliente al cambiar de pestaña.**
+  Enzo reportó "cuando cambio de rutina a nutrición hay un error en la parte de
+  abajo" y pidió arreglarlo entre todas las pestañas. Causa: `.view.leave`
+  (`App.jsx`) es `position:absolute` y no aporta alto a `<main>` (que tiene
+  `overflow:hidden` — ver comentario en `styles.css` línea ~209). Si la
+  pantalla que se va es más alta que la que entra (p. ej. Rutina con un turno
+  abierto vs. Nutrición, más corta), el borde inferior de la saliente quedaba
+  cortado en seco durante los 340ms de la transición en vez de deslizar
+  completa fuera del marco — se veía como un glitch/corte abajo. Fix: mientras
+  dura la transición se fuerza un `min-height` temporal en `<main>` igual al
+  más alto entre la vista entrante y la saliente (medido con `useLayoutEffect`,
+  antes del paint, para no parpadear); se libera al terminar. Aplica parejo a
+  las 5 pestañas, no sólo Rutina→Nutrición.
+- 355/355 tests en verde, build limpio. **No se pudo verificar visualmente en
+  navegador real desde este job** (background, sin extensión de Chrome
+  conectada — mismo límite que otras sesiones en background, ver
+  [[chrome-extension-background-job]] en memoria). Queda pendiente que Enzo
+  confirme en el celular que el corte ya no se ve al cambiar de pestaña.
+
 **Hecho y publicado el 2026-09-04** (PR #26 y PR #27, ambos mergeados a `main`):
 
 - **Simetría izquierda/derecha en unilaterales** — completo. `session.js` guarda
