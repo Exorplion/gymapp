@@ -176,8 +176,28 @@ export function changeTab(t, extra) {
   if (puedeVT) {
     lastTabChangeUsedVT = true;
     document.documentElement.dataset.tdir = dir;
+    /* main no tiene scroll propio (scrollea la página entera), así que su
+       alto "real" es el de TODO su contenido, no sólo la franja visible
+       entre el header y la barra de pestañas. La View Transition API saca
+       una foto de ese alto completo (viejo y nuevo) y la pinta en el
+       top-layer — por encima de CUALQUIER z-index, incluida la barra fija
+       de abajo. Sin recortarla, durante los 340ms del deslizamiento se ve
+       un pedazo de la pantalla vieja/nueva flotando sobre la barra (un
+       botón que en verdad está más abajo del pliegue visible). Se mide acá
+       el alto real entre main y la barra (una vez, antes de la foto) y
+       ::view-transition-group(app-main) en styles.css lo usa para recortar
+       en vez de animar su propio alto contenido-a-contenido. */
+    const main = document.querySelector('main');
+    const nav = document.querySelector('nav.tabbar');
+    if (main && nav) {
+      const h = nav.getBoundingClientRect().top - main.getBoundingClientRect().top;
+      if (h > 0) document.documentElement.style.setProperty('--vt-clip-h', `${Math.round(h)}px`);
+    }
     const vt = document.startViewTransition(() => flushSync(aplicar));
-    vt.finished.finally(() => delete document.documentElement.dataset.tdir);
+    vt.finished.finally(() => {
+      delete document.documentElement.dataset.tdir;
+      document.documentElement.style.removeProperty('--vt-clip-h');
+    });
   } else {
     lastTabChangeUsedVT = false;
     aplicar();
