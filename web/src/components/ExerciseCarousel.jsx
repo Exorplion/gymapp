@@ -27,7 +27,7 @@ import {
 } from '../lib/session.js';
 import { sideImbalance } from '../lib/symmetry.js';
 import { jumpToSlide, scrollToSlideEl, slideCenterDist } from '../lib/carousel.js';
-import { staggerReveal, squashStretch, impactBurst } from '../lib/motion.js';
+import { staggerRevealOnce, squashStretch, impactBurst } from '../lib/motion.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
@@ -82,10 +82,13 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
     if (!yaHuboSalto.current) {
       jumpToSlide(car, idx);
       yaHuboSalto.current = true;
-      // Reveal escalonado sólo la primera vez que se pinta el carrusel de
-      // este día — no en cada bump (avanzar de ejercicio no debe volver a
-      // animar las tarjetas ya visibles).
-      staggerReveal(car.children);
+      // Reveal escalonado sólo la primera vez que se pinta el carrusel EN
+      // TODA LA SESIÓN (staggerRevealOnce, ver motion.js) — antes sólo se
+      // evitaba repetirlo en cada bump (yaHuboSalto), pero Hoy remonta el
+      // carrusel entero cada vez que volvés a esa pestaña (key={store.tab}
+      // en App.jsx), así que igual competía con el fundido de cambio de
+      // pestaña en cada visita.
+      staggerRevealOnce('hoy-carousel', car.children);
     } else if (idx > 0) {
       // jumpToSlide ignora idx<=0 a propósito (no hace falta reposicionar
       // hacia el primer slide) — se preserva el mismo criterio acá.

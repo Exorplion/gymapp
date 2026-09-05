@@ -18,7 +18,7 @@
 // dos vistas de una sesión — la del historial y la del cierre.
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { staggerReveal, bloomOpen } from '../../lib/motion.js';
+import { staggerRevealOnce, bloomOpen } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 import { S, useStore, bump, openSheet, closeSheet, saveDraft, changeTab } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS } from '../../lib/format.js';
@@ -315,10 +315,12 @@ function BlockList({ index, exs }) {
   // que hay que aprender a abrir.
   const [openCat, setOpenCat] = useState(blocks[0]?.cat ?? null);
   const listRef = useRef(null);
-  // Reveal escalonado de los bloques musculares del día al montar Hoy.
+  // Reveal escalonado de los bloques musculares — sólo la primera vez que se
+  // ve Hoy en la sesión (staggerRevealOnce, ver motion.js), no en cada
+  // cambio de pestaña.
   useEffect(() => {
     const cards = listRef.current?.querySelectorAll(':scope > .block-card');
-    if (cards?.length) staggerReveal(cards);
+    if (cards?.length) staggerRevealOnce('hoy', cards);
   }, []);
   /* Mueve el bloque y RECIÉN DESPUÉS pinta el nuevo orden adentro de
      flipSort: así flipSort mide el "antes" con el DOM viejo, deja que

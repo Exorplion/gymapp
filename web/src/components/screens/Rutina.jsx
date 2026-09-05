@@ -14,7 +14,7 @@
 import { useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { S, bump, useStore, openSheet, changeTab } from '../../lib/state.js';
-import { staggerReveal } from '../../lib/motion.js';
+import { staggerRevealOnce } from '../../lib/motion.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
 import { equipLabel } from '../../lib/equip.js';
 import { catOf, stalestGroups, daysSinceAll, diasTexto } from '../../lib/muscle.js';
@@ -122,10 +122,12 @@ function RutinaView() {
   const st = routineStats();
   const maxSets = Math.max(1, ...S.routine.map(slot => slot.type === 'workout' ? (slot.exercises || []).reduce((a, e) => a + e.sets, 0) : 0));
   const cardsRef = useRef(null);
-  // Reveal escalonado de las tarjetas de turno al entrar a Rutina.
+  // Reveal escalonado de las tarjetas de turno — sólo la primera vez que se
+  // ve Rutina en la sesión (staggerRevealOnce), no en cada cambio de
+  // pestaña: ver el comentario de cabecera de esa función en motion.js.
   useEffect(() => {
     const cards = cardsRef.current?.querySelectorAll(':scope > .day-card');
-    if (cards?.length) staggerReveal(cards);
+    if (cards?.length) staggerRevealOnce('rutina', cards);
   }, []);
 
   if (!st.workoutCount) {
@@ -272,10 +274,16 @@ function ReforzarCard() {
   return (
     <div className="card sub mb-[var(--s3)]">
       <div className="sect" style={{ margin: 0, padding: 0 }}>Se está enfriando</div>
+      {/* Antes era un .btn.sm.ghost por fila (hasta 3): un botón de pill
+          completo, repetido, al lado de un texto chico — se veía enorme y
+          pesado para lo que es (Enzo: "el boton... es muy grande"). Un chip
+          chico (mismo componente visual que "Un toque"/"Frecuentes" en
+          Nutrición) es la acción rápida que en verdad es, sin competir en
+          tamaño con el texto de la fila. */}
       {viejos.slice(0, 3).map(c => (
         <div key={c} className="row">
           <div className="grow"><div className="t">{c}</div><div className="s">{diasTexto(dias[c])} sin entrenar</div></div>
-          <button type="button" className="btn sm ghost w-auto h-8 px-3" onClick={() => changeTab('hoy')}>+ Agregar a hoy</button>
+          <button type="button" className="chip" onClick={() => changeTab('hoy')}>+ Hoy</button>
         </div>
       ))}
     </div>

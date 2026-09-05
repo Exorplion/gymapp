@@ -186,7 +186,6 @@ main{
    Se abandona la identidad "como una app nativa" (deslizamiento direccional)
    en este punto específico a favor de esa referencia. */
 @keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-@keyframes screenOut{to{opacity:0}}
 .view.enter.dir-r,.view.enter.dir-l{animation:screenIn .22s var(--ease-out) both}
 /* z-index explícito, con position:relative para que z-index tenga efecto
    (sin position, un elemento static ignora z-index aunque sea flex/grid no
@@ -209,19 +208,25 @@ main{
    posicionado, así que top/left/right:0 la ponía por fuera del padding de
    main — ~36px más ancha y corrida ~18px/16px respecto de .view.enter,
    un salto de layout visible en el primer frame de cada cambio de pestaña. */
-.view.leave{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none}
-/* La saliente sólo se desvanece —rápido, sin desplazarse— mientras la
-   entrante hace su fundido+ascenso encima. */
-.view.leave.dir-r,.view.leave.dir-l{animation:screenOut .16s var(--ease) forwards}
+/* TERCERA VUELTA (Enzo: "aún se notan partes de la anterior pestaña
+   mientras cambias a la nueva" — el stagger real nunca fue la velocidad, es
+   que la vieja y la nueva se veían SUPERPUESTAS y semitransparentes a la
+   vez durante el fundido cruzado, mezclando texto/tarjetas de las dos
+   pantallas). Un crossfade con un fade-out de la vieja (por corto que sea)
+   es justo eso: dos capas de contenido DISTINTO parcialmente transparentes
+   en el mismo lugar al mismo tiempo, que se leen mezcladas, no como una
+   transición limpia — a diferencia de crossfadear el MISMO contenido (una
+   foto, un color) donde mezclarse no se nota. La saliente ahora desaparece
+   YA (opacity:0 estático, sin animación ni desvanecido propio) apenas
+   arranca la transición: la entrante, que arranca en opacity:0 y sube a 1
+   en sus propios 220ms, es lo único que se ve aparecer — nunca hay dos
+   pantallas distintas visibles a la vez, sólo un instante brevísimo de
+   fondo liso entre una y otra. */
+.view.leave{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none;opacity:0}
 @media (prefers-reduced-motion:reduce){
-  .view.enter.dir-r,.view.enter.dir-l,
-  .view.leave.dir-r,.view.leave.dir-l{animation:none}
-  /* Sin animación no hay nada que la esconda: .view.leave no tiene opacidad
-     propia fuera de slideOut, así que quedaría opaca y tapando (las
-     pantallas no tienen fondo sólido propio) el contenido nuevo detrás de
-     ella durante los 340ms del cambio de pestaña — texto viejo y nuevo
-     superpuestos. No hay nada que mostrar de la pantalla saliente una vez
-     apagado el movimiento, así que se saca del render directamente. */
+  .view.enter.dir-r,.view.enter.dir-l{animation:none}
+  /* .view.leave ya es opacity:0 siempre (regla de arriba) — display:none
+     además la saca del todo del render/hit-testing, no hace falta más. */
   .view.leave{display:none}
 }
 @media (prefers-reduced-motion:reduce){
@@ -2127,13 +2132,19 @@ main{view-transition-name:app-main}
    root ADEMÁS la duplicaría. Sin el scope a [data-tdir] esto apagaría
    también el crossfade que sí usa RoutineWizard (regla de arriba). */
 :root[data-tdir] ::view-transition-old(root),:root[data-tdir] ::view-transition-new(root){animation:none}
-/* Mismo cambio que .view.enter/.leave más arriba (fundido+ascenso sin
-   dirección, en vez del deslizamiento lateral de antes — referencia
-   moneditaapp.com, a pedido de Enzo): reusa las mismas @keyframes
-   screenIn/screenOut. Sin dirección no hace falta distinguir
-   [data-tdir="l"] de [data-tdir="r"] — la app-main vieja y la nueva siempre
-   animan igual, entren por donde entren. */
-:root[data-tdir] ::view-transition-old(app-main){animation:screenOut .16s var(--ease) forwards}
+/* TERCERA VUELTA (Enzo: "aún se notan partes de la anterior pestaña
+   mientras cambias a la nueva" — el "stagger" nunca fue la velocidad, es
+   que la vieja y la nueva quedaban semitransparentes y superpuestas a la
+   vez durante el fundido cruzado, mezclando texto/tarjetas de las dos
+   pantallas). Un fade-out de la foto vieja (por corto que sea) es EXACTAMENTE
+   eso: dos capas de contenido DISTINTO parcialmente transparentes en el
+   mismo lugar al mismo tiempo — se lee mezclado, no como una transición
+   limpia. La foto vieja ahora desaparece YA (opacity:0 estático, sin
+   animación propia) apenas arranca la transición; la nueva —que arranca en
+   opacity:0 y sube a 1 en sus propios 220ms (screenIn, mismas @keyframes
+   que .view.enter más arriba)— es lo único que se ve aparecer. Sin
+   dirección no hace falta distinguir [data-tdir="l"] de [data-tdir="r"]. */
+:root[data-tdir] ::view-transition-old(app-main){opacity:0}
 :root[data-tdir] ::view-transition-new(app-main){animation:screenIn .22s var(--ease-out) both}
 
 /* RoutineWizard.jsx: barra de progreso arriba del sheet, estilo onboarding
