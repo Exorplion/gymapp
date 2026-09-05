@@ -347,9 +347,15 @@ main{
 /* ---------- rueda de gestos (peso/reps) ---------- */
 /* Scroll-snap nativo, igual que .carousel — el gesto lo maneja el navegador,
    nada de spring en JS/rAF (ver la nota de esta sesión en reel.js). */
-.reel{position:relative;height:64px;border-radius:16px;background:var(--card2);border:1px solid var(--line2);overflow:hidden}
+/* overflow:hidden vive en .reel-track (recorta el scroll horizontal contra
+   las esquinas redondeadas), NO en .reel: la rueda fina vertical
+   (.reel-fine) es hija de .reel y flota POR ARRIBA de la rueda gruesa —con
+   overflow:hidden en .reel quedaba recortada por completo (invisible), y lo
+   único que se veía era el backdrop translúcido detrás ("mantengo
+   presionado y la pantalla sólo hace un blur", bug reportado por Enzo). */
+.reel{position:relative;height:64px;border-radius:16px;background:var(--card2);border:1px solid var(--line2)}
 .reel-track{
-  display:flex;align-items:center;height:100%;overflow-x:auto;
+  display:flex;align-items:center;height:100%;overflow-x:auto;border-radius:16px;
   scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;
   padding:0 calc(50% - 26px);
 }
