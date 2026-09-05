@@ -88,7 +88,7 @@ export default function WarmupCard({ ex, onListo, onSaltar }) {
           todo el ancho— y sin el peso que le corresponde a la acción que
           termina el calentamiento. La variante ámbar lo mantiene dentro del
           tono de la tarjeta en vez de meter el cian de `primary`. */}
-      <Button type="button" className="w-full" onClick={onListo}>
+      <Button type="button" variant="warn" className="w-full" onClick={onListo}>
         Listo · arrancar el descanso
       </Button>
     </div>
