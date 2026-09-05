@@ -417,6 +417,7 @@ function ExerciseSlide({ m, wd, started }) {
                   fmt={n => wDisplay(n)}
                   onChange={setW}
                   label="Peso"
+                  onTapValue={() => { wRef.current?.focus(); wRef.current?.select(); }}
                 />
                 <div className="step" style={{ marginTop: 6 }}>
                   <div className="val">
@@ -434,6 +435,7 @@ function ExerciseSlide({ m, wd, started }) {
                   min={1}
                   onChange={setR}
                   label="Reps"
+                  onTapValue={() => { rRef.current?.focus(); rRef.current?.select(); }}
                 />
                 <div className="step" style={{ marginTop: 6 }}>
                   <div className="val"><input ref={rRef} type="number" inputMode="numeric" defaultValue={v.r} onChange={onRChange} /></div>

@@ -360,6 +360,11 @@ main{
   font-variant-numeric:tabular-nums;transition:color .15s,font-size .15s,font-weight .15s;
 }
 .reel-tooth.on{color:var(--txt);font-size:26px;font-weight:800}
+/* El diente centrado es tocable (ver onTapValue, ReelPicker.jsx): abre el
+   teclado numérico si el peso/reps que se quiere no está entre los que ya
+   generó la ventana de la rueda. cursor:pointer es la única pista visual
+   que hace falta —es el mismo número grande de siempre, no un botón nuevo. */
+.reel-tooth.on[role="button"]{cursor:pointer}
 .reel-indicator{
   position:absolute;left:50%;top:6px;bottom:6px;width:52px;transform:translateX(-50%);
   border-radius:12px;background:var(--grad2);opacity:.14;pointer-events:none;
