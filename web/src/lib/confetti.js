@@ -17,6 +17,12 @@
 const COLORS = ['#2E7DFF', '#5EA2FF', '#22D3EE', '#2EE6A8', '#FFB454'];
 
 export function fireConfetti() {
+  /* Respeta "reducir movimiento" del sistema (WCAG 2.3.3). La regla CSS
+     global de styles.css:239 no alcanza acá: estas partículas se animan por
+     JS, no por CSS. Es puro festejo transitorio y no deja ningún estado, así
+     que no dispararlo no le saca información a nadie — el hito igual se
+     anuncia por texto en SessionComplete. */
+  if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const host = document.createElement('div');
   host.className = 'confetti-host';
   for (let i = 0; i < 28; i++) {
