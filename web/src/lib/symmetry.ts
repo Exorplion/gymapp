@@ -9,31 +9,38 @@
 import { S } from './state.js';
 import { exKey } from './equip.js';
 
+interface Side { left: number | null; right: number | null; }
+interface SetEntry { side?: 'left' | 'right'; w: number; r?: number; }
+interface SessionEntry { name?: string; equip?: string; machine?: string; sets: SetEntry[]; }
+interface Session { entries?: SessionEntry[]; }
+
 const MIN_SESSIONS = 3; // sesiones comparables mínimas para hablar de "patrón"
 const IMBALANCE_PCT = 12; // umbral de aviso, dentro del rango 10-15% pedido
 
 /** Peso máximo registrado por lado dentro de una sola entrada de sesión.
     null para el lado que no tiene ninguna serie ahí. */
-function bestBySide(sets) {
-  const bySide = { left: null, right: null };
+function bestBySide(sets: SetEntry[] | undefined): Side {
+  const bySide: Side = { left: null, right: null };
   for (const s of sets || []) {
     if (s.side !== 'left' && s.side !== 'right') continue;
-    if (bySide[s.side] == null || s.w > bySide[s.side]) bySide[s.side] = s.w;
+    if (bySide[s.side] == null || s.w > (bySide[s.side] as number)) bySide[s.side] = s.w;
   }
   return bySide;
 }
+
+export interface Imbalance { pct: number; strongerSide: 'left' | 'right'; }
 
 /** Desbalance izq/der sostenido para un ejercicio, mirando las sesiones más
     recientes donde AMBOS lados tienen datos (se ignoran las que no, en vez
     de contarlas como 0). Devuelve { pct, strongerSide } o null si no hay
     patrón sostenido — ni suficientes sesiones comparables, ni diferencia
     por encima del umbral. */
-export function sideImbalance(ex) {
+export function sideImbalance(ex: unknown): Imbalance | null {
   const key = exKey(ex);
-  const diffs = [];
+  const diffs: number[] = [];
   const strongerCount = { left: 0, right: 0 };
 
-  for (const s of S.sessions) {
+  for (const s of (S.sessions as Session[])) {
     const entry = (s.entries || []).find(en => exKey(en) === key);
     if (!entry) continue;
     const { left, right } = bestBySide(entry.sets);

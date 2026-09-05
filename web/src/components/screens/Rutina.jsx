@@ -283,7 +283,7 @@ function ReforzarCard() {
       {viejos.slice(0, 3).map(c => (
         <div key={c} className="row">
           <div className="grow"><div className="t">{c}</div><div className="s">{diasTexto(dias[c])} sin entrenar</div></div>
-          <button type="button" className="chip" onClick={() => changeTab('hoy')}>+ Hoy</button>
+          <button type="button" className="chip warn" onClick={() => changeTab('hoy')}>+ Hoy</button>
         </div>
       ))}
     </div>

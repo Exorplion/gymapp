@@ -43,7 +43,7 @@ export const EXCATALOG = [
    que importa y por eso esto es una lista y no un objeto: "Hamstring curl"
    tiene que caer en Pierna antes de que "curl" lo mande a Bíceps, y "Press
    militar" en Hombro antes de que "press" lo mande a Pecho. */
-const KEYWORDS = [
+const KEYWORDS: [string, string][] = [
   // pierna antes que bíceps, porque llevan "curl"
   ['hamstring', 'Pierna'], ['femoral', 'Pierna'], ['isquio', 'Pierna'],
   // hombro y tríceps antes que pecho, porque llevan "press"
@@ -79,6 +79,8 @@ const KEYWORDS = [
   ['pecho', 'Pecho'], ['press', 'Pecho'],
 ];
 
+export interface ExLike { name?: string; cat?: string; }
+
 /**
  * Grupo muscular de un ejercicio. Acepta el objeto o sólo el nombre.
  *
@@ -94,13 +96,13 @@ const KEYWORDS = [
  *
  * Devuelve null si no reconoce nada: nunca inventa una categoría.
  */
-export function catOf(ex) {
+export function catOf(ex: ExLike | string | null | undefined): string | null {
   if (ex && typeof ex === 'object' && ex.cat) return ex.cat;
   const n = norm(typeof ex === 'string' ? ex : ex?.name);
   if (!n) return null;
 
-  let contenido = null, lenC = 0;      // paso 2
-  let contenedor = null, lenD = Infinity; // paso 3
+  let contenido: string | null = null, lenC = 0;      // paso 2
+  let contenedor: string | null = null, lenD = Infinity; // paso 3
   for (const e of EXCATALOG) {
     const ne = norm(e.n);
     if (!ne) continue;
@@ -116,6 +118,8 @@ export function catOf(ex) {
   return null;
 }
 
+export interface MuscleBlock { cat: string; exs: ExLike[]; }
+
 /** Agrupa una lista de ejercicios YA ORDENADA en bloques contiguos por grupo
     muscular — no reordena nada, sólo junta lo que ya está junto. Un
     ejercicio sin grupo cae en 'Otros', al final, para no perderlo (mismo
@@ -125,9 +129,9 @@ export function catOf(ex) {
     (session.js: S.hoyOrder / S.draft.order) — esto es sólo una lectura para
     pintar encabezados y agrupar los controles de reordenar POR BLOQUE
     (moveBlock, session.js), nunca la fuente de verdad del orden. */
-export function blocksOf(exs) {
-  const out = [];
-  const byCat = new Map();
+export function blocksOf(exs: ExLike[]): MuscleBlock[] {
+  const out: MuscleBlock[] = [];
+  const byCat = new Map<string, MuscleBlock>();
   for (const ex of exs) {
     const cat = catOf(ex) || 'Otros';
     let b = byCat.get(cat);
@@ -137,14 +141,20 @@ export function blocksOf(exs) {
   return out;
 }
 
+interface SetEntry { w?: number; r?: number; rpe?: number | null; }
+interface SessionEntry extends ExLike { sets: SetEntry[]; }
+interface Session { date: string; entries?: SessionEntry[]; }
+
+const sessions = (): Session[] => S.sessions as Session[];
+
 /** Series por grupo muscular en los últimos `days` días.
 
     Lee el `cat` que quedó guardado en cada entrada: sin eso el volumen
     histórico dependería de la rutina de hoy, y renombrar un ejercicio
     reescribiría el pasado. */
-export function muscleVolume(days) {
-  const cutoff = dstr(new Date(Date.now() - days * 86400000)), tally = {};
-  S.sessions.filter(s => s.date >= cutoff).forEach(s => (s.entries || []).forEach(e => {
+export function muscleVolume(days: number): Record<string, number> {
+  const cutoff = dstr(new Date(Date.now() - days * 86400000)), tally: Record<string, number> = {};
+  sessions().filter(s => s.date >= cutoff).forEach(s => (s.entries || []).forEach(e => {
     const c = catOf(e);
     if (c) tally[c] = (tally[c] || 0) + e.sets.length;
   }));
@@ -153,10 +163,10 @@ export function muscleVolume(days) {
 
 /** Días enteros entre dos fechas YYYY-MM-DD, en hora local.
     El mediodía evita que el horario de verano corra el resultado un día. */
-function diasEntre(desde, hasta) {
+function diasEntre(desde: string, hasta: string): number {
   const a = new Date(desde + 'T12:00:00');
   const b = new Date(hasta + 'T12:00:00');
-  return Math.round((b - a) / 86400000);
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
 }
 
 /** Hace cuántos días entrenaste este grupo por última vez.
@@ -167,9 +177,9 @@ function diasEntre(desde, hasta) {
 
     Es un hecho, no un modelo. Deliberadamente NO se llama "recuperación": eso
     sería una afirmación fisiológica que la app no puede sostener. */
-export function daysSinceGroup(cat) {
-  let ultima = null;
-  for (const s of S.sessions || []) {
+export function daysSinceGroup(cat: string): number | null {
+  let ultima: string | null = null;
+  for (const s of sessions() || []) {
     const tiene = (s.entries || []).some(e => e.sets?.length && catOf(e) === cat);
     if (!tiene) continue;
     if (ultima === null || s.date > ultima) ultima = s.date;
@@ -178,8 +188,8 @@ export function daysSinceGroup(cat) {
 }
 
 /** El mapa completo de los nueve grupos, para pasárselo a la silueta. */
-export function daysSinceAll() {
-  const out = {};
+export function daysSinceAll(): Record<string, number | null> {
+  const out: Record<string, number | null> = {};
   MUSCLE_CATS.forEach(c => { out[c] = daysSinceGroup(c); });
   return out;
 }
@@ -195,15 +205,15 @@ export function daysSinceAll() {
     100 = sin historial (nada que recuperar). Es una estimación, no una
     medición fisiológica: por eso "estimado" en el nombre y no
     "recuperación" a secas. */
-export function recoveryPct(cat) {
+export function recoveryPct(cat: string): number {
   const dias = daysSinceGroup(cat);
   if (dias === null) return 100;
-  let avgRpe = null;
-  for (const s of S.sessions) {
+  let avgRpe: number | null = null;
+  for (const s of sessions()) {
     if (!(s.entries || []).some(e => catOf(e) === cat && e.sets?.length)) continue;
     const rpes = (s.entries || [])
       .filter(e => catOf(e) === cat)
-      .flatMap(e => (e.sets || []).map(st => st.rpe).filter(v => v != null));
+      .flatMap(e => (e.sets || []).map(st => st.rpe).filter((v): v is number => v != null));
     if (rpes.length) avgRpe = rpes.reduce((a, b) => a + b, 0) / rpes.length;
     break; // la sesión más reciente que tocó el grupo, tenga RPE o no
   }
@@ -213,20 +223,34 @@ export function recoveryPct(cat) {
 
 /** Los grupos que llevan `min` días o más sin entrenar, del más viejo al más
     nuevo. Sólo los que TIENEN historial. */
-export function stalestGroups(min = 7) {
+export function stalestGroups(min = 7): string[] {
   return MUSCLE_CATS
     .map(c => ({ c, d: daysSinceGroup(c) }))
-    .filter(x => x.d !== null && x.d >= min)
+    .filter((x): x is { c: string; d: number } => x.d !== null && x.d >= min)
     .sort((a, b) => b.d - a.d)
     .map(x => x.c);
 }
 
 /** Cuántos días lleva sin entrenarse, en castellano. `null` es "nunca". */
-export function diasTexto(d) {
+export function diasTexto(d: number | null | undefined): string {
   if (d === null || d === undefined) return 'nunca';
   if (d === 0) return 'hoy';
   if (d === 1) return 'ayer';
   return `hace ${d} días`;
+}
+
+export interface FibraBreakdown { fibra: string; sets: number; ejercicios: { name: string; sets: number }[]; }
+export interface GroupStats {
+  cat: string;
+  ventana: number;
+  dias: number | null;
+  sets: number;
+  sesiones: number;
+  volumen: number;
+  mejor: { w: number; r?: number; name?: string } | null;
+  porSemana: number;
+  top: { name: string; sets: number }[];
+  fibras: FibraBreakdown[] | null;
 }
 
 /**
@@ -242,16 +266,16 @@ export function diasTexto(d) {
  * Todo lo que devuelve es un hecho medido. No hay ninguna recomendación: la
  * app no sabe si entrenaste poco o mucho, sólo cuánto.
  */
-export function groupStats(cat, ventana = 28) {
+export function groupStats(cat: string, ventana = 28): GroupStats {
   const cutoff = dstr(new Date(Date.now() - ventana * 86400000));
-  let sets = 0, volumen = 0, sesiones = 0, mejor = null;
-  const porEx = new Map();
+  let sets = 0, volumen = 0, sesiones = 0, mejor: { w: number; r?: number; name?: string } | null = null;
+  const porEx = new Map<string, number>();
   // fibra -> (nombre de ejercicio -> series). Un Map de Maps y no un objeto
   // plano porque el nombre de la fibra puede traer tildes/espacios y este
   // camino nunca necesita usarlo como key de JSON ni nada por el estilo.
-  const porFibra = new Map();
+  const porFibra = new Map<string, Map<string, number>>();
 
-  for (const s of S.sessions || []) {
+  for (const s of sessions() || []) {
     if (s.date < cutoff) continue;
     let tocado = false;
     for (const e of s.entries || []) {
@@ -264,7 +288,7 @@ export function groupStats(cat, ventana = 28) {
         volumen += (st.w || 0) * (st.r || 0);
         if (!mejor || (st.w || 0) > mejor.w) mejor = { w: st.w || 0, r: st.r, name: e.name };
       }
-      porEx.set(e.name, (porEx.get(e.name) || 0) + ss.length);
+      porEx.set(e.name as string, (porEx.get(e.name as string) || 0) + ss.length);
 
       /* Sin fibra reconocida, el ejercicio cae bajo el nombre del grupo
          entero (cat) — no bajo un "otros" inventado. Es honesto: "esto
@@ -272,11 +296,11 @@ export function groupStats(cat, ventana = 28) {
          sin mapear, y es lo mismo que ya decía antes de que existiera este
          desglose. */
       const fib = fibrasDe(e);
-      const principales = fib?.p?.length ? fib.p : [cat];
+      const principales: string[] = fib?.p?.length ? fib.p : [cat];
       for (const nombreFibra of principales) {
         if (!porFibra.has(nombreFibra)) porFibra.set(nombreFibra, new Map());
-        const porExDeFibra = porFibra.get(nombreFibra);
-        porExDeFibra.set(e.name, (porExDeFibra.get(e.name) || 0) + ss.length);
+        const porExDeFibra = porFibra.get(nombreFibra) as Map<string, number>;
+        porExDeFibra.set(e.name as string, (porExDeFibra.get(e.name as string) || 0) + ss.length);
       }
     }
     if (tocado) sesiones++;
@@ -286,7 +310,7 @@ export function groupStats(cat, ventana = 28) {
      grupo donde todo cae en una sola bolsa (Glúteo, Gemelos) no gana nada
      mostrando "Glúteo: Hip thrust" en vez de la lista plana de siempre —
      sería la misma información con un paso extra. */
-  const fibras = porFibra.size > 1
+  const fibras: FibraBreakdown[] | null = porFibra.size > 1
     ? [...porFibra.entries()]
       .map(([fibra, ejPorNombre]) => {
         const ejercicios = [...ejPorNombre.entries()]
@@ -320,9 +344,9 @@ export function groupStats(cat, ventana = 28) {
     Existe para que el fallo deje de ser silencioso: la tarjeta de músculos los
     nombra y ofrece asignarlos. Un resumen incompleto presentado como completo
     es peor que no tener resumen. */
-export function uncategorized() {
-  const out = [];
-  Object.values(S.routine || {}).forEach(d => (d.exercises || []).forEach(e => {
+export function uncategorized(): ExLike[] {
+  const out: ExLike[] = [];
+  Object.values(S.routine || {}).forEach((d: any) => (d.exercises || []).forEach((e: ExLike) => {
     if (!catOf(e)) out.push(e);
   }));
   return out;
@@ -332,9 +356,9 @@ export function uncategorized() {
     que aparecen (primer ejercicio de cada uno manda) y sin repetir — para
     la pantalla de fin de sesión, que ilumina el cuerpo con lo que se hizo
     HOY y no con el historial completo (eso ya lo hace groupStats). */
-export function catsDeSesion(sess) {
-  const vistos = new Set();
-  const out = [];
+export function catsDeSesion(sess: Session | null | undefined): string[] {
+  const vistos = new Set<string>();
+  const out: string[] = [];
   for (const e of sess?.entries || []) {
     const c = catOf(e);
     if (c && !vistos.has(c)) { vistos.add(c); out.push(c); }

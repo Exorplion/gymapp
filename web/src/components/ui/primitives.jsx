@@ -13,6 +13,13 @@ const buttonVariants = cva(
       variant: {
         primary:
           "relative overflow-hidden bg-[image:var(--grad2)] text-[var(--on-grad)] shadow-[var(--glow)] after:content-[''] after:absolute after:top-0 after:-left-[60%] after:h-full after:w-[40%] after:bg-[linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent)] after:pointer-events-none after:animate-[sweep_3.2s_ease-in-out_infinite]",
+        // Gemelo ámbar de `primary`, con el mismo barrido de brillo: para el
+        // CTA que vive dentro de una tarjeta cálida (hoy, el calentamiento).
+        // Sin esto la única opción con vida propia era `primary`, que es cian
+        // y desentonaba adentro de un bloque ámbar; las alternativas neutras
+        // (`secondary`/`ghost`) no desentonan pero tampoco pesan como CTA.
+        warn:
+          "relative overflow-hidden bg-[image:var(--grad-warn)] text-[var(--on-grad)] shadow-[var(--glow-warn)] after:content-[''] after:absolute after:top-0 after:-left-[60%] after:h-full after:w-[40%] after:bg-[linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent)] after:pointer-events-none after:animate-[sweep_3.2s_ease-in-out_infinite]",
         secondary: 'bg-card2 text-txt border border-line2',
         ghost: 'bg-transparent text-mut hover:text-txt',
         outline: 'bg-transparent border border-line2 text-txt',

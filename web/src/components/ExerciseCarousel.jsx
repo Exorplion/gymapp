@@ -14,7 +14,7 @@
 // unidad (`alt`, kg↔lb) y el aviso de progresión, ninguno de los dos
 // editable, así que el patrón de refs no controlados (`altRef`/`pwRef`) se
 // mantiene sólo para esos dos.
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { S, wDisplay, wAlt, wStep, wToUnit, wFromUnit, openSheet } from '../lib/state.js';
 import { round1, fmtNum } from '../lib/format.js';

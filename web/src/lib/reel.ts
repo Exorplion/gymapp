@@ -13,10 +13,10 @@
 /** Genera `count` valores centrados en `center`, redondeados a múltiplos de
     `step` y nunca por debajo de `min`. Impar para que haya un diente central
     exacto. */
-export function reelValues(center, step, min = 0, count = 41) {
+export function reelValues(center: number, step: number, min = 0, count = 41): number[] {
   const half = Math.floor(count / 2);
   const base = Math.round(center / step) * step;
-  const out = [];
+  const out: number[] = [];
   for (let i = -half; i <= half; i++) {
     const v = Math.max(min, base + i * step);
     out.push(Math.round(v * 100) / 100);
@@ -29,8 +29,8 @@ export function reelValues(center, step, min = 0, count = 41) {
     `axis='y'` es lo mismo pero para la rueda fina vertical (mantener
     presionado — ver ReelPicker.jsx): mismo mecanismo de scroll-snap nativo,
     sólo cambia qué eje se lee/escribe. */
-export function reelCenter(scroller, idx, axis = 'x') {
-  const item = scroller?.children?.[idx];
+export function reelCenter(scroller: HTMLElement | null | undefined, idx: number, axis: 'x' | 'y' = 'x'): void {
+  const item = scroller?.children?.[idx] as HTMLElement | undefined;
   if (!scroller || !item) return;
   if (axis === 'y') {
     scroller.scrollTop = item.offsetTop - (scroller.clientHeight - item.offsetHeight) / 2;
@@ -41,16 +41,17 @@ export function reelCenter(scroller, idx, axis = 'x') {
 
 /** Índice del diente más cercano al centro visible, para leer el valor tras
     el gesto (scroll nativo, sin listener continuo de posición). */
-export function reelNearestIndex(scroller, axis = 'x') {
+export function reelNearestIndex(scroller: HTMLElement | null | undefined, axis: 'x' | 'y' = 'x'): number {
   if (!scroller) return -1;
   const mid = axis === 'y'
     ? scroller.scrollTop + scroller.clientHeight / 2
     : scroller.scrollLeft + scroller.clientWidth / 2;
   let best = -1, bestDist = Infinity;
   [...scroller.children].forEach((item, i) => {
+    const el = item as HTMLElement;
     const c = axis === 'y'
-      ? item.offsetTop + item.offsetHeight / 2
-      : item.offsetLeft + item.offsetWidth / 2;
+      ? el.offsetTop + el.offsetHeight / 2
+      : el.offsetLeft + el.offsetWidth / 2;
     const d = Math.abs(c - mid);
     if (d < bestDist) { bestDist = d; best = i; }
   });

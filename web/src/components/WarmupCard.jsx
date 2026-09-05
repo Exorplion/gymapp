@@ -82,7 +82,13 @@ export default function WarmupCard({ ex, onListo, onSaltar }) {
         Las tres seguidas, sin descanso. Después <b>{fmtMMSS(DESCANSO)}</b> y vas a tu primera serie.
       </p>
 
-      <Button type="button" size="sm" onClick={onListo}>
+      {/* Ancho completo y alto normal a propósito: es el ÚNICO cierre de la
+          tarjeta, y como `inline-flex` de tamaño `sm` quedaba angosto y pegado
+          a la izquierda, desalineado contra la rampa y la nota —que sí ocupan
+          todo el ancho— y sin el peso que le corresponde a la acción que
+          termina el calentamiento. La variante ámbar lo mantiene dentro del
+          tono de la tarjeta en vez de meter el cian de `primary`. */}
+      <Button type="button" variant="warn" className="w-full" onClick={onListo}>
         Listo · arrancar el descanso
       </Button>
     </div>
