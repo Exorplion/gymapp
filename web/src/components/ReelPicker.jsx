@@ -7,7 +7,7 @@
 import { useEffect, useRef } from 'react';
 import { reelValues, reelCenter, reelNearestIndex } from '../lib/reel.js';
 
-export default function ReelPicker({ value, step, min = 0, fmt, onChange, label }) {
+export default function ReelPicker({ value, step, min = 0, fmt, onChange, label, onTapValue }) {
   const scrollerRef = useRef(null);
   const timerRef = useRef(null);
   // Se regenera sólo cuando cambia el step o el "centro lógico" se corrió
@@ -43,11 +43,26 @@ export default function ReelPicker({ value, step, min = 0, fmt, onChange, label 
     <div className="reel" aria-label={label}>
       <div className="reel-indicator" aria-hidden="true" />
       <div className="reel-track" ref={scrollerRef} onScroll={onScroll}>
-        {values.map((v, i) => (
-          <div key={i} className={`reel-tooth${v === Math.round(value / step) * step ? ' on' : ''}`}>
-            {fmt ? fmt(v) : v}
-          </div>
-        ))}
+        {values.map((v, i) => {
+          const on = v === Math.round(value / step) * step;
+          /* Si el peso que el usuario quiere no está entre los dientes ya
+             generados (la ventana de reelValues() es finita), tocar el
+             número centrado —el único con el que ya está interactuando—
+             enfoca el input numérico de precisión que vive debajo (ver
+             onTapValue en ExerciseCarousel.jsx) y ahí el teclado del
+             teléfono aparece solo, sin agregar un botón/ícono nuevo a la
+             rueda. Sólo el diente "on" es tocable: los demás son parte del
+             gesto de scroll, no un blanco de tap. */
+          return (
+            <div
+              key={i}
+              className={`reel-tooth${on ? ' on' : ''}`}
+              {...(on && onTapValue ? { role: 'button', tabIndex: 0, onClick: onTapValue } : {})}
+            >
+              {fmt ? fmt(v) : v}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
