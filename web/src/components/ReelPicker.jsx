@@ -186,12 +186,18 @@ export default function ReelPicker({
 /** Rueda fina vertical: enteros vecinos al valor actual —EN LA UNIDAD QUE EL
     USUARIO VE (toUnit), no en kg crudos, para el caso común de "quiero un
     número que la rueda gruesa no tiene entre sus dientes de `step`" (87.5/90
-    → 88). Se cierra tocando afuera; cada asentamiento de scroll ya confirma
-    el valor (mismo mecanismo que la rueda gruesa), así que no hace falta un
-    botón "listo" aparte. */
+    → 88). Se cierra sola apenas el scroll asienta en un valor: quedaba
+    abierta con el backdrop encima de la rueda gruesa, tapando exactamente el
+    resultado que se acababa de elegir ("no se nota el resultado de mi
+    elección" — Enzo). Un breve respiro (CLOSE_MS) antes de cerrar deja ver
+    el dígito elegido resaltado un instante antes de volver a la rueda
+    gruesa ya actualizada. */
+const CLOSE_MS = 260;
+
 function FineReel({ value, min, toUnit, fromUnit, onChange, onClose }) {
   const scrollerRef = useRef(null);
   const timerRef = useRef(null);
+  const closeTimerRef = useRef(null);
   const center = Math.round(toUnit(value));
   const dispMin = Math.ceil(toUnit(min));
   const valuesRef = useRef(reelValues(center, 1, dispMin, FINE_COUNT));
@@ -200,17 +206,20 @@ function FineReel({ value, min, toUnit, fromUnit, onChange, onClose }) {
   useEffect(() => {
     const idx = values.indexOf(center);
     if (idx >= 0) reelCenter(scrollerRef.current, idx, 'y');
+    return () => { clearTimeout(timerRef.current); clearTimeout(closeTimerRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function onScroll() {
     clearTimeout(timerRef.current);
+    clearTimeout(closeTimerRef.current);
     timerRef.current = setTimeout(() => {
       const idx = reelNearestIndex(scrollerRef.current, 'y');
       if (idx < 0) return;
       const v = values[idx];
       reelCenter(scrollerRef.current, idx, 'y');
       if (v !== center) onChange(fromUnit(v));
+      closeTimerRef.current = setTimeout(onClose, CLOSE_MS);
     }, 120);
   }
 

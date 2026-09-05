@@ -174,59 +174,45 @@ main{
    el interruptor sobra y esconderlas por defecto dejaría la pantalla en blanco.
    Lo que queda de .view es la animación de entrada. */
 .view{display:block}
-/* la pantalla entra desde el lado hacia el que vas, como en una app nativa:
-   pestaña siguiente → entra por la derecha; anterior → por la izquierda.
-   Corre SOLO al cambiar de pestaña (.enter), nunca en un re-render.
-
-   Sin opacity: antes la entrante se desvanecía completa Y cada hijo se
-   desvanecía otra vez individualmente en cascada (vin + animation-delay
-   escalonado) — dos fundidos superpuestos que se leían como parpadeo, no
-   como un deslizamiento. Un tab-switch nativo no desvanece nada: la
-   pantalla es sólida de punta a punta del gesto, sólo cambia de posición.
-
-   100% y no unos pocos px: el offset chico (56px) estaba pensado para
-   acompañar el fundido que se acaba de sacar — con opacity, no importaba
-   que la pantalla no llegara a salir del marco, porque terminaba invisible
-   igual. Sin opacity, 56px la dejaba sólida y a medio camino: un after-image
-   de la pantalla anterior pisando a la nueva. Con 100% (todo el ancho de
-   la propia vista) la que sale queda realmente fuera del marco al terminar
-   —clip de `overflow:hidden` en main, sin scrollbar— y la que entra arranca
-   igual de afuera, como un push/pop real. */
-@keyframes slideR{from{transform:translate3d(100%,0,0)}to{transform:none}}
-@keyframes slideL{from{transform:translate3d(-100%,0,0)}to{transform:none}}
-.view.enter.dir-r{animation:slideR .34s var(--spring)}
-.view.enter.dir-l{animation:slideL .34s var(--spring)}
+/* SEGUNDA VUELTA (a pedido de Enzo, tomando moneditaapp.com de referencia):
+   el push/pop nativo (deslizamiento lateral al 100% + el staggerReveal
+   propio de cada pantalla corriendo AL MISMO TIEMPO que ese deslizamiento)
+   se sentía "caótico" — dos movimientos grandes superpuestos, uno de la
+   pantalla entera y otro de sus tarjetas adentro. moneditaapp no hace eso:
+   su transición de pantalla (`screenIn` en su CSS de producción) es un solo
+   movimiento chico y quieto —opacity + translateY(8px), sin dirección, sin
+   desplazamiento lateral— así que lo que se anima adentro (staggerReveal de
+   cada pantalla) no tiene que competir con nada más grande pasando a la vez.
+   Se abandona la identidad "como una app nativa" (deslizamiento direccional)
+   en este punto específico a favor de esa referencia. */
+@keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes screenOut{to{opacity:0}}
+.view.enter.dir-r,.view.enter.dir-l{animation:screenIn .22s var(--ease-out) both}
 /* z-index explícito, con position:relative para que z-index tenga efecto
    (sin position, un elemento static ignora z-index aunque sea flex/grid no
    aplica acá). Así la entrante queda SIEMPRE arriba de la saliente, sin
-   depender de que la animación con transform le cree un stacking context
-   implícito — eso es lo que pasaba antes, y con prefers-reduced-motion:reduce
-   apagando esa animación (ver media query más abajo) dejaba de funcionar:
-   .view.leave (position:absolute) pintaba por encima de .view.enter
-   (position:static) por orden de pintado de CSS, tapando la pantalla nueva
-   con la vieja congelada durante los 340ms de la transición. */
+   depender de que la animación le cree un stacking context implícito — eso
+   es lo que pasaba antes, y con prefers-reduced-motion:reduce apagando esa
+   animación (ver media query más abajo) dejaba de funcionar: .view.leave
+   (position:absolute) pintaba por encima de .view.enter (position:static)
+   por orden de pintado de CSS, tapando la pantalla nueva con la vieja
+   congelada durante la transición. */
 .view.enter{position:relative;z-index:1}
-/* La saliente ocupa el mismo lugar que la entrante (absolute, ancla a
-   main gracias al position:relative de arriba) para que las dos se vean
-   deslizando juntas y no una debajo de la otra. No participa del alto de
+/* La saliente ocupa el mismo lugar que la entrante (absolute, ancla a main
+   gracias al position:relative de arriba) para que el fundido cruzado se
+   vea limpio y no una pantalla debajo de la otra. No participa del alto de
    main: si sumara su propio alto al de la entrante, la página saltaría de
-   scroll por 340ms cada vez que cambiás de pestaña. z-index:0 (menor que el
-   de .enter) para que quede siempre debajo. */
+   scroll cada vez que cambiás de pestaña. z-index:0 (menor que el de
+   .enter) para que quede siempre debajo. */
 /* top/left/right calzan con el padding real de main (16px 18px ...) y no con
    0: el containing block de un absolute es el padding box del ancestro
    posicionado, así que top/left/right:0 la ponía por fuera del padding de
    main — ~36px más ancha y corrida ~18px/16px respecto de .view.enter,
    un salto de layout visible en el primer frame de cada cambio de pestaña. */
 .view.leave{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none}
-/* La saliente también se mantiene sólida — desliza afuera sin fundido,
-   igual que la entrante, y también al 100% (ver nota de slideR/slideL):
-   con el offset chico de antes quedaba a medio camino, sólida y superpuesta
-   a la nueva — un after-image de la pantalla anterior. Al 100% sale
-   realmente del marco. */
-@keyframes slideOutL{to{transform:translate3d(-100%,0,0)}}
-@keyframes slideOutR{to{transform:translate3d(100%,0,0)}}
-.view.leave.dir-r{animation:slideOutL .34s var(--ease) forwards}
-.view.leave.dir-l{animation:slideOutR .34s var(--ease) forwards}
+/* La saliente sólo se desvanece —rápido, sin desplazarse— mientras la
+   entrante hace su fundido+ascenso encima. */
+.view.leave.dir-r,.view.leave.dir-l{animation:screenOut .16s var(--ease) forwards}
 @media (prefers-reduced-motion:reduce){
   .view.enter.dir-r,.view.enter.dir-l,
   .view.leave.dir-r,.view.leave.dir-l{animation:none}
@@ -2141,14 +2127,14 @@ main{view-transition-name:app-main}
    root ADEMÁS la duplicaría. Sin el scope a [data-tdir] esto apagaría
    también el crossfade que sí usa RoutineWizard (regla de arriba). */
 :root[data-tdir] ::view-transition-old(root),:root[data-tdir] ::view-transition-new(root){animation:none}
-@keyframes vt-main-in-r{from{transform:translateX(100%)}to{transform:none}}
-@keyframes vt-main-in-l{from{transform:translateX(-100%)}to{transform:none}}
-@keyframes vt-main-out-l{to{transform:translateX(-100%)}}
-@keyframes vt-main-out-r{to{transform:translateX(100%)}}
-:root[data-tdir="r"] ::view-transition-old(app-main){animation:vt-main-out-l .34s var(--ease) forwards}
-:root[data-tdir="r"] ::view-transition-new(app-main){animation:vt-main-in-r .34s var(--spring)}
-:root[data-tdir="l"] ::view-transition-old(app-main){animation:vt-main-out-r .34s var(--ease) forwards}
-:root[data-tdir="l"] ::view-transition-new(app-main){animation:vt-main-in-l .34s var(--spring)}
+/* Mismo cambio que .view.enter/.leave más arriba (fundido+ascenso sin
+   dirección, en vez del deslizamiento lateral de antes — referencia
+   moneditaapp.com, a pedido de Enzo): reusa las mismas @keyframes
+   screenIn/screenOut. Sin dirección no hace falta distinguir
+   [data-tdir="l"] de [data-tdir="r"] — la app-main vieja y la nueva siempre
+   animan igual, entren por donde entren. */
+:root[data-tdir] ::view-transition-old(app-main){animation:screenOut .16s var(--ease) forwards}
+:root[data-tdir] ::view-transition-new(app-main){animation:screenIn .22s var(--ease-out) both}
 
 /* RoutineWizard.jsx: barra de progreso arriba del sheet, estilo onboarding
    (referencia visual: Liftoff — el mecanismo, no la identidad: acá es el
