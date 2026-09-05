@@ -228,7 +228,46 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
-**Hecho y publicado el 2026-09-04** (PR #35, mergeado a `main`):
+**Hecho y publicado el 2026-09-04** (PR #37, mergeado a `main` — REEMPLAZA el
+enfoque de PR #35, ver abajo):
+
+- **Rueda de peso/reps, segunda vuelta: rueda fina vertical + edición
+  manual EN la rueda, sin input aparte.** Enzo revirtió el enfoque de PR #35
+  ("creo que está mal, hagamos de otra manera") y describió el problema real:
+  la rueda gruesa sólo tiene dientes cada `step` (2.5kg, por ejemplo) — no
+  hay forma de parar en 88 si los dientes son 87.5/90. Pidió dos caminos,
+  los dos DENTRO de la rueda (nunca un número aparte debajo — eso es
+  justo lo que quería sacar, "reducimos algo de clutter"):
+  1. **Mantener presionado** (en cualquier parte de la rueda, sin
+     arrastrar) abre una rueda fina **vertical** con los enteros vecinos al
+     valor actual — resuelve el caso común (88 entre 87.5 y 90).
+  2. **Tocar (sin mantener) el número centrado** lo vuelve editable ahí
+     mismo — el teclado del teléfono aparece recién ahí, para el caso raro
+     que ni la rueda fina resuelve (un decimal como 88.3).
+  Se sacó el `<input>` de respaldo debajo de la rueda (y `wRef`/`rRef`/
+  `onWChange`/`onRChange`/`syncInputs` en `ExerciseCarousel.jsx`, ya sin
+  uso). La conversión kg↔lb (`wAlt`, lo único que sigue afuera de la rueda)
+  se alineó a la derecha y se agrandó un poco (13px→15px), también a pedido
+  de Enzo.
+  Cambios técnicos: `lib/reel.js` generaliza `reelCenter()`/
+  `reelNearestIndex()` con un parámetro de eje (x/y) para reusar la misma
+  matemática de scroll-snap en la rueda fina vertical; `lib/state.js` suma
+  `wToUnit()`/`wFromUnit()` (conversión numérica kg↔unidad visible, no sólo
+  texto como `wDisplay()`); `ReelPicker.jsx` deja de depender de que el
+  padre re-renderice con un `value` prop nuevo (`ExerciseCarousel` no hace
+  `bump()` en cada cambio, por diseño) — ahora guarda su propio estado
+  interno y sólo avisa hacia afuera con `onChange()`.
+  355/355 tests, `tsc --noEmit` limpio, build limpio. No se pudo verificar
+  por tacto real en celular desde este job (background, sin extensión de
+  Chrome — ver [[chrome-extension-background-job]]). Queda pendiente que
+  Enzo confirme que mantener presionado y tocar el número no se sienten en
+  conflicto con el scroll normal de la rueda.
+
+**Descartado (PR #35, revertido por Enzo el mismo día — no reintentar este
+camino):** número aparte debajo de la rueda como fallback de edición, con
+el número centrado de la rueda sólo enfocando ese input externo. Enzo lo
+probó y pidió el enfoque de arriba en su lugar — la edición tiene que vivir
+DENTRO de la rueda, no en un segundo número aparte.
 
 - **Rueda de peso/reps: el número centrado ahora es tocable para escribir.**
   Enzo pidió que si el peso que se quiere no está entre los que ya generó la
