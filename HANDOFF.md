@@ -249,6 +249,29 @@ No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicada
   [[chrome-extension-background-job]] en memoria). Queda pendiente que Enzo
   confirme en el celular que el corte ya no se ve al cambiar de pestaña.
 
+**Hecho y publicado el 2026-09-04** (PR #31, mergeado a `main`):
+
+- **`--ease-out` corregido con la curva real de moneditaapp.com.** Enzo pidió
+  "mejorá las animaciones" tomando esa app como referencia (ya se había
+  citado antes, ver arriba "Token de easing"). La vez anterior el valor
+  `.2,.8,.3,1` fue una aproximación a ojo. Esta vez se bajó el CSS real que
+  sirve el sitio (`curl` a `assets/index-*.css`) y se confirmó su curva de
+  entrada real, usada de forma consistente en TODA la app de referencia
+  (`rise`, `pop`, `toastIn`, `valueIn`, `screenIn`, `slideLeft`, `coachIn`):
+  `cubic-bezier(.16,1,.3,1)`. Se corrigió el token. Afecta a los mismos 5+
+  usos que ya consumían `--ease-out` (cierre de sheet, ancho de barra de
+  descanso, colapso de bloques) — se ve más decidido/"snappy".
+  **Nota para la próxima vez que Enzo pida "más como moneditaapp":** el resto
+  de sus animaciones (no adoptado todavía, decisión consciente de no
+  sobre-alcanzar sin que lo pida) son: `valueIn` (blur(6px)→0 + opacity, para
+  cuando un número cambia — FIERRO usa `countTo()`, que anima el conteo pero
+  no el blur) y `toastIn` (entra desde arriba con translateY(-20px), FIERRO
+  entra desde abajo — son filosofías de toast distintas, no un bug). No se
+  tocó el spring con rebote (`--spring`/SPRING en motion.js) porque
+  moneditaapp NO usa overshoot en ninguna curva (todas con y≤1) — cambiarlo
+  sería un cambio de identidad visual (de "juguetón" a "premium/contenido"),
+  no una corrección; preguntar antes si eso es lo que se quiere.
+
 **Hecho y publicado el 2026-09-04** (PR #26 y PR #27, ambos mergeados a `main`):
 
 - **Simetría izquierda/derecha en unilaterales** — completo. `session.js` guarda
