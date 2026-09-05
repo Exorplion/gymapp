@@ -185,8 +185,8 @@ footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line); font
   <div class="gates">
     <div class="gate">
       <span class="gate-name">Salud de código</span>
-      <span class="chip warn">Parcial</span>
-      <span class="gate-note">Se corrigió un crash de producción que mataba la tarjeta del ejercicio en curso. La caza sistemática del resto quedó a medias: el límite de sesión cortó al agente.</span>
+      <span class="chip crit">Auditada · 11 bugs sin corregir</span>
+      <span class="gate-note">El crash del ejercicio en curso está corregido y su clase entera, cerrada. Pero la caza completa encontró once más, cuatro de ellos capaces de dejar la app inutilizable o perder una serie en silencio.</span>
     </div>
     <div class="gate">
       <span class="gate-name">Accesibilidad</span>
@@ -195,8 +195,8 @@ footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line); font
     </div>
     <div class="gate">
       <span class="gate-name">Rendimiento</span>
-      <span class="chip crit">Sin empezar</span>
-      <span class="gate-note">Punto de partida medido: 1 743 KiB de precarga en 16 entradas. La auditoría no llegó a terminar.</span>
+      <span class="chip warn">Auditada · un bug ya corregido</span>
+      <span class="gate-note">Bundle atribuido dependencia por dependencia. Se corrigió la lectura inútil de todas las fotos en cada arranque; quedan unos 460 KB identificados para sacar.</span>
     </div>
     <div class="gate">
       <span class="gate-name">Sistema visual</span>
@@ -319,6 +319,90 @@ footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line); font
 
 <section>
   <div class="sec-head">
+    <p class="eyebrow">Bugs ocultos · auditoría completa</p>
+    <h2>El arranque es de vidrio</h2>
+  </div>
+  <p>Cerrada la clase del crash anterior, la caza encontró <strong>once bugs más</strong>. Cuatro comparten una misma raíz: <strong>lo que sale mal no se ve.</strong> Fallan en silencio y dejan a la app sin salida.</p>
+
+  <div class="card crit">
+    <span class="chip crit">Verificado · sin corregir</span>
+    <h3>Pantalla negra permanente si el arranque falla</h3>
+    <p class="small">La cadena de inicio no tiene <code>.catch</code>. Si algo en ella se rompe, la bandera de «listo» se queda en falso y la app <strong>devuelve una pantalla vacía para siempre</strong> — sin mensaje, sin botón de recargar, sin nada. La red de seguridad de React no ayuda: sólo atrapa errores de dibujado, no promesas rechazadas.</p>
+    <p class="small">Y los disparadores no son hipotéticos: navegación privada, almacenamiento lleno, o —el más probable— <strong>abrir la app sin señal justo después de una actualización</strong>, cuando un módulo que se carga bajo demanda todavía no está en la caché.</p>
+  </div>
+
+  <div class="card crit">
+    <span class="chip crit">Verificado · sin corregir</span>
+    <h3>Dos pestañas abiertas pueden colgar la app para siempre</h3>
+    <p class="small">Al abrir la base de datos sólo se contemplan el éxito y el error. Falta el tercer caso: <strong>«bloqueado»</strong>, que ocurre cuando otra pestaña tiene abierta una versión anterior. En ese caso la promesa <strong>no resuelve ni rechaza jamás</strong> — se queda pendiente. Misma pantalla negra que arriba, pero sin siquiera un error en la consola que explique por qué.</p>
+  </div>
+
+  <div class="card crit">
+    <span class="chip crit">Verificado · sin corregir</span>
+    <h3>Una serie puede perderse sin que nada lo diga</h3>
+    <p class="small">Las escrituras a disco resuelven al completarse y rechazan al haber error, pero <strong>no contemplan que la transacción se aborte</strong> — que es justo lo que pasa cuando el almacenamiento se llena. Ahí la promesa queda colgada.</p>
+    <p class="small">La consecuencia es concreta y mala: al guardar una serie, la espera nunca vuelve, así que <strong>no corre el aviso, ni la actualización de pantalla, ni el cronómetro de descanso.</strong> La serie está en memoria pero no en disco. Al recargar, no existe. Cero señales.</p>
+  </div>
+
+  <div class="card crit">
+    <span class="chip crit">Verificado · sin corregir</span>
+    <h3>El desayuno se anota en el día de ayer</h3>
+    <p class="small">La fecha activa de nutrición se calcula <strong>una sola vez, al cargar el módulo</strong>. Una app instalada en el teléfono no se cierra: se suspende. Si la dejás abierta a la noche y a la mañana registrás el desayuno, se guarda <strong>con la fecha de ayer</strong> — contaminando las calorías del día, las metas y la recalibración automática.</p>
+    <p class="small">Otras pantallas sí piden la fecha fresca, así que la app se contradice a sí misma. Ninguna prueba simula el cambio de día.</p>
+  </div>
+
+  <h3>Datos inventados: tres casos que contradicen el criterio propio</h3>
+  <p class="small">El proyecto tiene una regla explícita: cuando falta un dato se dice, no se rellena con un cero. Estos tres la rompen, y uno de ellos <strong>contradice un comentario escrito tres líneas más arriba</strong> en el mismo archivo.</p>
+  <ul>
+    <li>El registro por voz <strong>inventa 20 kg</strong> para un ejercicio sin historial, y lo presenta como dato.</li>
+    <li>Al importar una tabla de alimentos, una macro vacía se guarda como <strong>0 g</strong> y suma a la meta diaria como si fuera medición.</li>
+    <li>Al escalar un alimento por gramos, un valor ausente produce <strong>0 kcal</strong> en vez de «no sé» — el más difícil de notar, porque se disuelve en los totales.</li>
+  </ul>
+
+  <div class="card warn">
+    <h3>La rueda puede mostrarte un peso y guardar otro</h3>
+    <p class="small">Si escribís un valor lejos del centro de la rueda, la ventana de números se regenera <strong>un dibujado tarde</strong>. El peso queda guardado bien, pero la rueda se centra usando el índice nuevo sobre la lista vieja y muestra un número arbitrario. <strong>Leés un peso y guardaste otro.</strong> Es el cuarto bug de esta familia en el mismo componente.</p>
+  </div>
+
+  <p class="small">También: la alarma de descanso <strong>sigue sonando durante todo el descanso siguiente</strong> si arrancás uno nuevo mientras suena; las fotos de máquina se guardan <strong>sin comprimir</strong> —varios MB cada una, camino directo a llenar el almacenamiento y disparar el bug de arriba— aunque el proyecto ya tiene una función de compresión usada en otra pantalla; y no se pueden registrar series de <strong>peso corporal</strong> (dominadas, fondos, plancha), porque se exige un peso mayor que cero.</p>
+</section>
+
+<section>
+  <div class="sec-head">
+    <p class="eyebrow">Rendimiento</p>
+    <h2>El código propio no es el problema</h2>
+  </div>
+  <p>Medido de verdad, atribuyendo bytes reales del bundle a cada origen. Toda la app —28 pantallas emergentes, 5 pantallas, toda la lógica— suma unos 300 KB. <strong>El 60% del peso son cuatro dependencias.</strong></p>
+
+  <div class="tbl-scroll">
+    <table>
+      <thead><tr><th>Dependencia</th><th>Peso</th><th>Para qué</th></tr></thead>
+      <tbody>
+        <tr><td>Reproductor Lottie</td><td class="num fail">320 KB</td><td><strong>Una</strong> animación de 44×44 px</td></tr>
+        <tr><td>Framer Motion</td><td class="num">139 KB</td><td>Animaciones</td></tr>
+        <tr><td>GSAP</td><td class="num">83 KB</td><td>Un puñado de transiciones</td></tr>
+        <tr><td>tailwind-merge</td><td class="num">33 KB</td><td>Un ayudante de clases CSS</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="small">El caso de Lottie es el más nítido: <strong>320 KB de reproductor para un archivo de 6,9 KB</strong>, usado en un único lugar de todo el repositorio — la insignia de récord personal. Es además lo que dispara los dos avisos de código inseguro del compilador.</p>
+
+  <div class="card ok">
+    <span class="chip ok">Corregido · publicado</span>
+    <h3>Se leían todas tus fotos en cada arranque, para tirarlas</h3>
+    <p class="small">El inicio recorría los <strong>siete</strong> almacenes y usaba <strong>seis</strong>. El séptimo son las fotos de máquina: en cada arranque se cargaban <strong>todos los archivos de imagen</strong> a memoria y el resultado se descartaba sin usarse. Decenas de MB leídos en el camino crítico, antes del primer pixel. Las fotos nunca se leen en bloque por diseño — se piden de a una cuando hacen falta.</p>
+  </div>
+
+  <blockquote class="pull">Un trade-off que se suele vender mal: en una app instalada, partir el paquete en trozos no acelera las visitas siguientes. Lo que sí se paga en cada arranque es interpretar y evaluar 1,3 MB de código.</blockquote>
+
+  <p class="small">Por eso la recomendación <em>no</em> es dividir las 28 pantallas emergentes una por una — pesan entre 5 y 13 KB cada una y partirlas complica las animaciones sin ganar casi nada. Lo que vale es sacar del arranque los <strong>tres módulos gordos y de uso raro</strong>: unos 380 KB, del orden de 300 a 400 ms de arranque en un teléfono de gama media. Con eso más quitar Lottie, el paquete baja de 1339 a <strong>unos 875 KB</strong> sin tocar la arquitectura.</p>
+
+  <p class="small">Un detalle que dice algo sobre el estado de la documentación: el repositorio afirma que GSAP «se usa sólo en Inicio». En realidad se usa en <strong>cinco</strong> archivos.</p>
+</section>
+
+<section>
+  <div class="sec-head">
     <p class="eyebrow">Producto</p>
     <h2>El motor es mejor que su tablero</h2>
   </div>
@@ -357,13 +441,22 @@ footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line); font
   <div class="phase">
     <span class="phase-n">1</span>
     <div class="phase-body">
+      <h3>Que nada falle en silencio</h3>
+      <p class="small">Los cuatro bugs de arranque y escritura, más los tres de datos inventados. Es lo más barato de arreglar y lo que más daño hace: una pantalla negra sin explicación o una serie que se evapora destruyen la confianza en la app mucho más rápido que cualquier carencia de diseño. Incluye comprimir las fotos antes de guardarlas, que hoy es el camino más probable a llenar el almacenamiento.</p>
+      <p class="small"><strong>Criterio:</strong> ningún fallo deja a la app sin salida ni sin mensaje, y ningún dato ausente se guarda como cero.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <span class="phase-n">2</span>
+    <div class="phase-body">
       <h3>Devolverle el aire al núcleo</h3>
       <p class="small">Sacar de la tarjeta del ejercicio en curso todo lo que no sea peso, repeticiones y confirmar. Hoy se le cobra peaje a la acción más repetida de la app: esfuerzo percibido, selector de lado, foto de máquina y tres preguntas previas. <strong>Criterio:</strong> registrar una serie no debe requerir mirar nada más que peso, repeticiones y el botón.</p>
     </div>
   </div>
 
   <div class="phase">
-    <span class="phase-n">2</span>
+    <span class="phase-n">3</span>
     <div class="phase-body">
       <h3>Aplicar la dirección visual</h3>
       <p class="small">Primero unificar la fuente de verdad de los tokens, que hoy está duplicada a mano. Después el cambio de paleta, que por sí solo mueve el 70% de la app porque la mayoría del CSS ya usa variables. Riesgo controlado: son sustituciones uno a uno.</p>
@@ -371,7 +464,7 @@ footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line); font
   </div>
 
   <div class="phase">
-    <span class="phase-n">3</span>
+    <span class="phase-n">4</span>
     <div class="phase-body">
       <h3>Prescribir, no sólo describir</h3>
       <p class="small">Doble progresión, descarga accionable y cobertura de fibra donde se decide. La mayor parte de la lógica ya está escrita y probada.</p>
@@ -379,7 +472,7 @@ footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line); font
   </div>
 
   <div class="phase">
-    <span class="phase-n">4</span>
+    <span class="phase-n">5</span>
     <div class="phase-body">
       <h3>Recortar superficie</h3>
       <p class="small">Ocho de las pantallas emergentes existen sólo para editar la rutina: es una aplicación de configuración adentro de la aplicación de entrenar. Ahí está el grueso del recorte posible. <strong>Va después de la decisión de abajo</strong>, no antes.</p>
