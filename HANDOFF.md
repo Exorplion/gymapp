@@ -228,6 +228,26 @@ alcance a propósito (ver abajo).
 No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
+**Hecho y publicado el 2026-09-04** (PR #35, mergeado a `main`):
+
+- **Rueda de peso/reps: el número centrado ahora es tocable para escribir.**
+  Enzo pidió que si el peso que se quiere no está entre los que ya generó la
+  ventana de `reelValues()` (`lib/reel.js`), se pueda escribir directo — pero
+  el teclado numérico sólo tiene que aparecer al TOCAR el número, no antes.
+  Ya existía un `<input>` de precisión debajo de la rueda (fallback de la
+  revisión UX del 2026-09-03), pero no había ningún camino desde el número
+  de la rueda hasta ese input — había que descubrirlo por cuenta propia.
+  Fix: `ReelPicker.jsx` acepta un prop `onTapValue`, aplicado sólo al diente
+  `.on` (el número grande centrado); `ExerciseCarousel.jsx` lo usa para
+  enfocar+seleccionar `wRef`/`rRef` (los inputs ya existentes), que abren el
+  teclado nativo del teléfono al recibir foco. El input de abajo ya
+  actualizaba su propio valor en vivo mientras se tipea (comportamiento
+  nativo de `<input>`, no se tocó esa lógica — ver `onWChange`/`onRChange`
+  y el comentario de cabecera de `ExerciseCarousel.jsx` sobre por qué esos
+  inputs son no controlados). 355/355 tests, build limpio. No se pudo
+  verificar por tacto real en celular desde este job (background, sin
+  extensión de Chrome — ver [[chrome-extension-background-job]]).
+
 **Hecho y publicado el 2026-09-04** (PR #33, mergeado a `main` — CORRIGE PR #29,
 ver abajo):
 
