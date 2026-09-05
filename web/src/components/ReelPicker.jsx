@@ -218,8 +218,20 @@ function FineReel({ value, min, toUnit, fromUnit, onChange, onClose }) {
       if (idx < 0) return;
       const v = values[idx];
       reelCenter(scrollerRef.current, idx, 'y');
-      if (v !== center) onChange(fromUnit(v));
-      closeTimerRef.current = setTimeout(onClose, CLOSE_MS);
+      // El montaje mismo dispara un 'scroll' (reelCenter() del useEffect de
+      // arriba escribe scrollTop para centrar el valor inicial) — sin este
+      // guard, ESE scroll programático (no un gesto real) también agendaba
+      // el cierre automático, así que la rueda se cerraba sola a los
+      // ~380ms de abrirse SIN IMPORTAR si el usuario todavía la estaba
+      // sosteniendo/elegiendo un número — se sentía como que "se bugueaba y
+      // desaparecía, no dejaba elegir" (Enzo). Ahora sólo se agenda el
+      // cierre cuando el asentamiento cambió el valor de verdad — mientras
+      // el usuario no elija nada distinto del que ya estaba centrado, la
+      // rueda se queda abierta esperando.
+      if (v !== center) {
+        onChange(fromUnit(v));
+        closeTimerRef.current = setTimeout(onClose, CLOSE_MS);
+      }
     }, 120);
   }
 
