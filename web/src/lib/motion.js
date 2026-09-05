@@ -18,9 +18,25 @@
 
 const SPRING = 'cubic-bezier(.34,1.56,.64,1)'; // = var(--spring) en styles.css
 
+/* "Reducir movimiento" del sistema operativo (WCAG 2.3.3 / 2.2.2).
+   styles.css:239 ya neutraliza las animaciones CSS con
+   `*{animation-iteration-count:1!important}`, pero esa regla NO alcanza a la
+   Web Animations API (`el.animate()`) ni a GSAP — que es justamente todo lo
+   que vive en este archivo. Se chequea acá, en la fuente, y no en los ~13
+   lugares que llaman a estos helpers: un call site nuevo hereda el respeto
+   por la preferencia sin que nadie se acuerde de agregarlo.
+
+   OJO al usarlo: no todas estas funciones son decorativas. Las que PRODUCEN
+   el estado final (animateRing pinta el progreso con fill:'forwards';
+   countTo escribe el textContent) no pueden simplemente no correr —
+   dejarían el anillo vacío y el número en blanco. Esas saltan al estado
+   final de una; sólo las decorativas salen temprano. */
+const menosMovimiento = () =>
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 // Bounce de "me gusta" / toggle: racha, favoritos, checks. Ref: Instagram/Spotify.
 export function pulseLike(el) {
-  if (!el?.animate) return;
+  if (!el?.animate || menosMovimiento()) return;
   el.animate(
     [
       { transform: 'scale(1)' },
@@ -34,7 +50,7 @@ export function pulseLike(el) {
 
 // Bloom-open: sheets/paneles al montar. Ref: páginas de Notion.
 export function bloomOpen(el) {
-  if (!el?.animate) return;
+  if (!el?.animate || menosMovimiento()) return;
   el.animate(
     [
       { transform: 'scale(.94) translateY(10px)', opacity: 0 },
@@ -47,6 +63,10 @@ export function bloomOpen(el) {
 // Reveal escalonado de listas (ejercicios de una rutina, comidas del día).
 export function staggerReveal(els, { delayStep = 45, distance = 14 } = {}) {
   if (!els || els.animate) return; // guard: no pasar un solo elemento por error
+  // Seguro salir sin hacer nada: estas animaciones usan fill:'backwards', o
+  // sea que el estado final es el CSS natural del elemento (visible). No
+  // animar deja la lista tal cual, no la deja escondida.
+  if (menosMovimiento()) return;
   Array.from(els).forEach((el, i) => {
     if (!el?.animate) return;
     el.animate(
@@ -87,6 +107,14 @@ export function animateRing(circleEl, progress, { duration = 900 } = {}) {
   const from = Number(circleEl.getAttribute('data-progress')) || 0;
   const to = Math.max(0, Math.min(1, progress));
   circleEl.setAttribute('data-progress', String(to));
+  /* Con "reducir movimiento" NO se puede simplemente no correr: esta
+     animación usa fill:'forwards', o sea que ELLA es la que deja pintado el
+     progreso. Sin animar y sin esto, el anillo se quedaría vacío. Se salta al
+     valor final de una. */
+  if (menosMovimiento()) {
+    circleEl.style.strokeDashoffset = String(circumference * (1 - to));
+    return;
+  }
   circleEl.animate(
     [
       { strokeDashoffset: circumference * (1 - from) },
@@ -113,6 +141,7 @@ export function animateRing(circleEl, progress, { duration = 900 } = {}) {
 // gira con rotateY) porque cuelga fuera de ese árbol. Se autodestruye al
 // terminar — mismo patrón imperativo que fireConfetti().
 export function tapRing(x, y, { size = 26, color = 'var(--cyan)' } = {}) {
+  if (menosMovimiento()) return; // puro adorno transitorio, no deja estado
   const ring = document.createElement('span');
   ring.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:${size}px;height:${size}px;` +
     `margin:${-size / 2}px 0 0 ${-size / 2}px;border-radius:50%;border:2px solid ${color};` +
@@ -134,7 +163,7 @@ export function tapRing(x, y, { size = 26, color = 'var(--cyan)' } = {}) {
 // principios de animación de Disney, adoptados por juegos). Para el botón
 // de acción más repetido de la app: marcar una serie.
 export function squashStretch(el) {
-  if (!el?.animate) return;
+  if (!el?.animate || menosMovimiento()) return;
   el.animate(
     [
       { transform: 'scale(1,1)' },
@@ -152,6 +181,7 @@ export function squashStretch(el) {
 // la pantalla (haría perder de vista dónde estabas parado en un formulario).
 // Para momentos de logro: serie completada, PR nuevo.
 export function impactBurst(x, y, { count = 6, color = 'var(--cyan)', distance = 26 } = {}) {
+  if (menosMovimiento()) return; // partículas transitorias, no dejan estado
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5;
     const dx = Math.cos(angle) * distance * (0.7 + Math.random() * 0.5);
@@ -174,6 +204,10 @@ export function impactBurst(x, y, { count = 6, color = 'var(--cyan)', distance =
 // Cuenta ascendente/descendente de un número (peso, series, calorías, kcal).
 export function countTo(el, to, { from = 0, duration = 600, format = (n) => Math.round(n) } = {}) {
   if (!el) return;
+  /* Igual que animateRing: el conteo no es decoración, es lo que ESCRIBE el
+     número. Salir sin hacer nada dejaría el elemento vacío, así que con
+     movimiento reducido se pinta el valor final directo. */
+  if (menosMovimiento()) { el.textContent = format(to); return; }
   const start = performance.now();
   const step = (now) => {
     const t = Math.min(1, (now - start) / duration);

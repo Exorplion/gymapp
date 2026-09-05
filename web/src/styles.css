@@ -43,7 +43,13 @@
      pero no eran los mismos, y en tipografía chica la diferencia se nota. */
   --txt:#EEF4FF;
   --mut:#93A4C8;
-  --mut2:#64749A;
+  /* Subido de #64749A el 2026-09-05: aquel valor NO llegaba a 4.5:1 (WCAG
+     1.4.3 AA) sobre NINGUNA superficie de la app — 3.98:1 sobre --card,
+     3.68:1 sobre --card2, 3.18:1 sobre la tabbar. Y es el token de casi todo
+     el texto chico (8.5-11.5px). Texto chico, contraste bajo y pantalla al
+     sol del gimnasio es el peor caso posible. #8493BC da ~5.3:1 sobre
+     --card2 sin cambiar la sensación de "gris tenue". */
+  --mut2:#8493BC;
   --accent:#7FD1FF;      /* cian de acento: etiquetas, cifras, día activo */
   --deep:#2540E8;        /* azul profundo: arranque de los gradientes de barra */
   --blue:#2E7DFF;
@@ -113,7 +119,28 @@ h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif}
 .num{font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.01em}
 input,select,button,textarea{font-family:inherit;color:inherit}
 /* piso de calidad: foco visible para teclado, sin afectar el toque */
-:focus-visible{outline:2px solid var(--blue2);outline-offset:2px;border-radius:8px}
+/* El halo oscuro de box-shadow no es decorativo: sobre un CTA de gradiente
+   claro (--grad2 arranca en #7FD1FF, --grad-warn en #FFD79A) el anillo azul
+   solo daba 1.54:1 y 1.91:1 — o sea, el foco DESAPARECÍA justo sobre el
+   botón más importante de cada pantalla. WCAG 2.2 exige 3:1 (2.4.11 Focus
+   Appearance). El halo garantiza el contraste contra cualquier fondo. */
+:focus-visible{outline:2px solid var(--blue2);outline-offset:2px;border-radius:8px;
+  box-shadow:0 0 0 4px var(--bg)}
+
+/* ÁREA TÁCTIL — WCAG 2.2 SC 2.5.8 (Target Size, AA) exige 24x24 CSS px; la
+   guía de iOS/Android pide 44-48. Esta app se toca jadeando y con las manos
+   húmedas, así que acá el mínimo real es 44, no 24.
+   El patrón es el que la propia app ya usaba bien en .mpop-x: un ::after
+   invisible que agranda SÓLO la zona sensible al toque, sin mover un píxel
+   del diseño. Se expande casi todo en vertical porque estos controles viven
+   en filas: crecer a lo ancho les robaría el toque a sus vecinos.
+   (.reel-tooth queda afuera a propósito: la rueda ya provocó tres bugs de
+   scroll/gesto —ver HANDOFF.md— y un overlay encima puede comerse el
+   arrastre. Se trata aparte, con verificación en el teléfono.) */
+.warmup-skip,.sil-caras button,.done-again{position:relative}
+.warmup-skip::after,.sil-caras button::after,.done-again::after{
+  content:'';position:absolute;left:0;right:0;top:-11px;bottom:-11px;
+}
 button{background:none;border:none;cursor:pointer;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
 button:active{transform:scale(.96);transition-duration:.05s}
 [data-act]:not(button){transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
@@ -1151,7 +1178,11 @@ nav.tabbar{
 nav.tabbar button{color:var(--mut)}
 nav.tabbar button{
   flex:1;max-width:110px;display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:7px 0 5px;border-radius:14px;color:var(--mut2);position:relative;transition:.15s;
+  /* Sin `color` acá a propósito: la regla de arriba (nav.tabbar button) ya
+     lo fija en --mut. Hasta el 2026-09-05 esta línea repetía color:--mut2 y,
+     con la misma especificidad y estando después, PISABA ese arreglo — el
+     fix de contraste estaba escrito, comentado y muerto. */
+  padding:7px 0 5px;border-radius:14px;position:relative;transition:.15s;
 }
 nav.tabbar button svg{width:24px;height:24px;stroke:currentColor;fill:none;fill-opacity:0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke-width .18s var(--ease),fill-opacity .18s var(--ease)}
 nav.tabbar button span{font-family:'Barlow Condensed';font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
@@ -1453,8 +1484,13 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .block-head .s{flex:1;font-size:12px;color:var(--mut);text-align:right;margin-right:4px}
 .block-move{display:flex;gap:4px}
 .block-move button{
-  width:26px;height:26px;border-radius:8px;background:var(--card);border:1px solid var(--line2);
-  color:var(--mut2);font-size:10px;display:grid;place-items:center;
+  /* 26x26 era la mitad del mínimo táctil, en un control que se usa con el
+     teléfono en la mano antes de arrancar. Acá NO sirve el truco del ::after
+     invisible: ▲ y ▼ están apilados, así que expandir la zona sensible hacia
+     arriba y abajo haría que se pisen entre sí y termines tocando el
+     contrario. La única salida honesta es agrandarlos de verdad. */
+  width:36px;height:36px;border-radius:9px;background:var(--card);border:1px solid var(--line2);
+  color:var(--mut2);font-size:13px;display:grid;place-items:center;
 }
 .block-move button:disabled{opacity:.3}
 .block-move button:not(:disabled):active{color:#22D3EE;border-color:#22D3EE}
