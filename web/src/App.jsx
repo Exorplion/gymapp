@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { idbOpenOnce } from './lib/db.js';
 import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT } from './lib/state.js';
 import { applyComputedGoals } from './lib/macros.js';
@@ -172,6 +172,27 @@ export default function App() {
     return () => clearTimeout(salienteTimer.current);
   }, [store.tab, dir]);
 
+  /* `main` sólo mide del alto de .view.enter (.view.leave es position:absolute,
+     no participa del layout — ver el comentario de styles.css). Si la pantalla
+     que se va es más alta que la que entra (p. ej. Rutina con un turno
+     abierto vs. Nutrición), main la recorta en seco con su overflow:hidden
+     ANTES de que termine de deslizarse afuera: se ve como si la parte de
+     abajo de la pantalla saliente se cortara/rompiera a mitad de la
+     animación en vez de deslizar completa fuera del marco. Mientras dura la
+     transición, se fuerza a mano un min-height igual al más alto de los dos
+     (medido después de pintar ambas, con useLayoutEffect para no parpadear)
+     y se libera al terminar. */
+  const mainRef = useRef(null);
+  useLayoutEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+    if (!saliente) { main.style.minHeight = ''; return; }
+    const entrante = main.querySelector(':scope > .view.enter');
+    const saliendo = main.querySelector(':scope > .view.leave');
+    const h = Math.max(entrante?.scrollHeight || 0, saliendo?.scrollHeight || 0);
+    if (h) main.style.minHeight = `${h}px`;
+  }, [saliente]);
+
   // Puerto del arranque original (el script inline al final de index.html
   // hacía idbOpen().then(loadAll) antes de la primera render()). loadAll()
   // ya deja S.ready=true; acá además recalculamos las metas automáticas de
@@ -243,7 +264,7 @@ export default function App() {
       />
       {/* Inicio no scrollea: necesita que main deje de reservar el colchón
           inferior que sí usan las pantallas largas. */}
-      <main className={store.tab === 'inicio' ? 'full' : ''}>
+      <main ref={mainRef} className={store.tab === 'inicio' ? 'full' : ''}>
         {/* La saliente va PRIMERO en el DOM (así la entrante, montada después,
             queda arriba en el stacking normal) y con pointer-events:none —
             es puramente decorativa mientras se termina de ir. */}
