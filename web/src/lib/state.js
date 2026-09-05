@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from 'react';
-import { flushSync } from 'react-dom';
 import { idb, STORES } from './db.js';
 import { dstr, fmtNum, round1, kg2lb, lb2kg, KG2LB, vibrate } from './format.js';
 
@@ -162,56 +161,46 @@ export function closeSheet() { S.sheet = null; bump(); }
    misma dirección sin depender de un componente. */
 export const TAB_ORDEN = ['inicio', 'hoy', 'rutina', 'nutri', 'prog'];
 
-/** Marca, para el useEffect de transición de App.jsx, si el último cambio de
-    pestaña ya se animó con View Transitions API — así ese efecto no arma
-    ADEMÁS su propio par saliente/entrante. Señal efímera, no persistida. */
-export let lastTabChangeUsedVT = false;
+/** Antes marcaba si el último cambio de pestaña se había animado con View
+    Transitions API. QUINTA VUELTA — se abandonó esa API para el cambio de
+    pestaña (ver comentario de changeTab() más abajo): siempre queda en
+    `false`. Se deja exportada (en vez de borrarla) porque App.jsx todavía
+    la lee en el useEffect de transición — es un guard que ya no hace
+    falta pero tampoco molesta; no vale la pena tocar dos archivos para
+    sacar una constante muerta que no rompe nada dejándola. */
+export const lastTabChangeUsedVT = false;
 
-/** Cambia de pestaña. Con View Transitions API disponible y sin "reducir
-    movimiento", el cambio queda envuelto en document.startViewTransition()
-    (ver styles.css: <main> tiene su propio view-transition-name, aislado de
-    Header/TabBar/overlays). flushSync fuerza el commit sincrónico que la
-    librería necesita para fotografiar el "después" real.
+/** Cambia de pestaña. La transición visual la maneja pura CSS/JS —
+    `.view.enter`/`.view.leave` en App.jsx + styles.css (fundido+ascenso,
+    sin desplazamiento lateral, ver `screenIn` en styles.css).
+
+    NO usa View Transitions API nativa a propósito, aunque el navegador la
+    soporte — se probó (Chromium real, vía Playwright, no sólo lectura de
+    código) y falla para este caso de uso: `document.getAnimations()`
+    durante una transición real mostró que el contenido de `main` NUNCA
+    arma su propio grupo `::view-transition-*(app-main)` pese a tener
+    `view-transition-name:app-main` — cae dentro del crossfade POR DEFECTO
+    de ROOT (`-ua-view-transition-fade-in`/`-fade-out` +
+    `-ua-mix-blend-mode-plus-lighter`), que sigue activo sin importar qué
+    CSS se le ponga a `::view-transition-old(root)`/`::view-transition-
+    group(app-main)` (confirmado con getAnimations() que ninguna regla
+    propia llega a aplicarse). Resultado: la pantalla vieja y la nueva
+    quedan superpuestas y semitransparentes toda la transición — el bug de
+    "se notan partes de la pantalla anterior" que reportó Enzo, verificado
+    con screenshots reales a los 40/90/150/220ms de la transición. El
+    camino de `.view.enter`/`.view.leave` (App.jsx) SÍ se verificó limpio
+    en los mismos screenshots — cero superposición en cualquier instante
+    muestreado, en varios pares de pestañas. Si en el futuro un navegador
+    corrige este comportamiento se puede reconsiderar, pero no antes de
+    volver a verificar con captura de pantalla real, no sólo con lectura
+    de spec.
 
     `extra` corre en el mismo instante que S.tab (BodyMap.jsx lo usa para
     fijar S.rutMode='edit' junto con el cambio, no después). */
 export function changeTab(t, extra) {
   if (S.tab === t) return;
-  const antes = TAB_ORDEN.indexOf(S.tab);
-  const ahora = TAB_ORDEN.indexOf(t);
-  const dir = ahora < antes ? 'l' : 'r';
-  const puedeVT = typeof document !== 'undefined'
-    && typeof document.startViewTransition === 'function'
-    && !(typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const aplicar = () => { S.tab = t; extra?.(); bump(); };
-  if (puedeVT) {
-    lastTabChangeUsedVT = true;
-    document.documentElement.dataset.tdir = dir;
-    /* main no tiene scroll propio (scrollea la página entera), así que su
-       alto "real" es el de TODO su contenido, no sólo la franja visible
-       entre el header y la barra de pestañas. La View Transition API saca
-       una foto de ese alto completo (viejo y nuevo) y la pinta en el
-       top-layer — por encima de CUALQUIER z-index, incluida la barra fija
-       de abajo. Sin recortarla, durante los 340ms del deslizamiento se ve
-       un pedazo de la pantalla vieja/nueva flotando sobre la barra (un
-       botón que en verdad está más abajo del pliegue visible). Se mide acá
-       el alto real entre main y la barra (una vez, antes de la foto) y
-       ::view-transition-group(app-main) en styles.css lo usa para recortar
-       en vez de animar su propio alto contenido-a-contenido. */
-    const main = document.querySelector('main');
-    const nav = document.querySelector('nav.tabbar');
-    if (main && nav) {
-      const h = nav.getBoundingClientRect().top - main.getBoundingClientRect().top;
-      if (h > 0) document.documentElement.style.setProperty('--vt-clip-h', `${Math.round(h)}px`);
-    }
-    const vt = document.startViewTransition(() => flushSync(aplicar));
-    vt.finished.finally(() => {
-      delete document.documentElement.dataset.tdir;
-      document.documentElement.style.removeProperty('--vt-clip-h');
-    });
-  } else {
-    lastTabChangeUsedVT = false;
-    aplicar();
-  }
+  S.tab = t;
+  extra?.();
+  bump();
   vibrate(8);
 }
