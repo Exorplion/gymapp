@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { idb, STORES } from './db.js';
+import { idb } from './db.js';
 import { dstr, fmtNum, round1, kg2lb, lb2kg, KG2LB, vibrate } from './format.js';
 
 // S sigue siendo el mismo objeto mutable de la app original: todo el código
@@ -60,8 +60,18 @@ export function useStore() {
   return S;
 }
 
+/* Los stores que el arranque SÍ necesita en memoria. Deliberadamente NO es
+   STORES (db.js): ese incluye 'gymPhotos', que son Blobs de cámara y se leen
+   de a uno con getPhoto() cuando hacen falta (gyms.js), nunca en bloque.
+
+   Hasta el 2026-09-05 acá se recorría STORES entero —los 7— y se
+   desestructuraban 6: el getAll('gymPhotos') se ejecutaba igual, deserializaba
+   TODAS las fotos a memoria y el resultado se tiraba sin usarse. Con unas
+   pocas fotos eso son decenas de MB leídos en cada arranque, para nada. */
+const STORES_ARRANQUE = ['routine', 'sessions', 'meals', 'foods', 'body', 'settings'];
+
 export async function loadAll() {
-  const [rt, ss, ms, fs, bd, st] = await Promise.all(STORES.map(s => idb.all(s)));
+  const [rt, ss, ms, fs, bd, st] = await Promise.all(STORES_ARRANQUE.map(s => idb.all(s)));
   S.routine = rt.sort((a, b) => a.order - b.order);
   S.sessions = ss.sort((a, b) => b.start - a.start);
   S.meals = ms; S.foods = fs;
