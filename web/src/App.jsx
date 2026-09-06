@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { idbOpenOnce } from './lib/db.js';
-import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT } from './lib/state.js';
+import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT, resolveAutoRest } from './lib/state.js';
+import { dstr } from './lib/format.js';
 import { applyComputedGoals } from './lib/macros.js';
 import { initDragListeners } from './lib/drag.js';
 import { currentStreak } from './lib/streak.js';
@@ -205,6 +206,18 @@ export default function App() {
       // recién cambiaría al tuyo si entrabas a Ajustes.
       aplicarPaleta(S.cfg.themeColor);
       bump();
+    }).catch(err => {
+      /* Sin este catch, cualquier fallo del arranque dejaba la app en una
+         pantalla vacía PERMANENTE: no corría el bump(), así que React nunca
+         volvía a renderizar y el `return null` de más abajo quedaba fijo.
+         Sin mensaje, sin botón de recargar, y sin nada en consola en el caso
+         de `blocked` (ver db.js). Los disparadores son reales: IndexedDB
+         bloqueado en navegación privada, almacenamiento lleno, u otra
+         pestaña abierta con una versión anterior. */
+      console.error('[FIERRO] falló el arranque:', err);
+      S.bootError = err;
+      S.ready = true;   // deja de esperar: hay que pintar el error, no seguir en blanco
+      bump();
     });
   }, []);
 
@@ -215,6 +228,33 @@ export default function App() {
   // que sin este efecto el drag quedaría muerto.
   useEffect(() => {
     initDragListeners();
+  }, []);
+
+  /* Cambio de día con la app abierta.
+     Una PWA instalada no se cierra: se suspende. `S.nutriDate` se calculaba
+     UNA sola vez, al importar el módulo, así que si dejabas la app abierta a
+     la noche y a la mañana registrabas el desayuno, se guardaba con la fecha
+     de AYER — contaminando las calorías del día, las metas y la
+     recalibración de TDEE. Otras pantallas (Preworkout, BodyForm) sí pedían
+     la fecha fresca, así que la app se contradecía a sí misma.
+     `resolveAutoRest()` tenía el mismo problema: sólo corría en loadAll(), o
+     sea que el puntero de días de descanso no avanzaba sin recargar. */
+  useEffect(() => {
+    let hoyPrevio = dstr();
+    function alVolver() {
+      if (document.visibilityState !== 'visible') return;
+      const hoy = dstr();
+      if (hoy === hoyPrevio) return;
+      // Sólo se arrastra la fecha si estabas mirando "hoy". Si navegaste a
+      // propósito a un día pasado, cambiártelo de abajo sería peor que el bug.
+      if (S.nutriDate === hoyPrevio) S.nutriDate = hoy;
+      hoyPrevio = hoy;
+      Promise.resolve(resolveAutoRest()).catch(e =>
+        console.error('[FIERRO] no se pudo avanzar el turno al cambiar el día:', e));
+      bump();
+    }
+    document.addEventListener('visibilitychange', alVolver);
+    return () => document.removeEventListener('visibilitychange', alVolver);
   }, []);
 
   // El aviso de "sesión en curso" en la barra del teléfono.
@@ -242,6 +282,31 @@ export default function App() {
     });
     return ocultarSesion;
   }, [haySesion]);
+
+  /* El arranque falló: se dice, con la causa y una salida. Antes esto era
+     indistinguible de "todavía cargando" — las dos cosas eran una pantalla
+     negra, sólo que ésta no terminaba nunca. */
+  if (store.bootError) {
+    return (
+      <div style={{
+        minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 16,
+        padding: 32, textAlign: 'center',
+      }}>
+        <div className="vtitle" style={{ margin: 0 }}>No se pudo abrir FIERRO</div>
+        <p className="s text-mut" style={{ maxWidth: 340, lineHeight: 1.5 }}>
+          {String(store.bootError?.message || store.bootError)}
+        </p>
+        <p className="s text-mut2" style={{ maxWidth: 340, lineHeight: 1.5 }}>
+          Tus datos siguen guardados en el teléfono: esto es un problema para
+          abrirlos, no una pérdida.
+        </p>
+        <button type="button" className="btn" onClick={() => location.reload()}>
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   if (!store.ready) {
     // body{background:var(--bg)} ya cubre el fondo (styles.css se importa

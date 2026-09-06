@@ -49,6 +49,13 @@ export const REST_CIRC = 2 * Math.PI * 88;
 export function startRest(segs) {
   const total = segs > 0 ? segs : S.cfg.rest;
   if (!total) return;
+  /* Callar la alarma anterior antes de arrancar la nueva cuenta. La alarma
+     se auto-silencia recién a los 120s (TOPE, alarm.js), así que si volvías
+     a la serie y arrancabas otro descanso mientras todavía sonaba, seguía
+     vibrando y con el <audio> en loop DURANTE TODO el descanso nuevo — y sin
+     forma de pararla, porque el overlay que ofrece "PARAR" ya había pasado a
+     mostrar el temporizador nuevo. */
+  callar();
   audioCtx();        // crear con gesto del usuario
   prepararAlarma();  // desbloquear el <audio> con el mismo gesto
   pedirPermiso();

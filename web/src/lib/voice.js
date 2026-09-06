@@ -8,7 +8,7 @@
 // prellenar el peso sugerido de cada ítem reconocido). session.js NO importa
 // nada de acá, así que la dependencia es unidireccional — sin ciclo.
 import { S } from './state.js';
-import { norm, round1 } from './format.js';
+import { norm } from './format.js';
 import { EXCATALOG } from './muscle.js';
 import { lastDataFor } from './session.js';
 
@@ -74,7 +74,15 @@ export function parseWorkoutSpeech(text) {
     /* patrón hablado habitual: "<series> por / series de <reps>" */
     return {
       name: p.name, sets: Math.min(12, nums[0] || 3), reps: Math.min(50, nums[1] || 10),
-      w: round1((lastDataFor(p.name)?.[0]?.w) || 20),
+      /* `null` cuando no hay historial, NO un 20 inventado. Un ejercicio
+         dictado por voz que nunca hiciste aparecía precargado con "20 kg"
+         presentado como si fuera un dato tuyo — y si lo guardabas sin mirar,
+         quedaba en el historial como una serie real. La app no inventa datos
+         que no puede sostener: sin historial, el campo va vacío y lo llenás
+         vos (VoiceLog.jsx lo trata así).
+         Y `??` en vez de `||`: con `||`, un peso REAL de 0 —una serie de peso
+         corporal— también se convertía en 20. */
+      w: lastDataFor(p.name)?.[0]?.w ?? null,
     };
   });
 }
