@@ -37,6 +37,12 @@ export const S = {
   progRange: 'all',
   progTab: 'carga',
   ready: false,         // true una vez que loadAll() terminó
+  /* El arranque falló y no hay nada que mostrar. Existe porque la cadena de
+     inicio (App.jsx) no tenía `.catch`: si algo de ella rechazaba, no corría
+     el bump() y React se quedaba con el render inicial —una pantalla vacía—
+     para siempre, sin mensaje ni forma de recargar. El ErrorBoundary no
+     ayuda: sólo atrapa errores de render, no promesas rechazadas. */
+  bootError: null,
   sheet: null,           // {type, props} | null — qué sheet está abierto (Task 1 dejó esto pendiente para quien lo necesitara primero; ver Sheet.jsx)
   // La sesión recién cerrada, mientras dura la pantalla de racha/resumen/
   // cuerpo (SessionComplete.jsx) — null cuando no hay nada que mostrar.
@@ -88,8 +94,20 @@ export async function loadAll() {
   // por día de app abierta, no en cada render — ver macros.js. Import
   // dinámico para no crear un ciclo state.js↔macros.js (macros.js ya
   // importa saveCfg de acá).
-  const { refreshAdaptiveTDEE } = await import('./macros.js');
-  await refreshAdaptiveTDEE();
+  /* En try/catch a propósito: esto es ACCESORIO (recalcular un número que se
+     puede recalcular mañana) y estaba en el camino crítico del arranque.
+     Dos formas reales de que reviente y se lleve puesta la app entera:
+     el import dinámico falla —chunk todavía no precacheado justo después de
+     un deploy, estando sin señal— o el saveCfg() de adentro rechaza por
+     falta de espacio. En cualquiera de los dos casos la app tiene que abrir
+     igual: perder el ajuste de TDEE de hoy no se compara con no poder
+     entrenar. */
+  try {
+    const { refreshAdaptiveTDEE } = await import('./macros.js');
+    await refreshAdaptiveTDEE();
+  } catch (e) {
+    console.error('[FIERRO] no se pudo recalcular el TDEE adaptativo:', e);
+  }
 }
 
 /** Si el turno pendiente es un descanso y quedó así desde ANTES de hoy,

@@ -55,7 +55,10 @@ export default function VoiceLog({ items: initialItems, duration: initialDuratio
   function stepField(id, f, d) {
     setItems(prev => prev.map(it => {
       if (it._id !== id) return it;
-      const next = f === 'w' ? { ...it, w: Math.max(0, round1(it.w + d * wStep())) } : { ...it, [f]: Math.max(1, it[f] + d) };
+      // `it.w ?? 0`: sin historial el peso llega en null (voice.js dejó de
+      // inventar 20 kg), y sumarle el paso daría NaN. Tocar la flecha desde
+      // vacío arranca en 0, que es lo que uno espera.
+      const next = f === 'w' ? { ...it, w: Math.max(0, round1((it.w ?? 0) + d * wStep())) } : { ...it, [f]: Math.max(1, it[f] + d) };
       const el = fieldRefs.current[`${id}-${f}`];
       if (el) el.value = next[f]; // stepper: user didn't type this, so it's fine (expected) to overwrite the field
       return next;
@@ -85,6 +88,14 @@ export default function VoiceLog({ items: initialItems, duration: initialDuratio
 
   async function save() {
     if (!items.length) return;
+    /* Un peso en null es "todavía no lo dijiste", no cero. Guardarlo como 0
+       metería en tu historial una serie que nadie levantó — justo el dato
+       inventado que voice.js dejó de fabricar. Mejor frenar y pedirlo. */
+    const sinPeso = items.filter(it => it.w == null);
+    if (sinPeso.length) {
+      toast(`Falta el peso de ${sinPeso.map(it => it.name).join(', ')}`);
+      return;
+    }
     const slot = pendingSlot();
     const entries = items.map(it => ({
       exId: uid(), name: it.name,

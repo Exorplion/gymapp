@@ -78,9 +78,20 @@ export function parseFoodsMD(md) {
       name,
       alias: (celdas[1] || '').split(',').map(a => a.trim()).filter(Boolean),
       kcal,
-      p: celdaNum(celdas[3]) ?? 0,
-      c: celdaNum(celdas[4]) ?? 0,
-      f: celdaNum(celdas[5]) ?? 0,
+      /* `null`, no 0: una macro que la tabla no declara es un DATO QUE FALTA,
+         no una medición de cero. Guardarla como 0 la convertía en un hecho
+         inventado —"este alimento no tiene proteína"— que después sumaba a la
+         meta diaria como si alguien lo hubiera medido. Contradecía además el
+         comentario de este mismo archivo unas líneas más arriba ("mejor
+         perder una fila rota que inventarle macros") y el criterio de
+         CLAUDE.md.
+         No cambia ningún total hoy: macrosFor() (foodsearch.js) ya hace
+         `|| 0` al escalar. Lo que cambia es que el dato queda honesto en
+         disco, así que la UI puede distinguir "0 g" de "sin dato" cuando se
+         decida cómo mostrarlo. */
+      p: celdaNum(celdas[3]),
+      c: celdaNum(celdas[4]),
+      f: celdaNum(celdas[5]),
       unit: celdaNum(celdas[6]),
       cat: celdaTexto(celdas[7]),
     });

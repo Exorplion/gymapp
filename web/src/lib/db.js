@@ -61,17 +61,41 @@ export function idbOpen() {
         db.createObjectStore('routine', { keyPath: 'weekday' });
       }
     };
-    r.onsuccess = () => { DB.db = r.result; res(); };
+    r.onsuccess = () => {
+      DB.db = r.result;
+      /* Si OTRA pestaña abre la base con una versión más nueva, esta conexión
+         la bloquearía. Cerrarla acá deja que la otra siga adelante en vez de
+         que las dos queden trabadas esperándose. */
+      DB.db.onversionchange = () => DB.db.close();
+      res();
+    };
     r.onerror = () => rej(r.error);
+    /* El tercer final posible de indexedDB.open(), y el que faltaba: cuando
+       otra pestaña tiene abierta una conexión con una versión ANTERIOR, el
+       navegador dispara `blocked` y NO dispara ni success ni error. Sin este
+       handler la promesa quedaba pendiente para siempre — y como loadAll()
+       nunca volvía, S.ready se quedaba en false y la app mostraba una
+       pantalla vacía permanente, sin ningún error en consola que lo
+       explicara. Rechazar convierte un cuelgue mudo en un mensaje. */
+    r.onblocked = () => rej(new Error('Hay otra pestaña de FIERRO abierta con una versión anterior. Cerrala y volvé a entrar.'));
   });
 }
 
 export const idb = {
   all: st => new Promise((res, rej) => { const q = DB.db.transaction(st).objectStore(st).getAll(); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }),
   get: (st, k) => new Promise((res, rej) => { const q = DB.db.transaction(st).objectStore(st).get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }),
-  put: (st, v) => new Promise((res, rej) => { const t = DB.db.transaction(st, 'readwrite'); t.objectStore(st).put(v); t.oncomplete = res; t.onerror = () => rej(t.error); }),
-  del: (st, k) => new Promise((res, rej) => { const t = DB.db.transaction(st, 'readwrite'); t.objectStore(st).delete(k); t.oncomplete = res; t.onerror = () => rej(t.error); }),
-  clear: st => new Promise((res, rej) => { const t = DB.db.transaction(st, 'readwrite'); t.objectStore(st).clear(); t.oncomplete = res; t.onerror = () => rej(t.error); }),
+  /* Las tres escrituras llevan `onabort` además de `onerror`, y no es
+     redundante: una transacción ABORTADA —el caso típico es quedarse sin
+     espacio (QuotaExceededError)— dispara `abort`, no siempre `error`. Sin
+     este handler la promesa quedaba pendiente para siempre.
+     La consecuencia era concreta y silenciosa: en saveSet() (session.js) el
+     `await saveDraft()` nunca volvía, así que no corría el bump(), ni el
+     toast, ni el arranque del descanso. La serie quedaba en memoria pero no
+     en disco, la pantalla no se actualizaba, y al recargar no existía —
+     todo sin un solo mensaje. */
+  put: (st, v) => new Promise((res, rej) => { const t = DB.db.transaction(st, 'readwrite'); t.objectStore(st).put(v); t.oncomplete = res; t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('transacción abortada')); }),
+  del: (st, k) => new Promise((res, rej) => { const t = DB.db.transaction(st, 'readwrite'); t.objectStore(st).delete(k); t.oncomplete = res; t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('transacción abortada')); }),
+  clear: st => new Promise((res, rej) => { const t = DB.db.transaction(st, 'readwrite'); t.objectStore(st).clear(); t.oncomplete = res; t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('transacción abortada')); }),
 };
 
 // idbOpen() usa indexedDB.open, que es seguro de llamar más de una vez (cada
