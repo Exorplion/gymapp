@@ -1,6 +1,6 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-05
+**Última actualización:** 2026-09-08
 **Proyecto:** `Exorplion/gymapp` — FIERRO, PWA local de entrenamiento + nutrición
 **Sitio:** https://exorplion.github.io/gymapp/ (GitHub Pages, sirve la raíz de `main`)
 **Estado:** Plan Fierro (Fases 1-3) implementado, testeado, mergeado (PR #17) y publicado.
@@ -11,6 +11,212 @@ ver "Blockers" más abajo.
 
 Este archivo existe para que otra sesión pueda retomar sin volver a leer todo el
 historial. Si vas a seguir el roadmap, empezá por **Próximo paso exacto** al final.
+
+---
+
+## SESIÓN 2026-09-05/08 — Auditoría en 5 dimensiones, paleta nueva y robustez
+
+**Empezá por acá si retomás el trabajo.** Todo lo de esta sección está mergeado a
+`main` y publicado en vivo (verificado comparando el hash de asset de `index.html`
+contra el que sirve el sitio, más `pages/builds/latest` en `built`).
+PRs: **#55, #56, #57, #58, #59, #60, #61, #62**.
+
+**Artifact con la auditoría y el plan completos:**
+https://claude.ai/code/artifact/038d51b6-a75b-406f-a87b-69735b8953de
+(fuente versionada en `docs/plan-artifact.html`; el plan en texto está en
+`docs/PLAN-REFORMULACION.md`)
+
+### Lo más importante que se encontró
+
+1. **`GymPhoto` crasheaba el ejercicio en curso.** `useEffect` usado sin importar
+   en `ExerciseCarousel.jsx`. Se renderiza con un gym activo, y el sheet de inicio
+   empuja a elegir gym: el camino feliz terminaba en `ReferenceError`. **Es la
+   razón por la que la foto de máquina nunca funcionó en el celular.**
+   Pasó los 355 tests, `tsc` **y** oxlint en verde.
+2. **El backup DESTRUÍA datos al restaurar.** `importJSON()` vaciaba los 7 stores y
+   reponía 6 claves: se perdían las rutinas guardadas (`lib`), los gimnasios con su
+   mapa de equipo (`gyms`) y todas las fotos. Y como `exKey()` (`equip.js:58`)
+   incluye el equipo, perder el mapa **parte en dos el historial de cada
+   ejercicio** — los PRs y el "última vez" dejan de encontrar el pasado.
+3. **El arranque era de vidrio.** La cadena de inicio no tenía `.catch`: cualquier
+   fallo dejaba `S.ready` en false y una pantalla vacía **permanente**, sin mensaje
+   ni forma de recargar. `ErrorBoundary` no ayuda (sólo atrapa errores de render).
+
+### Defensa nueva: `no-undef`
+
+`.oxlintrc.json` sólo tenía dos reglas y **`no-undef` no estaba**. Por eso el crash
+pasó las tres herramientas. Ahora está como error, verificada con un caso
+deliberado. **Al correrla sobre todo el código el único hallazgo fue `__BUILD__`
+(global legítima de Vite): el bug de `GymPhoto` era el único de su clase.**
+
+### Paleta: "acero" (la segunda; la primera fue rechazada)
+
+**NO REINTENTAR mezclar familias opuestas.** El primer intento ("hierro y
+encendido": grafito + naranja, con el azul degradado a color de datos) lo rechazó
+Enzo: *"tiene mezclas de azul y naranja que no quedan… no te olvides que el modelo
+anatómico también tiene el color azul"*. La causa es geométrica: **naranja y azul
+son opuestos en la rueda; lo opuesto produce tensión, no armonía.** El razonamiento
+semántico era coherente pero creaba un problema visual, y se notaba sobre todo
+contra el modelo anatómico, que es una superficie azul grande.
+
+La que quedó, elegida por Enzo entre tres opciones con muestras: **análogo frío**,
+un recorrido de matices **vecinos** donde chocar es imposible por construcción:
+
+```
+índigo #2563EB → azul #3B82F6 → celeste #60A5FA/#93C5FD → cian #38BDF8 → verde azulado #22D3EE
+```
+
+El problema original (el azul haciendo cinco trabajos) se resuelve por
+**luminosidad y saturación** dentro de la familia, no metiendo un color de otra.
+El verde de "subiste" (#34D399) es vecino del cian. El rojo es el único de afuera y
+aparece poco — que rompa la armonía sólo cuando algo va mal es lo que lo hace
+legible como alarma.
+
+Tres cosas que casi arruinan el rediseño, y que hay que recordar si se vuelve a
+tocar el color:
+
+- **`theme.js` PISA el CSS.** `aplicarPaleta()` escribe estilos **en línea sobre el
+  elemento raíz** y gana por especificidad sobre `:root`. Sobrescribe 12 tokens.
+  Tiene además constantes calibradas contra la paleta (`BG`, `COLOR_DEFECTO`,
+  `ON_GRAD_OSCURO/CLARO`, todas exportadas ahora). **Si Enzo eligió un color de tema
+  en Ajustes, su elección gana sobre la paleta de fábrica.**
+- **`@theme` y `:root` estaban duplicados a mano**, y eso ya causó un bug real: al
+  subir `--mut2` por contraste sólo se tocó `:root`, así que las **59 utilidades
+  Tailwind** de los `.jsx` seguían con el valor que no pasa WCAG. Ahora `:root`
+  referencia `@theme` con `var()`.
+- **Los azules del mapa corporal y los swatches de la silueta se conservan a
+  propósito** — bajo el sistema nuevo son datos, y armonizan con la familia fría.
+
+### Accesibilidad (bloque de alto impacto, hecho)
+
+- `--mut2` (#64749A) **no llegaba a 4.5:1 sobre ninguna superficie** (3.98:1 card,
+  3.68:1 card2, 3.18:1 tabbar) siendo el token de casi todo el texto de 8.5-11.5px.
+- **Bug de cascada:** el fix de contraste del tab bar estaba escrito, comentado…
+  y la regla siguiente lo pisaba. Nunca se había aplicado.
+- **`prefers-reduced-motion`:** la regla CSS global no alcanza a la Web Animations
+  API ni a GSAP, que es todo lo que vive en `motion.js`/`confetti.js`. **Cuidado al
+  tocar esto:** `animateRing` (`fill:'forwards'`) y `countTo` (escribe
+  `textContent`) **producen el estado final** — un `return` seco dejaría el anillo
+  vacío y el número en blanco. Esas saltan al valor final.
+- Halo en el anillo de foco (daba 1.54:1 sobre los CTA claros), áreas táctiles con
+  `::after` invisible, `lang="es"`, `user-scalable` quitado.
+- **`.reel-tooth` se dejó afuera a propósito:** la rueda ya causó 3 bugs de
+  scroll/gesto y un overlay encima puede comerse el arrastre.
+
+### Robustez (PR #62)
+
+`db.js` no manejaba **`onblocked`** (dos pestañas → promesa pendiente para siempre,
+sin ni un error en consola) ni **`onabort`** en `put/del/clear` (quedarse sin
+espacio → `await saveDraft()` nunca vuelve, así que no corre el `bump()`, ni el
+toast, ni el descanso: **la serie queda en memoria pero no en disco**).
+`S.nutriDate` se calculaba una sola vez al importar el módulo: una PWA no se
+cierra, se suspende, así que **el desayuno se anotaba con fecha de ayer**.
+Y `voice.js` **inventaba 20 kg** para un ejercicio sin historial (usando `||`, así
+que un peso real de 0 también se volvía 20); `foodmd.js` guardaba `0 g` para macros
+no declaradas, contradiciendo un comentario de ese mismo archivo tres líneas arriba.
+
+### Rendimiento: auditado con números, casi todo sin hacer
+
+Atribución real por sourcemap. **El código propio no es el problema** (~300 KB
+entre las 28 pantallas emergentes, 5 pantallas y toda la lógica). El 60% del bundle
+son cuatro dependencias:
+
+| Dependencia | Peso | Para qué |
+| --- | --- | --- |
+| Lottie (web + react) | **320 KB** | **Una** animación de 44×44 (`SessionView.jsx:111`) |
+| framer-motion | 139 KB | Animaciones |
+| GSAP | 83 KB | Un puñado de tweens (la doc dice "sólo Inicio"; **son 5 archivos**) |
+| tailwind-merge | 33 KB | Un `cn()` que casi nunca resuelve conflictos |
+
+Ya corregido: `loadAll()` recorría los 7 stores y desestructuraba 6, así que
+**deserializaba todos los Blobs de fotos a memoria en cada arranque** y los tiraba.
+
+**Trade-off a no vender mal:** en una PWA instalada, partir el bundle **no** acelera
+las visitas siguientes (el service worker precachea todo igual). Lo que sí se paga
+en cada arranque en frío es el parse+eval. Por eso NO conviene `React.lazy` sheet
+por sheet, sino sacar del arranque los 3 módulos gordos de uso raro (~380 KB).
+Objetivo alcanzable: **1339 → ~875 KB**.
+
+### Sobre el framework de `AppDesign.jpeg` (transcripción completa leída)
+
+Enzo subió la transcripción del curso. **Los dos números NO están justificados:**
+el "max 5-7 pantallas" sale improvisado cuando el autor le dicta el prompt a la IA,
+y él mismo lo baja a 3-4 y a 2 en las otras dos apps. El "under 30 seconds" lo
+enuncia y sigue de largo. El framework produce **scope para un prompt**, no diseño
+de producto.
+
+El test que **sí** sirve: *un solo recorrido alcanza para aprender la app*. FIERRO
+lo falla, con dos pruebas en su propio código: hay una pantalla de **guía**
+(documentación dentro del producto) y **tres lugares distintos para crear un gym**.
+
+**A resistir a propósito:** el curso pide notificar 1-2 veces por día "golpeando la
+puerta" y su propio autor lo llama *dark patterns*. Contradice `CLAUDE.md` (avisos
+raros, no diarios), y además todo ese paso asume **retener usuarios ajenos**:
+FIERRO tiene un solo usuario, que es el autor. Se toma el mecanismo (estado
+inconcluso), no la frecuencia.
+
+En honestidad de datos **FIERRO ya es más estricto que el video**, que acepta
+estimaciones opacas sin marcarlas. Ese criterio no se toca.
+
+### Estado de las puertas de calidad
+
+| Puerta | Estado |
+| --- | --- |
+| Protección del dato | **Cerrada** — backup completo y no destructivo |
+| Artifact | **Cerrado** — publicado con las 5 auditorías |
+| Accesibilidad | **Casi** — falta la capa semántica (bloque B) |
+| Salud de código | **7 de 11 bugs** — quedan 4, ninguno crítico |
+| Sistema visual | **Empezada** — paleta lista; falta el resto del sistema |
+| Rendimiento | **1 de ~8** — ~460 KB identificados sin sacar |
+| Producto | **Sin empezar** — bloqueada por la decisión de abajo |
+
+### Lista de tareas viva (recrearla al retomar)
+
+La lista de tareas del CLI **no sobrevive entre sesiones**, así que va acá para que
+la próxima la reconstruya tal cual y siga desde donde quedó. Cada una tiene un
+criterio de aprobación concreto: son puertas que se aprueban o no, no impresiones.
+
+| # | Tarea | Estado | Criterio de aprobación |
+| --- | --- | --- | --- |
+| 1 | Corregir bugs ocultos que la red de seguridad no detecta | **EN CURSO — 7 de 11** | Cero bugs confirmados que rompan la app o pierdan datos. Hecho: el crash de `GymPhoto`, `no-undef` activada y esa clase probada limpia, los 4 críticos de robustez, los 2 de datos inventados, la alarma. **Quedan: la rueda que muestra un peso y guarda otro (`ReelPicker.jsx:56-61`), `GymPhoto` sin comprimir + sin `.catch`, `countTo()` sin cancelación, y las series de peso corporal (`session.js:480`, PREGUNTAR primero si es bug o decisión).** |
+| 2 | Llegar a WCAG 2.2 AA en contraste, targets y movimiento | **EN CURSO — falta la capa semántica** | Hecho: contraste (`--mut2`), el bug de cascada del tab bar, `prefers-reduced-motion` en WAAPI/GSAP, halo de foco, áreas táctiles, `lang`, zoom. **Queda el bloque B: los 26 sheets tienen `role="dialog"` sin nombre, no hay un solo `<h2>`/`<h3>` en toda la app, `ReelPicker` sin teclado, reordenar sólo por arrastre (SC 2.5.7), botones sólo-ícono sin nombre accesible.** |
+| 3 | Reducir el peso del bundle y el tiempo de arranque | **PENDIENTE — 1 de ~8** | Baseline 1339 KB de JS; objetivo ~875 KB. Hecho: la lectura inútil de todos los Blobs de fotos en cada arranque. **Quedan: Lottie (−320 KB), GSAP (−83 KB), `tailwind-merge` (−33 KB), lazy de `illustrations.js` (−61 KB), el warning INEFFECTIVE_DYNAMIC_IMPORT, `React.memo` en hojas caras (no hay NINGUNO en todo `components/` y `bump()` se llama 104 veces), paginar `History.jsx`, sacar los PNG de icono del precache (−325 KB).** |
+| 4 | Reformular el sistema visual con una dirección propia | **EN CURSO — la paleta, hecha** | Hecho: paleta "acero" + fuente única de verdad entre `@theme` y `:root`. **Quedan: 36 tamaños de letra (contra 8 tokens), 21 radios, 9 sombras ad-hoc, 5 recetas de "tarjeta", 6 de "eyebrow"; quitar `backdrop-filter` donde no hace nada; y el trabajo por pantalla (mover Completar/Descartar fuera de la zona inalcanzable en Hoy, adelgazar `SessStartInfo`, unificar los dos lenguajes de Rutina).** |
+| 5 | Limpiar el core loop de peaje y mejorar la oferta de producto | **BLOQUEADA** | Depende de la decisión de producto de abajo. Sacar de la tarjeta del ejercicio en curso todo lo que no sea peso, reps y confirmar (RPE, foto, lado, precheck). Más las mejoras de mayor impacto: doble progresión, descarga accionable, cobertura de fibra. |
+| 6 | Publicar el plan de reformulación como Artifact | **COMPLETA** | Publicado y actualizado con las 5 auditorías. |
+
+### Próximo paso al retomar
+
+Preguntarle a Enzo cuál de estas tres prefiere (las tres están listas):
+
+1. **Los 4 bugs restantes** (recomendado): la rueda que **muestra un peso y guarda
+   otro** (`ReelPicker.jsx:56-61`, la ventana se regenera un render tarde — cuarto
+   bug de esa familia en ese archivo); `GymPhoto` guardando fotos **sin comprimir**
+   de varios MB cuando `lib/photo.js` ya tiene `shrinkImage()` (es el camino más
+   probable a llenar el almacenamiento y disparar el `onabort` recién arreglado);
+   `countTo()` sin cancelación.
+2. **Rendimiento**: sacar Lottie (−320 KB) y mover `refreshAdaptiveTDEE()` de
+   `state.js` a `App.jsx` (10 min, mata el ciclo real y el warning
+   INEFFECTIVE_DYNAMIC_IMPORT).
+3. **Sistema visual**: colapsar la escala tipográfica (36 tamaños → 8) y los radios
+   (21 → 5).
+
+### Preguntas abiertas para Enzo
+
+- **La decisión de producto que bloquea dos puertas:** ¿FIERRO es *entrenar* (y
+  nutrición se subordina), *el ciclo completo* (hay que construir los puentes que
+  hoy no existen — el único es el aviso de proteína, que ni siquiera es
+  accionable), o *dos herramientas en un contenedor*? Los modelos de datos son
+  disjuntos y hasta los ejes de tiempo son incompatibles (rutina = secuencia;
+  nutrición = calendario por fecha).
+- **¿Las series de peso corporal son bug o decisión?** `session.js:480` exige
+  `w > 0`, así que dominadas, fondos y plancha no se pueden registrar. **No tocar
+  sin respuesta.**
+- **Confirmar la paleta "acero" en el celular.** Nada visual se pudo verificar:
+  este job es de background y no tiene navegador. Si no ve el celeste, revisar si
+  tiene un `themeColor` guardado en Ajustes — su elección pisa la paleta.
+
+---
 
 ## Pendiente de confirmar con Enzo (2026-09-05, sesión de background)
 
