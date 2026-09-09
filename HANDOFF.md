@@ -185,6 +185,59 @@ criterio de aprobación concreto: son puertas que se aprueban o no, no impresion
 | 5 | Limpiar el core loop de peaje y mejorar la oferta de producto | **BLOQUEADA** | Depende de la decisión de producto de abajo. Sacar de la tarjeta del ejercicio en curso todo lo que no sea peso, reps y confirmar (RPE, foto, lado, precheck). Más las mejoras de mayor impacto: doble progresión, descarga accionable, cobertura de fibra. |
 | 6 | Publicar el plan de reformulación como Artifact | **COMPLETA** | Publicado y actualizado con las 5 auditorías. |
 
+### Tarea 1 en detalle — los 4 bugs que faltan (7 de 11 hechos)
+
+Esto es lo que quedó abierto al cerrar la sesión del 2026-09-08. Ninguno es
+crítico; los tres primeros no necesitan que Enzo decida nada.
+
+**1. La rueda puede mostrar un peso y guardar otro** — `ReelPicker.jsx:56-61`
+La ventana de dientes se regenera **un render tarde**:
+```js
+const values = valuesRef.current;                    // captura el array VIEJO
+const onValue = Math.round(val / step) * step;
+if (!values.includes(onValue)) valuesRef.current = reelValues(val, step, min);
+```
+Escenario: la ventana es ±20 dientes (con paso de 2.5 kg son ±50 kg). Con 80 kg
+puestos, tocás el número centrado y escribís "150" → el valor se guarda bien
+(`v.w = 150`), pero ese render pinta el array viejo (30-130), ningún diente
+matchea, y el `useEffect [val]` centra por el índice del array **nuevo** aplicado
+al DOM **viejo**. La rueda queda en un número arbitrario hasta el próximo
+`bump()`. **Leés un peso y guardaste otro.**
+Fix: usar `valuesRef.current` DESPUÉS de la reasignación, o sea calcular la
+ventana como valor derivado del render, no leerla antes de actualizarla.
+**Es el cuarto bug de esta misma familia en ese archivo** (ver más abajo el
+patrón de scroll programático de PR #47/#50) — leer este handoff antes de tocarlo.
+
+**2. Fotos de máquina sin comprimir** — `gyms.js:80` + `ExerciseCarousel.jsx:205,219-227`
+`savePhoto()` guarda el `File` crudo de la cámara: **varios MB por foto**, cuando
+`lib/photo.js` ya tiene `shrinkImage()` (480px / JPEG 70 → ~50 KB) que sí se usa
+en `ExerciseForm.jsx`. Decenas de máquinas × varios MB es **el camino más probable
+a llenar el almacenamiento**, y por lo tanto a disparar el `onabort` que se acaba
+de arreglar (con el que se pierde una serie). Además:
+- `getPhoto(...).then(...)` sin `.catch` → rechazo no manejado, la foto no aparece.
+- `await savePhoto(...)` sin `try/catch`: si falla por cuota, igual se hace
+  `setUrl(next)` y **el usuario ve su foto creyendo que quedó guardada**; al volver
+  no está.
+Fix: comprimir antes de guardar, `try/catch` + toast, y `.catch` en el `getPhoto`.
+**Recomendado empezar por acá:** no sólo ahorra espacio, elimina la causa más
+probable del bug de escritura abortada.
+
+**3. `countTo()` sin cancelación** — `lib/motion.js` (final del archivo)
+Es un `requestAnimationFrame` en loop sin cancelador ni chequeo de nodo vivo. Si
+se llama otra vez antes de terminar (dos comidas registradas seguidas,
+`Nutricion.jsx:106`), quedan **dos loops peleando por el mismo `textContent`** y el
+número puede aterrizar en el valor viejo. También sigue escribiendo sobre nodos ya
+desmontados.
+Fix: devolver un cancelador y guardarlo en un ref, o guardar el `rafId` por
+elemento.
+
+**4. Series de peso corporal imposibles** — `session.js:480`
+`if (!(v.w > 0) || !(v.r > 0))` bloquea el guardado, así que **dominadas, fondos,
+plancha y abdominales no se pueden registrar**. Ningún test lo cubre porque el
+catálogo de prueba usa ejercicios con carga.
+**NO TOCAR SIN RESPUESTA DE ENZO:** puede ser una decisión deliberada de que se
+cargue el peso corporal como número. Preguntar antes: ¿es bug o es a propósito?
+
 ### Próximo paso al retomar
 
 Preguntarle a Enzo cuál de estas tres prefiere (las tres están listas):
