@@ -29,6 +29,7 @@ import Library from './components/sheets/Library.jsx';
 import DayPeek from './components/sheets/DayPeek.jsx';
 import ExInfo from './components/sheets/ExInfo.jsx';
 import ReorderHoy from './components/sheets/ReorderHoy.jsx';
+import MarcarDia from './components/sheets/MarcarDia.jsx';
 import History from './components/sheets/History.jsx';
 import FoodVoice from './components/sheets/FoodVoice.jsx';
 import StreakDetail from './components/sheets/StreakDetail.jsx';
@@ -88,6 +89,7 @@ function SheetContent({ sheet }) {
     case 'ex-info': return <ExInfo {...sheet.props} />;
     case 'confirm': return <ConfirmSheet {...sheet.props} />;
     case 'reorder-hoy': return <ReorderHoy {...sheet.props} />;
+    case 'marcar-dia': return <MarcarDia {...sheet.props} />;
     case 'streak-detail': return <StreakDetail {...sheet.props} />;
     case 'history': return <History {...sheet.props} />;
     case 'food-voice': return <FoodVoice {...sheet.props} />;

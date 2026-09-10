@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from './state.js';
-import { ensureSlot, reorderSeq, insertWorkout, insertRest, removeSlot, routineStats, routineName, undoRutina, applyDeload, endDeload, deloadActivo } from './rutina-logic.js';
+import { ensureSlot, reorderSeq, insertWorkout, insertRest, removeSlot, routineStats, routineName, undoRutina, applyDeload, endDeload, deloadActivo, weekdayProjection } from './rutina-logic.js';
 
 vi.mock('./db.js', () => ({ idb: { put: vi.fn(), clear: vi.fn(), del: vi.fn(), all: vi.fn() } }));
 
@@ -127,5 +127,37 @@ describe('descarga (deload) — aplicar y terminar', () => {
 
   it('deloadActivo() es null mientras no haya ninguna', () => {
     expect(deloadActivo()).toBe(null);
+  });
+});
+
+
+describe('weekdayProjection — anclada a HOY, no al lunes', () => {
+  beforeEach(() => {
+    S.routine = [
+      { id: 'a', order: 0, type: 'workout', name: 'Anterior A', exercises: [] },
+      { id: 'b', order: 1, type: 'rest' },
+      { id: 'c', order: 2, type: 'workout', name: 'Posterior A', exercises: [] },
+    ];
+  });
+
+  it('el turno PENDIENTE cae en el día de hoy', () => {
+    // Antes era WDS[(i+1)%7]: el turno 1 caía en lunes SIEMPRE, sin mirar el
+    // calendario ni el puntero. Una semana que empezaba un martes se veía
+    // como empezada un lunes.
+    S.cfg.seqIndex = 1;
+    const jueves = new Date(2026, 8, 10);   // jueves 2026-09-10
+    expect(weekdayProjection(jueves)[1]).toBe('Jue');
+  });
+
+  it('los turnos siguientes avanzan un día cada uno, y los anteriores retroceden', () => {
+    S.cfg.seqIndex = 1;
+    const jueves = new Date(2026, 8, 10);
+    expect(weekdayProjection(jueves)).toEqual(['Mié', 'Jue', 'Vie']);
+  });
+
+  it('con el puntero en el primer turno, la tira arranca hoy', () => {
+    S.cfg.seqIndex = 0;
+    const martes = new Date(2026, 8, 8);
+    expect(weekdayProjection(martes)).toEqual(['Mar', 'Mié', 'Jue']);
   });
 });

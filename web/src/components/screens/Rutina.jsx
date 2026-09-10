@@ -17,7 +17,7 @@ import { S, bump, useStore, openSheet, changeTab } from '../../lib/state.js';
 import { staggerRevealOnce } from '../../lib/motion.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
 import { equipLabel } from '../../lib/equip.js';
-import { catOf, stalestGroups, daysSinceAll, diasTexto } from '../../lib/muscle.js';
+import { catOf, stalestGroups, daysSinceAll, diasTexto, blocksOf } from '../../lib/muscle.js';
 import { coberturaDe } from '../../lib/coverage.js';
 import { gymEquipFor } from '../../lib/gyms.js';
 import { flipSort } from '../../lib/drag.js';
@@ -410,9 +410,9 @@ function RutinaEdit() {
   );
 }
 
-/** Tira horizontal: qué día de la semana le tocaría a cada turno si
-    arrancaras un lunes (weekdayProjection, rutina-logic.js) — descansos
-    incluidos, apagados, para que se vea DÓNDE caen sin poder tocarlos. */
+/** Tira horizontal: qué día de la semana le tocaría a cada turno contando
+    desde HOY (weekdayProjection, rutina-logic.js) — descansos incluidos,
+    apagados, para que se vea DÓNDE caen sin poder tocarlos. */
 function WeekProjection({ dow }) {
   return (
     <div className="week-proj">
@@ -427,7 +427,19 @@ function WeekProjection({ dow }) {
 }
 
 function SlotCard({ slot, index, n }) {
-  const exs = slot.exercises || [];
+  /* Los ejercicios se muestran AGRUPADOS por grupo muscular, igual que en la
+     sesión en vivo (blocksOf, lib/muscle.js — la misma función, para que las
+     dos pantallas no puedan discrepar sobre qué grupo es cuál). Enzo lo pidió
+     con esas palabras: "en la pestaña rutina los ejercicios también se deben
+     separar por subgrupos según el grupo muscular".
+
+     El encabezado del grupo se pinta DENTRO de la primera fila de cada bloque
+     y no como una fila aparte, y eso es a propósito: este contenedor es
+     `data-sort="rut"`, y drag.js reordena moviendo los hijos que tienen
+     data-sid. Una fila-encabezado sin data-sid quedaría varada arriba después
+     del primer arrastre, con los bloques ya movidos debajo. Adentro de la fila
+     viaja con ella y no se puede desincronizar. */
+  const exs = blocksOf(slot.exercises || []).flatMap(b => b.exs);
   const open = S.rutOpen === index;
   // referencia del riel: el ejercicio con más series del turno
   const maxSets = Math.max(1, ...exs.map(e => e.sets || 0));
@@ -462,9 +474,12 @@ function SlotCard({ slot, index, n }) {
                  reparto de volumen, que es lo que estás decidiendo acá */
               style={{ '--fill': maxSets ? ex.sets / maxSets : 1, '--i': i }}
             >
+              {(i === 0 || catOf(exs[i - 1]) !== catOf(ex)) && (
+                <div className="ex-group-tag">{catOf(ex) || 'Sin grupo'}</div>
+              )}
               <ExIcon icono={iconOf(ex)} size={26} className="ex-row-icon" />
               <div className="ex-row-top">
-                <span className="eyebrow">{i + 1} · {catOf(ex) || 'sin grupo'}</span>
+                <span className="eyebrow">{i + 1}</span>
                 <button
                   type="button"
                   className="mini info inline"

@@ -719,6 +719,63 @@ export async function deleteSet(exId, i) {
   bump();
 }
 
+/** Marca un día pasado como entrenado, con uno de los turnos ya configurados.
+
+    El caso real (Enzo, 2026-09-10): entrenó el martes y el jueves, pero el
+    martes no lo anotó — y la app no tiene forma de enterarse. Sin esto, ese
+    día queda como descanso para siempre: rompe la racha, no cuenta para el
+    volumen semanal y el puntero de la secuencia se queda atrás.
+
+    LO QUE NO HACE: no inventa las series. La sesión se guarda con `entries`
+    vacío y `retro: true`, o sea "este día entrenaste esto, no sabemos con qué
+    pesos". Es exactamente la distinción que el resto de la app ya respeta —
+    un alimento sin micros cuenta como "sin dato", nunca como 0. Rellenar los
+    pesos con los de la última vez sería inventar un historial que después
+    alimentaría los PRs, la progresión y el tonelaje como si fuera medido.
+
+    Tampoco pone duración: `null` es "no se sabe", que es la verdad. */
+export async function registrarDiaEntrenado(dateStr, slotId) {
+  if (!dateStr || dateStr > dstr()) return null;          // el futuro no se registra
+  const slot = S.routine.find(s => s.id === slotId);
+  if (!slot) return null;
+  if (S.sessions.some(s => s.date === dateStr && s.slotId === slotId)) {
+    toast('Ese turno ya está registrado ese día');
+    return null;
+  }
+  /* El mediodía y no las 00:00: una fecha suelta interpretada como medianoche
+     UTC se corre un día entero en husos negativos como el de Lima, que es el
+     bug de fechas más viejo del mundo. El resto del archivo ya usa 'T12:00:00'
+     por lo mismo. */
+  const t = new Date(dateStr + 'T12:00:00').getTime();
+  const sess = {
+    id: uid(), date: dateStr, slotId, dayName: slot.name || 'Entrenamiento',
+    start: t, end: t, duration: null, entries: [], retro: true,
+  };
+  await idb.put('sessions', sess);
+  S.sessions.unshift(sess);
+  // S.sessions se lee en todos lados asumiendo orden descendente por fecha.
+  // Una sesión retroactiva entra en el medio, no arriba.
+  S.sessions.sort((a, b) => (b.date < a.date ? -1 : b.date > a.date ? 1 : 0));
+
+  /* El puntero sólo avanza si esta sesión es la MÁS RECIENTE. Registrar el
+     martes después de haber hecho el jueves no puede hacer retroceder la
+     secuencia al turno siguiente del martes: eso te haría repetir un turno que
+     ya hiciste. */
+  const masReciente = S.sessions.every(s => s.date <= dateStr);
+  if (masReciente) {
+    const at = S.routine.findIndex(s => s.id === slotId);
+    if (at >= 0) {
+      S.cfg.seqIndex = (at + 1) % Math.max(1, S.routine.length);
+      S.cfg.seqIndexDate = dateStr;
+      await saveCfg();
+    }
+  }
+  vibrate(15);
+  bump();
+  toast(`Anotado: ${sess.dayName} el ${fmtD(dateStr)}`);
+  return sess;
+}
+
 export async function deleteHistorySession(id) {
   await idb.del('sessions', id);
   S.sessions = S.sessions.filter(s => s.id !== id);
