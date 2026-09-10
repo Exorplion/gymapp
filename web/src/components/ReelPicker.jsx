@@ -54,11 +54,17 @@ export default function ReelPicker({
   // renderizada — si se regenerara en cada valor, cada tick recentraría la
   // lista entera y el gesto se sentiría trabado.
   const valuesRef = useRef(reelValues(val, step, min));
-  const values = valuesRef.current;
   const onValue = Math.round(val / step) * step;
-  if (!values.includes(onValue)) {
+  // Se lee DESPUÉS de la posible regeneración, no antes: leerla antes dejaba
+  // este render pintando la ventana vieja mientras el useEffect [val] de más
+  // abajo centraba por el índice de la ventana NUEVA — índice nuevo aplicado
+  // al DOM viejo, o sea la rueda parada en un número arbitrario mientras el
+  // valor guardado era otro. Cuarto bug de la familia "el DOM y el estado de
+  // esta rueda van desfasados un render" (ver PR #47/#50 y el HANDOFF).
+  if (!valuesRef.current.includes(onValue)) {
     valuesRef.current = reelValues(val, step, min);
   }
+  const values = valuesRef.current;
 
   function commit(v) {
     const clamped = Math.max(min, v);

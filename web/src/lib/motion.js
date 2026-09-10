@@ -203,17 +203,38 @@ export function impactBurst(x, y, { count = 6, color = 'var(--cyan)', distance =
 
 // Cuenta ascendente/descendente de un número (peso, series, calorías, kcal).
 export function countTo(el, to, { from = 0, duration = 600, format = (n) => Math.round(n) } = {}) {
-  if (!el) return;
+  if (!el) return () => {};
   /* Igual que animateRing: el conteo no es decoración, es lo que ESCRIBE el
      número. Salir sin hacer nada dejaría el elemento vacío, así que con
      movimiento reducido se pinta el valor final directo. */
-  if (menosMovimiento()) { el.textContent = format(to); return; }
+  if (menosMovimiento()) { el.textContent = format(to); return () => {}; }
+  /* Un conteo por elemento: si se llama de nuevo antes de terminar (dos
+     comidas registradas seguidas, Nutricion.jsx), dos loops se pelean por el
+     mismo textContent y el número puede aterrizar en el valor VIEJO. Se
+     cancela el anterior sobre ese mismo elemento antes de arrancar. */
+  cancelCount(el);
   const start = performance.now();
   const step = (now) => {
+    /* Nodo desmontado (cambio de pestaña a mitad del conteo): se corta en vez
+       de seguir escribiendo sobre un elemento que ya no está en el documento. */
+    if (!el.isConnected) { counts.delete(el); return; }
     const t = Math.min(1, (now - start) / duration);
     const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
     el.textContent = format(from + (to - from) * eased);
-    if (t < 1) requestAnimationFrame(step);
+    if (t < 1) counts.set(el, requestAnimationFrame(step));
+    else counts.delete(el);
   };
-  requestAnimationFrame(step);
+  counts.set(el, requestAnimationFrame(step));
+  return () => cancelCount(el);
+}
+
+// rAF en curso por elemento, para que un conteo nuevo pueda cancelar al anterior.
+const counts = new WeakMap();
+
+/** Corta el conteo en curso sobre `el`, si lo hay. Deja el número donde esté:
+    cancelar es para que otro conteo tome el control, no para volver atrás. */
+export function cancelCount(el) {
+  if (!el) return;
+  const id = counts.get(el);
+  if (id != null) { cancelAnimationFrame(id); counts.delete(el); }
 }

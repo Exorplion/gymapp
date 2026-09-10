@@ -59,3 +59,21 @@ export function dataUrlKB(dataUrl) {
   const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
   return Math.round((b64.length * 3 / 4) / 1024);
 }
+
+/**
+ * Igual que shrinkImage() pero devuelve un Blob JPEG en vez de un data URL:
+ * las fotos de máquina por gym (gyms.js, store `gymPhotos`) se guardan como
+ * Blob nativo, no en base64. Sin esto se guardaba el File CRUDO de la cámara
+ * —varios MB por foto— cuando ya existía esta compresión: decenas de máquinas
+ * a varios MB es el camino más corto a llenar IndexedDB, y quedarse sin
+ * espacio aborta la escritura de la serie en curso (ver `onabort` en db.js).
+ */
+export function shrinkImageBlob(file) {
+  return shrinkImage(file).then(dataUrl => {
+    const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: 'image/jpeg' });
+  });
+}
