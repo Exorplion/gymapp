@@ -1,6 +1,6 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-09
+**Última actualización:** 2026-09-10
 **Proyecto:** `Exorplion/gymapp` — FIERRO, PWA local de entrenamiento + nutrición
 **Sitio:** https://exorplion.github.io/gymapp/ (GitHub Pages, sirve la raíz de `main`)
 **Estado:** Plan Fierro (Fases 1-3) implementado, testeado, mergeado (PR #17) y publicado.
@@ -17,6 +17,44 @@ ver "Blockers" más abajo.
 
 Este archivo existe para que otra sesión pueda retomar sin volver a leer todo el
 historial. Si vas a seguir el roadmap, empezá por **Próximo paso exacto** al final.
+
+---
+
+## SESIÓN 2026-09-10 — Seis bugs de la sesión en vivo (PR #73, mergeado y en vivo)
+
+Enzo entrenó con la app y reportó seis cosas. **Todas tenían una causa real en
+el código; ninguna era percepción.** Mergeado en PR #73 y verificado en vivo
+(el hash de asset que sirve el sitio coincide con el del build commiteado).
+
+| Reporte | Causa | Dónde |
+| --- | --- | --- |
+| "bajás el peso hasta 1 y el 1 se repite muchas veces" | `reelValues()` recortaba cada diente con `Math.max(min, ...)`: los 20 dientes por debajo del piso quedaban todos en el mismo número | `lib/reel.ts:16` |
+| Kelso Shrug no se reconocía como espalda | no estaba en ninguna de las cuatro tablas de ejercicios | `lib/muscle.ts`, `lib/exdb.js`, `lib/fibras.js`, `lib/exicon.js` |
+| "no me dejaba reordenar porque no pertenecía al grupo de espalda" | **consecuencia del anterior**: sin grupo, `blocksOf()` le armaba un bloque "Otros" propio y los bloques se mueven enteros (`moveBlock`, `session.js:113`) | se resuelve con el fix de arriba |
+| "una serie más" en un ejercicio ya terminado la agregó en otro slot | `addExtraSet` movía el puntero sólo `if (!S.draft.cur)` | `lib/session.js:386` |
+| "la rutina en vivo no registra bien qué día se está realizando" | la sesión se archivaba con `d.date`, la fecha en que se **abrió** el borrador. Una PWA se suspende, no se cierra: un borrador de anteayer se guardaba con fecha de anteayer | `lib/session.js` (`completeSession`) |
+| "no considera de manera automática los días" | `resolveAutoRest()` consumía **todos** los descansos seguidos con que pasara un solo día calendario | `lib/state.js:125` |
+| "la paleta negra con los bordes azul metalizado no aparece" | el código **ya estaba publicado** (se comparó el hash de CSS en vivo contra el local antes de tocar nada). El borde estaba a 16% de alfa sobre casi negro: ~1.15:1 contra la superficie, por debajo del umbral en el que el ojo lo lee como arista, y peor al sol | `styles.css` (`--glass-border`, `--edge-metal`, `--color-line/line2`) |
+
+**Dos cosas a no olvidar de esta tanda:**
+
+- **Antes de "rediseñar" algo que Enzo dice que no ve, verificar que esté
+  publicado y después medir el contraste.** Acá el rediseño estaba entero y en
+  vivo; el problema era que 16% de alfa no se ve. Rehacer la paleta hubiera
+  sido trabajo tirado sobre un diagnóstico falso.
+- **`--line`/`--line2` viven en DOS lugares**: `styles.css` y `theme.js`
+  (`paletaDesde()`, los alfas del final). Si se tocan sólo en el CSS, elegir un
+  color de tema en Ajustes **apaga** los bordes. Se subieron los dos juntos.
+
+**Decisiones tomadas sin preguntar, por si hay que revisarlas:** el piso del
+peso quedó en 0.5 kg (la rueda gruesa arranca en el primer múltiplo de `step`,
+la fina baja al kilo exacto), y el Kelso quedó en **Espalda** y no en un grupo
+"Trapecio" nuevo — el trapecio medio es espalda alta, y agregar un décimo grupo
+tocaría la silueta, el volumen semanal y el wizard de rutina.
+
+12 tests nuevos (372 en verde), `tsc --noEmit` limpio, sin warnings nuevos de
+lint. **Falta que Enzo confirme en el celular** — si sigue viendo la app vieja,
+es el service worker: cerrar todas las pestañas de la PWA y volver a abrirla.
 
 ---
 
