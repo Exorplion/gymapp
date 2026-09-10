@@ -31,7 +31,11 @@ const SPRING = 'cubic-bezier(.34,1.56,.64,1)'; // = var(--spring) en styles.css
    countTo escribe el textContent) no pueden simplemente no correr —
    dejarían el anillo vacío y el número en blanco. Esas saltan al estado
    final de una; sólo las decorativas salen temprano. */
-const menosMovimiento = () =>
+/** ¿El sistema pide menos movimiento? Se exporta porque siete componentes
+    repetian este mismo matchMedia escrito a mano, y uno de ellos (Inicio.jsx)
+    sin el guard de `typeof matchMedia`, que es lo que evita que reviente donde
+    no hay ventana. Una sola definicion, un solo lugar donde equivocarse. */
+export const menosMovimiento = () =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Bounce de "me gusta" / toggle: racha, favoritos, checks. Ref: Instagram/Spotify.

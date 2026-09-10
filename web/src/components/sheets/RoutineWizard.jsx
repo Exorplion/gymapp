@@ -18,7 +18,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import gsap from 'gsap';
-import { D } from '../../lib/motion.js';
+import { D, menosMovimiento } from '../../lib/motion.js';
 import { closeSheet } from '../../lib/state.js';
 import { MUSCLE_CATS, EXCATALOG } from '../../lib/muscle.js';
 import { coberturaDe } from '../../lib/coverage.js';
@@ -64,7 +64,7 @@ function useStepReveal(step) {
   const ref = useRef(null);
   useEffect(() => {
     const el = ref.current;
-    if (!el || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    if (!el || menosMovimiento()) return;
     const targets = el.querySelectorAll('.chip, .field, .card.sub, .wiz-groupcard');
     if (!targets.length) return;
     const ctx = gsap.context(() => {
@@ -121,7 +121,7 @@ export default function RoutineWizard() {
   // el efecto.
   function cambiarPaso(fn) {
     const puedeVT = typeof document.startViewTransition === 'function'
-      && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      && !menosMovimiento();
     // startViewTransition necesita el DOM ya actualizado ANTES de tomar la
     // foto del "después" — flushSync fuerza ese render sincrónico; sin él,
     // React batchea el setState y la librería fotografía el estado viejo dos

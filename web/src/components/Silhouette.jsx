@@ -38,7 +38,7 @@ import gsap from 'gsap';
 import { cuerpo } from '../lib/bodydata.js';
 import { groupStats, diasTexto } from '../lib/muscle.js';
 import { vibrate } from '../lib/format.js';
-import { tapRing, D } from '../lib/motion.js';
+import { tapRing, D, menosMovimiento } from '../lib/motion.js';
 import { S } from '../lib/state.js';
 import MusclePop from './MusclePop.jsx';
 
@@ -193,7 +193,7 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
   // sil-flip.
   useEffect(() => {
     const el = caja.current;
-    if (!el || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    if (!el || menosMovimiento()) return;
     const ctx = gsap.context(() => {
       gsap.fromTo(el, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: D.panel / 1000, ease: 'power3.out' });
     });
