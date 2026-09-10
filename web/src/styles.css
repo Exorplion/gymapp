@@ -1125,6 +1125,19 @@ body.dragging-on .card.day.drop-target{filter:none}
    como fila aparte). Los márgenes negativos lo sacan del padding de la fila
    para que ocupe el ancho completo y se lea como un separador entre bloques,
    no como un dato más de ese ejercicio. */
+/* Encabezado de subgrupo dentro del turno desplegado (Rutina, vista normal).
+   Se lee como una división de la lista, no como una fila más: por eso el
+   nombre a la izquierda y el recuento a la derecha, en la misma línea. */
+.day-exs-block + .day-exs-block{margin-top:10px}
+.day-exs-head{
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  padding:0 2px 5px;margin-bottom:5px;
+  border-bottom:1px solid rgba(var(--blue-rgb),.18);
+  font-size:var(--t-nano);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--blue3);
+}
+.day-exs-head span{letter-spacing:.02em;text-transform:none;font-weight:600;color:var(--mut2)}
+
 .ex-group-tag{
   margin:-10px -12px 8px -46px;padding:5px 12px 5px 46px;
   background:rgba(var(--blue-rgb),.10);
