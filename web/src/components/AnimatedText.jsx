@@ -19,6 +19,7 @@
 // palabra lo que para el ojo es una sola frase.
 import { Fragment, useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import { D } from '../lib/motion.js';
 
 export default function AnimatedText({ text, as: Tag = 'span', className, style }) {
   const ref = useRef(null);
@@ -33,7 +34,7 @@ export default function AnimatedText({ text, as: Tag = 'span', className, style 
       gsap.fromTo(
         words,
         { opacity: 0, y: 14 },
-        { opacity: 1, y: 0, duration: 0.45, stagger: 0.06, ease: 'power3.out' },
+        { opacity: 1, y: 0, duration: D.panel / 1000, stagger: 0.06, ease: 'power3.out' },
       );
     });
     return () => ctx.revert();

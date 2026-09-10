@@ -44,7 +44,7 @@ export function pulseLike(el) {
       { transform: 'scale(.92)' },
       { transform: 'scale(1)' },
     ],
-    { duration: 420, easing: SPRING },
+    { duration: D.momento, easing: SPRING },
   );
 }
 
@@ -56,7 +56,7 @@ export function bloomOpen(el) {
       { transform: 'scale(.94) translateY(10px)', opacity: 0 },
       { transform: 'scale(1) translateY(0)', opacity: 1 },
     ],
-    { duration: 320, easing: SPRING, fill: 'backwards' },
+    { duration: D.panel, easing: SPRING, fill: 'backwards' },
   );
 }
 
@@ -74,7 +74,7 @@ export function staggerReveal(els, { delayStep = 45, distance = 14 } = {}) {
         { transform: `translateY(${distance}px)`, opacity: 0 },
         { transform: 'translateY(0)', opacity: 1 },
       ],
-      { duration: 360, delay: i * delayStep, easing: SPRING, fill: 'backwards' },
+      { duration: D.panel, delay: i * delayStep, easing: SPRING, fill: 'backwards' },
     );
   });
 }
@@ -152,7 +152,7 @@ export function tapRing(x, y, { size = 26, color = 'var(--cyan)' } = {}) {
       { transform: 'scale(1)', opacity: .9 },
       { transform: 'scale(2.4)', opacity: 0 },
     ],
-    { duration: 550, easing: 'cubic-bezier(.4,0,.2,1)' },
+    { duration: D.momento, easing: 'cubic-bezier(.4,0,.2,1)' },
   );
   anim.onfinish = () => ring.remove();
 }
@@ -171,7 +171,7 @@ export function squashStretch(el) {
       { transform: 'scale(.94,1.08)', offset: .62 },
       { transform: 'scale(1,1)' },
     ],
-    { duration: 380, easing: 'cubic-bezier(.34,1.56,.64,1)' },
+    { duration: D.panel, easing: 'cubic-bezier(.34,1.56,.64,1)' },
   );
 }
 
@@ -195,13 +195,30 @@ export function impactBurst(x, y, { count = 6, color = 'var(--cyan)', distance =
         { transform: 'translate(0,0) scale(1)', opacity: 1 },
         { transform: `translate(${dx}px, ${dy}px) scale(.3)`, opacity: 0 },
       ],
-      { duration: 460 + Math.random() * 140, easing: 'cubic-bezier(.2,.8,.4,1)' },
+      { duration: D.momento + Math.random() * 140, easing: 'cubic-bezier(.2,.8,.4,1)' },
     );
     anim.onfinish = () => p.remove();
   }
 }
 
 // Cuenta ascendente/descendente de un número (peso, series, calorías, kcal).
+/* ---- TIEMPOS: los mismos cuatro pasos que el CSS (auditoria 2026-09-09) ----
+   La app animaba desde tres motores a la vez —WAAPI aca, GSAP en cinco
+   archivos, transiciones CSS— y cada uno traia sus propias duraciones: 17
+   distintas en CSS y otras 17 en JS. Dos animaciones que el usuario ve como
+   "lo mismo" (un chip que se marca y una tarjeta que aparece) no tenian por
+   que durar distinto, y duraban distinto sin que nadie lo hubiera decidido.
+
+   Estos son los mismos valores que --d1..--d4 de styles.css, en ms. Se
+   escriben una vez aca para que el lado JS no vuelva a derivar; si cambia el
+   ritmo de la app, se cambia en los dos lugares y no en 34.
+     D.toque   respuesta al dedo        D.objeto  algo chico cambia de estado
+     D.panel   algo grande entra/sale   D.momento celebracion, hito */
+export const D = { toque: 150, objeto: 220, panel: 320, momento: 460 };
+
+/** Curva estandar para lo que ENTRA o cambia de estado. Igual a --ease-out. */
+export const EASE_OUT = 'cubic-bezier(.16,1,.3,1)';
+
 export function countTo(el, to, { from = 0, duration = 600, format = (n) => Math.round(n) } = {}) {
   if (!el) return () => {};
   /* Igual que animateRing: el conteo no es decoración, es lo que ESCRIBE el
