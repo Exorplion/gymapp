@@ -3,7 +3,10 @@
 **Última actualización:** 2026-09-10
 **Proyecto:** `Exorplion/gymapp` — FIERRO, PWA local de entrenamiento + nutrición
 **Sitio:** https://exorplion.github.io/gymapp/ (GitHub Pages, sirve la raíz de `main`)
-**Estado:** Plan Fierro (Fases 1-3) implementado, testeado, mergeado (PR #17) y publicado.
+**Estado:** Plan Fierro (Fases 1-3) implementado, testeado, mergeado y publicado.
+**Las seis tareas de la lista viva están COMPLETAS** (2026-09-10, PRs #79-#82).
+Lo único que queda de ellas es mirar en pantalla lo que se publicó sin ojos —
+ver "QUÉ MIRAR EN EL CELULAR" en la sección del 2026-09-10 (tercera parte).
 **Sesión del 2026-09-09 cerrada** con la **Tarea 1 completa (11 de 11)**, la
 auditoría de animaciones aplicada, el rediseño "acero negro" y el bundle inicial
 de 1239 → 911 KB. PRs #65, #66, #67, #68, #69, #70, #71 — todos mergeados y
@@ -17,6 +20,105 @@ ver "Blockers" más abajo.
 
 Este archivo existe para que otra sesión pueda retomar sin volver a leer todo el
 historial. Si vas a seguir el roadmap, empezá por **Próximo paso exacto** al final.
+
+---
+
+## SESIÓN 2026-09-10 (tercera parte) — Las cuatro tareas abiertas, cerradas
+
+Enzo pidió las cuatro opciones que quedaban, en paralelo. PRs **#79, #80, #81 y
+#82**, todos mergeados y verificados en vivo. **Tareas 2, 3, 4 y 5: COMPLETAS.**
+
+### Tarea 2 — accesibilidad, bloque B (PR #79)
+
+- **Nombre del diálogo.** Los 27 sheets ya pintaban su `<h2>` pero el
+  `role="dialog"` no estaba enlazado: se anunciaba "diálogo" a secas, 27 veces.
+  `Sheet.jsx` le pone `id` al encabezado que ya existe y enlaza
+  `aria-labelledby` — así el texto visible y el anunciado son el mismo string
+  por construcción, y el próximo sheet lo hereda solo. **Si un sheet no tiene
+  encabezado el atributo NO se pone:** apuntar a la nada deja el diálogo sin
+  nombre, que es peor.
+- `IllusPick.jsx` era el único sheet sin encabezado (era un `<div>` con pinta de
+  título). Ahora es `<h2>` con la misma clase.
+- **`ReelPicker` con teclado.** Era 100% gesto: el control más usado de la app
+  quedaba fuera del alcance de un teclado (WCAG 2.1.1, nivel A). El diente
+  centrado es ahora un `spinbutton` con flechas, PageUp/Down, Home y Enter.
+- **Reordenar sin arrastrar (SC 2.5.7)** en `ReorderHoy`, con flechas que
+  escriben el mismo orden que el arrastre.
+- **18 botones sólo-ícono** nombrados, en 8 archivos.
+- Test de guardia (`a11y-markup.test.js`) que recorre el JSX. **Se verificó que
+  detecta de verdad un caso malo** — un test de guardia que no detecta nada es
+  peor que ninguno.
+
+### Tarea 3 — bundle, con números medidos (PR #80)
+
+| Qué | Antes | Ahora |
+| --- | --- | --- |
+| JS principal | 910.8 KB | **825.3 KB** (objetivo del handoff: ~875) |
+| Precache | 17 entradas / 1647.6 KiB | **13 / 1266.9 KiB** |
+
+- **GSAP fuera (−85 KB).** Cuatro de los cinco usos eran exactamente lo que
+  `staggerReveal()` ya hacía con WAAPI nativo; la diferencia real eran dos
+  parámetros (`scale`, `delay`) que costaron dos líneas. El quinto eran tres
+  tweens sobre objetos planos escribiendo `textContent` — o sea `countTo()`.
+  Única diferencia perceptible: la llama de la racha pasa de `elastic.out` a la
+  curva con rebote de la app.
+- **Los 4 PNG de ícono fuera del precache (−380 KB).** La app nunca los dibuja:
+  son para el instalador del sistema operativo, que los pide una vez.
+- `History.jsx` paginado **por semana** (no por sesión: partiría un grupo).
+- **`React.memo` NO se hizo, a propósito:** sin poder perfilar en un navegador
+  real sería una optimización indemostrable. Si alguien lo retoma, que mida
+  primero.
+
+### Tarea 5 — completa (PR #81)
+
+- **Doble progresión** (`lib/progression.ts`). La app decía "sugerido ~62.5 kg
+  (80% de tu 1RM)": un número correcto que **no es una instrucción** — un 1RM
+  estimado no sabe qué hiciste la semana pasada. Ahora: te quedás en el peso
+  hasta llegar al tope del rango en TODAS las series, y ahí subís y volvés al
+  piso. El rango sale del objetivo que el ejercicio ya tiene (piso `ex.reps`,
+  tope +3). **Y la rueda arranca en el peso nuevo cuando toca subir** — si no,
+  el trabajo de moverla quince veces por sesión sigue siendo del usuario.
+  Dos trampas, las dos con test: las **series de aproximación livianas no
+  cuentan** (adelantarían la subida — el error clásico), y **cortar la sesión a
+  la mitad no habilita subir**.
+- **Descarga accionable.** El aviso existía pero terminaba en "bajá 40-50% las
+  series", o sea a mano, y acordarse de subirlas después. Eso no pasa nunca, y
+  **una descarga a medias es peor que ninguna**. Ahora es un estado con
+  principio y fin: `S.cfg.deload` guarda las series de antes y terminarla las
+  devuelve exactas. **Hay un test de ida y vuelta: si se rompe, deja de ser una
+  descarga y pasa a ser un recorte permanente.**
+- **Cobertura de fibra sobre la rutina real**, no sólo dentro del asistente
+  (donde la veías una vez y nunca más). Sólo los grupos donde falta algo.
+
+### Tarea 4 — escala tipográfica (PR #82)
+
+209 declaraciones de CSS y 144 clases del JSX colapsan a **8 pasos**. Vive en
+`@theme` y no sólo en `:root`, así que Tailwind genera las utilidades con esos
+valores: `text-sm` en un `.jsx` y `font-size:var(--t-sm)` en una regla dan el
+mismo píxel, y las 32 clases con nombre que el JSX ya usaba entran a la escala.
+
+**Los seis tamaños de 40px para arriba NO se tocaron, contra lo que decía el
+plan.** Se revisaron uno por uno: no son deriva, son cinco números protagonistas
+de pantallas distintas (cronómetro de descanso, el mismo a pantalla completa,
+la cifra de una estadística, la de la tarjeta hero, la racha de fin de sesión).
+Cada uno es el elemento más grande de SU pantalla, y ahí el tamaño **es** la
+jerarquía. Colapsarlos habría aplanado cinco momentos en uno.
+
+**Dos formas de romper esto en silencio, las dos verificadas contra el CSS
+construido y no de palabra:**
+
+1. `text-[length:var(--t-sm)]` genera **cero** clases en Tailwind v4. El primer
+   intento habría dejado 144 elementos sin `font-size`, heredando.
+2. Cada utilidad con nombre emite también
+   `line-height:var(--tw-leading,var(--text-sm--line-height))`. Sin el
+   acompañante definido, esa var queda sin valor, **la declaración entera se
+   invalida** y el interlineado cae a `normal` — un cambio de layout silencioso
+   en 32 lugares.
+
+**QUÉ MIRAR EN EL CELULAR:** siete tamaños **suben** (8.5/9/9.5→10, 17→18,
+20→22, 21→22, 24→26, 25→26, 30→34). Un tamaño que crece dentro de un contenedor
+ajustado es lo único de este cambio que puede desbordar. Si algo se ve
+apretado, empezar por ahí.
 
 ---
 
