@@ -360,7 +360,7 @@ function SlotCard({ slot, index, n }) {
           </div>
           <span className="day-meta">{exs.length ? `${exs.length} ej.` : ''}<span className="chev">›</span></span>
         </button>
-        <button type="button" className="mini red" title="Quitar turno" onClick={() => removeWorkoutDay(slot.id)}>✕</button>
+        <button type="button" className="mini red" title="Quitar turno" aria-label={`Quitar el turno ${slot.name || 'sin nombre'}`} onClick={() => removeWorkoutDay(slot.id)}>✕</button>
       </div>
       <div className="day-body"><div className="dbi">
         {exs.length > 1 && (
@@ -418,8 +418,8 @@ function SlotCard({ slot, index, n }) {
                   >
                     ↓
                   </button>
-                  <button type="button" className="mini" onClick={() => openSheet('ex-form', { wd: index, ex })}>✎</button>
-                  <button type="button" className="mini red" onClick={() => deleteExercise(index, ex.id)}>✕</button>
+                  <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}>✎</button>
+                  <button type="button" className="mini red" aria-label={`Borrar ${ex.name}`} onClick={() => deleteExercise(index, ex.id)}>✕</button>
                 </span>
               </div>
             </div>

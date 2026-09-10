@@ -61,7 +61,7 @@ export default function Gyms() {
                     onChange={e => setEditNombre(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && guardarNombre(g.id)}
                   />
-                  <button type="button" className="grid h-9 w-9 flex-none place-items-center rounded-full text-mut hover:text-txt" onClick={() => guardarNombre(g.id)}>✓</button>
+                  <button type="button" className="grid h-9 w-9 flex-none place-items-center rounded-full text-mut hover:text-txt" aria-label="Guardar el nombre" onClick={() => guardarNombre(g.id)}>✓</button>
                 </div>
               );
             }

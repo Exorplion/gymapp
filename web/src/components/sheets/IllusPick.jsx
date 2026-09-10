@@ -30,8 +30,11 @@ export default function IllusPick({ exName = '', onPick, onClose }) {
   return (
     <>
       <div className="illus-head">
-        <div className="steplabel" style={{ margin: 0 }}>Elegí la ilustración</div>
-        <button type="button" className={cn('mini', 'transition-transform active:scale-90')} onClick={() => onClose?.()}>✕</button>
+        {/* El único sheet de los 27 sin encabezado: su título era un <div> con
+            pinta de título. Ahora es un <h2> de verdad —misma clase, así que se
+            ve igual— y con eso Sheet.jsx puede darle nombre al diálogo. */}
+        <h2 className="steplabel" style={{ margin: 0 }}>Elegí la ilustración</h2>
+        <button type="button" className={cn('mini', 'transition-transform active:scale-90')} aria-label="Cerrar" onClick={() => onClose?.()}>✕</button>
       </div>
       <div className="txt-mut" style={{ fontSize: 13, marginTop: 2, marginBottom: 14 }}>
         Buscá el movimiento y tocá el que corresponda. Las imágenes son de

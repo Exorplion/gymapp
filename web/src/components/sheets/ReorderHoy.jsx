@@ -4,8 +4,8 @@
 // kind="hoy" (que commitSort() ya distingue de "days"/"rut"): drag.js sólo
 // necesita el markup correcto, no hace falta ninguna lógica nueva.
 import { useEffect, useRef } from 'react';
-import { S, closeSheet } from '../../lib/state.js';
-import { orderedExs, sessionExs } from '../../lib/session.js';
+import { S, closeSheet, bump } from '../../lib/state.js';
+import { orderedExs, sessionExs, setExOrder } from '../../lib/session.js';
 import { staggerReveal } from '../../lib/motion.js';
 
 export default function ReorderHoy() {
@@ -22,18 +22,49 @@ export default function ReorderHoy() {
     if (listRef.current) staggerReveal(listRef.current.children);
   }, []);
 
+  /* Arrastrar era la ÚNICA forma de reordenar acá, y eso falla el criterio
+     2.5.7 de WCAG (todo lo que se hace arrastrando tiene que poder hacerse
+     con un solo toque). No es sólo un tema de lectores de pantalla: mantener
+     presionado y arrastrar con una mano, de pie, con el teléfono sudado y
+     entre serie y serie, es exactamente cuando un gesto sostenido falla.
+
+     Las flechas escriben el mismo orden que el arrastre (`setExOrder`), así
+     que las dos formas son intercambiables y ninguna es la de segunda. */
+  async function mover(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= exs.length) return;
+    const ids = exs.map(e => e.id);
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    await setExOrder(index, ids);
+    bump();
+  }
+
   return (
     <>
       <h2>Reordenar</h2>
-      <div className="drag-hint tight"><span>↕</span><span>Mantené presionado y arrastrá para cambiar el orden.</span></div>
+      <div className="drag-hint tight"><span>↕</span><span>Arrastrá manteniendo presionado, o usá las flechas.</span></div>
       <div data-sort="hoy" ref={listRef}>
-        {exs.map(ex => (
+        {exs.map((ex, i) => (
           <div className="row" data-sid={ex.id} key={ex.id}>
             <div className="grow">
               <div className="t">{ex.name}</div>
               <div className="s">{ex.sets} × {ex.reps}</div>
             </div>
-            <span className="chev" style={{ cursor: 'grab' }}>☰</span>
+            <button
+              type="button"
+              className="mini"
+              aria-label={`Subir ${ex.name}`}
+              disabled={i === 0}
+              onClick={() => mover(i, -1)}
+            >↑</button>
+            <button
+              type="button"
+              className="mini"
+              aria-label={`Bajar ${ex.name}`}
+              disabled={i === exs.length - 1}
+              onClick={() => mover(i, 1)}
+            >↓</button>
+            <span className="chev" style={{ cursor: 'grab' }} aria-hidden="true">☰</span>
           </div>
         ))}
       </div>

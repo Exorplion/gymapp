@@ -192,17 +192,17 @@ export default function ExerciseForm({ wd, ex }) {
         <div>
           <label htmlFor="exform-series" className="mb-1.5 block text-[13px] font-medium text-mut">Series objetivo</label>
           <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line2 bg-card2">
-            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" onClick={() => step(setSets, -1)}>−</button>
+            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una serie menos" onClick={() => step(setSets, -1)}>−</button>
             <div className="flex-1 text-center"><input id="exform-series" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-[15px] text-txt outline-none" value={sets} onChange={e => setSets(e.target.value)} /></div>
-            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" onClick={() => step(setSets, 1)}>+</button>
+            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una serie más" onClick={() => step(setSets, 1)}>+</button>
           </div>
         </div>
         <div>
           <label htmlFor="exform-reps" className="mb-1.5 block text-[13px] font-medium text-mut">Reps objetivo</label>
           <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line2 bg-card2">
-            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" onClick={() => step(setReps, -1)}>−</button>
+            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una repetición menos" onClick={() => step(setReps, -1)}>−</button>
             <div className="flex-1 text-center"><input id="exform-reps" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-[15px] text-txt outline-none" value={reps} onChange={e => setReps(e.target.value)} /></div>
-            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" onClick={() => step(setReps, 1)}>+</button>
+            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una repetición más" onClick={() => step(setReps, 1)}>+</button>
           </div>
         </div>
       </div>

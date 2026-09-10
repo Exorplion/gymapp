@@ -141,7 +141,7 @@ export default function MealForm({ slot: slotInicial }) {
                 <input type="number" inputMode="decimal" value={i.grams} onChange={e => setGramos(idx, e.target.value)} />
                 <span className="u">g</span>
                 <span className="k">{i.kcal} kcal</span>
-                <button type="button" className="mini red" onClick={() => quitar(idx)}>✕</button>
+                <button type="button" className="mini red" aria-label="Quitar este alimento" onClick={() => quitar(idx)}>✕</button>
               </div>
             ))}
             <div className="cart-total"><span>Total</span><b>{Math.round(total.kcal)} kcal</b></div>
