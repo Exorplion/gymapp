@@ -104,7 +104,7 @@ export default function Hoy() {
       {!active && exs.length > 0 && (
         <button type="button" className="pw-btn" onClick={() => openSheet('preworkout')}>
           <Bolt size={20} className="pwi" /><span className="pwt">Pre-workout</span>
-          <span className="text-mut text-[12.5px] font-medium">fluidos · carbos · cafeína</span>
+          <span className="text-mut text-micro font-medium">fluidos · carbos · cafeína</span>
           <span className="chev">›</span>
         </button>
       )}
@@ -201,7 +201,7 @@ function ActiveHero({ day, exs, started, allDone, activeEx }) {
         ></span>
         <div className="grow flex-1">
           <div className="cond text-xl font-bold">{day?.name || 'Entrenamiento'}</div>
-          <div className="text-mut text-[13px]">
+          <div className="text-mut text-sm">
             {started
               ? <><ElapsedTimer start={S.draft.start} /> · {doneEx}/{exs.length - nSkip} ejercicios · {nsets} serie{nsets === 1 ? '' : 's'}{nSkip > 0 ? ` · ${nSkip} saltado${nSkip === 1 ? '' : 's'}` : ''}</>
               : 'Sesión abierta · el reloj arranca cuando inicies el primer ejercicio'}
@@ -256,7 +256,7 @@ function RestHero() {
     <div className="card hero">
       <div className="eyebrow">Hoy</div>
       <div className="hero-day">Descanso</div>
-      <div className="text-mut text-[13px] mt-1.5">
+      <div className="text-mut text-sm mt-1.5">
         Mañana seguís con el próximo turno de tu rutina.
       </div>
     </div>
@@ -480,7 +480,7 @@ export function SessStartInfo({ index }) {
               type="text" placeholder="Nombre del gym" value={gymName}
               onChange={e => setGymName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') crearGym(); }}
-              className="h-11 grow rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-[15px] text-txt outline-none transition-colors focus-visible:border-blue2"
+              className="h-11 grow rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt outline-none transition-colors focus-visible:border-blue2"
               autoFocus
             />
             <button type="button" className="btn sm" style={{ width: 'auto', padding: '0 16px' }} onClick={crearGym}>Crear</button>
@@ -500,7 +500,7 @@ export function SessStartInfo({ index }) {
         <div className="chips">{chip('motivation', 'baja', 'Baja')}{chip('motivation', 'normal', 'Normal')}{chip('motivation', 'alta', 'Alta')}</div>
       </div>
       {precheckAdjust() !== 0 && (
-        <div className="text-mut text-[12.5px] mt-2">
+        <div className="text-mut text-micro mt-2">
           Ajuste sugerido hoy: {precheckAdjust() > 0 ? '+' : ''}{Math.round(precheckAdjust() * 100)}% sobre el peso sugerido
         </div>
       )}

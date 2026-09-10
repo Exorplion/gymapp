@@ -21,9 +21,9 @@ const item = {
 function Card({ eyebrow, value, sub }) {
   return (
     <motion.div variants={item} className="calcbox" style={{ marginTop: 10 }}>
-      <div className="text-mut text-[12.5px] font-medium">{eyebrow}</div>
+      <div className="text-mut text-micro font-medium">{eyebrow}</div>
       <div className="font-cond text-3xl font-bold text-txt mt-1">{value}</div>
-      {sub && <div className="text-mut text-[12.5px] mt-1">{sub}</div>}
+      {sub && <div className="text-mut text-micro mt-1">{sub}</div>}
     </motion.div>
   );
 }

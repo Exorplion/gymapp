@@ -88,7 +88,7 @@ function MisEjercicios() {
   const gym = S.gyms.find(g => g.id === S.cfg.activeGym);
 
   if (!exs.length) {
-    return <div className="text-mut text-[13.5px] mt-2">Armá tu rutina primero — acá van a aparecer sus ejercicios.</div>;
+    return <div className="text-mut text-sm mt-2">Armá tu rutina primero — acá van a aparecer sus ejercicios.</div>;
   }
 
   return (
@@ -166,7 +166,7 @@ function RutinaView() {
       <div className="card hero hero-plan">
         <div className="hero-eyebrow">Plan activo</div>
         <div className="hero-day">{routineName()}</div>
-        <div className="text-mut text-[13px] mt-1">
+        <div className="text-mut text-sm mt-1">
           {st.workoutCount} turno{st.workoutCount === 1 ? '' : 's'} de entrenamiento · {st.ex} ejercicios · {st.sets} series por ciclo
         </div>
         {/* Barras proporcionales a las series del turno: la secuencia se lee de
@@ -269,7 +269,7 @@ function DeloadCard() {
   if (activo) {
     return (
       <div className="card sub mb-[var(--s3)]" style={{ borderColor: 'var(--ok)' }}>
-        <div className="text-[13.5px] text-txt font-medium">Descarga en curso desde el {fmtD(activo.desde)}</div>
+        <div className="text-sm text-txt font-medium">Descarga en curso desde el {fmtD(activo.desde)}</div>
         <div className="s text-mut mt-1">
           {activo.grupos.join(', ')} con las series reducidas. Al terminarla, cada ejercicio
           vuelve exactamente a las series que tenía.
@@ -283,7 +283,7 @@ function DeloadCard() {
 
   return (
     <div className="card sub mb-[var(--s3)]" style={{ borderColor: 'var(--warn, #FFB454)' }}>
-      <div className="text-[13.5px] text-txt font-medium">⚠ Puede ser momento de una descarga</div>
+      <div className="text-sm text-txt font-medium">⚠ Puede ser momento de una descarga</div>
       <div className="s text-mut mt-1">
         {grupos.join(', ')} llevan 3+ semanas en tu volumen máximo recuperable. Una semana con 40-50% menos series por grupo suele restaurar el progreso.
       </div>
@@ -326,7 +326,7 @@ function CoberturaCard() {
 
   return (
     <div className="card sub mb-[var(--s3)]">
-      <div className="text-[13.5px] text-txt font-medium">Porciones que tu rutina todavía no toca</div>
+      <div className="text-sm text-txt font-medium">Porciones que tu rutina todavía no toca</div>
       <div className="s text-mut mt-1">
         Cada músculo tiene porciones que responden a ejercicios distintos. Estas no las
         cubre ninguno de los que elegiste.

@@ -10,7 +10,7 @@ import { createGym, renameGym, deleteGym, setActiveGym } from '../../lib/gyms.js
 import { bloomOpen, staggerReveal } from '../../lib/motion.js';
 import { Button } from '../ui/primitives.jsx';
 
-const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-[15px] text-txt outline-none transition-colors focus-visible:border-blue2';
+const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt outline-none transition-colors focus-visible:border-blue2';
 
 export default function Gyms() {
   const [nombre, setNombre] = useState('');
@@ -38,12 +38,12 @@ export default function Gyms() {
   return (
     <div ref={rootRef}>
       <h2 className="font-cond text-2xl font-bold text-txt">Gimnasios</h2>
-      <div className="mt-1 mb-4 text-[13px] text-mut">
+      <div className="mt-1 mb-4 text-sm text-mut">
         Guardá los gimnasios donde entrenás. Activá uno y, desde "Mis ejercicios", decile con qué equipo hacés cada ejercicio ahí.
       </div>
 
       {S.gyms.length === 0 && (
-        <div className="mb-4 mt-1 text-[13.5px] text-mut">Todavía no guardaste ningún gimnasio.</div>
+        <div className="mb-4 mt-1 text-sm text-mut">Todavía no guardaste ningún gimnasio.</div>
       )}
 
       {S.gyms.length > 0 && (
@@ -68,11 +68,11 @@ export default function Gyms() {
             return (
               <div className="flex items-center gap-2.5 py-2" key={g.id}>
                 <button type="button" className="grow text-left" onClick={() => setActiveGym(activo ? null : g.id)}>
-                  <div className="flex items-center gap-2 text-[14.5px] text-txt">
+                  <div className="flex items-center gap-2 text-sm text-txt">
                     {g.name}
-                    {activo && <span className="inline-flex items-center rounded-full bg-accent/15 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-accent">activo</span>}
+                    {activo && <span className="inline-flex items-center rounded-full bg-accent/15 px-2 py-0.5 text-nano font-semibold uppercase tracking-wide text-accent">activo</span>}
                   </div>
-                  <div className="text-[13px] text-mut">{n} ejercicio{n === 1 ? '' : 's'} con equipo propio acá</div>
+                  <div className="text-sm text-mut">{n} ejercicio{n === 1 ? '' : 's'} con equipo propio acá</div>
                 </button>
                 <button type="button" className="grid h-9 w-9 flex-none place-items-center rounded-full text-mut hover:text-txt" aria-label="Renombrar" onClick={() => { setEditId(g.id); setEditNombre(g.name); }}>✎</button>
                 <button type="button" className="grid h-9 w-9 flex-none place-items-center rounded-full text-red hover:bg-red/10" aria-label="Borrar" onClick={() => deleteGym(g.id)}>✕</button>
@@ -83,7 +83,7 @@ export default function Gyms() {
       )}
 
       <div className="mb-3">
-        <label htmlFor="gym-nombre" className="mb-1.5 block text-[13px] font-medium text-mut">Nuevo gimnasio</label>
+        <label htmlFor="gym-nombre" className="mb-1.5 block text-sm font-medium text-mut">Nuevo gimnasio</label>
         <input
           id="gym-nombre"
           className={inputCls}

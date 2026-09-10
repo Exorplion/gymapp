@@ -20,8 +20,8 @@ import { toast } from '../../lib/toast.js';
 import { bloomOpen } from '../../lib/motion.js';
 import { Button } from '../ui/primitives.jsx';
 
-const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-[15px] text-txt placeholder:text-mut2 outline-none transition-colors focus-visible:border-blue2';
-const labelCls = 'mb-1.5 block text-[13px] font-medium text-mut';
+const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt placeholder:text-mut2 outline-none transition-colors focus-visible:border-blue2';
+const labelCls = 'mb-1.5 block text-sm font-medium text-mut';
 
 export default function BodyForm() {
   const last = S.body[S.body.length - 1] || {};

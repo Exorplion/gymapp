@@ -92,7 +92,7 @@ export default function Progreso() {
             <div className="hero-eyebrow">{headLabel}</div>
             <div className="bignum">{headNum != null ? <span ref={headNumRef}>{fmtNum(round1(headNum))}</span> : '—'}<small> kg</small></div>
             {lastW && (
-              <div className="text-mut text-[13px] mt-[3px]">
+              <div className="text-mut text-sm mt-[3px]">
                 {wk && wk.curAvg != null ? `último ${fmtNum(round1(lastW.weight))} kg · ` : `${fmtNum(kg2lb(lastW.weight))} lb · `}
                 {fmtDFull(lastW.date)}
                 {wk && wk.delta != null && (
@@ -104,7 +104,7 @@ export default function Progreso() {
           <button type="button" className="reg-btn" onClick={() => openSheet('body-form')}>+ Registro</button>
         </div>
         {wk && wk.curAvg != null && (
-          <div className="text-mut text-[11.5px] mt-2 leading-snug">El peso fluctúa 1-2 kg por día; el promedio semanal es la métrica que importa.</div>
+          <div className="text-mut text-micro mt-2 leading-snug">El peso fluctúa 1-2 kg por día; el promedio semanal es la métrica que importa.</div>
         )}
         <div className="seg mt-3">
           {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['all', 'Todo']].map(([r, label]) => (
@@ -113,7 +113,7 @@ export default function Progreso() {
         </div>
         <div className="mt-3"><Chart id="chartWeight" pts={wpts} opts={{ unit: 'kg' }} /></div>
         {lastBf && (
-          <div className="text-mut text-[12.5px] mt-1.5">
+          <div className="text-mut text-micro mt-1.5">
             {lastBf.bodyfat}% grasa · masa magra estimada {fmtNum(round1(lastBf.weight * (1 - lastBf.bodyfat / 100)))} kg
           </div>
         )}
@@ -263,13 +263,13 @@ function StrengthTab() {
               <div key={x.name} className="row">
                 <div className="grow"><div className="t">{x.name}</div><div className="s"><span className={cls}>{tag}</span></div></div>
                 <div className="text-right flex-none">
-                  <div className="num text-[length:var(--t-xl)] text-blue3 leading-none">{fmtNum(round1(x.last))}</div>
-                  <div className="text-mut text-[length:var(--t-micro)] tracking-[.08em]">KG 1RM</div>
+                  <div className="num text-xl text-blue3 leading-none">{fmtNum(round1(x.last))}</div>
+                  <div className="text-mut text-micro tracking-[.08em]">KG 1RM</div>
                 </div>
               </div>
             );
           })}
-          <div className="text-mut text-[length:var(--t-sm)] leading-normal mt-[var(--s3)]">Calculado con la fórmula de Epley sobre tu mejor serie de cada sesión (se ignoran las de más de 12 reps, donde la fórmula se desvía). La proyección supone que mantenés el ritmo y se limita a 1 %/semana: la fuerza no sube en línea recta.</div>
+          <div className="text-mut text-sm leading-normal mt-[var(--s3)]">Calculado con la fórmula de Epley sobre tu mejor serie de cada sesión (se ignoran las de más de 12 reps, donde la fórmula se desvía). La proyección supone que mantenés el ritmo y se limita a 1 %/semana: la fuerza no sube en línea recta.</div>
         </div>
       )}
     </>
@@ -288,7 +288,7 @@ function VolumeTab() {
     <>
       {risk?.risk && (
         <div className="card sub" style={{ borderColor: 'var(--warn, #FFB454)' }}>
-          <div className="text-[13.5px] text-txt font-medium">⚠ Volumen alto esta semana</div>
+          <div className="text-sm text-txt font-medium">⚠ Volumen alto esta semana</div>
           <div className="s text-mut mt-1">Tonelaje 7 días ({fmtNum(risk.acute)} kg) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
         </div>
       )}
@@ -300,7 +300,7 @@ function VolumeTab() {
           const pct = b ? Math.min(100, Math.round((n / (b.mrv * 1.15)) * 100)) : Math.round(n / cats[0][1] * 100);
           return (
             <div key={c} className="mb-[var(--s3)]">
-              <div className="flex justify-between text-[length:var(--t-sm)] mb-[var(--s1)]">
+              <div className="flex justify-between text-sm mb-[var(--s1)]">
                 <span>{c}</span>
                 <span className="num">{n} series · <span style={{ color: BAND_COLOR[band] }}>{BAND_LABEL[band]}</span></span>
               </div>
@@ -308,7 +308,7 @@ function VolumeTab() {
             </div>
           );
         })}
-        <div className="text-mut text-[length:var(--t-sm)] leading-normal">Bandas de Renaissance Periodization (Mike Israetel): mínimo efectivo, rango que hace crecer y máximo recuperable — varían por grupo.</div>
+        <div className="text-mut text-sm leading-normal">Bandas de Renaissance Periodization (Mike Israetel): mínimo efectivo, rango que hace crecer y máximo recuperable — varían por grupo.</div>
       </div>
     </>
   );
@@ -345,8 +345,8 @@ function PRsList({ exNames }) {
             <div className="s">Mejor serie {fmtNum(round1(p.bestSet.w))} × {p.bestSet.r} · {fmtD(p.dV)}</div>
             {p.tier && <div className="s text-blue2">{p.tier.label} · {p.tier.ratio}× tu peso corporal</div>}</div>
           <div className="text-right flex-none">
-            <div className="pr-w">{fmtNum(round1(p.maxW))}<span className="text-[length:var(--t-sm)] text-mut"> kg</span></div>
-            <div className="text-mut text-[length:var(--t-micro)]">{fmtNum(kg2lb(p.maxW))} lb</div>
+            <div className="pr-w">{fmtNum(round1(p.maxW))}<span className="text-sm text-mut"> kg</span></div>
+            <div className="text-mut text-micro">{fmtNum(kg2lb(p.maxW))} lb</div>
           </div>
         </div>
       ))}

@@ -44,23 +44,23 @@ export default function ExInfo({ name, exId }) {
         </div>
       )}
       {equipLabel(ex) && (
-        <div className="mt-2 text-[12.5px] text-mut">
-          <span className="inline-flex items-center rounded-full bg-white/8 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-mut">{equipLabel(ex)}</span>
+        <div className="mt-2 text-micro text-mut">
+          <span className="inline-flex items-center rounded-full bg-white/8 px-2.5 py-1 text-micro font-semibold uppercase tracking-wide text-mut">{equipLabel(ex)}</span>
         </div>
       )}
       {info ? (
         <>
           <h3 className="mt-4 mb-1.5 font-cond text-lg font-semibold text-txt">Músculos</h3>
-          <div className="text-[15px] leading-relaxed text-txt">{info.m}</div>
+          <div className="text-body leading-relaxed text-txt">{info.m}</div>
           <h3 className="mt-4 mb-1.5 font-cond text-lg font-semibold text-txt">Por qué elegirlo</h3>
-          <div className="text-[14.5px] leading-relaxed text-txt">
+          <div className="text-sm leading-relaxed text-txt">
             {info.w.split('⚠').map((part, i, arr) => (
               <span key={i}>{part}{i < arr.length - 1 && <span className="text-warn">⚠</span>}</span>
             ))}
           </div>
         </>
       ) : (
-        <div className="my-2 text-[14px] leading-relaxed text-mut">
+        <div className="my-2 text-sm leading-relaxed text-mut">
           No tengo ficha educativa de este ejercicio todavía. Igual puedes registrarlo y seguir su progresión con normalidad.
         </div>
       )}
@@ -70,14 +70,14 @@ export default function ExInfo({ name, exId }) {
           <div className="mb-2 flex flex-wrap gap-2">
             {scheme.map((r, i) => (
               <span key={i} className={cn(
-                'inline-flex items-center rounded-full border border-line2 bg-card2 px-3.5 py-2 text-[13px] font-medium text-txt',
+                'inline-flex items-center rounded-full border border-line2 bg-card2 px-3.5 py-2 text-sm font-medium text-txt',
                 r === 0 && 'border-transparent bg-blue2 text-[var(--on-grad)]',
               )}>
                 Serie {i + 1}: {r === 0 ? 'al fallo' : `RIR ${r}`}
               </span>
             ))}
           </div>
-          <div className="text-[13px] leading-relaxed text-mut">
+          <div className="text-sm leading-relaxed text-mut">
             Solo el <b className="text-txt">último set</b> va al fallo (RIR 0). Los primeros dejan reps en reserva para no arruinar el volumen con fatiga.
             {isLowerBackLift(name) && <> <span className="text-warn">En este ejercicio nunca vayas al fallo (zona lumbar): máximo RIR 1.</span></>}
           </div>

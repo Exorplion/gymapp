@@ -50,7 +50,7 @@ export default function History() {
   return (
     <div ref={rootRef}>
       <h2 className="font-cond text-2xl font-bold text-txt">Todas tus sesiones</h2>
-      <div className="mt-0.5 mb-3.5 text-[13px] text-mut">
+      <div className="mt-0.5 mb-3.5 text-sm text-mut">
         {n ? `${n} ${n === 1 ? 'sesión cerrada' : 'sesiones cerradas'}` : 'Todavía no cerraste ninguna sesión'}
       </div>
 
@@ -62,7 +62,7 @@ export default function History() {
         <div ref={listRef}>
           {grupos.map(g => (
             <div key={g.key}>
-              <div className="mx-0.5 mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wide text-mut">{g.label} · {g.sessions.length} {g.sessions.length === 1 ? 'sesión' : 'sesiones'}</div>
+              <div className="mx-0.5 mb-2 mt-4 text-micro font-semibold uppercase tracking-wide text-mut">{g.label} · {g.sessions.length} {g.sessions.length === 1 ? 'sesión' : 'sesiones'}</div>
               <div className="mb-4 flex flex-col gap-2.5">
                 {g.sessions.map(s => <SessionCard key={s.id} sess={s} />)}
               </div>

@@ -40,7 +40,7 @@ export default function DayDrop({ fromWd, toWd }) {
   return (
     <div ref={rootRef}>
       <h2 className="font-cond text-2xl font-bold text-txt">El {WD[to].toLowerCase()} ya está ocupado</h2>
-      <div className="mb-[18px] text-[14px] leading-relaxed text-mut">
+      <div className="mb-[18px] text-sm leading-relaxed text-mut">
         Estás moviendo <b className="text-txt">{moving}</b> al {WD[to].toLowerCase()}, que hoy tiene <b className="text-txt">{sitting}</b>. ¿Qué hago con {sitting}?
       </div>
 
@@ -48,16 +48,16 @@ export default function DayDrop({ fromWd, toWd }) {
         {canShift && (
           <Button type="button" className="h-auto flex-col items-start gap-0.5 py-3 text-left" onClick={() => choose('shift')}>
             <span>Correrlo al {WD[parked].toLowerCase()}</span>
-            <span className="text-[12.5px] font-normal opacity-80">el primer día libre · el {WD[from].toLowerCase()} queda de descanso</span>
+            <span className="text-micro font-normal opacity-80">el primer día libre · el {WD[from].toLowerCase()} queda de descanso</span>
           </Button>
         )}
         <Button type="button" variant="secondary" className="h-auto flex-col items-start gap-0.5 py-3 text-left" onClick={() => choose('swap')}>
           <span>Intercambiarlos</span>
-          <span className="text-[12.5px] font-normal text-mut">{sitting} pasa al {WD[from].toLowerCase()}</span>
+          <span className="text-micro font-normal text-mut">{sitting} pasa al {WD[from].toLowerCase()}</span>
         </Button>
       </div>
 
-      <label className="mt-4 flex items-center gap-2.5 text-[13.5px] text-mut">
+      <label className="mt-4 flex items-center gap-2.5 text-sm text-mut">
         <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
         <span>No volver a preguntar (se cambia en Ajustes)</span>
       </label>
