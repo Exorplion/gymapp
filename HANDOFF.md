@@ -23,6 +23,48 @@ historial. Si vas a seguir el roadmap, empezá por **Próximo paso exacto** al f
 
 ---
 
+## SESIÓN 2026-09-10 (cuarta parte) — La semana real y el registro retroactivo
+
+PR **#84**, mergeado y en vivo. El caso que lo destapó: Enzo entrenó martes y
+jueves, descansó el miércoles, y la app seguía mostrando la semana como
+empezada un lunes.
+
+**La causa concreta era una línea:** `weekdayProjection()` era
+`WDS[(i + 1) % 7]`, o sea el turno 1 caía en **lunes siempre**, sin mirar el
+calendario ni el puntero. Ahora el turno pendiente es hoy y el resto se cuenta
+desde ahí.
+
+**Sobre la decisión vieja de NO tener calendario.** El encabezado de
+`Inicio.jsx` dice que un calendario por fecha "mentiría sobre cómo funciona la
+app", porque la rutina es una secuencia que avanza al entrenar, no casilleros
+lun-dom. **Esa decisión sigue en pie para el PLAN** y la tira de turnos no se
+tocó. Lo nuevo (`lib/week.ts` + `SemanaReal` en Inicio) es otra cosa: los
+**hechos**, qué días entrenaste de verdad según sesiones con fecha real. Plan y
+hechos, separados: así ninguno de los dos miente. Si alguien vuelve a leer ese
+comentario, que no lo tome como que el calendario nuevo lo contradice.
+
+**Registro retroactivo** (`registrarDiaEntrenado` + sheet `marcar-dia`): un día
+vacío se toca y se elige cuál de los turnos ya configurados se hizo.
+**No se piden los pesos, a propósito.** "Hice Posterior A el martes" se
+recuerda; "62.5×9, 62.5×8, 60×8" no. Pedirlos llevaría a completarlos de
+memoria y eso entraría al historial **como si fuera medido**: alimentaría PRs,
+progresión y tonelaje con números inventados. La sesión queda con `entries: []`,
+`duration: null` y `retro: true` — "este día entrenaste esto, no sabemos con qué
+pesos". `SessionCard` lo dice así en vez de "0 series · 0 kg", que sería falso.
+
+**El puntero sólo avanza si la sesión anotada es la más reciente.** Anotar el
+martes después de haber hecho el jueves no puede hacer retroceder la secuencia:
+te haría repetir un turno ya hecho. Hay test.
+
+**Rutina agrupada por grupo muscular**, con `blocksOf()` — la MISMA función que
+la sesión en vivo, para que las dos pantallas no puedan discrepar. El
+encabezado del bloque va **dentro** de la primera fila de cada grupo: el
+contenedor es `data-sort="rut"` y `drag.js` reordena moviendo los hijos con
+`data-sid`, así que una fila-encabezado suelta quedaría varada arriba después
+del primer arrastre.
+
+---
+
 ## SESIÓN 2026-09-10 (tercera parte) — Las cuatro tareas abiertas, cerradas
 
 Enzo pidió las cuatro opciones que quedaban, en paralelo. PRs **#79, #80, #81 y
