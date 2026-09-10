@@ -17,7 +17,7 @@ import { S, bump, useStore, openSheet, changeTab } from '../../lib/state.js';
 import { staggerRevealOnce } from '../../lib/motion.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
 import { equipLabel } from '../../lib/equip.js';
-import { catOf, stalestGroups, daysSinceAll, diasTexto, blocksOf } from '../../lib/muscle.js';
+import { catOf, stalestGroups, daysSinceAll, diasTexto, subBlocksOf, subCatOf } from '../../lib/muscle.js';
 import { coberturaDe } from '../../lib/coverage.js';
 import { gymEquipFor } from '../../lib/gyms.js';
 import { flipSort } from '../../lib/drag.js';
@@ -61,9 +61,9 @@ export default function Rutina() {
   if (S.rutMode === 'edit') return <RutinaEdit />;
   return (
     <>
-      <div className="vtitle"><h1>Rutina</h1><span className="sub">{S.rutTab === 'ejercicios' ? 'tus ejercicios' : 'tu semana'}</span></div>
+      <div className="vtitle"><h1>Entreno</h1><span className="sub">{S.rutTab === 'ejercicios' ? 'tus ejercicios' : 'tu plan'}</span></div>
       <div className="seg" style={{ margin: 'var(--s2) 0 var(--s3)' }}>
-        <button type="button" className={S.rutTab !== 'ejercicios' ? 'on' : ''} onClick={() => { S.rutTab = 'semana'; bump(); }}>Mi semana</button>
+        <button type="button" className={S.rutTab !== 'ejercicios' ? 'on' : ''} onClick={() => { S.rutTab = 'semana'; bump(); }}>Mi plan</button>
         <button type="button" className={S.rutTab === 'ejercicios' ? 'on' : ''} onClick={() => { S.rutTab = 'ejercicios'; bump(); }}>Mis ejercicios</button>
       </div>
       {S.rutTab === 'ejercicios' ? <MisEjercicios /> : <RutinaView />}
@@ -104,7 +104,7 @@ function MisEjercicios() {
               <button type="button" className="grow flex items-center gap-2.5 bg-none border-0 text-left p-0" onClick={() => openSheet('ex-info', { name: ex.name, exId: ex.id })}>
                 <span className="grow">
                   <span className="t">{ex.name}</span>
-                  <span className="s">{catOf(ex) || 'Sin grupo'}{equipLabel(ex) ? ` · ${equipLabel(ex)}` : ''}</span>
+                  <span className="s">{subCatOf(ex) || 'Sin grupo'}{equipLabel(ex) ? ` · ${equipLabel(ex)}` : ''}</span>
                 </span>
               </button>
               {gym && (
@@ -122,6 +122,7 @@ function MisEjercicios() {
 
 function RutinaView() {
   const st = routineStats();
+  const gymActivo = S.gyms.find(g => g.id === S.cfg.activeGym);
   const maxSets = Math.max(1, ...S.routine.map(slot => slot.type === 'workout' ? (slot.exercises || []).reduce((a, e) => a + e.sets, 0) : 0));
   const cardsRef = useRef(null);
   // Reveal escalonado de las tarjetas de turno — sólo la primera vez que se
@@ -190,6 +191,22 @@ function RutinaView() {
         <button type="button" className="btn glass" onClick={() => openSheet('library')}>Mis rutinas</button>
       </div>
 
+      {/* Los gimnasios eran alcanzables sólo desde un botón dentro de "Mis
+          ejercicios", que es la pestaña de al lado: quedaban escondidos detrás
+          de otra cosa. Acá son una opción propia, y el subtítulo dice qué vas a
+          encontrar adentro en vez de repetir el nombre del botón. */}
+      <button type="button" className="row w-full text-left mb-[var(--s3)]" onClick={() => openSheet('gyms')}>
+        <div className="grow">
+          <div className="t">🏋 Ver mis gimnasios</div>
+          <div className="s">
+            {S.gyms.length
+              ? `${S.gyms.length} guardado${S.gyms.length === 1 ? '' : 's'}${gymActivo ? ` · entrenando en ${gymActivo.name}` : ''} · qué máquina usás para cada ejercicio en cada uno`
+              : 'Guardá dónde entrenás y emparejá cada ejercicio con la máquina de ese gimnasio'}
+          </div>
+        </div>
+        <span className="chev" aria-hidden="true">›</span>
+      </button>
+
       <DeloadCard />
       <ReforzarCard />
       <CoberturaCard />
@@ -217,29 +234,43 @@ function RutinaView() {
               </button>
               {open && (
                 <div className="day-exs">
-                  {/* Tocar el ejercicio abre su ficha: qué porción del músculo
+                  {/* Agrupados por SUBGRUPO muscular (subBlocksOf, lib/muscle.js):
+                      un turno "Anterior" con sentadilla, prensa, curl femoral y
+                      gemelos salía entero como "Pierna", que es justo lo que no
+                      querés saber cuando estás mirando cómo repartiste el
+                      trabajo. Ahora se lee cuádriceps / isquiotibiales /
+                      gemelos por separado.
+
+                      Tocar el ejercicio abre su ficha: qué porción del músculo
                       trabaja, dibujada sobre el mismo cuerpo del mapa de
-                      Inicio. Antes esta fila no hacía nada al tocarla, que es
-                      justo donde uno va a preguntar "¿y esto para qué?". */}
-                  {slot.exercises.map((e, k) => (
-                    <button
-                      key={e.id}
-                      type="button"
-                      className="day-ex"
-                      onClick={() => openSheet('ex-info', { name: e.name, wd: i, exId: e.id })}
-                    >
-                      <span className="i">{k + 1}</span>
-                      <ExIcon icono={iconOf(e)} size={24} className="day-ex-icon" />
-                      <span className="grow">
-                        <span className="t">{e.name}</span>
-                        <span className="s">
-                          {equipLabel(e) && <span className="eq-tag">{equipLabel(e)}</span>}
-                          RIR {rirScheme(e.sets).join('/')}
-                        </span>
-                      </span>
-                      <span className="x">{e.sets}×{e.reps}</span>
-                      <span className="chev">›</span>
-                    </button>
+                      Inicio. */}
+                  {subBlocksOf(slot.exercises).map(bloque => (
+                    <div key={bloque.cat} className="day-exs-block">
+                      <div className="day-exs-head">
+                        {bloque.cat}
+                        <span>{bloque.exs.length} ej · {bloque.exs.reduce((a, e) => a + e.sets, 0)} series</span>
+                      </div>
+                      {bloque.exs.map(e => (
+                        <button
+                          key={e.id}
+                          type="button"
+                          className="day-ex"
+                          onClick={() => openSheet('ex-info', { name: e.name, wd: i, exId: e.id })}
+                        >
+                          <span className="i">{slot.exercises.indexOf(e) + 1}</span>
+                          <ExIcon icono={iconOf(e)} size={24} className="day-ex-icon" />
+                          <span className="grow">
+                            <span className="t">{e.name}</span>
+                            <span className="s">
+                              {equipLabel(e) && <span className="eq-tag">{equipLabel(e)}</span>}
+                              RIR {rirScheme(e.sets).join('/')}
+                            </span>
+                          </span>
+                          <span className="x">{e.sets}×{e.reps}</span>
+                          <span className="chev">›</span>
+                        </button>
+                      ))}
+                    </div>
                   ))}
                 </div>
               )}
@@ -449,8 +480,8 @@ function WeekProjection({ dow }) {
 
 function SlotCard({ slot, index, n }) {
   /* Los ejercicios se muestran AGRUPADOS por grupo muscular, igual que en la
-     sesión en vivo (blocksOf, lib/muscle.js — la misma función, para que las
-     dos pantallas no puedan discrepar sobre qué grupo es cuál). Enzo lo pidió
+     sesión en vivo, pero por SUBGRUPO (subBlocksOf, lib/muscle.js): "Pierna"
+     entero no dice nada cuando el turno tiene sentadilla, femoral y gemelos. Enzo lo pidió
      con esas palabras: "en la pestaña rutina los ejercicios también se deben
      separar por subgrupos según el grupo muscular".
 
@@ -460,7 +491,7 @@ function SlotCard({ slot, index, n }) {
      data-sid. Una fila-encabezado sin data-sid quedaría varada arriba después
      del primer arrastre, con los bloques ya movidos debajo. Adentro de la fila
      viaja con ella y no se puede desincronizar. */
-  const exs = blocksOf(slot.exercises || []).flatMap(b => b.exs);
+  const exs = subBlocksOf(slot.exercises || []).flatMap(b => b.exs);
   const open = S.rutOpen === index;
   // referencia del riel: el ejercicio con más series del turno
   const maxSets = Math.max(1, ...exs.map(e => e.sets || 0));
@@ -495,8 +526,8 @@ function SlotCard({ slot, index, n }) {
                  reparto de volumen, que es lo que estás decidiendo acá */
               style={{ '--fill': maxSets ? ex.sets / maxSets : 1, '--i': i }}
             >
-              {(i === 0 || catOf(exs[i - 1]) !== catOf(ex)) && (
-                <div className="ex-group-tag">{catOf(ex) || 'Sin grupo'}</div>
+              {(i === 0 || subCatOf(exs[i - 1]) !== subCatOf(ex)) && (
+                <div className="ex-group-tag">{subCatOf(ex) || 'Sin grupo'}</div>
               )}
               <ExIcon icono={iconOf(ex)} size={26} className="ex-row-icon" />
               <div className="ex-row-top">

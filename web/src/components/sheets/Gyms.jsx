@@ -1,11 +1,14 @@
-// Lista de gimnasios: crear, activar, borrar. El detalle de "qué equipo usás
-// en este gym para cada ejercicio" NO vive acá — se configura desde "Mis
-// ejercicios" (Rutina.jsx), ejercicio por ejercicio, con el gym activo ya
-// elegido acá. Separar las dos cosas evita un formulario gigante: elegís el
-// gym una vez, y de ahí en más cada ejercicio se configura donde ya lo estás
-// mirando.
+// Lista de gimnasios: crear, activar, renombrar, borrar, y entrar al match de
+// cada uno (sheet 'gym-match': tu rutina entera contra ESE gym, con lo que
+// falta asignar a la vista).
+//
+// El detalle de "con qué equipo hago este ejercicio acá" sigue viviendo en un
+// sheet aparte (GymEquip), uno por ejercicio, para no volver esto un
+// formulario gigante. Lo que cambió el 2026-09-10 es que ya no hay que llegar
+// ejercicio por ejercicio desde "Mis ejercicios" con el gym activo: desde acá
+// se ve la lista completa de un gym, esté activo o no.
 import { useEffect, useRef, useState } from 'react';
-import { S, closeSheet } from '../../lib/state.js';
+import { S, closeSheet, openSheet } from '../../lib/state.js';
 import { createGym, renameGym, deleteGym, setActiveGym } from '../../lib/gyms.js';
 import { bloomOpen, staggerReveal } from '../../lib/motion.js';
 import { Button } from '../ui/primitives.jsx';
@@ -39,7 +42,9 @@ export default function Gyms() {
     <div ref={rootRef}>
       <h2 className="font-cond text-2xl font-bold text-txt">Gimnasios</h2>
       <div className="mt-1 mb-4 text-sm text-mut">
-        Guardá los gimnasios donde entrenás. Activá uno y, desde "Mis ejercicios", decile con qué equipo hacés cada ejercicio ahí.
+        Guardá los gimnasios donde entrenás. Tocá el nombre para activarlo, o el
+        engranaje para ver cuál de tus ejercicios ya tiene máquina asignada ahí y
+        cuál no.
       </div>
 
       {S.gyms.length === 0 && (
@@ -74,6 +79,10 @@ export default function Gyms() {
                   </div>
                   <div className="text-sm text-mut">{n} ejercicio{n === 1 ? '' : 's'} con equipo propio acá</div>
                 </button>
+                {/* El match de la rutina entera contra ESTE gym. Antes había
+                    que abrir los 22 ejercicios de a uno desde "Mis
+                    ejercicios" para saber qué faltaba configurar acá. */}
+                <button type="button" className="grid h-9 w-9 flex-none place-items-center rounded-full text-mut hover:text-txt" aria-label={`Ver los ejercicios en ${g.name}`} onClick={() => openSheet('gym-match', { gymId: g.id })}>⚙</button>
                 <button type="button" className="grid h-9 w-9 flex-none place-items-center rounded-full text-mut hover:text-txt" aria-label="Renombrar" onClick={() => { setEditId(g.id); setEditNombre(g.name); }}>✎</button>
                 <button type="button" className="grid h-9 w-9 flex-none place-items-center rounded-full text-red hover:bg-red/10" aria-label="Borrar" onClick={() => deleteGym(g.id)}>✕</button>
               </div>

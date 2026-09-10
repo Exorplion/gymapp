@@ -17,7 +17,11 @@ const TABS = [
     path2: 'M5.5 9v11.5h13V9',
   },
   {
-    id: 'rutina', label: 'Rutina',
+    // El id sigue siendo 'rutina' a propósito aunque la etiqueta diga
+    // "Entreno": ese id está guardado en S.cfg (la pestaña en la que quedaste)
+    // y viaja en los backups. Cambiarlo dejaría a cualquier usuario existente
+    // abriendo una pestaña que ya no existe, por un cambio de texto.
+    id: 'rutina', label: 'Entreno',
     path: 'M8 3v4M16 3v4M3.5 10h17M8 14h3M8 17.5h6',
     rect: { x: 3.5, y: 5, width: 17, height: 16, rx: 3 },
   },

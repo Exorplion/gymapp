@@ -138,6 +138,84 @@ export interface MuscleBlock { cat: string; exs: ExLike[]; }
     (session.js: S.hoyOrder / S.draft.order) — esto es sólo una lectura para
     pintar encabezados y agrupar los controles de reordenar POR BLOQUE
     (moveBlock, session.js), nunca la fuente de verdad del orden. */
+/* ---------- subgrupos ----------
+   `catOf` contesta el grupo grande (Pierna, Espalda, Pecho). Sirve para el
+   volumen semanal y para la silueta, pero es demasiado grueso para leer una
+   rutina: un turno "Anterior" con sentadilla, prensa, curl femoral y gemelos
+   sale entero como "Pierna", que es justo lo que no querés saber cuando estás
+   mirando cómo repartiste el trabajo (Enzo, 2026-09-10: "siendo específicos,
+   quads, isquios, etc").
+
+   NO se inventa una tabla nueva para esto. `fibrasDe()` (lib/fibras.js) ya
+   sabe qué porción prioriza cada ejercicio —está construida sobre EMG e
+   hipertrofia, con las fuentes citadas en ese archivo— así que el subgrupo es
+   simplemente su porción principal, con un nombre legible. Una tabla paralela
+   se desincronizaría de aquella el primer día.
+
+   Si `fibrasDe()` no reconoce el ejercicio, el subgrupo ES el grupo: se dice
+   menos, no se adivina. */
+const SUBGRUPO_DE: Record<string, string> = {
+  'Vasto externo': 'Cuádriceps',
+  'Vasto interno': 'Cuádriceps',
+  Femoral: 'Isquiotibiales',
+  Glúteo: 'Glúteo',
+  Aductores: 'Aductores',
+  Gemelos: 'Gemelos',
+  'Dorsal alto': 'Espalda alta',
+  'Dorsal bajo': 'Dorsal',
+  /* Trapecio (medio) y dorsal alto son dos NOMBRES de la misma región, no dos
+     regiones: un remo a la espalda alta y un Kelso caen en las dos, y tratarlas
+     como subgrupos distintos hacía que esos ejercicios no se pudieran afinar y
+     volvieran a salir como "Espalda" entero. La distinción que sí importa —y la
+     que Enzo pidió— es espalda alta contra dorsal. */
+  Trapecio: 'Espalda alta',
+  Clavicular: 'Pecho superior',
+  Costal: 'Pecho',
+  'Deltoides anterior': 'Hombro anterior',
+  Hombro: 'Hombro',
+  'Tríceps cabeza larga': 'Tríceps',
+  Tríceps: 'Tríceps',
+  'Bíceps braquial': 'Bíceps',
+  Braquiorradial: 'Braquiorradial',
+  Bíceps: 'Bíceps',
+  'Abdomen superior': 'Abs',
+  'Abdomen inferior': 'Abs',
+  Oblicuos: 'Oblicuos',
+  Pierna: 'Pierna',
+};
+
+/** El subgrupo muscular de un ejercicio: más fino que `catOf`, y nunca en
+    contra suyo. Devuelve `null` sólo si `catOf` tampoco sabe.
+
+    Un ejercicio con VARIAS porciones principales sólo se afina si todas caen
+    en el mismo subgrupo (la sentadilla trabaja vasto externo e interno: las
+    dos son cuádriceps, así que "Cuádriceps" es verdad). Si apuntan a
+    subgrupos distintos, se devuelve el grupo entero. El press de banca es el
+    caso: trabaja la porción clavicular Y la costal, y quedarse con la primera
+    lo etiquetaría "Pecho superior" — una precisión inventada, del tipo que
+    esta app justamente no hace. Lo destapó un test. */
+export function subCatOf(ex: ExLike | string): string | null {
+  const principales: string[] = fibrasDe(ex as ExLike)?.p || [];
+  const subs = [...new Set(principales.map(x => SUBGRUPO_DE[x]).filter(Boolean))] as string[];
+  if (subs.length === 1) return subs[0];
+  return catOf(ex as ExLike);
+}
+
+/** Bloques por SUBGRUPO, en el orden en que aparecen. Mismo contrato que
+    blocksOf() —de hecho comparte su forma— para que una lista pueda pasar de
+    uno al otro cambiando una sola llamada. */
+export function subBlocksOf(exs: ExLike[]): MuscleBlock[] {
+  const out: MuscleBlock[] = [];
+  const by = new Map<string, MuscleBlock>();
+  for (const ex of exs) {
+    const cat = subCatOf(ex) || 'Otros';
+    let b = by.get(cat);
+    if (!b) { b = { cat, exs: [] }; by.set(cat, b); out.push(b); }
+    b.exs.push(ex);
+  }
+  return out;
+}
+
 export function blocksOf(exs: ExLike[]): MuscleBlock[] {
   const out: MuscleBlock[] = [];
   const byCat = new Map<string, MuscleBlock>();
