@@ -23,6 +23,71 @@ historial. Si vas a seguir el roadmap, empezá por **Próximo paso exacto** al f
 
 ---
 
+## SESIÓN 2026-09-10 (quinta parte) — La racha estaba rota
+
+PRs **#87 y #88**, mergeados y en vivo.
+
+### La racha: el bug, y la definición nueva (NO RELITIGAR)
+
+**`dayCompleted(dateStr)` recibía una fecha y la IGNORABA.** Para decidir qué
+correspondía ese día leía siempre `S.routine[S.cfg.seqIndex]`, o sea el turno
+pendiente **hoy**. Si el pendiente era descanso devolvía `null` para todos los
+días (racha 0, mapa de calor entero como "descanso"); si era entrenamiento
+preguntaba "¿hay una sesión de ESTE turno ese día?" contra cada fecha del
+pasado — falso casi siempre — y la racha se cortaba al primer día hacia atrás.
+
+El comentario del archivo lo llamaba "aproximación". **No lo era.** No se puede
+reconstruir qué turno estaba pendiente en una fecha vieja porque el puntero de
+la secuencia no guarda historia. Cualquier definición apoyada en eso está
+condenada; si alguien vuelve a intentarlo, esto es lo que va a encontrar.
+
+**La definición que quedó**, de las palabras de Enzo ("por completar la rutina
+o parte de la rutina" + "depende de los días y la rutina"):
+
+1. **Un día con sesión es un día entrenado.** Cuenta aunque sea parcial, y
+   cuenta si lo anotaste a mano después (`registrarDiaEntrenado`).
+2. **Un día sin sesión es descanso, y el descanso NO corta.** No hay que
+   declarar nada: no entrenar ES descansar.
+3. **El descanso corta sólo cuando se estira más de lo que TU rutina admite.**
+   El límite sale de la tanda más larga de descansos de tu secuencia —contada
+   en círculo, porque la secuencia vuelve a empezar— más un día de respiro.
+
+**Lo que a propósito NO hace: no exige haber hecho "el turno que tocaba".** Para
+una fecha pasada ese dato no existe (es lo que rompía la versión anterior), y
+castigar por hacer Posterior en vez de Anterior sería castigar por improvisar,
+que es lo que uno hace en un gimnasio real.
+
+Los tests viejos se reemplazaron enteros: probaban el comportamiento roto.
+
+### Estética (los tres que Enzo marcó)
+
+- **"Ver mis gimnasios" era una `.row`** — sin borde y sin aire, pegada abajo de
+  los dos botones grandes, se leía como parte de ellos. Ahora es `.nav-card`.
+- **Las tarjetas de turno no animaban ni al abrir ni al cerrar.** La causa del
+  cierre seco vale recordarla: era `{open && …}` — React desmonta el nodo y no
+  queda nada que animar. Ahora el contenido queda montado y colapsa por CSS
+  (`grid-template-rows` 0fr→1fr), la misma técnica que ya usaba `.day-body` en
+  el editor. **Si aparece otro acordeón que "se corta seco", es esto.**
+- **"Se está enfriando"** tenía un `.sect` con los márgenes anulados a mano:
+  título huérfano y de otro tamaño que sus tarjetas vecinas.
+
+### Antes de esto (PR #87): subgrupos, gimnasios y el nombre de la pestaña
+
+- El agrupamiento por músculo de la tanda anterior se había aplicado a
+  `SlotCard` (**modo edición**), que no es la lista que se ve normalmente.
+- Ahora es por **subgrupo** (`subCatOf`/`subBlocksOf`), construido sobre
+  `fibrasDe()` para no crear una tabla paralela que se desincronice. Dos reglas
+  salieron de tests que fallaron: un ejercicio con porciones de subgrupos
+  distintos **no se afina** (el press de banca no es "Pecho superior"), y
+  trapecio/dorsal alto son **la misma región**.
+- Sheet `gym-match`: tu rutina entera contra un gimnasio, con lo que falta
+  asignar. Importa porque `exKey` incluye el equipo: **el historial de un
+  ejercicio se parte si el mismo movimiento se registra con equipos distintos.**
+- **La pestaña se llama "Entreno"** (elegido por Enzo). El id interno sigue
+  siendo `'rutina'` a propósito: está en `S.cfg` y viaja en los backups.
+
+---
+
 ## SESIÓN 2026-09-10 (cuarta parte) — La semana real y el registro retroactivo
 
 PR **#84**, mergeado y en vivo. El caso que lo destapó: Enzo entrenó martes y
