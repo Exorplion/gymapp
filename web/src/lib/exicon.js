@@ -35,6 +35,7 @@ const TABLA = [
   ['chin up', 'dominadas'],
   ['jalon', 'jalon'], ['pulldown', 'jalon'],
   ['remo en polea', 'remopolea'], ['remo sentado', 'remopolea'], ['seated row', 'remopolea'],
+  ['kelso', 'remo'], ['shrug', 'remo'], ['encogimiento', 'remo'],
   ['remo', 'remo'], ['row', 'remo'],
   ['peso muerto rumano', 'pesomuerto'], ['rumano', 'pesomuerto'], ['rdl', 'pesomuerto'],
   ['sldl', 'pesomuerto'], ['peso muerto', 'pesomuerto'], ['deadlift', 'pesomuerto'],

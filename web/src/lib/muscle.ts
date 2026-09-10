@@ -24,7 +24,8 @@ export const EXCATALOG = [
   { c: 'Espalda', n: 'Dominadas' }, { c: 'Espalda', n: 'Remo con barra' }, { c: 'Espalda', n: 'Jalón al pecho' },
   { c: 'Espalda', n: 'Remo en polea' }, { c: 'Espalda', n: 'Peso muerto' },
   { c: 'Espalda', n: 'Jalón ancho' }, { c: 'Espalda', n: 'Remo espalda alta' }, { c: 'Espalda', n: 'Remo neutro' },
-  { c: 'Espalda', n: 'Back extension' },
+  { c: 'Espalda', n: 'Back extension' }, { c: 'Espalda', n: 'Kelso shrug' },
+  { c: 'Espalda', n: 'Encogimientos' },
   { c: 'Hombro', n: 'Press militar' }, { c: 'Hombro', n: 'Elevaciones laterales' }, { c: 'Hombro', n: 'Pájaros' }, { c: 'Hombro', n: 'Face pull' },
   { c: 'Bíceps', n: 'Curl con barra' }, { c: 'Bíceps', n: 'Curl martillo' }, { c: 'Bíceps', n: 'Curl inclinado' },
   { c: 'Bíceps', n: 'Curl predicador' },
@@ -54,6 +55,14 @@ const KEYWORDS: [string, string][] = [
   ['jalon', 'Espalda'], ['pulldown', 'Espalda'], ['dominada', 'Espalda'], ['pull up', 'Espalda'],
   ['remo', 'Espalda'], ['row', 'Espalda'], ['espalda', 'Espalda'], ['dorsal', 'Espalda'],
   ['back extension', 'Espalda'], ['hiperext', 'Espalda'], ['lumbar', 'Espalda'],
+  // Encogimientos: trapecio. La app no tiene grupo "Trapecio" propio, y el
+  // trapecio medio/inferior es espalda alta — no hombro. El Kelso shrug
+  // (encogimiento escapular tumbado/inclinado, en posición de remo) es
+  // literalmente un remo sin flexión de codo: cae en Espalda por la misma
+  // razón que el remo. Sin esto quedaba sin grupo, no aparecía en "Músculos
+  // esta semana" y no se lo podía usar para cambiar un remo.
+  ['kelso', 'Espalda'], ['shrug', 'Espalda'], ['encogimiento', 'Espalda'],
+  ['trapecio', 'Espalda'], ['romboide', 'Espalda'],
   // pierna
   ['sldl', 'Pierna'], ['rumano', 'Pierna'], ['rdl', 'Pierna'],
   ['leg press', 'Pierna'], ['leg extension', 'Pierna'], ['leg curl', 'Pierna'],

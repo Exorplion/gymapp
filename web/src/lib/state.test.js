@@ -32,6 +32,38 @@ describe('resolveAutoRest', () => {
     expect(S.routine[S.cfg.seqIndex].type).toBe('workout');
   });
 
+  it('consume UN descanso por día transcurrido, no todos de una vez', () => {
+    // Dos descansos seguidos en la rutina y un solo día calendario pasado:
+    // antes se saltaban los dos y la app se adelantaba al plan real.
+    const ayer = dstr(new Date(Date.now() - 86400000));
+    S.routine = [
+      { id: 'r1', order: 0, type: 'rest' },
+      { id: 'r2', order: 1, type: 'rest' },
+      { id: 'w1', order: 2, type: 'workout', name: 'Turno', exercises: [] },
+    ];
+    S.cfg.seqIndex = 0;
+    S.cfg.seqIndexDate = ayer;
+
+    resolveAutoRest();
+
+    expect(S.cfg.seqIndex).toBe(1);
+  });
+
+  it('dos días de descanso sí consumen los dos descansos', () => {
+    const anteayer = dstr(new Date(Date.now() - 2 * 86400000));
+    S.routine = [
+      { id: 'r1', order: 0, type: 'rest' },
+      { id: 'r2', order: 1, type: 'rest' },
+      { id: 'w1', order: 2, type: 'workout', name: 'Turno', exercises: [] },
+    ];
+    S.cfg.seqIndex = 0;
+    S.cfg.seqIndexDate = anteayer;
+
+    resolveAutoRest();
+
+    expect(S.cfg.seqIndex).toBe(2);
+  });
+
   it('no toca el puntero si el turno pendiente ya es un entrenamiento', () => {
     S.routine = [
       { id: 'w1', order: 0, type: 'workout', name: 'Turno', exercises: [] },

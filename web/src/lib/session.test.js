@@ -33,6 +33,17 @@ describe('session.js — secuencia', () => {
     expect(S.cfg.seqIndex).toBe(1); // pasa al descanso
   });
 
+  it('guarda la sesión con el día en que se ENTRENÓ, no en el que se abrió', async () => {
+    // Una PWA no se cierra, se suspende: un borrador abierto ayer (o el
+    // martes y completado el jueves) quedaba archivado con la fecha vieja.
+    await startSession(0);
+    S.draft.date = '2000-01-01';              // el borrador viene de "antes"
+    S.draft.start = Date.parse('2026-09-10T07:30:00');
+    S.draft.entries['e1'] = { name: 'Press', sets: [{ w: 50, r: 8, t: S.draft.start }] };
+    await completeSession();
+    expect(S.sessions[0].date).toBe('2026-09-10');
+  });
+
   it('pendingSlot() devuelve el turno en seqIndex', () => {
     S.cfg.seqIndex = 2;
     expect(pendingSlot().id).toBe('c');

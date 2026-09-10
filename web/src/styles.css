@@ -73,8 +73,8 @@
   --color-card2: #151B25;    /* superficie elevada */
   /* Bordes/marcos: azul translúcido, no blanco. El "metal" es esto más el
      --edge-metal de abajo (arriba claro, abajo oscuro). */
-  --color-line: rgba(96,165,250,.10);
-  --color-line2: rgba(147,197,253,.20);
+  --color-line: rgba(96,165,250,.18);
+  --color-line2: rgba(147,197,253,.34);
   --color-txt: #F1F5F9;
   --color-mut: #9CA7B5;
   --color-mut2: #838E9E;
@@ -158,7 +158,13 @@
   --glow:0 16px 40px -14px rgba(56,189,248,.55);
   --glow-warn:0 16px 40px -14px rgba(251,191,36,.5);
   --glass-blur:blur(22px) saturate(1.5);
-  --glass-border:rgba(147,197,253,.16);
+  /* Subido de .16 a .30 el 2026-09-10: el marco existía pero no se veía.
+     Un azul claro al 16% sobre un fondo casi negro da ~1.15:1 contra la
+     superficie — está ahí, pero por debajo del umbral en el que el ojo lo
+     lee como una arista, y peor todavía en una pantalla al sol del gimnasio
+     (Enzo: "la paleta negra con los border azul metalizado no aparece").
+     Al 30% la arista se distingue sin volverse un contorno duro. */
+  --glass-border:rgba(147,197,253,.30);
   --glass-hi:var(--edge-metal);
   /* escala de espaciado: antes había márgenes sueltos (4, 6, 10, 13, 14px…)
      sin ritmo; todo lo estructural se apoya ahora en estos seis pasos */
@@ -173,8 +179,11 @@
      y es un inset box-shadow, no una imagen ni un blur más. --edge-metal se
      pone junto al borde de una tarjeta; --grad-metal es el relleno sutil que
      evita que una superficie grande se vea como un rectángulo muerto. */
-  --edge-metal:inset 0 1px 0 rgba(147,197,253,.18), inset 0 -1px 0 rgba(0,0,0,.5);
-  --grad-metal:linear-gradient(180deg,rgba(96,165,250,.055),rgba(96,165,250,0) 42%);
+  /* El contraste ARRIBA/abajo es lo que hace que se lea metal y no un borde
+     pintado: subió la luz de arriba (.18 → .40) y se profundizó la sombra de
+     abajo. Sin esa diferencia el marco se ve plano por más color que tenga. */
+  --edge-metal:inset 0 1px 0 rgba(191,219,254,.40), inset 0 -1px 0 rgba(0,0,0,.62);
+  --grad-metal:linear-gradient(180deg,rgba(96,165,250,.09),rgba(96,165,250,0) 46%);
   /* ---- TIEMPOS (auditoría 2026-09-09) -------------------------------------
      La app tenía 17 duraciones distintas en CSS (.15 .18 .2 .22 .24 .25 .28
      .3 .32 .34 .38 .45 .5…) y otras 17 en JS, entre WAAPI, GSAP y CSS. Eso

@@ -39,6 +39,10 @@ const TABLA = [
   ['remo en polea', { p: ['Dorsal alto'], s: ['Bíceps'] }],
   ['remo sentado', { p: ['Dorsal alto'], s: ['Bíceps'] }],
   ['face pull', { p: ['Trapecio'] }],
+  // Kelso: encogimiento en posición de remo — trapecio medio, sin bíceps
+  // (el codo no se flexiona), por eso no lleva secundarios.
+  ['kelso', { p: ['Trapecio', 'Dorsal alto'] }],
+  ['shrug', { p: ['Trapecio'] }],
   ['encogimiento', { p: ['Trapecio'] }],
   ['remo', { p: ['Dorsal alto', 'Dorsal bajo'], s: ['Bíceps'] }],
   ['row', { p: ['Dorsal alto', 'Dorsal bajo'], s: ['Bíceps'] }],

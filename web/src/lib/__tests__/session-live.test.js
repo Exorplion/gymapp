@@ -113,6 +113,16 @@ describe('addExtraSet', () => {
     await addExtraSet('a');
     expect(nextPending(sessionExs(0)).id).toBe('a');
   });
+
+  it('vuelve a activar ESE ejercicio aunque ya haya otro en curso', async () => {
+    // El caso real: terminás 'a', la app pasa sola a 'b' y lo arrancás; te
+    // acordás de que a 'a' le faltaba una y volvés con el carrusel. Antes la
+    // serie se registraba en 'b' porque draft.cur no se movía.
+    S.draft.entries.a = { name: 'Press', sets: [{ w: 50, r: 10 }, { w: 50, r: 10 }, { w: 50, r: 10 }] };
+    S.draft.cur = 'b';
+    await addExtraSet('a');
+    expect(S.draft.cur).toBe('a');
+  });
 });
 
 describe('addSessionExercise', () => {
