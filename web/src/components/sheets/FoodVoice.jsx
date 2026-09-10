@@ -117,7 +117,7 @@ export default function FoodVoice() {
                       {i.source === 'mine' && <span className="ml-1.5 inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-mut">tuyo</span>}
                     </div>
                   </div>
-                  <button type="button" className="grid h-8 w-8 flex-none place-items-center rounded-full text-mut hover:text-txt" onClick={() => setItems(items.filter(x => x !== i))}>✕</button>
+                  <button type="button" className="grid h-8 w-8 flex-none place-items-center rounded-full text-mut hover:text-txt" aria-label="Quitar de la lista" onClick={() => setItems(items.filter(x => x !== i))}>✕</button>
                 </div>
               ))}
             </div>

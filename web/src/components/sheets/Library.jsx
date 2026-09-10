@@ -61,7 +61,7 @@ function LibraryList() {
                     <div className="t">{r.name}{cur && <span className="lib-tag">en uso</span>}</div>
                     <div className="s">{nd} días · {ne} ejercicios · guardada {fmtD(r.savedAt)}</div>
                   </button>
-                  <button type="button" className="mini red" onClick={() => deleteLibRoutine(r.id)}>✕</button>
+                  <button type="button" className="mini red" aria-label={`Borrar la rutina ${r.name}`} onClick={() => deleteLibRoutine(r.id)}>✕</button>
                 </div>
               );
             })}

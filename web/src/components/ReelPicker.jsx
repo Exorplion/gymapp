@@ -81,6 +81,28 @@ export default function ReelPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [val]);
 
+  /* La rueda era 100% gesto: sin un dedo que arrastre no había forma de
+     cambiar el peso ni las reps — el control MÁS usado de la app quedaba
+     fuera del alcance de un teclado o un switch (WCAG 2.1.1, y es un fallo
+     de nivel A, el más básico). Se cuelga del diente centrado, que ya era
+     el único elemento enfocable de la rueda porque abre la edición manual:
+     así el foco cae sobre el valor actual, que es exactamente lo que un
+     lector de pantalla tiene que anunciar.
+
+     Se pisa desde `onValue` (el múltiplo de step al que la rueda está
+     centrada) y no desde `val`: así una flecha siempre aterriza en un
+     diente, igual que un arrastre. */
+  function onWheelKeyDown(e) {
+    const salto = { PageUp: 5, PageDown: -5, ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key];
+    if (salto) {
+      e.preventDefault();
+      commit(Math.max(min, onValue + salto * step));
+      return;
+    }
+    if (e.key === 'Home') { e.preventDefault(); commit(min); return; }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(); }
+  }
+
   function onScroll() {
     clearTimeout(timerRef.current);
     // Se lee el diente centrado 120ms después de que el scroll se queda
@@ -131,8 +153,10 @@ export default function ReelPicker({
 
   // Tocar (tap corto, sin mantener) el número centrado lo vuelve editable,
   // en la unidad que el usuario ve (toUnit), no en kg crudos.
+  // El evento es opcional: desde el teclado (Enter/Espacio) se llama sin
+  // ninguno, y ahí no hay nada que detener.
   function openEdit(e) {
-    e.stopPropagation();
+    e?.stopPropagation();
     setEditing(true);
   }
   useEffect(() => {
@@ -193,7 +217,16 @@ export default function ReelPicker({
             <div
               key={i}
               className={`reel-tooth${on ? ' on' : ''}`}
-              {...(on ? { role: 'button', tabIndex: 0, onClick: openEdit } : {})}
+              {...(on ? {
+                role: 'spinbutton',
+                tabIndex: 0,
+                'aria-label': label,
+                'aria-valuenow': val,
+                'aria-valuemin': min,
+                'aria-valuetext': String(fmt ? fmt(val) : val),
+                onClick: openEdit,
+                onKeyDown: onWheelKeyDown,
+              } : {})}
             >
               {on ? (fmt ? fmt(val) : val) : (fmt ? fmt(v) : v)}
             </div>

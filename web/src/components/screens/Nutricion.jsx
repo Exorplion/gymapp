@@ -152,7 +152,7 @@ export default function Nutricion() {
       )}
 
       <div className="datenav">
-        <button type="button" className="mini w-11 h-11" onClick={() => shiftNutriDate(-1)}>‹</button>
+        <button type="button" className="mini w-11 h-11" aria-label="Día anterior" onClick={() => shiftNutriDate(-1)}>‹</button>
         <div
           className="d text-center"
           role={isToday ? undefined : 'button'}
@@ -163,7 +163,7 @@ export default function Nutricion() {
           {isToday ? 'Hoy' : fmtDFull(date)}
           {!isToday && <small>toca para volver a hoy</small>}
         </div>
-        <button type="button" className="mini w-11 h-11" disabled={isToday} onClick={() => shiftNutriDate(1)}>›</button>
+        <button type="button" className="mini w-11 h-11" aria-label="Día siguiente" disabled={isToday} onClick={() => shiftNutriDate(1)}>›</button>
       </div>
 
       {/* El puente entre las dos mitades de la app. Va ARRIBA del anillo, no
@@ -327,7 +327,7 @@ export default function Nutricion() {
                       </div>
                     )}
                   </div>
-                  <button type="button" className="meal-del" onClick={() => deleteMeal(meal.id)}>✕</button>
+                  <button type="button" className="meal-del" aria-label={`Borrar ${meal.name}`} onClick={() => deleteMeal(meal.id)}>✕</button>
                 </div>
               ))}
             </div>

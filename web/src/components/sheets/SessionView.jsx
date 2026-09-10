@@ -240,7 +240,7 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
         ) : (
           <span className="dcard-title">{entry.name}</span>
         )}
-        {editando && <button type="button" className="mini red" title="Quitar ejercicio" onClick={() => onBorrarEjercicio(idx)}>✕</button>}
+        {editando && <button type="button" className="mini red" title="Quitar ejercicio" aria-label={`Quitar ${entry.name}`} onClick={() => onBorrarEjercicio(idx)}>✕</button>}
       </div>
 
       {editando ? (
@@ -260,7 +260,7 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
                 type="number" inputMode="numeric" defaultValue={st.r}
                 onBlur={ev => onSetSerie(idx, si, 'r', ev.target.value)}
               />
-              <button type="button" className="mini red" onClick={() => onBorrarSerie(idx, si)}>✕</button>
+              <button type="button" className="mini red" aria-label={`Borrar la serie ${si + 1}`} onClick={() => onBorrarSerie(idx, si)}>✕</button>
             </div>
           ))}
           <button type="button" className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => onAgregarSerie(idx)}>+ Serie</button>
