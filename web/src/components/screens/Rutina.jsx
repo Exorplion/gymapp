@@ -195,9 +195,10 @@ function RutinaView() {
           ejercicios", que es la pestaña de al lado: quedaban escondidos detrás
           de otra cosa. Acá son una opción propia, y el subtítulo dice qué vas a
           encontrar adentro en vez de repetir el nombre del botón. */}
-      <button type="button" className="row w-full text-left mb-[var(--s3)]" onClick={() => openSheet('gyms')}>
+      <button type="button" className="nav-card" onClick={() => openSheet('gyms')}>
+        <span className="nav-card-ico" aria-hidden="true">🏋</span>
         <div className="grow">
-          <div className="t">🏋 Ver mis gimnasios</div>
+          <div className="t">Ver mis gimnasios</div>
           <div className="s">
             {S.gyms.length
               ? `${S.gyms.length} guardado${S.gyms.length === 1 ? '' : 's'}${gymActivo ? ` · entrenando en ${gymActivo.name}` : ''} · qué máquina usás para cada ejercicio en cada uno`
@@ -232,7 +233,13 @@ function RutinaView() {
                 </span>
                 <span className="chev">{open ? '⌄' : '›'}</span>
               </button>
-              {open && (
+              {/* El contenido va SIEMPRE montado y se colapsa por CSS
+                  (grid-template-rows 0fr→1fr, misma técnica que .day-body en
+                  el editor). Con `{open && ...}` no había forma de animar el
+                  CIERRE: React desmonta el nodo y no queda nada que animar,
+                  así que la tarjeta se cerraba de golpe. */}
+              <div className="day-collapse">
+                <div className="day-collapse-in">
                 <div className="day-exs">
                   {/* Agrupados por SUBGRUPO muscular (subBlocksOf, lib/muscle.js):
                       un turno "Anterior" con sentadilla, prensa, curl femoral y
@@ -273,7 +280,8 @@ function RutinaView() {
                     </div>
                   ))}
                 </div>
-              )}
+                </div>
+              </div>
             </div>
           );
         })}
@@ -387,7 +395,13 @@ function ReforzarCard() {
   const dias = daysSinceAll();
   return (
     <div className="card sub mb-[var(--s3)]">
-      <div className="sect" style={{ margin: 0, padding: 0 }}>Se está enfriando</div>
+      {/* Mismo encabezado que DeloadCard y CoberturaCard: era un `.sect` con
+          los márgenes anulados a mano, que en esta tarjeta se leía como un
+          título huérfano y de otro tamaño que sus vecinas. */}
+      <div className="text-sm text-txt font-medium">Se está enfriando</div>
+      <div className="s text-mut mt-1">
+        Grupos que hace más de diez días que no tocás. Sumalos al día de hoy.
+      </div>
       {/* Antes era un .btn.sm.ghost por fila (hasta 3): un botón de pill
           completo, repetido, al lado de un texto chico — se veía enorme y
           pesado para lo que es (Enzo: "el boton... es muy grande"). Un chip
