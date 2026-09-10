@@ -6,7 +6,7 @@ import { toast } from './toast.js';
 import { startRest, stopRest } from './rest.js';
 import { pedirPermiso } from './alarm.js';
 import { scrollCarouselTo } from './carousel.js';
-import { exKey } from './equip.js';
+import { exKey, isBodyweight } from './equip.js';
 import { currentStreak, bestStreak } from './streak.js';
 
 /** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
@@ -49,11 +49,28 @@ export async function toggleUnilateral(exId) {
   bump();
 }
 
+/** Tu peso corporal registrado, o 0 si nunca cargaste uno. Sale del perfil,
+    que BodyForm mantiene sincronizado con el último registro de cuerpo. */
+export function bodyWeightKg() {
+  const w = S.cfg?.profile?.weightKg;
+  return typeof w === 'number' && w > 0 ? w : 0;
+}
+
+/* Con qué peso arranca un ejercicio del que no hay historial. En los de peso
+   corporal (dominadas, fondos, plancha) la carga ES tu cuerpo, así que el
+   default sale de tu peso registrado — antes arrancaban en 20 kg como
+   cualquier otro, un número que ahí no significa nada. Si nunca cargaste tu
+   peso queda en 0 y saveSet te dice qué falta, en vez de inventar uno. */
+function pesoInicial(ex) {
+  if (isBodyweight(ex)) return bodyWeightKg();
+  return 20;
+}
+
 export function ensureVals(ex) {
   if (!S.hoyVals[ex.id]) {
     const last = lastDataFor(ex);
     if (last) { const ls = last[last.length - 1]; S.hoyVals[ex.id] = { w: ls.w, r: ls.r, rpe: null }; }
-    else S.hoyVals[ex.id] = { w: 20, r: ex.reps || 10, rpe: null };
+    else S.hoyVals[ex.id] = { w: pesoInicial(ex), r: ex.reps || 10, rpe: null };
   }
   // `rpe` puede faltar en un S.hoyVals guardado antes de que este campo
   // existiera — se completa acá en vez de forzar una migración de datos.
@@ -478,6 +495,13 @@ export function reemplazaA(exId) {
 export async function saveSet(exId) {
   const ex = findEx(exId); if (!ex) return;
   const v = ensureVals(ex);
+  if (!(v.w > 0) && isBodyweight(ex)) {
+    // Ejercicio de peso corporal sin peso: no es que el usuario haya puesto un
+    // número malo, es que la app todavía no sabe cuánto pesa. Se lo dice en vez
+    // de repetir "Peso y reps deben ser > 0", que ahí no explica nada.
+    toast('Registrá tu peso corporal en Progreso para usar este ejercicio');
+    return;
+  }
   if (!(v.w > 0) || !(v.r > 0)) { toast('Peso y reps deben ser > 0'); return; }
   if (!S.draft) {
     S.draft = { id: uid(), date: dstr(), slotId: pendingSlot()?.id, dayName: pendingSlot()?.name || 'Entrenamiento', start: Date.now(), cur: exId, entries: {} };
