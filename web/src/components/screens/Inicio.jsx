@@ -13,14 +13,13 @@
 // lib/bodydata.js) y el grid usa la tipografía condensada e itálica y los
 // degradados cian/azul que ya son de Fierro.
 //
-// La tira de arriba NO es un calendario de días de la semana (como el de
-// TRACKED): la rutina de Fierro no vive en casilleros lun-dom, es una
-// SECUENCIA de largo variable que avanza sólo cuando entrenás (ver
-// rutina-logic.js) — un calendario por fecha mentiría sobre cómo funciona.
-// En cambio es la misma tira de turnos que ya usa Rutina.jsx (weekbars),
-// reutilizada acá: cada turno es su posición en la secuencia, no un día
-// calendario, y tocar cualquiera que no sea "hoy" abre una vista previa
-// (mismo sheet 'day-peek' que usa Rutina) sin tocar el puntero real.
+// La tira de arriba es la SEMANA REAL (SemanaReal, lib/week.js): siete días
+// por fecha con lo que de verdad entrenaste. Ojo con el comentario histórico
+// que decía que un calendario "mentiría sobre cómo funciona la app": eso valía
+// —y sigue valiendo— para el PLAN, porque la rutina de Fierro no vive en
+// casilleros lun-dom sino en una SECUENCIA que avanza sólo cuando entrenás
+// (ver rutina-logic.js). Esta tira no muestra el plan, muestra los hechos, y
+// los hechos sí tienen fecha. El plan se ve y se edita en Rutina.
 import { useEffect, useRef } from 'react';
 import { S, useStore, bump, openSheet, changeTab } from '../../lib/state.js';
 import { WDS, MO, dstr, fmtD, fmtNum, round1 } from '../../lib/format.js';
@@ -107,7 +106,6 @@ export default function Inicio() {
   return (
     <div className="inicio">
       <SemanaReal />
-      {S.routine.length > 1 && <SeqStrip />}
 
       <div className="ini-top">
         <div className="ini-eyebrow">{eyebrow}</div>
@@ -132,11 +130,20 @@ export default function Inicio() {
 
 /** La semana REAL, de lunes a domingo, con lo que de verdad pasó.
 
-    Es el complemento de SeqStrip, no su reemplazo: la tira de turnos es el
-    PLAN (una secuencia que avanza cuando entrenás) y esto son los HECHOS (qué
-    días de esta semana entrenaste). Tenerlos separados es lo que permite
-    mostrar un calendario sin mentir sobre cómo funciona la rutina — ver el
-    comentario de lib/week.js.
+    Muestra los HECHOS: qué días de esta semana entrenaste de verdad. El PLAN
+    (la secuencia de turnos, que avanza cuando entrenás y no por fecha) vive en
+    la pestaña Rutina, que es donde se edita — ver el comentario de lib/week.js
+    sobre por qué tener las dos cosas separadas es lo que permite mostrar un
+    calendario sin mentir.
+
+    Hasta el 2026-09-10 esta pantalla tenía ADEMÁS una tira con la secuencia de
+    turnos (SeqStrip: barras numeradas 1, 2, 3…). Se borró: con las dos juntas
+    Inicio mostraba dos tiras horizontales que se leían como dos calendarios en
+    competencia, y la de turnos era justamente la que se confundía con una
+    semana ("me gusta más el nuevo, el otro borralo" — Enzo). El atajo para
+    espiar un turno (sheet 'day-peek') era lo único que sólo se abría desde
+    ahí, así que se movió a la tira de proyección de Rutina.jsx — si no, ese
+    sheet quedaba sin ninguna entrada en toda la app.
 
     Un día vacío del pasado se puede tocar para anotarlo: es la respuesta a
     "entrené el martes pero no lo anoté y la app no se entera". Un día futuro
@@ -184,39 +191,6 @@ function SemanaReal() {
         </button>
       )}
     </>
-  );
-}
-
-/** La tira de turnos: la misma idea que .weekbars de Rutina.jsx (una barra
-    por turno, alta si tiene series) pero de largo variable y tocable. El
-    turno de HOY (S.cfg.seqIndex) tiene el anillo encendido; los demás abren
-    una vista previa sin mover el puntero — la secuencia sólo avanza
-    entrenando de verdad, nunca tocando la tira. */
-function SeqStrip() {
-  const idx = S.cfg.seqIndex;
-  const maxSets = Math.max(1, ...S.routine.map(s => s.type === 'workout' ? (s.exercises || []).reduce((a, e) => a + e.sets, 0) : 0));
-  return (
-    <div className="ini-strip" role="group" aria-label="Turnos de tu rutina">
-      {S.routine.map((slot, i) => {
-        const on = slot.type === 'workout' && !!slot.exercises?.length;
-        const sets = on ? slot.exercises.reduce((a, e) => a + e.sets, 0) : 0;
-        const h = sets ? Math.round(14 + (sets / maxSets) * 18) : 5;
-        const hoy = i === idx;
-        return (
-          <button
-            type="button"
-            key={slot.id}
-            className={`ini-strip-i ${on ? 'on' : ''} ${hoy ? 'hoy' : ''}`}
-            onClick={() => hoy ? changeTab('hoy') : openSheet('day-peek', { wd: i })}
-            aria-label={`${on ? (slot.name || 'Turno') : 'Descanso'}${hoy ? ', hoy' : ''}`}
-            aria-current={hoy ? 'date' : undefined}
-          >
-            <span className="b" style={{ height: h }}></span>
-            <span className="n">{i + 1}</span>
-          </button>
-        );
-      })}
-    </div>
   );
 }
 

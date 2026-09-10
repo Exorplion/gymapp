@@ -2390,8 +2390,9 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    demás son sólo un vistazo (abren 'day-peek', no mueven el puntero real). */
 /* ---- LA SEMANA REAL (Inicio) --------------------------------------------
    Siete casilleros de lunes a domingo con lo que DE VERDAD pasó. Es lo
-   opuesto a .ini-strip, que muestra el plan (la secuencia de turnos): acá
-   cada casillero es una fecha. Tres estados que tienen que distinguirse de un
+   opuesto a la tira de turnos que Inicio tenía antes (.ini-strip, borrada el
+   2026-09-10): aquella mostraba el plan como una secuencia numerada y se leía
+   como un calendario sin serlo. Acá cada casillero es una fecha de verdad. Tres estados que tienen que distinguirse de un
    vistazo, porque significan cosas distintas: entrenado (punto encendido),
    vacío del pasado (tocable, para anotarlo) y futuro (apagado y sin tocar —
    "todavía no llegó" no es "no entrenaste"). */
@@ -2422,17 +2423,6 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   color:var(--blue3);font-size:var(--t-sm);font-weight:600;
 }
 
-.ini-strip{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 4px;flex:none;margin-bottom:6px}
-.ini-strip-i{
-  flex:0 0 46px;display:flex;flex-direction:column;align-items:center;gap:7px;
-  padding:9px 0 7px;border-radius:var(--r-md);background:rgba(255,255,255,.03);border:1px solid transparent;color:var(--mut2);
-}
-.ini-strip-i .b{width:20px;height:6px;border-radius:var(--r-xs);background:var(--card2);display:block}
-.ini-strip-i.on .b{background:linear-gradient(180deg,var(--blue3),var(--blue))}
-.ini-strip-i .n{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700}
-.ini-strip-i.hoy{border-color:rgba(var(--cyan-rgb),.4);background:rgba(var(--cyan-rgb),.07)}
-.ini-strip-i.hoy .n{color:var(--cyan)}
-.ini-strip-i.hoy .b{background:linear-gradient(180deg,var(--cyan),var(--blue));box-shadow:0 0 10px rgba(var(--cyan-rgb),.5)}
 
 /* Paso 1→2 del asistente de rutina (RoutineWizard.jsx) usa
    document.startViewTransition(): sin esto el navegador cruza los dos
