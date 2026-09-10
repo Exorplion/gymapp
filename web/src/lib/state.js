@@ -14,6 +14,10 @@ export const S = {
   meals: [], foods: [], body: [],
   cfg: {
     unit: 'kg', rest: 90, goals: { kcal: 2600, p: 160, c: 280, f: 80 }, goalsAuto: false,
+    // Descarga en curso: { desde, grupos, antes } o null. Guarda las series
+    // que cada ejercicio tenía ANTES para poder devolverlas exactas — ver
+    // applyDeload/endDeload en rutina-logic.js.
+    deload: null,
     seqIndex: 0,        // posición pendiente en S.routine
     seqIndexDate: null, // 'YYYY-MM-DD': desde cuándo seqIndex está en este valor
     profile: { sex: 'm', age: null, height: null, weightKg: null, activity: 'moderate', goal: 'deficit_mod', tdeeEmpirical: null, proteinPref: 0.5, fatPref: 0.5 },

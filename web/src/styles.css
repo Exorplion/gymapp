@@ -751,6 +751,20 @@ main{
 .ex-more-body{padding-top:var(--s2);border-top:1px solid var(--line)}
 .ex-more-body>.chip{margin-bottom:var(--s2)}
 
+/* Doble progresión: la instrucción de hoy. Se lee como dato, no como alarma
+   —el naranja/rojo está reservado para cuando algo va mal— salvo cuando toca
+   subir el peso, que es la única de las tres que pide hacer algo distinto de
+   lo de la semana pasada. */
+.prog-next{
+  margin-top:8px;padding:8px 10px;border-radius:var(--r-md);
+  background:rgba(var(--blue-rgb),.09);border:1px solid rgba(var(--blue-rgb),.24);
+  color:var(--blue3);font-size:12.5px;line-height:1.4;
+}
+.prog-next.up{
+  background:rgba(var(--ok-rgb),.10);border-color:rgba(var(--ok-rgb),.30);
+  color:var(--ok);font-weight:600;
+}
+
 .ex-actions{display:flex;gap:6px;margin-top:10px}
 .ex-actions button{
   flex:1;min-height:38px;border-radius:var(--r-md);

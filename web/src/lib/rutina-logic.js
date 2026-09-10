@@ -65,6 +65,69 @@ export function deloadSuggestion() {
   });
   return excedidos;
 }
+/* ---------- la descarga, como acción y no sólo como aviso ----------
+   El aviso existía desde la Fase 3, pero terminaba en "una semana con 40-50%
+   menos series suele restaurar el progreso" — o sea, dejándote a vos abrir
+   cada ejercicio de esos grupos y bajarle las series a mano, y acordarte de
+   volver a subirlas la semana siguiente. Eso último es lo que de verdad no
+   pasa: la descarga a medias es peor que ninguna, porque bajás el volumen y
+   después te quedás bajo sin querer.
+
+   Por eso se guarda lo que había ANTES en S.cfg.deload y terminar la descarga
+   lo restaura exacto. No es un "−40%" que después hay que adivinar cómo
+   deshacer: es un estado con principio y fin. */
+const FACTOR_DESCARGA = 0.55;   // ~45% menos series, dentro del 40-50% que dice el aviso
+
+/** ¿Hay una descarga activa? Devuelve cuándo se aplicó y a qué grupos. */
+export function deloadActivo() {
+  return S.cfg.deload || null;
+}
+
+/** Baja las series de todos los ejercicios de `grupos` y recuerda los valores
+    originales. Nunca deja un ejercicio en menos de 1 serie: un ejercicio con
+    cero series no es un ejercicio, es uno borrado a medias. */
+export async function applyDeload(grupos) {
+  if (!grupos?.length || S.cfg.deload) return false;
+  const antes = {};
+  let tocados = 0;
+  pushHistory('Descarga aplicada');
+  S.routine.forEach(slot => {
+    (slot.exercises || []).forEach(ex => {
+      if (!grupos.includes(catOf(ex))) return;
+      const nuevo = Math.max(1, Math.round(ex.sets * FACTOR_DESCARGA));
+      if (nuevo === ex.sets) return;
+      antes[ex.id] = ex.sets;
+      ex.sets = nuevo;
+      tocados++;
+    });
+  });
+  if (!tocados) return false;
+  S.cfg.deload = { desde: dstr(), grupos, antes };
+  await Promise.all([persistAll(), saveCfg()]);
+  bump();
+  return true;
+}
+
+/** Devuelve cada ejercicio a las series que tenía. Un ejercicio que se borró
+    o que cambiaste a mano durante la descarga simplemente no se toca: se
+    restaura lo que se pueda, y el estado de descarga se cierra igual — quedar
+    con la marca puesta para siempre por un ejercicio que ya no existe sería
+    peor que restaurar de menos. */
+export async function endDeload() {
+  const d = S.cfg.deload;
+  if (!d) return false;
+  pushHistory('Descarga terminada');
+  S.routine.forEach(slot => {
+    (slot.exercises || []).forEach(ex => {
+      if (d.antes[ex.id] != null) ex.sets = d.antes[ex.id];
+    });
+  });
+  S.cfg.deload = null;
+  await Promise.all([persistAll(), saveCfg()]);
+  bump();
+  return true;
+}
+
 /** Series por grupo en la semana que terminó hace `weeksAgo` semanas
     (0 = los últimos 7 días). muscleVolume(days) sólo sabe contar "los
     últimos N días desde hoy", así que se resta contando por diferencia. */
