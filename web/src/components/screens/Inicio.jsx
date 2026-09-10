@@ -31,7 +31,7 @@ import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
 import Silhouette from '../Silhouette.jsx';
 import AnimatedText from '../AnimatedText.jsx';
-import { countTo } from '../../lib/motion.js';
+import { countTo, D } from '../../lib/motion.js';
 
 export default function Inicio() {
   useStore();
@@ -50,7 +50,7 @@ export default function Inicio() {
       gsap.fromTo(
         tiles,
         { opacity: 0, y: 16, scale: 0.96 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.06, ease: 'power3.out' },
+        { opacity: 1, y: 0, scale: 1, duration: D.panel / 1000, stagger: 0.06, ease: 'power3.out' },
       );
     });
     return () => ctx.revert();

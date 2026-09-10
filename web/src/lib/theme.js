@@ -112,7 +112,7 @@ function conContraste(h, s, l, fondoHex, minimo, subir = true) {
     garantías de contraste de conContraste() se calcularían contra un color
     que la app ya no pinta, y darían por bueno un tono que en pantalla no se
     lee. Se actualizó junto con la paleta "hierro y encendido". */
-export const BG = '#0A0B0D';
+export const BG = '#050609';
 /* Los dos candidatos a texto ARRIBA del degradado. Se exportan para que los
    tests no los repitan a mano: antes estaban escritos también en theme.test.js
    y al cambiar la paleta el test falló por duplicación, no por un bug real. */

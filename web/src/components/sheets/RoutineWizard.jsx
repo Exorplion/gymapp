@@ -18,6 +18,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import gsap from 'gsap';
+import { D } from '../../lib/motion.js';
 import { closeSheet } from '../../lib/state.js';
 import { MUSCLE_CATS, EXCATALOG } from '../../lib/muscle.js';
 import { coberturaDe } from '../../lib/coverage.js';
@@ -70,7 +71,7 @@ function useStepReveal(step) {
       gsap.fromTo(
         targets,
         { opacity: 0, y: 12, scale: 0.94 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.4, stagger: 0.035, ease: 'power2.out', delay: 0.05 },
+        { opacity: 1, y: 0, scale: 1, duration: D.panel / 1000, stagger: 0.06, ease: 'power2.out', delay: 0.05 },
       );
     });
     return () => ctx.revert();

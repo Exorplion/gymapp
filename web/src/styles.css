@@ -47,12 +47,34 @@
      Contraste verificado sobre --card (#14161A): txt ~17:1 · mut 7.4:1 ·
      mut2 5.5:1 · accent 8.4:1 · ok 9.7:1 · warn ~11:1 · red 6.6:1 ·
      on-grad sobre accent 8.7:1. Ninguno por debajo de AA. */
-  --color-bg: #0A0B0D;
-  --color-bg2: #14161A;
-  --color-card: #14161A;
-  --color-card2: #1C1F25;
-  --color-line: rgba(255,255,255,.07);
-  --color-line2: rgba(255,255,255,.14);
+  /* ---- SEGUNDA VUELTA: "acero negro" (Enzo, 2026-09-09) ------------------
+     Pedido: "puede ser negro pero con tonos azul de fondo bordes marcos, no
+     sé tono metálico". La familia de matiz NO cambia —sigue siendo el
+     recorrido análogo frío de arriba, que se eligió por una razón geométrica
+     que no caducó— lo que cambia son las SUPERFICIES.
+
+     Antes eran grises neutros (#14161A) con bordes de blanco translúcido. El
+     blanco plano es justamente lo que hace que una superficie se lea como
+     plástico: el metal no devuelve luz blanca y pareja, devuelve el color de
+     lo que lo rodea, y con un borde más claro arriba que abajo (la luz cae
+     de arriba). Por eso acá el fondo baja a negro casi puro, las superficies
+     suben apenas en azul en vez de en gris, y los bordes pasan a ser azul
+     translúcido en lugar de blanco.
+
+     El contraste del texto MEJORA con este cambio, no empeora: las
+     superficies se oscurecen y el texto claro queda encima con más
+     diferencia que antes. Medido sobre las cuatro superficies nuevas, el peor
+     caso de texto es mut2 sobre --card2 con 5.21:1 (AA pide 4.5); sobre
+     --card da txt 17.1:1, mut 7.7:1, mut2 5.65:1, accent 8.8:1. Ninguno baja
+     de AA. */
+  --color-bg: #050609;       /* negro: el fondo de la app */
+  --color-bg2: #0B0E14;      /* negro azulado: barras y zócalos */
+  --color-card: #0E1219;     /* superficie: negro con azul, no gris */
+  --color-card2: #151B25;    /* superficie elevada */
+  /* Bordes/marcos: azul translúcido, no blanco. El "metal" es esto más el
+     --edge-metal de abajo (arriba claro, abajo oscuro). */
+  --color-line: rgba(96,165,250,.10);
+  --color-line2: rgba(147,197,253,.20);
   --color-txt: #F1F5F9;
   --color-mut: #9CA7B5;
   --color-mut2: #838E9E;
@@ -123,8 +145,8 @@
   --glow:0 16px 40px -14px rgba(56,189,248,.55);
   --glow-warn:0 16px 40px -14px rgba(251,191,36,.5);
   --glass-blur:blur(22px) saturate(1.5);
-  --glass-border:rgba(255,255,255,.12);
-  --glass-hi:inset 0 1px 0 rgba(255,255,255,.16);
+  --glass-border:rgba(147,197,253,.16);
+  --glass-hi:var(--edge-metal);
   /* escala de espaciado: antes había márgenes sueltos (4, 6, 10, 13, 14px…)
      sin ritmo; todo lo estructural se apoya ahora en estos seis pasos */
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
@@ -132,6 +154,27 @@
      que es deriva, no jerarquía */
   --t-micro:11px; --t-sm:13px; --t-body:15px; --t-lg:18px; --t-xl:22px;
   --t-display:34px; --t-hero:44px;
+  /* ---- MARCO METÁLICO -----------------------------------------------------
+     Un borde de un solo color se lee plano. El metal se reconoce porque la
+     arista de ARRIBA devuelve más luz que la de abajo: eso es todo el truco,
+     y es un inset box-shadow, no una imagen ni un blur más. --edge-metal se
+     pone junto al borde de una tarjeta; --grad-metal es el relleno sutil que
+     evita que una superficie grande se vea como un rectángulo muerto. */
+  --edge-metal:inset 0 1px 0 rgba(147,197,253,.18), inset 0 -1px 0 rgba(0,0,0,.5);
+  --grad-metal:linear-gradient(180deg,rgba(96,165,250,.055),rgba(96,165,250,0) 42%);
+  /* ---- TIEMPOS (auditoría 2026-09-09) -------------------------------------
+     La app tenía 17 duraciones distintas en CSS (.15 .18 .2 .22 .24 .25 .28
+     .3 .32 .34 .38 .45 .5…) y otras 17 en JS, entre WAAPI, GSAP y CSS. Eso
+     no es criterio, es deriva: nadie eligió que un chip tarde .22 y otro .24,
+     se fueron escribiendo sueltas. Cuatro pasos alcanzan, y el paso dice PARA
+     QUÉ sirve, no cuánto dura:
+       --d1 toque   — respuesta al dedo: presión, hover, foco.
+       --d2 objeto  — algo chico cambia de estado: chip, switch, badge.
+       --d3 panel   — algo grande entra o sale: sheet, pantalla, tarjeta.
+       --d4 momento — celebración: hito, PR, confeti. Se permite ser lento.
+     Los valores salen de los que ya predominaban, así que la app se sigue
+     sintiendo igual; lo que cambia es que ahora hay dónde elegirlos. */
+  --d1:150ms; --d2:220ms; --d3:320ms; --d4:460ms;
   --ease:cubic-bezier(.22,.9,.28,1);
   --spring:cubic-bezier(.34,1.56,.64,1);
   --ease-out:cubic-bezier(.16,1,.3,1);
@@ -192,9 +235,9 @@ input,select,button,textarea{font-family:inherit;color:inherit}
 .warmup-skip::after,.sil-caras button::after,.done-again::after{
   content:'';position:absolute;left:0;right:0;top:-11px;bottom:-11px;
 }
-button{background:none;border:none;cursor:pointer;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+button{background:none;border:none;cursor:pointer;transition:transform var(--d1) cubic-bezier(.34,1.56,.64,1)}
 button:active{transform:scale(.96);transition-duration:.05s}
-[data-act]:not(button){transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+[data-act]:not(button){transition:transform var(--d1) cubic-bezier(.34,1.56,.64,1)}
 [data-act]:not(button):active{transform:scale(.98);transition-duration:.05s}
 input[type=number]{-moz-appearance:textfield}
 input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none}
@@ -222,7 +265,7 @@ header.top{
   width:38px;height:38px;border-radius:13px;display:grid;place-items:center;
   border:1px solid rgba(255,255,255,.1);color:var(--mut);
   background:linear-gradient(150deg,rgba(255,255,255,.09),rgba(255,255,255,.02));
-  transition:.15s;
+  transition:var(--d1);
 }
 .icon-btn svg{width:19px;height:19px}
 .icon-btn:active{border-color:var(--line2);color:var(--blue2)}
@@ -244,7 +287,7 @@ header.top{
 .streak-n{font-family:'Barlow Condensed';font-weight:700;font-size:16px;letter-spacing:.04em;color:#FFC46B}
 .heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .heatmap .cell{aspect-ratio:1;border-radius:4px;background:var(--card2);border:1px solid var(--line)}
-.heatmap .cell.done{background:var(--grad2);border-color:transparent;animation:zoom .3s var(--ease) backwards}
+.heatmap .cell.done{background:var(--grad2);border-color:transparent;animation:zoom var(--d3) var(--ease) backwards}
 .heatmap .cell.rest{opacity:.28}
 .heatmap .cell.miss{background:rgba(255,93,115,.12);border-color:rgba(255,93,115,.3)}
 
@@ -271,7 +314,7 @@ main{
    Se abandona la identidad "como una app nativa" (deslizamiento direccional)
    en este punto específico a favor de esa referencia. */
 @keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.view.enter.dir-r,.view.enter.dir-l{animation:screenIn .22s var(--ease-out) both}
+.view.enter.dir-r,.view.enter.dir-l{animation:screenIn var(--d2) var(--ease-out) both}
 /* z-index explícito, con position:relative para que z-index tenga efecto
    (sin position, un elemento static ignora z-index aunque sea flex/grid no
    aplica acá). Así la entrante queda SIEMPRE arriba de la saliente, sin
@@ -349,7 +392,7 @@ main{
 
 /* ---------- cards ---------- */
 .card{
-  background:linear-gradient(180deg,rgba(12,19,34,.9),rgba(12,19,34,.74));
+  background:var(--grad-metal),linear-gradient(180deg,rgba(10,16,28,.92),rgba(10,16,28,.78));
   border:1px solid var(--glass-border);border-radius:var(--r);
   padding:var(--s4);margin-bottom:var(--s3);
   backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
@@ -366,7 +409,7 @@ main{
   background:radial-gradient(circle,rgba(34,211,238,.28),transparent 66%);pointer-events:none}
 /* tres niveles en vez de uno: destacada (hero) > normal > sutil (sub).
    Cuando todo tiene el mismo peso, nada destaca y todo se lee como ruido. */
-.card.sub{background:rgba(255,255,255,.02);border-color:rgba(255,255,255,.05);padding:var(--s3)}
+.card.sub{background:rgba(96,165,250,.035);border-color:rgba(96,165,250,.09);padding:var(--s3)}
 
 /* ---------- buttons ---------- */
 .btn{
@@ -375,7 +418,7 @@ main{
   font-family:'Barlow Condensed';font-weight:700;font-size:19px;
   letter-spacing:.09em;text-transform:uppercase;
   background:var(--grad2);color:var(--on-grad);box-shadow:var(--glow);
-  transition:.15s;position:relative;overflow:hidden;
+  transition:var(--d1);position:relative;overflow:hidden;
 }
 .btn:not(.sm):not(.ghost):not(.dim):not(.danger)::after{
   content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;
@@ -439,7 +482,7 @@ main{
 .reel-tooth{
   flex:none;width:52px;scroll-snap-align:center;text-align:center;
   font-family:'Barlow Condensed';font-weight:600;font-size:17px;color:var(--mut);
-  font-variant-numeric:tabular-nums;transition:color .15s,font-size .15s,font-weight .15s;
+  font-variant-numeric:tabular-nums;transition:color var(--d1),font-size var(--d1),font-weight var(--d1);
 }
 .reel-tooth.on{color:var(--txt);font-size:26px;font-weight:800}
 /* El diente centrado es tocable (tap corto → edición manual; mantener
@@ -468,7 +511,7 @@ main{
   z-index:61;width:76px;height:168px;border-radius:18px;overflow:hidden;
   background:var(--card2);border:1px solid var(--line2);
   box-shadow:0 22px 50px -20px rgba(0,0,0,.8);
-  animation:zoom .18s var(--ease-out) backwards;
+  animation:zoom var(--d1) var(--ease-out) backwards;
 }
 .reel-fine-track{
   display:flex;flex-direction:column;align-items:center;height:100%;overflow-y:auto;
@@ -479,7 +522,7 @@ main{
 .reel-tooth-v{
   flex:none;height:44px;display:flex;align-items:center;justify-content:center;
   scroll-snap-align:center;font-family:'Barlow Condensed';font-weight:600;font-size:17px;
-  color:var(--mut);font-variant-numeric:tabular-nums;transition:color .15s,font-size .15s,font-weight .15s;
+  color:var(--mut);font-variant-numeric:tabular-nums;transition:color var(--d1),font-size var(--d1),font-weight var(--d1);
 }
 .reel-tooth-v.on{color:var(--txt);font-size:24px;font-weight:800}
 .reel-fine-indicator{
@@ -512,7 +555,7 @@ main{
 @keyframes pop{from{transform:scale(.7);opacity:0}}
 /* solo la serie recién guardada hace "pop"; antes lo hacían todos los chips en
    cada re-render y la fila entera parpadeaba */
-.setchips .chip:last-child{animation:pop .2s cubic-bezier(.2,.8,.3,1.2)}
+.setchips .chip:last-child{animation:pop var(--d2) cubic-bezier(.2,.8,.3,1.2)}
 .chip.blue{background:rgba(46,125,255,.14);border-color:rgba(46,125,255,.4);color:var(--blue3)}
 /* Tono ámbar para el chip que ACCIONA sobre un aviso cálido ("Se está
    enfriando" → "+ Hoy"). El .chip pelado es el mismo gris que un chip
@@ -524,7 +567,7 @@ main{
    y no devolvía nada hasta que la pantalla cambiaba. Mismo hundido que ya usa
    el Button de primitives.jsx (active:scale-[.96]), para que el lenguaje de
    "esto respondió" sea uno solo en toda la app. */
-.chip{transition:transform .12s var(--ease-out),background .15s,border-color .15s}
+.chip{transition:transform .12s var(--ease-out),background var(--d1),border-color var(--d1)}
 .chip:active{transform:scale(.96)}
 /* La elección firme del usuario, y no una sugerencia del auto-detectado: por
    eso no es el mismo estilo que .blue (relleno tenue, "esto detecté") — hacía
@@ -554,7 +597,7 @@ main{
   content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
   background:linear-gradient(180deg,var(--blue2),var(--blue));
   transform:scaleY(var(--done));transform-origin:top;
-  transition:transform .45s var(--ease);
+  transition:transform var(--d4) var(--ease);
 }
 .ex-card.full::before{background:linear-gradient(180deg,var(--ok),#0E9F6E)}
 .ex-card .exname{font-family:'Barlow Condensed';font-size:22px;font-weight:700;letter-spacing:.02em}
@@ -601,8 +644,8 @@ main{
   font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.05em;
   color:var(--mut);background:var(--card2);border:1px solid var(--line);
   padding:4px 10px;border-radius:999px;
-  animation:countPop .32s var(--ease);
-  transition:color .3s var(--ease),background .3s var(--ease),border-color .3s var(--ease);
+  animation:countPop var(--d3) var(--ease);
+  transition:color var(--d3) var(--ease),background var(--d3) var(--ease),border-color var(--d3) var(--ease);
 }
 @keyframes countPop{0%{transform:scale(.55)}55%{transform:scale(1.2)}100%{transform:scale(1)}}
 .ex-done-count.full{color:#062b18;background:var(--ok);border-color:transparent}
@@ -663,7 +706,7 @@ main{
    ejercicio. */
 .carousel.focus .carousel-slide{flex:0 0 100%}
 .carousel-dots{display:flex;justify-content:center;gap:6px;margin:10px 0 4px}
-.carousel-dots i{width:6px;height:6px;border-radius:3px;background:var(--card2);border:1px solid var(--line2);transition:.2s}
+.carousel-dots i{width:6px;height:6px;border-radius:3px;background:var(--card2);border:1px solid var(--line2);transition:var(--d2)}
 .carousel-dots i.on{width:18px;background:var(--grad2);border-color:transparent}
 /* ---------- reordenar arrastrando ---------- */
 /* mantené presionada una fila y arrastrala: las demás se corren solas para
@@ -674,7 +717,7 @@ main{
 /* al soltar, la fila baja Y pierde el relieve de a poco: si el fondo y la
    sombra se apagan de golpe se ve como un parpadeo */
 [data-sid].settling{position:relative;z-index:30;
-  transition:transform .26s var(--ease),box-shadow .3s ease,border-color .3s ease,background-color .3s ease}
+  transition:transform .26s var(--ease),box-shadow var(--d3) ease,border-color var(--d3) ease,background-color var(--d3) ease}
 .ex-card.dragging{
   border-color:rgba(46,125,255,.5);
   box-shadow:0 26px 52px -20px rgba(0,0,0,.85),0 0 0 1px rgba(46,125,255,.35);
@@ -708,7 +751,7 @@ body.dragging-on .day-body{transition:none}
   border-color:rgba(46,125,255,.55);
   box-shadow:0 0 0 1px rgba(46,125,255,.35),0 0 30px -6px rgba(46,125,255,.45);
   transform:scale(1.012);
-  transition:transform .18s var(--ease),box-shadow .18s ease,border-color .18s ease;
+  transition:transform var(--d1) var(--ease),box-shadow var(--d1) ease,border-color var(--d1) ease;
 }
 body.dragging-on .card.day.drop-target{filter:none}
 .card.day.rest{opacity:.72}
@@ -824,7 +867,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 
 /* Una entrada a escena, no efectos sueltos: los rieles se llenan en cascada al
    abrir el resumen. Es el único momento animado de la vista. */
-.dcard.entry::before{animation:railIn .5s var(--ease) backwards;animation-delay:calc(var(--i,0) * 45ms)}
+.dcard.entry::before{animation:railIn var(--d4) var(--ease) backwards;animation-delay:calc(var(--i,0) * 45ms)}
 @keyframes railIn{from{transform:scaleY(0)}}
 
 /* ---------- el peso como el evento ----------
@@ -891,7 +934,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   display:block;width:100%;text-align:left;
   background:linear-gradient(158deg,rgba(255,255,255,.075),rgba(255,255,255,.02));
   border:1px solid var(--glass-border);border-radius:var(--r);padding:12px 14px;
-  transition:transform .15s var(--ease),border-color .15s ease;
+  transition:transform var(--d1) var(--ease),border-color var(--d1) ease;
 }
 .sess-card:active{transform:scale(.99);border-color:var(--line2)}
 .sc-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
@@ -960,7 +1003,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
   background:linear-gradient(180deg,var(--blue2),var(--blue));
   transform:scaleY(var(--fill,1));transform-origin:top;
-  animation:railIn .45s var(--ease) backwards;animation-delay:calc(var(--i,0) * 35ms);
+  animation:railIn var(--d4) var(--ease) backwards;animation-delay:calc(var(--i,0) * 35ms);
 }
 .ex-row-top{display:flex;align-items:center;gap:8px;margin-bottom:1px}
 .ex-row-top .eyebrow{flex:1;min-width:0}
@@ -1058,7 +1101,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .done-again:active{color:var(--blue2)}
 .wkstrip .wd{border-radius:14px;padding:9px 2px 8px;text-align:center;
   background:rgba(255,255,255,.024);border:1px solid rgba(255,255,255,.06);
-  transition:background .18s var(--ease),border-color .18s var(--ease)}
+  transition:background var(--d1) var(--ease),border-color var(--d1) var(--ease)}
 .wkstrip .wd .l{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;color:var(--mut2)}
 .wkstrip .wd .n{font-size:9px;line-height:1.2;margin-top:3px;color:var(--mut2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1103,26 +1146,26 @@ body.dragging-on .card.day.drop-target{filter:none}
    medía el triple de alto, con el texto centrado. */
 .day-name.off{color:var(--mut2);font-weight:500}
 .day-meta{margin-left:auto;color:var(--mut);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
-.chev{transition:.2s;display:inline-block;color:var(--mut2)}
+.chev{transition:var(--d2);display:inline-block;color:var(--mut2)}
 .day.open .chev{transform:rotate(90deg);color:var(--blue2)}
 /* acordeón animable: grid-template-rows 0fr→1fr sí transiciona (display no).
    Antes usaba display:none/block + animation:vin, que re-disparaba en cada
    renderRutina() y hacía parpadear la configuración de ejercicios. */
 .day-body{
   display:grid;grid-template-rows:0fr;margin-top:0;opacity:0;visibility:hidden;
-  transition:grid-template-rows .34s var(--ease-out),margin-top .34s var(--ease-out),opacity .24s ease,visibility 0s .34s;
+  transition:grid-template-rows var(--d3) var(--ease-out),margin-top var(--d3) var(--ease-out),opacity var(--d2) ease,visibility 0s var(--d3);
 }
 .day-body>.dbi{overflow:hidden;min-height:0}
 .day.open .day-body{
   grid-template-rows:1fr;margin-top:8px;opacity:1;visibility:visible;
-  transition:grid-template-rows .34s var(--ease-out),margin-top .34s var(--ease-out),opacity .24s ease,visibility 0s;
+  transition:grid-template-rows var(--d3) var(--ease-out),margin-top var(--d3) var(--ease-out),opacity var(--d2) ease,visibility 0s;
 }
 
 /* ---------- barras de progreso (nutrición) ---------- */
 .pbar{height:8px;border-radius:5px;background:rgba(255,255,255,.05);overflow:hidden}
 .pbar>i{display:block;height:100%;border-radius:5px;
   background:linear-gradient(90deg,var(--deep),var(--blue2) 60%,var(--cyan));
-  transition:width .5s var(--ease-out)}
+  transition:width var(--d4) var(--ease-out)}
 .pbar>i.over{background:linear-gradient(135deg,#E8A21D,#FFB454)}
 .macro3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
 .macro3 .m .lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);font-weight:600;margin-bottom:5px}
@@ -1133,7 +1176,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .kcal-ring{position:relative;width:92px;height:92px;flex:none}
 .kcal-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .kr-track{fill:none;stroke:var(--card2);stroke-width:9}
-.kr-prog{fill:none;stroke:url(#restGrad);stroke-width:9;stroke-linecap:round;stroke-dasharray:326.7;transition:stroke-dashoffset .5s var(--ease)}
+.kr-prog{fill:none;stroke:url(#restGrad);stroke-width:9;stroke-linecap:round;stroke-dasharray:326.7;transition:stroke-dashoffset var(--d4) var(--ease)}
 .kr-val{position:absolute;inset:0;display:grid;place-items:center;text-align:center;line-height:1.15}
 
 .bignum{font-family:'Barlow Condensed';font-weight:700;font-size:52px;line-height:1;font-variant-numeric:tabular-nums}
@@ -1233,9 +1276,9 @@ nav.tabbar button{
      lo fija en --mut. Hasta el 2026-09-05 esta línea repetía color:--mut2 y,
      con la misma especificidad y estando después, PISABA ese arreglo — el
      fix de contraste estaba escrito, comentado y muerto. */
-  padding:7px 0 5px;border-radius:14px;position:relative;transition:.15s;
+  padding:7px 0 5px;border-radius:14px;position:relative;transition:var(--d1);
 }
-nav.tabbar button svg{width:24px;height:24px;stroke:currentColor;fill:none;fill-opacity:0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke-width .18s var(--ease),fill-opacity .18s var(--ease)}
+nav.tabbar button svg{width:24px;height:24px;stroke:currentColor;fill:none;fill-opacity:0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke-width var(--d1) var(--ease),fill-opacity var(--d1) var(--ease)}
 nav.tabbar button span{font-family:'Barlow Condensed';font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
 nav.tabbar button.on{color:var(--on-grad)}
 /* la píldora activa se rellena de gradiente, así que el ícono pasa a oscuro
@@ -1254,7 +1297,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .tab-ind{
   position:absolute;top:7px;left:0;height:calc(100% - 14px);width:80px;border-radius:18px;
   background:var(--grad2);box-shadow:0 6px 20px -4px rgba(34,211,238,.55);pointer-events:none;
-  transition:transform .38s var(--ease),width .38s var(--ease);
+  transition:transform var(--d3) var(--ease),width var(--d3) var(--ease);
 }
 
 /* ---------- rest timer ---------- */
@@ -1264,7 +1307,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   background:linear-gradient(140deg,#0E1B38,#0A1220);
   border:1px solid rgba(46,125,255,.45);border-radius:20px;
   padding:12px 16px;box-shadow:0 10px 40px -8px rgba(46,125,255,.5);
-  transform:translateY(140%);opacity:0;transition:.3s var(--ease-out);
+  transform:translateY(140%);opacity:0;transition:var(--d3) var(--ease-out);
   max-width:492px;margin:0 auto;
 }
 #restbar.show{transform:none;opacity:1}
@@ -1278,12 +1321,12 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.06em;
 }
 #rest-track{height:5px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:10px;overflow:hidden}
-#rest-fill{display:block;height:100%;border-radius:3px;background:var(--grad);width:100%;transition:width .25s linear}
+#rest-fill{display:block;height:100%;border-radius:3px;background:var(--grad);width:100%;transition:width var(--d2) linear}
 
 /* ---------- rest timer: pantalla completa ---------- */
 #rest-fs{position:fixed;inset:0;z-index:65;display:none;place-items:center;
   background:rgba(3,5,10,.94);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);
-  animation:fdin .25s var(--ease);}
+  animation:fdin var(--d2) var(--ease);}
 #rest-fs.show{display:grid}
 .rfs-inner{display:flex;flex-direction:column;align-items:center;gap:22px;padding:24px;position:relative;width:100%;max-width:360px}
 .rfs-lbl{font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:var(--blue2)}
@@ -1291,7 +1334,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .rfs-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .rfs-track{fill:none;stroke:var(--card2);stroke-width:10}
 .rfs-prog{fill:none;stroke:url(#restGrad);stroke-width:10;stroke-linecap:round;
-  stroke-dasharray:552.9;stroke-dashoffset:0;transition:stroke-dashoffset .25s linear}
+  stroke-dasharray:552.9;stroke-dashoffset:0;transition:stroke-dashoffset var(--d2) linear}
 .rfs-time{position:absolute;inset:0;display:grid;place-items:center;
   font-family:'Barlow Condensed';font-weight:700;font-size:56px;font-variant-numeric:tabular-nums}
 .rfs-btns{display:flex;gap:12px;width:100%}
@@ -1320,7 +1363,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 /* ---------- bottom sheet ---------- */
 #sheet{position:fixed;inset:0;z-index:60;display:none}
 #sheet.open{display:block}
-#sheet .bk{position:absolute;inset:0;background:rgba(2,4,9,.7);backdrop-filter:blur(4px);animation:fdin .15s}
+#sheet .bk{position:absolute;inset:0;background:rgba(2,4,9,.7);backdrop-filter:blur(4px);animation:fdin var(--d1)}
 @keyframes fdin{from{opacity:0}}
 #sheet .panel{
   position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;
@@ -1330,7 +1373,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   border:1px solid rgba(255,255,255,.14);border-bottom:none;
   border-radius:26px 26px 0 0;
   padding:10px 20px calc(24px + env(safe-area-inset-bottom));
-  animation:shup .22s var(--spring);
+  animation:shup var(--d2) var(--spring);
   box-shadow:var(--glass-hi),0 -20px 60px -20px rgba(0,0,0,.7);
 }
 /* Sin opacity: la hoja entra sólida, sólo sube desde abajo del marco — el
@@ -1346,8 +1389,8 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
    que gana en la cascada sin necesitar !important. */
 @keyframes shdown{to{transform:translateY(60%)}}
 @keyframes fdout{to{opacity:0}}
-#sheet.closing .panel{animation:shdown .22s var(--ease-out) forwards}
-#sheet.closing .bk{animation:fdout .15s forwards}
+#sheet.closing .panel{animation:shdown var(--d2) var(--ease-out) forwards}
+#sheet.closing .bk{animation:fdout var(--d1) forwards}
 /* La regla global de arriba (*{animation-duration:.01ms!important}) acorta
    shdown pero no toca animation-fill-mode:forwards: bajo movimiento
    reducido la animación "termina" casi al instante y se queda CONGELADA en
@@ -1372,7 +1415,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 90px);
   background:#12203C;border:1px solid rgba(46,125,255,.5);color:var(--txt);
   padding:11px 20px;border-radius:999px;font-size:15px;font-weight:600;
-  opacity:0;pointer-events:none;transition:.25s;z-index:70;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:var(--d2);z-index:70;white-space:nowrap;
   box-shadow:0 8px 30px -6px rgba(0,0,0,.6);
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
@@ -1529,7 +1572,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   display:flex;align-items:center;gap:8px;padding:12px 12px;width:100%;text-align:left;
   background:none;border:0;color:inherit;font:inherit;
 }
-.block-head .chev{color:var(--mut2);font-size:15px;transition:transform .2s var(--ease);flex:none}
+.block-head .chev{color:var(--mut2);font-size:15px;transition:transform var(--d2) var(--ease);flex:none}
 .block-head[aria-expanded="true"] .chev{transform:rotate(90deg);color:var(--cyan)}
 .block-head .t{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:.02em}
 .block-head .s{flex:1;font-size:12px;color:var(--mut);text-align:right;margin-right:4px}
@@ -1546,7 +1589,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .block-move button:disabled{opacity:.3}
 .block-move button:not(:disabled):active{color:var(--cyan);border-color:var(--cyan)}
 
-.block-collapse{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s var(--ease)}
+.block-collapse{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--d3) var(--ease)}
 .block-collapse.open{grid-template-rows:1fr}
 .block-collapse-inner{overflow:hidden;min-height:0}
 .block-exs{padding:0 12px 12px;display:flex;flex-direction:column;gap:6px}
@@ -1634,7 +1677,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .weekbars .wbar.on .b{
   background:linear-gradient(var(--cyan),var(--deep));border-color:transparent;
-  animation:rise-y .45s var(--ease) backwards;
+  animation:rise-y var(--d4) var(--ease) backwards;
 }
 @keyframes rise-y{from{height:8px !important}}
 .weekbars span{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--mut2)}
@@ -1800,7 +1843,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    que sirve igual para un día de 3 ejercicios que uno de 12. */
 .hero-slot{
   display:grid;grid-template-rows:0fr;
-  transition:grid-template-rows .34s var(--ease),opacity .22s var(--ease),margin-bottom .34s var(--ease);
+  transition:grid-template-rows var(--d3) var(--ease),opacity var(--d2) var(--ease),margin-bottom var(--d3) var(--ease);
   opacity:0;margin-bottom:0;
 }
 .hero-slot.open{grid-template-rows:1fr;opacity:1}
@@ -1808,8 +1851,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* El contenido entra desde el lado hacia el que te moviste en la tira. */
 @keyframes heroInR{from{opacity:0;transform:translate3d(26px,0,0) scale(.985)}to{opacity:1;transform:none}}
 @keyframes heroInL{from{opacity:0;transform:translate3d(-26px,0,0) scale(.985)}to{opacity:1;transform:none}}
-.hero-swap.dir-r{animation:heroInR .34s var(--ease)}
-.hero-swap.dir-l{animation:heroInL .34s var(--ease)}
+.hero-swap.dir-r{animation:heroInR var(--d3) var(--ease)}
+.hero-swap.dir-l{animation:heroInL var(--d3) var(--ease)}
 
 /* Etiqueta de equipamiento junto al ejercicio. Discreta: es contexto, no el
    dato principal — pero tiene que estar, porque es lo que explica por qué dos
@@ -1902,7 +1945,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .sil-zoom{
   position:absolute;inset:0;perspective:1400px;
   transform-origin:var(--sil-org,50% 50%);
-  transition:transform .28s var(--ease);will-change:transform;
+  transition:transform var(--d3) var(--ease);will-change:transform;
 }
 .sil-zoom.on{transform:scale(1.55)}
 
@@ -1945,7 +1988,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   font-family:'Barlow Condensed',sans-serif;font-size:10.5px;font-weight:700;
   letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
   background:transparent;border:0;padding:5px 15px;border-radius:999px;
-  cursor:pointer;transition:color .2s var(--ease),background .2s var(--ease);
+  cursor:pointer;transition:color var(--d2) var(--ease),background var(--d2) var(--ease);
 }
 .sil-caras button[aria-pressed="true"]{color:var(--txt);background:rgba(255,255,255,.1)}
 
@@ -1961,7 +2004,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* fill y stroke se heredan del <g> a sus polígonos: el estado se pinta una vez
    y el glow se aplica al grupo entero en vez de a cada pieza. */
 .sil-z{stroke:rgba(2,5,12,.5);stroke-width:1.4;stroke-linejoin:round;
-  transition:fill .45s var(--ease),opacity .2s var(--ease)}
+  transition:fill var(--d4) var(--ease),opacity var(--d2) var(--ease)}
 .sil-d0{fill:url(#sil-g0);filter:url(#sil-glow)}
 .sil-d1{fill:url(#sil-g1)}
 .sil-d2{fill:url(#sil-g2)}
@@ -1997,7 +2040,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    pelearía con el glow que .sil-d0 ya trae puesto (filter:url(#sil-glow)) y
    se vería un parpadeo al terminar la animación. */
 @keyframes sil-revela{from{opacity:.18}to{opacity:1}}
-.sil-revela{animation:sil-revela .5s var(--ease) backwards}
+.sil-revela{animation:sil-revela var(--d4) var(--ease) backwards}
 @media (prefers-reduced-motion:reduce){
   .sil-revela{animation:none}
 }
@@ -2018,7 +2061,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   background:linear-gradient(158deg,rgba(255,255,255,.1),rgba(255,255,255,.04)),rgba(10,16,29,.97);
   border:1px solid var(--line2);border-bottom:0;
   box-shadow:0 -20px 44px -16px rgba(0,0,0,.85),0 0 0 1px rgba(0,0,0,.35);
-  animation:mpop-in .22s var(--spring) both;
+  animation:mpop-in var(--d2) var(--spring) both;
 }
 @keyframes mpop-in{from{opacity:0;transform:translateY(16px)}}
 
@@ -2226,7 +2269,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    `--vt-clip-h` — el cambio de pestaña es 100% `.view.enter`/`.view.leave`
    (App.jsx) + `screenIn` más arriba, verificado limpio con screenshots
    reales. Esta regla sigue viva sólo para RoutineWizard. */
-::view-transition-old(root),::view-transition-new(root){animation-duration:.22s}
+::view-transition-old(root),::view-transition-new(root){animation-duration:var(--d2)}
 
 /* RoutineWizard.jsx: barra de progreso arriba del sheet, estilo onboarding
    (referencia visual: Liftoff — el mecanismo, no la identidad: acá es el
