@@ -8,7 +8,6 @@
 // usa el overlay de descanso (#rest-fs en RestTimer.jsx) — position:fixed
 // propio, sin pasar por el sistema de S.sheet.
 import { useEffect, useRef, useState } from 'react';
-import gsap from 'gsap';
 import { S, useStore, openSheet } from '../lib/state.js';
 import { currentStreak } from '../lib/streak.js';
 import { catsDeSesion } from '../lib/muscle.js';
@@ -17,6 +16,7 @@ import { fireConfetti } from '../lib/confetti.js';
 import { Flame } from './Icon.jsx';
 import Silhouette from './Silhouette.jsx';
 import { cn } from '../lib/utils.js';
+import { countTo, popIn } from '../lib/motion.js';
 
 // Los tres tiempos NO duran lo mismo (a propósito: racha y resumen son un
 // vistazo, el cuerpo necesita más para que el revelado por zona se note).
@@ -113,39 +113,32 @@ export default function SessionComplete() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sess?.id]);
 
-  // Cuenta ascendente de los números del resumen con GSAP, sincronizada con
-  // los mismos delays que ya usan los beats (BEAT2_DELAY). Se salta entera
-  // bajo "reducir movimiento" — mismo criterio que el resto de esta
-  // pantalla: sin eso, contar de 0 a N ES movimiento, y el usuario pidió que
-  // no lo haya. gsap.to() sobre un objeto plano (no un elemento del DOM):
-  // el onUpdate escribe el número en el ref a mano, así el conteo no pasa
-  // por un re-render de React en cada frame.
+  /* Cuenta ascendente de los números del resumen, sincronizada con los mismos
+     delays que ya usan los beats (BEAT2_DELAY). Se salta entera bajo "reducir
+     movimiento" — mismo criterio que el resto de esta pantalla: contar de 0 a
+     N ES movimiento, y el usuario pidió que no lo haya.
+
+     Antes esto era lo último que quedaba de GSAP en la app: tres tweens sobre
+     objetos planos que escribían el textContent a mano en cada onUpdate.
+     countTo() (lib/motion.js) hace exactamente eso —rAF, escribe el número
+     sin pasar por React, se cancela solo si el nodo se desmonta— y ya lo usan
+     Inicio y Nutrición. Cuatro números, cuatro llamadas, y GSAP sale del
+     bundle. La llama usa popIn() con la curva con rebote de la app en vez de
+     `elastic.out`; es la única diferencia perceptible del cambio y es un
+     rebote por otro. */
   useEffect(() => {
     if (!sess || reducido) return;
     const { ejercicios, series, kg } = resumenDe(sess);
-    const streakVal = currentStreak();
-    if (flameRef.current) {
-      gsap.fromTo(
-        flameRef.current,
-        { opacity: 0, scale: 0.3, rotate: -25 },
-        { opacity: 1, scale: 1, rotate: 0, duration: 0.6, ease: 'elastic.out(1, 0.5)' },
-      );
-    }
-    const o1 = { v: 0 };
-    const t1 = gsap.to(o1, {
-      v: streakVal, duration: 0.7, ease: 'power2.out',
-      onUpdate: () => { if (streakRef.current) streakRef.current.textContent = Math.round(o1.v); },
-    });
-    const o2 = { ej: 0, ser: 0, kg: 0 };
-    const t2 = gsap.to(o2, {
-      ej: ejercicios, ser: series, kg: round1(kg), duration: 0.8, delay: BEAT2_DELAY / 1000, ease: 'power2.out',
-      onUpdate: () => {
-        if (ejRef.current) ejRef.current.textContent = Math.round(o2.ej);
-        if (serRef.current) serRef.current.textContent = Math.round(o2.ser);
-        if (kgRef.current) kgRef.current.textContent = fmtNum(round1(o2.kg));
-      },
-    });
-    return () => { t1.kill(); t2.kill(); };
+    popIn(flameRef.current, { scale: 0.3, rotate: -25, duration: 600 });
+    const cancels = [
+      countTo(streakRef.current, currentStreak(), { duration: 700 }),
+      countTo(ejRef.current, ejercicios, { duration: 800, delay: BEAT2_DELAY }),
+      countTo(serRef.current, series, { duration: 800, delay: BEAT2_DELAY }),
+      countTo(kgRef.current, round1(kg), {
+        duration: 800, delay: BEAT2_DELAY, format: n => fmtNum(round1(n)),
+      }),
+    ];
+    return () => cancels.forEach(c => c());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sess?.id]);
 

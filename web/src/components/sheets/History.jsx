@@ -4,17 +4,33 @@
 // Antes este sheet era la ÚNICA forma de ver el historial y colgaba del reloj
 // del header, con una fila plana por sesión. Ahora el reloj lleva a Progreso y
 // esto es el desborde de esa sección.
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { S, useStore } from '../../lib/state.js';
 import { groupSessionsByWeek } from '../../lib/session.js';
 import { bloomOpen, staggerReveal } from '../../lib/motion.js';
 import { Card } from '../ui/primitives.jsx';
 import SessionCard from '../SessionCard.jsx';
 
+/* Ocho semanas por tanda: entran casi dos meses de entrenamiento, que es la
+   ventana que alguien mira de verdad al abrir el historial. */
+const SEMANAS_POR_TANDA = 8;
+
 export default function History() {
   useStore();
-  const grupos = groupSessionsByWeek(S.sessions);
   const n = S.sessions.length;
+  /* Se pintan las semanas de a tandas. Este sheet montaba TODAS las sesiones
+     de toda la vida de una sola vez, y cada una es una SessionCard con su
+     propio markup: a las 200 sesiones son 200 tarjetas construidas para ver
+     las tres de arriba. Se pagina por SEMANA y no por sesión para no partir
+     un grupo por la mitad — el encabezado "semana del…" quedaría anunciando
+     sesiones que no están.
+
+     El botón dice cuántas faltan en vez de "cargar más": el número es el dato
+     que hace falta para decidir si vale la pena seguir bajando. */
+  const [semanas, setSemanas] = useState(SEMANAS_POR_TANDA);
+  const todos = groupSessionsByWeek(S.sessions);
+  const grupos = todos.slice(0, semanas);
+  const faltan = todos.length - grupos.length;
   const rootRef = useRef(null);
   const listRef = useRef(null);
 
@@ -22,6 +38,14 @@ export default function History() {
   useEffect(() => {
     if (listRef.current) staggerReveal(listRef.current.children);
   }, [n]);
+  // Las tandas siguientes NO vuelven a animar la lista entera: sólo entran
+  // las semanas nuevas, y las que ya estabas mirando se quedan quietas.
+  useEffect(() => {
+    if (semanas === SEMANAS_POR_TANDA) return;
+    const nuevas = Array.from(listRef.current?.children || []).slice(semanas - SEMANAS_POR_TANDA);
+    if (nuevas.length) staggerReveal(nuevas);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [semanas]);
 
   return (
     <div ref={rootRef}>
@@ -44,6 +68,15 @@ export default function History() {
               </div>
             </div>
           ))}
+          {faltan > 0 && (
+            <button
+              type="button"
+              className="btn sm ghost mt-2"
+              onClick={() => setSemanas(x => x + SEMANAS_POR_TANDA)}
+            >
+              Ver {faltan} {faltan === 1 ? 'semana más' : 'semanas más'}
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -26,7 +26,6 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-192.png', 'icon-maskable-512.png'],
       manifest: {
         name: 'FIERRO — Gym Tracker',
         short_name: 'FIERRO',
@@ -46,7 +45,15 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+        /* Los 4 PNG de ícono (324 KB, más de un tercio del precache) SALEN del
+           precache: la app nunca los dibuja. Son para el instalador del
+           sistema operativo y para la pantalla de inicio del teléfono, que
+           los pide una vez al instalar y se los queda él. Precargarlos hacía
+           que cada arranque en frío del service worker se trajera un tercio
+           de más en imágenes que ninguna pantalla usa.
+           Siguen en dist/ (viven en public/) y el manifest los sigue
+           declarando: lo único que cambia es que no se bajan por adelantado. */
+        globPatterns: ['**/*.{js,css,html,svg,ico}'],
         // El navegador ya tiene registrado el service worker de la app
         // vainilla (caché 'fierro-vNN', cache-first). Estas tres opciones son
         // las que hacen que el nuevo lo reemplace sin que el usuario tenga que

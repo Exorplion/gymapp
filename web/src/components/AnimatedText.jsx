@@ -18,8 +18,7 @@
 // aria-hidden: un lector de pantalla no tiene por qué escuchar palabra por
 // palabra lo que para el ojo es una sola frase.
 import { Fragment, useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import { D, menosMovimiento } from '../lib/motion.js';
+import { menosMovimiento, staggerReveal } from '../lib/motion.js';
 
 export default function AnimatedText({ text, as: Tag = 'span', className, style }) {
   const ref = useRef(null);
@@ -30,14 +29,7 @@ export default function AnimatedText({ text, as: Tag = 'span', className, style 
     if (!el || menosMovimiento()) return;
     const words = el.querySelectorAll(':scope > span');
     if (!words.length) return;
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        words,
-        { opacity: 0, y: 14 },
-        { opacity: 1, y: 0, duration: D.panel / 1000, stagger: 0.06, ease: 'power3.out' },
-      );
-    });
-    return () => ctx.revert();
+    staggerReveal(words, { delayStep: 60 });
   }, [text]);
 
   return (

@@ -17,8 +17,7 @@
 // es un paso aparte, el de siempre en "Mis rutinas".
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import gsap from 'gsap';
-import { D, menosMovimiento } from '../../lib/motion.js';
+import { menosMovimiento, staggerReveal } from '../../lib/motion.js';
 import { closeSheet } from '../../lib/state.js';
 import { MUSCLE_CATS, EXCATALOG } from '../../lib/muscle.js';
 import { coberturaDe } from '../../lib/coverage.js';
@@ -67,14 +66,7 @@ function useStepReveal(step) {
     if (!el || menosMovimiento()) return;
     const targets = el.querySelectorAll('.chip, .field, .card.sub, .wiz-groupcard');
     if (!targets.length) return;
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        targets,
-        { opacity: 0, y: 12, scale: 0.94 },
-        { opacity: 1, y: 0, scale: 1, duration: D.panel / 1000, stagger: 0.06, ease: 'power2.out', delay: 0.05 },
-      );
-    });
-    return () => ctx.revert();
+    staggerReveal(targets, { delayStep: 60, distance: 12, scale: 0.94, delay: 50 });
   }, [step]);
   return ref;
 }
