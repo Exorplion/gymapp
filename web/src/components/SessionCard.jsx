@@ -33,8 +33,15 @@ export default function SessionCard({ sess }) {
         <span className="sc-name">{sess.dayName || 'Entrenamiento'}</span>
         {nprs > 0 && <Badge tone="warn">🏆{nprs}</Badge>}
       </div>
-      <div className="sc-meta">{fmtD(sess.date)} · {sess.duration} min</div>
-      <div className="sc-meta strong">{nsets} series · {vol.toLocaleString('es')} kg de volumen</div>
+      <div className="sc-meta">{fmtD(sess.date)}{sess.duration ? ` · ${sess.duration} min` : ''}</div>
+      {/* Una sesión anotada a mano (registrarDiaEntrenado) no tiene series: se
+          sabe QUÉ entrenaste ese día, no con qué pesos. "0 series · 0 kg"
+          sería falso — no es que no levantaste nada, es que no está medido. */}
+      <div className="sc-meta strong">
+        {sess.retro
+          ? 'Anotada a mano · sin series registradas'
+          : `${nsets} series · ${vol.toLocaleString('es')} kg de volumen`}
+      </div>
       {names && <div className="sc-exs">{names}</div>}
     </button>
   );

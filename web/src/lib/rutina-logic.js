@@ -523,13 +523,26 @@ export async function removeWorkoutDay(id) {
   await applyWorkoutOrder(ids);
 }
 
-/** Qué día de la semana le tocaría a cada turno de S.routine SI la semana
-    arrancara un lunes — un vistazo, no una promesa: la secuencia real
-    avanza por finalización (ver session.js), no por fecha calendario, así
-    que esto puede correrse si algún día se salta. Sirve para responder
-    "¿esto me deja entrenando en fin de semana?" de un vistazo al editar. */
-export function weekdayProjection() {
-  return S.routine.map((_, i) => WDS[(i + 1) % 7]);
+/** Qué día de la semana le tocaría a cada turno de S.routine si a partir de
+    HOY no te saltearas ninguno. Sigue siendo un vistazo y no una promesa —la
+    secuencia real avanza por finalización (ver session.js), no por fecha— pero
+    ahora al menos arranca donde estás parado.
+
+    Antes era `WDS[(i + 1) % 7]`: el turno 1 caía en lunes SIEMPRE, sin mirar
+    el calendario ni el puntero. Con eso, una semana que empezó un martes se
+    veía como empezada un lunes, y la proyección entera quedaba corrida un día
+    (Enzo, 2026-09-10: "el calendario de la semana sigue mostrando que inicié
+    el lunes"). Ahora el turno PENDIENTE (S.cfg.seqIndex) es hoy, y el resto se
+    cuenta hacia adelante y hacia atrás desde ahí, que es la única forma de que
+    esto diga algo verdadero sobre tu semana. */
+export function weekdayProjection(hoy = new Date()) {
+  const idx = S.cfg.seqIndex || 0;
+  const base = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  return S.routine.map((_, i) => {
+    const d = new Date(base);
+    d.setDate(d.getDate() + (i - idx));
+    return WDS[d.getDay()];
+  });
 }
 
 export async function saveSlot(index, { name }) {

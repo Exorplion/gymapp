@@ -1120,6 +1120,19 @@ body.dragging-on .card.day.drop-target{filter:none}
    los 40 ejercicios del split se leían "Press ...", "Pec de...", "Leg pr...".
    Las acciones bajan a la segunda línea, más chicas, donde no compiten con
    el dato que importa. */
+/* Encabezado del bloque muscular dentro de la primera fila de cada grupo
+   (ver el comentario de SlotCard en Rutina.jsx sobre por qué va adentro y no
+   como fila aparte). Los márgenes negativos lo sacan del padding de la fila
+   para que ocupe el ancho completo y se lea como un separador entre bloques,
+   no como un dato más de ese ejercicio. */
+.ex-group-tag{
+  margin:-10px -12px 8px -46px;padding:5px 12px 5px 46px;
+  background:rgba(var(--blue-rgb),.10);
+  border-bottom:1px solid rgba(var(--blue-rgb),.20);
+  font-size:var(--t-nano);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--blue3);
+}
+
 .ex-row{
   position:relative;overflow:hidden;
   background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
@@ -2375,6 +2388,40 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    Fierro, de largo variable— así que flexea y no fuerza 7 columnas como
    .weekbars de Rutina. El turno de hoy lleva el anillo cian encendido; los
    demás son sólo un vistazo (abren 'day-peek', no mueven el puntero real). */
+/* ---- LA SEMANA REAL (Inicio) --------------------------------------------
+   Siete casilleros de lunes a domingo con lo que DE VERDAD pasó. Es lo
+   opuesto a .ini-strip, que muestra el plan (la secuencia de turnos): acá
+   cada casillero es una fecha. Tres estados que tienen que distinguirse de un
+   vistazo, porque significan cosas distintas: entrenado (punto encendido),
+   vacío del pasado (tocable, para anotarlo) y futuro (apagado y sin tocar —
+   "todavía no llegó" no es "no entrenaste"). */
+.wkreal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:var(--s3)}
+.wkreal-d{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:7px 0 6px;border-radius:var(--r-md);
+  background:var(--card2);border:1px solid var(--line);
+  transition:border-color var(--d1) var(--ease-out);
+}
+.wkreal-d .wd{font-size:var(--t-nano);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut2)}
+.wkreal-d .nu{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;line-height:1;color:var(--mut)}
+.wkreal-d .dot{width:5px;height:5px;border-radius:var(--r-full);background:var(--line2)}
+.wkreal-d.on{border-color:rgba(var(--ok-rgb),.34);background:rgba(var(--ok-rgb),.08)}
+.wkreal-d.on .nu{color:var(--txt)}
+.wkreal-d.on .dot{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.wkreal-d.hoy{border-color:var(--accent)}
+.wkreal-d.hoy .wd{color:var(--accent)}
+/* El futuro no se apaga con opacity sobre todo el casillero: eso también
+   apagaría el borde y lo dejaría flotando. Se bajan los contenidos. */
+.wkreal-d.fut{background:transparent;border-style:dashed}
+.wkreal-d.fut .wd,.wkreal-d.fut .nu{color:var(--mut2);opacity:.5}
+.wkreal-d.fut .dot{opacity:.25}
+.wkreal-ask{
+  display:block;width:100%;text-align:center;margin:-4px 0 var(--s3);
+  padding:8px;border-radius:var(--r-md);
+  background:rgba(var(--blue-rgb),.08);border:1px solid rgba(var(--blue-rgb),.22);
+  color:var(--blue3);font-size:var(--t-sm);font-weight:600;
+}
+
 .ini-strip{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 4px;flex:none;margin-bottom:6px}
 .ini-strip-i{
   flex:0 0 46px;display:flex;flex-direction:column;align-items:center;gap:7px;

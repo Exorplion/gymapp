@@ -26,6 +26,7 @@ import { S, useStore, bump, openSheet, changeTab } from '../../lib/state.js';
 import { WDS, MO, dstr, fmtD, fmtNum, round1 } from '../../lib/format.js';
 import { pendingSlot, sessionForSlot, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
 import { daysSinceAll, stalestGroups } from '../../lib/muscle.js';
+import { semanaDe } from '../../lib/week.js';
 import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
 import Silhouette from '../Silhouette.jsx';
@@ -105,6 +106,7 @@ export default function Inicio() {
 
   return (
     <div className="inicio">
+      <SemanaReal />
       {S.routine.length > 1 && <SeqStrip />}
 
       <div className="ini-top">
@@ -125,6 +127,63 @@ export default function Inicio() {
         <WeightTile />
       </div>
     </div>
+  );
+}
+
+/** La semana REAL, de lunes a domingo, con lo que de verdad pasó.
+
+    Es el complemento de SeqStrip, no su reemplazo: la tira de turnos es el
+    PLAN (una secuencia que avanza cuando entrenás) y esto son los HECHOS (qué
+    días de esta semana entrenaste). Tenerlos separados es lo que permite
+    mostrar un calendario sin mentir sobre cómo funciona la rutina — ver el
+    comentario de lib/week.js.
+
+    Un día vacío del pasado se puede tocar para anotarlo: es la respuesta a
+    "entrené el martes pero no lo anoté y la app no se entera". Un día futuro
+    NO se puede tocar y se pinta distinto — "todavía no llegó" no es lo mismo
+    que "no entrenaste", y pintarlos igual sería afirmar algo sobre el futuro. */
+function SemanaReal() {
+  const dias = semanaDe();
+  const sinRegistro = dias.filter(d => !d.esFuturo && !d.esHoy && !d.sesiones.length);
+  const ayer = sinRegistro[sinRegistro.length - 1];
+
+  return (
+    <>
+      <div className="wkreal" role="group" aria-label="Tu semana">
+        {dias.map(d => {
+          const hecho = d.sesiones.length > 0;
+          const cls = ['wkreal-d', hecho ? 'on' : '', d.esHoy ? 'hoy' : '', d.esFuturo ? 'fut' : ''].filter(Boolean).join(' ');
+          const nombre = hecho ? d.sesiones.map(x => x.dayName).join(' y ') : null;
+          return (
+            <button
+              type="button"
+              key={d.fecha}
+              className={cls}
+              disabled={d.esFuturo}
+              aria-current={d.esHoy ? 'date' : undefined}
+              aria-label={
+                hecho ? `${d.etiqueta} ${d.numero}: ${nombre}`
+                  : d.esFuturo ? `${d.etiqueta} ${d.numero}: todavía no llegó`
+                    : `${d.etiqueta} ${d.numero}: sin registrar, tocá para anotar qué entrenaste`
+              }
+              onClick={() => { if (!d.esFuturo) openSheet('marcar-dia', { fecha: d.fecha }); }}
+            >
+              <span className="wd">{d.etiqueta}</span>
+              <span className="nu">{d.numero}</span>
+              <span className="dot" aria-hidden="true" />
+            </button>
+          );
+        })}
+      </div>
+      {/* Una sola línea, sólo para el último día vacío, y sólo si hay alguno:
+          el criterio de la app es que los avisos sean raros. Los otros días
+          vacíos se anotan tocándolos, sin que nadie los reclame. */}
+      {ayer && (
+        <button type="button" className="wkreal-ask" onClick={() => openSheet('marcar-dia', { fecha: ayer.fecha })}>
+          ¿Entrenaste el {ayer.etiqueta.toLowerCase()} {ayer.numero}? Anotalo →
+        </button>
+      )}
+    </>
   );
 }
 
