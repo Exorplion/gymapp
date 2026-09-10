@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from './state.js';
-import { ensureSlot, reorderSeq, insertWorkout, insertRest, removeSlot, routineStats, routineName, undoRutina } from './rutina-logic.js';
+import { ensureSlot, reorderSeq, insertWorkout, insertRest, removeSlot, routineStats, routineName, undoRutina, applyDeload, endDeload, deloadActivo } from './rutina-logic.js';
 
 vi.mock('./db.js', () => ({ idb: { put: vi.fn(), clear: vi.fn(), del: vi.fn(), all: vi.fn() } }));
 
@@ -69,5 +69,63 @@ describe('rutina-logic — secuencia', () => {
     // persistAll (no persistDay) es lo que debe haber corrido: clear + put por cada turno
     expect(idb.clear).toHaveBeenCalledWith('routine');
     expect(idb.put).toHaveBeenCalled();
+  });
+});
+
+
+describe('descarga (deload) — aplicar y terminar', () => {
+  beforeEach(() => {
+    S.cfg.deload = null;
+    S.routine = [
+      { id: 'a', order: 0, type: 'workout', name: 'Empuje', exercises: [
+        { id: 'e1', name: 'Press banca', sets: 4, reps: 8 },
+        { id: 'e2', name: 'Curl con barra', sets: 3, reps: 10 },
+      ] },
+      { id: 'b', order: 1, type: 'workout', name: 'Tirón', exercises: [
+        { id: 'e3', name: 'Remo con barra', sets: 5, reps: 8 },
+      ] },
+    ];
+  });
+
+  it('baja las series sólo de los grupos indicados', async () => {
+    await applyDeload(['Pecho']);
+    expect(S.routine[0].exercises[0].sets).toBeLessThan(4);   // Press banca → Pecho
+    expect(S.routine[0].exercises[1].sets).toBe(3);           // Curl → Bíceps, intacto
+    expect(S.routine[1].exercises[0].sets).toBe(5);           // Remo → Espalda, intacto
+  });
+
+  it('TERMINARLA DEVUELVE EXACTAMENTE LAS SERIES QUE HABÍA', async () => {
+    // Es toda la premisa: una descarga a medias es peor que ninguna, porque
+    // bajás el volumen y te quedás bajo sin querer. Si esto se rompe, la
+    // función deja de ser una descarga y pasa a ser un recorte permanente.
+    const antes = JSON.stringify(S.routine.map(sl => sl.exercises.map(e => e.sets)));
+    await applyDeload(['Pecho', 'Espalda']);
+    expect(JSON.stringify(S.routine.map(sl => sl.exercises.map(e => e.sets)))).not.toBe(antes);
+    await endDeload();
+    expect(JSON.stringify(S.routine.map(sl => sl.exercises.map(e => e.sets)))).toBe(antes);
+  });
+
+  it('nunca deja un ejercicio en menos de una serie', async () => {
+    S.routine[0].exercises[0].sets = 1;
+    await applyDeload(['Pecho']);
+    expect(S.routine[0].exercises[0].sets).toBeGreaterThanOrEqual(1);
+  });
+
+  it('no se puede aplicar dos veces encima (la segunda pisaría lo guardado)', async () => {
+    await applyDeload(['Pecho']);
+    const trasPrimera = S.routine[0].exercises[0].sets;
+    expect(await applyDeload(['Pecho'])).toBe(false);
+    expect(S.routine[0].exercises[0].sets).toBe(trasPrimera);
+  });
+
+  it('un ejercicio borrado durante la descarga no impide terminarla', async () => {
+    await applyDeload(['Pecho']);
+    S.routine[0].exercises.shift();          // se borró el Press banca
+    expect(await endDeload()).toBe(true);
+    expect(deloadActivo()).toBe(null);
+  });
+
+  it('deloadActivo() es null mientras no haya ninguna', () => {
+    expect(deloadActivo()).toBe(null);
   });
 });

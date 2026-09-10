@@ -7,6 +7,7 @@ import { startRest, stopRest } from './rest.js';
 import { pedirPermiso } from './alarm.js';
 import { scrollCarouselTo } from './carousel.js';
 import { exKey, isBodyweight } from './equip.js';
+import { progresion } from './progression.js';
 import { currentStreak, bestStreak } from './streak.js';
 
 /** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
@@ -69,7 +70,17 @@ function pesoInicial(ex) {
 export function ensureVals(ex) {
   if (!S.hoyVals[ex.id]) {
     const last = lastDataFor(ex);
-    if (last) { const ls = last[last.length - 1]; S.hoyVals[ex.id] = { w: ls.w, r: ls.r, rpe: null }; }
+    /* Doble progresión (lib/progression.js): cuando la regla dice que hoy te
+       toca SUBIR el peso, la rueda arranca ya en el peso nuevo y en el piso
+       del rango. Es la diferencia entre un consejo y una acción: si el
+       consejo dice "subí a 62.5 y volvé a 8" pero la rueda te deja en 60×11,
+       el trabajo de moverla —quince veces por sesión— sigue siendo tuyo.
+       En los otros dos casos (sumar reps / sostener) el punto de partida
+       correcto ES la última serie, así que se deja el comportamiento de
+       siempre. */
+    const prog = progresion(ex);
+    if (prog?.accion === 'subir_peso') S.hoyVals[ex.id] = { w: prog.peso, r: prog.piso, rpe: null };
+    else if (last) { const ls = last[last.length - 1]; S.hoyVals[ex.id] = { w: ls.w, r: ls.r, rpe: null }; }
     else S.hoyVals[ex.id] = { w: pesoInicial(ex), r: ex.reps || 10, rpe: null };
   }
   // `rpe` puede faltar en un S.hoyVals guardado antes de que este campo

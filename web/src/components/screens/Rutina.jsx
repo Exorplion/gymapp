@@ -18,14 +18,16 @@ import { staggerRevealOnce } from '../../lib/motion.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
 import { equipLabel } from '../../lib/equip.js';
 import { catOf, stalestGroups, daysSinceAll, diasTexto } from '../../lib/muscle.js';
+import { coberturaDe } from '../../lib/coverage.js';
 import { gymEquipFor } from '../../lib/gyms.js';
 import { flipSort } from '../../lib/drag.js';
 import {
   routineStats, routineName,
   enterEditMode, exitEditMode, toggleSlotOpen, addWorkoutDay, removeWorkoutDay, weekdayProjection,
-  deleteExercise, moveEx, deloadSuggestion,
+  deleteExercise, moveEx, deloadSuggestion, deloadActivo, applyDeload, endDeload,
 } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
+import { fmtD } from '../../lib/format.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
 import { Info } from '../Icon.jsx';
@@ -190,6 +192,7 @@ function RutinaView() {
 
       <DeloadCard />
       <ReforzarCard />
+      <CoberturaCard />
 
       {/* Cada turno es una tarjeta que se despliega en el lugar, con sus
           ejercicios numerados — en el original abría un sheet aparte. */}
@@ -248,18 +251,98 @@ function RutinaView() {
   );
 }
 
-/** Aviso de deload automático (Plan Fierro · Fase 3): 3+ semanas seguidas
-    en el tope tolerable de volumen para un grupo. Es un aviso, no una
-    acción automática — reducir series a mano sigue siendo del usuario. */
+/** Deload (Plan Fierro · Fase 3): 3+ semanas seguidas en el tope tolerable de
+    volumen para un grupo.
+
+    Antes esto era sólo un aviso, y terminaba en "una semana con 40-50% menos
+    series suele restaurar el progreso" — o sea, dejándote abrir cada
+    ejercicio y bajarle las series a mano, y acordarte de subirlas la semana
+    siguiente. Eso último es lo que no pasa nunca, y una descarga a medias es
+    peor que ninguna: bajás el volumen y te quedás bajo sin querer. Ahora es
+    un estado con principio y fin, y terminarla devuelve cada ejercicio a las
+    series exactas que tenía. */
 function DeloadCard() {
+  const activo = deloadActivo();
   const grupos = deloadSuggestion();
-  if (!grupos.length) return null;
+  if (!activo && !grupos.length) return null;
+
+  if (activo) {
+    return (
+      <div className="card sub mb-[var(--s3)]" style={{ borderColor: 'var(--ok)' }}>
+        <div className="text-[13.5px] text-txt font-medium">Descarga en curso desde el {fmtD(activo.desde)}</div>
+        <div className="s text-mut mt-1">
+          {activo.grupos.join(', ')} con las series reducidas. Al terminarla, cada ejercicio
+          vuelve exactamente a las series que tenía.
+        </div>
+        <button type="button" className="btn sm ghost mt-2.5" onClick={endDeload}>
+          Terminar la descarga
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="card sub mb-[var(--s3)]" style={{ borderColor: 'var(--warn, #FFB454)' }}>
       <div className="text-[13.5px] text-txt font-medium">⚠ Puede ser momento de una descarga</div>
       <div className="s text-mut mt-1">
         {grupos.join(', ')} llevan 3+ semanas en tu volumen máximo recuperable. Una semana con 40-50% menos series por grupo suele restaurar el progreso.
       </div>
+      <button type="button" className="btn sm ghost mt-2.5" onClick={() => applyDeload(grupos)}>
+        Aplicar la descarga a {grupos.length === 1 ? grupos[0] : `estos ${grupos.length} grupos`}
+      </button>
+    </div>
+  );
+}
+
+/** Cobertura de fibra sobre la rutina QUE YA TENÉS.
+
+    Esto existía sólo dentro del asistente, o sea que lo veías una vez, el día
+    que armaste la rutina, y nunca más — justo cuando menos sabías. La
+    pregunta que contesta ("¿esta combinación cubre todo el músculo o me estoy
+    repitiendo?") sigue valiendo cada vez que agregás o cambiás un ejercicio,
+    que es todo el tiempo.
+
+    Sólo se muestran los grupos donde FALTA algo: si está todo cubierto no hay
+    nada que decidir, y una fila de tildes verdes sería ruido. Y sólo los
+    grupos que la rutina ya entrena — sugerir cobertura de un músculo que no
+    trabajás sería inventarte un problema.
+
+    coberturaDe() devuelve null para los grupos sin porciones distinguibles
+    con evidencia real; ahí no se muestra nada en vez de fabricar una. */
+function CoberturaCard() {
+  const porGrupo = new Map();
+  S.routine.forEach(slot => (slot.exercises || []).forEach(ex => {
+    const cat = catOf(ex);
+    if (!cat) return;
+    if (!porGrupo.has(cat)) porGrupo.set(cat, []);
+    porGrupo.get(cat).push(ex.name);
+  }));
+
+  const huecos = [...porGrupo.entries()]
+    .map(([cat, nombres]) => ({ cat, cob: coberturaDe(cat, nombres) }))
+    .filter(x => x.cob && x.cob.faltan.length && x.cob.cubiertas.length);
+
+  if (!huecos.length) return null;
+
+  return (
+    <div className="card sub mb-[var(--s3)]">
+      <div className="text-[13.5px] text-txt font-medium">Porciones que tu rutina todavía no toca</div>
+      <div className="s text-mut mt-1">
+        Cada músculo tiene porciones que responden a ejercicios distintos. Estas no las
+        cubre ninguno de los que elegiste.
+      </div>
+      {huecos.map(({ cat, cob }) => (
+        <div key={cat} className="mt-2.5">
+          <div className="eyebrow">{cat}</div>
+          <div className="wiz-coverage">
+            {cob.fibras.map(f => (
+              <span key={f} className={`wiz-fiber ${cob.cubiertas.includes(f) ? 'on' : ''}`}>
+                {cob.cubiertas.includes(f) ? '✓ ' : ''}{f}
+              </span>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -20,6 +20,7 @@ import { S, wDisplay, wAlt, wStep, wToUnit, wFromUnit, openSheet } from '../lib/
 import { round1, fmtNum } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
 import { suggestedWeight } from '../lib/charts.js';
+import { progresion, progresionTexto } from '../lib/progression.js';
 import {
   ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
   targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, dropSet, reemplazaA,
@@ -312,6 +313,7 @@ function ExerciseSlide({ m, wd, started }) {
   function setW(newW) { v.w = Math.max(0, round1(newW)); syncDependents(); }
   function setR(newR) { v.r = Math.max(1, Math.round(newR)); }
 
+  const prog = open ? progresion(ex) : null;
   const pwarnInitial = open ? progressionWarn(ex.name, v.w) : null;
   const cls = [full ? 'full doneex' : '', open ? 'cur' : '', waiting ? 'wait' : '', skipped ? 'skipped' : ''].filter(Boolean).join(' ');
 
@@ -358,9 +360,20 @@ function ExerciseSlide({ m, wd, started }) {
             {uni && ' por lado'}
           </div>
         )}
+        {/* Doble progresión: la instrucción concreta de hoy. Va ANTES del
+            sugerido por 1RM y lo reemplaza cuando existe — un 1RM estimado da
+            un número correcto pero no una instrucción: no sabe qué hiciste la
+            semana pasada, así que no puede decirte si hoy te toca avanzar o
+            sostener. Cuando no hay historial todavía, el sugerido por 1RM
+            sigue siendo lo mejor que se puede decir. */}
+        {open && prog && (
+          <div className={`prog-next${prog.accion === 'subir_peso' ? ' up' : ''}`}>
+            {prog.accion === 'subir_peso' ? '↑ ' : ''}{progresionTexto(prog)}
+          </div>
+        )}
         {(() => {
           const base = suggestedWeight(ex.name);
-          if (!base || !open) return null;
+          if (!base || !open || prog) return null;
           // El ajuste del chequeo de 3 preguntas (Plan Fierro · Fase 3) se
           // aplica acá — S.draft.precheckAdjust queda en 0 si no se
           // contestó nada, así que no cambia nada para quien no lo usa.
