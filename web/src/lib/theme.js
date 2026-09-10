@@ -174,8 +174,11 @@ export function paletaDesde(hex) {
     grad: `linear-gradient(135deg,${tono.deep} 0%,${tono.blue2} 100%)`,
     grad2: `linear-gradient(112deg,${tono.blue2},${tono.cyan} 58%,${tono.accent})`,
     glow: `0 16px 40px -14px ${hexToRgba(tono.cyan, 0.6)}`,
-    line: hexToRgba(tono.blue2, 0.10),
-    line2: hexToRgba(tono.blue2, 0.20),
+    // Mismos alfas que --color-line/--color-line2 en styles.css (subidos el
+    // 2026-09-10 para que el marco metálico se vea de verdad): si acá
+    // quedaran los viejos, elegir un color de tema APAGARÍA los bordes.
+    line: hexToRgba(tono.blue2, 0.18),
+    line2: hexToRgba(tono.blue2, 0.34),
   };
 }
 

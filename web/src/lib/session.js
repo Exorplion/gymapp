@@ -387,8 +387,16 @@ export async function addExtraSet(exId) {
   if (!S.draft) return 0;
   if (!S.draft.extraSets) S.draft.extraSets = {};
   S.draft.extraSets[exId] = (S.draft.extraSets[exId] || 0) + 1;
-  // si estaba cerrado por haber llegado al objetivo, vuelve a ser el actual
-  if (!S.draft.cur) S.draft.cur = exId;
+  /* Pedir una serie más REACTIVA esa tarjeta, siempre — no sólo cuando no
+     había ninguna abierta. Antes era `if (!S.draft.cur)`, y eso dejaba el
+     caso real: terminás Back extension, la app pasa sola a Hamstring curl,
+     te acordás de que te faltaba una, volvés con el carrusel y tocás "una
+     serie más" — el objetivo subía en Back extension pero el ejercicio en
+     curso seguía siendo Hamstring curl, así que la serie se registraba en la
+     tarjeta equivocada (Enzo, sesión en vivo). Pedir una serie más ES decir
+     "vuelvo a este": el que estaba abierto se cierra y queda en espera, en su
+     lugar de la secuencia, esperando su turno de nuevo. */
+  S.draft.cur = exId;
   await saveDraft();
   vibrate(15);
   bump();
@@ -585,8 +593,16 @@ export async function completeSession() {
     .filter(e => d.entries[e.id]?.sets?.length)
     .map(e => ({ name: e.name, sets: e.sets, reps: e.reps, equip: e.equip, machine: e.machine, unilateral: e.unilateral }));
 
+  /* El día que se guarda es el día en que DE VERDAD entrenaste (la primera
+     serie), no el día en que se abrió el borrador. Una PWA no se cierra, se
+     suspende: un borrador abierto anoche —o abierto el martes y completado el
+     jueves— quedaba archivado con la fecha vieja, así que la sesión aparecía
+     en el día equivocado del historial, de la racha y del volumen semanal
+     (Enzo: "la rutina en vivo no registra bien qué día se está realizando").
+     Mismo problema que ya tuvo S.nutriDate y por la misma causa. */
+  const fecha = dstr(new Date(startAt));
   const sess = {
-    id: d.id, date: d.date, slotId: d.slotId, dayName: d.dayName,
+    id: d.id, date: fecha, slotId: d.slotId, dayName: d.dayName,
     start: startAt, end: Date.now(), duration: Math.max(1, Math.round((Date.now() - startAt) / 60000)), entries,
     ...(skipped.length ? { skipped } : {}),
     ...(added.length ? { added } : {}),

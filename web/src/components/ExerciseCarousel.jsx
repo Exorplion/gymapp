@@ -467,6 +467,7 @@ function ExerciseSlide({ m, wd, started }) {
                   key={`w-${done.length}`}
                   value={v.w}
                   step={wStep()}
+                  min={0.5}
                   fmt={n => wDisplay(n)}
                   toUnit={wToUnit}
                   fromUnit={wFromUnit}
