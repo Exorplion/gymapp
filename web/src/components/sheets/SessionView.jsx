@@ -8,7 +8,7 @@
 // anterior — la vista donde uno mira "cómo me fue" no contestaba esa pregunta.
 // Ahora cada ejercicio es una .dcard con su grupo, sus series numeradas, su
 // volumen y cuánto cambió respecto de la última vez.
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { S, useStore, openSheet, closeSheet } from '../../lib/state.js';
 import { fmtDFull, fmtNum, round1, uid } from '../../lib/format.js';
 import { sessionPRs, deleteHistorySession, updateHistorySession, entryDelta, groupSets } from '../../lib/session.js';
@@ -20,11 +20,12 @@ import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
 import { Skip } from '../Icon.jsx';
 import { staggerReveal } from '../../lib/motion.js';
-// lottie-react 3.x no tiene export default: el componente es `Lottie`
-// nombrado, y el prop del JSON pasó a llamarse `src` (antes `animationData`
-// en 1.x/2.x, la versión que documentan la mayoría de los tutoriales viejos).
-import { Lottie } from 'lottie-react';
-import prBurst from '../../assets/lottie/pr-burst.json';
+// El burst de récord vive en su propio módulo y entra por React.lazy: son
+// 320 KB de lottie-web (la dependencia más pesada de la app, 24% del bundle)
+// para UNA animación de 44×44 que sólo se ve al cerrar la sesión que generó el
+// récord. Cargarla ahí y no en el arranque saca ese parse+eval del arranque en
+// frío sin cambiar nada de lo que se ve. Ver components/PrBurst.jsx.
+const PrBurst = lazy(() => import('../PrBurst.jsx'));
 
 export default function SessionView({ id, justFinished = false }) {
   useStore();
@@ -108,7 +109,14 @@ export default function SessionView({ id, justFinished = false }) {
               el récord — reabrir una sesión vieja con PR no debería repetir el
               festejo cada vez, así que ahí se queda el trofeo fijo de siempre. */}
           {justFinished
-            ? <Lottie src={prBurst} autoplay loop={false} style={{ width: 44, height: 44, flex: 'none' }} />
+            ? (
+              // El fallback es el MISMO trofeo que muestra una sesión vieja con
+              // récord: si la carga tarda no aparece un hueco ni un spinner,
+              // aparece lo que esa tarjeta muestra el resto del tiempo.
+              <Suspense fallback={<div className="pr-troph">🏆</div>}>
+                <PrBurst />
+              </Suspense>
+            )
             : <div className="pr-troph">🏆</div>}
           <div className="grow">
             <div className="cond" style={{ fontSize: 'var(--t-lg)', fontWeight: 700 }}>
