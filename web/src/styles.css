@@ -141,6 +141,19 @@
   --red:var(--color-red);
   --r:18px;
   --r-lg:26px;
+  /* ---- RADIOS (auditoria 2026-09-09) --------------------------------------
+     Habia 21 radios distintos (2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 18 20 24
+     26 99 999). Nadie decidio que un chip llevara 11 y el de al lado 12: se
+     fueron escribiendo sueltos. Cinco pasos alcanzan, y a diferencia de la
+     escala tipografica esto se puede colapsar sin riesgo, porque un radio de
+     mas o de menos no desborda un contenedor ni empuja texto.
+       --r-xs  detalle diminuto (barra de progreso, celda de heatmap)
+       --r-sm  control chico (badge, swatch, input embebido)
+       --r-md  control (chip, boton, campo)
+       --r     tarjeta / superficie      (ya existia, 18px)
+       --r-lg  superficie destacada      (ya existia, 26px)
+       --r-full pildora / circulo */
+  --r-xs:4px; --r-sm:8px; --r-md:12px; --r-full:999px;
   --tabs-h:91px;
   --glow:0 16px 40px -14px rgba(56,189,248,.55);
   --glow-warn:0 16px 40px -14px rgba(251,191,36,.5);
@@ -218,7 +231,7 @@ input,select,button,textarea{font-family:inherit;color:inherit}
    así que sin el halo el foco se confundiría con el propio botón. WCAG 2.2
    exige 3:1 (2.4.11 Focus Appearance); el halo lo garantiza contra cualquier
    fondo. */
-:focus-visible{outline:2px solid var(--blue2);outline-offset:2px;border-radius:8px;
+:focus-visible{outline:2px solid var(--blue2);outline-offset:2px;border-radius:var(--r-sm);
   box-shadow:0 0 0 4px var(--bg)}
 
 /* ÁREA TÁCTIL — WCAG 2.2 SC 2.5.8 (Target Size, AA) exige 24x24 CSS px; la
@@ -262,7 +275,7 @@ header.top{
 }
 .brand svg{width:24px;height:24px;stroke:var(--blue2);filter:drop-shadow(0 0 8px rgba(62,150,255,.7))}
 .icon-btn{
-  width:38px;height:38px;border-radius:13px;display:grid;place-items:center;
+  width:38px;height:38px;border-radius:var(--r-md);display:grid;place-items:center;
   border:1px solid rgba(255,255,255,.1);color:var(--mut);
   background:linear-gradient(150deg,rgba(255,255,255,.09),rgba(255,255,255,.02));
   transition:var(--d1);
@@ -276,7 +289,7 @@ header.top{
    un fondo que es todo azul y cian. En azul se perdía entre los demás. */
 .streak-btn{
   display:flex;align-items:center;width:auto;height:35px;gap:6px;
-  padding:7px 12px 7px 9px;border-radius:999px;
+  padding:7px 12px 7px 9px;border-radius:var(--r-full);
   background:linear-gradient(150deg,rgba(255,196,107,.18),rgba(255,255,255,.03));
   border:1px solid rgba(255,196,107,.32);
 }
@@ -286,7 +299,7 @@ header.top{
 .icon-btn svg.streak-flame{width:15px;height:15px;color:#FFC46B;flex:none}
 .streak-n{font-family:'Barlow Condensed';font-weight:700;font-size:16px;letter-spacing:.04em;color:#FFC46B}
 .heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.heatmap .cell{aspect-ratio:1;border-radius:4px;background:var(--card2);border:1px solid var(--line)}
+.heatmap .cell{aspect-ratio:1;border-radius:var(--r-xs);background:var(--card2);border:1px solid var(--line)}
 .heatmap .cell.done{background:var(--grad2);border-color:transparent;animation:zoom var(--d3) var(--ease) backwards}
 .heatmap .cell.rest{opacity:.28}
 .heatmap .cell.miss{background:rgba(255,93,115,.12);border-color:rgba(255,93,115,.3)}
@@ -414,7 +427,7 @@ main{
 /* ---------- buttons ---------- */
 .btn{
   display:flex;align-items:center;justify-content:center;gap:8px;
-  width:100%;min-height:52px;border-radius:18px;
+  width:100%;min-height:52px;border-radius:var(--r);
   font-family:'Barlow Condensed';font-weight:700;font-size:19px;
   letter-spacing:.09em;text-transform:uppercase;
   background:var(--grad2);color:var(--on-grad);box-shadow:var(--glow);
@@ -425,7 +438,7 @@ main{
   background:linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent);
   animation:sweep 3.2s ease-in-out infinite;pointer-events:none;
 }
-.btn.sm{min-height:44px;font-size:16px;border-radius:14px}
+.btn.sm{min-height:44px;font-size:16px;border-radius:var(--r-md)}
 .btn.ghost{background:var(--card2);box-shadow:none;border:1px solid var(--line2);color:var(--blue2)}
 .btn.dim{background:var(--card2);box-shadow:none;border:1px solid var(--line);color:var(--mut)}
 .btn.danger{background:rgba(255,93,115,.12);box-shadow:none;border:1px solid rgba(255,93,115,.35);color:var(--red)}
@@ -448,7 +461,7 @@ main{
 /* ---------- steppers ---------- */
 .step{display:flex;align-items:center;gap:6px}
 .step button{
-  width:48px;height:48px;flex:none;border-radius:14px;
+  width:48px;height:48px;flex:none;border-radius:var(--r-md);
   background:var(--card2);border:1px solid var(--line2);
   color:var(--blue2);font-size:24px;font-weight:600;line-height:1;
 }
@@ -472,9 +485,9 @@ main{
    overflow:hidden en .reel quedaba recortada por completo (invisible), y lo
    único que se veía era el backdrop translúcido detrás ("mantengo
    presionado y la pantalla sólo hace un blur", bug reportado por Enzo). */
-.reel{position:relative;height:64px;border-radius:16px;background:var(--card2);border:1px solid var(--line2)}
+.reel{position:relative;height:64px;border-radius:var(--r);background:var(--card2);border:1px solid var(--line2)}
 .reel-track{
-  display:flex;align-items:center;height:100%;overflow-x:auto;border-radius:16px;
+  display:flex;align-items:center;height:100%;overflow-x:auto;border-radius:var(--r);
   scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;
   padding:0 calc(50% - 26px);
 }
@@ -497,7 +510,7 @@ main{
 }
 .reel-indicator{
   position:absolute;left:50%;top:6px;bottom:6px;width:52px;transform:translateX(-50%);
-  border-radius:12px;background:var(--grad2);opacity:.14;pointer-events:none;
+  border-radius:var(--r-md);background:var(--grad2);opacity:.14;pointer-events:none;
 }
 
 /* Rueda fina vertical (mantener presionado): flota sobre la rueda gruesa en
@@ -508,7 +521,7 @@ main{
 .reel-fine-backdrop{position:fixed;inset:0;z-index:60;background:rgba(5,7,13,.45);backdrop-filter:blur(2px)}
 .reel-fine{
   position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%);
-  z-index:61;width:76px;height:168px;border-radius:18px;overflow:hidden;
+  z-index:61;width:76px;height:168px;border-radius:var(--r);overflow:hidden;
   background:var(--card2);border:1px solid var(--line2);
   box-shadow:0 22px 50px -20px rgba(0,0,0,.8);
   animation:zoom var(--d1) var(--ease-out) backwards;
@@ -527,21 +540,21 @@ main{
 .reel-tooth-v.on{color:var(--txt);font-size:24px;font-weight:800}
 .reel-fine-indicator{
   position:absolute;top:50%;left:6px;right:6px;height:44px;transform:translateY(-50%);
-  border-radius:12px;background:var(--grad2);opacity:.14;pointer-events:none;
+  border-radius:var(--r-md);background:var(--grad2);opacity:.14;pointer-events:none;
 }
 
 /* ---------- chips ---------- */
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{
   display:inline-flex;align-items:center;gap:6px;
-  padding:8px 12px;border-radius:999px;font-size:14px;font-weight:600;
+  padding:8px 12px;border-radius:var(--r-full);font-size:14px;font-weight:600;
   background:var(--card2);border:1px solid var(--line2);color:var(--txt);
 }
 /* Elegir la rutina de destino: una por renglón, porque lo que se lee es el
    nombre ("Posterior B") y en fila apretada no entra. */
 .chips.col{flex-direction:column;flex-wrap:nowrap}
 .chip.ancho{
-  width:100%;border-radius:12px;padding:9px 12px;justify-content:flex-start;gap:10px;
+  width:100%;border-radius:var(--r-md);padding:9px 12px;justify-content:flex-start;gap:10px;
 }
 .chip-dia{
   font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
@@ -581,12 +594,12 @@ main{
 .chip .x{color:var(--mut);font-size:15px;padding:0 2px}
 /* punto = ese día ya tiene entrenamiento. Sin esto, elegir destino en el
    selector de día es a ciegas: no sabés cuál vas a desplazar. */
-.chip-dot{width:5px;height:5px;border-radius:999px;background:currentColor;opacity:.55}
+.chip-dot{width:5px;height:5px;border-radius:var(--r-full);background:currentColor;opacity:.55}
 .chip-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}
 .chip-scroll::-webkit-scrollbar{display:none}
 .chip-scroll .chip{flex:none;padding:10px 14px;font-size:15px}
 .ac-list{margin-top:6px;display:flex;flex-direction:column;gap:6px}
-.ac-item{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:12px;font-size:14px;font-weight:600;background:var(--card2);border:1px solid var(--line2);color:var(--txt)}
+.ac-item{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:var(--r-md);font-size:14px;font-weight:600;background:var(--card2);border:1px solid var(--line2);color:var(--txt)}
 .ac-item:active{border-color:var(--blue2);background:rgba(46,125,255,.14)}
 
 /* ---------- ejercicio (Hoy) ---------- */
@@ -605,7 +618,7 @@ main{
 .ex-card .exlast{color:var(--blue2);font-size:13px;font-weight:500;margin-top:2px}
 .ex-card .exname .info.inline{display:inline-grid;vertical-align:middle;width:26px;height:26px;font-size:14px;margin-left:2px}
 .mini.info{color:var(--blue2);font-size:15px;font-weight:700}
-.prog-warn{margin-top:10px;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.4;
+.prog-warn{margin-top:10px;padding:9px 12px;border-radius:var(--r-md);font-size:12.5px;line-height:1.4;
   background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.32);color:var(--warn);font-weight:500}
 /* ---------- pictogramas de ejercicio ----------
    La persona hereda el color de la tarjeta; el aparato va apagado, para que lo
@@ -643,7 +656,7 @@ main{
   position:absolute;top:14px;right:14px;
   font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.05em;
   color:var(--mut);background:var(--card2);border:1px solid var(--line);
-  padding:4px 10px;border-radius:999px;
+  padding:4px 10px;border-radius:var(--r-full);
   animation:countPop var(--d3) var(--ease);
   transition:color var(--d3) var(--ease),background var(--d3) var(--ease),border-color var(--d3) var(--ease);
 }
@@ -682,7 +695,7 @@ main{
    escondido: se tocan jadeando y con las manos húmedas. */
 .ex-actions{display:flex;gap:6px;margin-top:10px}
 .ex-actions button{
-  flex:1;min-height:38px;border-radius:12px;
+  flex:1;min-height:38px;border-radius:var(--r-md);
   background:var(--card2);border:1px solid var(--line);
   color:var(--mut);font-size:12.5px;font-weight:600;letter-spacing:.02em;
   display:inline-flex;align-items:center;justify-content:center;gap:5px;
@@ -690,7 +703,7 @@ main{
 .ex-actions button:active{border-color:var(--line2);color:var(--blue2)}
 /* los saltados en el resumen de la sesión */
 .skip-note{
-  margin-top:14px;padding:9px 12px;border-radius:12px;
+  margin-top:14px;padding:9px 12px;border-radius:var(--r-md);
   font-size:12.5px;line-height:1.45;font-weight:500;
   background:rgba(255,180,84,.09);border:1px solid rgba(255,180,84,.28);color:var(--warn);
   display:flex;gap:6px;
@@ -706,7 +719,7 @@ main{
    ejercicio. */
 .carousel.focus .carousel-slide{flex:0 0 100%}
 .carousel-dots{display:flex;justify-content:center;gap:6px;margin:10px 0 4px}
-.carousel-dots i{width:6px;height:6px;border-radius:3px;background:var(--card2);border:1px solid var(--line2);transition:var(--d2)}
+.carousel-dots i{width:6px;height:6px;border-radius:var(--r-xs);background:var(--card2);border:1px solid var(--line2);transition:var(--d2)}
 .carousel-dots i.on{width:18px;background:var(--grad2);border-color:transparent}
 /* ---------- reordenar arrastrando ---------- */
 /* mantené presionada una fila y arrastrala: las demás se corren solas para
@@ -725,7 +738,7 @@ main{
 /* las filas de Rutina no tienen fondo propio: al levantarlas hay que darles uno
    o se ven transparentes encima de las demás */
 .row.dragging{
-  background:var(--card2);border-radius:12px;border-bottom-color:transparent;
+  background:var(--card2);border-radius:var(--r-md);border-bottom-color:transparent;
   box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(46,125,255,.3);
 }
 .day-headrow{display:flex;align-items:center;gap:8px}
@@ -792,7 +805,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .food-hits{display:flex;flex-direction:column;gap:6px;margin-bottom:var(--s3)}
 .food-hit{
   display:flex;align-items:center;gap:8px;width:100%;text-align:left;
-  padding:10px 12px;border-radius:12px;
+  padding:10px 12px;border-radius:var(--r-md);
   background:var(--card2);border:1px solid var(--line);
 }
 .food-hit .grow{flex:1;min-width:0;display:flex;align-items:center;gap:6px}
@@ -804,7 +817,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .cart-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}
 .cart-row .n{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cart-row input{
-  width:66px;flex:none;text-align:center;padding:5px 4px;border-radius:9px;
+  width:66px;flex:none;text-align:center;padding:5px 4px;border-radius:var(--r-sm);
   background:var(--card2);border:1px solid var(--line2);
   font-family:'Barlow Condensed';font-weight:700;font-size:17px;font-variant-numeric:tabular-nums;
 }
@@ -832,7 +845,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   flex:1;min-width:0;text-align:left;
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;
   letter-spacing:.02em;color:var(--txt);
-  padding:2px 8px;margin-left:-8px;border-radius:9px;
+  padding:2px 8px;margin-left:-8px;border-radius:var(--r-sm);
   border:1px dashed var(--line2);background:none;
 }
 .entry-name-edit .pen{font-size:12px;color:var(--blue2);margin-left:4px}
@@ -892,7 +905,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .load .rep{
   display:flex;flex-direction:column;align-items:center;gap:1px;
   background:rgba(56,189,248,.10);border:1px solid rgba(56,189,248,.24);
-  border-radius:10px;padding:3px 9px 4px;
+  border-radius:var(--r-sm);padding:3px 9px 4px;
 }
 .load .rep .s{
   font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
@@ -913,11 +926,11 @@ body.dragging-on .card.day.drop-target{filter:none}
 .set-edit{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)}
 .set-edit:last-of-type{border-bottom:none}
 .set-edit .i{
-  width:22px;height:22px;flex:none;display:grid;place-items:center;border-radius:7px;
+  width:22px;height:22px;flex:none;display:grid;place-items:center;border-radius:var(--r-sm);
   background:var(--card2);color:var(--mut);font-size:11px;font-weight:700;
 }
 .set-edit input{
-  width:64px;flex:none;text-align:center;padding:6px 4px;border-radius:10px;
+  width:64px;flex:none;text-align:center;padding:6px 4px;border-radius:var(--r-sm);
   background:var(--card2);border:1px solid var(--line2);
   font-family:'Barlow Condensed';font-weight:700;font-size:18px;
   font-variant-numeric:tabular-nums;
@@ -954,7 +967,7 @@ body.dragging-on .card.day.drop-target{filter:none}
    tener resumen. */
 .sin-grupo{
   display:block;width:100%;text-align:left;margin-top:var(--s3);
-  padding:10px 12px;border-radius:12px;
+  padding:10px 12px;border-radius:var(--r-md);
   background:rgba(255,180,84,.08);border:1px solid rgba(255,180,84,.26);
 }
 .sin-grupo .t{display:block;font-size:var(--t-sm);font-weight:600;color:var(--warn)}
@@ -966,7 +979,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .pick-list{display:flex;flex-direction:column;gap:6px}
 .pick-row{
   display:flex;align-items:center;gap:10px;
-  padding:9px 11px;border-radius:12px;
+  padding:9px 11px;border-radius:var(--r-md);
   background:var(--card2);border:1px solid var(--line);
 }
 .pick-row input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:var(--blue)}
@@ -991,7 +1004,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   position:relative;overflow:hidden;
   background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
   border:1px solid rgba(255,255,255,.07);
-  border-radius:14px;
+  border-radius:var(--r-md);
   /* los 46 de la izquierda son el riel más el pictograma (.ex-row-icon) */
   padding:10px 12px 10px 46px;margin-bottom:8px;
 }
@@ -1010,7 +1023,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .ex-row .n{font-size:16.5px;font-weight:600;line-height:1.25;letter-spacing:.01em}
 .ex-row .info.inline{
   display:inline-grid;width:24px;height:24px;flex:none;
-  font-size:13px;border-radius:8px;
+  font-size:13px;border-radius:var(--r-sm);
 }
 /* El pictograma sólo ocupa el alto del nombre, así que la fila de abajo se
    corre a la izquierda y recupera ese ancho: sin esto el esquema de RIR se
@@ -1033,7 +1046,7 @@ body.dragging-on .card.day.drop-target{filter:none}
    contenido, que es lo que hacía que la lista se leyera como una barra de
    herramientas y no como tu rutina */
 .ex-row .acts .mini{
-  width:32px;height:32px;border-radius:10px;font-size:13px;
+  width:32px;height:32px;border-radius:var(--r-sm);font-size:13px;
   background:transparent;border-color:rgba(255,255,255,.07);color:var(--mut2);
 }
 .ex-row .acts .mini:active{background:var(--card2);color:var(--blue2)}
@@ -1060,7 +1073,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .row .t{font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .s{color:var(--mut);font-size:13px;margin-top:1px}
 .mini{
-  width:40px;height:40px;flex:none;border-radius:11px;display:grid;place-items:center;
+  width:40px;height:40px;flex:none;border-radius:var(--r-md);display:grid;place-items:center;
   background:var(--card2);border:1px solid var(--line);color:var(--mut);font-size:16px;
 }
 .mini:active{color:var(--blue2);border-color:var(--line2)}
@@ -1071,7 +1084,7 @@ body.dragging-on .card.day.drop-target{filter:none}
    activo — a diferencia de .mini (ícono cuadrado de 40px) éste lleva texto,
    así que necesita su propio ancho automático y sin wrap. */
 .gym-eq-btn{
-  flex:none;padding:8px 12px;border-radius:11px;white-space:nowrap;
+  flex:none;padding:8px 12px;border-radius:var(--r-md);white-space:nowrap;
   background:var(--card2);border:1px solid var(--line);color:var(--mut);font-size:12px;font-weight:600;
 }
 .gym-eq-btn.on{color:var(--cyan);border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.08)}
@@ -1090,7 +1103,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   border-color:rgba(16,185,129,.3);
 }
 .done-pr{
-  margin-top:12px;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.4;
+  margin-top:12px;padding:9px 12px;border-radius:var(--r-md);font-size:12.5px;line-height:1.4;
   background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.3);color:var(--warn);font-weight:500;
 }
 /* "Entrenar de nuevo" es una salida, no el camino principal: texto, no botón */
@@ -1099,7 +1112,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   font-size:13px;font-weight:600;color:var(--mut);background:none;border:none;
 }
 .done-again:active{color:var(--blue2)}
-.wkstrip .wd{border-radius:14px;padding:9px 2px 8px;text-align:center;
+.wkstrip .wd{border-radius:var(--r-md);padding:9px 2px 8px;text-align:center;
   background:rgba(255,255,255,.024);border:1px solid rgba(255,255,255,.06);
   transition:background var(--d1) var(--ease),border-color var(--d1) var(--ease)}
 .wkstrip .wd .l{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;color:var(--mut2)}
@@ -1121,7 +1134,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .dayline:last-child{border-bottom:none}
 .dayline .badge{width:42px;flex:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;
   letter-spacing:.06em;color:var(--blue2);background:rgba(46,125,255,.12);
-  border:1px solid rgba(46,125,255,.28);border-radius:9px;padding:5px 0;text-align:center}
+  border:1px solid rgba(46,125,255,.28);border-radius:var(--r-sm);padding:5px 0;text-align:center}
 .dayline.rest .badge{color:var(--mut2);background:rgba(12,19,34,.5);border-color:var(--line)}
 .dayline .grow{flex:1;min-width:0}
 .dayline .t{font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1129,7 +1142,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .dayline .s{color:var(--mut);font-size:12.5px;margin-top:1px}
 .dayline:active{background:rgba(46,125,255,.06)}
 .lib-tag{font-size:var(--t-micro);letter-spacing:.06em;text-transform:uppercase;font-weight:700;
-  color:var(--ok);background:rgba(46,230,168,.12);border-radius:6px;padding:2px 6px;margin-left:6px}
+  color:var(--ok);background:rgba(46,230,168,.12);border-radius:var(--r-sm);padding:2px 6px;margin-left:6px}
 
 /* ---------- rutina: día ---------- */
 .day-head{
@@ -1162,8 +1175,8 @@ body.dragging-on .card.day.drop-target{filter:none}
 }
 
 /* ---------- barras de progreso (nutrición) ---------- */
-.pbar{height:8px;border-radius:5px;background:rgba(255,255,255,.05);overflow:hidden}
-.pbar>i{display:block;height:100%;border-radius:5px;
+.pbar{height:8px;border-radius:var(--r-xs);background:rgba(255,255,255,.05);overflow:hidden}
+.pbar>i{display:block;height:100%;border-radius:var(--r-xs);
   background:linear-gradient(90deg,var(--deep),var(--blue2) 60%,var(--cyan));
   transition:width var(--d4) var(--ease-out)}
 .pbar>i.over{background:linear-gradient(135deg,#E8A21D,#FFB454)}
@@ -1189,9 +1202,9 @@ body.dragging-on .card.day.drop-target{filter:none}
 
 /* ---------- gráficos ---------- */
 canvas.chart{width:100%;height:200px;display:block}
-.seg{display:flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:15px;padding:4px;gap:5px}
+.seg{display:flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:var(--r);padding:4px;gap:5px}
 .seg button{
-  flex:1;padding:9px 0;border-radius:11px;font-family:'Barlow Condensed';
+  flex:1;padding:9px 0;border-radius:var(--r-md);font-family:'Barlow Condensed';
   font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);
 }
 .seg button.on{background:var(--grad2);color:var(--on-grad);font-weight:700;box-shadow:var(--glow)}
@@ -1226,11 +1239,11 @@ canvas.chart{width:100%;height:200px;display:block}
   background:linear-gradient(135deg,rgba(46,125,255,.12),rgba(12,19,34,.4));
   border:1px solid rgba(46,125,255,.28);
 }
-.pr-troph{width:44px;height:44px;border-radius:14px;background:var(--grad2);display:grid;place-items:center;
+.pr-troph{width:44px;height:44px;border-radius:var(--r-md);background:var(--grad2);display:grid;place-items:center;
   box-shadow:var(--glow);font-size:20px;flex:none}
 .pr-w{font-family:'Barlow Condensed';font-weight:700;font-size:26px;line-height:1;color:var(--blue3)}
 .confetti-host{position:fixed;inset:0;z-index:80;pointer-events:none;overflow:hidden}
-.confetti-host i{position:absolute;top:-12px;width:8px;height:14px;border-radius:2px;
+.confetti-host i{position:absolute;top:-12px;width:8px;height:14px;border-radius:var(--r-xs);
   opacity:.95;animation:confettiFall linear forwards;transform:rotate(var(--rot))}
 @keyframes confettiFall{to{transform:translate(var(--drift),110vh) rotate(calc(var(--rot) + 360deg));opacity:0}}
 
@@ -1238,7 +1251,7 @@ canvas.chart{width:100%;height:200px;display:block}
 .field{margin-bottom:14px}
 .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
 .field input,.field select{
-  width:100%;padding:14px;border-radius:13px;font-size:17px;font-weight:500;
+  width:100%;padding:14px;border-radius:var(--r-md);font-size:17px;font-weight:500;
   background:var(--card2);border:1px solid var(--line2);outline:none;
 }
 .field input:focus,.field select:focus{border-color:var(--blue)}
@@ -1254,7 +1267,7 @@ canvas.chart{width:100%;height:200px;display:block}
 nav.tabbar{
   position:fixed;left:18px;right:18px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:50;
   display:flex;justify-content:space-around;
-  padding:7px;border-radius:24px;
+  padding:7px;border-radius:var(--r-lg);
   /* El vidrio necesita cuerpo. Con sólo el degradado blanco al 11%/4% encima
      del desenfoque, la barra era casi transparente: el contenido que pasaba
      por detrás al scrollear se leía a través de ella y se mezclaba con las
@@ -1276,7 +1289,7 @@ nav.tabbar button{
      lo fija en --mut. Hasta el 2026-09-05 esta línea repetía color:--mut2 y,
      con la misma especificidad y estando después, PISABA ese arreglo — el
      fix de contraste estaba escrito, comentado y muerto. */
-  padding:7px 0 5px;border-radius:14px;position:relative;transition:var(--d1);
+  padding:7px 0 5px;border-radius:var(--r-md);position:relative;transition:var(--d1);
 }
 nav.tabbar button svg{width:24px;height:24px;stroke:currentColor;fill:none;fill-opacity:0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke-width var(--d1) var(--ease),fill-opacity var(--d1) var(--ease)}
 nav.tabbar button span{font-family:'Barlow Condensed';font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
@@ -1295,7 +1308,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
    reaparecer en cada botón: el movimiento es lo que comunica "te moviste de
    aquí para allá" */
 .tab-ind{
-  position:absolute;top:7px;left:0;height:calc(100% - 14px);width:80px;border-radius:18px;
+  position:absolute;top:7px;left:0;height:calc(100% - 14px);width:80px;border-radius:var(--r);
   background:var(--grad2);box-shadow:0 6px 20px -4px rgba(34,211,238,.55);pointer-events:none;
   transition:transform var(--d3) var(--ease),width var(--d3) var(--ease);
 }
@@ -1305,7 +1318,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   position:fixed;left:12px;right:12px;z-index:45;
   bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 10px);
   background:linear-gradient(140deg,#0E1B38,#0A1220);
-  border:1px solid rgba(46,125,255,.45);border-radius:20px;
+  border:1px solid rgba(46,125,255,.45);border-radius:var(--r);
   padding:12px 16px;box-shadow:0 10px 40px -8px rgba(46,125,255,.5);
   transform:translateY(140%);opacity:0;transition:var(--d3) var(--ease-out);
   max-width:492px;margin:0 auto;
@@ -1316,12 +1329,12 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 #rest-time{font-family:'Barlow Condensed';font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
 #restbar .rb-btns{margin-left:auto;display:flex;gap:8px}
 #restbar .rb-btns button{
-  padding:10px 14px;border-radius:12px;background:rgba(46,125,255,.15);
+  padding:10px 14px;border-radius:var(--r-md);background:rgba(46,125,255,.15);
   border:1px solid rgba(46,125,255,.4);color:var(--blue3);
   font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.06em;
 }
-#rest-track{height:5px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:10px;overflow:hidden}
-#rest-fill{display:block;height:100%;border-radius:3px;background:var(--grad);width:100%;transition:width var(--d2) linear}
+#rest-track{height:5px;border-radius:var(--r-xs);background:rgba(255,255,255,.08);margin-top:10px;overflow:hidden}
+#rest-fill{display:block;height:100%;border-radius:var(--r-xs);background:var(--grad);width:100%;transition:width var(--d2) linear}
 
 /* ---------- rest timer: pantalla completa ---------- */
 #rest-fs{position:fixed;inset:0;z-index:65;display:none;place-items:center;
@@ -1350,7 +1363,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .rfs-inner.ringing .rfs-ring{animation:rfs-late .9s ease-in-out infinite}
 @keyframes rfs-late{0%,100%{transform:scale(1)}50%{transform:scale(1.055)}}
 .rfs-parar{
-  width:100%;height:60px;border:0;border-radius:18px;
+  width:100%;height:60px;border:0;border-radius:var(--r);
   background:linear-gradient(112deg,#FFB454,#E07C1A);color:#2A1603;
   font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:21px;letter-spacing:.14em;
   box-shadow:0 16px 40px -12px rgba(255,180,84,.55);
@@ -1402,7 +1415,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 @media (prefers-reduced-motion:reduce){
   #sheet.closing{display:none}
 }
-#sheet .handle{width:44px;height:5px;border-radius:3px;background:var(--line2);margin:6px auto 16px}
+#sheet .handle{width:44px;height:5px;border-radius:var(--r-xs);background:var(--line2);margin:6px auto 16px}
 /* En el mockup los títulos de sheet van en itálica y caja normal
    ("Historial"), no en versales: es el mismo gesto del título de pantalla,
    un escalón más abajo. */
@@ -1414,7 +1427,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   position:fixed;left:50%;transform:translateX(-50%) translateY(20px);
   bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 90px);
   background:#12203C;border:1px solid rgba(46,125,255,.5);color:var(--txt);
-  padding:11px 20px;border-radius:999px;font-size:15px;font-weight:600;
+  padding:11px 20px;border-radius:var(--r-full);font-size:15px;font-weight:600;
   opacity:0;pointer-events:none;transition:var(--d2);z-index:70;white-space:nowrap;
   box-shadow:0 8px 30px -6px rgba(0,0,0,.6);
 }
@@ -1525,13 +1538,13 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 
 /* ---------- perfil / macros ---------- */
 .profcard{display:flex;align-items:center;gap:12px;cursor:pointer}
-.profcard .pavatar{width:44px;height:44px;flex:none;border-radius:13px;background:var(--grad);display:grid;place-items:center;font-size:20px;box-shadow:var(--glow)}
+.profcard .pavatar{width:44px;height:44px;flex:none;border-radius:var(--r-md);background:var(--grad);display:grid;place-items:center;font-size:20px;box-shadow:var(--glow)}
 .profcard .pt{font-family:'Barlow Condensed';font-weight:700;font-size:18px;line-height:1.1}
 .macro3 .rng{font-size:10px;color:var(--mut2);font-weight:600;letter-spacing:.02em}
 .pbar>i.warn{background:linear-gradient(135deg,#E8A21D,#FFB454)!important}
 .pbar>i.red{background:linear-gradient(135deg,#E8455F,#FF5D73)!important}
 .feedback{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
-.feedback .fdot{width:9px;height:9px;border-radius:5px;margin-top:5px;flex:none;background:var(--mut)}
+.feedback .fdot{width:9px;height:9px;border-radius:var(--r-xs);margin-top:5px;flex:none;background:var(--mut)}
 .feedback.blue .fdot{background:var(--blue2);box-shadow:0 0 10px var(--blue)}
 .feedback.ok .fdot{background:var(--ok);box-shadow:0 0 10px var(--ok)}
 .feedback.warn .fdot{background:var(--warn);box-shadow:0 0 10px var(--warn)}
@@ -1540,16 +1553,16 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .rangerow{margin:16px 0 6px}
 .rangerow .rlbl{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--mut);margin-bottom:8px}
 .rangerow .rlbl b{color:var(--blue3);font-family:'Barlow Condensed';font-size:15px}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:4px;background:var(--card2);border:1px solid var(--line2);outline:none}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:var(--r-xs);background:var(--card2);border:1px solid var(--line2);outline:none}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--blue2);border:3px solid #0A101C;box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 1px var(--blue)}
 input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--blue2);border:3px solid #0A101C}
-.calcbox{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:6px}
+.calcbox{background:var(--card2);border:1px solid var(--line);border-radius:var(--r-md);padding:12px 14px;margin-top:6px}
 .calcbox .cr{display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;color:var(--mut)}
 .calcbox .cr b{color:var(--txt);font-weight:600}
 .calcbox .cr.big{font-size:15px;padding-top:9px;margin-top:5px;border-top:1px solid var(--line)}
 .calcbox .cr.big b{font-family:'Barlow Condensed';font-size:22px;color:var(--blue3)}
 .gtx{font-size:14px;line-height:1.55;color:var(--txt)}
-.pw-btn{display:flex;align-items:center;gap:10px;width:100%;padding:13px 16px;border-radius:15px;margin-bottom:12px;
+.pw-btn{display:flex;align-items:center;gap:10px;width:100%;padding:13px 16px;border-radius:var(--r);margin-bottom:12px;
   background:linear-gradient(135deg,rgba(46,125,255,.14),rgba(12,19,34,.4));border:1px solid rgba(46,125,255,.3);text-align:left}
 .pw-btn .pwi{font-size:20px}
 .pw-btn .pwt{font-family:'Barlow Condensed';font-weight:700;font-size:17px;letter-spacing:.03em}
@@ -1567,7 +1580,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .block-body{display:flex;height:104px;margin-bottom:10px}
 .active-body-mini{display:flex;height:52px;width:34px;flex:none}
 .block-list{margin-bottom:var(--s3)}
-.block-card{border-radius:14px;background:var(--card2);border:1px solid var(--line);margin-bottom:8px;overflow:hidden}
+.block-card{border-radius:var(--r-md);background:var(--card2);border:1px solid var(--line);margin-bottom:8px;overflow:hidden}
 .block-head{
   display:flex;align-items:center;gap:8px;padding:12px 12px;width:100%;text-align:left;
   background:none;border:0;color:inherit;font:inherit;
@@ -1583,7 +1596,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
      invisible: ▲ y ▼ están apilados, así que expandir la zona sensible hacia
      arriba y abajo haría que se pisen entre sí y termines tocando el
      contrario. La única salida honesta es agrandarlos de verdad. */
-  width:36px;height:36px;border-radius:9px;background:var(--card);border:1px solid var(--line2);
+  width:36px;height:36px;border-radius:var(--r-sm);background:var(--card);border:1px solid var(--line2);
   color:var(--mut2);font-size:13px;display:grid;place-items:center;
 }
 .block-move button:disabled{opacity:.3}
@@ -1596,7 +1609,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .block-ex-row{display:flex;align-items:center;gap:8px}
 .block-ex-row .grow{
   flex:1;min-width:0;text-align:left;background:var(--card);border:1px solid var(--line);
-  border-radius:11px;padding:10px 12px;color:inherit;font:inherit;
+  border-radius:var(--r-md);padding:10px 12px;color:inherit;font:inherit;
 }
 .block-ex-row .grow .t{display:block;font-size:14px;font-weight:600}
 .block-ex-row .grow .s{display:block;font-size:11.5px;color:var(--mut);margin-top:1px;text-align:left}
@@ -1624,7 +1637,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
 }
 .hero-cta{
-  margin-top:18px;height:58px;border-radius:18px;
+  margin-top:18px;height:58px;border-radius:var(--r);
   font-family:'Barlow Condensed',sans-serif;
   font-size:21px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
 }
@@ -1639,7 +1652,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .hist-row:last-child{border-bottom:none}
 .hist-badge{
-  flex:0 0 auto;min-width:42px;padding:5px 8px;border-radius:11px;text-align:center;
+  flex:0 0 auto;min-width:42px;padding:5px 8px;border-radius:var(--r-md);text-align:center;
   font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;
   color:var(--accent);
   background:linear-gradient(160deg,rgba(79,168,255,.22),rgba(255,255,255,.03));
@@ -1672,7 +1685,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .weekbars{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px;align-items:end}
 .weekbars .wbar{display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end}
 .weekbars .b{
-  width:100%;border-radius:8px;
+  width:100%;border-radius:var(--r-sm);
   background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);
 }
 .weekbars .wbar.on .b{
@@ -1690,7 +1703,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .week-proj{display:flex;gap:6px;overflow-x:auto;margin:14px 0;padding-bottom:2px}
 .week-proj-d{
   flex:0 0 64px;display:flex;flex-direction:column;align-items:center;gap:4px;
-  padding:9px 4px;border-radius:12px;background:var(--card2);border:1px solid var(--line);
+  padding:9px 4px;border-radius:var(--r-md);background:var(--card2);border:1px solid var(--line);
 }
 .week-proj-d .wd{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--cyan);text-transform:uppercase}
 .week-proj-d .t{font-size:10.5px;color:var(--mut);text-align:center;line-height:1.25;
@@ -1703,7 +1716,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* Par de botones del mockup: uno lleno y uno de vidrio, no dos fantasma. */
 .btn-row{display:flex;gap:10px;margin-top:var(--s4)}
 .btn-row .btn{
-  flex:1;height:50px;border-radius:16px;
+  flex:1;height:50px;border-radius:var(--r);
   font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;
   letter-spacing:.11em;text-transform:uppercase;
 }
@@ -1716,11 +1729,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .day-cards{display:flex;flex-direction:column;gap:10px;margin-top:var(--s4)}
 .day-card{
   background:linear-gradient(158deg,rgba(255,255,255,.075),rgba(255,255,255,.02));
-  border:1px solid rgba(255,255,255,.11);border-radius:20px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.11);border-radius:var(--r);overflow:hidden;
 }
 .day-head{display:flex;align-items:center;gap:13px;width:100%;padding:15px 16px;text-align:left}
 .day-badge{
-  flex:0 0 auto;min-width:40px;padding:6px 0;text-align:center;border-radius:11px;
+  flex:0 0 auto;min-width:40px;padding:6px 0;text-align:center;border-radius:var(--r-md);
   font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;
   color:var(--accent);background:rgba(79,168,255,.14);border:1px solid rgba(120,170,255,.28);
 }
@@ -1774,7 +1787,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   display:flex;justify-content:space-between;gap:6px;
   font-size:11.5px;font-weight:600;color:var(--mut);margin-bottom:5px;
 }
-.hero-kcal .macro3 .pbar{height:7px;border-radius:5px;background:rgba(255,255,255,.06)}
+.hero-kcal .macro3 .pbar{height:7px;border-radius:var(--r-xs);background:rgba(255,255,255,.06)}
 /* Un color por macro: proteína azul, carbos verde, grasa ámbar. */
 .hero-kcal .pbar.prot>i{background:linear-gradient(90deg,var(--deep),var(--cyan))}
 .hero-kcal .pbar.carb>i{background:linear-gradient(90deg,#12A97B,#2EE6A8)}
@@ -1786,7 +1799,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 /* Chips de acceso rápido: píldoras completas, con el + en cian */
 .chip-scroll .chip.blue{
-  flex:none;display:inline-flex;align-items:center;gap:8px;border-radius:999px;white-space:nowrap;
+  flex:none;display:inline-flex;align-items:center;gap:8px;border-radius:var(--r-full);white-space:nowrap;
   padding:11px 15px;font-size:14.5px;font-weight:600;color:var(--txt);
   background:linear-gradient(150deg,rgba(79,168,255,.16),rgba(255,255,255,.03));
   border:1px solid rgba(120,170,255,.28);
@@ -1795,7 +1808,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 /* Lista de comidas + botón de borrar en rojo */
 .meal-del{
-  flex:0 0 auto;width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
+  flex:0 0 auto;width:36px;height:36px;border-radius:var(--r-md);display:grid;place-items:center;
   color:#FF6B84;background:rgba(255,107,132,.1);border:1px solid rgba(255,107,132,.24);
 }
 
@@ -1809,7 +1822,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .hero-prog .bignum{font-size:54px}
 /* "+ Registro": botón de vidrio con texto cian, no un fantasma más */
 .reg-btn{
-  flex:0 0 auto;padding:12px 16px;border-radius:14px;
+  flex:0 0 auto;padding:12px 16px;border-radius:var(--r-md);
   font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;
   letter-spacing:.1em;text-transform:uppercase;color:var(--accent);
   background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
@@ -1826,7 +1839,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   grid-template-columns:none;grid-template-rows:repeat(7,1fr);
   grid-auto-flow:column;grid-auto-columns:1fr;gap:5px;
 }
-.heatmap.const .cell{border-radius:6px;aspect-ratio:1}
+.heatmap.const .cell{border-radius:var(--r-sm);aspect-ratio:1}
 .const-stats{display:flex;gap:18px;margin-top:16px}
 .const-stats .cond{font-size:26px;font-weight:700;line-height:1}
 .const-stats span{
@@ -1858,7 +1871,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    dato principal — pero tiene que estar, porque es lo que explica por qué dos
    números del mismo ejercicio no son comparables. */
 .eq-tag{
-  display:inline-block;margin-right:7px;padding:1px 7px;border-radius:6px;
+  display:inline-block;margin-right:7px;padding:1px 7px;border-radius:var(--r-sm);
   font-size:11px;font-weight:600;letter-spacing:.02em;
   color:var(--accent);background:rgba(79,168,255,.13);border:1px solid rgba(120,170,255,.24);
 }
@@ -1868,7 +1881,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    variante", no el protagonista de la tarjeta. */
 .gym-photo{margin-top:8px}
 .gym-photo-thumb{
-  width:56px;height:56px;border-radius:12px;overflow:hidden;padding:0;
+  width:56px;height:56px;border-radius:var(--r-md);overflow:hidden;padding:0;
   border:1px solid var(--line2);
 }
 .gym-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
@@ -1876,7 +1889,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* Primera vez en una máquina: no inventamos un peso, damos contexto y una
    instrucción de calibración. */
 .ex-first{
-  margin-top:10px;padding:11px 13px;border-radius:14px;
+  margin-top:10px;padding:11px 13px;border-radius:var(--r-md);
   background:linear-gradient(150deg,rgba(255,196,107,.12),rgba(255,255,255,.02));
   border:1px solid rgba(255,196,107,.24);
 }
@@ -1887,7 +1900,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .mach-photo{margin-top:8px}
 .mach-photo img{
   display:block;width:100%;max-height:200px;object-fit:cover;
-  border-radius:14px;border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--r-md);border:1px solid rgba(255,255,255,.12);
 }
 .mach-photo-acts{display:flex;gap:8px;margin-top:8px}
 .mach-photo-acts .btn{flex:1}
@@ -1897,10 +1910,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .illus-opt{
   display:flex;flex-direction:column;gap:6px;padding:8px;text-align:left;
   background:linear-gradient(158deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
-  border:1px solid rgba(255,255,255,.1);border-radius:16px;
+  border:1px solid rgba(255,255,255,.1);border-radius:var(--r);
 }
 .illus-opt img{
-  width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:11px;
+  width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r-md);
   background:rgba(255,255,255,.04);
 }
 .illus-opt span{font-size:11.5px;line-height:1.3;color:var(--mut)}
@@ -1910,7 +1923,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .ex-media{display:grid;grid-template-columns:1fr;gap:10px;margin:var(--s3) 0}
 .ex-media:has(img + img){grid-template-columns:1fr 1fr}
 .ex-media img{
-  width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:14px;
+  width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r-md);
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
 }
 
@@ -1981,13 +1994,13 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* Dos botones y no uno que alterne: uno solo tendría que decir o dónde estás o
    adónde vas, y las dos lecturas son igual de válidas. */
 .sil-caras{
-  display:inline-flex;gap:2px;padding:2px;flex:none;border-radius:999px;
+  display:inline-flex;gap:2px;padding:2px;flex:none;border-radius:var(--r-full);
   background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);
 }
 .sil-caras button{
   font-family:'Barlow Condensed',sans-serif;font-size:10.5px;font-weight:700;
   letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
-  background:transparent;border:0;padding:5px 15px;border-radius:999px;
+  background:transparent;border:0;padding:5px 15px;border-radius:var(--r-full);
   cursor:pointer;transition:color var(--d2) var(--ease),background var(--d2) var(--ease);
 }
 .sil-caras button[aria-pressed="true"]{color:var(--txt);background:rgba(255,255,255,.1)}
@@ -2070,7 +2083,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;
   font-style:italic;letter-spacing:-.02em;flex:1;min-width:0;
 }
-.mpop-when{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:99px;white-space:nowrap}
+.mpop-when{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:var(--r-full);white-space:nowrap}
 .mpop-when.t0{color:var(--cyan);background:rgba(34,211,238,.14)}
 .mpop-when.t1{color:#8FB6FF;background:rgba(46,125,255,.15)}
 .mpop-when.t2{color:#8CA2C8;background:rgba(120,150,200,.12)}
@@ -2082,14 +2095,14 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    24×24 un botón falla WCAG 2.5.8 (tamaño de objetivo), y acá no hay nada
    más cerca que se pise con esos 4px de más. */
 .mpop-x{
-  position:relative;flex:none;width:20px;height:20px;border-radius:7px;border:0;padding:0;line-height:1;
+  position:relative;flex:none;width:20px;height:20px;border-radius:var(--r-sm);border:0;padding:0;line-height:1;
   background:rgba(255,255,255,.07);color:var(--mut);font-size:15px;
 }
 .mpop-x::after{content:'';position:absolute;inset:-4px}
 
 .mpop-nums{display:flex;gap:6px;margin-bottom:9px}
 .mpop-nums div{
-  flex:1;min-width:0;text-align:center;padding:6px 2px;border-radius:9px;
+  flex:1;min-width:0;text-align:center;padding:6px 2px;border-radius:var(--r-sm);
   background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.055);
 }
 .mpop-nums b{
@@ -2151,7 +2164,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 
 .ini-legend{display:flex;justify-content:center;gap:11px;margin-bottom:7px;flex:none}
 .ini-legend span{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--mut2);letter-spacing:.04em}
-.ini-legend .sw{width:9px;height:9px;border-radius:3px;flex:none;display:inline-block}
+.ini-legend .sw{width:9px;height:9px;border-radius:var(--r-xs);flex:none;display:inline-block}
 /* Los mismos degradados que la silueta, para que la leyenda no mienta. */
 .sil-sw0{background:linear-gradient(140deg,#B9F8FF,var(--cyan));box-shadow:0 0 7px rgba(34,211,238,.55)}
 .sil-sw1{background:linear-gradient(140deg,#A9CEFF,var(--blue))}
@@ -2159,14 +2172,14 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .sil-sw3{background:linear-gradient(140deg,#F6C98B,#E39C43)}
 
 .ini-stale{
-  display:flex;align-items:center;gap:7px;padding:8px 11px;border-radius:11px;flex:none;
+  display:flex;align-items:center;gap:7px;padding:8px 11px;border-radius:var(--r-md);flex:none;
   background:rgba(255,180,84,.09);border:1px solid rgba(255,180,84,.25);
   font-size:12.5px;color:var(--warn);margin-bottom:9px;
 }
 
 .ini-cta{
   display:flex;align-items:center;justify-content:center;gap:9px;flex:none;
-  height:56px;border-radius:18px;border:0;width:100%;
+  height:56px;border-radius:var(--r);border:0;width:100%;
   background:var(--grad2);color:var(--on-grad);
   font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;letter-spacing:.06em;
   box-shadow:var(--glow);
@@ -2235,8 +2248,8 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-tile-macros{grid-area:macros;gap:5px}
 .ini-tile-weight{grid-area:weight;gap:5px}
 .ini-tile-num.sm{font-size:24px}
-.ini-tile-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:2px}
-.ini-tile-bar i{display:block;height:100%;background:var(--grad2);border-radius:3px}
+.ini-tile-bar{height:5px;border-radius:var(--r-xs);background:rgba(255,255,255,.08);overflow:hidden;margin-top:2px}
+.ini-tile-bar i{display:block;height:100%;background:var(--grad2);border-radius:var(--r-xs)}
 
 /* La tira de turnos: no es un calendario de fechas —es la secuencia de
    Fierro, de largo variable— así que flexea y no fuerza 7 columnas como
@@ -2245,9 +2258,9 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-strip{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 4px;flex:none;margin-bottom:6px}
 .ini-strip-i{
   flex:0 0 46px;display:flex;flex-direction:column;align-items:center;gap:7px;
-  padding:9px 0 7px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid transparent;color:var(--mut2);
+  padding:9px 0 7px;border-radius:var(--r-md);background:rgba(255,255,255,.03);border:1px solid transparent;color:var(--mut2);
 }
-.ini-strip-i .b{width:20px;height:6px;border-radius:4px;background:var(--card2);display:block}
+.ini-strip-i .b{width:20px;height:6px;border-radius:var(--r-xs);background:var(--card2);display:block}
 .ini-strip-i.on .b{background:linear-gradient(180deg,var(--blue3),var(--blue))}
 .ini-strip-i .n{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700}
 .ini-strip-i.hoy{border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.07)}
@@ -2274,8 +2287,8 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 /* RoutineWizard.jsx: barra de progreso arriba del sheet, estilo onboarding
    (referencia visual: Liftoff — el mecanismo, no la identidad: acá es el
    gradiente cian/azul de Fierro, no el elefante). */
-.wiz-progress{height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:var(--s3)}
-.wiz-progress i{display:block;height:100%;background:var(--grad2);border-radius:4px;transition:width .4s var(--spring)}
+.wiz-progress{height:6px;border-radius:var(--r-xs);background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:var(--s3)}
+.wiz-progress i{display:block;height:100%;background:var(--grad2);border-radius:var(--r-xs);transition:width var(--d4) var(--spring)}
 
 /* El cuerpo interactivo del asistente: se enciende en vivo con los grupos
    que se van tocando (WizardBody, RoutineWizard.jsx) — mismo mecanismo que
@@ -2291,7 +2304,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .wiz-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .wiz-groupcard{
   position:relative;display:flex;align-items:center;justify-content:center;
-  min-height:56px;padding:14px 16px;border-radius:16px;
+  min-height:56px;padding:14px 16px;border-radius:var(--r);
   background:linear-gradient(155deg,rgba(46,125,255,.10),rgba(12,19,34,.7) 60%);
   border:1px solid var(--line2);color:var(--txt);font-size:15px;font-weight:700;
   font-family:'Barlow Condensed',sans-serif;letter-spacing:.02em;
@@ -2306,7 +2319,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    porcentaje — ver el comentario de coverage.js sobre por qué. */
 .wiz-coverage{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .wiz-fiber{
-  font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;
+  font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:var(--r-full);
   background:rgba(255,255,255,.05);border:1px solid var(--line2);color:var(--mut);
 }
 .wiz-fiber.on{background:rgba(46,230,168,.14);border-color:rgba(46,230,168,.4);color:var(--ok)}
@@ -2319,7 +2332,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 
 /* Hoy dejó de ser pestaña: se entra desde Inicio, así que necesita su salida. */
 .back-btn{
-  width:34px;height:34px;flex:none;margin-left:-6px;border-radius:11px;
+  width:34px;height:34px;flex:none;margin-left:-6px;border-radius:var(--r-md);
   background:var(--card2);border:1px solid var(--line);
   color:var(--mut);font-size:22px;line-height:1;display:grid;place-items:center;
 }
@@ -2331,7 +2344,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    tarjetas de ejercicio que sí registran. */
 .warmup{
   background:linear-gradient(158deg,rgba(255,180,84,.09),rgba(255,180,84,.03)),var(--card2);
-  border:1px solid rgba(255,180,84,.26);border-radius:16px;
+  border:1px solid rgba(255,180,84,.26);border-radius:var(--r);
   padding:14px 15px;margin-bottom:var(--s3);
 }
 .warmup-top{display:flex;align-items:center;gap:9px;margin-bottom:10px}
@@ -2339,7 +2352,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .warmup-skip{
   flex:none;border:0;background:rgba(255,255,255,.07);color:var(--mut);
-  font-size:12px;font-weight:600;padding:5px 11px;border-radius:99px;
+  font-size:12px;font-weight:600;padding:5px 11px;border-radius:var(--r-full);
 }
 /* La movilidad va chica y con guion, no numerada como la rampa: son pasos
    sueltos ("círculos de hombro"), no una progresión de pesos — mezclarlas en
@@ -2380,7 +2393,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    mismo dibujo, no dos ilustraciones que puedan contradecirse. */
 .bodymini{
   background:linear-gradient(158deg,rgba(255,255,255,.05),rgba(255,255,255,.02)),var(--card2);
-  border:1px solid var(--line2);border-radius:16px;
+  border:1px solid var(--line2);border-radius:var(--r);
   padding:12px;margin-bottom:var(--s3);
 }
 .bm-cuerpos{display:flex;justify-content:center;gap:10px}

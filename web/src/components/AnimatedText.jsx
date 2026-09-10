@@ -19,7 +19,7 @@
 // palabra lo que para el ojo es una sola frase.
 import { Fragment, useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { D } from '../lib/motion.js';
+import { D, menosMovimiento } from '../lib/motion.js';
 
 export default function AnimatedText({ text, as: Tag = 'span', className, style }) {
   const ref = useRef(null);
@@ -27,7 +27,7 @@ export default function AnimatedText({ text, as: Tag = 'span', className, style 
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || typeof matchMedia !== 'function' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!el || menosMovimiento()) return;
     const words = el.querySelectorAll(':scope > span');
     if (!words.length) return;
     const ctx = gsap.context(() => {

@@ -31,7 +31,7 @@ import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
 import Silhouette from '../Silhouette.jsx';
 import AnimatedText from '../AnimatedText.jsx';
-import { countTo, D } from '../../lib/motion.js';
+import { countTo, D, menosMovimiento } from '../../lib/motion.js';
 
 export default function Inicio() {
   useStore();
@@ -43,7 +43,7 @@ export default function Inicio() {
   // directo, fuera del ciclo de render de React — no reemplaza nada de cómo
   // ya se pinta el grid, sólo lo anima al aparecer.
   useEffect(() => {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (menosMovimiento()) return;
     const tiles = gridRef.current?.querySelectorAll('.ini-tile');
     if (!tiles?.length) return;
     const ctx = gsap.context(() => {
@@ -217,7 +217,7 @@ function RachaTile({ racha }) {
   // que Apple Fitness/Duolingo usan para que un número quieto se sienta vivo.
   const numRef = useRef(null);
   useEffect(() => {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { if (numRef.current) numRef.current.textContent = racha; return; }
+    if (menosMovimiento()) { if (numRef.current) numRef.current.textContent = racha; return; }
     if (numRef.current) countTo(numRef.current, racha);
   }, [racha]);
   return (
