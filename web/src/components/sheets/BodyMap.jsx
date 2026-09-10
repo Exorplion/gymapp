@@ -28,13 +28,13 @@ export default function BodyMap() {
   return (
     <div>
       <h2 className="font-cond text-2xl font-bold text-txt">Tu cuerpo</h2>
-      <div className="mt-1 mb-4 text-[13px] text-mut">Tocá un músculo para ver cuándo lo entrenaste.</div>
+      <div className="mt-1 mb-4 text-sm text-mut">Tocá un músculo para ver cuándo lo entrenaste.</div>
 
       <div className="flex h-[min(52vh,420px)] justify-center my-1.5">
         <Silhouette days={dias} />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-mut">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-micro text-mut">
         <LegendSw color="bg-cyan">ayer</LegendSw>
         <LegendSw color="bg-blue">2-3 d</LegendSw>
         <LegendSw color="bg-blue3">4-6 d</LegendSw>
@@ -49,7 +49,7 @@ export default function BodyMap() {
           <div ref={listRef}>
             {mvCats.map(([c, n]) => (
               <div key={c} className="mb-2">
-                <div className="mb-1 flex justify-between text-[13px]">
+                <div className="mb-1 flex justify-between text-sm">
                   <span className="text-txt">{c}</span>
                   <span className="font-cond font-bold text-mut">{n} series</span>
                 </div>
@@ -62,7 +62,7 @@ export default function BodyMap() {
               </div>
             ))}
           </div>
-          <div className="mt-3 text-[13px] leading-relaxed text-mut">
+          <div className="mt-3 text-sm leading-relaxed text-mut">
             10–20 series semanales por grupo es el rango habitual para ganar masa.
           </div>
           <SinGrupoAviso />
@@ -92,11 +92,11 @@ function SinGrupoAviso() {
       className="mt-3 flex w-full flex-col gap-0.5 rounded-[var(--radius-r)] border border-warn/30 bg-warn/10 px-3.5 py-3 text-left transition-colors hover:bg-warn/15"
       onClick={() => { closeSheet(); changeTab('rutina', () => { S.rutMode = 'edit'; }); }}
     >
-      <span className="text-[13.5px] font-medium text-txt">
+      <span className="text-sm font-medium text-txt">
         {sin.length} ejercicio{sin.length === 1 ? '' : 's'} sin grupo muscular · no suma{sin.length === 1 ? '' : 'n'} acá
       </span>
-      <span className="text-[12.5px] text-mut">{sin.slice(0, 4).map(e => e.name).join(' · ')}{sin.length > 4 ? ` +${sin.length - 4}` : ''}</span>
-      <span className="text-[12.5px] font-semibold text-warn">Asignar →</span>
+      <span className="text-micro text-mut">{sin.slice(0, 4).map(e => e.name).join(' · ')}{sin.length > 4 ? ` +${sin.length - 4}` : ''}</span>
+      <span className="text-micro font-semibold text-warn">Asignar →</span>
     </button>
   );
 }
@@ -109,7 +109,7 @@ function StaleLine({ grupos, dias }) {
   // cuenta; acá sólo se muestra si es un dato completo (100% = "listo").
   const rec = recoveryPct(top[0]);
   return (
-    <div className="mt-3 rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 py-2.5 text-[13.5px] text-mut">
+    <div className="mt-3 rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 py-2.5 text-sm text-mut">
       ⌁ {top.join(' y ')} hace {d} día{d === 1 ? '' : 's'}
       {rec < 100 && <span> · recuperación estimada {rec}%</span>}
     </div>

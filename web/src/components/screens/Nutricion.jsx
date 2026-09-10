@@ -134,7 +134,7 @@ export default function Nutricion() {
           <div className="pavatar">👤</div>
           <div className="grow">
             <div className="pt">{GOAL_LABEL[S.cfg.profile.goal]} · {m.target} kcal</div>
-            <div className="text-mut text-[12.5px]">
+            <div className="text-mut text-micro">
               {S.cfg.profile.sex === 'f' ? 'Mujer' : 'Hombre'} · {fmtNum(round1(m.weight))} kg · P {m.protMin}-{m.protMax} · G {m.fatMin}-{m.fatMax} · C {m.carbs}g
             </div>
           </div>
@@ -145,7 +145,7 @@ export default function Nutricion() {
           <div className="pavatar">🎯</div>
           <div className="grow">
             <div className="pt">Calcular mis macros</div>
-            <div className="text-mut text-[12.5px]">Perfil → TDEE → target y rangos automáticos{S.cfg.goalsAuto ? '' : ' (usando metas manuales)'}</div>
+            <div className="text-mut text-micro">Perfil → TDEE → target y rangos automáticos{S.cfg.goalsAuto ? '' : ' (usando metas manuales)'}</div>
           </div>
           <span className="chev">›</span>
         </button>
@@ -176,7 +176,7 @@ export default function Nutricion() {
             <b>{ciclo.tipo === 'entreno' ? 'Día de entrenamiento' : 'Día de descanso'}</b>
             {' · '}{ciclo.deltaCarbs > 0 ? '+' : ''}{ciclo.deltaCarbs} g de carbohidratos
           </div>
-          <div className="text-mut text-[12.5px] leading-normal mt-1">{cycleExplain(ciclo)}</div>
+          <div className="text-mut text-micro leading-normal mt-1">{cycleExplain(ciclo)}</div>
         </div>
       )}
 
@@ -200,7 +200,7 @@ export default function Nutricion() {
             <div className="kcal-big">
               {kc > g.kcal ? kc - g.kcal : Math.max(0, g.kcal - kc)}<span>kcal</span>
             </div>
-            <div className="text-mut text-[12.5px] mt-0.5">
+            <div className="text-mut text-micro mt-0.5">
               {GOAL_LABEL[S.cfg.profile.goal]}
               {S.cfg.profile.weightKg ? ` · ${fmtNum(round1(S.cfg.profile.weightKg))} kg` : ''}
             </div>
@@ -225,14 +225,14 @@ export default function Nutricion() {
 
       {proteinaPendiente && (
         <div className="card sub">
-          <div className="text-[13.5px] text-txt font-medium">🥩 Entrenaste hace poco</div>
+          <div className="text-sm text-txt font-medium">🥩 Entrenaste hace poco</div>
           <div className="s text-mut mt-1">Todavía no registraste una comida con proteína. No es una regla dura, pero es el mejor momento para una.</div>
         </div>
       )}
 
       {bajos.length > 0 && (
         <div className="card sub">
-          <div className="text-[13.5px] text-txt font-medium">Micronutrientes bajos esta semana</div>
+          <div className="text-sm text-txt font-medium">Micronutrientes bajos esta semana</div>
           <div className="s text-mut mt-1">
             {bajos.map(b => `${b.label} (${b.dias} de 7 días)`).join(' · ')}
           </div>
@@ -242,7 +242,7 @@ export default function Nutricion() {
 
       {band?.adjust !== 0 && band && (
         <div className="card sub">
-          <div className="text-[13.5px] text-txt font-medium">
+          <div className="text-sm text-txt font-medium">
             {band.adjust > 0 ? '↑' : '↓'} Ajuste sugerido: {band.adjust > 0 ? '+' : ''}{band.adjust} kcal
           </div>
           <div className="s text-mut mt-1">
@@ -269,7 +269,7 @@ export default function Nutricion() {
         {S.foods.length > 0 && (
           <button
             type="button"
-            className={cn('mini w-8 h-8 text-[13px]', S.foodEdit && 'text-blue2 border-line2')}
+            className={cn('mini w-8 h-8 text-sm', S.foodEdit && 'text-blue2 border-line2')}
             aria-pressed={S.foodEdit}
             aria-label="Editar la lista de frecuentes"
             onClick={() => { S.foodEdit = !S.foodEdit; bump(); }}
@@ -302,7 +302,7 @@ export default function Nutricion() {
       {SR_FOOD && (
         <button type="button" className="pw-btn mt-[var(--s3)]" onClick={() => openSheet('food-voice')}>
           <span className="pwi">🎙</span><span className="pwt">Registrar por voz</span>
-          <span className="text-mut text-[12.5px] font-medium">decí qué comiste</span>
+          <span className="text-mut text-micro font-medium">decí qué comiste</span>
           <span className="chev">›</span>
         </button>
       )}

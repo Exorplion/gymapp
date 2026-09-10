@@ -7,7 +7,7 @@ import { cva } from 'class-variance-authority'
 import { cn } from '../../lib/utils.js'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-r)] text-[15px] font-medium transition-[transform,background,color,border-color] duration-150 active:scale-[.96] disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-blue2 focus-visible:outline-offset-2',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-r)] text-body font-medium transition-[transform,background,color,border-color] duration-150 active:scale-[.96] disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-blue2 focus-visible:outline-offset-2',
   {
     variants: {
       variant: {
@@ -28,8 +28,8 @@ const buttonVariants = cva(
       },
       size: {
         default: 'h-11 px-5',
-        sm: 'h-9 px-4 text-[13px]',
-        lg: 'h-13 px-6 text-[18px]',
+        sm: 'h-9 px-4 text-sm',
+        lg: 'h-13 px-6 text-lg',
         icon: 'w-[38px] h-[38px] p-0',
       },
     },
@@ -65,7 +65,7 @@ export function Badge({ className, tone = 'default', ...props }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide',
+        'inline-flex items-center rounded-full px-2.5 py-1 text-micro font-semibold uppercase tracking-wide',
         tones[tone],
         className,
       )}

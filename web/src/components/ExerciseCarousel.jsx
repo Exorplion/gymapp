@@ -380,7 +380,7 @@ function ExerciseSlide({ m, wd, started }) {
           const adj = S.draft?.precheckAdjust || 0;
           const sug = round1(base * (1 + adj));
           return (
-            <div className="text-mut text-[12px] mt-1">
+            <div className="text-mut text-micro mt-1">
               Sugerido hoy: ~{fmtNum(sug)} kg (80% de tu 1RM estimado{adj !== 0 ? `, ${adj > 0 ? '+' : ''}${Math.round(adj * 100)}% por tu chequeo` : ''})
             </div>
           );

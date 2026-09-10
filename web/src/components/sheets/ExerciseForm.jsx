@@ -25,9 +25,9 @@ import { Button } from '../ui/primitives.jsx';
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
 const CATALOG_CATS = [...new Set(EXCATALOG.map(e => e.c))];
 
-const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-[15px] text-txt outline-none transition-colors focus-visible:border-blue2';
-const eyebrowCls = 'mt-4 mb-2 block text-[11px] font-semibold uppercase tracking-wide text-mut';
-const chipBase = 'inline-flex items-center rounded-full border border-line2 px-3.5 py-2 text-[13px] font-medium transition-colors';
+const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt outline-none transition-colors focus-visible:border-blue2';
+const eyebrowCls = 'mt-4 mb-2 block text-micro font-semibold uppercase tracking-wide text-mut';
+const chipBase = 'inline-flex items-center rounded-full border border-line2 px-3.5 py-2 text-sm font-medium transition-colors';
 const chip = (on, tone = 'on') => cn(chipBase, on ? (tone === 'blue' ? 'border-transparent bg-blue2 text-[var(--on-grad)]' : 'border-transparent bg-[image:var(--grad)] font-bold text-[var(--on-grad)]') : 'bg-card2 text-txt hover:border-line');
 
 export default function ExerciseForm({ wd, ex }) {
@@ -113,7 +113,7 @@ export default function ExerciseForm({ wd, ex }) {
         <>
           {suggestions.length > 0 && (
             <>
-              <div className="mt-3 mb-1.5 text-[11px] uppercase tracking-wide text-mut">
+              <div className="mt-3 mb-1.5 text-micro uppercase tracking-wide text-mut">
                 Sugeridos para hoy
               </div>
               <div className="flex flex-wrap gap-2">
@@ -124,11 +124,11 @@ export default function ExerciseForm({ wd, ex }) {
             </>
           )}
           <details className="mt-2.5" open={!suggestions.length}>
-            <summary className="cursor-pointer text-[13px] font-semibold text-blue">📚 Explorar toda la base de ejercicios</summary>
+            <summary className="cursor-pointer text-sm font-semibold text-blue">📚 Explorar toda la base de ejercicios</summary>
             <div className="mt-2">
               {CATALOG_CATS.map(c => (
                 <div key={c}>
-                  <div className="mt-2.5 mb-1.5 text-[11px] uppercase tracking-wide text-mut">{c}</div>
+                  <div className="mt-2.5 mb-1.5 text-micro uppercase tracking-wide text-mut">{c}</div>
                   <div className="flex flex-wrap gap-2">
                     {EXCATALOG.filter(e => e.c === c).map(e => (
                       <button key={e.n} type="button" className={chip(false)} onClick={() => pickName(e.n)}>{e.n}</button>
@@ -146,7 +146,7 @@ export default function ExerciseForm({ wd, ex }) {
 
       {writingFree && (
         <div className="mt-3">
-          <label htmlFor="exform-nombre" className="mb-1.5 block text-[13px] font-medium text-mut">Nombre</label>
+          <label htmlFor="exform-nombre" className="mb-1.5 block text-sm font-medium text-mut">Nombre</label>
           <div className="flex items-center gap-2">
             <input
               id="exform-nombre"
@@ -175,14 +175,14 @@ export default function ExerciseForm({ wd, ex }) {
           {acMatches.length > 0 && (
             <div className="mt-1.5 flex flex-col gap-1 rounded-[var(--radius-r)] border border-line2 bg-card2 p-1.5">
               {acMatches.map(e => (
-                <button key={e.n} type="button" className="rounded-[10px] px-2.5 py-1.5 text-left text-[13.5px] text-txt hover:bg-white/5" onClick={() => pickName(e.n)}>
-                  {e.n} <span className="text-[11.5px] text-mut">· {e.c}</span>
+                <button key={e.n} type="button" className="rounded-[10px] px-2.5 py-1.5 text-left text-sm text-txt hover:bg-white/5" onClick={() => pickName(e.n)}>
+                  {e.n} <span className="text-micro text-mut">· {e.c}</span>
                 </button>
               ))}
             </div>
           )}
           {!ex && (
-            <button type="button" className="mt-1.5 text-[13px] font-medium text-blue" onClick={() => setWritingFree(false)}>
+            <button type="button" className="mt-1.5 text-sm font-medium text-blue" onClick={() => setWritingFree(false)}>
               ← Volver a sugerencias
             </button>
           )}
@@ -190,18 +190,18 @@ export default function ExerciseForm({ wd, ex }) {
       )}
       <div className="mt-3.5 grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="exform-series" className="mb-1.5 block text-[13px] font-medium text-mut">Series objetivo</label>
+          <label htmlFor="exform-series" className="mb-1.5 block text-sm font-medium text-mut">Series objetivo</label>
           <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line2 bg-card2">
             <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una serie menos" onClick={() => step(setSets, -1)}>−</button>
-            <div className="flex-1 text-center"><input id="exform-series" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-[15px] text-txt outline-none" value={sets} onChange={e => setSets(e.target.value)} /></div>
+            <div className="flex-1 text-center"><input id="exform-series" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-body text-txt outline-none" value={sets} onChange={e => setSets(e.target.value)} /></div>
             <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una serie más" onClick={() => step(setSets, 1)}>+</button>
           </div>
         </div>
         <div>
-          <label htmlFor="exform-reps" className="mb-1.5 block text-[13px] font-medium text-mut">Reps objetivo</label>
+          <label htmlFor="exform-reps" className="mb-1.5 block text-sm font-medium text-mut">Reps objetivo</label>
           <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line2 bg-card2">
             <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una repetición menos" onClick={() => step(setReps, -1)}>−</button>
-            <div className="flex-1 text-center"><input id="exform-reps" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-[15px] text-txt outline-none" value={reps} onChange={e => setReps(e.target.value)} /></div>
+            <div className="flex-1 text-center"><input id="exform-reps" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-body text-txt outline-none" value={reps} onChange={e => setReps(e.target.value)} /></div>
             <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una repetición más" onClick={() => step(setReps, 1)}>+</button>
           </div>
         </div>
@@ -227,7 +227,7 @@ export default function ExerciseForm({ wd, ex }) {
         </button>
       </div>
       {unilateral && (
-        <div className="mt-1.5 text-[13px] text-mut">
+        <div className="mt-1.5 text-sm text-mut">
           El peso y las reps que anotes en la sesión van a leerse como "por lado".
         </div>
       )}
@@ -239,8 +239,8 @@ export default function ExerciseForm({ wd, ex }) {
           semana". */}
       <label className={eyebrowCls}>
         Qué grupo entrena
-        {!cat && auto && <span className="text-[11px] font-medium normal-case tracking-normal text-mut"> · detecté {auto}</span>}
-        {!cat && !auto && name.trim() && <span className="text-[11px] font-medium normal-case tracking-normal text-warn"> · no lo reconozco, elegilo</span>}
+        {!cat && auto && <span className="text-micro font-medium normal-case tracking-normal text-mut"> · detecté {auto}</span>}
+        {!cat && !auto && name.trim() && <span className="text-micro font-medium normal-case tracking-normal text-warn"> · no lo reconozco, elegilo</span>}
       </label>
       <div className="flex flex-wrap gap-2">
         {MUSCLE_CATS.map(c => (
@@ -273,7 +273,7 @@ export default function ExerciseForm({ wd, ex }) {
         ))}
       </div>
       {equip && (
-        <div className="mt-2 text-[13px] text-mut">
+        <div className="mt-2 text-sm text-mut">
           {EQUIP_HINT[equip]}
         </div>
       )}
@@ -285,7 +285,7 @@ export default function ExerciseForm({ wd, ex }) {
           útil que una ilustración genérica porque reconocés ESA máquina. */}
       {equip && (
         <div className="mt-3">
-          <label className="mb-1.5 block text-[13px] font-medium text-mut">Foto de la máquina</label>
+          <label className="mb-1.5 block text-sm font-medium text-mut">Foto de la máquina</label>
           <input
             ref={photoRef}
             type="file"
@@ -307,7 +307,7 @@ export default function ExerciseForm({ wd, ex }) {
               <Button type="button" variant="secondary" className="w-full" onClick={() => photoRef.current?.click()}>
                 📷 Sacar o elegir foto
               </Button>
-              <div className="mt-1.5 text-[13px] text-mut">
+              <div className="mt-1.5 text-sm text-mut">
                 Para reconocerla al llegar. Se guarda reducida en tu teléfono, nunca se sube a ningún lado.
               </div>
             </>
@@ -319,7 +319,7 @@ export default function ExerciseForm({ wd, ex }) {
           elige a mano una vez: la base es en inglés y adivinar automáticamente
           pondría la imagen equivocada más de una vez. */}
       <div className="mt-3">
-        <label className="mb-1.5 block text-[13px] font-medium text-mut">Ilustración del movimiento</label>
+        <label className="mb-1.5 block text-sm font-medium text-mut">Ilustración del movimiento</label>
         {illus ? (
           <div className="overflow-hidden rounded-[var(--radius-r-lg)] border border-line2">
             <img src={illusUrl(illus)} alt="" className="block w-full" />
@@ -333,7 +333,7 @@ export default function ExerciseForm({ wd, ex }) {
             <Button type="button" variant="secondary" className="w-full" onClick={() => setPicking(true)}>
               🖼 Buscar ilustración
             </Button>
-            <div className="mt-1.5 text-[13px] text-mut">
+            <div className="mt-1.5 text-sm text-mut">
               Para ver cómo se hace el movimiento. Se descarga la primera vez y queda guardada.
             </div>
           </>

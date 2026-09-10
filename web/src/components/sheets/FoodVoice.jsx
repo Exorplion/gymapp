@@ -82,7 +82,7 @@ export default function FoodVoice() {
   return (
     <div ref={rootRef}>
       <h2 className="font-cond text-2xl font-bold text-txt">Registrar por voz</h2>
-      <div className="mt-0.5 mb-3.5 text-[13px] text-mut">
+      <div className="mt-0.5 mb-3.5 text-sm text-mut">
         Decí lo que comiste, con cantidades si las sabés. Por ejemplo:
         «200 gramos de pollo y una taza de arroz».
       </div>
@@ -92,11 +92,11 @@ export default function FoodVoice() {
       </Button>
 
       <div className="mt-3">
-        <label htmlFor="foodvoice-texto" className="mb-1.5 block text-[13px] font-medium text-mut">O escribilo</label>
+        <label htmlFor="foodvoice-texto" className="mb-1.5 block text-sm font-medium text-mut">O escribilo</label>
         <input
           id="foodvoice-texto"
           type="text"
-          className="h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-[15px] text-txt outline-none transition-colors focus-visible:border-blue2"
+          className="h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt outline-none transition-colors focus-visible:border-blue2"
           value={text}
           placeholder="dos huevos, 150 g de pollo…"
           onChange={e => reparse(e.target.value)}
@@ -105,16 +105,16 @@ export default function FoodVoice() {
 
       {known.length > 0 && (
         <>
-          <div className="mx-0.5 mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wide text-mut">Reconocido</div>
+          <div className="mx-0.5 mb-2 mt-4 text-micro font-semibold uppercase tracking-wide text-mut">Reconocido</div>
           <Card className="p-0 divide-y divide-white/5">
             <div ref={knownRef}>
               {known.map((i, n) => (
                 <div className="flex items-center gap-2.5 px-4 py-2.5" key={n}>
                   <div className="grow">
-                    <div className="text-[14.5px] text-txt">{i.name}</div>
-                    <div className="text-[13px] text-mut">
+                    <div className="text-sm text-txt">{i.name}</div>
+                    <div className="text-sm text-mut">
                       {i.grams ? `${i.grams} g · ` : ''}{i.kcal} kcal · P {fmtNum(round1(i.p))} · C {fmtNum(round1(i.c))} · G {fmtNum(round1(i.f))}
-                      {i.source === 'mine' && <span className="ml-1.5 inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-mut">tuyo</span>}
+                      {i.source === 'mine' && <span className="ml-1.5 inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 text-nano font-semibold uppercase tracking-wide text-mut">tuyo</span>}
                     </div>
                   </div>
                   <button type="button" className="grid h-8 w-8 flex-none place-items-center rounded-full text-mut hover:text-txt" aria-label="Quitar de la lista" onClick={() => setItems(items.filter(x => x !== i))}>✕</button>
@@ -122,7 +122,7 @@ export default function FoodVoice() {
               ))}
             </div>
             <div className="flex items-center gap-2.5 border-t border-white/[.09] px-4 py-2.5">
-              <div className="grow"><div className="text-[14.5px] text-txt">Total</div></div>
+              <div className="grow"><div className="text-sm text-txt">Total</div></div>
               <div className="font-cond font-bold text-accent">{total.kcal} kcal</div>
             </div>
           </Card>
@@ -131,15 +131,15 @@ export default function FoodVoice() {
 
       {unknown.length > 0 && (
         <>
-          <div className="mx-0.5 mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wide text-mut">No lo reconozco</div>
+          <div className="mx-0.5 mb-2 mt-4 text-micro font-semibold uppercase tracking-wide text-mut">No lo reconozco</div>
           <Card>
-            <div className="mb-2.5 text-[12.5px] leading-relaxed text-mut">
+            <div className="mb-2.5 text-micro leading-relaxed text-mut">
               No le invento macros a lo que no conozco. Agregalo una vez con
               «+ Agregar comida» y marcalo como frecuente: desde entonces lo
               reconozco cuando lo dictes.
             </div>
             {unknown.map((i, n) => (
-              <div className="py-1.5" key={n}><div className="text-[14.5px] text-txt">{i.name}</div></div>
+              <div className="py-1.5" key={n}><div className="text-sm text-txt">{i.name}</div></div>
             ))}
           </Card>
         </>

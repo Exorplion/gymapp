@@ -174,7 +174,7 @@ function MemoriaLine({ slot }) {
   }
   if (!recall && !tonelaje) return null;
   return (
-    <div className="text-mut text-[12px] mt-2 leading-snug">
+    <div className="text-mut text-micro mt-2 leading-snug">
       {recall && (
         <div>Hace 1 año: {recall.name} {recall.sets.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg</div>
       )}

@@ -21,9 +21,9 @@ import { cn } from '../../lib/utils.js';
 import { Button } from '../ui/primitives.jsx';
 import MachineField from '../MachineField.jsx';
 
-const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-[15px] text-txt outline-none transition-colors focus-visible:border-blue2';
-const eyebrowCls = 'mt-4 mb-2 block text-[11px] font-semibold uppercase tracking-wide text-mut';
-const chipBase = 'inline-flex items-center rounded-full border border-line2 px-3.5 py-2 text-[13px] font-medium transition-colors';
+const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt outline-none transition-colors focus-visible:border-blue2';
+const eyebrowCls = 'mt-4 mb-2 block text-micro font-semibold uppercase tracking-wide text-mut';
+const chipBase = 'inline-flex items-center rounded-full border border-line2 px-3.5 py-2 text-sm font-medium transition-colors';
 const chip = (on, tone = 'on') => cn(chipBase, on ? (tone === 'blue' ? 'border-transparent bg-blue2 text-[var(--on-grad)]' : 'border-transparent bg-[image:var(--grad)] font-bold text-[var(--on-grad)]') : 'bg-card2 text-txt hover:border-line');
 
 export default function EntryEdit({ sessId, idx }) {
@@ -85,19 +85,19 @@ export default function EntryEdit({ sessId, idx }) {
   return (
     <div ref={rootRef}>
       <h2 className="font-cond text-2xl font-bold text-txt">Cambiar ejercicio</h2>
-      <div className="mt-1 mb-4 text-[13px] leading-relaxed text-mut">
+      <div className="mt-1 mb-4 text-sm leading-relaxed text-mut">
         Corrige qué fue <b className="text-txt">{original}</b> en esta sesión. Los pesos y las series
         que anotaste no se tocan.
       </div>
 
       <div className="mb-3">
-        <label htmlFor="entryedit-nombre" className="mb-1.5 block text-[13px] font-medium text-mut">Qué ejercicio fue</label>
+        <label htmlFor="entryedit-nombre" className="mb-1.5 block text-sm font-medium text-mut">Qué ejercicio fue</label>
         <input id="entryedit-nombre" ref={nameRef} className={inputCls} value={name} onChange={e => setName(e.target.value)} autoComplete="off" />
       </div>
 
       {sugeridos.length > 0 && (
         <div className="mb-3">
-          <label className="mb-1.5 block text-[13px] font-medium text-mut">De la base</label>
+          <label className="mb-1.5 block text-sm font-medium text-mut">De la base</label>
           <div className="flex flex-wrap gap-2">
             {sugeridos.map(e => (
               <button key={e.n} type="button" className={chip(false)} onClick={() => { setName(e.n); setCat(''); }}>
@@ -110,7 +110,7 @@ export default function EntryEdit({ sessId, idx }) {
 
       <label className={eyebrowCls}>
         Qué grupo entrena
-        {!cat && auto && <span className="text-[11px] font-medium normal-case tracking-normal text-mut"> · detecté {auto}</span>}
+        {!cat && auto && <span className="text-micro font-medium normal-case tracking-normal text-mut"> · detecté {auto}</span>}
       </label>
       <div className="flex flex-wrap gap-2">
         {MUSCLE_CATS.map(c => (
@@ -144,7 +144,7 @@ export default function EntryEdit({ sessId, idx }) {
         <MachineField equip={equip} machine={machine} onChange={setMachine} />
       )}
 
-      <p className="mt-3 text-[13px] leading-relaxed text-mut">
+      <p className="mt-3 text-sm leading-relaxed text-mut">
         El equipo es lo que decide contra qué historial se compara: el mismo
         ejercicio en dos máquinas distintas no mueve la misma carga.
       </p>
