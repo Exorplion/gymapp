@@ -414,14 +414,35 @@ function RutinaEdit() {
     desde HOY (weekdayProjection, rutina-logic.js) — descansos incluidos,
     apagados, para que se vea DÓNDE caen sin poder tocarlos. */
 function WeekProjection({ dow }) {
+  /* Cada turno abre su vista previa (sheet 'day-peek') sin mover el puntero.
+     Ese atajo vivía en la tira de turnos de Inicio, que se borró el 2026-09-10
+     por competir visualmente con el calendario de la semana real; acá tiene
+     más sentido, porque es la pantalla donde el plan se mira y se edita. Los
+     descansos no se tocan: no hay nada que espiar. */
   return (
     <div className="week-proj">
-      {S.routine.map((slot, i) => (
-        <div key={slot.id} className={`week-proj-d ${slot.type === 'rest' ? 'off' : ''}`}>
-          <span className="wd">{dow[i]}</span>
-          <span className="t">{slot.type === 'rest' ? '—' : (slot.name || 'Sin nombre')}</span>
-        </div>
-      ))}
+      {S.routine.map((slot, i) => {
+        const descanso = slot.type === 'rest';
+        const contenido = (
+          <>
+            <span className="wd">{dow[i]}</span>
+            <span className="t">{descanso ? '—' : (slot.name || 'Sin nombre')}</span>
+          </>
+        );
+        return descanso ? (
+          <div key={slot.id} className="week-proj-d off">{contenido}</div>
+        ) : (
+          <button
+            type="button"
+            key={slot.id}
+            className="week-proj-d"
+            aria-label={`Ver ${slot.name || 'este turno'}`}
+            onClick={() => openSheet('day-peek', { wd: i })}
+          >
+            {contenido}
+          </button>
+        );
+      })}
     </div>
   );
 }
