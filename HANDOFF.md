@@ -20,6 +20,86 @@ historial. Si vas a seguir el roadmap, empezá por **Próximo paso exacto** al f
 
 ---
 
+## SESIÓN 2026-09-10 (segunda parte) — La decisión de producto, y las Tareas 4 y 5
+
+**Enzo respondió la pregunta que bloqueaba la Tarea 5 desde hace tres sesiones:
+FIERRO es EL CICLO COMPLETO.** Entrenamiento y nutrición se cruzan de verdad; hay
+que construir los puentes que no existían. No relitigar esto.
+
+PR #77, mergeado y verificado en vivo.
+
+### El primer puente: `lib/cycle.ts` (nuevo)
+
+El objetivo de calorías y macros era el **mismo todos los días**, entrenaras o no.
+Ahora sigue a lo que entrenaste **ese** día.
+
+**Lo que NO hace, y es lo que lo hace publicable:** no inventa calorías. No estima
+cuánto quemaste — el gasto de una sesión de fuerza es chico y muy variable, y un
+número ahí sería precisión disfrazada, justo lo que el criterio de producto
+prohíbe. **Redistribuye el mismo total semanal:** más carbos el día que entrenás,
+menos el día que no. La media semanal queda intacta por construcción — con `f` =
+fracción de días entrenados y `k` = amplitud, el promedio pesado es
+`f·(1 + k(1−f)) + (1−f)·(1 − k·f) = 1`, exacto — **y hay un test que lo verifica
+sobre seis repartos de días. Si ese test se rompe, ciclar pasa a ser comer de más
+sin que nadie lo haya pedido: no relajarlo, arreglar la causa.**
+
+Proteína y grasa no se ciclan (la proteína se necesita igual el día de descanso,
+que es cuando el músculo se repara). Devuelve `null` sin historial suficiente, sin
+sesiones en la ventana, o si entrenás **todos** los días — sin un día de descanso
+contra el cual compararlo no hay nada que ciclar. La pantalla entera lee el
+objetivo ciclado (anillo, barras, lo que falta): no es un cartel al costado.
+
+Bug que encontró el test de neutralidad, por si se vuelve a tocar: al mirar un día
+pasado la fracción se recalculaba desde **ese** día, así que la ventana se corría
+hasta un tramo sin sesiones y el ajuste desaparecía sin explicación. "Cada cuánto
+entrenás" es una propiedad tuya de AHORA, no del día que estás mirando.
+
+### Tarea 5, core loop: la tarjeta del ejercicio en curso
+
+Queda en **peso, reps y confirmar**. RPE, foto de la máquina, "un lado por vez" y
+las acciones del ejercicio pasan a un `<details>` cerrado. Nada se elimina: deja
+de pedirse por adelantado. `<details>` nativo y no un estado de React a propósito
+— trae teclado, foco y anuncio de abierto/cerrado ya resueltos, que es justo el
+bloque B de la Tarea 2.
+
+### Tarea 4: 50 literales de la paleta ANTERIOR seguían en el CSS
+
+El rediseño "acero" cambió los tokens pero dejó 50 `rgba()` escritos a mano con la
+paleta vieja: el azul de halos, anillos, chips y sombras seguía siendo `#2E7DFF`,
+no el `#3B82F6` de ahora. Lo importante no es el matiz corrido, es que **un literal
+no es una custom property**, así que `aplicarPaleta()` no podía pisarlo: elegías
+otro color en Ajustes y todos los efectos se quedaban azules. Ahora son tokens de
+canales (`--blue-rgb` y compañía — `rgba()` no acepta un color entero dentro de una
+`var()`, necesita los tres canales sueltos) que `theme.js` reescribe con el resto.
+De paso, los dos verdes distintos del CTA "ok" se unifican en `--grad-ok`.
+
+**Regla que se repite y ya causó dos bugs: un color escrito a mano en el CSS queda
+fuera del sistema de temas. Si el valor tiene que seguir a la paleta, es un token.**
+
+### Corrección a la Tarea 2 de la lista de abajo
+
+La lista dice *"no hay un solo `<h2>`/`<h3>` en toda la app"*. **Es falso** — se
+auditó: hay 65 encabezados en 30 archivos, y de los 27 sheets el único sin ninguno
+es `IllusPick.jsx`. Lo que sí sigue abierto de ese bloque es el resto: los sheets
+tienen `role="dialog"` **sin nombre accesible** (`Sheet.jsx` no expone
+`aria-labelledby`, aunque cada sheet ya pinta su `<h2>`), `ReelPicker` sin teclado,
+reordenar sólo por arrastre (SC 2.5.7) y botones sólo-ícono sin nombre.
+
+### Estado de las tareas después de esta sesión
+
+- **1 y 6: COMPLETAS.**
+- **2:** el bloque B sigue abierto, con el diagnóstico ya corregido arriba. Es la
+  puerta que MÁS conviene atacar desde un job sin navegador: no necesita ojos.
+- **4:** hechos paleta, radios, tiempos y ahora los literales. **Queda la escala
+  tipográfica (36 → 8) — el mapeo está escrito y NO se aplicó a propósito: un
+  tamaño de más empuja texto, y hay que recorrer 5 pantallas y 26 sheets mirando.**
+  Más las 5 recetas de "tarjeta", las 6 de "eyebrow" y el trabajo por pantalla.
+- **5: DESBLOQUEADA.** Hecho el core loop y el primer puente. **Quedan: doble
+  progresión, descarga accionable y cobertura de fibra**, más los puentes que la
+  decisión habilita (proteína según el volumen real, no sólo carbos).
+
+---
+
 ## SESIÓN 2026-09-10 — Seis bugs de la sesión en vivo (PR #73, mergeado y en vivo)
 
 Enzo entrenó con la app y reportó seis cosas. **Todas tenían una causa real en
