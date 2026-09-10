@@ -22,7 +22,6 @@
 // calendario, y tocar cualquiera que no sea "hoy" abre una vista previa
 // (mismo sheet 'day-peek' que usa Rutina) sin tocar el puntero real.
 import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
 import { S, useStore, bump, openSheet, changeTab } from '../../lib/state.js';
 import { WDS, MO, dstr, fmtD, fmtNum, round1 } from '../../lib/format.js';
 import { pendingSlot, sessionForSlot, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
@@ -31,7 +30,7 @@ import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
 import Silhouette from '../Silhouette.jsx';
 import AnimatedText from '../AnimatedText.jsx';
-import { countTo, D, menosMovimiento } from '../../lib/motion.js';
+import { countTo, menosMovimiento, staggerReveal } from '../../lib/motion.js';
 
 export default function Inicio() {
   useStore();
@@ -46,14 +45,7 @@ export default function Inicio() {
     if (menosMovimiento()) return;
     const tiles = gridRef.current?.querySelectorAll('.ini-tile');
     if (!tiles?.length) return;
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        tiles,
-        { opacity: 0, y: 16, scale: 0.96 },
-        { opacity: 1, y: 0, scale: 1, duration: D.panel / 1000, stagger: 0.06, ease: 'power3.out' },
-      );
-    });
-    return () => ctx.revert();
+    staggerReveal(tiles, { delayStep: 60, distance: 16, scale: 0.96 });
   }, []);
   const hoy = new Date();
   const slot = pendingSlot();

@@ -34,11 +34,10 @@
 //
 // Este componente no calcula estadísticas: pide groupStats() cuando tocás.
 import { useState, useRef, useEffect, useCallback } from 'react';
-import gsap from 'gsap';
 import { cuerpo } from '../lib/bodydata.js';
 import { groupStats, diasTexto } from '../lib/muscle.js';
 import { vibrate } from '../lib/format.js';
-import { tapRing, D, menosMovimiento } from '../lib/motion.js';
+import { tapRing, menosMovimiento, popIn } from '../lib/motion.js';
 import { S } from '../lib/state.js';
 import MusclePop from './MusclePop.jsx';
 
@@ -194,10 +193,7 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
   useEffect(() => {
     const el = caja.current;
     if (!el || menosMovimiento()) return;
-    const ctx = gsap.context(() => {
-      gsap.fromTo(el, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: D.panel / 1000, ease: 'power3.out' });
-    });
-    return () => ctx.revert();
+    popIn(el);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

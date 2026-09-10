@@ -65,22 +65,47 @@ export function bloomOpen(el) {
 }
 
 // Reveal escalonado de listas (ejercicios de una rutina, comidas del día).
-export function staggerReveal(els, { delayStep = 45, distance = 14 } = {}) {
+export function staggerReveal(els, { delayStep = 45, distance = 14, scale = 1, delay = 0 } = {}) {
   if (!els || els.animate) return; // guard: no pasar un solo elemento por error
   // Seguro salir sin hacer nada: estas animaciones usan fill:'backwards', o
   // sea que el estado final es el CSS natural del elemento (visible). No
   // animar deja la lista tal cual, no la deja escondida.
   if (menosMovimiento()) return;
+  /* `scale` y `delay` existen porque cuatro pantallas hacían EXACTAMENTE esta
+     animación con GSAP en paralelo (opacidad + y + escala + stagger), sólo
+     que con otro motor y otra curva. Al traerlas acá, la diferencia era esos
+     dos parámetros: agregarlos costó dos líneas y sacó una dependencia de
+     83 KB del arranque. Con scale=1 el `scale()` se omite del keyframe, así
+     que las llamadas viejas producen exactamente la misma animación de
+     antes. */
+  const desde = scale === 1 ? `translateY(${distance}px)` : `translateY(${distance}px) scale(${scale})`;
+  const hasta = scale === 1 ? 'translateY(0)' : 'translateY(0) scale(1)';
   Array.from(els).forEach((el, i) => {
     if (!el?.animate) return;
     el.animate(
       [
-        { transform: `translateY(${distance}px)`, opacity: 0 },
-        { transform: 'translateY(0)', opacity: 1 },
+        { transform: desde, opacity: 0 },
+        { transform: hasta, opacity: 1 },
       ],
-      { duration: D.panel, delay: i * delayStep, easing: SPRING, fill: 'backwards' },
+      { duration: D.panel, delay: delay + i * delayStep, easing: SPRING, fill: 'backwards' },
     );
   });
+}
+
+/** Entrada de UN elemento: aparece creciendo (y opcionalmente enderezándose).
+    Es el gemelo de staggerReveal para cuando hay una sola cosa que animar —
+    la silueta del cuerpo, la llama de la racha. Decorativa: con movimiento
+    reducido no corre y el elemento queda visible, que es su estado CSS. */
+export function popIn(el, { scale = 0.9, rotate = 0, duration = D.panel, easing = SPRING } = {}) {
+  if (!el?.animate || menosMovimiento()) return;
+  const giro = rotate ? ` rotate(${rotate}deg)` : '';
+  el.animate(
+    [
+      { opacity: 0, transform: `scale(${scale})${giro}` },
+      { opacity: 1, transform: 'scale(1) rotate(0deg)' },
+    ],
+    { duration, easing, fill: 'backwards' },
+  );
 }
 
 // Las 5 pantallas (Hoy/Rutina/Nutrición/Progreso + el carrusel de Hoy) tienen
@@ -223,7 +248,7 @@ export const D = { toque: 150, objeto: 220, panel: 320, momento: 460 };
 /** Curva estandar para lo que ENTRA o cambia de estado. Igual a --ease-out. */
 export const EASE_OUT = 'cubic-bezier(.16,1,.3,1)';
 
-export function countTo(el, to, { from = 0, duration = 600, format = (n) => Math.round(n) } = {}) {
+export function countTo(el, to, { from = 0, duration = 600, delay = 0, format = (n) => Math.round(n) } = {}) {
   if (!el) return () => {};
   /* Igual que animateRing: el conteo no es decoración, es lo que ESCRIBE el
      número. Salir sin hacer nada dejaría el elemento vacío, así que con
@@ -234,11 +259,19 @@ export function countTo(el, to, { from = 0, duration = 600, format = (n) => Math
      mismo textContent y el número puede aterrizar en el valor VIEJO. Se
      cancela el anterior sobre ese mismo elemento antes de arrancar. */
   cancelCount(el);
-  const start = performance.now();
+  /* `delay` corre el ARRANQUE, no el final: hasta que llega su turno el
+     número se queda en `from`. Antes esto lo hacía GSAP en la pantalla de
+     fin de sesión, donde los tres números entran escalonados con los beats
+     de la animación. */
+  const start = performance.now() + delay;
+  if (delay) el.textContent = format(from);   // mientras espera su turno, muestra el punto de partida
   const step = (now) => {
     /* Nodo desmontado (cambio de pestaña a mitad del conteo): se corta en vez
-       de seguir escribiendo sobre un elemento que ya no está en el documento. */
+       de seguir escribiendo sobre un elemento que ya no está en el documento.
+       Va ANTES del guard de `delay`: si no, un nodo que se va durante la
+       espera dejaba un rAF encadenándose para siempre. */
     if (!el.isConnected) { counts.delete(el); return; }
+    if (now < start) { counts.set(el, requestAnimationFrame(step)); return; }
     const t = Math.min(1, (now - start) / duration);
     const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
     el.textContent = format(from + (to - from) * eased);
