@@ -40,6 +40,31 @@ export const POLEA_FEEL = [
   { id: 'se siente pesada', label: 'Se siente pesada' },
 ];
 
+/* Movimientos donde la carga ES tu cuerpo. Enzo, sobre dominadas y compañía:
+   "si son dominadas que se ingrese el peso corporal". El peso que se registra
+   en estos ejercicios sale de tu último peso corporal (S.cfg.profile.weightKg),
+   no de un 20 kg por defecto que no significaría nada.
+
+   La lista por nombre existe porque `equip: 'corporal'` es opcional: las
+   rutinas creadas antes del sistema de equipamiento no lo tienen asignado, y
+   sin esto seguirían sin poder registrar una serie. */
+const CORPORAL_NOMBRES = [
+  'dominada', 'domin', 'pull up', 'pull-up', 'pullup', 'chin up', 'chin-up',
+  'fondo', 'dip', 'plancha', 'plank', 'abdominal', 'crunch', 'flexion',
+  'flexión', 'lagartija', 'push up', 'push-up', 'pushup', 'burpee',
+  'elevacion de piernas', 'elevación de piernas', 'muscle up', 'muscle-up',
+];
+
+/** ¿La carga de este ejercicio es el propio cuerpo? Por equipo declarado o,
+    si no lo tiene, por el nombre del movimiento. */
+export function isBodyweight(ex) {
+  if (ex?.equip === 'corporal') return true;
+  if (ex?.equip) return false; // equipo explícito distinto: manda ese
+  const n = String(ex?.name || '').trim().toLowerCase();
+  if (!n) return false;
+  return CORPORAL_NOMBRES.some(k => n.includes(k));
+}
+
 /** Equipos cuyo número NO es comparable fuera de esa máquina concreta. */
 const MACHINE_BOUND = new Set(['discos', 'placas', 'polea']);
 export const isMachineBound = equip => MACHINE_BOUND.has(equip);

@@ -6,7 +6,8 @@ vi.mock('./rest.js', () => ({ startRest: vi.fn(), stopRest: vi.fn() }));
 vi.mock('./alarm.js', () => ({ pedirPermiso: vi.fn() }));
 vi.mock('./carousel.js', () => ({ scrollCarouselTo: vi.fn() }));
 
-import { startSession, completeSession, pendingSlot } from './session.js';
+import { startSession, completeSession, pendingSlot, ensureVals } from './session.js';
+import { isBodyweight } from './equip.js';
 
 describe('session.js — secuencia', () => {
   beforeEach(() => {
@@ -35,5 +36,40 @@ describe('session.js — secuencia', () => {
   it('pendingSlot() devuelve el turno en seqIndex', () => {
     S.cfg.seqIndex = 2;
     expect(pendingSlot().id).toBe('c');
+  });
+});
+
+describe('peso corporal — dominadas y compañía (Enzo, 2026-09-09)', () => {
+  beforeEach(() => {
+    S.hoyVals = {};
+    S.sessions = [];
+    S.cfg.profile = { ...(S.cfg.profile || {}), weightKg: 78 };
+  });
+
+  it('isBodyweight reconoce el equipo declarado y el nombre del movimiento', () => {
+    expect(isBodyweight({ name: 'Lo que sea', equip: 'corporal' })).toBe(true);
+    expect(isBodyweight({ name: 'Dominadas' })).toBe(true);
+    expect(isBodyweight({ name: 'Fondos en paralelas' })).toBe(true);
+    expect(isBodyweight({ name: 'Plancha' })).toBe(true);
+    // Equipo explícito distinto manda sobre el nombre: dominadas con lastre en
+    // polea no son "tu cuerpo y nada más".
+    expect(isBodyweight({ name: 'Dominadas', equip: 'polea' })).toBe(false);
+    expect(isBodyweight({ name: 'Press banca', equip: 'barra' })).toBe(false);
+  });
+
+  it('un ejercicio de peso corporal sin historial arranca con tu peso, no con 20', () => {
+    const v = ensureVals({ id: 'x1', name: 'Dominadas', reps: 8 });
+    expect(v.w).toBe(78);
+  });
+
+  it('un ejercicio con carga externa sigue arrancando en 20', () => {
+    const v = ensureVals({ id: 'x2', name: 'Press banca', equip: 'barra', reps: 8 });
+    expect(v.w).toBe(20);
+  });
+
+  it('sin peso corporal registrado no se inventa uno', () => {
+    S.cfg.profile = { ...(S.cfg.profile || {}), weightKg: null };
+    const v = ensureVals({ id: 'x3', name: 'Fondos', reps: 8 });
+    expect(v.w).toBe(0);
   });
 });
