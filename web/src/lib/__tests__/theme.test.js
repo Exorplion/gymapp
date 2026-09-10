@@ -158,6 +158,31 @@ describe('paletaDesde', () => {
     });
   });
 
+  describe('canales rgb — los efectos siguen al color elegido', () => {
+    // Los ~50 rgba() de styles.css (halos, anillos, chips, sombras) consumen
+    // el triplete suelto: rgba() no acepta un color entero dentro de una
+    // var(). Sin estos canales, elegir un color cambiaba los tokens pero
+    // dejaba todos los efectos en el azul de fábrica.
+    it('devuelve un triplete "r,g,b" válido por cada tono', () => {
+      const p = paletaDesde('#FF6600');
+      for (const k of ['blueRgb', 'blue2Rgb', 'blue3Rgb', 'deepRgb', 'cyanRgb']) {
+        expect(p[k]).toMatch(/^\d{1,3},\d{1,3},\d{1,3}$/);
+        expect(p[k].split(',').every(n => +n >= 0 && +n <= 255)).toBe(true);
+      }
+    });
+
+    it('el triplete describe el MISMO color que su token hex', () => {
+      const p = paletaDesde('#7A1FA2');
+      const hex = p.blue.replace('#', '');
+      const esperado = [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16)).join(',');
+      expect(p.blueRgb).toBe(esperado);
+    });
+
+    it('cambia con el color elegido (no se queda en el azul de fábrica)', () => {
+      expect(paletaDesde('#FF6600').blueRgb).not.toBe(paletaDesde(COLOR_DEFECTO).blueRgb);
+    });
+  });
+
   it('onGrad elige, entre negro y blanco, el que de verdad da más contraste', () => {
     for (const hex of ['#0000FF', '#FFD700', '#8B0000', COLOR_DEFECTO]) {
       const p = paletaDesde(hex);

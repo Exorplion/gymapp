@@ -23,6 +23,7 @@ import { dstr, fmtDFull, fmtNum, round1 } from '../../lib/format.js';
 import { computeMacros, GOAL_LABEL, weeklyBandAdjustment } from '../../lib/macros.js';
 import { mealsOf, macroCls, nutriFeedback, frequentMeals, mealsBySlot, slotForTime } from '../../lib/meals.js';
 import { lowMicros } from '../../lib/micronutrients.js';
+import { cycledGoals, cycleExplain } from '../../lib/cycle.js';
 import { idb } from '../../lib/db.js';
 import { logMeal, addMealFromFood } from '../sheets/MealForm.jsx';
 import { useEffect, useRef } from 'react';
@@ -86,7 +87,15 @@ export default function Nutricion() {
   const date = S.nutriDate;
   const meals = mealsOf(date);
   const tot = meals.reduce((a, mm) => ({ kcal: a.kcal + mm.kcal, p: a.p + mm.p, c: a.c + mm.c, f: a.f + mm.f }), { kcal: 0, p: 0, c: 0, f: 0 });
-  const g = S.cfg.goals;
+  /* El objetivo del día sigue a lo que ENTRENASTE ese día (lib/cycle.js): más
+     carbohidratos el día que entrenaste, menos el día que no, con el total de
+     la semana intacto. `null` = no hay con qué ciclar (sin historial, o
+     entrenás todos los días), y ahí se usa la meta plana de siempre. Todo lo
+     de esta pantalla —el anillo, las barras, lo que falta— lee `g`, así que
+     con esta sola línea el ajuste llega a la pantalla entera en vez de
+     quedarse en un cartel decorativo. */
+  const ciclo = cycledGoals(date);
+  const g = ciclo || S.cfg.goals;
   const m = S.cfg.goalsAuto ? computeMacros() : null; // rangos vivos sólo si perfil activo
   const pct = (v, goal) => goal ? Math.min(100, v / goal * 100) : 0;
   const isToday = date === dstr();
@@ -156,6 +165,20 @@ export default function Nutricion() {
         </div>
         <button type="button" className="mini w-11 h-11" disabled={isToday} onClick={() => shiftNutriDate(1)}>›</button>
       </div>
+
+      {/* El puente entre las dos mitades de la app. Va ARRIBA del anillo, no
+          abajo, porque explica el número que el anillo está mostrando: sin
+          esto el objetivo cambiaría solo de un día para el otro y parecería
+          un bug. */}
+      {ciclo && (
+        <div className={`calcbox ${ciclo.tipo === 'entreno' ? 'blue' : ''} mb-[var(--s3)]`}>
+          <div className="text-sm leading-normal">
+            <b>{ciclo.tipo === 'entreno' ? 'Día de entrenamiento' : 'Día de descanso'}</b>
+            {' · '}{ciclo.deltaCarbs > 0 ? '+' : ''}{ciclo.deltaCarbs} g de carbohidratos
+          </div>
+          <div className="text-mut text-[12.5px] leading-normal mt-1">{cycleExplain(ciclo)}</div>
+        </div>
+      )}
 
       <div className="card hero hero-kcal">
         <div className="kcal-top">
