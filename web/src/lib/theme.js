@@ -179,7 +179,17 @@ export function paletaDesde(hex) {
   const negro = ON_GRAD_OSCURO, blanco = ON_GRAD_CLARO;
   const onGrad = contrastRatio(negro, tono.blue2) >= contrastRatio(blanco, tono.blue2) ? negro : blanco;
 
+  /* Los canales sueltos de cada tono: son lo que consumen los ~50 rgba() de
+     styles.css (halos, anillos, chips, sombras). Sin esto, elegir un color en
+     Ajustes cambiaba los tokens de color pero dejaba TODOS los efectos en el
+     azul de fábrica, porque un literal escrito adentro de un rgba() no es una
+     custom property y `aplicarPaleta()` no puede pisarlo. */
   return {
+    blueRgb: hexToRgbChannels(tono.blue),
+    blue2Rgb: hexToRgbChannels(tono.blue2),
+    blue3Rgb: hexToRgbChannels(tono.blue3),
+    deepRgb: hexToRgbChannels(tono.deep),
+    cyanRgb: hexToRgbChannels(tono.cyan),
     accent: tono.accent,
     deep: tono.deep,
     blue: tono.blue,
@@ -196,6 +206,14 @@ export function paletaDesde(hex) {
     line: hexToRgba(tono.blue2, 0.18),
     line2: hexToRgba(tono.blue2, 0.34),
   };
+}
+
+/** Los tres canales de un hex, como "r,g,b" — el formato que necesita
+    `rgba(var(--blue-rgb), .3)`: rgba() no acepta un color entero adentro de
+    una var(), necesita los canales sueltos. */
+function hexToRgbChannels(hex) {
+  const full = hex.replace('#', '');
+  return `${parseInt(full.slice(0, 2), 16)},${parseInt(full.slice(2, 4), 16)},${parseInt(full.slice(4, 6), 16)}`;
 }
 
 function hexToRgba(hex, alpha) {
@@ -219,6 +237,8 @@ const VAR_DE = {
   accent: '--accent', deep: '--deep', blue: '--blue', blue2: '--blue2', blue3: '--blue3',
   cyan: '--cyan', onGrad: '--on-grad', grad: '--grad', grad2: '--grad2',
   glow: '--glow', line: '--line', line2: '--line2',
+  blueRgb: '--blue-rgb', blue2Rgb: '--blue2-rgb', blue3Rgb: '--blue3-rgb',
+  deepRgb: '--deep-rgb', cyanRgb: '--cyan-rgb',
 };
 
 /** Aplica la paleta como custom properties en :root — pisa el valor por

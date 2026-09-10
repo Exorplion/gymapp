@@ -352,7 +352,6 @@ function ExerciseSlide({ m, wd, started }) {
             <> · serie {done.length + 1} → {curRir === 0 ? <b className="txt-blue">al fallo</b> : `RIR ${curRir}`}</>
           )}
         </div>
-        {open && S.cfg.activeGym && <GymPhoto gymId={S.cfg.activeGym} exName={ex.name} />}
         {last && (
           <div className="exlast">
             Última vez: {last.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg
@@ -421,18 +420,6 @@ function ExerciseSlide({ m, wd, started }) {
             <div className="prog-warn" ref={pwRef} style={{ display: pwarnInitial ? '' : 'none' }}>
               {pwarnInitial ? `⚠ ${pwarnInitial}` : ''}
             </div>
-            {/* Un lado por vez: lo que dice la rutina, con un botón para
-                anularlo sólo hoy — la máquina que te tocó puede obligarte a
-                hacerlo distinto de cómo lo planeaste. */}
-            <button
-              type="button"
-              className={`chip ${uni ? 'on' : ''}`}
-              style={{ marginBottom: 8 }}
-              aria-pressed={uni}
-              onClick={() => toggleUnilateral(ex.id)}
-            >
-              {uni ? '✓ Un lado por vez' : 'Un lado por vez'}
-            </button>
             {uni && (
               <div className="setrows" style={{ marginBottom: 8 }}>
                 <button
@@ -488,12 +475,6 @@ function ExerciseSlide({ m, wd, started }) {
                 />
               </div>
             </div>
-            {/* key=done.length: saveSet() resetea v.rpe a null después de
-                cada serie, y el estado local de RpeSelector no puede
-                enterarse de una mutación sobre `v`. Remontarlo por serie
-                lo deja siempre en blanco para la que viene — mismo truco
-                que ya usa .ex-done-count más arriba. */}
-            <RpeSelector key={done.length} v={v} />
             <button
               type="button"
               className="btn"
@@ -511,7 +492,42 @@ function ExerciseSlide({ m, wd, started }) {
             >
               ✓ Terminé la serie {done.length + 1} de {target}
             </button>
-            <ExActions ex={ex} wd={wd} />
+            {/* Todo lo que NO es peso, reps y confirmar vive acá abajo,
+                cerrado. El core loop de una serie es "elegí el peso, elegí
+                las reps, confirmá": cada cosa más que compita por ese
+                espacio es peaje que se paga entre 15 y 30 veces por sesión,
+                con el pulso a 150 y el teléfono en una mano. Nada se
+                elimina —el RPE destraba ACWR, la foto resuelve "cuál de las
+                tres máquinas era", el lado alterna solo— pero deja de
+                pedirse por adelantado: se abre cuando lo buscás.
+
+                <details> nativo y no un estado de React a propósito: viene
+                con el teclado, el foco y el anuncio de abierto/cerrado ya
+                resueltos, que es justo el bloque B de la Tarea 2. */}
+            <details className="ex-more">
+              <summary>Más opciones de esta serie</summary>
+              <div className="ex-more-body">
+                {/* Un lado por vez: lo que dice la rutina, con un botón para
+                    anularlo sólo hoy — la máquina que te tocó puede obligarte
+                    a hacerlo distinto de cómo lo planeaste. */}
+                <button
+                  type="button"
+                  className={`chip ${uni ? 'on' : ''}`}
+                  aria-pressed={uni}
+                  onClick={() => toggleUnilateral(ex.id)}
+                >
+                  {uni ? '✓ Un lado por vez' : 'Un lado por vez'}
+                </button>
+                {/* key=done.length: saveSet() resetea v.rpe a null después de
+                    cada serie, y el estado local de RpeSelector no puede
+                    enterarse de una mutación sobre `v`. Remontarlo por serie
+                    lo deja siempre en blanco para la que viene — mismo truco
+                    que ya usa .ex-done-count más arriba. */}
+                <RpeSelector key={done.length} v={v} />
+                {S.cfg.activeGym && <GymPhoto gymId={S.cfg.activeGym} exName={ex.name} />}
+                <ExActions ex={ex} wd={wd} />
+              </div>
+            </details>
           </>
         )}
         {done.length > 0 && (
