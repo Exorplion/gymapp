@@ -1,78 +1,184 @@
-// Puerto de funciones de racha desde index.html
+// La racha: cuántos días seguidos venís sin faltar.
+//
+// ---------------------------------------------------------------------------
+// POR QUÉ SE REESCRIBIÓ (2026-09-10)
+//
+// La versión anterior no funcionaba, y no era una cuestión de definición sino
+// un bug: `dayCompleted(dateStr)` recibía una fecha y **la ignoraba** — para
+// decidir qué correspondía ese día leía siempre `S.routine[S.cfg.seqIndex]`,
+// o sea el turno pendiente HOY. Consecuencias reales:
+//
+//   · si el turno pendiente era un descanso, devolvía null para TODOS los días
+//     y la racha daba 0 con el mapa de calor entero pintado como "descanso";
+//   · si era un entrenamiento, preguntaba "¿hay una sesión de ESTE turno ese
+//     día?" para cada fecha del pasado, y eso es falso casi siempre, así que
+//     la racha se cortaba al primer día hacia atrás.
+//
+// El comentario del archivo lo admitía como "aproximación". No lo era: no se
+// puede reconstruir qué turno estaba pendiente en una fecha vieja, porque el
+// puntero de la secuencia no guarda historia. Cualquier definición de racha
+// apoyada en eso está condenada.
+//
+// ---------------------------------------------------------------------------
+// LA DEFINICIÓN, Y POR QUÉ ES ÉSTA
+//
+// Enzo preguntó: "la racha debe ser por completar la rutina o parte de la
+// rutina, debe haber una manera de mantenerla… creo que depende de los días y
+// la rutina, ¿no?". Las dos mitades de esa intuición son correctas, y la
+// definición sale de combinarlas con lo único que la app sabe con certeza de
+// cada fecha: si entrenaste o no.
+//
+//   1. Un día con una sesión es un día entrenado. **Cuenta aunque sea parcial**
+//      —dos ejercicios de cinco siguen siendo haber ido— y cuenta también si lo
+//      anotaste a mano después (registrarDiaEntrenado). Eso es "completar la
+//      rutina o parte de la rutina".
+//
+//   2. Un día sin sesión es descanso, y **el descanso no corta**. Es la
+//      respuesta a "si un día no se entrenó automáticamente califica como
+//      descanso": no hay que declarar nada, no entrenar ES descansar.
+//
+//   3. El descanso sólo corta cuando se estira más de lo que tu propia rutina
+//      admite. Ahí entra "depende de la rutina": el límite no es un número
+//      inventado, sale de cuántos descansos seguidos tiene TU secuencia. Si
+//      alternás entreno y descanso, dos días seguidos sin ir ya es faltar; si
+//      tu rutina tiene tres descansos juntos, tenés tres días.
+//
+// Lo que esto NO hace: no exige que hayas hecho el turno "que tocaba". La
+// secuencia avanza al completar, no por fecha, así que "el turno que tocaba"
+// para una fecha pasada no existe como dato — es justamente lo que rompía la
+// versión anterior. Y castigar por hacer Posterior en vez de Anterior sería
+// castigar por improvisar, que es lo que uno hace en un gimnasio real.
 import { S } from './state.js';
-import { dstr, fmtDFull } from './format.js';
+import { dstr } from './format.js';
 
-interface RoutineSlot { id: string; type: 'workout' | 'rest'; exercises?: unknown[]; }
-interface SessionEntry { date: string; slotId?: string; }
+interface RoutineSlot { id: string; type: 'workout' | 'rest'; exercises?: unknown[] }
+interface SessionEntry { date: string }
 
 const routine = (): RoutineSlot[] => S.routine as RoutineSlot[];
 const sessions = (): SessionEntry[] => S.sessions as SessionEntry[];
 
-/** Un día "cumplido" mira qué turno de la secuencia estaba pendiente esa
-    fecha (aproximado por S.cfg.seqIndexDate: el turno vigente cuando
-    seqIndex cambió por última vez) — si es descanso, no cuenta ni corta;
-    si es entrenamiento, cumple si hay una sesión de ESE turno esa fecha. */
-export function dayCompleted(dateStr: string): boolean | null {
-  // Sólo se puede evaluar con precisión el turno vigente ahora mismo (no
-  // se reconstruye el puntero histórico completo — ver nota de diseño).
-  // Para `dateStr === S.cfg.seqIndexDate` (el día en que el puntero quedó
-  // en su valor actual) esto es exacto; para fechas más viejas se usa la
-  // misma aproximación, consistente con "sólo aplica desde la migración".
-  const slot = routine()[S.cfg.seqIndex as number];
-  if (!slot || slot.type === 'rest') return null;
-  return sessions().some(s => s.slotId === slot.id && s.date === dateStr);
+/** Tope duro por si la rutina fuera casi toda descanso: con más de una semana
+    de tolerancia la racha dejaría de significar nada. */
+const TOLERANCIA_MAX = 7;
+
+/** Cuántos días seguidos sin entrenar admite tu rutina antes de que sea una
+    falta.
+
+    Sale de la tanda más larga de descansos de TU secuencia, más un día de
+    respiro — correrse un día es normal y no debería costar la racha. La
+    secuencia es circular (al terminar vuelve a empezar), así que la tanda se
+    busca dando la vuelta: descansos al final y al principio son una sola.
+
+    Sin rutina, o sin ningún descanso en ella, el mínimo es 1: podés saltarte
+    un día. Cero sería exigir entrenar todos los días para siempre. */
+export function toleranciaDescanso(): number {
+  const r = routine();
+  if (!r.length) return 1;
+  const tipos = r.map(s => s.type);
+  if (!tipos.includes('rest')) return 1;
+  if (!tipos.includes('workout')) return TOLERANCIA_MAX;   // rutina 100% descanso
+  let mejor = 0, actual = 0;
+  // Dos vueltas para que una tanda que cruza el final se cuente entera.
+  for (let i = 0; i < tipos.length * 2; i++) {
+    if (tipos[i % tipos.length] === 'rest') { actual++; mejor = Math.max(mejor, actual); }
+    else actual = 0;
+  }
+  return Math.min(TOLERANCIA_MAX, Math.min(mejor, tipos.length) + 1);
 }
 
-// Cota dura para el retroceso día a día: dayCompleted() ya no depende de
-// la fecha pedida cuando el turno pendiente es de descanso (lee siempre
-// S.routine[S.cfg.seqIndex]), así que puede devolver null indefinidamente
-// sin importar qué tan atrás se camine — el loop necesita un límite que no
-// dependa de que dayCompleted() alguna vez deje de ser null.
-const MAX_STREAK_LOOKBACK_DAYS = 3650; // ~10 años
+/** Las fechas en que hay al menos una sesión. */
+function fechasEntrenadas(): Set<string> {
+  return new Set(sessions().map(s => s.date));
+}
 
+/** ¿Entrenaste ese día? Sin vueltas: una sesión con esa fecha. */
+export function dayTrained(dateStr: string): boolean {
+  return fechasEntrenadas().has(dateStr);
+}
+
+const MAX_LOOKBACK = 3650; // ~10 años, cota dura del retroceso
+
+/** Días seguidos sin faltar, contando desde hoy hacia atrás.
+
+    Los días de descanso se cuentan **sólo cuando un día entrenado más viejo
+    los respalda**: si hoy no entrenaste, hoy suma a la racha porque venís de
+    una seguidilla, no porque no hacer nada sume por sí solo. Por eso los días
+    sin sesión quedan "pendientes" hasta que aparece el entrenamiento que los
+    sostiene, y si el hueco se pasa de la tolerancia no se cuentan nunca. */
 export function currentStreak(): number {
-  if (!routine().some(s => s.type === 'workout' && s.exercises?.length)) return 0;
-  const todayStr = dstr();
-  let n = 0, d = new Date(), first = true;
-  for (let i = 0; i < MAX_STREAK_LOOKBACK_DAYS; i++) {
+  const fechas = fechasEntrenadas();
+  if (!fechas.size) return 0;
+  const primera = [...fechas].reduce((a, b) => (a < b ? a : b));
+  const tol = toleranciaDescanso();
+  let n = 0, pendientes = 0;
+  const d = new Date();
+  for (let i = 0; i < MAX_LOOKBACK; i++) {
     const ds = dstr(d);
-    const c = dayCompleted(ds);
-    if (c === null) { d.setDate(d.getDate() - 1); first = false; continue; }
-    if (c === false) {
-      if (first && ds === todayStr) { d.setDate(d.getDate() - 1); first = false; continue; }
-      break;
+    if (ds < primera) break;              // antes de tu primera sesión no hay racha que contar
+    if (fechas.has(ds)) { n += pendientes + 1; pendientes = 0; }
+    else {
+      pendientes++;
+      if (pendientes > tol) break;        // el hueco es una falta: la racha corta acá
     }
-    n++; d.setDate(d.getDate() - 1); first = false;
+    d.setDate(d.getDate() - 1);
   }
   return n;
 }
 
+/** La racha más larga que tuviste, con la misma regla. */
 export function bestStreak(): number {
-  if (!sessions().length) return 0;
-  const dates = sessions().map(s => s.date);
-  let d = new Date(dates.reduce((a, b) => a < b ? a : b) + 'T12:00:00');
-  const endStr = dstr();
-  let cur = 0, best = 0;
-  while (dstr(d) <= endStr) {
-    const c = dayCompleted(dstr(d));
-    if (c === true) { cur++; best = Math.max(best, cur); }
-    else if (c === false) { cur = 0; }
+  const fechas = fechasEntrenadas();
+  if (!fechas.size) return 0;
+  const tol = toleranciaDescanso();
+  const primera = [...fechas].reduce((a, b) => (a < b ? a : b));
+  const hoy = dstr();
+  let cur = 0, pendientes = 0, best = 0;
+  const d = new Date(primera + 'T12:00:00');
+  while (dstr(d) <= hoy) {
+    const ds = dstr(d);
+    if (fechas.has(ds)) {
+      cur += pendientes + 1; pendientes = 0;
+      best = Math.max(best, cur);
+    } else {
+      pendientes++;
+      if (pendientes > tol) { cur = 0; pendientes = 0; }
+    }
     d.setDate(d.getDate() + 1);
   }
   return best;
 }
 
-export interface StreakDay { date: string; status: 'rest' | 'done' | 'miss'; }
-export interface StreakHeatmap { days: StreakDay[]; pct: number; }
+export interface StreakDay { date: string; status: 'rest' | 'done' | 'miss' }
+export interface StreakHeatmap { days: StreakDay[]; pct: number }
 
+/** Los últimos 56 días, cada uno como entrenado / descanso / falta.
+
+    Un día sin sesión es **descanso** salvo que pertenezca a una tanda más
+    larga que la tolerancia: recién ahí es una falta. Por eso la tanda se mide
+    entera antes de etiquetar sus días — mirando un día suelto es imposible
+    saber si fue descanso o abandono, y esa es justamente la diferencia que el
+    mapa tiene que mostrar. */
 export function streakHeatmap(): StreakHeatmap {
-  const days: StreakDay[] = []; let done = 0, total = 0;
+  const fechas = fechasEntrenadas();
+  const tol = toleranciaDescanso();
+  const dias: StreakDay[] = [];
   for (let i = 55; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
-    const ds = dstr(d);
-    const c = dayCompleted(ds);
-    if (c !== null) { total++; if (c) done++; }
-    days.push({ date: ds, status: c === null ? 'rest' : c ? 'done' : 'miss' });
+    dias.push({ date: dstr(d), status: 'rest' });
   }
-  return { days, pct: total ? Math.round(done / total * 100) : 0 };
+  let i = 0;
+  while (i < dias.length) {
+    if (fechas.has(dias[i].date)) { dias[i].status = 'done'; i++; continue; }
+    let j = i;
+    while (j < dias.length && !fechas.has(dias[j].date)) j++;
+    const largo = j - i;
+    /* Vale lo mismo para una tanda cerrada que para la que llega hasta hoy:
+       mientras no pase la tolerancia seguís a tiempo, y recién después es una
+       falta. */
+    if (largo > tol) for (let k = i; k < j; k++) dias[k].status = 'miss';
+    i = j;
+  }
+  const contados = dias.filter(x => x.status !== 'rest').length;
+  const hechos = dias.filter(x => x.status === 'done').length;
+  return { days: dias, pct: contados ? Math.round((hechos / contados) * 100) : 0 };
 }

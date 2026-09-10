@@ -1872,6 +1872,29 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 
 /* Tarjetas de día, desplegables en el lugar */
+/* Fila de navegación con peso propio: una acción que abre otra pantalla, no
+   un renglón de una lista. Existe porque "Ver mis gimnasios" estaba puesta
+   como .row —sin borde y sin aire— pegada abajo de los dos botones grandes:
+   se leía como si fuera parte de ellos (Enzo: "no tiene ni bordes… está muy
+   pegado a los botones de editar rutina"). */
+.nav-card{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  margin-top:var(--s3);padding:13px 14px;
+  border-radius:var(--r);background:var(--card2);
+  border:1px solid var(--line2);color:var(--txt);
+  transition:border-color var(--d1) var(--ease-out),transform var(--d1) var(--ease-out);
+}
+.nav-card:active{transform:scale(.99);border-color:var(--blue2)}
+.nav-card .grow{flex:1;min-width:0}
+.nav-card .t{display:block;font-size:var(--t-body);font-weight:600}
+.nav-card .s{display:block;font-size:var(--t-micro);color:var(--mut);margin-top:2px;line-height:1.35}
+.nav-card-ico{
+  flex:none;display:grid;place-items:center;width:38px;height:38px;
+  border-radius:var(--r-md);font-size:var(--t-lg);
+  background:rgba(var(--blue-rgb),.12);border:1px solid rgba(var(--blue-rgb),.24);
+}
+.nav-card .chev{flex:none;color:var(--mut2);font-size:var(--t-lg)}
+
 .day-cards{display:flex;flex-direction:column;gap:10px;margin-top:var(--s4)}
 .day-card{
   background:linear-gradient(158deg,rgba(255,255,255,.075),rgba(255,255,255,.02));
@@ -1887,6 +1910,22 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .day-head .t{display:block;font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700}
 .day-head .s{display:block;font-size:var(--t-micro);color:var(--mut);margin-top:1px}
 .day-head .chev{color:var(--mut2);font-size:var(--t-lg)}
+/* Acordeón de la tarjeta de turno: misma técnica que .day-body en el editor
+   (grid-template-rows 0fr→1fr, que sí transiciona; display no). El contenido
+   queda montado para que el CIERRE también se anime — con un `{open && …}` de
+   React no hay nodo que animar cuando se cierra y la tarjeta se corta seca. */
+.day-collapse{
+  display:grid;grid-template-rows:0fr;opacity:0;visibility:hidden;
+  transition:grid-template-rows var(--d3) var(--ease-out),opacity var(--d2) ease,visibility 0s var(--d3);
+}
+.day-collapse-in{overflow:hidden;min-height:0}
+.day-card.open .day-collapse{
+  grid-template-rows:1fr;opacity:1;visibility:visible;
+  transition:grid-template-rows var(--d3) var(--ease-out),opacity var(--d2) ease,visibility 0s;
+}
+.day-card .day-head .chev{transition:transform var(--d2) var(--ease-out)}
+.day-card.open .day-head .chev{transform:rotate(90deg);color:var(--blue2)}
+
 .day-exs{padding:0 16px 14px}
 /* 9px y no 12 de separación: el pictograma se sumó a la fila y el nombre
    necesita recuperar ese ancho. */
