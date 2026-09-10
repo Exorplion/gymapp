@@ -26,6 +26,8 @@ import {
   isUnilateral, toggleUnilateral, setSide,
 } from '../lib/session.js';
 import { sideImbalance } from '../lib/symmetry.js';
+import { shrinkImageBlob } from '../lib/photo.js';
+import { toast } from '../lib/toast.js';
 import { jumpToSlide, scrollToSlideEl, slideCenterDist } from '../lib/carousel.js';
 import { staggerRevealOnce, squashStretch, impactBurst } from '../lib/motion.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
@@ -208,6 +210,11 @@ function GymPhoto({ gymId, exName }) {
       const next = blob ? URL.createObjectURL(blob) : null;
       urlRef.current = next;
       setUrl(next);
+    }).catch(() => {
+      // Leer la foto puede fallar (IndexedDB bloqueada por otra pestaña). Sin
+      // este catch era un rechazo no manejado y la miniatura no aparecía nunca
+      // sin ninguna señal de por qué.
+      if (!cancelled) setUrl(null);
     });
     return () => {
       cancelled = true;
@@ -219,9 +226,26 @@ function GymPhoto({ gymId, exName }) {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    await savePhoto(gymId, exName, file);
+    // Comprimir ANTES de guardar (480px / JPEG 70 → ~50 KB en vez de varios
+    // MB), y no mostrar la miniatura hasta que la escritura haya terminado
+    // bien: antes se hacía setUrl() pase lo que pase, así que si el guardado
+    // fallaba por cuota el usuario veía su foto y creía que había quedado —
+    // al volver no estaba.
+    let blob;
+    try {
+      blob = await shrinkImageBlob(file);
+    } catch {
+      toast('No se pudo leer esa imagen');
+      return;
+    }
+    try {
+      await savePhoto(gymId, exName, blob);
+    } catch {
+      toast('No se pudo guardar la foto (¿sin espacio?)');
+      return;
+    }
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
-    const next = URL.createObjectURL(file);
+    const next = URL.createObjectURL(blob);
     urlRef.current = next;
     setUrl(next);
   }
