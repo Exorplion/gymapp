@@ -181,9 +181,137 @@ criterio de aprobación concreto: son puertas que se aprueban o no, no impresion
 | 1 | Corregir bugs ocultos que la red de seguridad no detecta | **EN CURSO — 10 de 11** | Cero bugs confirmados que rompan la app o pierdan datos. Hecho: el crash de `GymPhoto`, `no-undef` activada y esa clase probada limpia, los 4 críticos de robustez, los 2 de datos inventados, la alarma. Hecho el 2026-09-09 (PR #65): la rueda desfasada, la foto sin comprimir y `countTo()` sin cancelación. **Queda sólo: las series de peso corporal (`session.js:480`, PREGUNTAR primero si es bug o decisión).** |
 | 2 | Llegar a WCAG 2.2 AA en contraste, targets y movimiento | **EN CURSO — falta la capa semántica** | Hecho: contraste (`--mut2`), el bug de cascada del tab bar, `prefers-reduced-motion` en WAAPI/GSAP, halo de foco, áreas táctiles, `lang`, zoom. **Queda el bloque B: los 26 sheets tienen `role="dialog"` sin nombre, no hay un solo `<h2>`/`<h3>` en toda la app, `ReelPicker` sin teclado, reordenar sólo por arrastre (SC 2.5.7), botones sólo-ícono sin nombre accesible.** |
 | 3 | Reducir el peso del bundle y el tiempo de arranque | **PENDIENTE — 1 de ~8** | Baseline 1339 KB de JS; objetivo ~875 KB. Hecho: la lectura inútil de todos los Blobs de fotos en cada arranque. **Quedan: Lottie (−320 KB), GSAP (−83 KB), `tailwind-merge` (−33 KB), lazy de `illustrations.js` (−61 KB), el warning INEFFECTIVE_DYNAMIC_IMPORT, `React.memo` en hojas caras (no hay NINGUNO en todo `components/` y `bump()` se llama 104 veces), paginar `History.jsx`, sacar los PNG de icono del precache (−325 KB).** |
-| 4 | Reformular el sistema visual con una dirección propia | **EN CURSO — la paleta, hecha** | Hecho: paleta "acero" + fuente única de verdad entre `@theme` y `:root`. **Quedan: 36 tamaños de letra (contra 8 tokens), 21 radios, 9 sombras ad-hoc, 5 recetas de "tarjeta", 6 de "eyebrow"; quitar `backdrop-filter` donde no hace nada; y el trabajo por pantalla (mover Completar/Descartar fuera de la zona inalcanzable en Hoy, adelgazar `SessStartInfo`, unificar los dos lenguajes de Rutina).** |
+| 4 | Reformular el sistema visual con una dirección propia | **EN CURSO — paleta, radios y tiempos hechos** | Hecho: paleta "acero" + fuente única de verdad entre `@theme` y `:root`. Hecho el 2026-09-09: paleta "acero negro" (superficies con tinte azul + marco metálico), **21 radios → 5** (103 usos) y **el sistema de tiempos** (34 duraciones → 4 pasos, CSS y JS). **Quedan: los 36 tamaños de letra (mapeo ya escrito arriba — NO aplicar sin poder mirar la pantalla), 9 sombras ad-hoc, 5 recetas de "tarjeta", 6 de "eyebrow"; quitar `backdrop-filter` donde no hace nada; y el trabajo por pantalla (mover Completar/Descartar fuera de la zona inalcanzable en Hoy, adelgazar `SessStartInfo`, unificar los dos lenguajes de Rutina).** |
 | 5 | Limpiar el core loop de peaje y mejorar la oferta de producto | **BLOQUEADA** | Depende de la decisión de producto de abajo. Sacar de la tarjeta del ejercicio en curso todo lo que no sea peso, reps y confirmar (RPE, foto, lado, precheck). Más las mejoras de mayor impacto: doble progresión, descarga accionable, cobertura de fibra. |
 | 6 | Publicar el plan de reformulación como Artifact | **COMPLETA** | Publicado y actualizado con las 5 auditorías. |
+
+## SESIÓN 2026-09-09 (segunda parte) — Auditoría de animaciones y "acero negro"
+
+Pedido de Enzo, textual: *"vas a buscar la librería de animaciones de gsap en
+internet buscala e instalala… vas a hacer una auditoria de animaciones tiempos de
+animación y cosas relacionadas… no es necesario que mantengas el tono azul puede
+ser negro pero con tonos azul de fondo bordes marcos, no sé tono metalico"*.
+
+### GSAP: no había nada que instalar
+
+Ya estaba en el proyecto en **3.15.0, que es la última versión publicada**. Y desde
+que Webflow lo compró (abril 2025) **GSAP es 100% gratis, incluidos los plugins que
+antes eran de pago**: `SplitText.js`, `MorphSVGPlugin.js`, `Flip.js`, `CustomEase.js`,
+`ScrollTrigger.js`, `Draggable.js` y `ScrambleTextPlugin.js` **ya están en
+`node_modules/gsap/`**, disponibles sin licencia ni registro. **No hay que instalar
+nada ni buscar un repositorio privado** — si alguna vez aparece un `.npmrc`
+apuntando a `npm.greensock.com`, eso es del esquema viejo y hay que sacarlo.
+Fuente: [Webflow](https://webflow.com/blog/gsap-becomes-free) ·
+[npm](https://www.npmjs.com/package/gsap).
+
+### El hallazgo principal: no había un sistema de tiempos, había deriva
+
+La app anima desde **tres motores a la vez** — transiciones CSS, WAAPI
+(`lib/motion.js`) y GSAP (5 archivos) — y cada uno traía sus propias duraciones:
+
+| Dónde | Duraciones distintas | Curvas distintas |
+| --- | --- | --- |
+| CSS | **17** (.15 .18 .2 .22 .24 .25 .28 .3 .32 .34 .38 .45 .5…) | 8 |
+| JS (WAAPI + GSAP) | **17** (0.12 → 0.8s, 320/360/380/420/460/500/550ms) | 6 |
+
+Nadie decidió que un chip tardara .22 y el de al lado .24. Dos animaciones que el
+usuario lee como "lo mismo" duraban distinto. Ahora hay **cuatro pasos, nombrados
+por para qué sirven y no por cuánto duran**, espejados en CSS y en JS:
+
+```
+--d1 toque   150ms  respuesta al dedo: presión, hover, foco
+--d2 objeto  220ms  algo chico cambia de estado: chip, switch, badge
+--d3 panel   320ms  algo grande entra o sale: sheet, pantalla, tarjeta
+--d4 momento 460ms  celebración: hito, PR, confeti
+```
+
+En JS son `D.toque/objeto/panel/momento` (exportados de `lib/motion.js`). **Si se
+cambia el ritmo de la app hay que tocar los dos lugares** — CSS y JS — no 34.
+
+Hecho: **74 duraciones sueltas** del CSS tokenizadas (sobreviven sólo las
+intencionales: `0s`/`.01ms` de reduced-motion, `3.2s` del confeti, `35ms` del
+sweep); las **4 entradas de pantalla con GSAP** (0.4/0.45/0.5/0.6 en cuatro
+archivos **para el mismo gesto**) unificadas a `D.panel`; el stagger de
+`RoutineWizard` sube de 0.035 a 0.06 — **por debajo de 0.05 el escalonado no se
+percibe como ritmo, se percibe como lag**.
+
+### Lo que se evaluó y se decidió NO hacer
+
+- **Barras de progreso animando `width`** (`#rest-fill`, `.wiz-progress i`, la
+  barra de la tabbar). `transform:scaleX()` es la propiedad compuesta y sería "lo
+  correcto" de manual, pero deforma el `border-radius` de los extremos y estas
+  barras son elementos chicos y aislados: el layout que disparan es de un solo
+  nodo, no del árbol. **El costo visual es real y la ganancia de rendimiento no.**
+- **Los acordeones con `grid-template-rows`** (dos lugares) sí disparan layout del
+  contenido, pero es la técnica estándar para animar "de 0 a la altura que salga"
+  y no hay alternativa sin fijar alturas a mano. Se deja.
+- **Colapsar la escala tipográfica** (ver abajo).
+
+### Rediseño: "acero negro"
+
+La familia de matiz **no cambia** — el recorrido análogo frío se eligió por una
+razón geométrica que no caducó (ver la sección de la paleta "acero" más abajo).
+Lo que cambia son las **superficies**:
+
+| Token | Antes | Ahora |
+| --- | --- | --- |
+| `--bg` | `#0A0B0D` gris muy oscuro | `#050609` negro casi puro |
+| `--bg2` | `#14161A` | `#0B0E14` negro azulado |
+| `--card` | `#14161A` gris neutro | `#0E1219` negro **con azul** |
+| `--card2` | `#1C1F25` | `#151B25` |
+| `--line` / `--line2` | blanco translúcido | **azul** translúcido |
+
+**Por qué esto se lee como metal y lo anterior como plástico:** el metal no
+devuelve luz blanca y pareja, devuelve el color de lo que lo rodea, y con la
+arista de **arriba más clara que la de abajo** (la luz cae de arriba). Eso es
+`--edge-metal`, un `inset box-shadow` de dos líneas — no un blur ni una imagen.
+`--grad-metal` es el barrido sutil que evita que una superficie grande quede como
+un rectángulo muerto. **`theme.js` `BG` se sincronizó con el fondo nuevo**: si
+quedaba el viejo, sus garantías de contraste se calcularían contra un color que la
+app ya no pinta.
+
+**Contraste verificado calculando WCAG** sobre las 4 superficies × 9 colores de
+texto (no estimado): peor caso **5.21:1** (`mut2` sobre `--card2`), AA pide 4.5.
+Ninguno por debajo. El cambio **mejora** el contraste: las superficies se oscurecen
+y el texto claro queda encima con más diferencia que antes.
+
+### Radios: 21 → 5
+
+103 usos colapsados a `--r-xs`/`--r-sm`/`--r-md`/`--r`/`--r-lg`/`--r-full`.
+Sobreviven los legítimos: los `50%` de círculo y los dos radios compuestos de
+hojas pegadas al borde, donde el valor describe **una forma concreta**, no un
+nivel de la escala.
+
+### Tipografía: 36 tamaños — NO se tocó, y la razón importa
+
+El inventario confirma el problema (36 tamaños distintos: 8.5 9 9.5 10 10.5 11
+11.5 12 12.5 13 13.5 14 14.5 15 16 16.5 17 18 19 20 21 22 23 24 25 26 28 30 34 38
+40 46 52 54 56 64). **Pero colapsarlo no es seguro desde un job sin navegador**, y
+esa es una diferencia real con los radios: un radio de más no desborda nada,
+**un tamaño de letra de más empuja texto** — y el mapeo por cercanía obliga a
+saltos de hasta **+4px en los números grandes** (30→34), justo donde la app pinta
+cifras de estadística dentro de contenedores ajustados. Cambiar 36 tamaños sin
+poder mirar la pantalla es la forma más directa de entregar algo peor.
+
+**Queda listo para cuando se pueda ver en pantalla.** Mapeo propuesto, de 36 a 8
+pasos, cada tamaño al token más cercano:
+
+```
+8.5 9 9.5 10 10.5  -> --t-nano   10px   (token NUEVO)
+11 11.5 12 12.5    -> --t-micro  11px
+13 13.5 14 14.5    -> --t-sm     13px
+15 16 16.5         -> --t-body   15px
+17 18 19           -> --t-lg     18px
+20 21 22 23        -> --t-xl     22px
+24 25 26 28        -> --t-2xl    26px   (token NUEVO)
+30 34 38           -> --t-display 34px
+40 46 52 54 56 64  -> --t-hero   44px
+```
+
+El orden correcto es: aplicarlo, **abrir la app y recorrer las 5 pantallas y los
+26 sheets**, y corregir los desbordes uno por uno. No al revés.
+
+---
 
 ## SESIÓN 2026-09-09 — 3 de los 4 bugs de la Tarea 1, cerrados (PR #65)
 
