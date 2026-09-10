@@ -1,6 +1,6 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-08
+**Última actualización:** 2026-09-09
 **Proyecto:** `Exorplion/gymapp` — FIERRO, PWA local de entrenamiento + nutrición
 **Sitio:** https://exorplion.github.io/gymapp/ (GitHub Pages, sirve la raíz de `main`)
 **Estado:** Plan Fierro (Fases 1-3) implementado, testeado, mergeado (PR #17) y publicado.
@@ -178,14 +178,52 @@ criterio de aprobación concreto: son puertas que se aprueban o no, no impresion
 
 | # | Tarea | Estado | Criterio de aprobación |
 | --- | --- | --- | --- |
-| 1 | Corregir bugs ocultos que la red de seguridad no detecta | **EN CURSO — 7 de 11** | Cero bugs confirmados que rompan la app o pierdan datos. Hecho: el crash de `GymPhoto`, `no-undef` activada y esa clase probada limpia, los 4 críticos de robustez, los 2 de datos inventados, la alarma. **Quedan: la rueda que muestra un peso y guarda otro (`ReelPicker.jsx:56-61`), `GymPhoto` sin comprimir + sin `.catch`, `countTo()` sin cancelación, y las series de peso corporal (`session.js:480`, PREGUNTAR primero si es bug o decisión).** |
+| 1 | Corregir bugs ocultos que la red de seguridad no detecta | **EN CURSO — 10 de 11** | Cero bugs confirmados que rompan la app o pierdan datos. Hecho: el crash de `GymPhoto`, `no-undef` activada y esa clase probada limpia, los 4 críticos de robustez, los 2 de datos inventados, la alarma. Hecho el 2026-09-09 (PR #65): la rueda desfasada, la foto sin comprimir y `countTo()` sin cancelación. **Queda sólo: las series de peso corporal (`session.js:480`, PREGUNTAR primero si es bug o decisión).** |
 | 2 | Llegar a WCAG 2.2 AA en contraste, targets y movimiento | **EN CURSO — falta la capa semántica** | Hecho: contraste (`--mut2`), el bug de cascada del tab bar, `prefers-reduced-motion` en WAAPI/GSAP, halo de foco, áreas táctiles, `lang`, zoom. **Queda el bloque B: los 26 sheets tienen `role="dialog"` sin nombre, no hay un solo `<h2>`/`<h3>` en toda la app, `ReelPicker` sin teclado, reordenar sólo por arrastre (SC 2.5.7), botones sólo-ícono sin nombre accesible.** |
 | 3 | Reducir el peso del bundle y el tiempo de arranque | **PENDIENTE — 1 de ~8** | Baseline 1339 KB de JS; objetivo ~875 KB. Hecho: la lectura inútil de todos los Blobs de fotos en cada arranque. **Quedan: Lottie (−320 KB), GSAP (−83 KB), `tailwind-merge` (−33 KB), lazy de `illustrations.js` (−61 KB), el warning INEFFECTIVE_DYNAMIC_IMPORT, `React.memo` en hojas caras (no hay NINGUNO en todo `components/` y `bump()` se llama 104 veces), paginar `History.jsx`, sacar los PNG de icono del precache (−325 KB).** |
 | 4 | Reformular el sistema visual con una dirección propia | **EN CURSO — la paleta, hecha** | Hecho: paleta "acero" + fuente única de verdad entre `@theme` y `:root`. **Quedan: 36 tamaños de letra (contra 8 tokens), 21 radios, 9 sombras ad-hoc, 5 recetas de "tarjeta", 6 de "eyebrow"; quitar `backdrop-filter` donde no hace nada; y el trabajo por pantalla (mover Completar/Descartar fuera de la zona inalcanzable en Hoy, adelgazar `SessStartInfo`, unificar los dos lenguajes de Rutina).** |
 | 5 | Limpiar el core loop de peaje y mejorar la oferta de producto | **BLOQUEADA** | Depende de la decisión de producto de abajo. Sacar de la tarjeta del ejercicio en curso todo lo que no sea peso, reps y confirmar (RPE, foto, lado, precheck). Más las mejoras de mayor impacto: doble progresión, descarga accionable, cobertura de fibra. |
 | 6 | Publicar el plan de reformulación como Artifact | **COMPLETA** | Publicado y actualizado con las 5 auditorías. |
 
-### Tarea 1 en detalle — los 4 bugs que faltan (7 de 11 hechos)
+## SESIÓN 2026-09-09 — 3 de los 4 bugs de la Tarea 1, cerrados (PR #65)
+
+Mergeado a `main` y publicado. 356/356 tests, `tsc --noEmit` limpio, lint sin
+warnings nuevos, build limpio. **Nada se pudo verificar por vista/tacto real en
+celular** — este job es de background, sin extensión de Chrome (ver
+[[chrome-extension-background-job]]).
+
+1. **La rueda mostraba un peso y guardaba otro** (`ReelPicker.jsx`). La ventana de
+   dientes se leía **antes** de la posible regeneración, así que el render pintaba
+   el array viejo mientras el `useEffect [val]` centraba por el índice del array
+   **nuevo** — índice nuevo aplicado al DOM viejo. Fix: mover
+   `const values = valuesRef.current` **después** del `if` que la regenera.
+   Cuarto bug de la familia "el DOM y el estado de esta rueda van desfasados un
+   render" (PR #47, #50, #52). **Leer este handoff antes de volver a tocar ese
+   archivo.**
+2. **Fotos de máquina sin comprimir** (`ExerciseCarousel.jsx` + `lib/photo.js`).
+   `savePhoto()` recibía el `File` crudo de la cámara (varios MB). Se agregó
+   `shrinkImageBlob()` en `lib/photo.js` — envuelve el `shrinkImage()` que ya
+   existía y devuelve un **Blob** JPEG (~50 KB), que es lo que el store
+   `gymPhotos` espera (Blob nativo, no base64). Además: `try/catch` + toast en el
+   guardado, y la miniatura **sólo se muestra si la escritura terminó bien** —
+   antes se hacía `setUrl()` pasara lo que pasara, así que al fallar por cuota el
+   usuario veía su foto creyendo que había quedado guardada. Y `.catch` en el
+   `getPhoto()` del `useEffect`.
+   Esto además **saca la causa más probable** de llenar IndexedDB, que es lo que
+   dispara el `onabort` de PR #62 (con el que se pierde una serie).
+3. **`countTo()` sin cancelación** (`lib/motion.js`). Ahora hay un `WeakMap` de
+   rAF por elemento: una llamada nueva cancela la anterior sobre ese mismo nodo, y
+   el loop corta si `el.isConnected` es false. Devuelve un cancelador y se exporta
+   `cancelCount(el)`. Ningún caller necesitó cambiar.
+
+**Lo único que queda de la Tarea 1** son las series de peso corporal
+(`session.js:480`): `if (!(v.w > 0) || !(v.r > 0))` bloquea guardar dominadas,
+fondos, plancha y abdominales. **NO se tocó a propósito** — puede ser deliberado
+(que se cargue el peso corporal como número). Esperando respuesta de Enzo.
+
+---
+
+### Tarea 1 — el bug que falta (10 de 11 hechos)
 
 Esto es lo que quedó abierto al cerrar la sesión del 2026-09-08. Ninguno es
 crítico; los tres primeros no necesitan que Enzo decida nada.
@@ -240,19 +278,16 @@ cargue el peso corporal como número. Preguntar antes: ¿es bug o es a propósit
 
 ### Próximo paso al retomar
 
-Preguntarle a Enzo cuál de estas tres prefiere (las tres están listas):
+Los 3 bugs sin bloqueo ya se cerraron (PR #65, 2026-09-09). Quedan dos caminos
+listos para arrancar, más una pregunta:
 
-1. **Los 4 bugs restantes** (recomendado): la rueda que **muestra un peso y guarda
-   otro** (`ReelPicker.jsx:56-61`, la ventana se regenera un render tarde — cuarto
-   bug de esa familia en ese archivo); `GymPhoto` guardando fotos **sin comprimir**
-   de varios MB cuando `lib/photo.js` ya tiene `shrinkImage()` (es el camino más
-   probable a llenar el almacenamiento y disparar el `onabort` recién arreglado);
-   `countTo()` sin cancelación.
-2. **Rendimiento**: sacar Lottie (−320 KB) y mover `refreshAdaptiveTDEE()` de
+1. **Rendimiento**: sacar Lottie (−320 KB) y mover `refreshAdaptiveTDEE()` de
    `state.js` a `App.jsx` (10 min, mata el ciclo real y el warning
    INEFFECTIVE_DYNAMIC_IMPORT).
-3. **Sistema visual**: colapsar la escala tipográfica (36 tamaños → 8) y los radios
+2. **Sistema visual**: colapsar la escala tipográfica (36 tamaños → 8) y los radios
    (21 → 5).
+3. **Pregunta pendiente:** ¿las series de peso corporal (`session.js:480`) son bug
+   o decisión? Es lo único que falta de la Tarea 1 y no se toca sin respuesta.
 
 ### Preguntas abiertas para Enzo
 
