@@ -180,10 +180,56 @@ criterio de aprobación concreto: son puertas que se aprueban o no, no impresion
 | --- | --- | --- | --- |
 | 1 | Corregir bugs ocultos que la red de seguridad no detecta | **EN CURSO — 10 de 11** | Cero bugs confirmados que rompan la app o pierdan datos. Hecho: el crash de `GymPhoto`, `no-undef` activada y esa clase probada limpia, los 4 críticos de robustez, los 2 de datos inventados, la alarma. Hecho el 2026-09-09 (PR #65): la rueda desfasada, la foto sin comprimir y `countTo()` sin cancelación. **Queda sólo: las series de peso corporal (`session.js:480`, PREGUNTAR primero si es bug o decisión).** |
 | 2 | Llegar a WCAG 2.2 AA en contraste, targets y movimiento | **EN CURSO — falta la capa semántica** | Hecho: contraste (`--mut2`), el bug de cascada del tab bar, `prefers-reduced-motion` en WAAPI/GSAP, halo de foco, áreas táctiles, `lang`, zoom. **Queda el bloque B: los 26 sheets tienen `role="dialog"` sin nombre, no hay un solo `<h2>`/`<h3>` en toda la app, `ReelPicker` sin teclado, reordenar sólo por arrastre (SC 2.5.7), botones sólo-ícono sin nombre accesible.** |
-| 3 | Reducir el peso del bundle y el tiempo de arranque | **PENDIENTE — 1 de ~8** | Baseline 1339 KB de JS; objetivo ~875 KB. Hecho: la lectura inútil de todos los Blobs de fotos en cada arranque. **Quedan: Lottie (−320 KB), GSAP (−83 KB), `tailwind-merge` (−33 KB), lazy de `illustrations.js` (−61 KB), el warning INEFFECTIVE_DYNAMIC_IMPORT, `React.memo` en hojas caras (no hay NINGUNO en todo `components/` y `bump()` se llama 104 veces), paginar `History.jsx`, sacar los PNG de icono del precache (−325 KB).** |
+| 3 | Reducir el peso del bundle y el tiempo de arranque | **EN CURSO — el bundle baja 26%** | Baseline 1339 KB de JS; objetivo ~875 KB. Hecho: la lectura inútil de todos los Blobs de fotos en cada arranque. Hecho el 2026-09-09: **Lottie fuera del arranque (−328 KB medidos: 1239 → 910.78 KB)**. Descartados con razón escrita arriba: `tailwind-merge`, `fedb-index` y el warning INEFFECTIVE_DYNAMIC_IMPORT. **Quedan: GSAP (−83 KB, pero se usa en 5 archivos — no es una mudanza trivial), `React.memo` en hojas caras (no hay NINGUNO en todo `components/` y `bump()` se llama 104 veces), paginar `History.jsx`, sacar los PNG de icono del precache (−325 KB).** |
 | 4 | Reformular el sistema visual con una dirección propia | **EN CURSO — paleta, radios y tiempos hechos** | Hecho: paleta "acero" + fuente única de verdad entre `@theme` y `:root`. Hecho el 2026-09-09: paleta "acero negro" (superficies con tinte azul + marco metálico), **21 radios → 5** (103 usos) y **el sistema de tiempos** (34 duraciones → 4 pasos, CSS y JS). **Quedan: los 36 tamaños de letra (mapeo ya escrito arriba — NO aplicar sin poder mirar la pantalla), 9 sombras ad-hoc, 5 recetas de "tarjeta", 6 de "eyebrow"; quitar `backdrop-filter` donde no hace nada; y el trabajo por pantalla (mover Completar/Descartar fuera de la zona inalcanzable en Hoy, adelgazar `SessStartInfo`, unificar los dos lenguajes de Rutina).** |
 | 5 | Limpiar el core loop de peaje y mejorar la oferta de producto | **BLOQUEADA** | Depende de la decisión de producto de abajo. Sacar de la tarjeta del ejercicio en curso todo lo que no sea peso, reps y confirmar (RPE, foto, lado, precheck). Más las mejoras de mayor impacto: doble progresión, descarga accionable, cobertura de fibra. |
 | 6 | Publicar el plan de reformulación como Artifact | **COMPLETA** | Publicado y actualizado con las 5 auditorías. |
+
+## SESIÓN 2026-09-09 (tercera parte) — Rendimiento: el bundle baja 26%
+
+**Lottie fuera del arranque (PR #70).** `lottie-web` + `lottie-react` eran **320 KB
+— la dependencia más pesada de la app, 24% del bundle — para reproducir un JSON de
+6.8 KB en UN solo lugar**: el estallido de 44×44 al cerrar la sesión que generó un
+récord. Ahora vive en `components/PrBurst.jsx` y entra por `React.lazy`, con el
+trofeo fijo como fallback (el mismo símbolo que ya muestra una sesión vieja con
+récord, así que no aparece un hueco ni un spinner nuevo).
+
+**Medido, no estimado: `index` pasa de ~1239 KB a 910.78 KB.** Lottie queda en un
+chunk propio de 327 KB que sólo se descarga al ver un récord recién hecho.
+
+Por qué `lazy` y no reemplazar la animación por partículas propias (que la app ya
+tiene, `impactBurst`): la auditoría concluyó que en una PWA instalada partir el
+bundle **no** acelera las visitas siguientes — el service worker precachea todo
+igual — pero **el parse+eval sí se paga en cada arranque en frío**. Sacar del
+arranque un módulo grande de uso raro ataca exactamente eso **sin cambiar nada de
+lo que se ve**, que es estrictamente mejor que cambiar el festejo.
+
+### Lo que se evaluó en rendimiento y se decidió NO hacer (con la razón)
+
+- **`tailwind-merge` (33 KB).** El handoff lo daba por fácil ("un `cn()` que casi
+  nunca resuelve conflictos"). El problema: `cn()` es justamente lo que deja que un
+  `className` de afuera **pise** la clase base de un componente shadcn. Sin
+  `twMerge` las dos clases quedan puestas y gana la que el CSS declare última, no
+  la que el llamador quiso — o sea, roturas visuales silenciosas y dispersas.
+  **No se toca sin poder mirar la pantalla.**
+- **`fedb-index.js` (63 KB, lo que el handoff llamaba "lazy de illustrations.js
+  −61 KB").** `illustrations.js` en sí son 5 KB; el peso es el índice de datos que
+  importa, y lo usan sólo 3 sheets (`ExerciseForm`, `ExInfo`, `IllusPick`).
+  Sacarlo del arranque obliga a volver `illusUrl()` **asíncrona en pleno render**,
+  que es un cambio de arquitectura en un camino de render, no una mudanza de
+  import. Camino exacto para cuando se pueda probar: precargar el índice al abrir
+  cualquiera de esos 3 sheets y mantener `illusUrl()` síncrona leyendo de un cache
+  ya poblado, con la ilustración genérica mientras no lo esté.
+- **El warning `INEFFECTIVE_DYNAMIC_IMPORT`** (`macros.ts` importado dinámicamente
+  por `state.js` y estáticamente por otros 5). El handoff lo daba como "10 min".
+  Es **cosmético**: `macros` ya está en el bundle principal por esos 5 imports
+  estáticos, así que arreglarlo **no baja un solo byte**. Lo único que hace el
+  import dinámico ahí es romper un ciclo real, y sigue haciéndolo. Mover esa
+  llamada toca **el camino crítico del arranque**, que este mismo handoff
+  documenta como "de vidrio" hasta hace dos sesiones. No vale el riesgo por un
+  warning que no cuesta nada.
+
+---
 
 ## SESIÓN 2026-09-09 (segunda parte) — Auditoría de animaciones y "acero negro"
 
@@ -406,16 +452,36 @@ cargue el peso corporal como número. Preguntar antes: ¿es bug o es a propósit
 
 ### Próximo paso al retomar
 
-Los 3 bugs sin bloqueo ya se cerraron (PR #65, 2026-09-09). Quedan dos caminos
-listos para arrancar, más una pregunta:
+**La Tarea 1 está cerrada (11 de 11)**: los 3 bugs sin bloqueo en PR #65 y el de
+peso corporal en PR #67, con la decisión de Enzo (*"Si son dominadas que se
+ingrese el peso corporal, sí"*). Rendimiento y sistema visual avanzaron fuerte
+(PRs #68, #69, #70).
 
-1. **Rendimiento**: sacar Lottie (−320 KB) y mover `refreshAdaptiveTDEE()` de
-   `state.js` a `App.jsx` (10 min, mata el ciclo real y el warning
-   INEFFECTIVE_DYNAMIC_IMPORT).
-2. **Sistema visual**: colapsar la escala tipográfica (36 tamaños → 8) y los radios
-   (21 → 5).
-3. **Pregunta pendiente:** ¿las series de peso corporal (`session.js:480`) son bug
-   o decisión? Es lo único que falta de la Tarea 1 y no se toca sin respuesta.
+**Lo primero al retomar es MIRAR LA APP.** Tres cosas grandes se publicaron sin
+que nadie las viera en pantalla, porque este job es de background y no tiene
+navegador (ver [[chrome-extension-background-job]]):
+
+1. **La paleta "acero negro"** — fondo negro casi puro, superficies con tinte
+   azul, marcos metálicos. Si Enzo no ve el cambio, **revisar si tiene un
+   `themeColor` guardado en Ajustes: su elección pisa la paleta de fábrica**
+   (`theme.js` escribe estilos en línea sobre el elemento raíz y gana por
+   especificidad).
+2. **El ritmo nuevo de las animaciones** — cuatro pasos en vez de 34 duraciones
+   sueltas. Lo que hay que sentir es si algo quedó *lento* o *apurado* respecto
+   de antes; los valores salen de los que ya predominaban, así que no debería,
+   pero cuatro entradas de pantalla con GSAP sí cambiaron (0.4/0.45/0.5/0.6 →
+   0.32).
+3. **Dominadas y peso corporal** — que al abrir el ejercicio aparezca el peso
+   registrado y la serie se pueda guardar.
+
+Y con la app a la vista, los dos trabajos que **quedaron listos y frenados
+justamente por no poder verla** (el mapeo ya está escrito, no hay que
+rediseñarlo):
+
+- **La escala tipográfica, 36 tamaños → 8.** Mapeo completo más arriba. Aplicar,
+  recorrer las 5 pantallas y los 26 sheets, y corregir desbordes uno por uno.
+- **`tailwind-merge` (−33 KB)** y **`fedb-index.js` (−63 KB)**, con el camino de
+  cada uno escrito en la sección de rendimiento.
 
 ### Preguntas abiertas para Enzo
 
