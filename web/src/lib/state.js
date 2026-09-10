@@ -122,6 +122,14 @@ export async function loadAll() {
     entrenamiento, o hasta dar la vuelta completa si la rutina es 100%
     descanso — acotado a `S.routine.length` pasos para no depender de que
     la fecha cambie en el medio para cortar. */
+/** Días calendario entre dos 'YYYY-MM-DD' (>= 0). Se arma con mediodía para
+    que el cambio de horario de verano no corra el resultado un día. */
+function diasEntre(desde, hasta) {
+  const a = new Date(desde + 'T12:00:00'), b = new Date(hasta + 'T12:00:00');
+  if (Number.isNaN(+a) || Number.isNaN(+b)) return 0;
+  return Math.max(0, Math.round((b - a) / 86400000));
+}
+
 export function resolveAutoRest() {
   const today = dstr();
   if (S.cfg.seqIndexDate && S.cfg.seqIndexDate < today) {
@@ -132,7 +140,16 @@ export function resolveAutoRest() {
     // el punto de llegada.
     // Tope defensivo en S.routine.length: cubre la rutina 100% descanso sin
     // depender de que la fecha cambie para cortar el loop.
-    for (let i = 0; i < S.routine.length && S.routine[S.cfg.seqIndex]?.type === 'rest'; i++) {
+    /* UN descanso por día calendario transcurrido, no todos los descansos
+       de una vez. Una rutina con dos descansos seguidos los consumía ambos
+       apenas pasaba un solo día, así que la app se adelantaba al plan real
+       (Enzo: "no considera de manera automática los días"). Ahora los días
+       que pasaron son el presupuesto: descansaste un día → avanzás un
+       descanso; descansaste dos → avanzás dos. El tope sigue siendo
+       S.routine.length para la rutina 100% descanso. */
+    const dias = diasEntre(S.cfg.seqIndexDate, today);
+    const pasos = Math.min(dias, S.routine.length);
+    for (let i = 0; i < pasos && S.routine[S.cfg.seqIndex]?.type === 'rest'; i++) {
       S.cfg.seqIndex = (S.cfg.seqIndex + 1) % Math.max(1, S.routine.length);
     }
   }

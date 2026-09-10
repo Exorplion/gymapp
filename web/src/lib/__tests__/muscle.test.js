@@ -23,6 +23,11 @@ const REALES = [
   ['Back extension 45°', 'Espalda'],
   ['Aductor', 'Pierna'],
   ['Abductor', 'Pierna'],
+  // Agregados el 2026-09-10: Enzo quiso cambiar un remo por Kelsos en vivo y
+  // la app no lo dejaba porque el ejercicio no caía en ningún grupo.
+  ['Kelso shrug', 'Espalda'],
+  ['Kelsos', 'Espalda'],
+  ['Encogimientos con mancuernas', 'Espalda'],
 ];
 
 describe('catOf', () => {
