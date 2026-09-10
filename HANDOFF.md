@@ -36,6 +36,20 @@ el código; ninguna era percepción.** Mergeado en PR #73 y verificado en vivo
 | "no considera de manera automática los días" | `resolveAutoRest()` consumía **todos** los descansos seguidos con que pasara un solo día calendario | `lib/state.js:125` |
 | "la paleta negra con los bordes azul metalizado no aparece" | el código **ya estaba publicado** (se comparó el hash de CSS en vivo contra el local antes de tocar nada). El borde estaba a 16% de alfa sobre casi negro: ~1.15:1 contra la superficie, por debajo del umbral en el que el ojo lo lee como arista, y peor al sol | `styles.css` (`--glass-border`, `--edge-metal`, `--color-line/line2`) |
 
+**Séptimo bug, reportado después (PR #75, mergeado y en vivo): elegir negro
+ponía la app en ROJO.** `hexToHsl()` devuelve `h=0` para cualquier color sin
+matiz —negro, blanco, cualquier gris— y 0° en la rueda de color es el rojo: el
+`0` de "no tiene matiz" se leía como el `0` de "rojo puro", y `paletaDesde()`
+giraba los seis tonos de la receta al rojo saturado. Ahora un acromático
+(`s < 8`, o luminosidad en los extremos) **cae a la paleta de fábrica** en vez
+de que se le invente un matiz, que es lo que Enzo pidió: negro de fondo con el
+azul metálico que la app ya tiene. La saturación se conserva entera a propósito
+—apagarla apagaría también los degradados y las líneas, o sea justo el relieve
+metálico que se quiere ver—. Un color oscuro pero CON matiz (un azul marino
+elegido a propósito) sigue conservando el suyo, y hay un test que lo fija.
+**Ojo si se toca `paletaDesde()`: `h=0` es un valor ambiguo por diseño de HSL,
+no un dato.** (`lib/theme.js`)
+
 **Dos cosas a no olvidar de esta tanda:**
 
 - **Antes de "rediseñar" algo que Enzo dice que no ve, verificar que esté
