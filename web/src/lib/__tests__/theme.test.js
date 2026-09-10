@@ -123,6 +123,41 @@ describe('paletaDesde', () => {
     });
   });
 
+  describe('colores sin matiz (negro, blanco, grises)', () => {
+    // Elegir negro ponía la app ENTERA en rojo: hexToHsl() devuelve h=0 para
+    // cualquier acromático, y 0° en la rueda de color es el rojo, así que el
+    // 0 de "no tiene matiz" se leía como el 0 de "rojo puro".
+    const acromaticos = ['#000000', '#111111', '#808080', '#FFFFFF', '#F5F5F5'];
+
+    it.each(acromaticos)('%s no produce una paleta roja', hex => {
+      const p = paletaDesde(hex);
+      for (const rol of ['accent', 'blue', 'blue2', 'blue3', 'cyan', 'deep']) {
+        const { h, s: sat } = hexToHsl(p[rol]);
+        // rojo = matiz cerca de 0/360 CON saturación real. Un gris tiene h=0
+        // pero saturación ~0, y ese no es el caso que molesta.
+        const esRojo = sat > 12 && (h < 25 || h > 335);
+        expect(esRojo, `${rol} salió rojo: ${p[rol]}`).toBe(false);
+      }
+    });
+
+    it.each(acromaticos)('%s conserva el azul metálico de fábrica', hex => {
+      // Lo que Enzo pidió: negro de fondo, pero bordes y efectos con el azul
+      // metálico que la app ya tiene. Sin matiz propio, se cae a la paleta
+      // de fábrica tal cual — no a un gris apagado.
+      expect(paletaDesde(hex)).toEqual(paletaDesde(COLOR_DEFECTO));
+    });
+
+    it('un color oscuro pero CON matiz sí conserva su matiz', () => {
+      // Sólo lo acromático cae al matiz de fábrica; un azul marino elegido a
+      // propósito tiene que seguir saliendo azul.
+      const p = paletaDesde('#0B1F6B');
+      const { h, s: sat } = hexToHsl(p.blue);
+      expect(sat).toBeGreaterThan(50);
+      expect(h).toBeGreaterThan(200);
+      expect(h).toBeLessThan(260);
+    });
+  });
+
   it('onGrad elige, entre negro y blanco, el que de verdad da más contraste', () => {
     for (const hex of ['#0000FF', '#FFD700', '#8B0000', COLOR_DEFECTO]) {
       const p = paletaDesde(hex);

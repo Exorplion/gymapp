@@ -145,7 +145,23 @@ const RECETA = {
 export function paletaDesde(hex) {
   const hsl = hexToHsl(hex);
   if (!hsl) return null;
-  const base = hsl.h;
+  /* Negro, blanco y grises NO TIENEN MATIZ: hexToHsl() devuelve h=0 para
+     todos ellos, y 0° en la rueda de color es el rojo. Elegir negro salía
+     entonces como una app entera en rojo saturado (Enzo, 2026-09-10) — no
+     porque el negro "sea" rojo, sino porque no hay ningún matiz que girar y
+     el 0 de "no aplica" se estaba leyendo como el 0 de "rojo".
+
+     Lo honesto con un color sin matiz es no inventarle uno: se cae a la
+     paleta de FÁBRICA, que es exactamente lo que se espera al elegir negro
+     (Enzo: "obviamente el negro, pero los bordes de las tarjetas y los
+     efectos de color azul metálico como ya está en la app"). El fondo de la
+     app ya es negro —eso no lo decide este color, lo decide --bg en
+     styles.css— así que "negro" acá significa "sin color propio encima":
+     negro con el azul metálico de siempre. Se conserva la saturación entera
+     de la receta a propósito: apagarla también apagaría los degradados y las
+     líneas, y la app perdería justo el relieve metálico que se quiere. */
+  const acromatico = hsl.s < 8 || hsl.l < 4 || hsl.l > 96;
+  const base = acromatico ? HUE_DEFECTO : hsl.h;
   const tono = {};
   for (const [rol, r] of Object.entries(RECETA)) {
     tono[rol] = hslToHex(base + r.dh, r.s, r.l);
@@ -192,6 +208,12 @@ function hexToRgba(hex, alpha) {
     elijas otro. Es el acento de la paleta "acero" (= --color-accent en
     styles.css): el punto más claro y saturado del recorrido frío. */
 export const COLOR_DEFECTO = '#38BDF8';
+
+/** El matiz de fábrica, al que caen los colores sin matiz propio (negro,
+    blanco, grises). Se calcula del propio COLOR_DEFECTO en vez de escribir el
+    número a mano: si mañana cambia la paleta, esto la sigue solo. */
+const HUE_DEFECTO = hexToHsl(COLOR_DEFECTO).h;
+
 
 const VAR_DE = {
   accent: '--accent', deep: '--deep', blue: '--blue', blue2: '--blue2', blue3: '--blue3',
