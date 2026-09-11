@@ -23,6 +23,53 @@ historial. Si vas a seguir el roadmap, empezá por **Próximo paso exacto** al f
 
 ---
 
+## SESIÓN 2026-09-10 (sexta parte) — El HUD del modelo anatómico
+
+PR **#90**, mergeado y en vivo. Aplica el parche que dejó Claude Design en
+`Rediseño animaciones GymApp/patch/` (carpeta fuera del repo, en la raíz del
+proyecto). **No se reemplazaron los archivos con los del parche**: venían con la
+cabecera de comentarios recortada, sin el bloque `<svg className="sil-defs">` y
+sin la red de `asentar()` (el `setTimeout` que despierta al cuerpo cuando el
+`transitionend` no llega nunca, caso real con "reducir movimiento"). Se
+integraron los cambios a mano sobre los archivos actuales.
+
+- **El encuadre del zoom ahora se mide** (`Silhouette.jsx`). Era
+  `.sil-zoom.on{transform:scale(1.55)}` fijo con el origen clampeado al 25-75%
+  del stage. Con un grupo grande —Pierna— el cuerpo agrandado crecía por debajo
+  del borde de la ficha y el músculo que tocaste quedaba tapado justo por la
+  hoja que venías a leer; con uno chico —gemelo, bíceps— 1.55 se quedaba corto.
+  Un `useLayoutEffect` mide la ventana libre real (borde de arriba del stage →
+  borde de arriba de la ficha, leído del DOM porque la ficha cambia de alto
+  según cuántas fibras tenga el grupo) y centra el músculo ahí, con escala
+  entre 1.15 y 2.2. Llega al CSS como `--sil-esc` / `--sil-dy`.
+  - **El momento de la medición importa:** se mide en el commit donde la ficha
+    ya está en el DOM pero el zoom todavía NO se aplicó — por eso `.on` depende
+    de `enc` y no de `sel`. Medir después de transformar daría el rect ya
+    escalado y el cálculo se realimentaría solo.
+  - El `dy` **no** se multiplica por la escala: el `transform-origin` está
+    sobre el músculo, así que ese punto no se mueve al escalar.
+  - Se sacó el clamp 25-75% del origen: existía para compensar el zoom fijo, y
+    ahora movería el origen fuera del músculo y rompería el centrado.
+  - Hizo falta `data-cat={z.cat}` en cada `<g>` tocable: la medición ocurre en
+    el commit siguiente, cuando el `currentTarget` del evento ya no sirve.
+- **La ficha ya no se desborda** (`MusclePop.jsx` + `styles.css`). No tenía tope
+  de alto; anclada a `bottom:0` dentro de `.sil-pair`, un grupo con muchas
+  fibras (Pierna: cuádriceps, isquios y aductores, nueve ejercicios) crecía
+  hasta pasarse del contenedor y se cortaba contra el borde de la pantalla.
+  Ahora `.mpop` tiene `max-height:62%` + `display:flex`, y lo único de alto
+  variable —la lista de ejercicios— vive en un `.mpop-scroll`. Cabecera,
+  números y pie quedan fijos (`flex:none`): los tres números son el resumen, y
+  un resumen que hay que ir a buscar no es un resumen.
+- `prefers-reduced-motion` no necesitó tocarse: ya anula la transición de
+  `.sil-zoom`, y el encuadre nuevo se sigue aplicando, sólo que sin animar.
+- 471/471 tests, `tsc --noEmit` limpio, sin warnings nuevos de lint.
+
+**Pendiente de verificación visual:** el encuadre se validó por razonamiento y
+build, no en un navegador con el cuerpo a mano. Vale mirarlo tocando Pierna
+(grupo grande, ficha alta) y Gemelos (grupo chico) en el celular.
+
+---
+
 ## SESIÓN 2026-09-10 (quinta parte) — La racha estaba rota
 
 PRs **#87 y #88**, mergeados y en vivo.
