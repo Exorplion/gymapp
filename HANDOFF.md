@@ -23,6 +23,91 @@ historial. Si vas a seguir el roadmap, empezá por **Próximo paso exacto** al f
 
 ---
 
+## PENDIENTE ABIERTO — Rediseñar la ficha de músculo (`.mpop`)
+
+**Estado: no empezado. Es el próximo paso si Enzo retoma la silueta.**
+
+Después de mergear el PR #90, Enzo probó el resultado y dijo, textual:
+
+> "si se ve bien pero creo que le falta más organización visibilidad estética
+> orden, no me gusta así se ve feo, debe haber otra manera de hacer esa ventana
+> pero lo dejaremos para la siguiente sesión"
+
+Leer eso con cuidado, porque separa dos cosas:
+
+- **El encuadre del zoom quedó bien** ("si se ve bien"). Esa parte está cerrada:
+  no rehacer el `useLayoutEffect` que mide la ventana libre, no volver al
+  `scale(1.55)` fijo, no reponer el clamp 25-75% del origen. Ver la sección de
+  abajo para el porqué de cada una.
+- **La ficha en sí es el problema.** No es un bug ni un desborde —ese se
+  arregló— es que el contenido está mal jerarquizado y la hoja se ve cargada.
+  "Debe haber otra manera de hacer esa ventana" es una invitación explícita a
+  **cambiar el formato**, no a retocar paddings del formato actual.
+
+### Qué NO hacer
+
+- No parchar el CSS existente con ajustes chicos de spacing y dar por cerrado:
+  el pedido es de fondo. `max-height:62%` + `.mpop-scroll` es una solución de
+  contención, no de diseño — resolvió el desborde y ahí termina su mérito.
+- No inventar datos para llenar la ficha (ver "Criterio de producto" en
+  `CLAUDE.md`): sin dato es sin dato, no un cero.
+- No empezar a codear sin acordar la dirección con Enzo primero. Es un pedido
+  estético sin una especificación: arrancar a escribir CSS es la forma rápida
+  de gastar una sesión en algo que no era.
+
+### Dónde vive todo
+
+| Qué | Archivo | Líneas (al 2026-09-10) |
+|---|---|---|
+| El JSX de la ficha entera | `web/src/components/MusclePop.jsx` | 1-125 |
+| cabecera (nombre + badge de días + ×) | `MusclePop.jsx` | 54-64 |
+| los tres números (series / sesiones / por sem.) | `MusclePop.jsx` | 77-81 |
+| el tramo con scroll (lista de ejercicios) | `MusclePop.jsx` | 92-113 |
+| pie (tope de kg + volumen) | `MusclePop.jsx` | 115-118 |
+| caption "últimos N días" | `MusclePop.jsx` | 122 |
+| `.mpop` (la hoja) | `web/src/styles.css` | 2259 |
+| `.mpop-scroll` | `web/src/styles.css` | 2277 |
+| `.mpop-head` | `web/src/styles.css` | 2289 |
+| `.mpop-nums` | `web/src/styles.css` | 2311 |
+| `.mpop-list` | `web/src/styles.css` | 2323 |
+| `.mpop-fibras` | `web/src/styles.css` | 2332 |
+| `.mpop-pie` / `.mpop-cap` | `web/src/styles.css` | 2339-2342 |
+| de dónde salen los datos | `web/src/lib/muscle.js` → `groupStats()` | — |
+
+Los datos que la ficha tiene disponibles hoy (no hay que ir a buscar más):
+`cat`, `dias`, `sets`, `sesiones`, `porSemana`, `volumen`, `mejor {w,r}`,
+`top[]`, `fibras[]`, `ventana`.
+
+### Lo que hay que decidir con Enzo antes de tocar código
+
+1. **Formato.** ¿Sigue siendo una hoja anclada abajo dentro de `.sil-pair`, o
+   pasa a ser un sheet de pantalla completa como el resto de la app? Ojo: el
+   anclaje adentro de `.sil-pair` existe a propósito —para que el cuerpo con
+   zoom siga visible mientras leés— y un sheet completo mata esa idea. Si se
+   va a un sheet, el zoom de la silueta pierde su razón de ser y hay que
+   decidir qué pasa con él.
+2. **Jerarquía.** Hoy compiten cinco bloques por atención al mismo volumen
+   visual. ¿Qué es lo primero que Enzo quiere leer al tocar un músculo: hace
+   cuántos días, cuántas series, o qué ejercicios hizo?
+3. **Qué se puede sacar.** Sospecha razonable: el caption "últimos N días" +
+   el badge de días + el texto de "sin series en los últimos N días" dicen
+   cosas solapadas. Menos bloques probablemente sea la mitad del arreglo.
+
+### Criterio de aprobación
+
+- Enzo lo mira en el celular y dice que se ve ordenado — es un pedido estético,
+  el juez es él, no una métrica.
+- Se prueba con los dos extremos reales: **Pierna** (tres fibras, nueve
+  ejercicios: el caso que desbordaba) y **Gemelos** (grupo chico, sin fibras).
+  Y con un grupo **nunca entrenado**, que toma la rama `sets === 0`.
+- 471/471 tests en verde, `tsc --noEmit` limpio, sin warnings nuevos de lint.
+- Si el rediseño toca el alto de la ficha, **reverificar el encuadre del zoom**:
+  el `useLayoutEffect` de `Silhouette.jsx` mide contra el borde superior de
+  `.mpop`, así que cambiarle el alto cambia el encuadre. No hace falta tocar el
+  cálculo (lee el DOM, no asume nada), pero sí mirarlo.
+
+---
+
 ## SESIÓN 2026-09-10 (sexta parte) — El HUD del modelo anatómico
 
 PR **#90**, mergeado y en vivo. Aplica el parche que dejó Claude Design en
@@ -64,9 +149,9 @@ integraron los cambios a mano sobre los archivos actuales.
   `.sil-zoom`, y el encuadre nuevo se sigue aplicando, sólo que sin animar.
 - 471/471 tests, `tsc --noEmit` limpio, sin warnings nuevos de lint.
 
-**Pendiente de verificación visual:** el encuadre se validó por razonamiento y
-build, no en un navegador con el cuerpo a mano. Vale mirarlo tocando Pierna
-(grupo grande, ficha alta) y Gemelos (grupo chico) en el celular.
+**Verificado por Enzo en el celular:** el encuadre del zoom quedó bien y el
+desborde se fue. Lo que NO le gustó es la ficha en sí —jerarquía, orden,
+estética— y eso quedó como pendiente abierto arriba de esta sección.
 
 ---
 
@@ -1224,7 +1309,15 @@ alcance a propósito (ver abajo).
 
 ## Próximo paso exacto
 
-No hay trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
+**Al 2026-09-10 hay UN pendiente abierto con dueño claro: rediseñar la ficha de
+músculo (`.mpop`).** Está especificado arriba de todo, en la sección
+"PENDIENTE ABIERTO — Rediseñar la ficha de músculo", con el pedido textual de
+Enzo, la tabla de archivo:línea, lo que hay que decidir con él ANTES de tocar
+código y el criterio de aprobación. Empezá por ahí.
+
+Lo de abajo es historial anterior a ese pendiente.
+
+No hay otro trabajo pendiente obligatorio: las Fases 1-3 están completas y publicadas, y
 `mn` en `foodtable.js` ya se completó (2026-09-03).
 
 **Hecho y publicado el 2026-09-05** (PR #52, mergeado a `main` — completa
