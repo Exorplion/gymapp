@@ -33,7 +33,16 @@
 //               su cuenta y el conjunto se ve facetado, como vidrio roto.
 //
 // Este componente no calcula estadísticas: pide groupStats() cuando tocás.
-import { useState, useRef, useEffect, useCallback } from 'react';
+//
+// El encuadre del zoom se MIDE, no es fijo. Antes era `scale(1.55)` con el
+// origen clampeado al 25-75% del stage: con un músculo grande —pierna— el
+// cuerpo agrandado crecía por debajo del borde de la ficha y el músculo que
+// habías tocado quedaba tapado justo por la hoja que venías a leer; con uno
+// chico —gemelo, bíceps— 1.55 se quedaba corto y no había nada que mirar.
+// Ahora escala y desplazamiento se calculan contra la ventana libre real
+// (borde de arriba del stage → borde de arriba de la ficha) antes de aplicar
+// la transformación, y el músculo se centra ahí.
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { cuerpo } from '../lib/bodydata.js';
 import { groupStats, diasTexto } from '../lib/muscle.js';
 import { vibrate } from '../lib/format.js';
@@ -124,6 +133,11 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar }) {
         return (
           <g
             key={i}
+            /* data-cat: el encuadre necesita volver a encontrar el grupo
+               tocado para medirlo (ver el useLayoutEffect de abajo). El
+               currentTarget del evento no sirve: la medición ocurre en el
+               commit siguiente, después de que React reconcilió. */
+            data-cat={z.cat}
             className={`sil-z sil-tap ${cls} ${activo ? 'sil-sel' : ''}`}
             role="button"
             tabIndex={activa ? 0 : -1}
@@ -148,6 +162,7 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar }) {
 
 export default function Silhouette({ days = {}, interactivo = true, revelar = null }) {
   const [sel, setSel] = useState(null);   // { cat, ox, oy } — ox/oy en % del stage
+  const [enc, setEnc] = useState(null);   // { esc, dy } — encuadre medido, ver el useLayoutEffect
   const [ang, setAng] = useState(0);      // grados; los múltiplos pares de 180 son la frente
   const [quieto, setQuieto] = useState(true);   // ni girando ni cayendo: se puede tocar
   const [tirando, setTirando] = useState(false); // el dedo manda: sin transición, el giro sigue la mano
@@ -165,7 +180,7 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
   // estado aparte para que no puedan discrepar — el ángulo es la única verdad.
   const atras = Math.abs(Math.round(ang / 180) % 2) === 1;
 
-  const cerrar = useCallback(() => setSel(null), []);
+  const cerrar = useCallback(() => { setSel(null); setEnc(null); }, []);
 
   /** El cuerpo terminó de moverse: vuelve a aceptar toques y el gesto se olvida.
 
@@ -220,6 +235,36 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quieto, tirando, ang]);
 
+  /* El encuadre: se mide en el commit donde la ficha YA está en el DOM pero
+     el zoom todavía NO está aplicado (por eso `.on` depende de `enc`, que se
+     setea acá). Medir después de aplicar la transformación daría el rect ya
+     escalado y el cálculo se realimentaría solo.
+
+     - ventana libre = del borde de arriba del stage a donde empieza la ficha.
+       La ficha mide distinto según cuántas fibras tenga el grupo, así que se
+       lee del DOM en vez de asumir un alto.
+     - escala = la que hace que el músculo ocupe ~62% de esa ventana, con tope
+       arriba y abajo para que un gemelo no se convierta en un mapa satelital
+       ni una pierna se quede sin agrandar.
+     - dy = lo que falta para centrar el músculo en la ventana. No se
+       multiplica por la escala: el transform-origin está sobre el músculo, así
+       que ese punto no se mueve al escalar. */
+  useLayoutEffect(() => {
+    if (!sel || !stage.current || !caja.current) return;
+    const g = stage.current.querySelector(`[data-cat="${CSS.escape(sel.cat)}"]`);
+    if (!g) return;
+    const s = stage.current.getBoundingClientRect();
+    const r = g.getBoundingClientRect();
+    if (!r.height) return;
+    const pop = caja.current.querySelector('.mpop');
+    const techo = s.top + 8;
+    const piso = Math.max(techo + 80, (pop ? pop.getBoundingClientRect().top : s.bottom) - 14);
+    const libre = piso - techo;
+    const esc = Math.max(1.15, Math.min(2.2, (libre * 0.62) / r.height));
+    const dy = (techo + libre / 2) - (r.top + r.height / 2);
+    setEnc({ esc: Math.round(esc * 1000) / 1000, dy: Math.round(dy) });
+  }, [sel]);
+
   /** Hace zoom al músculo tocado y abre su ficha de estadísticas.
 
       Antes el globo de estadísticas se anclaba al punto tocado (ver historial
@@ -250,15 +295,15 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
     const px = clientX ?? (m.left + m.width / 2);
     const py = clientY ?? (m.top + m.height / 2);
     tapRing(px, py);
-    // Clampeado a 25-75%: un origen muy cerca del borde del stage deja el
-    // músculo pegado al borde de la pantalla incluso agrandado, que es
-    // justo lo que queríamos evitar.
-    const clamp = (n) => Math.max(25, Math.min(75, n));
     vibrate(8);
+    // El origen ya NO se clampea al 25-75%: ese clamp existía para que el zoom
+    // fijo no dejara el músculo contra el borde, y ahora el encuadre se mide.
+    // Clampearlo movería el origen fuera del músculo y el centrado fallaría.
+    setEnc(null);
     setSel({
       cat,
-      ox: clamp(((px - s.left) / s.width) * 100),
-      oy: clamp(((py - s.top) / s.height) * 100),
+      ox: ((px - s.left) / s.width) * 100,
+      oy: ((py - s.top) / s.height) * 100,
     });
   };
 
@@ -283,7 +328,7 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
     if (!g.giro) {
       if (Math.abs(dx) < 8) return;
       g.giro = true;
-      setSel(null);
+      cerrar();
       setQuieto(false);
       setTirando(true);
       stage.current?.setPointerCapture?.(e.pointerId);
@@ -320,8 +365,12 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
         } : {})}
       >
         <div
-          className={`sil-zoom ${sel ? 'on' : ''}`}
-          style={sel ? { '--sil-org': `${sel.ox}% ${sel.oy}%` } : undefined}
+          className={`sil-zoom ${sel && enc ? 'on' : ''}`}
+          style={sel ? {
+            '--sil-org': `${sel.ox}% ${sel.oy}%`,
+            '--sil-esc': enc ? enc.esc : 1,
+            '--sil-dy': enc ? `${enc.dy}px` : '0px',
+          } : undefined}
         >
           <div
             className={`sil-flip ${tirando ? '' : 'suave'}`}

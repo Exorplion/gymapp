@@ -17,6 +17,14 @@
 //
 // Muestra hechos medidos y ninguna recomendación. La app sabe cuántas series
 // hiciste; no sabe si son pocas.
+//
+// Desborde: la ficha no tenía tope de alto. Anclada a bottom:0 dentro de
+// `.sil-pair`, un grupo con muchas fibras —Pierna: cuádriceps, isquios y
+// aductores, nueve ejercicios— crecía hacia arriba hasta pasarse del
+// contenedor y se cortaba contra el borde de la pantalla. Ahora la ficha tiene
+// tope (`max-height` en `.mpop`) y lo único de alto variable —la lista de
+// ejercicios— vive en un contenedor con scroll propio: cabecera, números y pie
+// quedan siempre visibles.
 import { useEffect, useRef } from 'react';
 import { diasTexto } from '../lib/muscle.js';
 import { bloomOpen } from '../lib/motion.js';
@@ -72,31 +80,37 @@ export default function MusclePop({ stats, onClose }) {
             <div><b>{porSemana}</b><span>por sem.</span></div>
           </div>
 
-          {/* Por fibra cuando hay más de una fibra real que distinguir (ver
+          {/* Lo único de alto variable —la lista de ejercicios— es lo único
+              que scrollea. Los tres números de arriba quedan fuera: son el
+              resumen, y un resumen que hay que ir a buscar no es un resumen.
+
+              Por fibra cuando hay más de una fibra real que distinguir (ver
               groupStats en lib/muscle.js) — reemplaza a la lista plana y no
               se muestra junto a ella, porque diría lo mismo dos veces. Sin
               eso —Glúteo, Gemelos, cualquier grupo donde todo cae en la
               misma bolsa— la lista plana de siempre. */}
-          {fibras ? (
-            <div className="mpop-fibras">
-              {fibras.map(f => (
-                <div key={f.fibra} className="mpop-fibra">
-                  <div className="mpop-fibra-nombre">{f.fibra}</div>
-                  <ul className="mpop-list">
-                    {f.ejercicios.map(e => (
-                      <li key={e.name}><span>{e.name}</span><b>{e.sets}</b></li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          ) : top.length > 0 && (
-            <ul className="mpop-list">
-              {top.map(t => (
-                <li key={t.name}><span>{t.name}</span><b>{t.sets}</b></li>
-              ))}
-            </ul>
-          )}
+          <div className="mpop-scroll">
+            {fibras ? (
+              <div className="mpop-fibras">
+                {fibras.map(f => (
+                  <div key={f.fibra} className="mpop-fibra">
+                    <div className="mpop-fibra-nombre">{f.fibra}</div>
+                    <ul className="mpop-list">
+                      {f.ejercicios.map(e => (
+                        <li key={e.name}><span>{e.name}</span><b>{e.sets}</b></li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : top.length > 0 && (
+              <ul className="mpop-list">
+                {top.map(t => (
+                  <li key={t.name}><span>{t.name}</span><b>{t.sets}</b></li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           <div className="mpop-pie">
             {mejor && mejor.w > 0 && <span className="mpop-top">Tope {mejor.w} kg × {mejor.r}</span>}

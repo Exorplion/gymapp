@@ -2145,7 +2145,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   transform-origin:var(--sil-org,50% 50%);
   transition:transform var(--d3) var(--ease);will-change:transform;
 }
-.sil-zoom.on{transform:scale(1.55)}
+/* La escala y el desplazamiento los mide Silhouette.jsx contra la ventana
+   libre real (borde del stage → borde de la ficha) y llegan como variables: un
+   1.55 fijo tapaba los músculos grandes con la ficha y se quedaba corto con
+   los chicos. */
+.sil-zoom.on{transform:translateY(var(--sil-dy,0px)) scale(var(--sil-esc,1.55))}
 
 /* Las capas ocupan el stage entero y el dibujo se centra adentro con su propio
    preserveAspectRatio. Es a propósito: pedirle a la caja que tome la forma del
@@ -2260,8 +2264,27 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   border:1px solid var(--line2);border-bottom:0;
   box-shadow:0 -20px 44px -16px rgba(0,0,0,.85),0 0 0 1px rgba(0,0,0,.35);
   animation:mpop-in var(--d2) var(--spring) both;
+  /* Tope de alto + columna flex: sin esto un grupo con muchas fibras (Pierna)
+     crecía hasta pasarse del contenedor y se cortaba contra la pantalla. El
+     min-height:0 del hijo con scroll sólo funciona dentro de un flex. */
+  max-height:62%;
+  display:flex;
+  flex-direction:column;
 }
 @keyframes mpop-in{from{opacity:0;transform:translateY(16px)}}
+
+/* El único tramo que scrollea: cabecera, números y pie quedan fijos. */
+.mpop-scroll{
+  flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  /* El corte de arriba avisa que hay más contenido sin agregar una sombra más
+     a una ficha que ya tiene bastante cromo. */
+  mask-image:linear-gradient(180deg,transparent 0,#000 10px);
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 10px);
+  padding-top:6px;
+}
+.mpop-scroll::-webkit-scrollbar{width:0;height:0}
+.mpop-nums,.mpop-pie,.mpop-head,.mpop-cap{flex:none}
 
 .mpop-head{display:flex;align-items:center;gap:7px;margin-bottom:9px}
 .mpop-name{
