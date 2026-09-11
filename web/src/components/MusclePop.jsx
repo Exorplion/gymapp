@@ -51,11 +51,16 @@ export default function MusclePop({ stats, onClose }) {
       role="dialog"
       aria-label={`Estadísticas de ${cat}`}
     >
+      {/* El nombre manda y la frescura va debajo, no al lado. Antes el badge
+          de días competía con el nombre por el mismo renglón; apilados se
+          leen en orden y la cabecera deja de ser una fila de tres cosas. */}
       <div className="mpop-head">
-        <span className="mpop-name">{cat}</span>
-        <span className={`mpop-when t${dias === null ? 'n' : dias <= 1 ? '0' : dias <= 3 ? '1' : dias <= 6 ? '2' : '3'}`}>
-          {diasTexto(dias)}
-        </span>
+        <div className="mpop-title">
+          <span className="mpop-name">{cat}</span>
+          <span className={`mpop-when t${dias === null ? 'n' : dias <= 1 ? '0' : dias <= 3 ? '1' : dias <= 6 ? '2' : '3'}`}>
+            {diasTexto(dias)}
+          </span>
+        </div>
         <button type="button" className="mpop-x" onClick={onClose} aria-label="Cerrar">×</button>
       </div>
 
@@ -70,7 +75,7 @@ export default function MusclePop({ stats, onClose }) {
         <p className="mpop-vacio">
           {nunca
             ? 'Todavía no registraste nada de este grupo.'
-            : `Sin series en los últimos ${ventana} días — la última vez fue ${diasTexto(dias)}.`}
+            : `Sin series en los últimos ${ventana} días.`}
         </p>
       ) : (
         <>
@@ -112,14 +117,18 @@ export default function MusclePop({ stats, onClose }) {
             )}
           </div>
 
-          <div className="mpop-pie">
-            {mejor && mejor.w > 0 && <span className="mpop-top">Tope {mejor.w} kg × {mejor.r}</span>}
-            {volumen > 0 && <span>{kilos(volumen)} kg movidos</span>}
-          </div>
         </>
       )}
 
-      <div className="mpop-cap">últimos {ventana} días</div>
+      {/* Un solo pie. Antes eran dos renglones —tope/volumen y el caption
+          "últimos N días"— que decían cosas del mismo rango de importancia a
+          dos alturas distintas. La ventana es contexto de todo lo de arriba,
+          no un título aparte: va al final de la misma línea. */}
+      <div className="mpop-pie">
+        {sets > 0 && mejor && mejor.w > 0 && <span className="mpop-top">Tope {mejor.w} kg × {mejor.r}</span>}
+        {sets > 0 && volumen > 0 && <span>{kilos(volumen)} kg movidos</span>}
+        <span className="mpop-vent">últimos {ventana} días</span>
+      </div>
     </div>
   );
 }
