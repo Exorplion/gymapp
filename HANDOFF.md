@@ -23,9 +23,47 @@ historial. Si vas a seguir el roadmap, empezá por **Próximo paso exacto** al f
 
 ---
 
-## PENDIENTE ABIERTO — Rediseñar la ficha de músculo (`.mpop`)
+## SESIÓN 2026-09-10 (séptima parte) — La ficha de músculo, rediseñada
 
-**Estado: no empezado. Es el próximo paso si Enzo retoma la silueta.**
+**Estado: implementado y publicado. Falta que Enzo lo mire en el celular** — es
+un pedido estético, el juez es él.
+
+Enzo pidió "termina todo lo pendiente y publica", así que la dirección se
+decidió sin la charla previa que pedía la sección de abajo. **Las tres
+decisiones que se tomaron, por si hay que revisarlas:**
+
+1. **Formato: se mantuvo la hoja anclada** dentro de `.sil-pair`. Un sheet de
+   pantalla completa deja sin sentido al zoom de la silueta (el cuerpo tiene
+   que seguir visible mientras leés) y ese zoom recién se acababa de arreglar.
+2. **Jerarquía: primero el nombre, después hace cuántos días.** La cabecera era
+   una fila de tres elementos peleando el mismo renglón; ahora el nombre va
+   grande arriba y la frescura debajo como subtítulo de color (dejó de ser un
+   chip: una pastilla de color al lado del título leía como alerta).
+3. **Qué se sacó:** el caption `.mpop-cap` "últimos N días" —ahora es el último
+   dato del pie, alineado a la derecha— y el "la última vez fue X" del estado
+   vacío, que repetía lo que ya dice la cabecera. Tres bloques → uno.
+
+Además, los tres números dejaron de ser tres tarjetas con borde propio adentro
+de una hoja que ya tiene borde: son una sola tira con separadores de 1px. Y el
+pie tiene una línea arriba que lo despega de la lista con scroll.
+
+Lo que **no** se tocó, a propósito: el `useLayoutEffect` que mide el encuadre
+del zoom (lee el DOM, así que absorbe solo el cambio de alto de la ficha), el
+`max-height:62%`, el `.mpop-scroll` y la rama `sets === 0`.
+
+471/471 tests, `tsc --noEmit` limpio, sin warnings nuevos de lint.
+**No se pudo verificar en navegador** (job de background, sin extensión de
+Chrome). Falta probarlo con **Pierna** (tres fibras, nueve ejercicios),
+**Gemelos** (grupo chico, sin fibras) y un grupo **nunca entrenado**.
+
+Archivos: `web/src/components/MusclePop.jsx`, `web/src/styles.css` (`.mpop-*`).
+
+---
+
+## PEDIDO ORIGINAL — Rediseñar la ficha de músculo (`.mpop`)
+
+**Estado: implementado el 2026-09-10 (ver sección de arriba). Se conserva el
+pedido textual y el criterio de aprobación porque el juez sigue siendo Enzo.**
 
 Después de mergear el PR #90, Enzo probó el resultado y dijo, textual:
 
@@ -1309,11 +1347,13 @@ alcance a propósito (ver abajo).
 
 ## Próximo paso exacto
 
-**Al 2026-09-10 hay UN pendiente abierto con dueño claro: rediseñar la ficha de
-músculo (`.mpop`).** Está especificado arriba de todo, en la sección
-"PENDIENTE ABIERTO — Rediseñar la ficha de músculo", con el pedido textual de
-Enzo, la tabla de archivo:línea, lo que hay que decidir con él ANTES de tocar
-código y el criterio de aprobación. Empezá por ahí.
+**Al 2026-09-10, el rediseño de la ficha de músculo (`.mpop`) está implementado
+y publicado** — ver la sección "SESIÓN 2026-09-10 (séptima parte)" arriba de
+todo, con las tres decisiones de diseño que se tomaron sin la charla previa
+(Enzo pidió terminar y publicar). **Lo único que queda es que Enzo lo mire en
+el celular** y diga si ahora sí se ve ordenado; probar con Pierna, Gemelos y un
+grupo nunca entrenado. Si no le gusta, la sección con el pedido textual y las
+preguntas de diseño sigue abajo.
 
 Lo de abajo es historial anterior a ese pendiente.
 

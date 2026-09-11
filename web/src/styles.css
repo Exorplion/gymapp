@@ -2284,19 +2284,25 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   padding-top:6px;
 }
 .mpop-scroll::-webkit-scrollbar{width:0;height:0}
-.mpop-nums,.mpop-pie,.mpop-head,.mpop-cap{flex:none}
+.mpop-nums,.mpop-pie,.mpop-head{flex:none}
 
-.mpop-head{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+/* Nombre arriba, frescura debajo: dos renglones de peso distinto en vez de
+   tres elementos peleando el mismo. La × queda alineada al nombre. */
+.mpop-head{display:flex;align-items:flex-start;gap:7px;margin-bottom:10px}
+.mpop-title{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .mpop-name{
-  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:800;
-  font-style:italic;letter-spacing:-.02em;flex:1;min-width:0;
+  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:800;
+  font-style:italic;letter-spacing:-.02em;line-height:1.05;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-.mpop-when{font-size:var(--t-nano);font-weight:600;padding:2px 7px;border-radius:var(--r-full);white-space:nowrap}
-.mpop-when.t0{color:var(--cyan);background:rgba(var(--cyan-rgb),.14)}
-.mpop-when.t1{color:#8FB6FF;background:rgba(var(--blue-rgb),.15)}
-.mpop-when.t2{color:#8CA2C8;background:rgba(120,150,200,.12)}
-.mpop-when.t3{color:var(--warn);background:rgba(var(--warn-rgb),.14)}
-.mpop-when.tn{color:var(--mut2);background:rgba(255,255,255,.06)}
+/* Ya no es un chip: adentro de una hoja chica, una pastilla de color al lado
+   del título leía como una alerta. Como subtítulo el color alcanza. */
+.mpop-when{font-size:var(--t-nano);font-weight:600;letter-spacing:.04em;white-space:nowrap}
+.mpop-when.t0{color:var(--cyan)}
+.mpop-when.t1{color:#8FB6FF}
+.mpop-when.t2{color:#8CA2C8}
+.mpop-when.t3{color:var(--warn)}
+.mpop-when.tn{color:var(--mut2)}
 /* El punto visual se queda en 20×20 —agrandarlo en un globo de 208px de
    ancho lo abultaría de más— pero el área tocable real pasa a 28×28 con un
    ::after invisible que se extiende más allá del borde. Por debajo de
@@ -2308,11 +2314,16 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .mpop-x::after{content:'';position:absolute;inset:-4px}
 
-.mpop-nums{display:flex;gap:6px;margin-bottom:9px}
-.mpop-nums div{
-  flex:1;min-width:0;text-align:center;padding:6px 2px;border-radius:var(--r-sm);
-  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.055);
+/* Una sola tira con separadores finos, no tres tarjetas. Cada número tenía su
+   caja con borde adentro de una hoja que ya tiene borde: el cromo pesaba más
+   que el dato. Ahora el fondo es uno solo y lo que separa es una línea. */
+.mpop-nums{
+  display:flex;margin-bottom:10px;border-radius:var(--r-sm);
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);
+  overflow:hidden;
 }
+.mpop-nums div{flex:1;min-width:0;text-align:center;padding:7px 2px}
+.mpop-nums div+div{border-left:1px solid rgba(255,255,255,.05)}
 .mpop-nums b{
   display:block;font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:800;
   line-height:1.05;font-variant-numeric:tabular-nums;
@@ -2336,10 +2347,16 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .mpop-fibra .mpop-list{margin-bottom:5px}
 
-.mpop-pie{display:flex;flex-wrap:wrap;gap:4px 9px;font-size:var(--t-nano);color:var(--mut2)}
+/* Pie único: tope, volumen y la ventana en la misma línea, separados por una
+   línea de arriba que los despega de la lista con scroll. */
+.mpop-pie{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 9px;
+  margin-top:8px;padding-top:7px;border-top:1px solid rgba(255,255,255,.06);
+  font-size:var(--t-nano);color:var(--mut2);
+}
 .mpop-top{color:var(--warn);font-weight:600}
-.mpop-vacio{margin:0 0 8px;font-size:var(--t-micro);line-height:1.45;color:var(--mut2)}
-.mpop-cap{margin-top:7px;font-size:var(--t-nano);letter-spacing:.07em;text-transform:uppercase;color:var(--mut2);opacity:.7}
+.mpop-vent{margin-left:auto;letter-spacing:.06em;text-transform:uppercase;opacity:.7}
+.mpop-vacio{margin:0;font-size:var(--t-micro);line-height:1.45;color:var(--mut2)}
 
 /* Para quien pidió menos movimiento, el cuerpo cambia de cara de golpe. El giro
    es lindo, no es información: sacarlo no le quita nada a lo que la pantalla
