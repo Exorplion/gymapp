@@ -83,4 +83,12 @@ describe('subBlocksOf', () => {
     ];
     expect(subBlocksOf(exs).flatMap(b => b.exs)).toHaveLength(3);
   });
+  /* Un turno de descanso es `{id, order, type:'rest'}` — sin `exercises`. La
+     tarjeta de Rutina lo monta igual (el contenido va siempre en el DOM para
+     poder animar el cierre), así que este caso llega de verdad y hacía
+     crashear la pantalla entera con "exs is not iterable". */
+  it('un turno sin ejercicios devuelve una lista vacia, no explota', () => {
+    expect(subBlocksOf(undefined)).toEqual([]);
+    expect(subBlocksOf(null)).toEqual([]);
+  });
 });
