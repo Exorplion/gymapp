@@ -1,9 +1,12 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-10
+**Última actualización:** 2026-09-13
 **Proyecto:** `Exorplion/gymapp` — FIERRO, PWA local de entrenamiento + nutrición
 **Sitio:** https://exorplion.github.io/gymapp/ (GitHub Pages, sirve la raíz de `main`)
 **Estado:** Plan Fierro (Fases 1-3) implementado, testeado, mergeado y publicado.
+**Al 2026-09-13:** arreglado el crash de la pestaña Rutina (turno de descanso,
+PR #94) y la app está en manos de un tester — el pendiente vivo es su feedback.
+Ver "SESIÓN 2026-09-13" y "PENDIENTE ABIERTO — Feedback del amigo de Enzo".
 **Las seis tareas de la lista viva están COMPLETAS** (2026-09-10, PRs #79-#82).
 Lo único que queda de ellas es mirar en pantalla lo que se publicó sin ojos —
 ver "QUÉ MIRAR EN EL CELULAR" en la sección del 2026-09-10 (tercera parte).
@@ -20,6 +23,113 @@ ver "Blockers" más abajo.
 
 Este archivo existe para que otra sesión pueda retomar sin volver a leer todo el
 historial. Si vas a seguir el roadmap, empezá por **Próximo paso exacto** al final.
+
+---
+
+## SESIÓN 2026-09-13 — El crash de Rutina, y la app en manos de un tester
+
+**Estado: arreglado, testeado, publicado y mergeado (PR #94). El pendiente
+abierto es esperar el feedback del amigo de Enzo.**
+
+### El bug: la pestaña Rutina crasheaba con un turno de descanso
+
+Enzo reportó "la pestaña de rutina decía error la última vez que usé la app".
+El texto era **"Algo se rompió en esta pantalla"** — es el `ErrorBoundary`, o
+sea un crash de render, distinto de "No se pudo abrir FIERRO" (`App.jsx:293`),
+que es un fallo de arranque de IndexedDB. **Distinguir esas dos pantallas es lo
+primero que hay que preguntar** ante un reporte así: mandan a lugares opuestos.
+
+**Causa raíz:** un turno de descanso es `{id, order, type:'rest'}` —
+**sin `exercises`** (ver `rutina-logic.js:265, 395, 477`). La tarjeta de turno
+monta su contenido **siempre** (el `.day-collapse` va en el DOM aunque esté
+colapsado, a propósito, para poder animar el cierre — con `{open && ...}` React
+desmonta el nodo y no queda nada que animar). Así que
+`subBlocksOf(slot.exercises)` recibía `undefined` y tiraba
+`TypeError: exs is not iterable`, que desmonta el árbol entero de React.
+
+**Es una regresión de `9d45b30`** ("agrupamiento por subgrupo muscular"): la
+versión anterior era `blocksOf(slot.exercises || [])` y el `|| []` se perdió al
+pasar a `subBlocksOf`. Confirmado con `git log -S`.
+
+Se reprodujo con un test **antes** de tocar código, y falló con el error exacto.
+
+**Qué se cambió:**
+
+| Qué | Archivo |
+|---|---|
+| Se restaura el guard en el call site | `web/src/components/screens/Rutina.jsx:254` |
+| `subBlocksOf`/`blocksOf` aceptan nullish (defensa en profundidad) | `web/src/lib/muscle.ts:207, 219` |
+| Test de regresión | `web/src/lib/__tests__/subgroup.test.js` |
+| El ErrorBoundary muestra el error en pantalla | `web/src/components/ErrorBoundary.jsx` |
+
+El guard de librería no es redundante: **`DayPeek.jsx:30` pasa `d.exercises`
+igual de crudo** a `blocksOf` y tenía el mismo bug latente.
+
+### El ErrorBoundary ahora muestra el error, no sólo lo loguea
+
+Antes mandaba `error` y `componentStack` a `console.error` y en pantalla decía
+sólo "algo se rompió". **En un celular no hay consola**, así que este bug hubo
+que diagnosticarlo leyendo código a ciegas. Ahora muestra el mensaje y el
+component stack en un `<pre>` seleccionable, con un botón **"Copiar detalle"**
+(`navigator.clipboard`, con `catch` silencioso: si no hay permiso el texto ya
+está visible y se puede capturar en pantalla).
+
+**Consecuencia práctica:** ante el próximo reporte de "se rompió", pedir el
+texto copiado antes de investigar nada.
+
+### Bonus: un test que caducaba solo
+
+`cycle.test.js > "LA MEDIA SEMANAL NO SE MUEVE"` fallaba (470/471, no los 471
+que decía este handoff). El test fija `HOY = '2026-09-10'` pero llamaba
+`cycledGoals(d)` **sin pasar la fecha**, y esa función usa `dstr()` — el reloj
+real — como default (`cycle.ts:107`). Pasó mientras se corrió el mismo 10; al
+correrlo el 13 la ventana de 14 días se corrió y la suma dejó de balancear
+(esperaba ≤14, daba 70). **No era un bug del producto:** en producción el
+default es el correcto. Se le pasa `HOY` explícito, como ya hacen los demás
+tests del archivo. Commit `0b384df`.
+
+**Lección:** un test que fija una fecha tiene que pasarla a TODAS las funciones
+que leen el reloj, o pasa sólo el día que se escribió.
+
+472/472 tests, `tsc --noEmit` limpio, sin warnings nuevos de lint. Build
+commiteado y publicado.
+
+---
+
+## PENDIENTE ABIERTO — Feedback del amigo de Enzo
+
+**Estado: la app ya está en sus manos. Se espera su respuesta.**
+
+Enzo le pasó la app a un amigo para que la use y le dé feedback. Se verificó en
+código que **arranca bien desde cero**:
+
+- El seed con el registro real de Enzo (`lib/seed.js`) es **opt-in** desde
+  Ajustes — el tester no ve datos ajenos, arranca limpio.
+- `Rutina.jsx:141` tiene el estado vacío pensado para ese momento ("Todavía no
+  tenés rutina… elegí una plantilla o armá tu split"), con entrada directa al
+  `routine-wizard`.
+- `base: './'` en `vite.config`, así que el sitio en Pages carga bien.
+
+Cómo se comparte (por si hace falta repetirlo): el link
+https://exorplion.github.io/gymapp/ y que lo instale — Android/Chrome menú ⋮ →
+"Instalar aplicación"; iPhone **Safari** (no Chrome) → compartir → "Agregar a
+inicio". Sin cuenta, sin backend. Advertencia obligada: **no borrar datos del
+navegador ni usar incógnito**, se pierde todo; en iOS, Safari puede limpiar el
+almacenamiento a los ~7 días sin abrir la app, y tenerla instalada reduce ese
+riesgo.
+
+Sus datos viven en SU teléfono: para verlos hay que pedirle
+**Ajustes → Exportar** y que mande el JSON.
+
+**Qué hacer cuando llegue el feedback:**
+
+1. Si reporta un crash, pedirle el texto de **"Copiar detalle"** antes de
+   investigar. Ya no hay que adivinar.
+2. Ojo con lo que sea estético o de flujo: el juez de eso es Enzo, no el tester
+   — traer el reporte y decidir con él, no salir a codear.
+3. Sigue abierto el pedido de que **Enzo** mire la ficha de músculo en el
+   celular (ver la sección del 2026-09-10, séptima parte): Pierna, Gemelos y un
+   grupo nunca entrenado.
 
 ---
 
