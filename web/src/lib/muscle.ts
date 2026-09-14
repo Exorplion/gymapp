@@ -204,10 +204,10 @@ export function subCatOf(ex: ExLike | string): string | null {
 /** Bloques por SUBGRUPO, en el orden en que aparecen. Mismo contrato que
     blocksOf() —de hecho comparte su forma— para que una lista pueda pasar de
     uno al otro cambiando una sola llamada. */
-export function subBlocksOf(exs: ExLike[]): MuscleBlock[] {
+export function subBlocksOf(exs: ExLike[] | null | undefined): MuscleBlock[] {
   const out: MuscleBlock[] = [];
   const by = new Map<string, MuscleBlock>();
-  for (const ex of exs) {
+  for (const ex of exs || []) {
     const cat = subCatOf(ex) || 'Otros';
     let b = by.get(cat);
     if (!b) { b = { cat, exs: [] }; by.set(cat, b); out.push(b); }
@@ -216,10 +216,10 @@ export function subBlocksOf(exs: ExLike[]): MuscleBlock[] {
   return out;
 }
 
-export function blocksOf(exs: ExLike[]): MuscleBlock[] {
+export function blocksOf(exs: ExLike[] | null | undefined): MuscleBlock[] {
   const out: MuscleBlock[] = [];
   const byCat = new Map<string, MuscleBlock>();
-  for (const ex of exs) {
+  for (const ex of exs || []) {
     const cat = catOf(ex) || 'Otros';
     let b = byCat.get(cat);
     if (!b) { b = { cat, exs: [] }; byCat.set(cat, b); out.push(b); }

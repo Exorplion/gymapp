@@ -251,7 +251,7 @@ function RutinaView() {
                       Tocar el ejercicio abre su ficha: qué porción del músculo
                       trabaja, dibujada sobre el mismo cuerpo del mapa de
                       Inicio. */}
-                  {subBlocksOf(slot.exercises).map(bloque => (
+                  {subBlocksOf(slot.exercises || []).map(bloque => (
                     <div key={bloque.cat} className="day-exs-block">
                       <div className="day-exs-head">
                         {bloque.cat}

@@ -77,7 +77,7 @@ describe('cycledGoals', () => {
       const f = trainingFraction(14, HOY);
       if (f == null) continue;
       const dias = Array.from({ length: 14 }, (_, i) => diasAtras(i));
-      const total = dias.reduce((a, d) => a + cycledGoals(d).c, 0);
+      const total = dias.reduce((a, d) => a + cycledGoals(d, HOY).c, 0);
       const plano = 14 * S.cfg.goals.c;
       // Tolerancia de 14 g: un gramo de redondeo por día como mucho.
       expect(Math.abs(total - plano)).toBeLessThanOrEqual(14);
