@@ -321,7 +321,7 @@ function DeloadCard() {
   }
 
   return (
-    <div className="card sub mb-[var(--s3)]" style={{ borderColor: 'var(--warn, #FFB454)' }}>
+    <div className="card sub mb-[var(--s3)]" style={{ borderColor: 'var(--warn)' }}>
       <div className="text-sm text-txt font-medium">⚠ Puede ser momento de una descarga</div>
       <div className="s text-mut mt-1">
         {grupos.join(', ')} llevan 3+ semanas en tu volumen máximo recuperable. Una semana con 40-50% menos series por grupo suele restaurar el progreso.

@@ -89,6 +89,13 @@
   --color-ok: #34D399;       /* subiste, PR — vecino del cian, armoniza */
   --color-warn: #FBBF24;     /* atención, calentamiento — usado poco */
   --color-red: #F87171;      /* bajaste: el único de afuera, y es a propósito */
+  /* La racha. Era el único color de la app que se usaba en seis lugares sin
+     tener nombre: estaba escrito a mano como var(--flame) en la llama del header,
+     en el número de la racha, en la barra de grasa, en el primer ejercicio y
+     en la tarjeta de sesión. Seis copias del mismo naranja significan que
+     cambiarlo es buscar y reemplazar, y que nadie sabe si son el mismo color
+     a propósito o por casualidad. Son a propósito: es el fuego. */
+  --color-flame: #FFC46B;
   --radius-r: 18px;
   --radius-r-lg: 26px;
   --font-cond: 'Barlow Condensed', sans-serif;
@@ -169,6 +176,7 @@
   --ok:var(--color-ok);
   --warn:var(--color-warn);
   --red:var(--color-red);
+  --flame:var(--color-flame);
   /* ---- CANALES RGB (auditoría 2026-09-10) ---------------------------------
      El rediseño "acero" cambió los TOKENS, pero dejó 50 rgba() con los
      valores de la paleta ANTERIOR escritos a mano: el azul de los halos,
@@ -379,8 +387,8 @@ header.top{
 /* Más específico que .icon-btn svg (línea de arriba): la llama es más chica
    que el resto de los íconos de header y va en ámbar, no en el gris/azul de
    siempre — es el único acento cálido de la interfaz. */
-.icon-btn svg.streak-flame{width:15px;height:15px;color:#FFC46B;flex:none}
-.streak-n{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-body);letter-spacing:.04em;color:#FFC46B}
+.icon-btn svg.streak-flame{width:15px;height:15px;color:var(--flame);flex:none}
+.streak-n{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-body);letter-spacing:.04em;color:var(--flame)}
 .heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .heatmap .cell{aspect-ratio:1;border-radius:var(--r-xs);background:var(--card2);border:1px solid var(--line)}
 .heatmap .cell.done{background:var(--grad2);border-color:transparent;animation:zoom var(--d3) var(--ease) backwards}
@@ -2059,7 +2067,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* Un color por macro: proteína azul, carbos verde, grasa ámbar. */
 .hero-kcal .pbar.prot>i{background:linear-gradient(90deg,var(--deep),var(--cyan))}
 .hero-kcal .pbar.carb>i{background:linear-gradient(90deg,#12A97B,#2EE6A8)}
-.hero-kcal .pbar.fat>i{background:linear-gradient(90deg,#E08A2B,#FFC46B)}
+.hero-kcal .pbar.fat>i{background:linear-gradient(90deg,#E08A2B,var(--flame))}
 /* El separador y el espaciado del mockup; el punto y el texto los produce
    nutriFeedback() (meals.js), que ya trae .fdot con su color según el caso. */
 .nutri-fb{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
@@ -2161,7 +2169,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   background:linear-gradient(150deg,rgba(255,196,107,.12),rgba(255,255,255,.02));
   border:1px solid rgba(255,196,107,.24);
 }
-.ex-first .t{font-size:var(--t-sm);font-weight:700;color:#FFC46B;margin-bottom:4px}
+.ex-first .t{font-size:var(--t-sm);font-weight:700;color:var(--flame);margin-bottom:4px}
 .ex-first .s{font-size:var(--t-micro);line-height:1.5;color:var(--mut);margin-top:4px}
 
 /* Foto de la máquina en el formulario */
@@ -2807,7 +2815,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   .sc-beat{animation:none}
 }
 
-.sc-flame{color:#FFC46B}
+.sc-flame{color:var(--flame)}
 .sc-streak-n{font-family:'Barlow Condensed';font-weight:800;font-size:64px;color:#fff;line-height:1}
 .sc-lbl{color:var(--mut);font-size:var(--t-sm);font-weight:600;text-transform:uppercase;letter-spacing:.1em}
 

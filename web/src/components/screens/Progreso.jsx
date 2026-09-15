@@ -117,21 +117,51 @@ export default function Progreso() {
             {lastBf.bodyfat}% grasa · masa magra estimada {fmtNum(round1(lastBf.weight * (1 - lastBf.bodyfat / 100)))} kg
           </div>
         )}
-        {Object.keys(lastVals).length > 0 && (
-          <div className="stats" style={{ '--n': 4 }}>
-            {Object.entries(lastVals).map(([k, v]) => (
-              <div key={k}>
-                <div className="n">{fmtNum(v)}</div>
-                <span className="l">{BODY_LABELS[k]} cm</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* Las medidas salieron del hero (2026-09-15).
+
+          El hero venía haciendo ocho trabajos en una sola tarjeta: el número
+          grande, la variación semanal, el botón de registrar, la advertencia
+          de que el peso fluctúa, el selector de rango, el gráfico, el
+          porcentaje de grasa y estas cuatro medidas. Era el bloque más denso
+          de la app y las medidas eran lo que peor quedaba: cuatro números sin
+          una etiqueta que dijera qué son, colgados debajo de un gráfico que
+          habla de otra cosa.
+
+          Acá arriba el hero contesta una sola pregunta —cuánto pesás y cómo
+          viene— y las medidas contestan la suya con su propio título. */}
+      {Object.keys(lastVals).length > 0 && (
+        <>
+          <div className="sect">Medidas · último registro</div>
+          <div className="card">
+            <div className="stats" style={{ '--n': 4 }}>
+              {Object.entries(lastVals).map(([k, v]) => (
+                <div key={k}>
+                  <div className="n">{fmtNum(v)}</div>
+                  <span className="l">{BODY_LABELS[k]} cm</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       <SesionesSection />
 
-      <div className="seg my-[var(--s3)]">
+      {/* Este bloque era el único de la pantalla sin título (2026-09-15).
+
+          Todo lo demás en Progreso se anuncia: "Tus sesiones", "Frecuencia",
+          "Constancia", "PRs". Pero después de la lista de sesiones aparecían
+          tres pestañas sueltas —Carga, 1RM, Volumen— y un gráfico, sin nada
+          que dijera de qué van. Peor: una de las tres (1RM) traía su propio
+          título adentro, así que el mismo selector a veces tenía encabezado
+          y a veces no, según la pestaña elegida.
+
+          Ahora el título lo pone el bloque, una vez, y las pestañas son lo
+          que son: tres maneras de mirar el mismo entrenamiento. */}
+      <div className="sect">Tu entrenamiento</div>
+      <div className="seg mb-[var(--s3)]">
         {[['carga', 'Carga'], ['1rm', '1RM'], ['volumen', 'Volumen']].map(([k, label]) => (
           <button key={k} type="button" className={tab === k ? 'on' : ''} aria-pressed={tab === k} onClick={() => { S.progTab = k; bump(); }}>{label}</button>
         ))}
@@ -246,7 +276,11 @@ function StrengthTab() {
   const readout = strengthReadout();
   return (
     <>
-      <div className="sect">Fuerza · 1RM estimado</div>
+      {/* Sin "Fuerza · 1RM estimado" acá: el bloque ya se anuncia arriba con
+          "Tu entrenamiento", y de las tres pestañas ésta era la única que
+          además metía su propio título — el selector parecía cambiar de
+          estructura según lo que tocaras. Qué es el 1RM lo dice la pestaña
+          que elegiste y lo explica la tabla de abajo. */}
       {!readout.length ? (
         <div className="card sub"><div className="empty p-[18px]"><p className="m-0">Registrá un ejercicio en dos sesiones para empezar a ver su tendencia.</p></div></div>
       ) : (
@@ -276,7 +310,20 @@ function StrengthTab() {
   );
 }
 
-const BAND_COLOR = { bajo: 'var(--text-mut, #8B97B4)', efectivo: 'var(--ok, #2EE6A8)', 'cerca-max': 'var(--warn, #FFB454)', excedido: 'var(--danger, #FF5470)' };
+/* Los colores de las bandas de volumen.
+
+   Estaban escritos como `var(--token, #hex)`, y dos de esos cuatro tokens no
+   existen en la app: `--text-mut` y `--danger` nunca se definieron (los
+   nombres reales son `--mut` y `--red`). Un `var()` con un nombre inexistente
+   no falla ni avisa: usa el fallback. Así que "Bajo mínimo" y "Excedido" se
+   venían pintando SIEMPRE con dos hex sueltos de la paleta vieja, anteriores
+   al rediseño "acero", sin seguir el tema ni el color que elegiste en
+   Ajustes. Y justo "Excedido" es el aviso más serio de la pantalla — el de
+   sobreentrenamiento — pintado con un rojo que no es el rojo de la app.
+
+   Sin fallback a propósito: un fallback que nombra un valor distinto al del
+   token es peor que ninguno, porque esconde exactamente este error. */
+const BAND_COLOR = { bajo: 'var(--mut)', efectivo: 'var(--ok)', 'cerca-max': 'var(--warn)', excedido: 'var(--red)' };
 const BAND_LABEL = { bajo: 'Bajo mínimo', efectivo: 'Rango efectivo', 'cerca-max': 'Cerca del máximo', excedido: 'Excedido' };
 
 function VolumeTab() {
@@ -287,12 +334,14 @@ function VolumeTab() {
   return (
     <>
       {risk?.risk && (
-        <div className="card sub" style={{ borderColor: 'var(--warn, #FFB454)' }}>
+        <div className="card sub" style={{ borderColor: 'var(--warn)' }}>
           <div className="text-sm text-txt font-medium">⚠ Volumen alto esta semana</div>
           <div className="s text-mut mt-1">Tonelaje 7 días ({fmtNum(risk.acute)} kg) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
         </div>
       )}
-      <div className="sect">Volumen por grupo · 7 días</div>
+      {/* El "· 7 días" no se pierde al sacar el título: pasa a la leyenda de
+          abajo, que es donde Carga ya explica qué estás mirando. Las tres
+          pestañas se comportan igual. */}
       <div className="card">
         {cats.map(([c, n]) => {
           const band = volumeBand(c, n);
@@ -308,7 +357,7 @@ function VolumeTab() {
             </div>
           );
         })}
-        <div className="text-mut text-sm leading-normal">Bandas de Renaissance Periodization (Mike Israetel): mínimo efectivo, rango que hace crecer y máximo recuperable — varían por grupo.</div>
+        <div className="text-mut text-sm leading-normal">Series por grupo muscular en los últimos 7 días. Bandas de Renaissance Periodization (Mike Israetel): mínimo efectivo, rango que hace crecer y máximo recuperable — varían por grupo.</div>
       </div>
     </>
   );
