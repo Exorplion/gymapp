@@ -29,6 +29,7 @@ import { logMeal, addMealFromFood } from '../sheets/MealForm.jsx';
 import { useEffect, useRef } from 'react';
 import { countTo, staggerRevealOnce } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
+import { Pencil, X } from '../Icon.jsx';
 
 // El botón de voz sólo aparece si el navegador reconoce voz — mismo criterio
 // que el registro por voz de sesiones en Hoy.jsx.
@@ -138,7 +139,7 @@ export default function Nutricion() {
               {S.cfg.profile.sex === 'f' ? 'Mujer' : 'Hombre'} · {fmtNum(round1(m.weight))} kg · P {m.protMin}-{m.protMax} · G {m.fatMin}-{m.fatMax} · C {m.carbs}g
             </div>
           </div>
-          <button type="button" className="icon-btn accent" aria-label="Ver / modificar mis datos" onClick={() => openSheet('profile')}>✎</button>
+          <button type="button" className="icon-btn accent" aria-label="Ver / modificar mis datos" onClick={() => openSheet('profile')}><Pencil /></button>
         </div>
       ) : (
         <button type="button" className="card profcard border-line2" onClick={() => openSheet('profile')}>
@@ -273,7 +274,7 @@ export default function Nutricion() {
             aria-pressed={S.foodEdit}
             aria-label="Editar la lista de frecuentes"
             onClick={() => { S.foodEdit = !S.foodEdit; bump(); }}
-          >✎</button>
+          ><Pencil /></button>
         )}
       </div>
       {S.foods.length > 0 ? (
@@ -336,7 +337,7 @@ export default function Nutricion() {
                       </div>
                     )}
                   </div>
-                  <button type="button" className="meal-del" aria-label={`Borrar ${meal.name}`} onClick={() => deleteMeal(meal.id)}>✕</button>
+                  <button type="button" className="meal-del" aria-label={`Borrar ${meal.name}`} onClick={() => deleteMeal(meal.id)}><X /></button>
                 </div>
               ))}
             </div>

@@ -34,6 +34,7 @@ import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
 import { pendingSlot } from '../../lib/session.js';
 import { sheetReveal } from '../../lib/motion.js';
+import { X } from '../Icon.jsx';
 
 const FIELDS = [['sets', 'Series'], ['reps', 'Reps'], ['w', 'Peso kg']];
 
@@ -135,7 +136,7 @@ export default function VoiceLog({ items: initialItems, duration: initialDuratio
         <div className="card sub" style={{ marginBottom: 'var(--s2)' }} key={it._id}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
             <div className="grow" style={{ flex: 1 }}><div className="cond" style={{ fontSize: 'var(--t-lg)', fontWeight: 700 }}>{it.name}</div></div>
-            <button type="button" className="mini red" onClick={() => delItem(it._id)}>✕</button>
+            <button type="button" className="mini red" onClick={() => delItem(it._id)}><X /></button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 'var(--s2)', marginTop: 'var(--s2)' }}>
             {FIELDS.map(([f, lbl]) => (

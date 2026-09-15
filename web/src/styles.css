@@ -733,6 +733,10 @@ main{
 .ex-card .exlast{color:var(--blue2);font-size:var(--t-sm);font-weight:500;margin-top:2px}
 .ex-card .exname .info.inline{display:inline-grid;vertical-align:middle;width:26px;height:26px;font-size:var(--t-sm);margin-left:2px}
 .mini.info{color:var(--blue2);font-size:var(--t-body);font-weight:700}
+/* Los botones .mini pasaron de tener un carácter adentro (✎ ✕ ↑ ↓) a tener
+   un ícono de trazo, igual que .icon-btn, que ya traía su propia regla. Sin
+   un tamaño acá el SVG toma el del viewBox (24px) y desborda el botón. */
+.mini svg{width:17px;height:17px}
 .prog-warn{margin-top:10px;padding:9px 12px;border-radius:var(--r-md);font-size:var(--t-micro);line-height:1.4;
   background:rgba(var(--warn-rgb),.1);border:1px solid rgba(var(--warn-rgb),.32);color:var(--warn);font-weight:500}
 /* ---------- pictogramas de ejercicio ----------

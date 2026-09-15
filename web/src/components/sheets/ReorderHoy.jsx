@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 import { S, closeSheet, bump } from '../../lib/state.js';
 import { orderedExs, sessionExs, setExOrder } from '../../lib/session.js';
 import { sheetReveal } from '../../lib/motion.js';
+import { ArrowDown, ArrowUp } from '../Icon.jsx';
 
 export default function ReorderHoy() {
   const index = S.cfg.seqIndex;
@@ -56,14 +57,14 @@ export default function ReorderHoy() {
               aria-label={`Subir ${ex.name}`}
               disabled={i === 0}
               onClick={() => mover(i, -1)}
-            >↑</button>
+            ><ArrowUp /></button>
             <button
               type="button"
               className="mini"
               aria-label={`Bajar ${ex.name}`}
               disabled={i === exs.length - 1}
               onClick={() => mover(i, 1)}
-            >↓</button>
+            ><ArrowDown /></button>
             <span className="chev" style={{ cursor: 'grab' }} aria-hidden="true">☰</span>
           </div>
         ))}

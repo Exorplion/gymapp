@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { searchIllus, illusUrl } from '../../lib/illustrations.js';
 import { sheetReveal } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
+import { X } from '../Icon.jsx';
 
 export default function IllusPick({ exName = '', onPick, onClose }) {
   const [q, setQ] = useState(exName);
@@ -34,7 +35,7 @@ export default function IllusPick({ exName = '', onPick, onClose }) {
             pinta de título. Ahora es un <h2> de verdad —misma clase, así que se
             ve igual— y con eso Sheet.jsx puede darle nombre al diálogo. */}
         <h2 className="steplabel" style={{ margin: 0 }}>Elegí la ilustración</h2>
-        <button type="button" className={cn('mini', 'transition-transform active:scale-90')} aria-label="Cerrar" onClick={() => onClose?.()}>✕</button>
+        <button type="button" className={cn('mini', 'transition-transform active:scale-90')} aria-label="Cerrar" onClick={() => onClose?.()}><X /></button>
       </div>
       <div className="txt-mut" style={{ fontSize: 13, marginTop: 2, marginBottom: 14 }}>
         Buscá el movimiento y tocá el que corresponda. Las imágenes son de

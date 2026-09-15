@@ -28,6 +28,7 @@
 import { useEffect, useRef } from 'react';
 import { diasTexto } from '../lib/muscle.js';
 import { bloomOpen } from '../lib/motion.js';
+import { X } from './Icon.jsx';
 
 /** Volumen en kg, corto: 12.4k en vez de 12380. */
 function kilos(v) {
@@ -61,7 +62,7 @@ export default function MusclePop({ stats, onClose }) {
             {diasTexto(dias)}
           </span>
         </div>
-        <button type="button" className="mpop-x" onClick={onClose} aria-label="Cerrar">×</button>
+        <button type="button" className="mpop-x" onClick={onClose} aria-label="Cerrar"><X /></button>
       </div>
 
       {/* Antes esto sólo cubría "nunca" (dias===null): si lo habías

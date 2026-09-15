@@ -140,3 +140,24 @@ export function Check({ size = 17, className, style }) {
     </svg>
   );
 }
+
+/* Subir y bajar en una lista. Reemplazan a ↑ y ↓, que además de no ser del
+   mismo material que el resto del set tenían un problema propio: las flechas
+   tipográficas cambian bastante de peso y de largo entre plataformas, así
+   que la columna de botones ↑/↓ se veía pareja en un teléfono y despareja en
+   otro. Un trazo dibujado mide lo mismo en todos. */
+export function ArrowUp({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M12 19V5M12 5l-5.5 5.5M12 5l5.5 5.5" />
+    </svg>
+  );
+}
+
+export function ArrowDown({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M12 5v14M12 19l-5.5-5.5M12 19l5.5-5.5" />
+    </svg>
+  );
+}

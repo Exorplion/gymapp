@@ -18,6 +18,7 @@ import { toast } from '../../lib/toast.js';
 import { searchFoods, macrosFor, defaultGrams } from '../../lib/foodsearch.js';
 import { SLOTS, slotForTime } from '../../lib/meals.js';
 import { bloomOpen, sheetReveal } from '../../lib/motion.js';
+import { X } from '../Icon.jsx';
 
 const ahora = () => new Date().toTimeString().slice(0, 5);
 
@@ -141,7 +142,7 @@ export default function MealForm({ slot: slotInicial }) {
                 <input type="number" inputMode="decimal" value={i.grams} onChange={e => setGramos(idx, e.target.value)} />
                 <span className="u">g</span>
                 <span className="k">{i.kcal} kcal</span>
-                <button type="button" className="mini red" aria-label="Quitar este alimento" onClick={() => quitar(idx)}>✕</button>
+                <button type="button" className="mini red" aria-label="Quitar este alimento" onClick={() => quitar(idx)}><X /></button>
               </div>
             ))}
             <div className="cart-total"><span>Total</span><b>{Math.round(total.kcal)} kcal</b></div>

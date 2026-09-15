@@ -18,7 +18,7 @@ import { equipLabel, exKey } from '../../lib/equip.js';
 import { toast } from '../../lib/toast.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
-import { Skip } from '../Icon.jsx';
+import { Skip, X } from '../Icon.jsx';
 import { sheetReveal } from '../../lib/motion.js';
 // El burst de récord vive en su propio módulo y entra por React.lazy: son
 // 320 KB de lottie-web (la dependencia más pesada de la app, 24% del bundle)
@@ -240,7 +240,7 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
         ) : (
           <span className="dcard-title">{entry.name}</span>
         )}
-        {editando && <button type="button" className="mini red" title="Quitar ejercicio" aria-label={`Quitar ${entry.name}`} onClick={() => onBorrarEjercicio(idx)}>✕</button>}
+        {editando && <button type="button" className="mini red" title="Quitar ejercicio" aria-label={`Quitar ${entry.name}`} onClick={() => onBorrarEjercicio(idx)}><X /></button>}
       </div>
 
       {editando ? (
@@ -260,7 +260,7 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
                 type="number" inputMode="numeric" defaultValue={st.r}
                 onBlur={ev => onSetSerie(idx, si, 'r', ev.target.value)}
               />
-              <button type="button" className="mini red" aria-label={`Borrar la serie ${si + 1}`} onClick={() => onBorrarSerie(idx, si)}>✕</button>
+              <button type="button" className="mini red" aria-label={`Borrar la serie ${si + 1}`} onClick={() => onBorrarSerie(idx, si)}><X /></button>
             </div>
           ))}
           <button type="button" className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => onAgregarSerie(idx)}>+ Serie</button>

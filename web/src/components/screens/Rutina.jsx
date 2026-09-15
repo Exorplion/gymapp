@@ -30,7 +30,7 @@ import { toast } from '../../lib/toast.js';
 import { fmtD } from '../../lib/format.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
-import { Info } from '../Icon.jsx';
+import { ArrowDown, ArrowUp, Info, Pencil, X } from '../Icon.jsx';
 import { RutinaVacia } from '../Illustration.jsx';
 
 /** Puerto del guard de sheetLibSave() (index.html): "No hay rutina que
@@ -550,7 +550,7 @@ function SlotCard({ slot, index, n }) {
           </div>
           <span className="day-meta">{exs.length ? `${exs.length} ej.` : ''}<span className="chev">›</span></span>
         </button>
-        <button type="button" className="mini red" title="Quitar turno" aria-label={`Quitar el turno ${slot.name || 'sin nombre'}`} onClick={() => removeWorkoutDay(slot.id)}>✕</button>
+        <button type="button" className="mini red" title="Quitar turno" aria-label={`Quitar el turno ${slot.name || 'sin nombre'}`} onClick={() => removeWorkoutDay(slot.id)}><X /></button>
       </div>
       <div className="day-body"><div className="dbi">
         {exs.length > 1 && (
@@ -599,20 +599,16 @@ function SlotCard({ slot, index, n }) {
                     data-act="ex-up"
                     disabled={i === 0}
                     onClick={() => handleMoveEx(index, ex.id, -1)}
-                  >
-                    ↑
-                  </button>
+                  ><ArrowUp /></button>
                   <button
                     type="button"
                     className="mini"
                     data-act="ex-down"
                     disabled={i === exs.length - 1}
                     onClick={() => handleMoveEx(index, ex.id, 1)}
-                  >
-                    ↓
-                  </button>
-                  <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}>✎</button>
-                  <button type="button" className="mini red" aria-label={`Borrar ${ex.name}`} onClick={() => deleteExercise(index, ex.id)}>✕</button>
+                  ><ArrowDown /></button>
+                  <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}><Pencil /></button>
+                  <button type="button" className="mini red" aria-label={`Borrar ${ex.name}`} onClick={() => deleteExercise(index, ex.id)}><X /></button>
                 </span>
               </div>
             </div>
