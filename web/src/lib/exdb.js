@@ -47,9 +47,33 @@ export const EXDB = [
   { k: ['face pull'], m: 'Deltoides posterior · manguito rotador · trapecio', w: 'Salud de hombro y postura. Volumen "gratis" para rear delt que equilibra tanto press horizontal.' },
 ];
 
+/* Las palabras clave de EXDB, normalizadas UNA vez.
+
+   exInfo() las normalizaba en cada llamada, con un bucle anidado: las 29
+   entradas por sus sinónimos, y norm() sobre cada uno. norm() hace
+   normalize('NFD') —normalización Unicode completa— así que eran unas
+   doscientas por llamada, sobre una tabla que es constante.
+
+   Y exInfo() se llama UNA VEZ POR FILA: la pantalla Rutina tiene 40
+   ejercicios. Era de lo más caro de montarla, y montarla es lo que dejaba el
+   hilo bloqueado ~850ms en cada cambio de pestaña — con el hilo bloqueado no
+   hay con qué dibujar el deslizamiento, y por eso se veía como un salto.
+
+   Mismo arreglo que catOf() en muscle.ts, por el mismo motivo. */
+const EXDB_NORM = EXDB.map(e => ({ e, ks: e.k.map(norm).filter(Boolean) }));
+const CACHE_INFO = new Map();
+
 export function exInfo(name) {
-  const n = norm(name); let best = null, len = 0;
-  for (const e of EXDB) for (const kw of e.k) { const nk = norm(kw); if (n.includes(nk) && nk.length > len) { best = e; len = nk.length; } }
+  const n = norm(name);
+  if (!n) return null;
+  const recordado = CACHE_INFO.get(n);
+  if (recordado !== undefined) return recordado;
+
+  let best = null, len = 0;
+  for (const { e, ks } of EXDB_NORM) {
+    for (const nk of ks) if (n.includes(nk) && nk.length > len) { best = e; len = nk.length; }
+  }
+  CACHE_INFO.set(n, best);
   return best;
 }
 

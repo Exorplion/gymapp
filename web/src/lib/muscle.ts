@@ -105,26 +105,55 @@ export interface ExLike { name?: string; cat?: string; }
  *
  * Devuelve null si no reconoce nada: nunca inventa una categoría.
  */
+/* El catálogo, normalizado UNA vez.
+
+   catOf() llamaba a norm() sobre las 48 entradas de EXCATALOG en CADA
+   invocación. norm() hace normalize('NFD'), que es normalización Unicode
+   completa y no es barata: eran 49 normalizaciones por llamada —48 del
+   catálogo, que nunca cambia, más la del nombre que sí varía.
+
+   Medido el 2026-09-15: 17.5 µs por llamada a catOf. Parece poco hasta que se
+   cuenta cuántas veces se llama. daysSinceAll() sola la invoca una vez por
+   cada entrada de cada sesión POR CADA uno de los nueve grupos musculares, y
+   eso corre al montar Inicio, Rutina y Progreso. Ahí es donde se iban buena
+   parte de los cientos de milisegundos que dejaban el hilo bloqueado durante
+   un cambio de pestaña.
+
+   EXCATALOG es una constante del módulo: su forma normalizada se calcula al
+   cargar y se reusa siempre. */
+const CATALOGO_NORM: { ne: string; c: string }[] = EXCATALOG
+  .map(e => ({ ne: norm(e.n), c: e.c }))
+  .filter(e => e.ne);
+
+/* Además, la respuesta se recuerda por nombre. Los nombres de ejercicio se
+   repiten muchísimo —el mismo "Press plano máquina" aparece en cada sesión
+   que lo tenga— y la respuesta para un nombre dado no cambia nunca: EXCATALOG
+   y KEYWORDS son constantes. Es una caché de por vida a propósito: la app es
+   de un solo usuario y sus nombres distintos se cuentan por decenas. */
+const CACHE_CAT = new Map<string, string | null>();
+
 export function catOf(ex: ExLike | string | null | undefined): string | null {
   if (ex && typeof ex === 'object' && ex.cat) return ex.cat;
   const n = norm(typeof ex === 'string' ? ex : ex?.name);
   if (!n) return null;
+  const recordado = CACHE_CAT.get(n);
+  if (recordado !== undefined) return recordado;
 
   let contenido: string | null = null, lenC = 0;      // paso 2
   let contenedor: string | null = null, lenD = Infinity; // paso 3
-  for (const e of EXCATALOG) {
-    const ne = norm(e.n);
-    if (!ne) continue;
+  for (const e of CATALOGO_NORM) {
+    const ne = e.ne;
     if (n.includes(ne)) { if (ne.length > lenC) { contenido = e.c; lenC = ne.length; } }
     // sólo para nombres de 4+ caracteres: un fragmento corto se llevaría por
     // delante media tabla
     else if (n.length >= 4 && ne.includes(n)) { if (ne.length < lenD) { contenedor = e.c; lenD = ne.length; } }
   }
-  if (contenido) return contenido;
-  if (contenedor) return contenedor;
-
-  for (const [kw, cat] of KEYWORDS) if (n.includes(kw)) return cat;
-  return null;
+  let resultado: string | null = contenido || contenedor;
+  if (!resultado) {
+    for (const [kw, cat] of KEYWORDS) if (n.includes(kw)) { resultado = cat; break; }
+  }
+  CACHE_CAT.set(n, resultado);
+  return resultado;
 }
 
 export interface MuscleBlock { cat: string; exs: ExLike[]; }
