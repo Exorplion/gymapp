@@ -246,8 +246,56 @@ export const lastTabChangeUsedVT = false;
 
     `extra` corre en el mismo instante que S.tab (BodyMap.jsx lo usa para
     fijar S.rutMode='edit' junto con el cambio, no después). */
+/* ─── La foto de la pantalla que se va ───────────────────────────────────
+
+   Medido el 2026-09-15: durante un cambio de pestaña el hilo principal
+   quedaba bloqueado entre 370 y 970 ms, con tareas largas de hasta 523 ms.
+   La app cae de 62 fps a 1: un solo frame pintado en todo el deslizamiento.
+   Por eso se veía como un salto y no como un movimiento — la animación
+   estaba bien, no había con qué dibujarla.
+
+   La mitad de ese costo era evitable. App.jsx pintaba la pantalla saliente
+   llamando otra vez a pantallaDe(tab): React la MONTABA DE CERO, con sus
+   efectos y sus cálculos (Progreso recorre todas las sesiones para las
+   marcas, Rutina arma sus 40 filas). Todo para algo que, como dice el
+   comentario de App.jsx, "es puramente decorativo mientras se termina de
+   ir" — no se toca, no cambia, sólo se desliza hacia afuera.
+
+   Una copia del DOM hace exactamente eso y cuesta 0.44 ms en Inicio y 0.86
+   en Entreno, contra cientos de milisegundos de un montaje.
+
+   La foto se saca ACÁ y no en App.jsx porque tiene que tomarse ANTES de que
+   S.tab cambie: un instante después React ya reemplazó el nodo y lo que
+   había en pantalla no existe más. */
+let fotoSaliente = null;
+
+function sacarFoto() {
+  if (typeof document === 'undefined') return null;
+  const viva = document.querySelector('main > .view.enter');
+  if (!viva) return null;
+  const copia = viva.cloneNode(true);
+  /* cloneNode no copia lo que hay dentro de un <canvas>: son píxeles, no
+     DOM. Sin esto los gráficos de Progreso y el anillo de Comida saldrían en
+     blanco justo mientras la pantalla se desliza. */
+  const originales = viva.querySelectorAll('canvas');
+  const copias = copia.querySelectorAll('canvas');
+  for (let i = 0; i < originales.length; i++) {
+    try { copias[i]?.getContext('2d')?.drawImage(originales[i], 0, 0); } catch { /* sin contexto 2d o vacío */ }
+  }
+  return copia;
+}
+
+/** La foto tomada en el último changeTab(). Se entrega una sola vez: la usa
+    App.jsx al montar la pantalla saliente y después no sirve para nada. */
+export function tomarFotoSaliente() {
+  const f = fotoSaliente;
+  fotoSaliente = null;
+  return f;
+}
+
 export function changeTab(t, extra) {
   if (S.tab === t) return;
+  fotoSaliente = sacarFoto();
   S.tab = t;
   extra?.();
   bump();

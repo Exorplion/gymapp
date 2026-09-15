@@ -495,6 +495,12 @@ input,textarea,select,[contenteditable]{touch-action:auto}
 .view.vecino{position:absolute;top:16px;left:0;right:0;z-index:0;pointer-events:none}
 /* Mientras el dedo manda no hay transición: el movimiento ES el dedo, y
    cualquier suavizado lo vuelve elástico y con retraso. */
+/* Congela la animación en su primer keyframe —la pantalla nueva esperando
+   fuera del marco— hasta que el navegador haya podido pintar un cuadro. Ver
+   el comentario largo de listoParaAnimar en App.jsx: sin esto, en un teléfono
+   la animación corre entera mientras el hilo está bloqueado montando la
+   pantalla, y no queda un solo frame para dibujarla. */
+.view.esperando{animation-play-state:paused}
 .view.arrastrada{transition:none}
 /* Al soltar sí, para terminar el recorrido (o volver) sin saltos. */
 .view.soltando{transition:transform var(--d2) var(--ease-push)}

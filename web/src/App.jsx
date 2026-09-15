@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { idbOpenOnce } from './lib/db.js';
-import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT, resolveAutoRest } from './lib/state.js';
+import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT, resolveAutoRest, tomarFotoSaliente } from './lib/state.js';
 import { dstr } from './lib/format.js';
 import { applyComputedGoals } from './lib/macros.js';
 import { initDragListeners } from './lib/drag.js';
@@ -176,7 +176,7 @@ export default function App() {
        detrás. Montar acá la animación de la barra la haría entrar una
        segunda vez, desde el borde, después de haber llegado. */
     if (porArrastre.current) { porArrastre.current = false; tabPrevio.current = store.tab; return; }
-    setSaliente({ tab: tabPrevio.current, dir });
+    setSaliente({ tab: tabPrevio.current, dir, foto: tomarFotoSaliente() });
     tabPrevio.current = store.tab;
     clearTimeout(salienteTimer.current);
     /* El desmontaje tiene que llegar DESPUÉS de que termine el deslizamiento,
@@ -284,6 +284,33 @@ export default function App() {
   }
 
   useEffect(() => () => clearTimeout(soltarTimer.current), []);
+
+  /* ───────── Que el deslizamiento empiece cuando haya con qué dibujarlo ──
+
+     Medido el 2026-09-15 con el CPU frenado 6× (un teléfono de gama media):
+     montar la pantalla nueva bloquea el hilo principal entre 550 y 880ms. La
+     animación arranca en el mismo commit que ese montaje, así que corre
+     mientras nada se puede pintar: cuando el hilo se libera ya pasaron sus
+     320ms y la pantalla aparece puesta. Tocás y la app salta. Ése es el
+     "parpadeo" que quedaba, y no se arregla con más CSS — no había frames.
+
+     No se puede hacer el montaje más barato que gratis, pero sí se puede
+     poner en orden: primero montar, y recién cuando el navegador pudo pintar
+     un frame, soltar la animación.
+
+     `animation-play-state:paused` la deja congelada en su primer keyframe, o
+     sea la pantalla nueva esperando fuera del marco — exactamente donde tiene
+     que estar. Los dos requestAnimationFrame son la forma de saber que el
+     navegador ya pintó: el primero se agenda durante el trabajo bloqueante y
+     el segundo sólo llega cuando de verdad hubo un cuadro. */
+  const [listoParaAnimar, setListoParaAnimar] = useState(true);
+  useLayoutEffect(() => {
+    if (!saliente) return;
+    setListoParaAnimar(false);
+    let id2 = 0;
+    const id1 = requestAnimationFrame(() => { id2 = requestAnimationFrame(() => setListoParaAnimar(true)); });
+    return () => { cancelAnimationFrame(id1); cancelAnimationFrame(id2); };
+  }, [saliente]);
 
   /* `main` sólo mide del alto de .view.enter (.view.leave es position:absolute,
      no participa del layout — ver el comentario de styles.css). Si la pantalla
@@ -453,8 +480,23 @@ export default function App() {
             queda arriba en el stacking normal) y con pointer-events:none —
             es puramente decorativa mientras se termina de ir. */}
         {saliente && (
-          <div className={`view leave dir-${saliente.dir}`}>
-            {pantallaDe(saliente.tab)}
+          <div
+            className={`view leave dir-${saliente.dir}${listoParaAnimar ? '' : ' esperando'}`}
+            /* Se cuelga la FOTO del DOM que estaba en pantalla (ver
+               sacarFoto en state.js), no se vuelve a montar la pantalla con
+               React. La saliente no se toca ni cambia mientras se va: sólo
+               tiene que verse igual que un instante antes. Montarla de nuevo
+               costaba cientos de milisegundos de hilo bloqueado y era la
+               mitad de por qué el deslizamiento no llegaba a dibujarse.
+
+               `pantallaDe` queda como salida de emergencia por si no hubo
+               foto (un cambio de pestaña que no pasó por changeTab). */
+            ref={el => {
+              if (!el || !saliente.foto || el.firstChild) return;
+              el.append(...Array.from(saliente.foto.childNodes));
+            }}
+          >
+            {saliente.foto ? null : pantallaDe(saliente.tab)}
           </div>
         )}
         {/* La vecina, sólo mientras dura el gesto: esperando fuera del marco,
@@ -472,7 +514,7 @@ export default function App() {
         {/* El `key` es lo que hace que la animación se repita: sin él React
             reusa el mismo div y el navegador no vuelve a correr el keyframe. */}
         <div
-          className={`view enter dir-${dir}${arrastre ? (arrastre.soltando ? ' arrastrada soltando' : ' arrastrada') : ''}`}
+          className={`view enter dir-${dir}${arrastre ? (arrastre.soltando ? ' arrastrada soltando' : ' arrastrada') : ''}${listoParaAnimar ? '' : ' esperando'}`}
           key={store.tab}
           /* `animation:'none'` no es decorativo: las animaciones de entrada
              usan fill:both, o sea que su valor final de `transform` queda
