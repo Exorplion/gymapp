@@ -9,7 +9,7 @@ import { TEMPLATES, applyTemplate } from '../../lib/templates.js';
 import {
   routineStats, routineName, applyLibRoutine, deleteLibRoutine, saveCurrentAsLib, startBlank,
 } from '../../lib/rutina-logic.js';
-import { bloomOpen, sheetReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 import { X } from '../Icon.jsx';
 
 function LibraryList() {
@@ -108,8 +108,6 @@ function LibrarySave({ initialName }) {
   const [name, setName] = useState(initialName ?? (routineName() === 'Rutina personalizada' ? '' : routineName()));
   const inputRef = useRef(null);
   const rootRef = useRef(null);
-
-  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
 
   return (
     <div ref={rootRef}>

@@ -17,7 +17,7 @@ import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
 import { searchFoods, macrosFor, defaultGrams } from '../../lib/foodsearch.js';
 import { SLOTS, slotForTime } from '../../lib/meals.js';
-import { bloomOpen, sheetReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 import { X } from '../Icon.jsx';
 
 const ahora = () => new Date().toTimeString().slice(0, 5);
@@ -172,7 +172,6 @@ function AlimentoNuevo({ nombre, onListo, onCancel }) {
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
   const rootRef = useRef(null);
-  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
 
   async function crear() {
     const trimmed = name.trim();

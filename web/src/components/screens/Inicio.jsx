@@ -21,7 +21,7 @@
 // (ver rutina-logic.js). Esta tira no muestra el plan, muestra los hechos, y
 // los hechos sí tienen fecha. El plan se ve y se edita en Rutina.
 import { useEffect, useRef } from 'react';
-import { S, useStore, bump, openSheet, changeTab } from '../../lib/state.js';
+import { S, useStore, openSheet, changeTab } from '../../lib/state.js';
 import { WDS, MO, dstr, fmtD, fmtNum, round1 } from '../../lib/format.js';
 import { pendingSlot, sessionForSlot, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
 import { daysSinceAll, stalestGroups, untrainedGroups, MUSCLE_CATS } from '../../lib/muscle.js';

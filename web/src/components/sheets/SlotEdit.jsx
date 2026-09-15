@@ -4,7 +4,7 @@
 // ese selector: mover un turno ahora es arrastrarlo en la lista de edición
 // (ver Rutina.jsx, data-sort="seq"), no un campo dentro de este sheet — así
 // que lo único que queda acá es el nombre.
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { S } from '../../lib/state.js';
 import { saveSlot } from '../../lib/rutina-logic.js';
 import { pulseLike } from '../../lib/motion.js';
@@ -15,7 +15,6 @@ export default function SlotEdit({ index }) {
   const inputRef = useRef(null);
   const btnRef = useRef(null);
   const rootRef = useRef(null);
-
 
   function guardar() {
     pulseLike(btnRef.current);
