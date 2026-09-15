@@ -80,10 +80,59 @@ visibles a la vez.
 - **`tokens.test.js` nuevo**: falla si algún `var()` nombra un token que no
   existe, señalando archivo y línea. Verificado a mano reintroduciendo el bug.
 
+### EL HALLAZGO GRANDE: el reset sin capa mataba 263 utilidades
+
+Encontrado **verificando en el navegador**, no leyendo codigo — y no se podia
+encontrar leyendo, porque los componentes estaban bien escritos.
+
+`styles.css` tenia `*{margin:0;padding:0}`, `button{background:none;border:none}`
+e `input,select,button,textarea{color:inherit}` **fuera de toda capa**, despues
+de `@import "tailwindcss"`. Tailwind v4 pone sus utilidades en
+`@layer utilities`, y en la cascada **lo que no esta en ninguna capa le gana
+siempre a lo que si lo esta**, sin importar especificidad ni orden.
+
+Medido en Chrome: `px-3` daba 0px, `py-2.5` 0px, `mb-4` 0px. `gap-2` SI daba
+8px, porque `gap` no lo pisa el reset. **Esa asimetria es la firma del bug.**
+
+Alcance: **263 utilidades de espaciado en 21 archivos `.jsx`** sin efecto, mas
+el borde/degradado/color de `<Button variant="icon">`. Eso ultimo es,
+literalmente, "los botones parecen letras al aire": el commit anterior ya usaba
+la pieza correcta, pero la pieza no podia pintarse.
+
+**Arreglo:** las cuatro reglas (`*`, `button`, `input…`, `body`, `main`) van en
+`@layer base`. Las clases propias (`.btn`, `.mini`, `.icon-btn`, `.card`) no se
+tocan: son selectores de clase sin capa, siguen ganando igual que antes.
+
+**Si tocas `styles.css`:** cualquier regla de ELEMENTO que pise padding,
+margin, background, border o color tiene que ir dentro de `@layer base`.
+`tokens.test.js` lo vigila y falla nombrando la regla.
+
+### Verificacion visual: SI se puede, era una suposicion mia equivocada
+
+Dije que no podia verificar en pantalla porque la extension de Chrome no
+conecta en un job de background. Es cierto de la extension, pero **el MCP
+`chrome-devtools` levanta su propio Chrome y funciona perfecto**. Receta:
+
+1. `cd web && npm run dev` en background
+2. `new_page` a `http://localhost:5173/`, `resize_page` 390x844
+3. Ajustes -> "Cargar mi registro" (OJO: son **dos** hojas de confirmacion
+   encadenadas, hay que pasar las dos)
+4. `evaluate_script` para medir (`getBoundingClientRect`, `getComputedStyle`,
+   `getAnimations`) — mide, no mires: "se ve bien" no es una verificacion
+
+Asi se verificaron, con numeros: la tarjeta "Sin datos"/"Al dia", el anillo del
+boton ENTRENAR (`ctaRing 5s`), la coreografia de las hojas (panel `shup` 0-220ms
+y contenido arrancando en 220ms, escalonado de a 30), la alineacion de
+`.ex-row` (`icono_pisa_banda:false`, `mismo_borde_izq:true`), los colores de
+las bandas de volumen (`rgb(156,167,181)` = `--mut`, cero hex viejos), el
+espaciado de Nutricion (12px del contenedor) y el deshacer al borrar un gym
+(vuelve a su posicion original).
+
 ### PENDIENTE al 2026-09-15
 
-1. **Mirarlo en el celular.** Es lo único que falta y es bloqueante para
-   mergear: son 11 cambios visuales sin una sola verificación en pantalla.
+1. **Mirarlo en TU celular.** Ya se verifico en Chrome de escritorio a 390px
+   (ver arriba), asi que esto ya no es bloqueante — pero un telefono real tiene
+   safe-area, notch y WebView propio. Vale una pasada.
 2. El feedback del tester (sigue abierto, ver sección 2026-09-13).
 3. IA en Nutrición: Enzo lo pidió. **Su suscripción de Claude NO sirve** —
    hace falta una cuenta de API con saldo. Y como el build se commitea a un
