@@ -93,3 +93,50 @@ export function ChevronDown({ size = 18, className, style }) {
     </svg>
   );
 }
+
+/* Los cuatro de las filas de lista: ajustar, renombrar, quitar, confirmar.
+   Vivían como los glifos ⚙ ✎ ✕ ✓ escritos a mano dentro de Gyms.jsx y
+   FoodVoice.jsx — exactamente el problema que este archivo ya había resuelto
+   para 🔥⚡🎤: un carácter no se recolorea con CSS, cambia de forma según la
+   plataforma y no comparte el grosor de trazo del resto del set, así que en
+   una fila al lado de un ícono de verdad se ve más fino y desalineado. */
+
+/** "Ajustar lo de este gimnasio". Perillas y no un engranaje: lo que abre no
+    es una pantalla de configuración sino la lista de ejercicios donde vas
+    asignando con qué máquina hacés cada uno acá — ajustar, no configurar. */
+export function Tune({ size = 17, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M4 7h9M19 7h1M4 12h3M13 12h7M4 17h9M19 17h1" />
+      <circle cx="16" cy="7" r="2.1" />
+      <circle cx="10" cy="12" r="2.1" />
+      <circle cx="16" cy="17" r="2.1" />
+    </svg>
+  );
+}
+
+export function Pencil({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M4 20l4-1L19 8a2.1 2.1 0 0 0-3-3L5 16l-1 4z" />
+      <path d="M14.5 6.5l3 3" />
+    </svg>
+  );
+}
+
+/** Quitar / cerrar. */
+export function X({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
+    </svg>
+  );
+}
+
+export function Check({ size = 17, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M5 12.5l4.5 4.5L19 7" />
+    </svg>
+  );
+}
