@@ -30,7 +30,7 @@ import { toast } from '../../lib/toast.js';
 import { fmtD } from '../../lib/format.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
-import { Info } from '../Icon.jsx';
+import { ArrowDown, ArrowUp, Info, Pencil, X } from '../Icon.jsx';
 import { RutinaVacia } from '../Illustration.jsx';
 
 /** Puerto del guard de sheetLibSave() (index.html): "No hay rutina que
@@ -321,7 +321,7 @@ function DeloadCard() {
   }
 
   return (
-    <div className="card sub mb-[var(--s3)]" style={{ borderColor: 'var(--warn, #FFB454)' }}>
+    <div className="card sub mb-[var(--s3)]" style={{ borderColor: 'var(--warn)' }}>
       <div className="text-sm text-txt font-medium">⚠ Puede ser momento de una descarga</div>
       <div className="s text-mut mt-1">
         {grupos.join(', ')} llevan 3+ semanas en tu volumen máximo recuperable. Una semana con 40-50% menos series por grupo suele restaurar el progreso.
@@ -457,38 +457,67 @@ function RutinaEdit() {
 
 /** Tira horizontal: qué día de la semana le tocaría a cada turno contando
     desde HOY (weekdayProjection, rutina-logic.js) — descansos incluidos,
-    apagados, para que se vea DÓNDE caen sin poder tocarlos. */
+    apagados, para que se vea DÓNDE caen sin poder tocarlos.
+
+    2026-09-15 — Enzo: "ese calendario semanal en editar rutina no lo
+    entiendo, creo que está mal sincronizado". No está desincronizado, pero
+    la sensación era correcta y el problema era nuestro: la tira mostraba
+    LUN/MAR/MIÉ como si fuera una agenda, y no lo es. La rutina es una
+    secuencia que avanza cuando entrenás, no cuando pasa un día (ver el
+    comentario de lib/week.js). Los días que mostraba salen de suponer que
+    vas a entrenar un turno por día, todos los días, desde hoy — en cuanto
+    te saltás uno, cada etiqueta queda corrida.
+
+    O sea que la tira afirmaba fechas que no puede sostener, que es
+    justamente lo que la app no hace. Se arregla diciendo en voz alta de qué
+    supuesto salen, y anclando la tira con el turno en el que estás parado
+    ahora: sin ese ancla no había forma de leer dónde empieza la cuenta. */
 function WeekProjection({ dow }) {
+  /* El turno actual de la secuencia. weekdayProjection() cuenta los días
+     desde ACÁ (i - idx), así que éste es el que cae hoy — y por eso es el
+     único que la tira puede afirmar sin suponer nada. */
+  const idx = S.cfg.seqIndex || 0;
   /* Cada turno abre su vista previa (sheet 'day-peek') sin mover el puntero.
      Ese atajo vivía en la tira de turnos de Inicio, que se borró el 2026-09-10
      por competir visualmente con el calendario de la semana real; acá tiene
      más sentido, porque es la pantalla donde el plan se mira y se edita. Los
      descansos no se tocan: no hay nada que espiar. */
   return (
-    <div className="week-proj">
-      {S.routine.map((slot, i) => {
-        const descanso = slot.type === 'rest';
-        const contenido = (
-          <>
-            <span className="wd">{dow[i]}</span>
-            <span className="t">{descanso ? '—' : (slot.name || 'Sin nombre')}</span>
-          </>
-        );
-        return descanso ? (
-          <div key={slot.id} className="week-proj-d off">{contenido}</div>
-        ) : (
-          <button
-            type="button"
-            key={slot.id}
-            className="week-proj-d"
-            aria-label={`Ver ${slot.name || 'este turno'}`}
-            onClick={() => openSheet('day-peek', { wd: i })}
-          >
-            {contenido}
-          </button>
-        );
-      })}
-    </div>
+    <>
+      {/* Decir el supuesto es la mitad del arreglo: sin esta línea la tira
+          se lee como "tu semana", y no lo es. */}
+      <div className="week-proj-cap">
+        Si entrenás un turno por día desde hoy
+      </div>
+      <div className="week-proj">
+        {S.routine.map((slot, i) => {
+          const descanso = slot.type === 'rest';
+          const ahora = i === idx;
+          const contenido = (
+            <>
+              {/* El turno actual dice "HOY" y no un día de la semana: es el
+                  único dato de la tira que no depende del supuesto. */}
+              <span className="wd">{ahora ? 'Hoy' : dow[i]}</span>
+              <span className="t">{descanso ? '—' : (slot.name || 'Sin nombre')}</span>
+            </>
+          );
+          const cls = `week-proj-d${descanso ? ' off' : ''}${ahora ? ' now' : ''}`;
+          return descanso ? (
+            <div key={slot.id} className={cls}>{contenido}</div>
+          ) : (
+            <button
+              type="button"
+              key={slot.id}
+              className={cls}
+              aria-label={`Ver ${slot.name || 'este turno'}${ahora ? ' (el que te toca ahora)' : ''}`}
+              onClick={() => openSheet('day-peek', { wd: i })}
+            >
+              {contenido}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -521,7 +550,7 @@ function SlotCard({ slot, index, n }) {
           </div>
           <span className="day-meta">{exs.length ? `${exs.length} ej.` : ''}<span className="chev">›</span></span>
         </button>
-        <button type="button" className="mini red" title="Quitar turno" aria-label={`Quitar el turno ${slot.name || 'sin nombre'}`} onClick={() => removeWorkoutDay(slot.id)}>✕</button>
+        <button type="button" className="mini red" title="Quitar turno" aria-label={`Quitar el turno ${slot.name || 'sin nombre'}`} onClick={() => removeWorkoutDay(slot.id)}><X /></button>
       </div>
       <div className="day-body"><div className="dbi">
         {exs.length > 1 && (
@@ -570,20 +599,16 @@ function SlotCard({ slot, index, n }) {
                     data-act="ex-up"
                     disabled={i === 0}
                     onClick={() => handleMoveEx(index, ex.id, -1)}
-                  >
-                    ↑
-                  </button>
+                  ><ArrowUp /></button>
                   <button
                     type="button"
                     className="mini"
                     data-act="ex-down"
                     disabled={i === exs.length - 1}
                     onClick={() => handleMoveEx(index, ex.id, 1)}
-                  >
-                    ↓
-                  </button>
-                  <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}>✎</button>
-                  <button type="button" className="mini red" aria-label={`Borrar ${ex.name}`} onClick={() => deleteExercise(index, ex.id)}>✕</button>
+                  ><ArrowDown /></button>
+                  <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}><Pencil /></button>
+                  <button type="button" className="mini red" aria-label={`Borrar ${ex.name}`} onClick={() => deleteExercise(index, ex.id)}><X /></button>
                 </span>
               </div>
             </div>

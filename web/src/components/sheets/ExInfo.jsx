@@ -3,19 +3,17 @@
 // (sheetExInfo(name,wd,exId)) pero, igual que en el original, no se usa: el
 // esquema de sets/reps se busca recorriendo TODOS los días de S.routine por
 // exId, no sólo `wd`.
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { illusUrl } from '../../lib/illustrations.js';
 import { equipLabel } from '../../lib/equip.js';
 import { S } from '../../lib/state.js';
 import { exInfo, rirScheme, isLowerBackLift } from '../../lib/exdb.js';
 import { fibrasDe } from '../../lib/fibras.js';
-import { bloomOpen } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 import BodyMini from '../BodyMini.jsx';
 
 export default function ExInfo({ name, exId }) {
   const rootRef = useRef(null);
-  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   const info = exInfo(name);
   let sets = null, ex = null;

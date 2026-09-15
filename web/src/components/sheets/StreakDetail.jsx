@@ -4,8 +4,8 @@
 import { useEffect, useRef } from 'react';
 import { streakHeatmap, currentStreak, bestStreak } from '../../lib/streak.js';
 import { fmtDFull } from '../../lib/format.js';
-import { Flame } from '../Icon.jsx';
 import { countTo, pulseLike } from '../../lib/motion.js';
+import { Flame } from '../Icon.jsx';
 
 export default function StreakDetail() {
   const { days, pct } = streakHeatmap();
@@ -25,7 +25,7 @@ export default function StreakDetail() {
 
   return (
     <>
-      <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Flame ref={flameRef} size={24} style={{ color: '#FFC46B' }} />Racha</h2>
+      <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Flame ref={flameRef} size={24} style={{ color: 'var(--flame)' }} />Racha</h2>
       <div className="stats">
         <div><div className="n" ref={curRef}>{currentStreak()}</div><span className="l">Actual</span></div>
         <div><div className="n" ref={bestRef}>{bestStreak()}</div><span className="l">Mejor</span></div>

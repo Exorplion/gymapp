@@ -7,10 +7,9 @@
 //
 // El "no volver a preguntar" guarda la elección en S.cfg.dayDrop; se cambia
 // después desde Ajustes.
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { S, closeSheet, saveCfg, bump } from '../../lib/state.js';
 import { WD } from '../../lib/format.js';
-import { bloomOpen } from '../../lib/motion.js';
 import { Button } from '../ui/primitives.jsx';
 // TEMP verification-only stub (task 9) — applyDayDrop/nextFreeDay no longer
 // exist; DayDrop.jsx is now orphaned dead code, a known separate gap not
@@ -29,7 +28,6 @@ export default function DayDrop({ fromWd, toWd }) {
   const canShift = parked !== null && parked !== from;
   const rootRef = useRef(null);
 
-  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   async function choose(mode) {
     closeSheet();

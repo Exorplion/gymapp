@@ -20,6 +20,7 @@
 // ('gymPhotos', db.js) para no inflar el blob de 'settings'.
 import { S, bump, saveCfg } from './state.js';
 import { idb } from './db.js';
+import { toast } from './toast.js';
 import { persistSlot } from './rutina-logic.js';
 
 export const saveGyms = () => idb.put('settings', { key: 'gyms', value: S.gyms });
@@ -45,12 +46,47 @@ export function renameGym(id, name) {
   bump();
 }
 
+/** Borra un gimnasio, con deshacer.
+
+    Borraba en seco, y el botón vive pegado al de activar —que es el que más
+    se toca de la fila—. Un error de dedo se llevaba el gym y, con él, todo
+    el mapeo de "este ejercicio, acá, con esta máquina", que es trabajo de
+    varias sesiones y no se puede reconstruir de memoria.
+
+    Se resuelve con deshacer y no con un "¿estás seguro?" por dos razones:
+    un diálogo de confirmación le cobra un paso a los borrados buenos, que
+    son casi todos, y encima educa a tocar "sí" sin leer. Y porque la app ya
+    tiene esta convención: rutina-logic.js avisa sus cambios destructivos con
+    un toast de "Deshacer" (4 segundos, ver toast.js). Esto es lo mismo.
+
+    Se guarda la posición además del objeto: al deshacer, el gym vuelve donde
+    estaba y no al final: si reapareciera en otro lugar, uno dudaría de si se
+    recuperó lo mismo que se borró. */
 export function deleteGym(id) {
+  const pos = S.gyms.findIndex(g => g.id === id);
+  if (pos < 0) return;
+  const borrado = S.gyms[pos];
+  const eraActivo = S.cfg.activeGym === id;
+
   S.gyms = S.gyms.filter(g => g.id !== id);
-  if (S.cfg.activeGym === id) S.cfg.activeGym = null;
+  if (eraActivo) S.cfg.activeGym = null;
   saveGyms();
   saveCfg();
   bump();
+
+  toast(`Se borró ${borrado.name}`, {
+    actionLabel: 'Deshacer',
+    onAction: () => {
+      // splice con el índice acotado: si mientras tanto se borró algún otro,
+      // la posición vieja puede quedar fuera de rango y splice lo agregaría
+      // igual al final — acotar deja el resultado explícito en vez de casual.
+      S.gyms.splice(Math.min(pos, S.gyms.length), 0, borrado);
+      if (eraActivo) S.cfg.activeGym = id;
+      saveGyms();
+      saveCfg();
+      bump();
+    },
+  });
 }
 
 /** Qué equipo usás para `exName` en el gym `gymId` — null si ese gym nunca

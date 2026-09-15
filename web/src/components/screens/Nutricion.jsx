@@ -29,6 +29,7 @@ import { logMeal, addMealFromFood } from '../sheets/MealForm.jsx';
 import { useEffect, useRef } from 'react';
 import { countTo, staggerRevealOnce } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
+import { Pencil, X } from '../Icon.jsx';
 
 // El botón de voz sólo aparece si el navegador reconoce voz — mismo criterio
 // que el registro por voz de sesiones en Hoy.jsx.
@@ -138,7 +139,7 @@ export default function Nutricion() {
               {S.cfg.profile.sex === 'f' ? 'Mujer' : 'Hombre'} · {fmtNum(round1(m.weight))} kg · P {m.protMin}-{m.protMax} · G {m.fatMin}-{m.fatMax} · C {m.carbs}g
             </div>
           </div>
-          <button type="button" className="icon-btn accent" aria-label="Ver / modificar mis datos" onClick={() => openSheet('profile')}>✎</button>
+          <button type="button" className="icon-btn accent" aria-label="Ver / modificar mis datos" onClick={() => openSheet('profile')}><Pencil /></button>
         </div>
       ) : (
         <button type="button" className="card profcard border-line2" onClick={() => openSheet('profile')}>
@@ -273,7 +274,7 @@ export default function Nutricion() {
             aria-pressed={S.foodEdit}
             aria-label="Editar la lista de frecuentes"
             onClick={() => { S.foodEdit = !S.foodEdit; bump(); }}
-          >✎</button>
+          ><Pencil /></button>
         )}
       </div>
       {S.foods.length > 0 ? (
@@ -292,20 +293,29 @@ export default function Nutricion() {
         </div>
       )}
 
-      <div className="spacer"></div>
-      <button
-        type="button" className="btn"
-        onClick={() => openSheet('meal-form', { slot: slotForTime(new Date().toTimeString().slice(0, 5)) })}
-      >
-        + Agregar comida
-      </button>
-      {SR_FOOD && (
-        <button type="button" className="pw-btn mt-[var(--s3)]" onClick={() => openSheet('food-voice')}>
-          <span className="pwi">🎙</span><span className="pwt">Registrar por voz</span>
-          <span className="text-mut text-micro font-medium">decí qué comiste</span>
-          <span className="chev">›</span>
+      {/* Las dos formas de registrar comida, como un grupo.
+
+          Antes eran dos botones sueltos separados por un `<div class="spacer">`
+          vacío de 8px arriba y un `mt-[var(--s3)]` de 12px en el de abajo:
+          tres decisiones de espaciado distintas para dos elementos que son lo
+          mismo. Con el grupo el espacio lo pone el contenedor una sola vez
+          (gap), y si mañana aparece una tercera forma de registrar entra sin
+          que haya que acordarse de ponerle margen. */}
+      <div className="act-stack">
+        <button
+          type="button" className="btn"
+          onClick={() => openSheet('meal-form', { slot: slotForTime(new Date().toTimeString().slice(0, 5)) })}
+        >
+          + Agregar comida
         </button>
-      )}
+        {SR_FOOD && (
+          <button type="button" className="pw-btn" onClick={() => openSheet('food-voice')}>
+            <span className="pwi">🎙</span><span className="pwt">Registrar por voz</span>
+            <span className="text-mut text-micro font-medium">decí qué comiste</span>
+            <span className="chev">›</span>
+          </button>
+        )}
+      </div>
 
       <div className="sect">Comidas de {isToday ? 'hoy' : 'este día'}</div>
       {!meals.length ? (
@@ -327,7 +337,7 @@ export default function Nutricion() {
                       </div>
                     )}
                   </div>
-                  <button type="button" className="meal-del" aria-label={`Borrar ${meal.name}`} onClick={() => deleteMeal(meal.id)}>✕</button>
+                  <button type="button" className="meal-del" aria-label={`Borrar ${meal.name}`} onClick={() => deleteMeal(meal.id)}><X /></button>
                 </div>
               ))}
             </div>

@@ -1,6 +1,148 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-13
+**Última actualización:** 2026-09-15
+
+---
+
+## SESIÓN 2026-09-15 — Auditoría de UX: 11 arreglos, PR #96
+
+**Estado: todo commiteado, pusheado y buildeado en la rama
+`worktree-handoff-cleanup-foodtable` (PR #96). 484 tests en verde.
+NADA se verificó en pantalla — job de background, la extensión de Chrome no
+conecta. Es todo visual: el próximo paso es abrirlo en el celular.**
+
+Enzo reportó la hoja de gimnasios fea, la tarjeta de Inicio "bugueada", el
+cambio de pestaña "un parpadeo", "un stagger terrible" al abrir Mis rutinas,
+el ícono del ejercicio desalineado, el calendario de editar rutina "mal
+sincronizado" y espaciado raro en Nutrición. Todo resultó ser real y casi
+todo tenía una causa demostrable en el código.
+
+### Bugs de comportamiento (no eran de estética)
+
+| Qué | Causa raíz | Dónde se arregló |
+|---|---|---|
+| "Todo entrenado esta semana" con CERO sesiones | `stalestGroups()` descarta los `null` (= "nunca") a propósito, y `StaleTile` leía la lista vacía como "todo al día" | `muscle.ts` (`untrainedGroups()` nueva) + `Inicio.jsx:261` |
+| Dos bandas de volumen con colores de la paleta vieja | `var(--text-mut, …)` y `var(--danger, …)`: esos tokens **no existen**. CSS no avisa, usa el fallback | `Progreso.jsx` (`BAND_COLOR`) |
+| Borrar un gym se llevaba su mapa de equipo sin vuelta atrás | Sin confirmación ni deshacer, con el botón pegado al de activar | `gyms.js` (`deleteGym` con toast "Deshacer") |
+
+### Animación: la causa era una sola y sistémica
+
+`Sheet.jsx` llamaba a `bloomOpen()` sobre el `.panel`, que anima `transform`
+— **la misma propiedad que la animación CSS `shup`**. Una animación WAAPI le
+gana a una CSS, así que `shup` (la hoja subiendo sólida) **no se veía nunca** y
+en su lugar quedaba un pop con fundido, justo lo que el comentario de
+`styles.css` dice que no se quería. Encima **23 hojas** hacían su propio
+`bloomOpen` adentro: una escala de 320 ms dentro de otra de 320 ms.
+
+Ahora hay una sola coreografía y en orden: el panel sube (CSS) y recién
+cuando llegó se revela el contenido (`sheetReveal()` en `motion.js`, que
+espera `D.objeto`). Las hojas que no tenían animación —editar rutina— ahora
+la tienen.
+
+**OJO para la próxima:** dos archivos usaban la forma `if (ref.current)
+bloomOpen(...)` y se escaparon de la primera pasada — `Library.jsx` (¡el que
+Enzo reportó!) y `MealForm.jsx`. Se arreglaron después. Si buscás llamadas,
+buscá las dos formas.
+
+### Cambio de pestaña — CUARTA vuelta
+
+Las dos anteriores están descartadas y **no se reintentan**: deslizamiento
+lateral = "caótico" (2ª), fundido cruzado = mezcla las dos pantallas (3ª). El
+problema de la 3ª era que la saliente pasaba a `opacity:0` **sin animación**:
+un primer acto de 0 ms se lee como corte. Ahora se **secuencian** — la vieja
+se va (`--d1`) y recién ahí entra la nueva (`--d2`, con delay). Nunca hay dos
+visibles a la vez.
+
+**Si se siente lento, el número a tocar es uno solo:** el `--d1` del
+`animation-delay` de `.view.enter` en `styles.css`.
+
+### Layout
+
+- **Tarjeta de ejercicio** (`.ex-row`): el pictograma era `absolute` con
+  `top:12px` FIJO, así que cuando la fila lleva la banda azul de grupo el
+  ícono le quedaba encima. Y `.ex-row-bot` tenía `margin-left:-32px`, o sea
+  dos bordes izquierdos. Ahora es una grilla de 2 columnas.
+- **Progreso**: el bloque de Carga/1RM/Volumen era el único sin título, y dos
+  de sus tres pestañas metían el suyo propio adentro. Ahora el título lo pone
+  el bloque ("Tu entrenamiento") y las tres se comportan igual. Las medidas
+  salieron del hero, que hacía ocho trabajos en una tarjeta.
+- **Calendario de editar rutina**: no estaba desincronizado — proyectaba
+  "un turno por día desde hoy" y lo mostraba como agenda. Ahora dice el
+  supuesto y marca el turno actual como "Hoy".
+
+### Sistema de diseño
+
+- `--flame` nuevo: `#FFC46B` estaba a mano en **6** lugares.
+- Los últimos **20 glifos** (`✎ ✕ ↑ ↓`) que eran contenido entero de un botón
+  pasaron a íconos de `Icon.jsx` (se agregaron `Tune`, `Pencil`, `X`, `Check`,
+  `ArrowUp`, `ArrowDown`). Los `×` de multiplicación quedaron intactos a
+  propósito. Los `‹ ›` de navegación siguen afuera, como ya decía `Icon.jsx`.
+- **`tokens.test.js` nuevo**: falla si algún `var()` nombra un token que no
+  existe, señalando archivo y línea. Verificado a mano reintroduciendo el bug.
+
+### EL HALLAZGO GRANDE: el reset sin capa mataba 263 utilidades
+
+Encontrado **verificando en el navegador**, no leyendo codigo — y no se podia
+encontrar leyendo, porque los componentes estaban bien escritos.
+
+`styles.css` tenia `*{margin:0;padding:0}`, `button{background:none;border:none}`
+e `input,select,button,textarea{color:inherit}` **fuera de toda capa**, despues
+de `@import "tailwindcss"`. Tailwind v4 pone sus utilidades en
+`@layer utilities`, y en la cascada **lo que no esta en ninguna capa le gana
+siempre a lo que si lo esta**, sin importar especificidad ni orden.
+
+Medido en Chrome: `px-3` daba 0px, `py-2.5` 0px, `mb-4` 0px. `gap-2` SI daba
+8px, porque `gap` no lo pisa el reset. **Esa asimetria es la firma del bug.**
+
+Alcance: **263 utilidades de espaciado en 21 archivos `.jsx`** sin efecto, mas
+el borde/degradado/color de `<Button variant="icon">`. Eso ultimo es,
+literalmente, "los botones parecen letras al aire": el commit anterior ya usaba
+la pieza correcta, pero la pieza no podia pintarse.
+
+**Arreglo:** las cuatro reglas (`*`, `button`, `input…`, `body`, `main`) van en
+`@layer base`. Las clases propias (`.btn`, `.mini`, `.icon-btn`, `.card`) no se
+tocan: son selectores de clase sin capa, siguen ganando igual que antes.
+
+**Si tocas `styles.css`:** cualquier regla de ELEMENTO que pise padding,
+margin, background, border o color tiene que ir dentro de `@layer base`.
+`tokens.test.js` lo vigila y falla nombrando la regla.
+
+### Verificacion visual: SI se puede, era una suposicion mia equivocada
+
+Dije que no podia verificar en pantalla porque la extension de Chrome no
+conecta en un job de background. Es cierto de la extension, pero **el MCP
+`chrome-devtools` levanta su propio Chrome y funciona perfecto**. Receta:
+
+1. `cd web && npm run dev` en background
+2. `new_page` a `http://localhost:5173/`, `resize_page` 390x844
+3. Ajustes -> "Cargar mi registro" (OJO: son **dos** hojas de confirmacion
+   encadenadas, hay que pasar las dos)
+4. `evaluate_script` para medir (`getBoundingClientRect`, `getComputedStyle`,
+   `getAnimations`) — mide, no mires: "se ve bien" no es una verificacion
+
+Asi se verificaron, con numeros: la tarjeta "Sin datos"/"Al dia", el anillo del
+boton ENTRENAR (`ctaRing 5s`), la coreografia de las hojas (panel `shup` 0-220ms
+y contenido arrancando en 220ms, escalonado de a 30), la alineacion de
+`.ex-row` (`icono_pisa_banda:false`, `mismo_borde_izq:true`), los colores de
+las bandas de volumen (`rgb(156,167,181)` = `--mut`, cero hex viejos), el
+espaciado de Nutricion (12px del contenedor) y el deshacer al borrar un gym
+(vuelve a su posicion original).
+
+### PENDIENTE al 2026-09-15
+
+1. **Mirarlo en TU celular.** Ya se verifico en Chrome de escritorio a 390px
+   (ver arriba), asi que esto ya no es bloqueante — pero un telefono real tiene
+   safe-area, notch y WebView propio. Vale una pasada.
+2. El feedback del tester (sigue abierto, ver sección 2026-09-13).
+3. IA en Nutrición: Enzo lo pidió. **Su suscripción de Claude NO sirve** —
+   hace falta una cuenta de API con saldo. Y como el build se commitea a un
+   repo público, la clave tendría que ponerla él en Ajustes y vivir en
+   IndexedDB. Falta confirmar si la API acepta llamadas directas desde el
+   navegador. Costo estimado: ~US$0,22/mes con Haiku 4.5.
+
+---
+
+**Última actualización anterior:** 2026-09-13
 **Proyecto:** `Exorplion/gymapp` — FIERRO, PWA local de entrenamiento + nutrición
 **Sitio:** https://exorplion.github.io/gymapp/ (GitHub Pages, sirve la raíz de `main`)
 **Estado:** Plan Fierro (Fases 1-3) implementado, testeado, mergeado y publicado.

@@ -18,7 +18,6 @@ import { exMatchesQuery } from '../../lib/exdb.js';
 import { recommendedExercises, saveExercise } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
 import { Mic, RecordDot } from '../Icon.jsx';
-import { bloomOpen } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 import { Button } from '../ui/primitives.jsx';
 
@@ -44,7 +43,6 @@ export default function ExerciseForm({ wd, ex }) {
   const photoRef = useRef(null);
   const rootRef = useRef(null);
 
-  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   async function onPhoto(e) {
     const file = e.target.files?.[0];

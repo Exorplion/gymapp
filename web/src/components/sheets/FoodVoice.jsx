@@ -11,8 +11,9 @@ import { idb } from '../../lib/db.js';
 import { uid, fmtNum, round1, vibrate } from '../../lib/format.js';
 import { parseFoodSpeech, sumItems } from '../../lib/foodvoice.js';
 import { toast } from '../../lib/toast.js';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 import { Button, Card } from '../ui/primitives.jsx';
+import { X } from '../Icon.jsx';
 
 const SR_CLASS = typeof window !== 'undefined'
   ? (window.SpeechRecognition || window.webkitSpeechRecognition || null)
@@ -26,14 +27,13 @@ export default function FoodVoice() {
   const rootRef = useRef(null);
   const knownRef = useRef(null);
 
-  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   // Se corta el reconocimiento si el sheet se cierra a mitad de dictado:
   // sin esto el micrófono seguiría abierto.
   useEffect(() => () => { try { recRef.current?.stop(); } catch (e) { /* ya detenido */ } }, []);
 
   useEffect(() => {
-    if (knownRef.current) staggerReveal(knownRef.current.children);
+    if (knownRef.current) sheetReveal(knownRef.current.children);
   }, [items]);
 
   function listen() {
@@ -110,14 +110,19 @@ export default function FoodVoice() {
             <div ref={knownRef}>
               {known.map((i, n) => (
                 <div className="flex items-center gap-2.5 px-4 py-2.5" key={n}>
-                  <div className="grow">
-                    <div className="text-sm text-txt">{i.name}</div>
+                  <div className="min-w-0 grow">
+                    <div className="truncate text-body font-semibold text-txt">{i.name}</div>
                     <div className="text-sm text-mut">
                       {i.grams ? `${i.grams} g · ` : ''}{i.kcal} kcal · P {fmtNum(round1(i.p))} · C {fmtNum(round1(i.c))} · G {fmtNum(round1(i.f))}
                       {i.source === 'mine' && <span className="ml-1.5 inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 text-nano font-semibold uppercase tracking-wide text-mut">tuyo</span>}
                     </div>
                   </div>
-                  <button type="button" className="grid h-8 w-8 flex-none place-items-center rounded-full text-mut hover:text-txt" aria-label="Quitar de la lista" onClick={() => setItems(items.filter(x => x !== i))}>✕</button>
+                  {/* Era un ✕ suelto en un círculo sin fondo ni borde: se leía
+                      como un carácter flotando al lado del alimento, no como
+                      algo que se pueda tocar. Misma pieza que el resto. */}
+                  <Button type="button" variant="icon" size="icon" className="border-red/30 text-red" aria-label={`Quitar ${i.name} de la lista`} onClick={() => setItems(items.filter(x => x !== i))}>
+                    <X />
+                  </Button>
                 </div>
               ))}
             </div>

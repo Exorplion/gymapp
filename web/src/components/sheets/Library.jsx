@@ -9,14 +9,15 @@ import { TEMPLATES, applyTemplate } from '../../lib/templates.js';
 import {
   routineStats, routineName, applyLibRoutine, deleteLibRoutine, saveCurrentAsLib, startBlank,
 } from '../../lib/rutina-logic.js';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
+import { X } from '../Icon.jsx';
 
 function LibraryList() {
   const st = routineStats();
   const tmplRef = useRef(null);
 
   useEffect(() => {
-    if (tmplRef.current) staggerReveal(tmplRef.current.children);
+    if (tmplRef.current) sheetReveal(tmplRef.current.children);
   }, []);
 
   return (
@@ -61,7 +62,7 @@ function LibraryList() {
                     <div className="t">{r.name}{cur && <span className="lib-tag">en uso</span>}</div>
                     <div className="s">{nd} días · {ne} ejercicios · guardada {fmtD(r.savedAt)}</div>
                   </button>
-                  <button type="button" className="mini red" aria-label={`Borrar la rutina ${r.name}`} onClick={() => deleteLibRoutine(r.id)}>✕</button>
+                  <button type="button" className="mini red" aria-label={`Borrar la rutina ${r.name}`} onClick={() => deleteLibRoutine(r.id)}><X /></button>
                 </div>
               );
             })}
@@ -107,8 +108,6 @@ function LibrarySave({ initialName }) {
   const [name, setName] = useState(initialName ?? (routineName() === 'Rutina personalizada' ? '' : routineName()));
   const inputRef = useRef(null);
   const rootRef = useRef(null);
-
-  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
 
   return (
     <div ref={rootRef}>

@@ -17,7 +17,8 @@ import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
 import { searchFoods, macrosFor, defaultGrams } from '../../lib/foodsearch.js';
 import { SLOTS, slotForTime } from '../../lib/meals.js';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
+import { X } from '../Icon.jsx';
 
 const ahora = () => new Date().toTimeString().slice(0, 5);
 
@@ -55,7 +56,7 @@ export default function MealForm({ slot: slotInicial }) {
   const hits = useMemo(() => searchFoods(q, { slot, limit: 8 }), [q, slot]);
 
   useEffect(() => {
-    if (hitsRef.current) staggerReveal(hitsRef.current.children, { delayStep: 30 });
+    if (hitsRef.current) sheetReveal(hitsRef.current.children, { delayStep: 30 });
   }, [hits]);
 
   const total = carrito.reduce((a, i) => ({
@@ -141,7 +142,7 @@ export default function MealForm({ slot: slotInicial }) {
                 <input type="number" inputMode="decimal" value={i.grams} onChange={e => setGramos(idx, e.target.value)} />
                 <span className="u">g</span>
                 <span className="k">{i.kcal} kcal</span>
-                <button type="button" className="mini red" aria-label="Quitar este alimento" onClick={() => quitar(idx)}>✕</button>
+                <button type="button" className="mini red" aria-label="Quitar este alimento" onClick={() => quitar(idx)}><X /></button>
               </div>
             ))}
             <div className="cart-total"><span>Total</span><b>{Math.round(total.kcal)} kcal</b></div>
@@ -171,7 +172,6 @@ function AlimentoNuevo({ nombre, onListo, onCancel }) {
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
   const rootRef = useRef(null);
-  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
 
   async function crear() {
     const trimmed = name.trim();

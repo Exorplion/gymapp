@@ -33,7 +33,7 @@ import WarmupCard from '../WarmupCard.jsx';
 import { tocaCalentar, bloqueDe, DESCANSO } from '../../lib/warmup.js';
 import { startRest } from '../../lib/rest.js';
 import { toast } from '../../lib/toast.js';
-import { Bolt, Mic, RecordDot } from '../Icon.jsx';
+import { Bolt, Mic, Pencil, RecordDot } from '../Icon.jsx';
 import { HoySinPlan } from '../Illustration.jsx';
 import Silhouette from '../Silhouette.jsx';
 
@@ -367,7 +367,7 @@ function BlockList({ index, exs }) {
                         <span className="t">{ex.name}</span>
                         <span className="s">{equipLabel(ex) ? `${equipLabel(ex)} · ` : ''}{ex.sets}×{ex.reps}</span>
                       </button>
-                      <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}>✎</button>
+                      <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}><Pencil /></button>
                     </div>
                   ))}
                   <button type="button" className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => openSheet('ex-form', { wd: index, ex: null })}>

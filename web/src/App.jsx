@@ -4,6 +4,7 @@ import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab
 import { dstr } from './lib/format.js';
 import { applyComputedGoals } from './lib/macros.js';
 import { initDragListeners } from './lib/drag.js';
+import { empiezaExcluido, clasificarSwipe, pintaHorizontal } from './lib/swipe.js';
 import { currentStreak } from './lib/streak.js';
 import { sessionExs } from './lib/session.js';
 import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
@@ -170,12 +171,119 @@ export default function App() {
   useEffect(() => {
     if (store.tab === tabPrevio.current) return;
     if (lastTabChangeUsedVT) { tabPrevio.current = store.tab; return; }
+    /* Si el cambio vino de un deslizamiento con el dedo, el recorrido YA se
+       hizo — la pantalla vieja salió del marco arrastrada y la nueva entró
+       detrás. Montar acá la animación de la barra la haría entrar una
+       segunda vez, desde el borde, después de haber llegado. */
+    if (porArrastre.current) { porArrastre.current = false; tabPrevio.current = store.tab; return; }
     setSaliente({ tab: tabPrevio.current, dir });
     tabPrevio.current = store.tab;
     clearTimeout(salienteTimer.current);
-    salienteTimer.current = setTimeout(() => setSaliente(null), 340);
+    /* El desmontaje tiene que llegar DESPUÉS de que termine el deslizamiento,
+       con margen. El deslizamiento dura --d3 (320ms, ver pushInR/pushOutR en
+       styles.css) y esto estaba en 340: veinte milisegundos de colchón, o sea
+       menos de dos frames. Alcanza en una máquina holgada; en un teléfono
+       cargado, un frame perdido al arrancar la animación deja la pantalla
+       saliente desmontada ANTES de terminar su recorrido — desaparece de
+       golpe a mitad del deslizamiento, que es justo el corte que se quería
+       sacar. Con 480 el colchón es de 160ms y el efecto es el mismo: nadie
+       ve la pantalla saliente después de que salió del marco. */
+    salienteTimer.current = setTimeout(() => setSaliente(null), 480);
     return () => clearTimeout(salienteTimer.current);
   }, [store.tab, dir]);
+
+  /* ───────── Deslizar la pantalla para cambiar de pestaña ─────────
+
+     Existió y se sacó: "cualquier gesto horizontal, en cualquier parte,
+     terminaba cambiando de pestaña sin querer" (ver el comentario de ORDEN).
+     Vuelve, y con lo que le faltaba: ahora la pantalla SIGUE AL DEDO.
+
+     Eso no es un adorno, es lo que arregla el motivo por el que se sacó. Un
+     swipe que sólo se evalúa al soltar es una apuesta a ciegas: o cambia de
+     pestaña o no, y si no querías, ya está. Siguiendo al dedo ves apenas
+     empezás que la pantalla se está moviendo, y si no era tu intención
+     volvés y la soltás — vuelve sola a su lugar. La activación accidental
+     deja de ser un accidente y pasa a ser algo que podés cancelar.
+
+     Se reusan los umbrales de lib/swipe.js, que ya tienen tests: la lista de
+     zonas excluidas (carrusel, silueta, tiras de chips, campos de texto), el
+     mínimo para saber si el gesto pinta horizontal, y el criterio final.
+
+     El orden es el de la BARRA (cuatro pestañas), no TAB_ORDEN: 'hoy' vive
+     ahí dentro pero no es una pestaña visible, y deslizar hasta una pantalla
+     que la barra no marca como activa se lee como que no pasó nada. Desde
+     'hoy' se sale hacia Inicio, que es de donde se entra. */
+  const ORDEN_SWIPE = ['inicio', 'rutina', 'nutri', 'prog'];
+  const [arrastre, setArrastre] = useState(null); // {dx, destino, ancho, soltando} | null
+  const gesto = useRef(null);
+  const porArrastre = useRef(false);
+  const soltarTimer = useRef(null);
+
+  function vecinoDe(tab, hacia) {
+    /* 'hoy' no está en la barra, pero se entra desde Inicio: volver con el
+       dedo tiene que devolverte ahí. Sin este caso, Hoy sería la única
+       pantalla de la que no se puede salir deslizando — y es justo una en la
+       que tenés las manos ocupadas. */
+    if (tab === 'hoy') return hacia < 0 ? 'inicio' : 'rutina';
+    const i = ORDEN_SWIPE.indexOf(tab);
+    if (i < 0) return null;
+    return ORDEN_SWIPE[i + hacia] || null;
+  }
+
+  function alBajar(e) {
+    if (store.sheet) return;                         // con una hoja abierta, no
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (empiezaExcluido(e.target)) return;
+    gesto.current = { x0: e.clientX, y0: e.clientY, capturado: false, abortado: false };
+  }
+
+  function alMover(e) {
+    const g = gesto.current;
+    if (!g || g.abortado) return;
+    const dx = e.clientX - g.x0;
+    const dy = e.clientY - g.y0;
+
+    if (!g.capturado) {
+      const pinta = pintaHorizontal(dx, dy);
+      if (pinta === null) return;                    // todavía no se sabe
+      if (pinta === false) { g.abortado = true; return; }  // es un scroll
+      const vista = mainRef.current?.querySelector(':scope > .view.enter');
+      g.ancho = vista?.offsetWidth || 1;
+      g.capturado = true;
+    }
+
+    const destino = vecinoDe(store.tab, dx < 0 ? 1 : -1);
+    /* Sin vecino (primera o última pestaña) el gesto no se bloquea: se deja
+       ceder un poco y volver. Una pared invisible confunde; una que empuja
+       de vuelta dice "hasta acá". */
+    setArrastre({ dx: destino ? dx : dx * 0.28, destino, ancho: g.ancho, soltando: false });
+  }
+
+  function alSoltar(e) {
+    const g = gesto.current;
+    gesto.current = null;
+    if (!g || !g.capturado) { setArrastre(null); return; }
+
+    const dx = e.clientX - g.x0;
+    const dy = e.clientY - g.y0;
+    const sentido = clasificarSwipe(dx, dy);
+    const destino = sentido ? vecinoDe(store.tab, sentido) : null;
+
+    clearTimeout(soltarTimer.current);
+    if (destino) {
+      // Completar el recorrido desde donde quedó el dedo, y recién ahí
+      // cambiar de pestaña: si cambiáramos ya, la pantalla saltaría atrás
+      // para volver a entrar desde el borde.
+      setArrastre({ dx: Math.sign(dx) * g.ancho, destino, ancho: g.ancho, soltando: true });
+      porArrastre.current = true;
+      soltarTimer.current = setTimeout(() => { changeTab(destino); setArrastre(null); }, 220);
+    } else {
+      setArrastre(a => (a ? { ...a, dx: 0, soltando: true } : null));
+      soltarTimer.current = setTimeout(() => setArrastre(null), 220);
+    }
+  }
+
+  useEffect(() => () => clearTimeout(soltarTimer.current), []);
 
   /* `main` sólo mide del alto de .view.enter (.view.leave es position:absolute,
      no participa del layout — ver el comentario de styles.css). Si la pantalla
@@ -333,7 +441,14 @@ export default function App() {
       />
       {/* Inicio no scrollea: necesita que main deje de reservar el colchón
           inferior que sí usan las pantallas largas. */}
-      <main ref={mainRef} className={store.tab === 'inicio' ? 'full' : ''}>
+      <main
+        ref={mainRef}
+        className={`${store.tab === 'inicio' ? 'full' : ''}${arrastre ? ' arrastrando' : ''}`}
+        onPointerDown={alBajar}
+        onPointerMove={alMover}
+        onPointerUp={alSoltar}
+        onPointerCancel={alSoltar}
+      >
         {/* La saliente va PRIMERO en el DOM (así la entrante, montada después,
             queda arriba en el stacking normal) y con pointer-events:none —
             es puramente decorativa mientras se termina de ir. */}
@@ -342,9 +457,29 @@ export default function App() {
             {pantallaDe(saliente.tab)}
           </div>
         )}
+        {/* La vecina, sólo mientras dura el gesto: esperando fuera del marco,
+            del lado hacia el que estás arrastrando, y moviéndose lo mismo que
+            la de adelante. Es lo que hace que se vea que hay algo del otro
+            lado en vez de un hueco. */}
+        {arrastre?.destino && (
+          <div
+            className={`view vecino${arrastre.soltando ? ' soltando' : ''}`}
+            style={{ transform: `translateX(${arrastre.dx + (arrastre.dx < 0 ? arrastre.ancho : -arrastre.ancho)}px)` }}
+          >
+            {pantallaDe(arrastre.destino)}
+          </div>
+        )}
         {/* El `key` es lo que hace que la animación se repita: sin él React
             reusa el mismo div y el navegador no vuelve a correr el keyframe. */}
-        <div className={`view enter dir-${dir}`} key={store.tab}>
+        <div
+          className={`view enter dir-${dir}${arrastre ? (arrastre.soltando ? ' arrastrada soltando' : ' arrastrada') : ''}`}
+          key={store.tab}
+          /* `animation:'none'` no es decorativo: las animaciones de entrada
+             usan fill:both, o sea que su valor final de `transform` queda
+             aplicado para siempre y le gana a un transform inline. Sin
+             apagarla, la pantalla no se movería ni un píxel con el dedo. */
+          style={arrastre ? { animation: 'none', transform: `translateX(${arrastre.dx}px)` } : undefined}
+        >
           {pantallaDe(store.tab)}
         </div>
       </main>

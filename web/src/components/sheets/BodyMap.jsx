@@ -10,7 +10,7 @@
 import { useEffect, useRef } from 'react';
 import { S, closeSheet, changeTab } from '../../lib/state.js';
 import { daysSinceAll, stalestGroups, muscleVolume, uncategorized, recoveryPct } from '../../lib/muscle.js';
-import { staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 import Silhouette from '../Silhouette.jsx';
 
 export default function BodyMap() {
@@ -22,7 +22,7 @@ export default function BodyMap() {
   const listRef = useRef(null);
 
   useEffect(() => {
-    if (listRef.current) staggerReveal(listRef.current.children);
+    if (listRef.current) sheetReveal(listRef.current.children);
   }, [mvCats.length]);
 
   return (

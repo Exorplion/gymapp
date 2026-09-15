@@ -11,13 +11,12 @@
 // campo en blanco al guardar significa "no registro este dato hoy", no
 // "repetí el valor de la vez pasada". saveBody() lo refleja con num():
 // parseFloat('') es NaN → null → esa columna queda null en el registro.
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { S, closeSheet, saveCfg } from '../../lib/state.js';
 import { uid, dstr } from '../../lib/format.js';
 import { applyComputedGoals } from '../../lib/macros.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
-import { bloomOpen } from '../../lib/motion.js';
 import { Button } from '../ui/primitives.jsx';
 
 const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt placeholder:text-mut2 outline-none transition-colors focus-visible:border-blue2';
@@ -34,7 +33,6 @@ export default function BodyForm() {
   const weightRef = useRef(null);
   const rootRef = useRef(null);
 
-  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   async function save() {
     const num = raw => { const v = parseFloat(raw); return isNaN(v) ? null : v; };

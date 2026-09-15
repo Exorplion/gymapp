@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { closeSheet } from '../../lib/state.js';
 import { EQUIP, EQUIP_HINT, isMachineBound } from '../../lib/equip.js';
 import { setGymEquip, gymEquipFor } from '../../lib/gyms.js';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 import { Button } from '../ui/primitives.jsx';
 
@@ -21,8 +21,7 @@ export default function GymEquip({ gymId, gymName, exName }) {
   const rootRef = useRef(null);
   const chipsRef = useRef(null);
 
-  useEffect(() => { bloomOpen(rootRef.current); }, []);
-  useEffect(() => { if (chipsRef.current) staggerReveal(chipsRef.current.children); }, []);
+  useEffect(() => { if (chipsRef.current) sheetReveal(chipsRef.current.children); }, []);
 
   function guardar() {
     setGymEquip(gymId, exName, equip, machine);

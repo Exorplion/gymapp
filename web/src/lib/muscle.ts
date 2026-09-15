@@ -318,6 +318,20 @@ export function stalestGroups(min = 7): string[] {
     .map(x => x.c);
 }
 
+/** Los grupos de los que NO hay ni un registro. `null` en daysSinceGroup()
+    es "nunca", que no es lo mismo que "hace mucho" — y `stalestGroups()` los
+    descarta a propósito, porque un grupo que nunca entrenaste no se está
+    enfriando: nunca estuvo caliente.
+
+    Existe porque esa distinción se estaba perdiendo justo donde más importa.
+    La tarjeta "Más flojo" de Inicio mostraba "Todo entrenado esta semana"
+    cuando `stalestGroups()` venía vacío — y venía vacío también con la app
+    recién instalada y cero sesiones. O sea que afirmaba haber entrenado todo
+    sin tener un solo dato, que es exactamente lo que la app no hace. */
+export function untrainedGroups(): string[] {
+  return MUSCLE_CATS.filter(c => daysSinceGroup(c) === null);
+}
+
 /** Cuántos días lleva sin entrenarse, en castellano. `null` es "nunca". */
 export function diasTexto(d: number | null | undefined): string {
   if (d === null || d === undefined) return 'nunca';

@@ -17,7 +17,7 @@
 // es un paso aparte, el de siempre en "Mis rutinas".
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { menosMovimiento, staggerReveal } from '../../lib/motion.js';
+import { menosMovimiento, sheetReveal } from '../../lib/motion.js';
 import { closeSheet } from '../../lib/state.js';
 import { MUSCLE_CATS, EXCATALOG } from '../../lib/muscle.js';
 import { coberturaDe } from '../../lib/coverage.js';
@@ -66,7 +66,7 @@ function useStepReveal(step) {
     if (!el || menosMovimiento()) return;
     const targets = el.querySelectorAll('.chip, .field, .card.sub, .wiz-groupcard');
     if (!targets.length) return;
-    staggerReveal(targets, { delayStep: 60, distance: 12, scale: 0.94, delay: 50 });
+    sheetReveal(targets, { delayStep: 60, distance: 12, scale: 0.94, delay: 50 });
   }, [step]);
   return ref;
 }

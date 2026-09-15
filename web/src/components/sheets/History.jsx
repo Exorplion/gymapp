@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { S, useStore } from '../../lib/state.js';
 import { groupSessionsByWeek } from '../../lib/session.js';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 import { Card } from '../ui/primitives.jsx';
 import SessionCard from '../SessionCard.jsx';
 
@@ -34,16 +34,15 @@ export default function History() {
   const rootRef = useRef(null);
   const listRef = useRef(null);
 
-  useEffect(() => { bloomOpen(rootRef.current); }, []);
   useEffect(() => {
-    if (listRef.current) staggerReveal(listRef.current.children);
+    if (listRef.current) sheetReveal(listRef.current.children);
   }, [n]);
   // Las tandas siguientes NO vuelven a animar la lista entera: sólo entran
   // las semanas nuevas, y las que ya estabas mirando se quedan quietas.
   useEffect(() => {
     if (semanas === SEMANAS_POR_TANDA) return;
     const nuevas = Array.from(listRef.current?.children || []).slice(semanas - SEMANAS_POR_TANDA);
-    if (nuevas.length) staggerReveal(nuevas);
+    if (nuevas.length) sheetReveal(nuevas);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [semanas]);
 
