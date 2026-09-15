@@ -455,11 +455,22 @@ header.top{
    `margin` y este `padding` le ganarían a cualquier utilidad puesta sobre
    <main>. Hoy nadie le pone una, pero la regla vale igual — el bug de las
    263 utilidades muertas empezó siendo exactamente esto. */
+/* El margen lateral de las pantallas. Vive acá, en un token, porque lo tienen
+   que compartir DOS reglas que no se pueden desincronizar: el ancho que
+   recorta `main` y el ancho que recorren las pantallas al deslizarse. Ver el
+   comentario de .view más abajo. */
+:root{ --pad-x:18px; }
+
 @layer base {
   main{
     position:relative;overflow:hidden;
     max-width:520px;margin:0 auto;
-    padding:16px 18px calc(var(--tabs-h) + env(safe-area-inset-bottom) + 110px);
+    /* Sin padding lateral: lo ponen las pantallas. Si lo pusiera main, su
+       recorte quedaría 18px más ancho que el recorrido de las pantallas y al
+       terminar el deslizamiento sobraría una franja de la pantalla anterior
+       pegada al borde izquierdo — que es exactamente el bug que Enzo
+       fotografió el 2026-09-15. */
+    padding:16px 0 calc(var(--tabs-h) + env(safe-area-inset-bottom) + 110px);
     /* `pan-y`: el navegador se queda con el scroll vertical y NOS deja a
        nosotros el movimiento horizontal. Es lo que permite arrastrar la
        pantalla de costado sin pelearle al scroll, y sin tener que adivinar
@@ -481,7 +492,7 @@ input,textarea,select,[contenteditable]{touch-action:auto}
 /* La pantalla que espera del otro lado mientras arrastrás. Mismo encuadre que
    .view.leave para que entre alineada, y sin recibir toques: durante el gesto
    sólo se mira. */
-.view.vecino{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none}
+.view.vecino{position:absolute;top:16px;left:0;right:0;z-index:0;pointer-events:none}
 /* Mientras el dedo manda no hay transición: el movimiento ES el dedo, y
    cualquier suavizado lo vuelve elástico y con retraso. */
 .view.arrastrada{transition:none}
@@ -494,7 +505,21 @@ main.arrastrando{overflow:hidden;user-select:none}
    mostraba la activa con .active. En React sólo se renderiza la activa, así que
    el interruptor sobra y esconderlas por defecto dejaría la pantalla en blanco.
    Lo que queda de .view es la animación de entrada. */
-.view{display:block}
+/* La pantalla ocupa TODO el ancho de main y se pone ella su propio margen
+   lateral. Antes el margen era de main y la pantalla medía 18px menos de cada
+   lado.
+
+   Esa diferencia era el bug de la franja: al deslizar, la pantalla que sale
+   se mueve translateX(-100%), o sea el 100% de SU ancho. Si su ancho es 18px
+   menor que el del marco que la recorta, su borde derecho termina el
+   recorrido en x=18 en vez de x=0 — y esos 18px de la pantalla anterior se
+   quedan visibles, pegados al borde izquierdo, hasta que React la desmonta.
+   Con la pantalla del mismo ancho que el recorte, el 100% la saca entera.
+
+   El margen se aplica con padding y no con margin para que siga siendo parte
+   de la caja que se traslada: con margin, el fondo que se desliza no lo
+   incluiría. */
+.view{display:block;padding-left:var(--pad-x);padding-right:var(--pad-x)}
 /* SEGUNDA VUELTA (a pedido de Enzo, tomando moneditaapp.com de referencia):
    el push/pop nativo (deslizamiento lateral al 100% + el staggerReveal
    propio de cada pantalla corriendo AL MISMO TIEMPO que ese deslizamiento)
@@ -618,7 +643,7 @@ main.arrastrando{overflow:hidden;user-select:none}
 /* `opacity:0` se queda como estado final y como red de seguridad: si la
    animación no corre (reduced-motion la reduce a ~0ms), la saliente sigue
    invisible igual que antes y nunca se superpone con la entrante. */
-.view.leave{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none;opacity:0}
+.view.leave{position:absolute;top:16px;left:0;right:0;z-index:0;pointer-events:none;opacity:0}
 .view.leave.dir-r{animation:pushOutR var(--d3) var(--ease-push) both}
 .view.leave.dir-l{animation:pushOutL var(--d3) var(--ease-push) both}
 @media (prefers-reduced-motion:reduce){
