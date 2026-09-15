@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { S } from '../../lib/state.js';
 import { saveSlot } from '../../lib/rutina-logic.js';
-import { bloomOpen, pulseLike } from '../../lib/motion.js';
+import { pulseLike } from '../../lib/motion.js';
 
 export default function SlotEdit({ index }) {
   const d = S.routine[index];
@@ -16,7 +16,6 @@ export default function SlotEdit({ index }) {
   const btnRef = useRef(null);
   const rootRef = useRef(null);
 
-  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
 
   function guardar() {
     pulseLike(btnRef.current);

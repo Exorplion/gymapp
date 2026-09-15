@@ -121,6 +121,24 @@ export function popIn(el, { scale = 0.9, rotate = 0, duration = D.panel, easing 
 // la app es "sesión nueva" y las tarjetas vuelven a hacer su primer reveal,
 // que es exactamente cuándo tiene sentido mostrarlo.
 const revealed = new Set();
+/** El stagger de una lista que vive DENTRO de una hoja.
+
+    Es staggerReveal con una sola diferencia: espera a que el panel termine
+    de subir (`shup`, --d2 = D.objeto en styles.css) antes de empezar. Sin esa
+    espera, las tarjetas se deslizaban hacia arriba mientras la hoja entera
+    también se deslizaba hacia arriba — dos movimientos en el mismo eje, a
+    velocidades distintas, uno adentro del otro. Se lee como que la lista
+    "pelea" con la hoja; Enzo lo describió como "un stagger terrible" al
+    abrir Mis rutinas.
+
+    También son pasos más cortos (30ms en vez de 45): una vez que la hoja ya
+    está quieta, el ojo tiene toda la lista enfrente y un desfile lento se
+    siente lento, no elegante. Con el panel en movimiento no se notaba
+    porque había algo más grande tapándolo. */
+export function sheetReveal(els, opts = {}) {
+  staggerReveal(els, { delay: D.objeto, delayStep: 30, ...opts });
+}
+
 export function staggerRevealOnce(key, els, opts) {
   if (revealed.has(key)) return;
   revealed.add(key);

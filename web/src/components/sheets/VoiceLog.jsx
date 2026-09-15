@@ -33,7 +33,7 @@ import { dstr, uid, round1, vibrate } from '../../lib/format.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
 import { pendingSlot } from '../../lib/session.js';
-import { staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 
 const FIELDS = [['sets', 'Series'], ['reps', 'Reps'], ['w', 'Peso kg']];
 
@@ -48,7 +48,7 @@ export default function VoiceLog({ items: initialItems, duration: initialDuratio
   // cada tecla): confirma que "esto es lo que entendí" con un gesto, no un
   // salto seco de 11 tarjetas iguales.
   useEffect(() => {
-    if (listRef.current) staggerReveal(listRef.current.children);
+    if (listRef.current) sheetReveal(listRef.current.children);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

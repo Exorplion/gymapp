@@ -6,7 +6,7 @@
 import { useEffect, useRef } from 'react';
 import { S, closeSheet, bump } from '../../lib/state.js';
 import { orderedExs, sessionExs, setExOrder } from '../../lib/session.js';
-import { staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 
 export default function ReorderHoy() {
   const index = S.cfg.seqIndex;
@@ -19,7 +19,7 @@ export default function ReorderHoy() {
   // reordenamiento en sí, que sigue siendo enteramente cosa de drag.js
   // (data-sort/data-sid intactos).
   useEffect(() => {
-    if (listRef.current) staggerReveal(listRef.current.children);
+    if (listRef.current) sheetReveal(listRef.current.children);
   }, []);
 
   /* Arrastrar era la ÚNICA forma de reordenar acá, y eso falla el criterio

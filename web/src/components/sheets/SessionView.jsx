@@ -19,7 +19,7 @@ import { toast } from '../../lib/toast.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
 import { Skip } from '../Icon.jsx';
-import { staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 // El burst de récord vive en su propio módulo y entra por React.lazy: son
 // 320 KB de lottie-web (la dependencia más pesada de la app, 24% del bundle)
 // para UNA animación de 44×44 que sólo se ve al cerrar la sesión que generó el
@@ -36,7 +36,7 @@ export default function SessionView({ id, justFinished = false }) {
   const s = S.sessions.find(x => x.id === id);
 
   useEffect(() => {
-    if (entriesRef.current) staggerReveal(entriesRef.current.children);
+    if (entriesRef.current) sheetReveal(entriesRef.current.children);
   }, [id]);
 
   if (!s) return null;

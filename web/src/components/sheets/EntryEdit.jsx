@@ -7,7 +7,7 @@
 // Cambia sólo esa entrada de esa sesión. Si la RUTINA del día también tiene el
 // nombre viejo, lo ofrece con un botón: el historial y el plan son dos cosas, y
 // corregir un registro no debería reescribir el plan sin permiso.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { S, closeSheet, openSheet } from '../../lib/state.js';
 import { norm } from '../../lib/format.js';
 import { updateHistorySession } from '../../lib/session.js';
@@ -16,7 +16,6 @@ import { EXCATALOG, MUSCLE_CATS, catOf } from '../../lib/muscle.js';
 import { exMatchesQuery } from '../../lib/exdb.js';
 import { EQUIP, isMachineBound } from '../../lib/equip.js';
 import { toast } from '../../lib/toast.js';
-import { bloomOpen } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 import { Button } from '../ui/primitives.jsx';
 import MachineField from '../MachineField.jsx';
@@ -38,7 +37,6 @@ export default function EntryEdit({ sessId, idx }) {
   const nameRef = useRef(null);
   const rootRef = useRef(null);
 
-  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   const q = norm(name);
   const sugeridos = useMemo(

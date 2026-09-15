@@ -409,8 +409,29 @@ main{
    cada pantalla) no tiene que competir con nada más grande pasando a la vez.
    Se abandona la identidad "como una app nativa" (deslizamiento direccional)
    en este punto específico a favor de esa referencia. */
+/* CUARTA VUELTA (Enzo, 2026-09-15: "ahora solo es un parpadeo"). Tiene razón,
+   y es la consecuencia directa de la tercera: al hacer que la saliente
+   desapareciera YA (opacity:0 sin animación) se quitó el único problema real
+   —ver dos pantallas distintas mezcladas— pero también se quitó toda salida.
+   Una transición cuyo primer acto dura 0ms se lee como un corte.
+
+   Los dos caminos anteriores están descartados y no se reintentan: el
+   deslizamiento lateral se sintió caótico contra el stagger de adentro
+   (segunda vuelta) y el fundido cruzado mezclaba contenidos (tercera).
+
+   Lo que queda, y es lo que faltaba probar: no superponerlas, SECUENCIARLAS.
+   La saliente se va de verdad (fade + 6px hacia arriba, --d1) y recién
+   cuando terminó entra la nueva (--d2, con delay de --d1). En ningún
+   instante hay dos pantallas visibles a la vez —que era la condición
+   irrenunciable de la tercera vuelta— pero ahora sí hay una salida que se
+   ve. Las dos se mueven hacia arriba, así que se leen como un solo
+   recorrido continuo y no como dos gestos sueltos.
+
+   Si llega a sentirse lento, el número a tocar es uno solo: el --d1 del
+   delay de .view.enter. */
 @keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.view.enter.dir-r,.view.enter.dir-l{animation:screenIn var(--d2) var(--ease-out) both}
+@keyframes screenOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(-6px) scale(.99)}}
+.view.enter.dir-r,.view.enter.dir-l{animation:screenIn var(--d2) var(--ease-out) var(--d1) both}
 /* z-index explícito, con position:relative para que z-index tenga efecto
    (sin position, un elemento static ignora z-index aunque sea flex/grid no
    aplica acá). Así la entrante queda SIEMPRE arriba de la saliente, sin
@@ -446,7 +467,10 @@ main{
    en sus propios 220ms, es lo único que se ve aparecer — nunca hay dos
    pantallas distintas visibles a la vez, sólo un instante brevísimo de
    fondo liso entre una y otra. */
-.view.leave{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none;opacity:0}
+/* `opacity:0` se queda como estado final y como red de seguridad: si la
+   animación no corre (reduced-motion la reduce a ~0ms), la saliente sigue
+   invisible igual que antes y nunca se superpone con la entrante. */
+.view.leave{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none;opacity:0;animation:screenOut var(--d1) var(--ease-out) both}
 @media (prefers-reduced-motion:reduce){
   .view.enter.dir-r,.view.enter.dir-l{animation:none}
   /* .view.leave ya es opacity:0 siempre (regla de arriba) — display:none
@@ -727,7 +751,10 @@ main{
    viven el ⓘ arriba y los cuatro botones de acción abajo, y el dibujo se les
    montaba encima. El hueco se lo hace el padding de .ex-row, más abajo — no
    una regla acá, que quedaría antes en la hoja y la perdería la cascada. */
-.ex-row-icon{position:absolute;top:12px;left:14px;color:var(--blue2);opacity:.6}
+/* Sin position:absolute: ahora es una celda de la grilla de .ex-row (ver el
+   comentario largo más abajo). Quedarse absoluto era lo que lo dejaba
+   pisando la banda de grupo. */
+.ex-row-icon{color:var(--blue2);opacity:.6}
 
 /* En el resumen de la semana y en el detalle de una sesión las filas ya son
    flex, así que el dibujo entra como un elemento más y no hace falta sacarlo
@@ -1138,22 +1165,56 @@ body.dragging-on .card.day.drop-target{filter:none}
 }
 .day-exs-head span{letter-spacing:.02em;text-transform:none;font-weight:600;color:var(--mut2)}
 
+/* La banda de grupo muscular ocupa el ancho entero de la tarjeta: los
+   márgenes negativos cancelan el padding de .ex-row y el padding propio lo
+   repone, así el texto queda alineado con el pictograma de abajo. Si cambia
+   el padding de .ex-row, estos cuatro números cambian con él. */
 .ex-group-tag{
-  margin:-10px -12px 8px -46px;padding:5px 12px 5px 46px;
+  grid-column:1 / -1;grid-row:1;
+  margin:-12px -14px 10px -16px;padding:6px 14px 6px 16px;
   background:rgba(var(--blue-rgb),.10);
   border-bottom:1px solid rgba(var(--blue-rgb),.20);
   font-size:var(--t-nano);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
   color:var(--blue3);
 }
 
+/* La tarjeta de ejercicio, rehecha como grilla (2026-09-15).
+
+   Antes era un bloque con padding-left:46px y el pictograma sacado del flujo
+   (position:absolute; top:12px). Eso tenía dos problemas que se veían:
+
+   1. El ícono estaba clavado a 12px del borde de arriba SIEMPRE, pero la
+      fila a veces empieza con la banda de grupo (.ex-group-tag, el fondo
+      azul). Cuando esa banda está, el contenido baja y el ícono se queda
+      arriba: le queda ENCIMA a la banda, mitad adentro y mitad afuera. Por
+      eso se veía desalineado sólo en algunas filas — justo las primeras de
+      cada grupo muscular, que son las que llevan banda.
+   2. `.ex-row-bot` se corregía con margin-left:-32px para recuperar el
+      espacio del pictograma. O sea que la tarjeta tenía DOS bordes
+      izquierdos: el nombre arrancaba en 46px y la prescripción en 14px.
+
+   Con grilla los dos desaparecen solos: el ícono es una celda que abarca las
+   tres filas de contenido y se centra contra ellas (no contra la tarjeta,
+   así que la banda ya no lo descoloca), y todo el contenido comparte una
+   única columna, o sea un único borde izquierdo. Las filas van numeradas
+   explícitamente para que la banda ocupe la 1 aunque no exista: una fila de
+   grilla vacía mide 0. */
 .ex-row{
   position:relative;overflow:hidden;
   background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
   border:1px solid rgba(255,255,255,.07);
   border-radius:var(--r-md);
-  /* los 46 de la izquierda son el riel más el pictograma (.ex-row-icon) */
-  padding:10px 12px 10px 46px;margin-bottom:8px;
+  display:grid;grid-template-columns:26px 1fr;column-gap:11px;
+  /* el riel (::before) mide 4px sobre el borde izquierdo; los 16 lo dejan
+     respirar en vez de que el pictograma lo toque */
+  padding:12px 14px 12px 16px;margin-bottom:8px;
+  transition:border-color var(--d1) var(--ease-out),background var(--d1) var(--ease-out);
 }
+.ex-row:active{border-color:rgba(var(--blue-rgb),.28)}
+.ex-row-icon{grid-column:1;grid-row:2 / span 3;align-self:center}
+.ex-row-top{grid-column:2;grid-row:2}
+.ex-row .n{grid-column:2;grid-row:3}
+.ex-row .ex-row-bot{grid-column:2;grid-row:4}
 /* El riel, igual que en el detalle de sesión pero diciendo otra cosa: acá su
    altura son las series de este ejercicio contra el que más tiene del día.
    La lista se vuelve un gráfico del reparto de volumen, que es justo lo que
@@ -1174,7 +1235,11 @@ body.dragging-on .card.day.drop-target{filter:none}
 /* El pictograma sólo ocupa el alto del nombre, así que la fila de abajo se
    corre a la izquierda y recupera ese ancho: sin esto el esquema de RIR se
    cortaba en las filas de números anchos ("4×15"). */
-.ex-row-bot{display:flex;align-items:center;gap:9px;margin-top:8px;margin-left:-32px}
+/* Sin el margin-left:-32px que tenía: existía para recuperar a mano el
+   espacio que el pictograma absoluto le robaba al padding, y era lo que
+   dejaba la prescripción con un borde izquierdo distinto al del nombre.
+   Con la grilla no hay nada que recuperar. */
+.ex-row-bot{display:flex;align-items:center;gap:9px;margin-top:8px}
 /* la prescripción es el dato de esta pantalla, así que es el número grande —
    el mismo rol que el peso en el detalle de sesión */
 .ex-row .presc{
@@ -1597,7 +1662,10 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   display:flex;align-items:center;gap:10px;
 }
 .sect::after{content:"";flex:1;height:1px;background:var(--line)}
-.spacer{height:8px}
+/* Un grupo de acciones apiladas: el espacio entre ellas lo pone el
+   contenedor, no cada botón con su propio margen. Es la diferencia entre
+   "estos dos botones son un grupo" y "estos dos botones quedaron cerca". */
+.act-stack{display:flex;flex-direction:column;gap:var(--s3);margin-top:var(--s4)}
 .txt-blue{color:var(--blue2)} .txt-ok{color:var(--ok)} .txt-red{color:var(--red)} .txt-mut{color:var(--mut)} .txt-warn{color:var(--warn)}
 /* Un <button> real metido en medio de una oración ("· usar último
    registrado") — alcanzable por teclado, a diferencia del <span onClick> que
@@ -1846,7 +1914,22 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    dar contexto de "¿esto me deja entrenando el fin de semana?" mientras
    reordenás. No es arrastrable: los descansos (.off) sólo se muestran,
    se recalculan solos alrededor de los entrenamientos. */
-.week-proj{display:flex;gap:6px;overflow-x:auto;margin:14px 0;padding-bottom:2px}
+/* El supuesto del que sale la tira, dicho arriba de ella. Ver el comentario
+   de WeekProjection en Rutina.jsx: sin esta línea los días se leen como una
+   agenda y la tira promete fechas que no puede cumplir. */
+.week-proj-cap{
+  font-size:var(--t-nano);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--mut2);margin:14px 0 6px;
+}
+.week-proj{display:flex;gap:6px;overflow-x:auto;margin:0 0 14px;padding-bottom:2px}
+/* El turno en el que estás parado: el ancla de toda la tira. Se marca con el
+   acento y un borde lleno, no sólo con el texto "Hoy", para que se encuentre
+   de un vistazo entre siete casillas iguales. */
+.week-proj-d.now{
+  border-color:var(--blue2);background:rgba(var(--blue-rgb),.12);
+}
+.week-proj-d.now .wd{color:var(--accent)}
+.week-proj-d.now .t{color:var(--txt)}
 .week-proj-d{
   flex:0 0 64px;display:flex;flex-direction:column;align-items:center;gap:4px;
   padding:9px 4px;border-radius:var(--r-md);background:var(--card2);border:1px solid var(--line);
@@ -2415,6 +2498,41 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-cta.pulse{animation:pulse 2s infinite}
 .ini-wk{margin-top:10px;flex:none}
 @media (prefers-reduced-motion:reduce){.ini-cta.pulse{animation:none}}
+
+/* ENTRENAR: el único de los cuatro CTA que invita a HACER algo — los otros
+   tres informan un estado (seguir lo empezado, ver lo hecho, no toca hoy).
+   Por eso es el único con un gesto propio: un reflejo que recorre el borde
+   una vez cada cinco segundos. Si lo tuvieran los cuatro dejaría de señalar
+   cuál importa, que es justamente lo que tiene que hacer.
+
+   El texto también cambia de tratamiento: más grande y con el tracking
+   bastante más abierto que el resto de los CTA, para que se lea como una
+   palabra estampada y no como una etiqueta más. Se queda en peso 700
+   (y no 800 como el resto de .ini-cta) porque de Barlow Condensed sólo se
+   cargan 500/600/700: pedir 800 hace que el navegador finja el grosor. */
+.ini-cta-go{
+  position:relative;overflow:hidden;
+  font-weight:700;font-size:var(--t-xl);letter-spacing:.14em;
+}
+.ini-cta-go .ini-cta-txt{position:relative;z-index:2}
+/* El reflejo. Gira un cuadrado con gradiente cónico detrás del botón, en vez
+   de animar un ángulo con @property: el WebView de Android todavía no lo
+   soporta en todas las versiones, y ahí la animación simplemente no correría. */
+.ini-cta-go::before{
+  content:"";position:absolute;left:50%;top:50%;
+  width:170%;aspect-ratio:1;translate:-50% -50%;z-index:0;
+  background:conic-gradient(from 0deg,transparent 0 70%,rgba(255,255,255,.92) 83%,transparent 91%);
+  animation:ctaRing 5s linear infinite;
+}
+/* Tapa el centro y deja el reflejo asomando sólo como un filo: sin esto el
+   cónico se vería como un aspa girando dentro del botón. */
+.ini-cta-go::after{
+  content:"";position:absolute;inset:1.5px;z-index:1;
+  border-radius:calc(var(--r) - 1.5px);
+  background:var(--grad2);
+}
+@keyframes ctaRing{to{rotate:360deg}}
+@media (prefers-reduced-motion:reduce){.ini-cta-go::before{animation:none}}
 
 /* El panel de abajo: la tarjeta del cuerpo ocupa las dos columnas y las dos
    chicas (racha / grupo flojo) se reparten la fila siguiente — un grid

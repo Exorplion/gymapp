@@ -16,7 +16,7 @@ import { S, openSheet, closeSheet } from '../../lib/state.js';
 import { gymEquipFor } from '../../lib/gyms.js';
 import { subBlocksOf } from '../../lib/muscle.js';
 import { equipLabel } from '../../lib/equip.js';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 
 /** Cada ejercicio distinto de la rutina, una sola vez. Sale de S.routine, así
     que no puede desincronizarse de lo que de verdad entrenás. */
@@ -39,9 +39,8 @@ export default function GymMatch({ gymId }) {
 
   const rootRef = useRef(null);
   const listRef = useRef(null);
-  useEffect(() => { bloomOpen(rootRef.current); }, []);
   useEffect(() => {
-    if (listRef.current) staggerReveal(listRef.current.children);
+    if (listRef.current) sheetReveal(listRef.current.children);
   }, []);
 
   if (!gym) return null;

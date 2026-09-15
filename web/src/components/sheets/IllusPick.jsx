@@ -13,7 +13,7 @@
 // vocabulario en español (ver lib/illustrations.js).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { searchIllus, illusUrl } from '../../lib/illustrations.js';
-import { staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 
 export default function IllusPick({ exName = '', onPick, onClose }) {
@@ -24,7 +24,7 @@ export default function IllusPick({ exName = '', onPick, onClose }) {
   // Cada nueva búsqueda repinta la grilla entera: una entrada en cascada
   // suave marca que cambió el set de resultados, no sólo un parpadeo.
   useEffect(() => {
-    if (gridRef.current) staggerReveal(gridRef.current.children);
+    if (gridRef.current) sheetReveal(gridRef.current.children);
   }, [results]);
 
   return (

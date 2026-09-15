@@ -3,13 +3,12 @@
 // del sheet (Sheet.jsx ya lo resuelve), igual que el original no traía
 // botón de cierre propio.
 import { useEffect, useRef } from 'react';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 
 export default function Guide() {
   const rootRef = useRef(null);
   useEffect(() => {
-    bloomOpen(rootRef.current);
-    if (rootRef.current) staggerReveal(rootRef.current.children);
+    if (rootRef.current) sheetReveal(rootRef.current.children);
   }, []);
 
   return (

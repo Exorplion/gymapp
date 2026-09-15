@@ -11,7 +11,7 @@ import { idb } from '../../lib/db.js';
 import { uid, fmtNum, round1, vibrate } from '../../lib/format.js';
 import { parseFoodSpeech, sumItems } from '../../lib/foodvoice.js';
 import { toast } from '../../lib/toast.js';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 import { Button, Card } from '../ui/primitives.jsx';
 import { X } from '../Icon.jsx';
 
@@ -27,14 +27,13 @@ export default function FoodVoice() {
   const rootRef = useRef(null);
   const knownRef = useRef(null);
 
-  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   // Se corta el reconocimiento si el sheet se cierra a mitad de dictado:
   // sin esto el micrófono seguiría abierto.
   useEffect(() => () => { try { recRef.current?.stop(); } catch (e) { /* ya detenido */ } }, []);
 
   useEffect(() => {
-    if (knownRef.current) staggerReveal(knownRef.current.children);
+    if (knownRef.current) sheetReveal(knownRef.current.children);
   }, [items]);
 
   function listen() {

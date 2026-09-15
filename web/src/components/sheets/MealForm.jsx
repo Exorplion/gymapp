@@ -17,7 +17,7 @@ import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
 import { searchFoods, macrosFor, defaultGrams } from '../../lib/foodsearch.js';
 import { SLOTS, slotForTime } from '../../lib/meals.js';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { bloomOpen, sheetReveal } from '../../lib/motion.js';
 
 const ahora = () => new Date().toTimeString().slice(0, 5);
 
@@ -55,7 +55,7 @@ export default function MealForm({ slot: slotInicial }) {
   const hits = useMemo(() => searchFoods(q, { slot, limit: 8 }), [q, slot]);
 
   useEffect(() => {
-    if (hitsRef.current) staggerReveal(hitsRef.current.children, { delayStep: 30 });
+    if (hitsRef.current) sheetReveal(hitsRef.current.children, { delayStep: 30 });
   }, [hits]);
 
   const total = carrito.reduce((a, i) => ({

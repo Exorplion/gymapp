@@ -10,7 +10,7 @@ import { blocksOf } from '../../lib/muscle.js';
 const editDay = () => {};
 import { openSheet } from '../../lib/state.js';
 import { Info } from '../Icon.jsx';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 import { Button } from '../ui/primitives.jsx';
 
 export default function DayPeek({ wd }) {
@@ -19,8 +19,7 @@ export default function DayPeek({ wd }) {
   const blocksRef = useRef(null);
 
   useEffect(() => {
-    bloomOpen(rootRef.current);
-    if (blocksRef.current) staggerReveal(blocksRef.current.children);
+    if (blocksRef.current) sheetReveal(blocksRef.current.children);
   }, []);
 
   if (!d?.exercises?.length) return null;

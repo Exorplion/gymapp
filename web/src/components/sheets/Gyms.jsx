@@ -26,7 +26,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { S, closeSheet, openSheet } from '../../lib/state.js';
 import { createGym, renameGym, deleteGym, setActiveGym } from '../../lib/gyms.js';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 import { Button, Card, Badge } from '../ui/primitives.jsx';
 import { Tune, Pencil, X, Check } from '../Icon.jsx';
 import { cn } from '../../lib/utils.js';
@@ -40,9 +40,8 @@ export default function Gyms() {
   const rootRef = useRef(null);
   const listRef = useRef(null);
 
-  useEffect(() => { bloomOpen(rootRef.current); }, []);
   useEffect(() => {
-    if (listRef.current) staggerReveal(listRef.current.children);
+    if (listRef.current) sheetReveal(listRef.current.children);
   }, [S.gyms.length]);
 
   function agregar() {

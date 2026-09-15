@@ -4,8 +4,8 @@
 import { useEffect, useRef } from 'react';
 import { streakHeatmap, currentStreak, bestStreak } from '../../lib/streak.js';
 import { fmtDFull } from '../../lib/format.js';
-import { Flame } from '../Icon.jsx';
 import { countTo, pulseLike } from '../../lib/motion.js';
+import { Flame } from '../Icon.jsx';
 
 export default function StreakDetail() {
   const { days, pct } = streakHeatmap();

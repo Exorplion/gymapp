@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../state.js';
-import { catOf, muscleVolume, uncategorized, daysSinceGroup, daysSinceAll, stalestGroups, MUSCLE_CATS, groupStats, diasTexto, catsDeSesion } from '../muscle.js';
+import { catOf, muscleVolume, uncategorized, daysSinceGroup, daysSinceAll, stalestGroups, untrainedGroups, MUSCLE_CATS, groupStats, diasTexto, catsDeSesion } from '../muscle.js';
 
 // Los 18 ejercicios de la rutina real de Enzo que HOY no matchean: son el
 // motivo de este bloque, así que son el test.
@@ -201,6 +201,40 @@ describe('stalestGroups', () => {
   it('los frescos no aparecen', () => {
     S.sessions = [sesion('a', '2026-08-09', [['Jalón ancho', serie]])];
     expect(stalestGroups()).toEqual([]);
+  });
+});
+
+/* El complemento de stalestGroups: "nunca" no es "hace mucho".
+
+   Que stalestGroups() devuelva [] tiene DOS causas distintas y opuestas —
+   entrenaste todo hace poco, o no entrenaste nada nunca — y la tarjeta
+   "Más flojo" de Inicio las confundía: mostraba "Todo entrenado esta semana"
+   en los dos casos, incluida la app recién instalada con cero sesiones. */
+describe('untrainedGroups', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 10));
+  });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('sin una sola sesión, TODOS los grupos están sin registro', () => {
+    S.sessions = [];
+    expect(untrainedGroups()).toEqual(MUSCLE_CATS);
+  });
+
+  it('el grupo entrenado sale de la lista; el resto sigue sin registro', () => {
+    S.sessions = [sesion('a', '2026-08-09', [['Jalón ancho', serie]])];
+    const sinDato = untrainedGroups();
+    expect(sinDato).not.toContain('Espalda');
+    expect(sinDato).toContain('Gemelos');
+  });
+
+  it('un grupo entrenado hace muchísimo NO cuenta como sin registro', () => {
+    // Es el caso que distingue esta función de stalestGroups: hace 172 días
+    // es "flojo", no "nunca". Los dos listados tienen que discrepar acá.
+    S.sessions = [sesion('c', '2026-02-20', [['Hip thrust', serie]])];
+    expect(untrainedGroups()).not.toContain('Glúteo');
+    expect(stalestGroups()).toContain('Glúteo');
   });
 });
 

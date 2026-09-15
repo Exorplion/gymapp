@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { S, closeSheet } from '../../lib/state.js';
 import { equipLabel, exKey } from '../../lib/equip.js';
 import { copyExercises, copySourceExercises } from '../../lib/rutina-logic.js';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { sheetReveal } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 import { Button, Card } from '../ui/primitives.jsx';
 
@@ -27,7 +27,6 @@ export default function CopyExercises({ mode = 'push', index }) {
   const rootRef = useRef(null);
   const listRef = useRef(null);
 
-  useEffect(() => { bloomOpen(rootRef.current); }, []);
 
   // Turnos con ejercicios, que son los únicos que sirven de origen.
   const conEjercicios = S.routine.map((s, i) => i).filter(i => S.routine[i]?.exercises?.length);
@@ -67,7 +66,7 @@ export default function CopyExercises({ mode = 'push', index }) {
   const idDe = e => e.id ?? e.name;
 
   useEffect(() => {
-    if (listRef.current) staggerReveal(listRef.current.children);
+    if (listRef.current) sheetReveal(listRef.current.children);
   }, [disponibles.length, src]);
 
   const destino = esPush ? destinoIndex : propio;

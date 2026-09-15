@@ -9,14 +9,14 @@ import { TEMPLATES, applyTemplate } from '../../lib/templates.js';
 import {
   routineStats, routineName, applyLibRoutine, deleteLibRoutine, saveCurrentAsLib, startBlank,
 } from '../../lib/rutina-logic.js';
-import { bloomOpen, staggerReveal } from '../../lib/motion.js';
+import { bloomOpen, sheetReveal } from '../../lib/motion.js';
 
 function LibraryList() {
   const st = routineStats();
   const tmplRef = useRef(null);
 
   useEffect(() => {
-    if (tmplRef.current) staggerReveal(tmplRef.current.children);
+    if (tmplRef.current) sheetReveal(tmplRef.current.children);
   }, []);
 
   return (

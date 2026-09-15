@@ -24,7 +24,7 @@ import { useEffect, useRef } from 'react';
 import { S, useStore, bump, openSheet, changeTab } from '../../lib/state.js';
 import { WDS, MO, dstr, fmtD, fmtNum, round1 } from '../../lib/format.js';
 import { pendingSlot, sessionForSlot, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
-import { daysSinceAll, stalestGroups } from '../../lib/muscle.js';
+import { daysSinceAll, stalestGroups, untrainedGroups, MUSCLE_CATS } from '../../lib/muscle.js';
 import { semanaDe } from '../../lib/week.js';
 import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
@@ -92,7 +92,16 @@ export default function Inicio() {
     eyebrow = fecha;
     titulo = slot.name || 'Entrenamiento';
     sub = `${slot.exercises.length} ejercicio${slot.exercises.length === 1 ? '' : 's'} · vas por tu racha`;
-    cta = <button type="button" className="ini-cta" onClick={irAHoy}>IR A HOY</button>;
+    /* "ENTRENAR", no "IR A HOY". El botón principal nombra la acción, no el
+       destino: "ir a hoy" describe una navegación dentro de la app (¿ir
+       adónde? "hoy" es una pestaña, no algo que quieras hacer), y lo que la
+       persona vino a hacer es entrenar. Con `ini-cta-go` además se distingue
+       de los otros tres CTA, que son estados y no la invitación principal. */
+    cta = (
+      <button type="button" className="ini-cta ini-cta-go" onClick={irAHoy}>
+        <span className="ini-cta-txt">ENTRENAR</span>
+      </button>
+    );
   } else {
     const hayRutina = S.routine.some(s => s.type === 'workout' && s.exercises?.length);
     eyebrow = fecha;
@@ -258,7 +267,43 @@ function RachaTile({ racha }) {
     `stalestGroups` los devuelve del más viejo al más nuevo, así que los días
     que se muestran son los del primero — el peor caso. */
 function StaleTile({ grupos, dias }) {
-  if (!grupos.length) return <div className="ini-tile ini-tile-stale ini-tile-ok">Todo entrenado esta semana</div>;
+  if (!grupos.length) {
+    /* `grupos` vacío tiene DOS causas opuestas y hasta el 2026-09-15 la
+       tarjeta las confundía: decía "Todo entrenado esta semana" tanto si de
+       verdad estaba todo al día como si no había una sola sesión registrada.
+       Con la app recién instalada afirmaba haber entrenado los nueve grupos
+       sin tener un dato — justo lo que la app no hace (ver CLAUDE.md).
+
+       `stalestGroups()` descarta los "nunca" a propósito y está bien que lo
+       haga: un grupo que nunca entrenaste no se está enfriando, y listarlo
+       sería gritarle a alguien que recién empieza. Lo que faltaba era que
+       ESTA tarjeta supiera de qué vacío se trata. */
+    const sinDato = untrainedGroups();
+    if (sinDato.length === MUSCLE_CATS.length) {
+      return (
+        <div className="ini-tile ini-tile-stale">
+          <div className="ini-tile-lbl">Más flojo</div>
+          <div className="ini-tile-stale-name">Sin datos</div>
+          <div className="ini-tile-stale-days">registrá una sesión</div>
+        </div>
+      );
+    }
+    return (
+      <div className="ini-tile ini-tile-stale ini-tile-ok">
+        <div className="ini-tile-lbl">Más flojo</div>
+        <div className="ini-tile-stale-name">Al día</div>
+        {/* Se dice sobre cuánto se está afirmando. "Todo entrenado" a secas
+            daba por cubiertos también los grupos de los que no hay registro
+            —gemelos y abs son los que más se saltean— y eso es afirmar de
+            más. Mismo criterio que el `coverage` de microsOfDay(). */}
+        <div className="ini-tile-stale-days">
+          {sinDato.length === 0
+            ? 'nada flojo esta semana'
+            : `${MUSCLE_CATS.length - sinDato.length} de ${MUSCLE_CATS.length} grupos con registro`}
+        </div>
+      </div>
+    );
+  }
   const top = grupos.slice(0, 2);
   const d = dias[top[0]];
   return (
