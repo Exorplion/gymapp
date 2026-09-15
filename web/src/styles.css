@@ -460,8 +460,36 @@ header.top{
     position:relative;overflow:hidden;
     max-width:520px;margin:0 auto;
     padding:16px 18px calc(var(--tabs-h) + env(safe-area-inset-bottom) + 110px);
+    /* `pan-y`: el navegador se queda con el scroll vertical y NOS deja a
+       nosotros el movimiento horizontal. Es lo que permite arrastrar la
+       pantalla de costado sin pelearle al scroll, y sin tener que adivinar
+       con preventDefault cuál de los dos ganó.
+
+       Ojo: esto vale para todo lo que está adentro, así que lo que tenga su
+       propio gesto horizontal necesita recuperarlo — ver la regla de abajo. */
+    touch-action:pan-y;
   }
 }
+
+/* Las zonas que YA tenían su propio movimiento horizontal recuperan el
+   control del gesto. Es la misma lista que lib/swipe.js usa para no activarse
+   ahí (EXCLUYE), y tiene que seguir siéndolo: si las dos se separan, una zona
+   va a quedar sin poder desplazarse y sin cambiar de pestaña — inerte. */
+.carousel,.sil-stage,.chip-scroll,.week-proj,.heatmap,#restbar,#rest-fs,
+input,textarea,select,[contenteditable]{touch-action:auto}
+
+/* La pantalla que espera del otro lado mientras arrastrás. Mismo encuadre que
+   .view.leave para que entre alineada, y sin recibir toques: durante el gesto
+   sólo se mira. */
+.view.vecino{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none}
+/* Mientras el dedo manda no hay transición: el movimiento ES el dedo, y
+   cualquier suavizado lo vuelve elástico y con retraso. */
+.view.arrastrada{transition:none}
+/* Al soltar sí, para terminar el recorrido (o volver) sin saltos. */
+.view.soltando{transition:transform var(--d2) var(--ease-push)}
+/* Mientras se arrastra, main no debe scrollear ni mostrar el contenido que
+   se sale por los costados. */
+main.arrastrando{overflow:hidden;user-select:none}
 /* En la app original .view envolvía a TODAS las pantallas a la vez y se
    mostraba la activa con .active. En React sólo se renderiza la activa, así que
    el interruptor sobra y esconderlas por defecto dejaría la pantalla en blanco.
