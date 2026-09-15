@@ -79,6 +79,73 @@ describe('tokens de CSS', () => {
     ).toEqual([]);
   });
 
+  /* El bug más caro de la auditoría del 2026-09-15, y el más silencioso.
+
+     styles.css tenía `*{margin:0;padding:0}`, `button{background:none;
+     border:none}` e `input,select,button,textarea{color:inherit}` escritos
+     SIN capa, después de `@import "tailwindcss"`. Tailwind v4 pone sus
+     utilidades en `@layer utilities`, y en la cascada lo que no está en
+     ninguna capa le gana siempre a lo que sí lo está — da igual la
+     especificidad y el orden.
+
+     Resultado: 263 utilidades de espaciado repartidas en 21 archivos .jsx no
+     hacían nada, y el borde y el fondo de los botones estilados con Tailwind
+     tampoco. Nadie lo iba a encontrar leyendo un componente: los componentes
+     estaban bien escritos, sus clases no llegaban.
+
+     Este test vigila la regla general: un selector de ELEMENTO que pise una
+     propiedad que Tailwind también genera tiene que vivir dentro de una capa. */
+  it('ningún reset de elemento pisa las utilidades de Tailwind desde fuera de una capa', () => {
+    const PISAN = /(^|;|\{)\s*(margin|padding|background|border|color|gap|display)[-:]/;
+    // Selectores de elemento puro (sin punto, sin #, sin corchetes).
+    const SOLO_ELEMENTOS = /^[*a-z]+(\s*,\s*[*a-z:]+)*$/;
+
+    /* Los comentarios se sacan ANTES de parsear. Sin esto el test no sirve:
+       el reset vive justo debajo de un comentario largo, y como un selector
+       no puede contener "/" el regex de reglas no llegaba a verlo. Se
+       comprobó: con el bug reintroducido, el test pasaba igual. */
+    const limpio = sinComentarios(css);
+
+    // Se recorta todo lo que está dentro de un @layer{...} para quedarse con
+    // lo suelto. Conteo de llaves, porque las reglas anidan.
+    let sinCapa = '';
+    let i = 0;
+    while (i < limpio.length) {
+      const prox = limpio.indexOf('@layer', i);
+      if (prox === -1) { sinCapa += limpio.slice(i); break; }
+      sinCapa += limpio.slice(i, prox);
+      const abre = limpio.indexOf('{', prox);
+      if (abre === -1) break;
+      let nivel = 1, j = abre + 1;
+      while (j < limpio.length && nivel > 0) {
+        if (limpio[j] === '{') nivel++;
+        else if (limpio[j] === '}') nivel--;
+        j++;
+      }
+      i = j;
+    }
+
+    /* Se parte por "}" en vez de usar un regex de regla completa. Con el
+       regex, dos reglas seguidas no se podían detectar las dos: la primera
+       consumía la llave de cierre que la segunda necesitaba como prefijo, y
+       justo el reset venía pegado a otra regla. También se comprobó. */
+    const culpables = [];
+    for (const trozo of sinCapa.split('}')) {
+      const k = trozo.indexOf('{');
+      if (k === -1) continue;
+      const sel = trozo.slice(0, k).trim().split('\n').pop().trim();
+      const cuerpo = trozo.slice(k + 1);
+      if (!sel || !SOLO_ELEMENTOS.test(sel)) continue;
+      if (!PISAN.test(cuerpo)) continue;
+      culpables.push(`${sel} { ${cuerpo.replace(/\s+/g, ' ').trim().slice(0, 55)}… }`);
+    }
+
+    expect(
+      culpables,
+      'Estas reglas están fuera de toda capa y le ganan a TODAS las utilidades de Tailwind (padding, margin, background, border…), sin importar la especificidad. Metelas en @layer base.',
+    ).toEqual([]);
+  });
+
   it('no quedan hex sueltos del color de la racha: para eso está --flame', () => {
     // #FFC46B vivía a mano en seis lugares. El token existe justamente para
     // que no vuelvan a aparecer copias.

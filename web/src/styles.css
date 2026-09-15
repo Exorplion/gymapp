@@ -308,14 +308,19 @@
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 }
 html{scroll-behavior:smooth}
-body{
-  font-family:'Barlow',system-ui,sans-serif;
-  background:var(--bg);
-  color:var(--txt);
-  min-height:100dvh;
-  overscroll-behavior-y:none;
-  -webkit-font-smoothing:antialiased;
-  user-select:none;
+/* En @layer base como el resto de los resets de elemento: es un estilo base
+   por definición, y fuera de capa le ganaría a cualquier utilidad de fondo o
+   color aplicada al <body>. */
+@layer base {
+  body{
+    font-family:'Barlow',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--txt);
+    min-height:100dvh;
+    overscroll-behavior-y:none;
+    -webkit-font-smoothing:antialiased;
+    user-select:none;
+  }
 }
 /* atmósfera: glow superior + grano */
 body::before{
@@ -433,10 +438,16 @@ header.top{
 .heatmap .cell.miss{background:rgba(255,93,115,.12);border-color:rgba(255,93,115,.3)}
 
 /* ---------- layout ---------- */
-main{
-  position:relative;overflow:hidden;
-  max-width:520px;margin:0 auto;
-  padding:16px 18px calc(var(--tabs-h) + env(safe-area-inset-bottom) + 110px);
+/* En capa por el mismo motivo que los resets de arriba: sin ella, este
+   `margin` y este `padding` le ganarían a cualquier utilidad puesta sobre
+   <main>. Hoy nadie le pone una, pero la regla vale igual — el bug de las
+   263 utilidades muertas empezó siendo exactamente esto. */
+@layer base {
+  main{
+    position:relative;overflow:hidden;
+    max-width:520px;margin:0 auto;
+    padding:16px 18px calc(var(--tabs-h) + env(safe-area-inset-bottom) + 110px);
+  }
 }
 /* En la app original .view envolvía a TODAS las pantallas a la vez y se
    mostraba la activa con .active. En React sólo se renderiza la activa, así que
