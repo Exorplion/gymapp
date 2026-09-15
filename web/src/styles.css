@@ -282,6 +282,19 @@
   --ease:cubic-bezier(.22,.9,.28,1);
   --spring:cubic-bezier(.34,1.56,.64,1);
   --ease-out:cubic-bezier(.16,1,.3,1);
+  /* Para recorridos LARGOS: el deslizamiento de pestaña, que mueve la
+     pantalla entera de lado a lado.
+
+     `--ease` y `--ease-out` no sirven acá y se midió por qué: las dos son
+     curvas tipo expo-out, pensadas para que un movimiento CHICO (una tarjeta
+     subiendo 10px) se sienta inmediato al dedo. Aplicadas a 354px hacen el
+     76% del recorrido en los primeros 80ms de 320 — la pantalla se
+     teletransporta y después se arrastra, que se lee como un corte, no como
+     un deslizamiento.
+
+     Ésta reparte el recorrido de forma pareja: arranca, viaja y frena. Es lo
+     que hace que se VEA que la pantalla entra desde un lado. */
+  --ease-push:cubic-bezier(.4,0,.2,1);
   font-synthesis:none;
 }
 /* EL RESET VA EN @layer base, Y NO SUELTO. Es la diferencia entre que las
@@ -485,9 +498,60 @@ header.top{
 
    Si llega a sentirse lento, el número a tocar es uno solo: el --d1 del
    delay de .view.enter. */
-@keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-@keyframes screenOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(-6px) scale(.99)}}
-.view.enter.dir-r,.view.enter.dir-l{animation:screenIn var(--d2) var(--ease-out) var(--d1) both}
+/* QUINTA VUELTA (Enzo, 2026-09-15): vuelve el deslizamiento direccional.
+
+   "la navegación entre pestañas no era un deslizamiento tipo iOS? el
+   deslizamiento era según el sentido, no un parpadeo como es ahora."
+
+   Se había sacado el 2026-09-04 (commit 53629cf) a pedido suyo, y ese pedido
+   decía por qué: "hay un stagger de la página anterior cuando pasas a la
+   nueva". El commit lo diagnosticó bien — "el deslizamiento lateral corría AL
+   MISMO TIEMPO que el staggerReveal propio de cada pantalla, dos movimientos
+   grandes superpuestos"— pero la solución fue tirar el deslizamiento, no
+   ordenar los dos movimientos.
+
+   Era el mismo problema que las hojas tenían hasta hoy: nadie los
+   secuenciaba. Ahora que eso está resuelto (ver sheetReveal en motion.js),
+   el deslizamiento puede volver sin ser caótico:
+
+     · las dos pantallas se mueven JUNTAS, como un push de iOS. No se
+       superponen mezcladas —que era la condición irrenunciable de la tercera
+       vuelta— porque están una al lado de la otra, no una encima de la otra.
+     · la que sale acompaña con un 28% de recorrido, no 100%: es el parallax
+       de iOS, y hace que se lea como que queda atrás en vez de como dos
+       páginas distintas volando en direcciones opuestas.
+     · el stagger interno de cada pantalla espera a que el deslizamiento
+       termine (screenReveal en motion.js). Ése era el problema de verdad.
+
+   `dir-r` = avanzás en la barra (Inicio → Entreno): lo nuevo entra desde la
+   derecha. `dir-l` = volvés: entra desde la izquierda. Que la dirección
+   signifique algo es justamente lo que se había perdido — antes las dos
+   clases disparaban la misma animación sin dirección. */
+@keyframes pushInR{from{transform:translateX(100%)}to{transform:none}}
+@keyframes pushInL{from{transform:translateX(-100%)}to{transform:none}}
+/* La que sale viaja el 100%, no un parallax corto, y NO se desvanece.
+
+   Con un recorrido corto (se probó con 28%, el parallax de iOS) las dos
+   pantallas se superponen a mitad de camino, porque `.view` no tiene fondo
+   propio: se ve el contenido de una encima del de la otra. Ahí hace falta un
+   fundido para tapar la mezcla — y el fundido se come el efecto, la saliente
+   desaparece antes de que se llegue a ver que retrocede. Medido: a 150ms de
+   320 ya estaba en opacidad 0.03.
+
+   Viajando las dos el 100% en sentidos opuestos encajan exactamente, borde
+   con borde, y no se pisan en ningún frame. Eso permite que la saliente se
+   quede SÓLIDA todo el recorrido, que es lo que hace que se lea como una
+   pantalla que se va y no como algo que se apaga. iOS puede hacer el parallax
+   corto porque sus vistas son opacas y una tapa a la otra; acá no lo son. */
+/* `opacity:1` explícito en los dos extremos: la regla base de .view.leave la
+   deja en 0 (es la red para cuando la animación no corre, p. ej. con
+   movimiento reducido), y sin esto la saliente sería invisible justo ahora
+   que queremos verla recorrer. La animación, con fill:both, la pisa mientras
+   dura — y para cuando termina, App.jsx ya la desmontó. */
+@keyframes pushOutR{from{transform:none;opacity:1}to{transform:translateX(-100%);opacity:1}}
+@keyframes pushOutL{from{transform:none;opacity:1}to{transform:translateX(100%);opacity:1}}
+.view.enter.dir-r{animation:pushInR var(--d3) var(--ease-push) both}
+.view.enter.dir-l{animation:pushInL var(--d3) var(--ease-push) both}
 /* z-index explícito, con position:relative para que z-index tenga efecto
    (sin position, un elemento static ignora z-index aunque sea flex/grid no
    aplica acá). Así la entrante queda SIEMPRE arriba de la saliente, sin
@@ -526,7 +590,9 @@ header.top{
 /* `opacity:0` se queda como estado final y como red de seguridad: si la
    animación no corre (reduced-motion la reduce a ~0ms), la saliente sigue
    invisible igual que antes y nunca se superpone con la entrante. */
-.view.leave{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none;opacity:0;animation:screenOut var(--d1) var(--ease-out) both}
+.view.leave{position:absolute;top:16px;left:18px;right:18px;z-index:0;pointer-events:none;opacity:0}
+.view.leave.dir-r{animation:pushOutR var(--d3) var(--ease-push) both}
+.view.leave.dir-l{animation:pushOutL var(--d3) var(--ease-push) both}
 @media (prefers-reduced-motion:reduce){
   .view.enter.dir-r,.view.enter.dir-l{animation:none}
   /* .view.leave ya es opacity:0 siempre (regla de arriba) — display:none

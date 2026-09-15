@@ -173,7 +173,16 @@ export default function App() {
     setSaliente({ tab: tabPrevio.current, dir });
     tabPrevio.current = store.tab;
     clearTimeout(salienteTimer.current);
-    salienteTimer.current = setTimeout(() => setSaliente(null), 340);
+    /* El desmontaje tiene que llegar DESPUÉS de que termine el deslizamiento,
+       con margen. El deslizamiento dura --d3 (320ms, ver pushInR/pushOutR en
+       styles.css) y esto estaba en 340: veinte milisegundos de colchón, o sea
+       menos de dos frames. Alcanza en una máquina holgada; en un teléfono
+       cargado, un frame perdido al arrancar la animación deja la pantalla
+       saliente desmontada ANTES de terminar su recorrido — desaparece de
+       golpe a mitad del deslizamiento, que es justo el corte que se quería
+       sacar. Con 480 el colchón es de 160ms y el efecto es el mismo: nadie
+       ve la pantalla saliente después de que salió del marco. */
+    salienteTimer.current = setTimeout(() => setSaliente(null), 480);
     return () => clearTimeout(salienteTimer.current);
   }, [store.tab, dir]);
 

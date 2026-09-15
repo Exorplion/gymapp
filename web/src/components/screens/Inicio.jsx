@@ -30,7 +30,7 @@ import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
 import Silhouette from '../Silhouette.jsx';
 import AnimatedText from '../AnimatedText.jsx';
-import { countTo, menosMovimiento, staggerReveal } from '../../lib/motion.js';
+import { countTo, menosMovimiento, screenReveal } from '../../lib/motion.js';
 
 export default function Inicio() {
   useStore();
@@ -45,7 +45,11 @@ export default function Inicio() {
     if (menosMovimiento()) return;
     const tiles = gridRef.current?.querySelectorAll('.ini-tile');
     if (!tiles?.length) return;
-    staggerReveal(tiles, { delayStep: 60, distance: 16, scale: 0.96 });
+    /* screenReveal y no staggerReveal: espera a que el deslizamiento de
+       pestaña termine. Con las tarjetas subiendo mientras la pantalla entera
+       todavía viaja, se ven dos movimientos grandes a la vez — que es
+       exactamente por lo que el deslizamiento se había sacado. */
+    screenReveal(tiles, { delayStep: 60, distance: 16, scale: 0.96 });
   }, []);
   const hoy = new Date();
   const slot = pendingSlot();

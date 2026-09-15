@@ -139,10 +139,53 @@ export function sheetReveal(els, opts = {}) {
   staggerReveal(els, { delay: D.objeto, delayStep: 30, ...opts });
 }
 
+/** El stagger de una pantalla que acaba de entrar por el cambio de pestaña.
+
+    Mismo criterio que sheetReveal, y por el mismo motivo: espera a que
+    termine el deslizamiento (`pushInR`/`pushInL`, --d3 = D.panel en
+    styles.css) antes de animar nada adentro.
+
+    Esta espera es la pieza que faltaba el 2026-09-04. Ese día el
+    deslizamiento direccional se sacó porque "corría al mismo tiempo que el
+    staggerReveal propio de cada pantalla" — pantalla entera viajando y
+    tarjetas subiendo a la vez, dos movimientos grandes encimados. La
+    conclusión fue tirar el deslizamiento; la causa era que nadie los había
+    puesto en orden. Con esto, el deslizamiento vuelve y el stagger entra
+    después, cuando la pantalla ya está quieta.
+
+    Si alguna vez se siente lento, el número a tocar es este delay — no la
+    duración del deslizamiento, que es lo que le da el carácter. */
+export function screenReveal() {
+  /* No hace nada, y es a propósito. Se deja la función —en vez de borrar las
+     seis llamadas— para que quede escrito acá por qué, y para que volver
+     atrás sea una línea.
+
+     La primera versión de esto esperaba a que terminara el deslizamiento y
+     RECIÉN ahí escalonaba las tarjetas. Se midió en el navegador y estaba
+     mal: staggerReveal usa fill:'backwards', así que durante toda la espera
+     las tarjetas quedan en opacidad 0. La pantalla entraba deslizándose
+     VACÍA y se rellenaba después de llegar. Peor que el problema original.
+
+     La conclusión es la misma que en las hojas: una sola coreografía. Con el
+     deslizamiento direccional, la pantalla YA tiene su animación de entrada
+     — entra entera, con su contenido puesto. Escalonar las tarjetas encima es
+     el segundo movimiento grande que hacía caótico el deslizamiento en la
+     versión del 2026-09-04. Elegir el deslizamiento es elegir esto.
+
+     Sigue vivo el stagger donde sí corresponde: dentro de las hojas
+     (sheetReveal, que espera al panel) y en listas que cambian en el lugar
+     sin que la pantalla se mueva (History al traer más sesiones). */
+}
+
+/* Delega en screenReveal y no en staggerReveal: sus cinco llamadas viven
+   dentro de pantallas (Hoy, Rutina, Nutrición, Progreso y el carrusel de
+   ejercicios, que está dentro de Hoy), o sea que todas ocurren mientras la
+   pantalla está entrando con el deslizamiento de pestaña. Esperar a que
+   termine es lo correcto para las cinco. */
 export function staggerRevealOnce(key, els, opts) {
   if (revealed.has(key)) return;
   revealed.add(key);
-  staggerReveal(els, opts);
+  screenReveal(els, opts);
 }
 
 // Cierre de anillo de progreso (0..1) sobre un <circle> con
