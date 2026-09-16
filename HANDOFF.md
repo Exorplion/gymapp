@@ -1,6 +1,126 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-15
+**Última actualización:** 2026-09-15 (cierre de sesión)
+
+---
+
+## ESTADO AL CERRAR — todo MERGEADO y PUBLICADO
+
+Tres PRs mergeados a `main` en esta sesión. `main` = `965dc31`.
+
+| PR | Qué |
+|---|---|
+| #96 | Auditoría de UX: 12 defectos (incluido el reset de CSS que anulaba 263 clases) |
+| #97 | La franja de la pestaña anterior pegada al borde izquierdo |
+| #98 | El deslizamiento no se veía porque el hilo estaba bloqueado |
+
+**485 tests en verde, lint limpio, build commiteado a la raíz.**
+
+### Lo único pendiente
+
+1. **Que Enzo lo mire en su teléfono.** Todo se verificó en Chrome a 390px y
+   con el CPU frenado 6×, pero un celular real tiene safe-area, notch y su
+   propio WebView.
+2. **El service worker guarda la versión vieja.** Si algo "no cambió", no es
+   que falló el merge: Ajustes → "⟳ Buscar actualización". Pasó dos veces en
+   esta sesión y costó una ronda entera de confusión cada vez.
+3. Feedback del tester (abierto desde el 2026-09-13).
+4. IA en Nutrición: Enzo lo pidió. **Su suscripción de Claude NO sirve** —
+   hace falta cuenta de API con saldo. Como el build se commitea a un repo
+   público, la clave tendría que ponerla él en Ajustes y vivir en IndexedDB.
+   Falta confirmar si la API acepta llamadas directas desde el navegador.
+   Costo estimado: ~US$0,22/mes con Haiku 4.5.
+
+---
+
+## SESIÓN 2026-09-15 (tercera parte) — Navegación entre pestañas
+
+### El malentendido, para que no se repita
+
+Enzo pidió tres veces lo mismo y yo entendí otra cosa dos veces:
+
+1. "es un parpadeo" → yo animé el cambio que dispara la barra.
+2. "no hiciste el deslizamiento" → seguía sin estar **mergeado**; él miraba
+   `main`, que animaba `screenIn` (fundido vertical sin dirección).
+3. "solo lo estás implementando en la barra de navegación, **yo me refería a
+   toda la pantalla**" → lo que quería era **deslizar con el dedo** en
+   cualquier parte para cambiar de pestaña.
+
+**Lección: cuando Enzo dice que algo no anda, verificar PRIMERO si está
+mergeado y si el service worker se actualizó — antes de tocar código.**
+
+### Lo que se hizo
+
+- **Vuelve el deslizamiento direccional** (`pushInR`/`pushOutR`). Se había
+  sacado el 2026-09-04 (`53629cf`) porque "corría al mismo tiempo que el
+  staggerReveal de cada pantalla". La causa era el solapamiento, no el
+  deslizamiento: se ordenaron y volvió. Las dos pantallas viajan el 100% en
+  sentidos opuestos, encajan borde con borde y **no se pisan en ningún
+  frame**.
+- **El stagger interno de cada pantalla se fue**, y es el precio: con el
+  deslizamiento la pantalla ya entra entera. La primera versión (esperar y
+  después escalonar) dejaba las tarjetas en opacidad 0 y la pantalla entraba
+  VACÍA. `screenReveal()` en motion.js quedó como no-op documentado — volver
+  atrás es una línea.
+- **Curva nueva `--ease-push`**: `--ease` y `--ease-out` son expo-out, para
+  movimientos chicos. Sobre 354px hacían el 76% del recorrido en los primeros
+  80ms de 320 — la pantalla se teletransportaba.
+- **Swipe de pantalla completa**, con la pantalla siguiendo al dedo. También
+  se había sacado ("cualquier gesto horizontal terminaba cambiando de pestaña
+  sin querer"). Seguir al dedo ES la cura: ves que se mueve y podés
+  cancelar. `main{touch-action:pan-y}` + `touch-action:auto` en las zonas con
+  scroll horizontal propio (misma lista que `EXCLUYE` de swipe.js — **si las
+  dos se separan, una zona queda inerte**).
+
+### Los dos bugs que aparecieron al verificar
+
+**1. La franja del borde izquierdo (PR #97).** Geométrico, no de timing: las
+pantallas viajan `translateX(-100%)` = el 100% de SU ancho, pero `main`
+recortaba 18px más afuera (su padding lateral). El borde derecho de la
+saliente terminaba en x=18, no en 0. El padding pasó de `main` a `.view`
+(token `--pad-x`), así que ahora miden lo mismo que el recorte.
+**Si tocás `styles.css`: el ancho del recorte y el del recorrido NO se pueden
+desincronizar.**
+
+**2. El hilo bloqueado (PR #98).** En reposo 62 fps; durante un cambio, **1
+fps**. La animación estaba bien, no había con qué dibujarla. Tres causas:
+  - La saliente se **montaba de cero** con React. Ahora es una foto del DOM
+    (`sacarFoto()` en state.js): 0,44ms contra cientos. Copia también los
+    píxeles de los `<canvas>`, que `cloneNode` no trae.
+  - `catOf()` normalizaba las 48 entradas del catálogo **en cada llamada**
+    (`normalize('NFD')`, 17,5µs). Catálogo pre-normalizado + caché por nombre.
+  - `exInfo()` igual pero peor: bucle anidado, ~200 normalizaciones por
+    llamada, y se llama **una vez por fila** (Rutina tiene 40).
+  - Y el orden: la animación arrancaba en el mismo commit que el montaje.
+    Ahora `animation-play-state:paused` hasta que el navegador pintó un
+    cuadro (dos `requestAnimationFrame` encadenados).
+
+**Resultado, CPU frenado 6×, build de producción, mediana de 5:**
+Inicio→Entreno 8→**44 fps**; Inicio→Progreso 5→**39 fps**.
+
+### Cómo medir esto (sirve para cualquier queja de "se ve raro")
+
+- **El MCP `chrome-devtools` funciona en jobs de background** (la extensión de
+  Chrome no, ésa es otra). Levanta su propio Chrome.
+- **Medir el build de PRODUCCIÓN, no el dev server**: el modo desarrollo de
+  React infla los números y no es lo que corre en el teléfono.
+- **Con `emulate` + `cpuThrottlingRate: 6`**: sin frenar, producción ya iba a
+  49-62 fps y el bug no aparecía. El problema sólo existe en hardware lento.
+- **Medir, no mirar**: `getBoundingClientRect`, `getComputedStyle`,
+  `getAnimations`, `PerformanceObserver` de `longtask`. Y **repetir**: hubo
+  varianza de 2 a 29 fps en el mismo caso — no ajustar nada sobre una sola
+  corrida.
+- Trampa: al cargar el seed de prueba son **dos** hojas de confirmación.
+
+### Lo que se probó y se descartó (no reintentar sin datos nuevos)
+
+- `will-change:transform` / `contain:paint` sobre las vistas: una variante
+  **empeoró**. Varianza demasiado alta para decidir.
+- Quitar `backdrop-filter` / `box-shadow`: no movía la aguja cuando el cuello
+  de botella era JS.
+- Parallax corto tipo iOS (28%) para la pantalla saliente: las vistas no
+  tienen fondo propio, así que se superponen y hace falta un fundido que se
+  come el efecto (a 150ms de 320 ya estaba en opacidad 0,03).
 
 ---
 
