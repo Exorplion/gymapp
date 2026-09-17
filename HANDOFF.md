@@ -1,6 +1,60 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-17 (onboarding + anatomía real)
+**Última actualización:** 2026-09-17 (cierre — 15 PRs en el día)
+
+---
+
+## SESIÓN 2026-09-17 (cierre) — PRs #107 a #112, todos mergeados
+
+`main` = `568867e`. **605 tests.** Quince PRs en el día.
+
+### Lo que se hizo
+
+| PR | Qué |
+|---|---|
+| #107 | Las tarjetas dejan de parecer de página web + la regla en CLAUDE.md |
+| #108 | Anterior/Posterior con sus descansos (A·P·R·A·P·R·R) |
+| #109 | Nombre con lápiz, Lumbares, guiones fuera, traer-ejercicios arreglado |
+| #110 | Rueda de progreso del entrenamiento |
+| #111 | Coverflow 3D — **EXPERIMENTO, pendiente de decisión** |
+| #112 | La tarjeta de ejercicio: 8 arreglos, y RPE pasa a RIR |
+
+### Las decisiones que no hay que relitigar
+
+- **Tarjetas: lista agrupada + héroe.** Elegido por Enzo sobre otras dos
+  opciones. Una superficie por sección con filas divididas por hairlines; la
+  caja se reserva para lo que de verdad es una unidad aparte.
+- **`.grouprow` trae el reset del botón adentro, y existe `.cardbtn`.** Una
+  regla sin arreglo estructural se vuelve a violar sola — por eso el bug de
+  `card linkcard` pasaba "siempre".
+- **Lumbares sólo para lo que es lumbar.** Back extension, hiperextensiones,
+  good morning, reverse hyper. Peso muerto se queda en Espalda y SLDL/rumano
+  en Pierna: su motor son glúteo e isquios, y moverlos falsearía los dos
+  volúmenes.
+- **El esfuerzo se registra en RIR, no en RPE.** La app prescribía en RIR en
+  todas partes y preguntaba en RPE, que es la escala invertida. Internamente
+  **se sigue guardando `rpe`** y la conversión ocurre sólo en la UI — el
+  precedente del repo es no migrar sesiones nunca.
+- **Los descansos en plantillas se expresan con `null`** en vez de lista de
+  ejercicios (`applyTemplate` forzaba `type:'workout'`, así que ninguna
+  plantilla podía tener descansos).
+
+### Trampas nuevas — costaron tiempo, no repetirlas
+
+- **Un teléfono real renderiza más ancho que 390px.** Tres defectos que Enzo
+  veía en su captura no aparecían en las pruebas a 390. **Medir a 390 Y 430.**
+- **`getBoundingClientRect()` de un elemento de texto mide la CAJA, no el
+  texto.** Dio un falso positivo de solapamiento. Para saber dónde termina el
+  texto real: `Range.selectNodeContents(el).getBoundingClientRect()`.
+- **Con `scroll-snap`, el primer y el último elemento no pueden centrarse**
+  si el contenedor no tiene padding simétrico o spacers. Pasó en el carrusel
+  (27px de desvío). Si algo "no está centrado" en una lista con snap, mirar
+  esto antes que el elemento.
+- **Un prop mal nombrado no falla, se ve.** `Rutina.jsx` abría un sheet con
+  `wd` y el componente leía `index`: el título mostraba "Turno NaN".
+- **Copiar ejercicios a un turno de descanso los guardaba invisibles** — se
+  escribían pero no se cambiaba `type` a `'workout'`, y Entreno sólo lista
+  turnos de entrenamiento.
 
 ---
 
@@ -75,27 +129,69 @@ Cinco pedidos de Enzo, todos verificados en Chrome con el build de producción
   plantilla, **testear que `catOf()` no devuelva null ni el grupo equivocado**
   (hay un test que recorre los 21).
 
-### Pendientes
+### Pendientes — estado al cierre del 2026-09-17
 
-Los puntos 1 a 4 de esta lista **se hicieron** en el PR #105 (ver la sesión
-de más abajo). Lo que queda:
+#### Depende de Enzo, no de código
 
-1. Que Enzo confirme **en su teléfono**: el parpadeo al cambiar de pestaña
-   (dos cuadros se ven mejor con el ojo que con un número) y el onboarding
-   de 4 pasos.
-2. **Bíceps, Tríceps, Glúteo y Gemelos no muestran micro-silueta.** La
-   lámina de MuscleMap no los subdivide, así que no hay geometría para
-   encender. Antes mostraban franjas abstractas con etiquetas ciertas
-   ("Bíceps: braquial y braquiorradial") y eso se perdió a propósito: el
-   dato es verdadero pero la figura era inventada. **Si Enzo lo quiere de
-   vuelta hay que resolverlo de otra forma** (dibujar las porciones, o
-   mostrar el dato sin figura). No reintentar franjas sin hablarlo.
-3. **Una división del pecho en TRES (clavicular/esternal/abdominal) no es
-   posible sin dibujar**: MuscleMap trae dos parches, no tres, y los dos
-   existentes casi se tocan verticalmente. Es trabajo de ilustración.
-4. `Silhouette` ya acepta `porciones`, pero **nadie se lo pasa todavía**:
-   Inicio sigue encendiendo el grupo entero. Falta cablearlo desde donde se
-   sepan las porciones del día.
+1. **Instalar la PWA** (menú del navegador → "Agregar a pantalla de inicio").
+   Es lo único que hace que Chrome conceda la persistencia. Sin eso el aviso
+   de Ajustes sigue ahí, y con razón.
+2. **Exportar un JSON.** El respaldo automático ya existe (PR #101), pero se
+   dispara recién al cerrar un entrenamiento.
+3. **Decidir el coverflow** (PR #111). Es un experimento. Los números:
+   scroll 47,9 → 44,8 fps, y **registrar una serie 101 → 166 ms**. Esos +65ms
+   caen sobre la acción que repite 15-30 veces por sesión, y los vecinos a
+   opacidad 0,4 sobre fondo oscuro quedan muy sutiles. **Mi recomendación
+   escrita: no dejarlo.** Para revertir: `git revert -m 1 0d7ba6d` — saca el
+   efecto, su CSS y devuelve el ancho del slide a 100%.
+4. **Confirmar en el teléfono**: el parpadeo al cambiar de pestaña, el
+   onboarding de 4 pasos, y **la rueda de progreso con un ejercicio
+   unilateral** (ese caso quedó cubierto por tests pero no se pudo cerrar en
+   el navegador por el overlay de descanso).
+5. **Las series y reps de la plantilla Anterior/Posterior las inventó
+   Claude**, con el criterio de las otras plantillas. Está anotado en
+   `templates.js` que Enzo no las dictó. Faltan sus números reales.
+
+#### Animaciones en cola (Enzo mandó los ejemplos de motion.dev)
+
+6. **Acordeones** (`react-radix-accordion`) — la app tiene dos que hoy abren
+   de golpe: el de los turnos en Entreno (`.day-collapse`) y el `<details>`
+   de "más opciones" en la sesión.
+7. **Variants** (`react-variants`) — para Ajustes y la info de ejercicio. Ya
+   existen `staggerReveal()`/`sheetReveal()` en motion.js: es reimplementar
+   más declarativo, no capacidad nueva.
+8. **Diálogo de confirmación** (`react-family-dialog`) — `ConfirmSheet` ya
+   existe; cambia cómo aparece. **Cuidado**: `Sheet.jsx` documenta que ya se
+   retiró una vez un `bloomOpen()` imperativo porque competía con la
+   animación CSS y producía doble movimiento. Reemplazar, no superponer.
+
+**Dato útil**: motion.dev ES framer-motion (renombrado al independizarse en
+2025) y ya está instalado. No hace falta ningún plugin. El componente
+Carousel del ejemplo de coverflow sí es de pago (Motion+).
+
+#### Deudas técnicas anotadas
+
+9. **`Silhouette` acepta `porciones` pero nadie se las pasa**: Inicio sigue
+   encendiendo el grupo entero en vez de la porción.
+10. **Bíceps, Tríceps, Glúteo y Gemelos no muestran micro-silueta.** La
+    lámina no los subdivide. Antes mostraban franjas abstractas con etiquetas
+    ciertas y eso se perdió a propósito: el dato era verdadero pero la figura
+    inventada. **No reintentar franjas sin hablarlo con Enzo.**
+11. **El pecho en TRES porciones (clavicular/esternal/abdominal) no es
+    posible sin dibujar**: MuscleMap trae dos parches y casi se tocan.
+12. **Lumbares no tiene zona propia en la lámina** — enciende "Dorsal bajo",
+    que ya comparten jalones y remos. Limitación documentada en el test, no
+    un bug silencioso.
+13. Migrar de `framer-motion` a `motion` (dos imports). El paquete legacy
+    funciona pero ya no recibe desarrollo. **Nunca los dos a la vez**:
+    rompe `AnimatePresence`.
+14. **KokonutUI** (kokonutui.com) se puede instalar con el CLI de shadcn.
+    Faltan dos cosas de plomería: **no existe `components.json`** y **no está
+    configurado el alias `@/`** (ni en vite.config ni en tsconfig; todos los
+    imports son relativos). Sin el alias, cualquier componente pegado falla.
+    El resto de sus dependencias ya está. Ojo con la estética: son
+    componentes de landing/SaaS, y el pedido de Enzo fue justamente alejarse
+    del look web.
 
 ---
 
