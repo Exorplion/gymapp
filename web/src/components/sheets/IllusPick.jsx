@@ -54,7 +54,7 @@ export default function IllusPick({ exName = '', onPick, onClose }) {
       </div>
 
       {results.length === 0 ? (
-        <div className="card"><div className="empty" style={{ padding: 18 }}>
+        <div className="card"><div className="empty" style={{ padding: 'var(--pad-x)' }}>
           <p style={{ margin: 0 }}>
             {q.trim() ? 'Nada con ese nombre. Probá con otra palabra.' : 'Escribí el nombre del movimiento.'}
           </p>

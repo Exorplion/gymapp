@@ -30,6 +30,13 @@ import { X } from '../Icon.jsx';
     tiene la misma forma que S.routine/S.lib — se normaliza acá nomás, sólo
     para mostrarla en la vista previa, sin tocar templates.js (applyTemplate
     ya hace esta misma conversión al aplicarla de verdad). */
+/** t.days viene como "3 días/sem" (para prosa) — acá se extrae sólo el
+    número para el dato corto de la fila ("3 D"), sin tocar templates.js. */
+function templateDaysShort(t) {
+  const n = t.days.match(/\d+/);
+  return n ? `${n[0]} D` : t.days;
+}
+
 function templateSlots(t) {
   return t.secuencia.map(([name, list]) => ({
     type: 'workout', name,
@@ -87,13 +94,13 @@ function LibraryList({ onPeek }) {
         La que estás usando, las que armaste vos, y plantillas listas. Tocá cualquiera para ver su contenido completo antes de cambiarte.
       </div>
 
-      {/* 1. La que estás usando — destacada, con la MISMA línea de resumen
-          que las otras dos secciones. */}
-      <h3>La que estás usando</h3>
+      {/* 1. La que estás usando — la ÚNICA caja de la pantalla (héroe): todo
+          lo demás es lista agrupada, así que el destaque se nota de verdad. */}
+      <div className="eyebrow" style={{ marginBottom: 6 }}>La que estás usando</div>
       <button
         type="button"
-        className="card linkcard"
-        style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: 16, borderColor: 'var(--blue2)' }}
+        className="card hero cardbtn"
+        style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: 16 }}
         onClick={() => onPeek({ kind: 'current' })}
       >
         <div className="cond" style={{ fontSize: 18, fontWeight: 700 }}>{routineName()}</div>
@@ -108,20 +115,22 @@ function LibraryList({ onPeek }) {
       {/* 2. Las que creaste vos — misma data que "la que estás usando", para
           poder comparar un split contra otro de un vistazo (Enzo: "PPL dice
           los días y frecuencia y abajo está anterior posterior con la misma
-          data"). */}
+          data"). Lista agrupada: una superficie, filas con hairline. */}
       {S.lib.length > 0 && (
         <>
-          <h3>Las que creaste vos</h3>
-          <div style={{ marginBottom: 16 }}>
+          <div className="eyebrow" style={{ marginBottom: 6 }}>Las que creaste vos</div>
+          <div className="group" style={{ marginBottom: 16 }}>
             {S.lib.map(r => {
               const cur = r.name === S.cfg.routineName;
+              const st2 = summarizeSlots(r.days);
               return (
-                <div className="row" key={r.id}>
-                  <button type="button" className="grow linkcard" onClick={() => onPeek({ kind: 'lib', id: r.id })}>
-                    <div className="t">{r.name}{cur && <span className="lib-tag">en uso</span>}</div>
-                    <SlotSummaryLine slots={r.days} />
-                    <div className="s">guardada {fmtD(r.savedAt)}</div>
+                <div className="grouprow" key={r.id} style={{ paddingRight: 'var(--s2)' }}>
+                  <button type="button" className="grouprow-grow" style={{ background: 'none', border: 0, padding: 0, textAlign: 'left', font: 'inherit', color: 'inherit', cursor: 'pointer' }} onClick={() => onPeek({ kind: 'lib', id: r.id })}>
+                    <span className="grouprow-t">{r.name}{cur && <span className="lib-tag">en uso</span>}</span>
+                    <span className="grouprow-s">{slotsFrequencyText(r.days)} · guardada {fmtD(r.savedAt)}</span>
                   </button>
+                  <span className="grouprow-v">{st2.workoutCount} D</span>
+                  <span className="grouprow-chev">›</span>
                   <button type="button" className="mini red" aria-label={`Borrar la rutina ${r.name}`} onClick={() => deleteLibRoutine(r.id)}><X /></button>
                 </div>
               );
@@ -130,27 +139,25 @@ function LibraryList({ onPeek }) {
         </>
       )}
 
-      {/* 3. Plantillas. */}
-      <h3>Plantillas</h3>
-      <div className="txt-mut" style={{ fontSize: 13, margin: '-4px 0 12px' }}>
+      {/* 3. Plantillas — mismo patrón de lista agrupada. */}
+      <div className="eyebrow" style={{ marginBottom: 6 }}>Plantillas</div>
+      <div className="txt-mut" style={{ fontSize: 13, margin: '-2px 0 8px' }}>
         Reemplazan tu split actual. Después las editás a gusto.
       </div>
-      <div ref={tmplRef}>
+      <div className="group" ref={tmplRef} style={{ marginBottom: 16 }}>
       {TEMPLATES.map(t => (
         <button
           key={t.id}
           type="button"
-          className="card tmpl linkcard"
-          style={{ display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer', marginBottom: 10 }}
+          className="grouprow"
           onClick={() => onPeek({ kind: 'tmpl', id: t.id })}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div className="grow">
-              <div className="cond" style={{ fontSize: 20, fontWeight: 700 }}>{t.name}</div>
-              <div className="txt-mut" style={{ fontSize: 12.5, marginTop: 2 }}>{t.days} · {t.who}</div>
-              <div className="txt-blue" style={{ fontSize: 12, marginTop: 3, fontWeight: 600 }}>{t.freq}</div>
-            </div>
-          </div>
+          <span className="grouprow-grow">
+            <span className="grouprow-t">{t.name}</span>
+            <span className="grouprow-s">{t.who} · {t.freq}</span>
+          </span>
+          <span className="grouprow-v">{templateDaysShort(t)}</span>
+          <span className="grouprow-chev">›</span>
         </button>
       ))}
       </div>

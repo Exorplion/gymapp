@@ -178,7 +178,7 @@ function RpeSelector({ v }) {
               type="button"
               aria-pressed={on}
               className={`chip ${on ? 'on' : ''}`}
-              style={{ minWidth: 26, padding: '4px 0', textAlign: 'center', flex: 1 }}
+              style={{ minWidth: 26, padding: 'var(--s1) 0', textAlign: 'center', flex: 1 }}
               whileTap={{ scale: 0.9 }}
               transition={{ duration: 0.12 }}
               onClick={() => { const next = on ? null : n; v.rpe = next; setRpe(next); }}

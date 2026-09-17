@@ -196,7 +196,7 @@ export default function Progreso() {
               <div><div className="n">{sessionsSince(30)}</div><span className="l">Sesiones · 30 días</span></div>
             </div>
           </div>
-          <div className="card sub">
+          <div className="card">
             {trainDays.map(slot => {
               const st = routineStability(slot.id);
               const bits = [];
@@ -226,7 +226,7 @@ export default function Progreso() {
 
       <div className="sect">PRs · Récords personales</div>
       {!exNames.length ? (
-        <div className="card sub"><div className="empty p-[18px]"><p className="m-0">Aquí brillarán tus mejores marcas. 🏆</p></div></div>
+        <div className="card"><div className="empty p-[18px]"><p className="m-0">Aquí brillarán tus mejores marcas. 🏆</p></div></div>
       ) : (
         <PRsList exNames={exNames} />
       )}
@@ -282,7 +282,7 @@ function StrengthTab() {
           estructura según lo que tocaras. Qué es el 1RM lo dice la pestaña
           que elegiste y lo explica la tabla de abajo. */}
       {!readout.length ? (
-        <div className="card sub"><div className="empty p-[18px]"><p className="m-0">Registrá un ejercicio en dos sesiones para empezar a ver su tendencia.</p></div></div>
+        <div className="card"><div className="empty p-[18px]"><p className="m-0">Registrá un ejercicio en dos sesiones para empezar a ver su tendencia.</p></div></div>
       ) : (
         <div className="card">
           {readout.slice(0, 10).map(x => {
@@ -334,7 +334,7 @@ function VolumeTab() {
   return (
     <>
       {risk?.risk && (
-        <div className="card sub" style={{ borderColor: 'var(--warn)' }}>
+        <div className="notice warn">
           <div className="text-sm text-txt font-medium">⚠ Volumen alto esta semana</div>
           <div className="s text-mut mt-1">Tonelaje 7 días ({fmtNum(risk.acute)} kg) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
         </div>

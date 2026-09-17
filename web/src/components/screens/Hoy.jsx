@@ -483,7 +483,7 @@ export function SessStartInfo({ index }) {
               className="h-11 grow rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt outline-none transition-colors focus-visible:border-blue2"
               autoFocus
             />
-            <button type="button" className="btn sm" style={{ width: 'auto', padding: '0 16px' }} onClick={crearGym}>Crear</button>
+            <button type="button" className="btn sm" style={{ width: 'auto', padding: '0 var(--s4)' }} onClick={crearGym}>Crear</button>
           </div>
         )}
       </div>
