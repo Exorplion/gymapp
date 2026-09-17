@@ -73,3 +73,25 @@ export function necesitaBackup(nSesiones, lastBackupAt, now = Date.now()) {
   const d = daysSinceBackup(lastBackupAt, now);
   return d === null || d >= DIAS_AVISO_BACKUP;
 }
+
+/* Cada cuánto respalda solo. Más seguido que el aviso (21 días) porque no
+   cuesta nada: un archivo por semana en Descargas, sin que nadie se acuerde
+   de nada. El techo de lo que podés perder pasa a ser una semana. */
+export const DIAS_AUTO_BACKUP = 7;
+
+/** ¿Corresponde disparar el respaldo automático al cerrar una sesión?
+ *
+ *  Se engancha ahí y no a un temporizador por dos razones: una PWA no corre
+ *  en segundo plano, así que "cada domingo" no existiría; y cerrar una
+ *  sesión es un toque de botón, que es la activación que los navegadores
+ *  exigen para dejar bajar un archivo sin bloquearlo.
+ *
+ *  `autoBackup === undefined` cuenta como prendido: las instalaciones
+ *  anteriores a este cambio no tienen la clave y son justo las que vienen
+ *  sin ninguna copia. */
+export function tocaAutoBackup(cfg, nSesiones, now = Date.now()) {
+  if (cfg?.autoBackup === false) return false;
+  if (!nSesiones) return false;
+  const d = daysSinceBackup(cfg?.lastBackupAt, now);
+  return d === null || d >= DIAS_AUTO_BACKUP;
+}

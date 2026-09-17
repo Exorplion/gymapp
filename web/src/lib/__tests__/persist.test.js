@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   ensurePersisted, storageEstimate, daysSinceBackup, necesitaBackup, DIAS_AVISO_BACKUP,
+  tocaAutoBackup, DIAS_AUTO_BACKUP,
 } from '../persist.js';
 
 const DIA = 86400000;
@@ -100,5 +101,42 @@ describe('necesitaBackup', () => {
   it('avisa recién a los 21 días, no todos los días', () => {
     expect(necesitaBackup(12, AHORA - (DIAS_AVISO_BACKUP - 1) * DIA, AHORA)).toBe(false);
     expect(necesitaBackup(12, AHORA - DIAS_AVISO_BACKUP * DIA, AHORA)).toBe(true);
+  });
+});
+
+describe('tocaAutoBackup', () => {
+  it('respalda solo si nunca hubo copia y ya hay historial', () => {
+    expect(tocaAutoBackup({ lastBackupAt: null }, 5, AHORA)).toBe(true);
+  });
+
+  it('no respalda dos veces en la misma semana', () => {
+    expect(tocaAutoBackup({ lastBackupAt: AHORA - 2 * DIA }, 5, AHORA)).toBe(false);
+  });
+
+  it('vuelve a respaldar a los 7 días', () => {
+    expect(tocaAutoBackup({ lastBackupAt: AHORA - (DIAS_AUTO_BACKUP - 1) * DIA }, 5, AHORA)).toBe(false);
+    expect(tocaAutoBackup({ lastBackupAt: AHORA - DIAS_AUTO_BACKUP * DIA }, 5, AHORA)).toBe(true);
+  });
+
+  it('respeta que lo hayas apagado, aunque nunca hayas respaldado', () => {
+    expect(tocaAutoBackup({ autoBackup: false, lastBackupAt: null }, 99, AHORA)).toBe(false);
+  });
+
+  it('cuenta como prendido si la clave no existe todavía', () => {
+    // Las instalaciones anteriores a este cambio no tienen `autoBackup`, y
+    // son justo las que están sin ninguna copia. Un `undefined` no puede
+    // dejarlas afuera.
+    expect(tocaAutoBackup({ lastBackupAt: null }, 5, AHORA)).toBe(true);
+    expect(tocaAutoBackup({}, 5, AHORA)).toBe(true);
+  });
+
+  it('no respalda un historial vacío', () => {
+    // Un archivo sin nada adentro no es una red de seguridad, es ruido en
+    // Descargas.
+    expect(tocaAutoBackup({ lastBackupAt: null }, 0, AHORA)).toBe(false);
+  });
+
+  it('no revienta si cfg no existe', () => {
+    expect(tocaAutoBackup(undefined, 5, AHORA)).toBe(true);
   });
 });

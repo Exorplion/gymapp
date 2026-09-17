@@ -658,6 +658,31 @@ export async function completeSession() {
   // SessionComplete.jsx quien dispara fireConfetti() al abrir session-view.
   S.sessionComplete = { ...sess, huboPR: prs.length > 0, milestone };
   bump();
+
+  /* Respaldo automático — la otra mitad del arreglo del 2026-09-17.
+     `persist()` evita que el SISTEMA borre los datos, pero no que los borres
+     vos, ni que se pierda el teléfono. El JSON exportado vive en Descargas,
+     fuera del almacenamiento que el navegador puede desalojar, y es lo único
+     que sobrevive a todo.
+
+     Va acá, al cerrar una sesión, y no en un temporizador: una PWA no corre
+     en segundo plano, así que "cada domingo" nunca se ejecutaría. Y cerrar
+     la sesión es un toque de botón, que es la activación que el navegador
+     exige para dejar bajar un archivo sin bloquearlo.
+
+     Después del bump() y sin await a propósito: la pantalla de resumen tiene
+     que aparecer ya. Y en try/catch —igual que el TDEE en loadAll()— porque
+     un respaldo que falla no puede llevarse puesto el cierre de un
+     entrenamiento que YA está guardado en disco. */
+  try {
+    const { tocaAutoBackup } = await import('./persist.js');
+    if (tocaAutoBackup(S.cfg, S.sessions.length)) {
+      const { exportJSON } = await import('./backup.js');
+      await exportJSON({ auto: true });
+    }
+  } catch (e) {
+    console.error('[FIERRO] no se pudo hacer el respaldo automático:', e);
+  }
 }
 
 /** Abre el borrador de sesión (weekday `wd`, con el orden ya reacomodado si
