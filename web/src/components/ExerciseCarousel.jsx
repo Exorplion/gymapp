@@ -249,7 +249,7 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
     de más, cambiar de ejercicio porque la máquina está ocupada, y saltarlo
     porque no te da el tiempo. Botones explícitos y no un menú escondido: se
     tocan jadeando y con las manos húmedas. */
-function ExActions({ ex, wd }) {
+function ExActions({ ex, wd, uni, puedeUni }) {
   function confirmarSalto() {
     openSheet('confirm', {
       title: `¿Saltar ${ex.name}?`,
@@ -262,40 +262,88 @@ function ExActions({ ex, wd }) {
     <div className="ex-actions">
       {/* Sumar y quitar juntos: decidir "hoy hago una menos" es tan común como
           "hoy hago una más", y hasta ahora sólo se podía hacia arriba. */}
-      <button type="button" onClick={() => dropSet(ex.id)}>− Serie</button>
-      <button type="button" onClick={() => addExtraSet(ex.id)}>+ Serie</button>
-      <button type="button" onClick={() => openSheet('ex-swap', { wd, exId: ex.id })}><Swap /> Cambiar</button>
-      <button type="button" onClick={confirmarSalto}><Skip /> Saltar</button>
+      <button type="button" className="ex-act" onClick={() => dropSet(ex.id)}>− Serie</button>
+      <button type="button" className="ex-act" onClick={() => addExtraSet(ex.id)}>+ Serie</button>
+      {/* Un botón de verdad, entre botones — no un chip inerte compitiendo con
+          el título (Enzo, ver el handoff 2026-09-17). Sólo aparece donde
+          puedeSerUnilateral(ex) lo permite; el estado on/off se lee igual que
+          cualquier otro toggle de la app (fondo lleno + aria-pressed). */}
+      {puedeUni && (
+        <button
+          type="button"
+          className={`ex-act uni ${uni ? 'on' : ''}`}
+          aria-pressed={uni}
+          onClick={() => toggleUnilateral(ex.id)}
+        >
+          {uni ? '✓ Unilateral' : 'Unilateral'}
+        </button>
+      )}
+      {/* "Cambiar" no decía QUÉ cambia. Enzo: "está malísimo" — ahora dice la
+          acción completa, en la voz de la app. */}
+      <button type="button" className="ex-act" onClick={() => openSheet('ex-swap', { wd, exId: ex.id })}>
+        <Swap /> Otro ejercicio
+      </button>
+      <button type="button" className="ex-act" onClick={confirmarSalto}><Skip /> Saltar</button>
     </div>
   );
 }
 
-/** RPE opcional 1-10 por serie (Plan Fierro · Fase 2): el dato que destraba
-    ACWR, la recuperación muscular por esfuerzo y el ajuste de calorías por
-    bandas. Se guarda en v.rpe (leído por saveSet() al confirmar la serie) y
-    se resetea solo después de cada serie — nunca se arrastra a la
-    siguiente para no dar un dato viejo por accidente. Optativo de verdad:
-    no bloquea "Terminé la serie" si no se toca. */
-function RpeSelector({ v }) {
+// RIR ↔ RPE: la app entera prescribe en RIR (Rutina.jsx, DayPeek.jsx,
+// ExInfo.jsx, la línea "Objetivo … → RIR N" de esta misma tarjeta) pero acá
+// abajo se seguía preguntando en RPE, la escala INVERTIDA (RPE 10 = RIR 0).
+// Enzo: "eso del esfuerzo no sé usarlo" — tenía razón, eran dos idiomas
+// distintos en la misma pantalla. Convertimos sólo en esta capa de UI: el
+// campo que se guarda en cada serie sigue siendo `rpe` (hay historial real
+// con ese campo, y el precedente de este repo es no migrar sesiones, ver
+// lib/db.js) — rir = 10 - rpe, rpe = 10 - rir.
+const RIR_OPTS = [0, 1, 2, 3, 4];
+function rirFromRpe(rpe) {
+  if (rpe == null) return null;
+  const rir = 10 - rpe;
+  return rir >= 4 ? 4 : Math.max(0, rir);
+}
+// "4+" es un balde: cualquier rpe <=6 (histórico o nuevo) cae ahí. Se elige
+// 6 como valor guardado porque es el techo exacto de ese balde (10-4=6) — un
+// rpe viejo de 5 o 3 se sigue leyendo "4+" sin tocarlo, nunca se migra.
+function rpeFromRir(rir) { return rir >= 4 ? 6 : 10 - rir; }
+
+/** RIR opcional por serie (Plan Fierro · Fase 2, corregido 2026-09-17): el
+    dato que destraba ACWR, la recuperación muscular por esfuerzo y el ajuste
+    de calorías por bandas. Se guarda en v.rpe (leído por saveSet() al
+    confirmar la serie) y se resetea solo después de cada serie — nunca se
+    arrastra a la siguiente para no dar un dato viejo por accidente.
+    Optativo de verdad: no bloquea "Terminé la serie" si no se toca.
+    `curRir` es lo que la rutina pidió para ESTA serie (rirScheme, ya
+    calculado más arriba en ExerciseSlide) — mostrarlo acá es lo que permite
+    leer "pediste RIR 2, dejaste RIR 1" de un vistazo, en vez de adivinar
+    contra un número que vive treinta píxeles más arriba. */
+function RirSelector({ v, curRir }) {
   const [rpe, setRpe] = useState(v.rpe);
+  const rir = rirFromRpe(rpe);
   return (
     <div className="mt-2.5">
-      <div className="steplabel">RPE (esfuerzo) · opcional</div>
-      <div className="flex gap-1 mt-1" role="group" aria-label="Esfuerzo percibido, 1 a 10">
-        {Array.from({ length: 10 }, (_, i) => i + 1).map(n => {
-          const on = rpe === n;
+      <div className="steplabel">
+        Reps en reserva (RIR) · opcional
+        {curRir != null && <span className="txt-mut"> · hoy pedía {curRir === 0 ? 'al fallo' : `RIR ${curRir}`}</span>}
+      </div>
+      <div className="rir-opts" role="group" aria-label="Repeticiones en reserva que te quedaron">
+        {RIR_OPTS.map(n => {
+          const on = rir === n;
           return (
             <motion.button
               key={n}
               type="button"
               aria-pressed={on}
               className={`chip ${on ? 'on' : ''}`}
-              style={{ minWidth: 26, padding: 'var(--s1) 0', textAlign: 'center', flex: 1 }}
               whileTap={{ scale: 0.9 }}
               transition={{ duration: 0.12 }}
-              onClick={() => { const next = on ? null : n; v.rpe = next; setRpe(next); }}
+              onClick={() => {
+                const nextRpe = on ? null : rpeFromRir(n);
+                v.rpe = nextRpe;
+                setRpe(nextRpe);
+              }}
             >
-              {n}
+              {n === 4 ? '4+' : n === 0 ? '0 (al fallo)' : n}
             </motion.button>
           );
         })}
@@ -473,20 +521,6 @@ function ExerciseSlide({ m, wd, started }) {
               </button>
             )}
           </div>
-          {/* A la vista, al lado del nombre — no escondido en "opciones de
-              esta serie" (Enzo lo pidió explícito). Sólo si tiene sentido
-              ofrecerlo: en sentadilla o peso muerto no hay "lado" que armar
-              (puedeSerUnilateral, D6). */}
-          {puedeUni && (
-            <button
-              type="button"
-              className={`chip uni-toggle ${uni ? 'on' : ''}`}
-              aria-pressed={uni}
-              onClick={() => toggleUnilateral(ex.id)}
-            >
-              {uni ? '✓ Un lado por vez' : 'Un lado por vez'}
-            </button>
-          )}
         </div>
         {/* Cambiaste éste por otro: el original ya no está en la lista, pero
             queda dicho de dónde salió. */}
@@ -586,7 +620,7 @@ function ExerciseSlide({ m, wd, started }) {
             <div className="txt-mut" style={{ fontSize: 12, textAlign: 'center', marginTop: 8 }}>
               Dale cuando estés en la máquina{!started ? ' — acá arranca el cronómetro' : ''}
             </div>
-            <ExActions ex={ex} wd={wd} />
+            <ExActions ex={ex} wd={wd} uni={uni} puedeUni={puedeUni} />
           </>
         )}
         {open && (
@@ -691,13 +725,13 @@ function ExerciseSlide({ m, wd, started }) {
               <summary className="chip ex-more-summary">Más opciones de esta serie</summary>
               <div className="ex-more-body" ref={moreBodyRef}>
                 {/* key=done.length: saveSet() resetea v.rpe a null después de
-                    cada serie, y el estado local de RpeSelector no puede
+                    cada serie, y el estado local de RirSelector no puede
                     enterarse de una mutación sobre `v`. Remontarlo por serie
                     lo deja siempre en blanco para la que viene — mismo truco
                     que ya usa .ex-done-count más arriba. */}
-                <RpeSelector key={done.length} v={v} />
+                <RirSelector key={done.length} v={v} curRir={curRir} />
                 {S.cfg.activeGym && <GymPhoto gymId={S.cfg.activeGym} exName={ex.name} />}
-                <ExActions ex={ex} wd={wd} />
+                <ExActions ex={ex} wd={wd} uni={uni} puedeUni={puedeUni} />
               </div>
             </details>
           </>
