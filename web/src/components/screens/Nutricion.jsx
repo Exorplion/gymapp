@@ -225,14 +225,14 @@ export default function Nutricion() {
       </div>
 
       {proteinaPendiente && (
-        <div className="card sub">
+        <div className="notice">
           <div className="text-sm text-txt font-medium">🥩 Entrenaste hace poco</div>
           <div className="s text-mut mt-1">Todavía no registraste una comida con proteína. No es una regla dura, pero es el mejor momento para una.</div>
         </div>
       )}
 
       {bajos.length > 0 && (
-        <div className="card sub">
+        <div className="notice">
           <div className="text-sm text-txt font-medium">Micronutrientes bajos esta semana</div>
           <div className="s text-mut mt-1">
             {bajos.map(b => `${b.label} (${b.dias} de 7 días)`).join(' · ')}
@@ -242,7 +242,7 @@ export default function Nutricion() {
       )}
 
       {band?.adjust !== 0 && band && (
-        <div className="card sub">
+        <div className="notice">
           <div className="text-sm text-txt font-medium">
             {band.adjust > 0 ? '↑' : '↓'} Ajuste sugerido: {band.adjust > 0 ? '+' : ''}{band.adjust} kcal
           </div>

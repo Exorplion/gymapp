@@ -291,7 +291,7 @@ function DeloadCard() {
 
   if (activo) {
     return (
-      <div className="card sub mb-[var(--s3)]" style={{ borderColor: 'var(--ok)' }}>
+      <div className="notice ok">
         <div className="text-sm text-txt font-medium">Descarga en curso desde el {fmtD(activo.desde)}</div>
         <div className="s text-mut mt-1">
           {activo.grupos.join(', ')} con las series reducidas. Al terminarla, cada ejercicio
@@ -305,7 +305,7 @@ function DeloadCard() {
   }
 
   return (
-    <div className="card sub mb-[var(--s3)]" style={{ borderColor: 'var(--warn)' }}>
+    <div className="notice warn">
       <div className="text-sm text-txt font-medium">⚠ Puede ser momento de una descarga</div>
       <div className="s text-mut mt-1">
         {grupos.join(', ')} llevan 3+ semanas en tu volumen máximo recuperable. Una semana con 40-50% menos series por grupo suele restaurar el progreso.
@@ -348,7 +348,7 @@ function CoberturaCard() {
   if (!huecos.length) return null;
 
   return (
-    <div className="card sub mb-[var(--s3)]">
+    <div className="notice">
       <div className="text-sm text-txt font-medium">Porciones que tu rutina todavía no toca</div>
       <div className="s text-mut mt-1">
         Cada músculo tiene porciones que responden a ejercicios distintos. Estas no las
@@ -378,7 +378,7 @@ function ReforzarCard() {
   if (!viejos.length) return null;
   const dias = daysSinceAll();
   return (
-    <div className="card sub mb-[var(--s3)]">
+    <div className="notice">
       {/* Mismo encabezado que DeloadCard y CoberturaCard: era un `.sect` con
           los márgenes anulados a mano, que en esta tarjeta se leía como un
           título huérfano y de otro tamaño que sus vecinas. */}

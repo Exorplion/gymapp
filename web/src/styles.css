@@ -3183,3 +3183,32 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    existiendo para el otro caso, el legítimo: un <button> que debe verse
    como texto pelado, SIN ninguna clase de apariencia. */
 .cardbtn{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;-webkit-appearance:none}
+
+/* ---------- notice: aviso sin caja ---------- */
+/* Un aviso ("todavía no registraste proteína", "podés hacer una descarga")
+   es contenido de la pantalla, no una unidad aparte — a diferencia de un
+   plan activo o un turno, no hay nada que "entrar a ver" adentro. Antes
+   usaba .card.sub, la variante "fantasma" (fondo a 3.5% de opacidad, borde a
+   9%): casi no se percibía como caja, así que el espacio de sobra no se leía
+   como separación y la caja a medio existir daba una sensación desprolija
+   (Enzo: "no está espaciada... se ve horrible, y aniñado"). .notice no
+   finge ser una caja: etiqueta/título + texto, separados del resto por aire
+   (margin), no por borde. El acento de color que antes era el borde de TODA
+   la caja (descarga en curso = ok, riesgo/sugerencia = warn) queda como una
+   regla angosta a la izquierda, sólo en los avisos que señalan un estado. */
+/* El padding-left va en la BASE, no en las variantes de color: si sólo lo
+   tuvieran .ok/.warn, un aviso con color arrancaría 12px más adentro que uno
+   sin color, y en Entreno conviven los tres (descarga + cobertura +
+   refuerzo). Medido: el texto quedaba en x=20 y x=32 en la misma pantalla —
+   exactamente el escalón que Enzo llama "desalineado".
+   La regla de color sigue siendo transparente por defecto, así que ocupa su
+   lugar igual y el riel es el mismo con color o sin él. */
+/* El margen es simétrico (arriba Y abajo), y no sólo abajo: sin caja que lo
+   delimite, el aire ES la separación. Con `margin:0 0 var(--s4)` el aviso
+   quedaba pegado a la tarjeta de arriba —medido: 0px de hueco arriba, 16
+   abajo— que es exactamente la queja original de Enzo ("no está espaciada
+   de las otras tarjetas"). Entre dos avisos seguidos los márgenes colapsan,
+   así que siguen separados 16 y no 32. */
+.notice{margin:var(--s4) 0;border-left:2px solid transparent;padding-left:var(--s3)}
+.notice.ok{border-left-color:var(--ok)}
+.notice.warn{border-left-color:var(--warn)}
