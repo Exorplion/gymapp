@@ -1073,9 +1073,22 @@ main.arrastrando{overflow:hidden;user-select:none}
   background:var(--card2);border-radius:var(--r-md);border-bottom-color:transparent;
   box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(var(--blue-rgb),.3);
 }
-.day-headrow{display:flex;align-items:center;gap:8px}
-.day-headrow .day-head{flex:1}
-.day-headrow .day-handle{cursor:grab;flex:none}
+/* Fila de turno en edición (handoff 2026-09-17, punto 3, Enzo: "los botones
+   de reordenar y el botón de limpiar también están desalineados"): el
+   problema medido no era el centrado vertical (los seis elementos ya
+   coincidían en 441px) sino el padding — la manija vivía pegada al borde de
+   la tarjeta (gap:8 sin padding propio) mientras que el badge/nombre, adentro
+   de .day-head, arrancaban recién a los 16px de SU padding interno. Dos
+   insets distintos para lo que debería leerse como una sola fila. Ahora el
+   padding horizontal vive en .day-headrow (12px, simétrico con el borrar del
+   otro extremo) y .day-head no repite el suyo cuando está anidado acá —un
+   solo inset para toda la fila. Manija y borrar además crecen a 44px (mínimo
+   táctil), separándolos visualmente de la información (badge+nombre+resumen)
+   como controles de edición aparte. */
+.day-headrow{display:flex;align-items:center;gap:8px;padding:0 12px}
+.day-headrow .day-head{flex:1;padding:14px 0}
+.day-headrow .day-handle{cursor:grab;flex:none;width:44px;height:44px}
+.day-headrow .mini.red{width:44px;height:44px}
 .card.day.dragging{
   box-shadow:0 26px 52px -20px rgba(0,0,0,.85),0 0 0 1px rgba(var(--blue-rgb),.35);
 }
@@ -3070,15 +3083,41 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    editable IN SITU dentro de la misma tarjeta — reemplaza al sheet
    SlotEdit.jsx, que existía sólo para escribir este campo. Mismo tamaño y
    tipografía que .day-name (la etiqueta estática que reemplaza) para que
-   tocar el lápiz no salte de tamaño el texto de la tarjeta. */
+   tocar el lápiz no salte de tamaño el texto de la tarjeta.
+
+   Queja de diseño (2026-09-17, Enzo: "hay un detalle de estética... son
+   unos guiones seguidos de un signo >, se ve horrible"): el input medía
+   248px de ancho con `border-bottom:dashed` PERMANENTE — una línea de
+   guiones larguísima que, pegada al chevron `›`, se leía como un campo de
+   formulario a medio llenar en vez del nombre de un entrenamiento. El
+   subrayado ahora sólo aparece mientras el campo tiene foco (igual que
+   :focus más abajo); en reposo el nombre se lee como título, sin ninguna
+   línea. La editabilidad ya la señala la manija+badge del modo edición
+   (ver .day-headrow) — no hace falta que cada carácter del título grite
+   "soy un input". */
 .day-name-input{
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-xl);
   display:block;width:100%;line-height:1.15;
-  background:none;border:0;border-bottom:1px dashed var(--line2);
+  background:none;border:0;border-bottom:1px dashed transparent;
   color:var(--txt);padding:0 0 2px;
 }
 .day-name-input:focus{outline:none;border-bottom-color:var(--blue2)}
 .day-name-input::placeholder{color:var(--mut2);font-weight:500}
+
+/* Encabezado de la rutina en edición (handoff 2026-09-17, punto 1): nombre +
+   lápiz, mismo patrón que .day-name-input pero para S.cfg.routineName en vez
+   de un turno. Sin línea punteada permanente por la misma razón que arriba
+   — el lápiz ya dice "esto se edita". */
+.routine-name-head{display:flex;align-items:center;gap:8px;margin:0 0 var(--s3)}
+.routine-name-txt{
+  flex:1;min-width:0;font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  font-size:var(--t-xl);color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.routine-name-input{
+  flex:1;min-width:0;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--t-xl);
+  background:none;border:0;border-bottom:1px dashed var(--blue2);color:var(--txt);padding:0 0 2px;
+}
+.routine-name-input:focus{outline:none}
 
 /* ============================================================
    Onboarding de "Nuevo ejercicio" (ExerciseForm.jsx) — cuatro pasos

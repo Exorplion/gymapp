@@ -220,14 +220,25 @@ export function cloneExercise(ex) {
   };
 }
 
+/** Resuelve a qué índice de S.routine apunta una referencia de turno: por
+    `id` (preferido — sobrevive a un reorder, mismo motivo que
+    hasOpenSession/removeWorkoutDay más abajo) o por índice numérico (compat
+    con llamadores que todavía no migraron). */
+function slotIndexOf(ref) {
+  if (typeof ref === 'string') return S.routine.findIndex(s => s.id === ref);
+  return +ref;
+}
+
 /** Los ejercicios de una fuente de copiado: un turno de la secuencia actual
-    ({fromIndex}) o un turno de una rutina guardada ({libId, libIndex}). */
+    ({fromId}, o {fromIndex} en índices por compat) o un turno de una rutina
+    guardada ({libId, libIndex}). */
 export function copySourceExercises(src) {
   if (src?.libId != null) {
     const r = S.lib.find(x => x.id === src.libId);
     return r?.days?.[src.libIndex]?.exercises || [];
   }
-  return S.routine[+src?.fromIndex]?.exercises || [];
+  const idx = src?.fromId != null ? slotIndexOf(src.fromId) : +src?.fromIndex;
+  return S.routine[idx]?.exercises || [];
 }
 
 /** Nombre del turno de origen, para heredarlo si el destino no tiene. */
@@ -236,36 +247,54 @@ function copySourceName(src) {
     const r = S.lib.find(x => x.id === src.libId);
     return r?.days?.[src.libIndex]?.name || '';
   }
-  return S.routine[+src?.fromIndex]?.name || '';
+  const idx = src?.fromId != null ? slotIndexOf(src.fromId) : +src?.fromIndex;
+  return S.routine[idx]?.name || '';
 }
 
 /**
- * Lleva ejercicios de `src` al turno `toIndex`.
+ * Lleva ejercicios de `src` al turno `to`.
  *
  * `ids` identifica qué copiar dentro del origen: por `id` cuando viene de un
  * turno de la secuencia actual, y por `name` cuando viene de una rutina
  * guardada (los ejercicios de S.lib no tienen id — se generan al aplicarlos).
+ *
+ * `to` es el `id` del turno destino (preferido) o su índice (compat). Igual
+ * que `src.fromId`/`src.fromIndex`: identificar por id es lo que hace que la
+ * copia siga yendo al turno correcto si S.routine se reordenó entre que se
+ * abrió el sheet y se confirmó — antes esto se resolvía por índice numérico
+ * puro y un reorder de por medio podía mandar la copia a otro turno, o
+ * inventar uno con ensureSlot (Enzo, 2026-09-17: "no actualiza
+ * correctamente").
  *
  * `mode`:
  *   'replace' — el destino queda con exactamente lo seleccionado.
  *   'merge'   — sólo entran los que el destino no tiene ya, comparando por
  *               exKey: el mismo nombre con otro equipo NO es un repetido, es
  *               justo lo que el módulo de equipamiento existe para separar.
+ *
+ * Devuelve {copied, reason?, toIndex, toId} en vez de mutar en silencio: el
+ * llamador (CopyExercises.jsx) necesita distinguir "copié N" de "no había
+ * nada nuevo" para decidir si cierra el sheet o se queda mostrando por qué
+ * no pasó nada — antes esos casos hacían `return` sin avisar y el sheet se
+ * cerraba (o no) sin que quedara claro qué había pasado.
  */
-export async function copyExercises(src, toIndex, ids, mode = 'merge') {
-  const to = +toIndex;
-  if (src?.libId == null && +src?.fromIndex === to) return;   // copiar sobre sí mismo
+export async function copyExercises(src, to, ids, mode = 'merge') {
+  const toIdx = slotIndexOf(to);
+  if (toIdx < 0) return { copied: 0, reason: 'no-target' };
+  const fromIdx = src?.libId != null ? -1
+    : (src?.fromId != null ? slotIndexOf(src.fromId) : +src?.fromIndex);
+  if (src?.libId == null && fromIdx === toIdx) return { copied: 0, reason: 'same' };   // copiar sobre sí mismo
   const elegidos = copySourceExercises(src).filter(e => ids.includes(e.id ?? e.name));
-  if (!elegidos.length) return;
+  if (!elegidos.length) return { copied: 0, reason: 'none-selected' };
 
-  const destino = ensureSlot(to);
+  const destino = ensureSlot(toIdx);
   const existentes = mode === 'replace' ? [] : (destino.exercises || []);
   const yaHay = new Set(existentes.map(exKey));
   const nuevos = elegidos
     .filter(e => mode === 'replace' || !yaHay.has(exKey(e)))
     .map(cloneExercise);
 
-  if (!nuevos.length && mode === 'merge') { toast('Ese turno ya tiene todos esos ejercicios'); return; }
+  if (!nuevos.length && mode === 'merge') { toast('Ese turno ya tiene todos esos ejercicios'); return { copied: 0, reason: 'duplicate' }; }
 
   pushHistory(
     mode === 'replace'
@@ -273,11 +302,20 @@ export async function copyExercises(src, toIndex, ids, mode = 'merge') {
       : `${nuevos.length} ejercicio${nuevos.length === 1 ? '' : 's'} copiado${nuevos.length === 1 ? '' : 's'}`,
   );
   destino.exercises = [...existentes, ...nuevos];
+  // Un turno "libre" en la UI puede ser un turno de entrenamiento vacío O un
+  // turno de descanso (CopyExercises.jsx los muestra igual, como "libre") —
+  // si es lo segundo, copiarle ejercicios sin volverlo 'workout' los deja
+  // guardados pero invisibles: la pantalla de Entreno sólo lista turnos
+  // type==='workout', así que la copia "no aparecía" aunque sí se había
+  // persistido (encontrado verificando IndexedDB directamente, Enzo
+  // 2026-09-17: "no actualiza correctamente").
+  destino.type = 'workout';
   // Un turno que todavía no tenía nombre hereda el del origen; uno que ya lo
   // tenía se lo queda — el nombre es del turno, no del contenido.
   if (!destino.name) destino.name = copySourceName(src);
-  await persistSlot(to);
+  await persistSlot(toIdx);
   bump();
+  return { copied: nuevos.length, toIndex: toIdx, toId: destino.id };
 }
 export async function saveLib() { await idb.put('settings', { key: 'lib', value: S.lib }); }
 export async function applyDays(seq, name) {
@@ -803,4 +841,17 @@ export function saveCurrentAsLib(name) {
   } else {
     doSave();
   }
+}
+
+/** Renombra la rutina ACTIVA (S.cfg.routineName), a diferencia de
+    saveCurrentAsLib: no toca S.routine ni deja copia en S.lib. Antes el
+    único "guardar" disponible en el editor era saveCurrentAsLib, que de paso
+    generaba una entrada extra en "Mis rutinas" — confuso para Enzo, que sólo
+    quería ponerle nombre a la que ya está editando. Esto es sólo eso: un
+    renombrado, sin efectos secundarios sobre la biblioteca. */
+export function renameRoutine(name) {
+  name = (name || '').trim();
+  if (!name) { toast('Ingresá un nombre'); return; }
+  S.cfg.routineName = name;
+  saveCfg(); bump();
 }

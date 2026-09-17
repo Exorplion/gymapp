@@ -39,7 +39,9 @@ const TABLA = [
   ['remo', 'remo'], ['row', 'remo'],
   ['peso muerto rumano', 'pesomuerto'], ['rumano', 'pesomuerto'], ['rdl', 'pesomuerto'],
   ['sldl', 'pesomuerto'], ['peso muerto', 'pesomuerto'], ['deadlift', 'pesomuerto'],
+  ['rack pull', 'pesomuerto'],
   ['back extension', 'backext'], ['hiperext', 'backext'], ['lumbar', 'backext'],
+  ['good morning', 'backext'], ['buenos dias', 'backext'], ['reverse hyper', 'backext'],
 
   // pierna
   ['leg press', 'prensa'], ['prensa', 'prensa'],
