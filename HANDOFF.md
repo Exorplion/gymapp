@@ -1,6 +1,69 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-17 (pérdida total de datos)
+**Última actualización:** 2026-09-17 (unilateral + Entreno)
+
+---
+
+## SESIÓN 2026-09-17 (segunda parte) — PR #103, mergeado
+
+Cinco pedidos de Enzo, todos verificados en Chrome con el build de producción
+(no sólo con tests). `main` = `2efb115`. **543 tests.**
+
+### Lo que se hizo
+
+1. **Unilateral: una serie son los dos lados.** Spec completa en
+   `docs/superpowers/specs/2026-09-17-unilateral-design.md` (D1-D6). El
+   conteo, el descanso partido (`cfg.restSide`=20s), la lateralidad en
+   `exKey()`, los gráficos separados, el interruptor visible y persistente.
+2. **Entreno sin redundancia.** Cuatro puertas → una ("Mis rutinas").
+   `SlotEdit.jsx` borrado. Agrupación por `blocksOf` (grupo grueso).
+3. **`MuscleFibers.jsx`** — micro-silueta de porciones, sin texto.
+4. **Parpadeo al cambiar de pestaña**: la saliente se montaba en `useEffect`
+   (post-pintado) → ahora `useLayoutEffect`.
+5. **Plantilla Anterior/Posterior** = los 21 ejercicios reales de Enzo.
+
+### Trampas encontradas — no volver a caer
+
+- **`visibility:hidden` en un ancestro hace que `innerText` devuelva vacío.**
+  Costó una falsa alarma: los encabezados de grupo parecían haber perdido su
+  nombre y en realidad estaban ocultos por el bug del colapso. Para verificar
+  el DOM usar `textContent` o `getComputedStyle`, no `innerText`.
+- **La clase de la tarjeta de turno importa**: `.day-card.open .day-collapse`
+  es lo que abre el acordeón. Quedó como `card day` al fusionar las vistas y
+  el turno no mostraba nada (`height:0`). Una línea, `Rutina.jsx:536`.
+- **`catOf()` matchea 'apertura' → Pecho** antes de cualquier regla de
+  hombro. "Aperturas posteriores" es de HOMBRO y se clasificaba mal. Se usa
+  "Pájaros", que el catálogo ya entiende. Si se agregan nombres nuevos a una
+  plantilla, **testear que `catOf()` no devuelva null ni el grupo equivocado**
+  (hay un test que recorre los 21).
+
+### Pendientes
+
+1. **Onboarding continuo de "nuevo ejercicio"** — pedido por Enzo, todavía
+   **sin diseñar**. Quiere: confirmar → ver qué agregó → seguir agregando,
+   con animaciones. **Obstáculo real**: el sistema de sheets NO apila — hay
+   un solo `S.sheet` y abrir uno reemplaza al anterior (`state.js:217`). Por
+   eso hoy cada ejercicio creado cierra el panel. Hay que construir el
+   encadenado antes que la estética.
+2. **Modelo anatómico** — tres opciones propuestas, Enzo no decidió:
+   (a) que `MuscleFibers` use las curvas reales del pecho (`upperChest`
+   /"Clavicular" y `lowerChest`/"Costal" YA existen en `bodydata.js:178-185`)
+   en vez de las franjas abstractas; (b) que `Silhouette.jsx:92` deje de
+   filtrar los parches, así Inicio puede encender porciones; (c) agregar el
+   archivo de licencia de **MuscleMap (MIT, © Melih Colpan)** — hoy sólo hay
+   un comentario de atribución en `bodydata.js:1-17` y la MIT exige incluir
+   el texto al redistribuir, cosa que hacemos al publicar.
+   **Una división en tres (clavicular/esternal/abdominal) NO es posible sin
+   dibujar**: MuscleMap trae dos parches, no tres.
+3. **El puente `fibras.js` ↔ `bodydata.js` es coincidencia de strings sin
+   ningún test.** Si un nombre de porción cambia una letra, deja de
+   encenderse en silencio. Vale un test.
+4. **El chip "Un lado por vez" aparece en ejercicios donde no aplica** (ej.
+   "Remo con barra"). `puedeSerUnilateral()` sólo excluye por nombre, no mira
+   el equipo. Decisión consciente (mostrar de más es recuperable), pero Enzo
+   puede querer afinarlo.
+5. Que Enzo confirme el parpadeo **en su teléfono** — dos cuadros se ven
+   mejor con el ojo que con un número.
 
 ---
 
