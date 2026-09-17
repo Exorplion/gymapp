@@ -48,7 +48,10 @@ const blobADataURL = blob => new Promise((res, rej) => {
   fr.readAsDataURL(blob);
 });
 
-export async function exportJSON() {
+/** `auto` = lo disparó la app al cerrar una sesión, no un toque en Ajustes.
+    Sólo cambia lo que se dice: un archivo que aparece en Descargas sin que
+    lo hayas pedido tiene que explicarse solo, o parece un error. */
+export async function exportJSON({ auto = false } = {}) {
   try {
     // Las fotos son Blobs y JSON no los sabe serializar: van como data URL.
     // Se leen del store directamente (no de S) porque nunca se cargan en
@@ -81,7 +84,9 @@ export async function exportJSON() {
     await saveCfg();
 
     const nF = photos.length;
-    toast(`Backup descargado${nF ? ` · incluye ${nF} foto${nF > 1 ? 's' : ''}` : ''}`);
+    toast(auto
+      ? 'Respaldo automático guardado en Descargas'
+      : `Backup descargado${nF ? ` · incluye ${nF} foto${nF > 1 ? 's' : ''}` : ''}`);
   } catch {
     // Nunca en silencio: si el respaldo no salió, el usuario TIENE que
     // enterarse — creer que respaldaste y no haberlo hecho es peor que el

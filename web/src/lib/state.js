@@ -22,6 +22,12 @@ export const S = {
     seqIndexDate: null, // 'YYYY-MM-DD': desde cuándo seqIndex está en este valor
     profile: { sex: 'm', age: null, height: null, weightKg: null, activity: 'moderate', goal: 'deficit_mod', tdeeEmpirical: null, proteinPref: 0.5, fatPref: 0.5 },
     activeGym: null,    // id de S.gyms, o null (sin gym activo)
+    /* Respaldo automático al cerrar una sesión (ver tocaAutoBackup en
+       persist.js). Arranca PRENDIDO a propósito: el default lo eligió la
+       pérdida total del 2026-09-17, no una preferencia. Se puede apagar en
+       Ajustes; `undefined` cuenta como prendido para que las instalaciones
+       que ya existen queden cubiertas sin tener que tocar nada. */
+    autoBackup: true,
   },
   draft: null,          // sesión en curso
   tab: 'inicio',        // la portada; 'hoy' sigue existiendo, pero se entra desde acá

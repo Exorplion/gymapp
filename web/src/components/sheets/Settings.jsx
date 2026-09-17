@@ -73,6 +73,15 @@ export default function Settings() {
 
   const diasBackup = daysSinceBackup(S.cfg.lastBackupAt);
   const avisarBackup = necesitaBackup(S.sessions.length, S.cfg.lastBackupAt);
+  // `!== false` y no una verdad simple: una instalación vieja no tiene la
+  // clave, y undefined tiene que leerse como prendido (ver tocaAutoBackup).
+  const autoOn = S.cfg.autoBackup !== false;
+
+  function setAutoBackup(on) {
+    S.cfg.autoBackup = on;
+    saveCfg();
+    bump();
+  }
 
   const colorActual = S.cfg.themeColor || COLOR_DEFECTO;
   const paleta = paletaDesde(colorActual) || {};
@@ -367,6 +376,19 @@ export default function Settings() {
           que el navegador puede desalojar. Cuando hace falta de verdad, el
           botón deja de ser un "ghost" más de la lista. */}
       <button type="button" className={avisarBackup ? 'btn' : 'btn ghost'} style={{ marginBottom: 10 }} onClick={() => exportJSON()}>⬇ Exportar todo a JSON</button>
+
+      {/* Prendido de fábrica. El default lo eligió la pérdida del
+          2026-09-17, no una preferencia: acordarse de respaldar es
+          justamente lo que falla. */}
+      <div className="seg" style={{ marginBottom: 10 }}>
+        <button type="button" className={autoOn ? 'on' : ''} aria-pressed={autoOn} onClick={() => setAutoBackup(true)}>Respaldo automático</button>
+        <button type="button" className={autoOn ? '' : 'on'} aria-pressed={!autoOn} onClick={() => setAutoBackup(false)}>Sólo manual</button>
+      </div>
+      <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+        {autoOn
+          ? 'Al cerrar un entrenamiento, si pasó una semana desde tu última copia, la app guarda un JSON en Descargas sola. Ahí no lo alcanza ningún borrado del navegador.'
+          : 'Nadie va a respaldar por vos. Si el teléfono borra los datos, se pierde lo que no hayas exportado a mano.'}
+      </div>
       <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => importRef.current?.click()}>⬆ Importar JSON</button>
       <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={onImportFile} />
       <button type="button" className="btn danger" onClick={startWipeAll}>Borrar todos los datos</button>
