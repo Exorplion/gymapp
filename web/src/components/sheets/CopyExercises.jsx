@@ -13,6 +13,7 @@ import { equipLabel, exKey } from '../../lib/equip.js';
 import { copyExercises, copySourceExercises } from '../../lib/rutina-logic.js';
 import { sheetReveal } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
+import { toast } from '../../lib/toast.js';
 import { Button, Card } from '../ui/primitives.jsx';
 
 // Nombre a mostrar para un turno de la secuencia actual.
@@ -21,8 +22,15 @@ const slotLabel = i => S.routine[i]?.name || `Turno ${i + 1}`;
 const chipBase = 'inline-flex items-center rounded-full border border-line2 px-3.5 py-2 text-sm font-medium transition-colors';
 const chip = on => cn(chipBase, on ? 'border-transparent bg-blue2 font-bold text-[var(--on-grad)]' : 'bg-card2 text-txt hover:border-line');
 
-export default function CopyExercises({ mode = 'push', index }) {
-  const propio = +index;
+// Rutina.jsx abre este sheet como openSheet('copy-exs', { mode, wd: index }) —
+// `wd` es la convención que ya usan ex-info/ex-form para "qué turno" (ver
+// Rutina.jsx:631/646/669/691). Antes esto desestructuraba `index`, que nunca
+// llegaba: el prop real es `wd`, así que `propio` daba NaN y todo lo que
+// dependía de él (destino, "Turno NaN" en el título, elegir origen) quedaba
+// roto — la causa de fondo de "no actualiza correctamente" (Enzo,
+// 2026-09-17), no sólo el problema de índices vs id de más abajo.
+export default function CopyExercises({ mode = 'push', wd }) {
+  const propio = +wd;
   const esPush = mode === 'push';
   const rootRef = useRef(null);
   const listRef = useRef(null);
@@ -51,16 +59,22 @@ export default function CopyExercises({ mode = 'push', index }) {
   const [destinoIndex, setDestinoIndex] = useState(esPush ? null : propio);
   const [sel, setSel] = useState(null);                     // null = todos
   const [modo, setModo] = useState('merge');
+  const [enviando, setEnviando] = useState(false);           // deshabilita mientras el await está en curso
 
   const rutinaLib = S.lib.find(r => r.id === libId) || null;
   const diasLib = rutinaLib ? rutinaLib.days.map((d, i) => i).filter(i => rutinaLib.days[i]?.exercises?.length) : [];
   const libIndexActivo = libIndex != null && diasLib.includes(libIndex) ? libIndex : (diasLib[0] ?? null);
 
-  const src = useMemo(() => (
-    (!esPush && fuente === 'lib')
+  // El origen se identifica por `id` de turno (fromId), no por índice: si
+  // S.routine se reordena entre que se abre el sheet y se confirma, la copia
+  // tiene que seguir yendo al turno correcto. fromIndex queda de respaldo
+  // por si el turno ya no existe (se borró mientras el sheet estaba abierto).
+  const src = useMemo(() => {
+    const i = esPush ? propio : origenIndex;
+    return (!esPush && fuente === 'lib')
       ? { libId, libIndex: libIndexActivo }
-      : { fromIndex: esPush ? propio : origenIndex }
-  ), [esPush, fuente, libId, libIndexActivo, propio, origenIndex]);
+      : { fromId: S.routine[i]?.id, fromIndex: i };
+  }, [esPush, fuente, libId, libIndexActivo, propio, origenIndex]);
 
   const disponibles = copySourceExercises(src);
   const idDe = e => e.id ?? e.name;
@@ -70,6 +84,7 @@ export default function CopyExercises({ mode = 'push', index }) {
   }, [disponibles.length, src]);
 
   const destino = esPush ? destinoIndex : propio;
+  const destinoId = destino != null ? S.routine[destino]?.id : null;
   const exsDestino = destino != null ? (S.routine[destino]?.exercises || []) : [];
   const destinoOcupado = exsDestino.length > 0;
   const yaHay = new Set(exsDestino.map(exKey));
@@ -80,6 +95,12 @@ export default function CopyExercises({ mode = 'push', index }) {
     disponibles.filter(e => modo === 'replace' || !yaHay.has(exKey(e))).map(idDe),
   );
   const elegidos = disponibles.filter(e => seleccion.has(idDe(e)));
+  // De los elegidos, cuántos entrarían de verdad: en merge sobre un destino
+  // ocupado, los repetidos no cuentan. Si esto da 0 con elegidos.length > 0,
+  // el usuario eligió sólo cosas que ya estaban — hay que avisarle ANTES de
+  // confirmar (deshabilitando el botón), no dejar que el sheet se cierre sin
+  // que haya pasado nada (Enzo, 2026-09-17).
+  const nuevosCount = elegidos.filter(e => !(modo === 'merge' && destinoOcupado && yaHay.has(exKey(e)))).length;
 
   function toggle(e) {
     const next = new Set(seleccion);
@@ -91,10 +112,34 @@ export default function CopyExercises({ mode = 'push', index }) {
   const todosPuestos = elegidos.length === disponibles.length;
   const alternarTodos = () => setSel(todosPuestos ? new Set() : new Set(disponibles.map(idDe)));
 
+  // Cierra sólo cuando de verdad se copió algo. Antes no había try/catch: si
+  // copyExercises rechazaba (IndexedDB llena, persistSlot fallando, lo que
+  // sea), la excepción nunca llegaba a closeSheet() y el sheet quedaba
+  // abierto sin ningún mensaje — el "se queda abierta" que reportó Enzo.
+  // Ahora, si falla, se queda abierto mostrando por qué.
   async function confirmar() {
-    if (destino == null || !elegidos.length) return;
-    await copyExercises(src, destino, elegidos.map(idDe), destinoOcupado ? modo : 'replace');
-    closeSheet();
+    if (destino == null || !nuevosCount || enviando) return;
+    setEnviando(true);
+    try {
+      const res = await copyExercises(src, destinoId ?? destino, elegidos.map(idDe), destinoOcupado ? modo : 'replace');
+      if (!res?.copied) {
+        toast(
+          res?.reason === 'duplicate' ? 'Ese turno ya tiene todos esos ejercicios'
+          : res?.reason === 'same' ? 'Elegí un turno distinto del de origen'
+          : 'No se copió nada',
+        );
+        return;
+      }
+      // El turno destino queda abierto en Entreno: así se ve directamente lo
+      // que se trajo, en vez de tener que ir a buscarlo (Enzo: "de allí ver
+      // los ejercicios que se trajeron").
+      S.rutOpen = res.toIndex;
+      closeSheet();
+    } catch (err) {
+      toast(`No se pudo copiar: ${err?.message || 'error inesperado'}`);
+    } finally {
+      setEnviando(false);
+    }
   }
 
   const nombreOrigen = (!esPush && fuente === 'lib')
@@ -248,15 +293,24 @@ export default function CopyExercises({ mode = 'push', index }) {
         </div>
       )}
 
-      <Button type="button" className="mt-4 w-full" disabled={destino == null || !elegidos.length} onClick={confirmar}>
+      <Button type="button" className="mt-4 w-full" disabled={destino == null || !elegidos.length || !nuevosCount || enviando} onClick={confirmar}>
         {destino == null
           ? (esPush ? 'Elegí a dónde' : 'Elegí un turno')
-          /* El destino se nombra por su rutina y no por el número de turno,
-             igual que en la lista de arriba: "al Posterior A" es lo que uno
-             tiene en la cabeza, "al turno 3" te obliga a traducir. */
-          : `${esPush ? 'Copiar' : 'Traer'} ${elegidos.length} ejercicio${elegidos.length === 1 ? '' : 's'}${esPush ? ` a ${slotLabel(destino)}` : ''}`}
+          : !elegidos.length
+            ? 'Elegí al menos un ejercicio'
+            /* Todo lo elegido ya estaba en el destino: avisarlo ACÁ, antes de
+               que se pueda tocar "confirmar", no después de que el sheet ya
+               se cerró sin haber hecho nada. */
+            : !nuevosCount
+              ? 'Ya están todos en ese turno'
+              : enviando
+                ? 'Copiando…'
+                /* El destino se nombra por su rutina y no por el número de turno,
+                   igual que en la lista de arriba: "al Posterior A" es lo que uno
+                   tiene en la cabeza, "al turno 3" te obliga a traducir. */
+                : `${esPush ? 'Copiar' : 'Traer'} ${nuevosCount} ejercicio${nuevosCount === 1 ? '' : 's'}${esPush ? ` a ${slotLabel(destino)}` : ''}`}
       </Button>
-      <Button type="button" variant="ghost" className="mt-2.5 w-full" onClick={closeSheet}>Cancelar</Button>
+      <Button type="button" variant="ghost" className="mt-2.5 w-full" disabled={enviando} onClick={closeSheet}>Cancelar</Button>
     </div>
   );
 }
