@@ -29,14 +29,84 @@ import {
 import { sideImbalance } from '../lib/symmetry.js';
 import { shrinkImageBlob } from '../lib/photo.js';
 import { toast } from '../lib/toast.js';
-import { jumpToSlide, scrollToSlideEl, slideCenterDist } from '../lib/carousel.js';
-import { staggerRevealOnce, squashStretch, impactBurst, bloomOpen } from '../lib/motion.js';
+import { jumpToSlide, scrollToSlideEl } from '../lib/carousel.js';
+import { staggerRevealOnce, squashStretch, impactBurst, bloomOpen, menosMovimiento } from '../lib/motion.js';
 import { relatedHistory, equipLabel, puedeSerUnilateral } from '../lib/equip.js';
 import { getPhoto, savePhoto } from '../lib/gyms.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
 import ReelPicker from './ReelPicker.jsx';
 import { Info, Skip, Swap } from './Icon.jsx';
+// EXPERIMENTO — coverflow 3D (pedido de Enzo, ver motion.dev/examples/react-carousel-coverflow).
+// Revertir = borrar este import + el archivo + el bloque "COVERFLOW" de abajo.
+import '../styles-coverflow.css';
+
+// ---- COVERFLOW: matemática pura (testeada aparte) ----------------------
+// t = distancia señalada del centro del slide al centro visible del
+// carrusel, normalizada por el ancho del slide (o sea "cuántos slides de
+// distancia"). slideCenterDist() de lib/carousel.js ya hace exactamente esa
+// cuenta pero en valor absoluto (la necesita para elegir el dot activo); acá
+// hace falta el signo para saber hacia qué lado inclinar, así que
+// measureAndPaint() (más abajo, dentro del componente) calcula su propia
+// versión señalada, en la misma pasada de lectura que usa para los dots, y
+// le pasa el resultado a esta función.
+const CF_MAX_ANGLE = 32; // grados, vecino inmediato
+const CF_MAX_SCALE_DROP = 0.15;
+const CF_MAX_OPACITY_DROP = 0.6;
+const CF_MAX_Z = 70; // px hundidos hacia adentro
+const CF_FLAT_EPSILON = 0.03; // por debajo de esto, el slide activo queda EXACTAMENTE plano
+
+function coverflowFrame(t) {
+  const clamped = Math.max(-1.6, Math.min(1.6, t));
+  if (Math.abs(clamped) < CF_FLAT_EPSILON) {
+    return { rotateY: 0, scale: 1, opacity: 1, translateZ: 0, zIndex: 100 };
+  }
+  const abs = Math.min(Math.abs(clamped), 1); // el efecto satura a partir de 1 slide de distancia
+  const sign = clamped > 0 ? 1 : -1;
+  return {
+    rotateY: -sign * CF_MAX_ANGLE * abs,
+    scale: 1 - CF_MAX_SCALE_DROP * abs,
+    opacity: 1 - CF_MAX_OPACITY_DROP * abs,
+    translateZ: -CF_MAX_Z * abs,
+    zIndex: Math.round(100 - abs * 20),
+  };
+}
+
+/** Aplica coverflowFrame() como estilo inline directamente sobre el nodo del
+    DOM — nada de setState acá. session.js llama a scrollCarouselTo() varias
+    veces por serie registrada y App.jsx recuerda muy bien (PR #98, 1fps) lo
+    que cuesta remontar o re-renderizar de más en esta pantalla: el efecto
+    tiene que seguir el dedo del usuario a costo cero de React. */
+function applyCoverflowStyle(slide, frame, isCenter) {
+  /* El slide ACTIVO queda plano por decisión, no por umbral.
+     Antes el estado plano dependía de que la distancia calculada cayera bajo
+     CF_FLAT_EPSILON, y eso no pasa nunca de forma confiable: `offsetLeft` y
+     `clientWidth` son enteros pero `scrollLeft` es fraccional, así que el
+     motor de scroll-snap de Chrome deja un residuo sub-pixel permanente.
+     Medido con el slide centrado a propósito: transform
+     `matrix3d(0.985093, 0, -0.0500593, …)` y `opacity: 0.945` — o sea la
+     tarjeta con la rueda de peso, el RPE y el botón de registrar la serie
+     quedaba rotada ~3° y atenuada.
+     `isCenter` ya sabe cuál es el activo (es el más cercano al centro): si lo
+     sabemos, se le fuerza el estado plano y no se le pregunta al número. */
+  const plano = isCenter
+    ? { rotateY: 0, scale: 1, opacity: 1, translateZ: 0, zIndex: 100 }
+    : frame;
+  const { rotateY, scale, opacity, translateZ, zIndex } = plano;
+  slide.style.transform = rotateY === 0 && translateZ === 0 && scale === 1
+    ? ''
+    : `perspective(1200px) rotateY(${rotateY}deg) translateZ(${translateZ}px) scale(${scale})`;
+  slide.style.opacity = opacity === 1 ? '' : String(opacity);
+  slide.style.zIndex = String(zIndex);
+  slide.classList.toggle('cf-center', isCenter);
+}
+// ---- fin COVERFLOW matemática -------------------------------------------
+
+// coverflowFrame colgada del componente (no un `export` de nivel de módulo
+// aparte) para no disparar el warning de oxlint react(only-export-components)
+// — este archivo sólo puede tener un export además del default. El test la
+// llama como ExerciseCarousel.coverflowFrame(t).
+ExerciseCarousel.coverflowFrame = coverflowFrame;
 
 export default function ExerciseCarousel({ exs, wd, active, started, curId, nextEx }) {
   const carRef = useRef(null);
@@ -99,19 +169,61 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
       scrollToSlideEl(car, car.children[idx], 'smooth');
     }
     const dotsWrap = dotsRef.current;
-    function upd() {
-      if (!dotsWrap) return;
-      const dots = [...dotsWrap.children];
-      let best = 0, bestDist = Infinity;
-      [...car.children].forEach((s, i) => {
-        const dist = slideCenterDist(car, s);
-        if (dist < bestDist) { bestDist = dist; best = i; }
+    // COVERFLOW: gateado por prefers-reduced-motion (menosMovimiento) — con
+    // movimiento reducido el carrusel queda 100% como antes, plano y sin 3D.
+    const coverflowOn = !menosMovimiento();
+    let rafId = null;
+    // TODAS las lecturas de layout (offsetLeft/offsetWidth/scrollLeft, tanto
+    // para el coverflow como para el dot activo) van en una sola pasada,
+    // ANTES de escribir nada — si se intercalan lectura/escritura por slide
+    // (o si el coverflow escribe en un rAF distinto del de los dots) cada
+    // lectura posterior fuerza un reflow síncrono sobre el layout que la
+    // escritura anterior acaba de invalidar. Se detectó exactamente este
+    // patrón (135ms de reflow forzado en una corrida de 1.8s con CPU 6x)
+    // cuando el coverflow escribía en su propio rAF y los dots leían justo
+    // después, en el mismo upd(), sobre un layout ya invalidado.
+    function measureAndPaint() {
+      const children = [...car.children];
+      const scrollLeft = car.scrollLeft;
+      const clientWidth = car.clientWidth;
+      // Lectura (batch): un solo recorrido, nada se escribe todavía.
+      const reads = children.map(s => ({ offsetLeft: s.offsetLeft, offsetWidth: s.offsetWidth }));
+      let bestIdx = 0, bestAbsDist = Infinity;
+      const signedT = reads.map((r, i) => {
+        const center = r.offsetLeft + r.offsetWidth / 2 - scrollLeft;
+        const raw = center - clientWidth / 2;
+        const absDist = Math.abs(raw);
+        if (absDist < bestAbsDist) { bestAbsDist = absDist; bestIdx = i; }
+        return raw / (r.offsetWidth || clientWidth || 1);
       });
-      dots.forEach((d, j) => d.classList.toggle('on', j === best));
+      // Escritura (batch): recién ahora se toca el DOM.
+      if (coverflowOn) {
+        children.forEach((s, i) => applyCoverflowStyle(s, coverflowFrame(signedT[i]), i === bestIdx));
+      }
+      if (dotsWrap) {
+        [...dotsWrap.children].forEach((d, j) => d.classList.toggle('on', j === bestIdx));
+      }
+    }
+    let firstPaint = true;
+    function upd() {
+      if (firstPaint) {
+        // La primera pasada (montaje) se aplica ya mismo: si se difiere un
+        // frame con rAF, el carrusel se ve "plano" un instante y después
+        // salta al coverflow — mismo tipo de parpadeo que PR #98 ya evitó
+        // para el reveal escalonado.
+        firstPaint = false;
+        measureAndPaint();
+        return;
+      }
+      if (rafId != null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => { rafId = null; measureAndPaint(); });
     }
     car.addEventListener('scroll', upd, { passive: true });
     upd();
-    return () => car.removeEventListener('scroll', upd);
+    return () => {
+      car.removeEventListener('scroll', upd);
+      if (rafId != null) cancelAnimationFrame(rafId);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusKey]);
 
@@ -119,7 +231,7 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
 
   return (
     <>
-      <div id="ex-carousel" className={`carousel${active ? ' focus' : ''}`} ref={carRef}>
+      <div id="ex-carousel" className={`carousel${active ? ' focus' : ''}${menosMovimiento() ? '' : ' coverflow'}`} ref={carRef}>
         {meta.map(m => (
           <ExerciseSlide key={m.ex.id} m={m} wd={wd} started={started} />
         ))}

@@ -1,0 +1,47 @@
+/* EXPERIMENTO — coverflow 3D del carrusel de ejercicios (pedido de Enzo tras
+   ver https://motion.dev/examples/react-carousel-coverflow). Aislado a
+   propósito en este archivo aparte de styles.css: revertir el experimento es
+   borrar este archivo + la línea de import en ExerciseCarousel.jsx + el
+   bloque de JS marcado "COVERFLOW" en ese mismo componente. Nada de esto se
+   mezcla con la rueda de progreso ni con el resto de la hoja de estilos.
+
+   La geometría (rotateY/scale/opacity/translateZ por slide) se calcula en JS
+   —coverflowFrame() en ExerciseCarousel.jsx— a partir de slideCenterDist().
+   Acá sólo vive lo que tiene que ser CSS de verdad: el contexto de
+   perspectiva del contenedor y el apagado del backdrop-filter en los slides
+   no centrados (blur + 3D transform simultáneos es la combinación más cara
+   que hay — ver comentario de cabecera de ExerciseCarousel.jsx). */
+
+.carousel.coverflow {
+  perspective: 1200px;
+  /* overflow-x:auto de styles.css ya fuerza overflow-y a 'auto' (la regla
+     CSS de "uno visible + uno no visible => ambos auto"). Eso alcanza para
+     no recortar los slides rotados en la vertical porque no crecen en alto,
+     sólo se inclinan/escalan — se verificó visualmente en Chrome MCP. */
+}
+
+.carousel.coverflow .carousel-slide {
+  will-change: transform, opacity;
+  /* Sin transition acá a propósito: la transform se reescribe en cada frame
+     de scroll (ver upd() en ExerciseCarousel.jsx) para seguir 1:1 el dedo del
+     usuario, igual que el scroll nativo. Una transition CSS compitiendo con
+     esas escrituras por frame produciría lag, no suavidad. */
+}
+
+/* El slide activo tiene que quedar plano y legible de verdad: ahí vive la
+   rueda de peso/reps y el botón de registrar la serie. Esta clase la aplica
+   JS al slide más cercano al centro (mismo criterio que ya usa
+   .carousel-dots i.on) y sirve además para no tocar el blur del que se está
+   usando. */
+.carousel.coverflow .carousel-slide.cf-center {
+  z-index: 5;
+}
+
+/* Blur + rotateY/scale 3D en simultáneo es carísimo (compositing forzado en
+   cada frame para cada slide). Se desactiva sólo en los vecinos, que además
+   ya van con opacity reducida — perder el blur ahí no se nota, y evita el
+   costo en el momento más sensible: mientras el usuario está arrastrando. */
+.carousel.coverflow .carousel-slide:not(.cf-center) .card {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}

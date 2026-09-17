@@ -1049,7 +1049,16 @@ main.arrastrando{overflow:hidden;user-select:none}
    cuesta 57px de ancho justo donde van los números. El cambio pasa al abrir la
    sesión, que ya es una transición de pantalla completa, no a mitad de un
    ejercicio. */
-.carousel.focus .carousel-slide{flex:0 0 100%}
+/* 88% y no 100%: al 100% no se asoma el vecino, y sin vecino el coverflow
+   (styles-coverflow.css) es invisible en reposo — se alcanzaba a ver sólo de
+   reojo mientras el dedo arrastra. Con 88% se ve el borde del ejercicio
+   siguiente, que además informa: sabés que hay algo al lado.
+   No baja a 84% (el ancho de fuera de sesión) a propósito: durante la sesión
+   la tarjeta ES el input —rueda de peso, RPE, botón de registrar— y cada
+   píxel de ancho ahí se usa. 88% es el punto donde el vecino asoma sin
+   apretar el input.
+   Si el coverflow se revierte, esta regla vuelve a 100%. */
+.carousel.focus .carousel-slide{flex:0 0 88%}
 .carousel-dots{display:flex;justify-content:center;gap:6px;margin:10px 0 4px}
 .carousel-dots i{width:6px;height:6px;border-radius:var(--r-xs);background:var(--card2);border:1px solid var(--line2);transition:var(--d2)}
 .carousel-dots i.on{width:18px;background:var(--grad2);border-color:transparent}
