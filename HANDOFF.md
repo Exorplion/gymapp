@@ -1,6 +1,72 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-15 (cierre de sesión)
+**Última actualización:** 2026-09-17 (pérdida total de datos)
+
+---
+
+## SESIÓN 2026-09-17 — Enzo perdió TODOS sus datos
+
+Entrenó el martes 15; el jueves 17 abrió la app sin rutina, sin sesiones y
+sin pesos. Todo, de una sola vez, sin haber tocado nada.
+
+### No fue la app — esto ya está descartado, no reinvestigarlo
+
+- Los tres caminos que borran están **detrás de una confirmación explícita**:
+  `wipeAll()` (backup.js:144), los `idb.clear('routine')` de rutina-logic.js
+  (263, 366, 706) y la migración de db.js.
+- **El esquema no cambió** en el deploy del martes: `db.js` no se toca desde
+  `e7613df`, y `DB.ver` sigue en 3. No hubo `onupgradeneeded` destructivo.
+- `loadAll()` (state.js:83) es todo-o-nada: si una lectura falla, la promesa
+  rechaza y se pinta `bootError`. Una base con datos **no** puede mostrarse
+  vacía. Que la app abriera normal y vacía significa que la base estaba
+  realmente vacía.
+
+### Qué fue
+
+**`navigator.storage.persist()` no se llamaba en ninguna parte** — cero
+coincidencias en todo `src/`. Sin esa llamada Chrome clasifica el
+almacenamiento del origen como *best-effort* y, bajo presión de espacio, el
+sistema **desaloja el origen entero** (IndexedDB + caches + localStorage) sin
+avisar y sin dejar rastro. Es exactamente la forma que tuvo la pérdida.
+
+### Qué se hizo (PR pendiente de merge al cerrar)
+
+- **`web/src/lib/persist.js`** (nuevo): `ensurePersisted()`,
+  `storageEstimate()`, `daysSinceBackup()`, `necesitaBackup()`.
+  Devuelven `null` cuando no se pudo saber — distinto de `false` y de `0`,
+  mismo criterio que `acwr()` y `microsOfDay()`.
+- **`App.jsx`**: se pide la persistencia en el arranque, **fuera** de la
+  cadena `idbOpenOnce().then(loadAll)`. No puede demorar ni romper el inicio.
+- **`Settings.jsx`**: el bloque "Respaldo" ahora dice el estado real —
+  espacio reservado sí/no/desconocido, MB ocupados, y hace cuántos días
+  respaldaste. `S.cfg.lastBackupAt` se escribía desde el 2026-09-05 y **no
+  se leía en ningún lado**.
+- El botón de exportar deja de ser `ghost` cuando hace falta: nunca
+  respaldaste, o pasaron 21 días (`DIAS_AVISO_BACKUP`). 21 y no 1 — los
+  avisos de esta app son raros o la moneda se devalúa.
+- 14 tests nuevos, **499 en verde**.
+
+### Lo que NO arregla, y hay que tenerlo claro
+
+`persist()` **puede ser denegado**: Chrome sólo lo concede si la PWA está
+instalada o hay engagement suficiente. En el Chrome de prueba se denegó, y
+esa es justamente la rama que se verificó en pantalla. Y ningún permiso
+sobrevive a un borrado hecho a mano por el usuario. **La única copia que
+sobrevive a todo es el JSON exportado**, que vive en Descargas, fuera del
+bucket desalojable.
+
+### Pendientes
+
+1. **Que Enzo instale la app** (menú del navegador → "Agregar a pantalla de
+   inicio"). Es lo que hace que Chrome conceda la persistencia. Sin eso, el
+   aviso amarillo va a seguir ahí — y con razón.
+2. **Que exporte un JSON hoy.** Ahora mismo su historial no tiene copia.
+3. Recuperar lo perdido: **no se pudo**. Si el origen fue desalojado, los
+   archivos ya no están en el teléfono. Quedó pedido verificar en Chrome →
+   Configuración de sitios → Datos almacenados si `exorplion.github.io`
+   todavía reporta MB; si reportara datos, el diagnóstico cambia.
+4. Respaldo automático periódico (¿descarga sin gesto del usuario?) — no se
+   evaluó todavía.
 
 ---
 

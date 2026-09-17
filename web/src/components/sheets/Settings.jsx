@@ -346,11 +346,13 @@ export default function Settings() {
           bien". Ver el encabezado de lib/persist.js. */}
       <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
         {S.persisted === true && <>✓ Tu teléfono tiene <b>reservado</b> este espacio. El sistema no lo borra solo.</>}
+        {/* Sin el glifo ⋮ a propósito: en la tipografía de la app se lee
+            como dos puntos ("menú : del navegador") y confunde. */}
         {S.persisted === false && (
           <><b className="txt-warn">⚠ El navegador no reservó este espacio.</b> Si el teléfono
           se queda sin memoria puede borrar <b>todo</b> de golpe y sin avisar. Para que lo
-          reserve, instalá la app desde el menú ⋮ del navegador → "Agregar a pantalla de
-          inicio". Y hasta entonces, exportá seguido.</>
+          reserve, instalá la app: menú del navegador (los tres puntitos de arriba a la
+          derecha) → "Agregar a pantalla de inicio". Y hasta entonces, exportá seguido.</>
         )}
         {S.persisted === null && <>No se pudo saber si este navegador reserva el espacio.</>}
         {espacio && <><br />Ocupado: <b>{(espacio.usage / 1048576).toFixed(1)} MB</b>.</>}
