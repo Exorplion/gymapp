@@ -9,6 +9,35 @@ import { vibrate } from './format.js';
 import { applyDays } from './rutina-logic.js';
 import { toast } from './toast.js';
 
+/* Los dos turnos de Anterior/Posterior viven acá afuera porque la secuencia
+   los usa DOS veces cada uno (A · P · R · A · P · R · R). Repetir las listas
+   inline dejaría cuatro copias que se pueden desincronizar al editar una. */
+const AP_ANTERIOR = [
+  ['Press plano', 4, 8],
+  ['Press inclinado', 4, 10],
+  ['Pec deck', 3, 12],
+  ['Press militar', 4, 8],
+  ['Elevaciones laterales', 3, 15],
+  ['Extensión de tríceps', 3, 12],
+  ['Extensión de tríceps overhead', 3, 12],
+  ['Extensión de cuádriceps', 3, 15],
+  ['Hack squat', 4, 10],
+  ['Aductor', 3, 15],
+  ['Abdominales', 3, 15],
+];
+const AP_POSTERIOR = [
+  ['Jalón ancho', 4, 8],
+  ['Kelso shrug', 3, 12],
+  ['Pájaros', 3, 15],
+  ['Remo neutro agarre cerrado', 4, 10],
+  ['Curl predicador', 3, 12],
+  ['Curl martillo', 3, 12],
+  ['Peso muerto rumano', 4, 8],
+  ['Curl femoral', 3, 12],
+  ['Elevación de gemelos', 4, 15],
+  ['Hip thrust', 4, 10],
+];
+
 export const TEMPLATES = [
   { id: 'fullbody', name: 'Full Body', days: '3 días/sem', who: 'principiantes o poco tiempo', freq: 'cada grupo 3×/sem',
     secuencia: [
@@ -61,33 +90,19 @@ export const TEMPLATES = [
   // nombre que ya reconoce el catálogo (EXCATALOG/KEYWORDS en muscle.ts,
   // TABLA en fibras.js) para ese mismo ejercicio y lo clasifica en Hombro; con
   // "Aperturas posteriores" la palabra "apertura" lo mandaría a Pecho.
-  { id: 'antpost', name: 'Anterior / Posterior', days: '2 días/sem', who: 'rutina real de Enzo', freq: 'cada turno 1×/sem',
+  { id: 'antpost', name: 'Anterior / Posterior', days: '4 días/sem', who: 'cadena anterior y posterior · ciclo de 7 días', freq: 'cada turno 2×/sem',
+    /* El ciclo es A · P · R · A · P · R · R — los dos turnos se repiten dos
+       veces por semana con un descanso en medio y dos al final. Los turnos
+       de descanso son parte de la plantilla, no algo que el usuario tenga
+       que intercalar después (ver el `null` en applyTemplate). */
     secuencia: [
-      ['Anterior', [
-        ['Press plano', 4, 8],
-        ['Press inclinado', 4, 10],
-        ['Pec deck', 3, 12],
-        ['Press militar', 4, 8],
-        ['Elevaciones laterales', 3, 15],
-        ['Extensión de tríceps', 3, 12],
-        ['Extensión de tríceps overhead', 3, 12],
-        ['Extensión de cuádriceps', 3, 15],
-        ['Hack squat', 4, 10],
-        ['Aductor', 3, 15],
-        ['Abdominales', 3, 15],
-      ]],
-      ['Posterior', [
-        ['Jalón ancho', 4, 8],
-        ['Kelso shrug', 3, 12],
-        ['Pájaros', 3, 15],
-        ['Remo neutro agarre cerrado', 4, 10],
-        ['Curl predicador', 3, 12],
-        ['Curl martillo', 3, 12],
-        ['Peso muerto rumano', 4, 8],
-        ['Curl femoral', 3, 12],
-        ['Elevación de gemelos', 4, 15],
-        ['Hip thrust', 4, 10],
-      ]],
+      ['Anterior', AP_ANTERIOR],
+      ['Posterior', AP_POSTERIOR],
+      ['Descanso', null],
+      ['Anterior', AP_ANTERIOR],
+      ['Posterior', AP_POSTERIOR],
+      ['Descanso', null],
+      ['Descanso', null],
     ] },
 ];
 
@@ -95,9 +110,18 @@ export async function applyTemplate(id) {
   const t = TEMPLATES.find(x => x.id === id); if (!t) return;
   const has = S.routine.some(s => s.type === 'workout' && s.exercises?.length);
   const doApply = async () => {
-    const seq = t.secuencia.map(([name, list]) => ({
-      type: 'workout', name, exercises: list.map(([n, s, r]) => ({ name: n, sets: s, reps: r })),
-    }));
+    /* Un turno con `null` en vez de lista de ejercicios es un DESCANSO.
+       Hasta el 2026-09-17 acá se forzaba `type:'workout'` para todos, así
+       que ninguna plantilla podía expresar un descanso: la secuencia se
+       aplicaba como días de entrenamiento seguidos y el usuario tenía que
+       intercalar los descansos a mano. applyDays() (rutina-logic.js) ya
+       sabía manejar `type:'rest'` desde siempre — el que los perdía era
+       este map. Enzo lo notó en Anterior/Posterior: "te olvidaste de poner
+       los días de descanso, es AP R AP RR". */
+    const seq = t.secuencia.map(([name, list]) => (list === null
+      ? { type: 'rest' }
+      : { type: 'workout', name, exercises: list.map(([n, s, r]) => ({ name: n, sets: s, reps: r })) }
+    ));
     await applyDays(seq, t.name);
     S.rutOpen = 0;
     S.rutMode = 'view';
