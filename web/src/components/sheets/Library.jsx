@@ -38,10 +38,18 @@ function templateDaysShort(t) {
 }
 
 function templateSlots(t) {
-  return t.secuencia.map(([name, list]) => ({
-    type: 'workout', name,
-    exercises: list.map(([n, sets, reps]) => ({ name: n, sets, reps })),
-  }));
+  /* `list === null` es un turno de DESCANSO (ver applyTemplate en
+     templates.js). Este map tiene que respetarlo o revienta con
+     "null.map is not a function" y se lleva puesta la pantalla entera:
+     pasó al agregar los descansos a Anterior/Posterior, y ni los tests
+     ni el build lo vieron — sólo se vio abriendo la vista previa. */
+  return t.secuencia.map(([name, list]) => (list === null
+    ? { type: 'rest' }
+    : {
+        type: 'workout', name,
+        exercises: list.map(([n, sets, reps]) => ({ name: n, sets, reps })),
+      }
+  ));
 }
 
 /** Contenido completo de un turno/plantilla — ejercicios con series×reps,
