@@ -47,7 +47,13 @@ export const S = {
      para siempre, sin mensaje ni forma de recargar. El ErrorBoundary no
      ayuda: sólo atrapa errores de render, no promesas rechazadas. */
   bootError: null,
-  sheet: null,           // {type, props} | null — qué sheet está abierto (Task 1 dejó esto pendiente para quien lo necesitara primero; ver Sheet.jsx)
+  /* ¿El navegador se comprometió a NO desalojar nuestros datos?
+     true = concedido · false = denegado (riesgo real, hay que decirlo)
+     null = no se pudo saber. Lo llena ensurePersisted() en el arranque
+     (persist.js). Ver el encabezado de ese módulo: la pérdida total del
+     2026-09-17 ocurrió justamente porque nadie lo había pedido nunca. */
+  persisted: null,
+  sheet: null,         // {type, props} | null — qué sheet está abierto (Task 1 dejó esto pendiente para quien lo necesitara primero; ver Sheet.jsx)
   // La sesión recién cerrada, mientras dura la pantalla de racha/resumen/
   // cuerpo (SessionComplete.jsx) — null cuando no hay nada que mostrar.
   // Separado de `sheet` porque es pantalla completa, no un sheet: los dos

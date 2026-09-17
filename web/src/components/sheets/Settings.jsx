@@ -37,6 +37,7 @@ import { fmtMMSS, vibrate } from '../../lib/format.js';
 import { computeMacros, applyComputedGoals } from '../../lib/macros.js';
 import { seedRegistro, seedCount, wipeSeed } from '../../lib/seed.js';
 import { exportJSON, importJSON, wipeAll } from '../../lib/backup.js';
+import { storageEstimate, daysSinceBackup, necesitaBackup } from '../../lib/persist.js';
 import { exportFoodsMD, importFoodsMD } from '../../lib/foodmd.js';
 import { toast } from '../../lib/toast.js';
 import { aplicarPaleta, paletaDesde, COLOR_DEFECTO } from '../../lib/theme.js';
@@ -63,8 +64,15 @@ export default function Settings() {
   const mdRef = useRef(null);
   const rootRef = useRef(null);
   const [buscando, setBuscando] = useState(false);
+  // null mientras no se midió: el bloque de abajo no afirma nada hasta tenerlo.
+  const [espacio, setEspacio] = useState(null);
 
   useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
+
+  useEffect(() => { storageEstimate().then(setEspacio); }, []);
+
+  const diasBackup = daysSinceBackup(S.cfg.lastBackupAt);
+  const avisarBackup = necesitaBackup(S.sessions.length, S.cfg.lastBackupAt);
 
   const colorActual = S.cfg.themeColor || COLOR_DEFECTO;
   const paleta = paletaDesde(colorActual) || {};
@@ -330,7 +338,33 @@ export default function Settings() {
       <input ref={mdRef} type="file" accept=".md,text/markdown,text/plain" hidden onChange={onMdFile} />
 
       <h3>Respaldo</h3>
-      <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => exportJSON()}>⬇ Exportar todo a JSON</button>
+
+      {/* Estado real del almacenamiento. Existe por la pérdida total del
+          2026-09-17: la app no tenía forma de decir que sus datos estaban
+          en una repisa que el sistema podía tirar. Cada estado dice lo que
+          sabe y nada más — `null` es "no se pudo saber", no "está todo
+          bien". Ver el encabezado de lib/persist.js. */}
+      <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+        {S.persisted === true && <>✓ Tu teléfono tiene <b>reservado</b> este espacio. El sistema no lo borra solo.</>}
+        {S.persisted === false && (
+          <><b className="txt-warn">⚠ El navegador no reservó este espacio.</b> Si el teléfono
+          se queda sin memoria puede borrar <b>todo</b> de golpe y sin avisar. Para que lo
+          reserve, instalá la app desde el menú ⋮ del navegador → "Agregar a pantalla de
+          inicio". Y hasta entonces, exportá seguido.</>
+        )}
+        {S.persisted === null && <>No se pudo saber si este navegador reserva el espacio.</>}
+        {espacio && <><br />Ocupado: <b>{(espacio.usage / 1048576).toFixed(1)} MB</b>.</>}
+        <br />
+        {diasBackup === null
+          ? <b className="txt-warn">Nunca exportaste un respaldo.</b>
+          : <>Último respaldo: <b>{diasBackup === 0 ? 'hoy' : `hace ${diasBackup} día${diasBackup === 1 ? '' : 's'}`}</b>.</>}
+      </div>
+
+      {/* El respaldo exportado es lo ÚNICO que sobrevive a un borrado del
+          usuario o del sistema: vive en Descargas, fuera del almacenamiento
+          que el navegador puede desalojar. Cuando hace falta de verdad, el
+          botón deja de ser un "ghost" más de la lista. */}
+      <button type="button" className={avisarBackup ? 'btn' : 'btn ghost'} style={{ marginBottom: 10 }} onClick={() => exportJSON()}>⬇ Exportar todo a JSON</button>
       <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => importRef.current?.click()}>⬆ Importar JSON</button>
       <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={onImportFile} />
       <button type="button" className="btn danger" onClick={startWipeAll}>Borrar todos los datos</button>
