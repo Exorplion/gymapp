@@ -193,12 +193,14 @@ describe('isUnilateral / toggleUnilateral', () => {
     await expect(toggleUnilateral('a')).resolves.toBeUndefined();
   });
 
-  it('si ya hay una serie registrada hoy, el toggle también actualiza esa entrada', async () => {
+  it('si ya hay una serie registrada hoy, el toggle se bloquea (D5: no se corrompen dos historiales)', async () => {
     S.hoyVals = {};
     await saveSet('a');   // crea S.draft.entries.a con unilateral: false (heredado)
     expect(S.draft.entries.a.unilateral).toBe(false);
     await toggleUnilateral('a');
-    expect(S.draft.entries.a.unilateral).toBe(true);
+    // no cambia: las filas ya guardadas quedaron indexadas con la clave vieja
+    expect(S.draft.entries.a.unilateral).toBe(false);
+    expect(isUnilateral(S.routine[0].exercises.find(e => e.id === 'a'))).toBe(false);
   });
 });
 

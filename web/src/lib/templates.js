@@ -46,12 +46,48 @@ export const TEMPLATES = [
       ['Upper (torso)', [['Press inclinado mancuernas', 4, 10], ['Jalón al pecho', 4, 10], ['Elevaciones laterales', 3, 15], ['Curl martillo', 3, 12], ['Overhead extension', 3, 12]]],
       ['Lower (pierna)', [['Prensa', 4, 12], ['Curl femoral', 4, 12], ['Zancadas', 3, 10], ['Elevación de gemelos', 4, 15]]],
     ] },
-  { id: 'antpost', name: 'Anterior / Posterior', days: '4 días/sem', who: 'empujadores vs traccionadores', freq: 'cada grupo 2×/sem',
+  // Rutina real que dictó Enzo (2026-09-17): un solo turno Anterior y un solo
+  // turno Posterior, más largos que los 5 ejercicios "de catálogo" que tenía
+  // esta plantilla antes — su queja fue textual: "anterior posterior no tiene
+  // todos los ejercicios que yo hacía antes". Se reemplazan los cuatro turnos
+  // (A/B de cada uno) por estos dos, en el orden exacto que dio.
+  //
+  // Series/reps: Enzo NO las dictó. Son el mismo criterio que ya usan el
+  // resto de las plantillas de este archivo (básicos 4×8–4×10, aislamiento
+  // 3×12–3×15) — un punto de partida razonable, no un dato que él haya dado.
+  // No hacerlo pasar por un hecho (ver CLAUDE.md, "criterio de producto").
+  //
+  // "Aperturas posteriores" (rear delt fly) se registra como "Pájaros": es el
+  // nombre que ya reconoce el catálogo (EXCATALOG/KEYWORDS en muscle.ts,
+  // TABLA en fibras.js) para ese mismo ejercicio y lo clasifica en Hombro; con
+  // "Aperturas posteriores" la palabra "apertura" lo mandaría a Pecho.
+  { id: 'antpost', name: 'Anterior / Posterior', days: '2 días/sem', who: 'rutina real de Enzo', freq: 'cada turno 1×/sem',
     secuencia: [
-      ['Anterior A', [['Press banca', 4, 8], ['Press militar', 3, 10], ['Sentadilla', 4, 8], ['Elevaciones laterales', 3, 15], ['Extensión tríceps polea', 3, 12]]],
-      ['Posterior A', [['Dominadas', 4, 8], ['Remo con barra', 4, 10], ['Peso muerto rumano', 4, 10], ['Curl con barra', 3, 12], ['Face pull', 3, 15]]],
-      ['Anterior B', [['Press inclinado mancuernas', 4, 10], ['Prensa', 4, 12], ['Fondos', 3, 10], ['Extensiones de cuádriceps', 3, 15], ['Overhead extension', 3, 12]]],
-      ['Posterior B', [['Jalón al pecho', 4, 10], ['Remo', 4, 12], ['Curl femoral', 4, 12], ['Curl martillo', 3, 12], ['Pájaros', 3, 15]]],
+      ['Anterior', [
+        ['Press plano', 4, 8],
+        ['Press inclinado', 4, 10],
+        ['Pec deck', 3, 12],
+        ['Press militar', 4, 8],
+        ['Elevaciones laterales', 3, 15],
+        ['Extensión de tríceps', 3, 12],
+        ['Extensión de tríceps overhead', 3, 12],
+        ['Extensión de cuádriceps', 3, 15],
+        ['Hack squat', 4, 10],
+        ['Aductor', 3, 15],
+        ['Abdominales', 3, 15],
+      ]],
+      ['Posterior', [
+        ['Jalón ancho', 4, 8],
+        ['Kelso shrug', 3, 12],
+        ['Pájaros', 3, 15],
+        ['Remo neutro agarre cerrado', 4, 10],
+        ['Curl predicador', 3, 12],
+        ['Curl martillo', 3, 12],
+        ['Peso muerto rumano', 4, 8],
+        ['Curl femoral', 3, 12],
+        ['Elevación de gemelos', 4, 15],
+        ['Hip thrust', 4, 10],
+      ]],
     ] },
 ];
 

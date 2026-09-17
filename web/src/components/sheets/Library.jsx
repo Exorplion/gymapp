@@ -2,17 +2,77 @@
 // distintas en el original (dos llamadas a openSheet con HTML distinto) que
 // acá se unifican en un componente con dos modos, porque el plan de Task 5
 // sólo prevé un archivo Library.jsx para ambas.
+//
+// Reestructuración (handoff 2026-09-17, punto 1): antes había CUATRO puertas
+// para conseguir una rutina, y las cuatro sólo aparecían con la rutina vacía
+// — "Mis rutinas" pasó a ser la ÚNICA puerta, siempre visible (Rutina.jsx),
+// y este sheet se reorganiza en tres secciones con la MISMA data para las
+// tres (turnos, frecuencia): la que estás usando, las que creaste vos, y las
+// plantillas. Enzo lo pidió textual: "muestra PPL dice los días y frecuencia
+// y abajo está anterior posterior con la misma data".
+//
+// Entrar a cualquiera abre una vista previa con el contenido COMPLETO antes
+// de decidir cambiarse — reemplazar el split activo es destructivo, así que
+// mirar "3 días · 12 ejercicios" y confiar no alcanza. La confirmación real
+// (applyLibRoutine/applyTemplate) sigue viviendo donde ya vivía, sin tocarla.
 import { useEffect, useRef, useState } from 'react';
 import { S, openSheet, closeSheet } from '../../lib/state.js';
 import { fmtD } from '../../lib/format.js';
 import { TEMPLATES, applyTemplate } from '../../lib/templates.js';
 import {
-  routineStats, routineName, applyLibRoutine, deleteLibRoutine, saveCurrentAsLib, startBlank,
+  routineStats, routineName, summarizeSlots, slotsFrequencyText,
+  applyLibRoutine, deleteLibRoutine, saveCurrentAsLib, startBlank,
 } from '../../lib/rutina-logic.js';
 import { sheetReveal } from '../../lib/motion.js';
 import { X } from '../Icon.jsx';
 
-function LibraryList() {
+/** Una plantilla (t.secuencia: [[nombre, [[nombre,sets,reps],...]], ...]) no
+    tiene la misma forma que S.routine/S.lib — se normaliza acá nomás, sólo
+    para mostrarla en la vista previa, sin tocar templates.js (applyTemplate
+    ya hace esta misma conversión al aplicarla de verdad). */
+function templateSlots(t) {
+  return t.secuencia.map(([name, list]) => ({
+    type: 'workout', name,
+    exercises: list.map(([n, sets, reps]) => ({ name: n, sets, reps })),
+  }));
+}
+
+/** Contenido completo de un turno/plantilla — ejercicios con series×reps,
+    sin agrupar por músculo (esto es un vistazo antes de decidir, no la
+    pantalla de edición). */
+function PeekSlots({ slots }) {
+  return (
+    <div className="card sub" style={{ padding: 'var(--s2) var(--s3)', marginBottom: 16 }}>
+      {slots.map((s, i) => (
+        <div key={i} className="row" style={{ alignItems: 'flex-start' }}>
+          <div className="grow">
+            <div className="t">{s.type === 'rest' ? 'Descanso' : (s.name || 'Sin nombre')}</div>
+            {s.type === 'workout' && (
+              <div className="s">
+                {(s.exercises || []).map(e => `${e.name} (${e.sets}×${e.reps})`).join(' · ') || 'sin ejercicios'}
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Encabezado de resumen compartido por las tres secciones: mismo orden de
+    datos (turnos de entrenamiento, de descanso, frecuencia) para que
+    comparar una contra otra sea leer la misma línea tres veces, no adivinar
+    qué significa cada tarjeta. */
+function SlotSummaryLine({ slots }) {
+  const st = summarizeSlots(slots);
+  return (
+    <div className="s">
+      {st.workoutCount} turno{st.workoutCount === 1 ? '' : 's'} de entrenamiento · {st.restCount} de descanso · {slotsFrequencyText(slots)}
+    </div>
+  );
+}
+
+function LibraryList({ onPeek }) {
   const st = routineStats();
   const tmplRef = useRef(null);
 
@@ -24,43 +84,43 @@ function LibraryList() {
     <>
       <h2>Mis rutinas</h2>
       <div className="sheet-sub">
-        Guardá el split que estés usando para volver a él cuando quieras, o cargá una plantilla.
+        La que estás usando, las que armaste vos, y plantillas listas. Tocá cualquiera para ver su contenido completo antes de cambiarte.
       </div>
-      {/* Primera opción, arriba de todo: onboarding por grupos musculares →
-          ejercicios recomendados. Guarda una rutina de PRUEBA directo en la
-          biblioteca, sin tocar el split activo — por eso va antes de
-          "Guardadas"/"Plantillas", no escondida al final junto a "Empezar en
-          blanco" (que sí edita el split en uso). */}
-      <div className="card" style={{ marginBottom: 16, borderColor: 'var(--blue2)' }}>
-        <div className="cond" style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Armar rutina con asistente</div>
-        <div className="txt-mut" style={{ fontSize: 13, marginBottom: 12 }}>
-          Elegís qué grupos musculares trabajar y qué ejercicios de cada uno — queda guardada para probarla, tu split activo no cambia.
-        </div>
-        <button type="button" className="btn sm" onClick={() => openSheet('routine-wizard')}>Empezar</button>
-      </div>
+
+      {/* 1. La que estás usando — destacada, con la MISMA línea de resumen
+          que las otras dos secciones. */}
+      <h3>La que estás usando</h3>
+      <button
+        type="button"
+        className="card linkcard"
+        style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: 16, borderColor: 'var(--blue2)' }}
+        onClick={() => onPeek({ kind: 'current' })}
+      >
+        <div className="cond" style={{ fontSize: 18, fontWeight: 700 }}>{routineName()}</div>
+        <SlotSummaryLine slots={S.routine} />
+      </button>
       {st.workoutCount > 0 && (
-        <button
-          type="button"
-          className="btn ghost"
-          style={{ marginBottom: 16 }}
-          onClick={() => openSheet('library', { mode: 'save' })}
-        >
+        <button type="button" className="btn ghost" style={{ marginBottom: 16 }} onClick={() => openSheet('library', { mode: 'save' })}>
           💾 Guardar la actual como…
         </button>
       )}
+
+      {/* 2. Las que creaste vos — misma data que "la que estás usando", para
+          poder comparar un split contra otro de un vistazo (Enzo: "PPL dice
+          los días y frecuencia y abajo está anterior posterior con la misma
+          data"). */}
       {S.lib.length > 0 && (
         <>
-          <h3>Guardadas</h3>
-          <div className="card sub" style={{ padding: 'var(--s2) var(--s3)', marginBottom: 16 }}>
+          <h3>Las que creaste vos</h3>
+          <div style={{ marginBottom: 16 }}>
             {S.lib.map(r => {
-              const nd = Object.values(r.days).filter(d => d.type === 'workout').length;
-              const ne = Object.values(r.days).reduce((a, d) => a + (d.exercises?.length || 0), 0);
               const cur = r.name === S.cfg.routineName;
               return (
                 <div className="row" key={r.id}>
-                  <button type="button" className="grow linkcard" data-act="lib-apply" onClick={() => applyLibRoutine(r.id)}>
+                  <button type="button" className="grow linkcard" onClick={() => onPeek({ kind: 'lib', id: r.id })}>
                     <div className="t">{r.name}{cur && <span className="lib-tag">en uso</span>}</div>
-                    <div className="s">{nd} días · {ne} ejercicios · guardada {fmtD(r.savedAt)}</div>
+                    <SlotSummaryLine slots={r.days} />
+                    <div className="s">guardada {fmtD(r.savedAt)}</div>
                   </button>
                   <button type="button" className="mini red" aria-label={`Borrar la rutina ${r.name}`} onClick={() => deleteLibRoutine(r.id)}><X /></button>
                 </div>
@@ -69,18 +129,20 @@ function LibraryList() {
           </div>
         </>
       )}
+
+      {/* 3. Plantillas. */}
       <h3>Plantillas</h3>
       <div className="txt-mut" style={{ fontSize: 13, margin: '-4px 0 12px' }}>
         Reemplazan tu split actual. Después las editás a gusto.
       </div>
       <div ref={tmplRef}>
       {TEMPLATES.map(t => (
-        <div
+        <button
           key={t.id}
-          className="card tmpl"
-          data-act="tmpl-apply"
-          style={{ cursor: 'pointer', marginBottom: 10 }}
-          onClick={() => applyTemplate(t.id)}
+          type="button"
+          className="card tmpl linkcard"
+          style={{ display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer', marginBottom: 10 }}
+          onClick={() => onPeek({ kind: 'tmpl', id: t.id })}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div className="grow">
@@ -88,18 +150,59 @@ function LibraryList() {
               <div className="txt-mut" style={{ fontSize: 12.5, marginTop: 2 }}>{t.days} · {t.who}</div>
               <div className="txt-blue" style={{ fontSize: 12, marginTop: 3, fontWeight: 600 }}>{t.freq}</div>
             </div>
-            <span className="btn sm" style={{ width: 'auto', padding: '0 16px', minHeight: 40 }}>Usar</span>
           </div>
-        </div>
+        </button>
       ))}
       </div>
+
       <div className="card" style={{ borderStyle: 'dashed', borderColor: 'var(--line2)' }}>
         <div className="cond" style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Personalizada</div>
         <div className="txt-mut" style={{ fontSize: 13, marginBottom: 12 }}>
           Empezá de cero y armá tu propio split día por día.
         </div>
-        <button type="button" className="btn sm ghost" onClick={startBlank}>Empezar en blanco</button>
+        <button type="button" className="btn sm ghost" onClick={() => openSheet('routine-wizard')}>Armar con asistente</button>
+        <button type="button" className="btn sm ghost" style={{ marginTop: 8 }} onClick={startBlank}>Empezar en blanco</button>
       </div>
+    </>
+  );
+}
+
+/** Vista previa de una rutina/plantilla ANTES de decidir cambiarse — la
+    confirmación de reemplazo (destructiva) sigue viviendo en
+    applyLibRoutine/applyTemplate, esto sólo deja ver qué hay adentro. */
+function LibraryPeek({ peek, onBack }) {
+  let title, slots, onUse, useLabel;
+  if (peek.kind === 'current') {
+    title = routineName();
+    slots = S.routine;
+    onUse = null; // ya es la que estás usando — no hay nada que "usar"
+  } else if (peek.kind === 'lib') {
+    const r = S.lib.find(x => x.id === peek.id);
+    if (!r) return null;
+    title = r.name;
+    slots = r.days;
+    onUse = () => applyLibRoutine(r.id);
+    useLabel = 'Usar esta rutina';
+  } else {
+    const t = TEMPLATES.find(x => x.id === peek.id);
+    if (!t) return null;
+    title = t.name;
+    slots = templateSlots(t);
+    onUse = () => applyTemplate(t.id);
+    useLabel = 'Usar esta plantilla';
+  }
+
+  return (
+    <>
+      <button type="button" className="btn sm ghost" style={{ marginBottom: 12 }} onClick={onBack}>‹ Volver</button>
+      <h2>{title}</h2>
+      <SlotSummaryLine slots={slots} />
+      <div style={{ marginTop: 12 }}>
+        <PeekSlots slots={slots} />
+      </div>
+      {onUse && (
+        <button type="button" className="btn" onClick={onUse}>{useLabel}</button>
+      )}
     </>
   );
 }
@@ -125,5 +228,8 @@ function LibrarySave({ initialName }) {
 }
 
 export default function Library({ mode = 'list', name }) {
-  return mode === 'save' ? <LibrarySave initialName={name} /> : <LibraryList />;
+  const [peek, setPeek] = useState(null);
+  if (mode === 'save') return <LibrarySave initialName={name} />;
+  if (peek) return <LibraryPeek peek={peek} onBack={() => setPeek(null)} />;
+  return <LibraryList onPeek={setPeek} />;
 }

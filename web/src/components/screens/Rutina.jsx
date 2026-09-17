@@ -11,25 +11,36 @@
 // variable (S.routine[i]), así que ni la vista ni el editor recorren
 // WEEK_ORDER — recorren S.routine directo, y cada turno se identifica por su
 // posición (i) en vez de por el día de la semana que le tocaba.
-import { useEffect, useRef } from 'react';
+//
+// Reestructuración (handoff 2026-09-17): el editor dejó de ser una PANTALLA
+// aparte (RutinaEdit). S.rutMode sigue existiendo (templates.js y BodyMap.jsx
+// lo tocan directo para saltar a editar), pero ahora sólo decide si las
+// MISMAS tarjetas de siempre son arrastrables/editables — tocar el lápiz ya
+// no navega a otro componente, sólo cambia qué controles se muestran encima
+// del mismo layout. Esto también mata la redundancia de las "cuatro puertas"
+// hacia una rutina: ahora hay una sola entrada siempre visible ("Mis
+// rutinas", más abajo) en vez de tres botones que sólo aparecían con la
+// rutina vacía.
+import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { S, bump, useStore, openSheet, changeTab } from '../../lib/state.js';
 import { staggerRevealOnce } from '../../lib/motion.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
 import { equipLabel } from '../../lib/equip.js';
-import { catOf, stalestGroups, daysSinceAll, diasTexto, subBlocksOf, subCatOf } from '../../lib/muscle.js';
+import { catOf, stalestGroups, daysSinceAll, diasTexto, blocksOf, subCatOf } from '../../lib/muscle.js';
 import { coberturaDe } from '../../lib/coverage.js';
 import { gymEquipFor } from '../../lib/gyms.js';
 import { flipSort } from '../../lib/drag.js';
 import {
   routineStats, routineName,
   enterEditMode, exitEditMode, toggleSlotOpen, addWorkoutDay, removeWorkoutDay, weekdayProjection,
-  deleteExercise, moveEx, deloadSuggestion, deloadActivo, applyDeload, endDeload,
+  deleteExercise, moveEx, saveSlot, deloadSuggestion, deloadActivo, applyDeload, endDeload,
 } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
 import { fmtD } from '../../lib/format.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
+import MuscleFibers from '../MuscleFibers.jsx';
 import { ArrowDown, ArrowUp, Info, Pencil, X } from '../Icon.jsx';
 import { RutinaVacia } from '../Illustration.jsx';
 
@@ -58,7 +69,6 @@ async function handleMoveEx(index, exId, dir) {
 
 export default function Rutina() {
   useStore();
-  if (S.rutMode === 'edit') return <RutinaEdit />;
   return (
     <>
       <div className="vtitle"><h1>Entreno</h1><span className="sub">{S.rutTab === 'ejercicios' ? 'tus ejercicios' : 'tu plan'}</span></div>
@@ -120,172 +130,146 @@ function MisEjercicios() {
   );
 }
 
+/** La pantalla entera de Entreno: hero + accesos + tarjetas de turno, todo en
+    el mismo lugar tanto mirando como editando. `editing` (S.rutMode==='edit')
+    sólo prende drag/inputs/acciones en las MISMAS tarjetas — no cambia de
+    árbol de componentes, que es justo lo que Enzo pidió ("tocás el lápiz y
+    las tarjetas se vuelven arrastrables y editables sin cambiar de
+    pantalla"). */
 function RutinaView() {
+  const editing = S.rutMode === 'edit';
   const st = routineStats();
   const gymActivo = S.gyms.find(g => g.id === S.cfg.activeGym);
+  const dow = weekdayProjection();
+  // En edición sólo se muestran (y arrastran) los turnos de ENTRENAMIENTO —
+  // los descansos se recalculan solos alrededor (applyWorkoutOrder,
+  // rutina-logic.js). `index` sigue apuntando a la posición real en
+  // S.routine (necesario para ex-info/moveEx/data-wd); `n` es sólo el número
+  // de posición que se muestra.
+  const workouts = S.routine
+    .map((slot, i) => ({ slot, i }))
+    .filter(x => x.slot.type === 'workout');
   const maxSets = Math.max(1, ...S.routine.map(slot => slot.type === 'workout' ? (slot.exercises || []).reduce((a, e) => a + e.sets, 0) : 0));
   const cardsRef = useRef(null);
   // Reveal escalonado de las tarjetas de turno — sólo la primera vez que se
   // ve Rutina en la sesión (staggerRevealOnce), no en cada cambio de
-  // pestaña: ver el comentario de cabecera de esa función en motion.js.
+  // pestaña, y no mientras se edita (ahí las tarjetas ya están en pantalla,
+  // sólo cambiaron de estado).
   useEffect(() => {
+    if (editing) return;
     const cards = cardsRef.current?.querySelectorAll(':scope > .day-card');
     if (cards?.length) staggerRevealOnce('rutina', cards);
-  }, []);
+  }, [editing]);
 
-  if (!st.workoutCount) {
-    return (
-      <>
-        <div className="card"><div className="empty">
-          <RutinaVacia className="big" />
-          <p>Todavía no tenés rutina.<br />Elegí una <b>plantilla</b> lista o armá tu split turno por turno.</p>
-          <button
-            type="button"
-            className="btn sm max-w-[260px] mx-auto"
-            onClick={() => openSheet('library')}
-          >
-            Ver rutinas y plantillas
-          </button>
-        </div></div>
-        {/* Entrada directa al onboarding, sin pasar por "Mis rutinas" primero
-            — este es el primer momento en que alguien sin rutina ve la
-            pantalla, así que es donde más sentido tiene ofrecer el asistente. */}
-        <button type="button" className="btn sm ghost mt-[var(--s3)]" onClick={() => openSheet('routine-wizard')}>
-          Armar con asistente
-        </button>
-        <button type="button" className="btn ghost mt-[var(--s2)]" onClick={enterEditMode}>
-          ✎ Armar mi rutina
-        </button>
-      </>
-    );
+  function toggleEdit() {
+    if (editing) exitEditMode(); else enterEditMode();
   }
 
   return (
     <>
-      {/* Tarjeta del plan. El mockup le da a cada pantalla un matiz propio:
-          Hoy es azul, Rutina es violeta. */}
-      <div className="card hero hero-plan">
-        <div className="hero-eyebrow">Plan activo</div>
-        <div className="hero-day">{routineName()}</div>
-        <div className="text-mut text-sm mt-1">
-          {st.workoutCount} turno{st.workoutCount === 1 ? '' : 's'} de entrenamiento · {st.ex} ejercicios · {st.sets} series por ciclo
+      {/* Tarjeta del plan — se esconde en edición para dejarle el lugar a la
+          tira de proyección semanal, que es la referencia que importa
+          mientras estás reordenando turnos. */}
+      {!editing && st.workoutCount > 0 && (
+        <div className="card hero hero-plan">
+          <div className="hero-eyebrow">Plan activo</div>
+          <div className="hero-day">{routineName()}</div>
+          <div className="text-mut text-sm mt-1">
+            {st.workoutCount} turno{st.workoutCount === 1 ? '' : 's'} de entrenamiento · {st.ex} ejercicios · {st.sets} series por ciclo
+          </div>
+          {/* Barras proporcionales a las series del turno: la secuencia se lee de
+              un vistazo, y los turnos de descanso quedan como un guion bajo. */}
+          <div className="weekbars">
+            {S.routine.map((slot, i) => {
+              const sets = slot.type === 'workout' ? (slot.exercises || []).reduce((a, e) => a + e.sets, 0) : 0;
+              const h = sets ? Math.round(30 + (sets / maxSets) * 40) : 10;
+              return (
+                <div key={slot.id} className={`wbar ${sets ? 'on' : ''}`}>
+                  <div className="b" style={{ height: h }}></div>
+                  <span>{i + 1}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        {/* Barras proporcionales a las series del turno: la secuencia se lee de
-            un vistazo, y los turnos de descanso quedan como un guion bajo. */}
-        <div className="weekbars">
-          {S.routine.map((slot, i) => {
-            const sets = slot.type === 'workout' ? (slot.exercises || []).reduce((a, e) => a + e.sets, 0) : 0;
-            const h = sets ? Math.round(30 + (sets / maxSets) * 40) : 10;
-            return (
-              <div key={slot.id} className={`wbar ${sets ? 'on' : ''}`}>
-                <div className="b" style={{ height: h }}></div>
-                <span>{i + 1}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      )}
+
+      {editing && <WeekProjection dow={dow} />}
 
       <div className="btn-row">
-        <button type="button" className="btn" onClick={enterEditMode}>Editar rutina</button>
-        <button type="button" className="btn glass" onClick={() => openSheet('library')}>Mis rutinas</button>
+        <button type="button" className="btn" onClick={toggleEdit}>{editing ? '‹ Listo' : '✎ Editar rutina'}</button>
+        {editing && <button type="button" className="btn glass" onClick={openLibSaveSheet}>💾 Guardar como…</button>}
       </div>
+
+      {/* Antes había CUATRO puertas hacia una rutina ("Ver rutinas y
+          plantillas", "Armar con asistente", "✎ Armar mi rutina" y "Guardar
+          como…" dentro del editor), y las tres primeras sólo aparecían con la
+          rutina vacía. Ahora hay UNA sola puerta, siempre visible —no sólo
+          cuando no hay rutina— y en el mismo lugar de siempre: justo arriba
+          de "Mis gimnasios", mismo estilo de nav-card. */}
+      {!editing && (
+        <button type="button" className="nav-card" onClick={() => openSheet('library')}>
+          <span className="nav-card-ico" aria-hidden="true">📚</span>
+          <div className="grow">
+            <div className="t">Mis rutinas</div>
+            <div className="s">
+              {st.workoutCount
+                ? `${routineName()} · ${st.workoutCount} entrenamiento${st.workoutCount === 1 ? '' : 's'} · guardadas, plantillas y la que estás usando`
+                : 'Elegí una plantilla o armá la tuya — guardadas, plantillas y asistente'}
+            </div>
+          </div>
+          <span className="chev" aria-hidden="true">›</span>
+        </button>
+      )}
 
       {/* Los gimnasios eran alcanzables sólo desde un botón dentro de "Mis
           ejercicios", que es la pestaña de al lado: quedaban escondidos detrás
           de otra cosa. Acá son una opción propia, y el subtítulo dice qué vas a
           encontrar adentro en vez de repetir el nombre del botón. */}
-      <button type="button" className="nav-card" onClick={() => openSheet('gyms')}>
-        <span className="nav-card-ico" aria-hidden="true">🏋</span>
-        <div className="grow">
-          <div className="t">Ver mis gimnasios</div>
-          <div className="s">
-            {S.gyms.length
-              ? `${S.gyms.length} guardado${S.gyms.length === 1 ? '' : 's'}${gymActivo ? ` · entrenando en ${gymActivo.name}` : ''} · qué máquina usás para cada ejercicio en cada uno`
-              : 'Guardá dónde entrenás y emparejá cada ejercicio con la máquina de ese gimnasio'}
+      {!editing && (
+        <button type="button" className="nav-card" onClick={() => openSheet('gyms')}>
+          <span className="nav-card-ico" aria-hidden="true">🏋</span>
+          <div className="grow">
+            <div className="t">Ver mis gimnasios</div>
+            <div className="s">
+              {S.gyms.length
+                ? `${S.gyms.length} guardado${S.gyms.length === 1 ? '' : 's'}${gymActivo ? ` · entrenando en ${gymActivo.name}` : ''} · qué máquina usás para cada ejercicio en cada uno`
+                : 'Guardá dónde entrenás y emparejá cada ejercicio con la máquina de ese gimnasio'}
+            </div>
           </div>
-        </div>
-        <span className="chev" aria-hidden="true">›</span>
-      </button>
+          <span className="chev" aria-hidden="true">›</span>
+        </button>
+      )}
 
-      <DeloadCard />
-      <ReforzarCard />
-      <CoberturaCard />
+      {!editing && (
+        <>
+          <DeloadCard />
+          <ReforzarCard />
+          <CoberturaCard />
+        </>
+      )}
+
+      {!editing && !st.workoutCount && (
+        <div className="card"><div className="empty">
+          <RutinaVacia className="big" />
+          <p>Todavía no tenés rutina.<br />Tocá "Mis rutinas" arriba para elegir una plantilla, o "✎ Editar rutina" para armar la tuya turno por turno.</p>
+        </div></div>
+      )}
+
+      {editing && workouts.length > 1 && (
+        <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un entrenamiento y soltalo para reordenarlo — el descanso se acomoda solo.</span></div>
+      )}
 
       {/* Cada turno es una tarjeta que se despliega en el lugar, con sus
-          ejercicios numerados — en el original abría un sheet aparte. */}
-      <div className="day-cards" ref={cardsRef}>
-        {S.routine.map((slot, i) => {
-          const on = slot.type === 'workout' && !!slot.exercises?.length;
-          const sets = on ? slot.exercises.reduce((a, e) => a + e.sets, 0) : 0;
-          const open = S.rutOpen === i && on;
-          return (
-            <div key={slot.id} className={`day-card ${open ? 'open' : ''}`}>
-              <button
-                type="button"
-                className="day-head"
-                onClick={() => { S.rutOpen = open ? -1 : i; bump(); }}
-              >
-                <span className={`day-badge ${on ? '' : 'off'}`}>{i + 1}</span>
-                <span className="grow">
-                  <span className="t">{on ? (slot.name || 'Rutina') : 'Descanso'}</span>
-                  <span className="s">{on ? `${slot.exercises.length} ejercicios · ${sets} series` : 'libre'}</span>
-                </span>
-                <span className="chev">{open ? '⌄' : '›'}</span>
-              </button>
-              {/* El contenido va SIEMPRE montado y se colapsa por CSS
-                  (grid-template-rows 0fr→1fr, misma técnica que .day-body en
-                  el editor). Con `{open && ...}` no había forma de animar el
-                  CIERRE: React desmonta el nodo y no queda nada que animar,
-                  así que la tarjeta se cerraba de golpe. */}
-              <div className="day-collapse">
-                <div className="day-collapse-in">
-                <div className="day-exs">
-                  {/* Agrupados por SUBGRUPO muscular (subBlocksOf, lib/muscle.js):
-                      un turno "Anterior" con sentadilla, prensa, curl femoral y
-                      gemelos salía entero como "Pierna", que es justo lo que no
-                      querés saber cuando estás mirando cómo repartiste el
-                      trabajo. Ahora se lee cuádriceps / isquiotibiales /
-                      gemelos por separado.
-
-                      Tocar el ejercicio abre su ficha: qué porción del músculo
-                      trabaja, dibujada sobre el mismo cuerpo del mapa de
-                      Inicio. */}
-                  {subBlocksOf(slot.exercises || []).map(bloque => (
-                    <div key={bloque.cat} className="day-exs-block">
-                      <div className="day-exs-head">
-                        {bloque.cat}
-                        <span>{bloque.exs.length} ej · {bloque.exs.reduce((a, e) => a + e.sets, 0)} series</span>
-                      </div>
-                      {bloque.exs.map(e => (
-                        <button
-                          key={e.id}
-                          type="button"
-                          className="day-ex"
-                          onClick={() => openSheet('ex-info', { name: e.name, wd: i, exId: e.id })}
-                        >
-                          <span className="i">{slot.exercises.indexOf(e) + 1}</span>
-                          <ExIcon icono={iconOf(e)} size={24} className="day-ex-icon" />
-                          <span className="grow">
-                            <span className="t">{e.name}</span>
-                            <span className="s">
-                              {equipLabel(e) && <span className="eq-tag">{equipLabel(e)}</span>}
-                              RIR {rirScheme(e.sets).join('/')}
-                            </span>
-                          </span>
-                          <span className="x">{e.sets}×{e.reps}</span>
-                          <span className="chev">›</span>
-                        </button>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+          ejercicios numerados. En edición sólo se listan los de entrenamiento
+          (data-sort="seq", ver drag.js); mirando se listan TODOS, descansos
+          incluidos, en su posición real. */}
+      <div className="day-cards" ref={cardsRef} {...(editing ? { 'data-sort': 'seq' } : {})}>
+        {editing
+          ? workouts.map(({ slot, i }, pos) => <SlotCard key={slot.id} slot={slot} index={i} n={pos + 1} editing />)
+          : S.routine.map((slot, i) => <SlotCard key={slot.id} slot={slot} index={i} n={i + 1} editing={false} />)}
       </div>
+      {editing && <button type="button" className="btn sm ghost mt-[var(--s3)]" onClick={addWorkoutDay}>+ Entrenamiento</button>}
     </>
   );
 }
@@ -418,43 +402,6 @@ function ReforzarCard() {
   );
 }
 
-function RutinaEdit() {
-  // El editor ya no muestra descansos: sólo los turnos de entrenamiento, en
-  // su orden real dentro de S.routine (necesario para que `index` siga
-  // sirviendo para ex-info/moveEx/data-wd, que indexan S.routine directo,
-  // no la lista filtrada) más un número de posición sólo para mostrar.
-  const dow = weekdayProjection();
-  const workouts = S.routine
-    .map((slot, i) => ({ slot, i }))
-    .filter(x => x.slot.type === 'workout');
-
-  return (
-    <>
-      <div className="vtitle"><h1>Editar</h1><span className="sub">{routineName()}</span></div>
-      <div className="flex gap-2.5 mb-[var(--s4)]">
-        <button type="button" className="btn sm ghost flex-1" onClick={exitEditMode}>‹ Listo</button>
-        <button
-          type="button"
-          className="btn sm ghost flex-1"
-          onClick={openLibSaveSheet}
-        >
-          💾 Guardar como…
-        </button>
-      </div>
-
-      <WeekProjection dow={dow} />
-
-      {workouts.length > 1 && (
-        <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un entrenamiento y soltalo para reordenarlo — el descanso se acomoda solo.</span></div>
-      )}
-      <div data-sort="seq">
-        {workouts.map(({ slot, i }, pos) => <SlotCard key={slot.id} slot={slot} index={i} n={pos + 1} />)}
-      </div>
-      <button type="button" className="btn sm ghost mt-[var(--s3)]" onClick={addWorkoutDay}>+ Entrenamiento</button>
-    </>
-  );
-}
-
 /** Tira horizontal: qué día de la semana le tocaría a cada turno contando
     desde HOY (weekdayProjection, rutina-logic.js) — descansos incluidos,
     apagados, para que se vea DÓNDE caen sin poder tocarlos.
@@ -521,125 +468,206 @@ function WeekProjection({ dow }) {
   );
 }
 
-function SlotCard({ slot, index, n }) {
-  /* Los ejercicios se muestran AGRUPADOS por grupo muscular, igual que en la
-     sesión en vivo, pero por SUBGRUPO (subBlocksOf, lib/muscle.js): "Pierna"
-     entero no dice nada cuando el turno tiene sentadilla, femoral y gemelos. Enzo lo pidió
-     con esas palabras: "en la pestaña rutina los ejercicios también se deben
-     separar por subgrupos según el grupo muscular".
-
-     El encabezado del grupo se pinta DENTRO de la primera fila de cada bloque
-     y no como una fila aparte, y eso es a propósito: este contenedor es
-     `data-sort="rut"`, y drag.js reordena moviendo los hijos que tienen
-     data-sid. Una fila-encabezado sin data-sid quedaría varada arriba después
-     del primer arrastre, con los bloques ya movidos debajo. Adentro de la fila
-     viaja con ella y no se puede desincronizar. */
-  const exs = subBlocksOf(slot.exercises || []).flatMap(b => b.exs);
-  const open = S.rutOpen === index;
-  // referencia del riel: el ejercicio con más series del turno
-  const maxSets = Math.max(1, ...exs.map(e => e.sets || 0));
-
+/** Nombre de turno editable in situ — reemplaza al sheet SlotEdit.jsx, que
+    existía sólo para esto. Estado local para no pelear con cada tecleo contra
+    el bump() de saveSlot; se persiste recién al perder el foco, y también con
+    Enter (mismo gesto que "aceptar" en cualquier input de una sola línea). */
+function SlotNameInput({ index, slot }) {
+  const [name, setName] = useState(slot.name || '');
+  useEffect(() => { setName(slot.name || ''); }, [slot.id, slot.name]);
+  function commit() {
+    const trimmed = name.trim();
+    if (trimmed !== (slot.name || '')) saveSlot(index, { name: trimmed });
+  }
   return (
-    <div className={`card day ${open ? 'open' : ''}`} data-sid={slot.id}>
-      <div className="day-headrow">
-        <span className="mini day-handle" title="Arrastrar a otra posición">✥</span>
-        <button type="button" className="day-head" onClick={() => toggleSlotOpen(index)}>
-          <div className="day-txt">
-            <span className="day-wd">Entrenamiento {n}</span>
-            <span className={`day-name ${slot.name ? '' : 'off'}`}>{slot.name || 'Sin nombre'}</span>
-          </div>
-          <span className="day-meta">{exs.length ? `${exs.length} ej.` : ''}<span className="chev">›</span></span>
-        </button>
-        <button type="button" className="mini red" title="Quitar turno" aria-label={`Quitar el turno ${slot.name || 'sin nombre'}`} onClick={() => removeWorkoutDay(slot.id)}><X /></button>
+    <input
+      className="day-name-input"
+      value={name}
+      onChange={e => setName(e.target.value)}
+      onBlur={commit}
+      onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+      onClick={e => e.stopPropagation()}
+      placeholder="Nombre del turno (grupos musculares)"
+      aria-label={`Nombre del turno ${index + 1}`}
+    />
+  );
+}
+
+function SlotCard({ slot, index, n, editing }) {
+  const open = S.rutOpen === index;
+  const on = slot.type === 'workout';
+
+  // Turno de descanso: fila apagada, sin controles y sin data-sid — no
+  // participa del drag (los descansos se recalculan solos, ver
+  // applyWorkoutOrder) y en modo edición ni siquiera se llega a renderizar
+  // esta rama (RutinaView ya filtra sólo workouts para `editing`).
+  if (!on) {
+    return (
+      <div className="day-card">
+        <div className="day-head" style={{ cursor: 'default' }}>
+          <span className="day-badge off">{n}</span>
+          <span className="grow"><span className="t">Descanso</span><span className="s">libre</span></span>
+        </div>
       </div>
-      <div className="day-body"><div className="dbi">
-        {exs.length > 1 && (
-          <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un ejercicio para reordenarlo.</span></div>
-        )}
-        <div data-sort="rut" data-wd={index} style={{ '--lift': 1.015 }}>
-          {/* El nombre va en su propia línea a ancho completo. Cuando esto era
-              una .row con los cinco botones al lado, en 320px al nombre le
-              quedaban 62px: los 40 ejercicios del split se veían como
-              "Press ...", "Pec de...", "Leg pr...". */}
-          {exs.map((ex, i) => (
-            <div
-              className="ex-row" data-sid={ex.id} key={ex.id}
-              /* el riel se llena según las series de ESTE ejercicio contra el
-                 que más tiene del turno: la lista se vuelve un gráfico del
-                 reparto de volumen, que es lo que estás decidiendo acá */
-              style={{ '--fill': maxSets ? ex.sets / maxSets : 1, '--i': i }}
-            >
-              {(i === 0 || subCatOf(exs[i - 1]) !== subCatOf(ex)) && (
-                <div className="ex-group-tag">{subCatOf(ex) || 'Sin grupo'}</div>
-              )}
-              <ExIcon icono={iconOf(ex)} size={26} className="ex-row-icon" />
-              <div className="ex-row-top">
-                <span className="eyebrow">{i + 1}</span>
-                <button
-                  type="button"
-                  className="mini info inline"
-                  data-act="ex-info"
-                  style={exInfo(ex.name) ? undefined : { opacity: .4 }}
-                  onClick={() => openSheet('ex-info', { name: ex.name, wd: index, exId: ex.id })}
+    );
+  }
+
+  const exs = slot.exercises || [];
+  const sets = exs.reduce((a, e) => a + e.sets, 0);
+  // referencia del riel de series en edición: el ejercicio con más series del turno
+  const maxSets = Math.max(1, ...exs.map(e => e.sets || 0));
+  // Agrupados por GRUPO muscular grueso (blocksOf, lib/muscle.js) y no por
+  // subgrupo: separar "press plano" (Pecho) de "press inclinado" (Pecho
+  // superior) es justo la distinción que Enzo quiere ver JUNTA acá. La
+  // precisión fina no se pierde — pasa a mostrarla MuscleFibers, sin texto.
+  const bloques = blocksOf(exs);
+
+  /* REGRESIÓN 2026-09-17: esto decía `card day` (la clase del viejo
+     editor-pantalla-aparte, pensada para el acordeón .day-body/.day.open de
+     esa pantalla) pero el markup de abajo es el acordeón .day-collapse/
+     .day-collapse-in de la vista normal, que sólo se abre con
+     `.day-card.open` (ver styles.css). Con la clase vieja el turno nunca
+     alcanzaba altura > 0 al abrirse, Y de paso `.day.open .chev` (esa regla
+     es de OTRO acordeón, styles.css:1559) rotaba el glifo que acá ya se
+     intercambia a mano (⌄/›) — la superposición de las dos cosas es el "<"
+     que se veía en vez de un chevron abierto. Una sola clase arregla las dos
+     cosas: `day-card` es la que styles.css espera. */
+  return (
+    <div className={`day-card ${open ? 'open' : ''}`} data-sid={slot.id}>
+      <div className="day-headrow">
+        {editing && <span className="mini day-handle" title="Arrastrar a otra posición">✥</span>}
+        <button type="button" className="day-head" onClick={() => toggleSlotOpen(index)}>
+          <span className={`day-badge ${on ? '' : 'off'}`}>{n}</span>
+          <span className="grow">
+            {editing ? (
+              <SlotNameInput index={index} slot={slot} />
+            ) : (
+              <span className={`day-name ${slot.name ? '' : 'off'}`}>{slot.name || 'Rutina'}</span>
+            )}
+            <span className="s">{exs.length ? `${exs.length} ejercicios · ${sets} series` : 'libre'}</span>
+          </span>
+          <span className="chev">{open ? '⌄' : '›'}</span>
+        </button>
+        {editing && <button type="button" className="mini red" title="Quitar turno" aria-label={`Quitar el turno ${slot.name || 'sin nombre'}`} onClick={() => removeWorkoutDay(slot.id)}><X /></button>}
+      </div>
+
+      <div className="day-collapse">
+        <div className="day-collapse-in">
+        <div className="day-exs">
+          {editing && exs.length > 1 && (
+            <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un ejercicio para reordenarlo.</span></div>
+          )}
+          {editing ? (
+            /* En edición la lista es PLANA (data-sort="rut" exige hijos
+               directos con data-sid, ver drag.js): el encabezado del grupo
+               va DENTRO de la primera fila de cada bloque, nunca como fila
+               aparte — una fila-encabezado sin data-sid quedaría huérfana
+               arriba después de un drag, con el bloque ya movido debajo. */
+            <div data-sort="rut" data-wd={index} style={{ '--lift': 1.015 }}>
+              {bloques.flatMap(b => b.exs).map((ex, i, arr) => (
+                <div
+                  className="ex-row" data-sid={ex.id} key={ex.id}
+                  style={{ '--fill': maxSets ? ex.sets / maxSets : 1, '--i': i }}
                 >
-                  <Info />
-                </button>
-              </div>
-              <div className="n">{ex.name}</div>
-              <div className="ex-row-bot">
-                <span className="presc">{ex.sets}<i>×</i>{ex.reps}</span>
-                <span className="m">
-                  RIR {rirScheme(ex.sets, ex.name).join('/')}
-                  {equipLabel(ex) && <span className="eq-tag">{equipLabel(ex)}</span>}
-                </span>
-                <span className="acts">
-                  <button
-                    type="button"
-                    className="mini"
-                    data-act="ex-up"
-                    disabled={i === 0}
-                    onClick={() => handleMoveEx(index, ex.id, -1)}
-                  ><ArrowUp /></button>
-                  <button
-                    type="button"
-                    className="mini"
-                    data-act="ex-down"
-                    disabled={i === exs.length - 1}
-                    onClick={() => handleMoveEx(index, ex.id, 1)}
-                  ><ArrowDown /></button>
-                  <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}><Pencil /></button>
-                  <button type="button" className="mini red" aria-label={`Borrar ${ex.name}`} onClick={() => deleteExercise(index, ex.id)}><X /></button>
-                </span>
-              </div>
+                  {(i === 0 || catOf(arr[i - 1]) !== catOf(ex)) && (
+                    <div className="ex-group-tag">
+                      {catOf(ex) || 'Sin grupo'}
+                      <MuscleFibers cat={catOf(ex)} exercises={bloques.find(b => b.cat === (catOf(ex) || 'Otros'))?.exs || []} />
+                    </div>
+                  )}
+                  <ExIcon icono={iconOf(ex)} size={26} className="ex-row-icon" />
+                  <div className="ex-row-top">
+                    <span className="eyebrow">{i + 1}</span>
+                    <button
+                      type="button"
+                      className="mini info inline"
+                      data-act="ex-info"
+                      style={exInfo(ex.name) ? undefined : { opacity: .4 }}
+                      onClick={() => openSheet('ex-info', { name: ex.name, wd: index, exId: ex.id })}
+                    >
+                      <Info />
+                    </button>
+                  </div>
+                  <div className="n">{ex.name}</div>
+                  <div className="ex-row-bot">
+                    <span className="presc">{ex.sets}<i>×</i>{ex.reps}</span>
+                    <span className="m">
+                      RIR {rirScheme(ex.sets, ex.name).join('/')}
+                      {equipLabel(ex) && <span className="eq-tag">{equipLabel(ex)}</span>}
+                    </span>
+                    <span className="acts">
+                      <button type="button" className="mini" data-act="ex-up" disabled={i === 0} onClick={() => handleMoveEx(index, ex.id, -1)}><ArrowUp /></button>
+                      <button type="button" className="mini" data-act="ex-down" disabled={i === arr.length - 1} onClick={() => handleMoveEx(index, ex.id, 1)}><ArrowDown /></button>
+                      <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}><Pencil /></button>
+                      <button type="button" className="mini red" aria-label={`Borrar ${ex.name}`} onClick={() => deleteExercise(index, ex.id)}><X /></button>
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          ) : (
+            /* Mirando (no editando): sí se pintan como bloques separados con
+               encabezado propio — no hay drag acá, así que no hay riesgo de
+               fila huérfana. */
+            bloques.map(bloque => (
+              <div key={bloque.cat} className="day-exs-block">
+                <div className="day-exs-head">
+                  <span className="grow">{bloque.cat}</span>
+                  <MuscleFibers cat={bloque.cat} exercises={bloque.exs} />
+                  <span>{bloque.exs.length} ej · {bloque.exs.reduce((a, e) => a + e.sets, 0)} series</span>
+                </div>
+                {bloque.exs.map(e => (
+                  <button
+                    key={e.id}
+                    type="button"
+                    className="day-ex"
+                    onClick={() => openSheet('ex-info', { name: e.name, wd: index, exId: e.id })}
+                  >
+                    <span className="i">{exs.indexOf(e) + 1}</span>
+                    <ExIcon icono={iconOf(e)} size={24} className="day-ex-icon" />
+                    <span className="grow">
+                      <span className="t">{e.name}</span>
+                      <span className="s">
+                        {equipLabel(e) && <span className="eq-tag">{equipLabel(e)}</span>}
+                        RIR {rirScheme(e.sets).join('/')}
+                      </span>
+                    </span>
+                    <span className="x">{e.sets}×{e.reps}</span>
+                    <span className="chev">›</span>
+                  </button>
+                ))}
+              </div>
+            ))
+          )}
         </div>
-        <div className="flex gap-2.5 mt-3">
-          <button type="button" className="btn sm ghost flex-[2]" onClick={() => openSheet('ex-form', { wd: index, ex: null })}>
-            + Ejercicio
-          </button>
-          <button type="button" className="btn sm dim flex-1" onClick={() => openSheet('slot-edit', { index })}>
-            ✎ Turno
-          </button>
+        {editing && (
+          <div className="dbi">
+            <div className="flex gap-2.5 mt-3">
+              <button type="button" className="btn sm ghost flex-1" onClick={() => openSheet('ex-form', { wd: index, ex: null })}>
+                + Ejercicio
+              </button>
+            </div>
+            {/* Anterior A y Anterior B son la misma rutina: sin esto había que
+                cargar los mismos nueve ejercicios a mano dos veces, y cada
+                corrección otras dos. Botones siempre visibles y no un aviso al
+                salir del editor — un cartel cada vez que terminás de editar se
+                vuelve ruido y termina en que lo cerrás sin leer. */}
+            <div className="flex gap-2.5 mt-2.5">
+              <button
+                type="button" className="btn sm dim flex-1"
+                disabled={!exs.length}
+                onClick={() => openSheet('copy-exs', { mode: 'push', wd: index })}
+              >
+                ⧉ Copiar a otro turno
+              </button>
+              <button type="button" className="btn sm dim flex-1" onClick={() => openSheet('copy-exs', { mode: 'pull', wd: index })}>
+                ⤓ Traer de otro turno
+              </button>
+            </div>
+          </div>
+        )}
         </div>
-        {/* Anterior A y Anterior B son la misma rutina: sin esto había que
-            cargar los mismos nueve ejercicios a mano dos veces, y cada
-            corrección otras dos. Botones siempre visibles y no un aviso al
-            salir del editor — un cartel cada vez que terminás de editar se
-            vuelve ruido y termina en que lo cerrás sin leer. */}
-        <div className="flex gap-2.5 mt-2.5">
-          <button
-            type="button" className="btn sm dim flex-1"
-            disabled={!exs.length}
-            onClick={() => openSheet('copy-exs', { mode: 'push', wd: index })}
-          >
-            ⧉ Copiar a otro turno
-          </button>
-          <button type="button" className="btn sm dim flex-1" onClick={() => openSheet('copy-exs', { mode: 'pull', wd: index })}>
-            ⤓ Traer de otro turno
-          </button>
-        </div>
-      </div></div>
+      </div>
     </div>
   );
 }

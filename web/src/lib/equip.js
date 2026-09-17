@@ -15,6 +15,8 @@
 //
 // Por eso el historial se compara ahora por nombre + equipo, y opcionalmente
 // por máquina concreta (ver machineKey más abajo).
+import { norm } from './format.js';
+
 export const EQUIP = [
   { id: 'barra',      label: 'Barra',        hint: 'El número es el peso real. Comparable en cualquier gimnasio.' },
   { id: 'mancuernas', label: 'Mancuernas',   hint: 'Peso por mano. Comparable en cualquier gimnasio.' },
@@ -82,11 +84,41 @@ export const isMachineBound = equip => MACHINE_BOUND.has(equip);
  */
 export function exKey(ex) {
   const name = String(ex?.name || '').trim().toLowerCase();
-  if (!ex?.equip) return name;
+  // D3 (docs/superpowers/specs/2026-09-17-unilateral-design.md): la lateralidad
+  // entra como sufijo, nunca como campo nuevo del historial. Un `ex.unilateral`
+  // ausente (todo el historial viejo) da sufijo vacío y cae exactamente en la
+  // clave bilateral de siempre — cero migración, cero riesgo de partir el
+  // pasado en dos. `unilateral: false` se comporta igual que no tenerlo.
+  const uni = ex?.unilateral ? '·uni' : '';
+  if (!ex?.equip) return `${name}${uni}`;
   const machine = isMachineBound(ex.equip) && ex.machine
     ? `·${String(ex.machine).trim().toLowerCase()}`
     : '';
-  return `${name}·${ex.equip}${machine}`;
+  return `${name}·${ex.equip}${machine}${uni}`;
+}
+
+/* D6: ejercicios que por naturaleza mueven las dos mitades del cuerpo a la
+   vez con la misma barra/máquina — no hay "lado izquierdo" que registrar por
+   separado. Lista de exclusión explícita y chica a propósito: el default es
+   TRUE (mostrar el interruptor) porque mostrarlo de más es recuperable con
+   un toque, y esconderlo de más le saca a Enzo una opción que necesitaba sin
+   que se dé cuenta de por qué. */
+const BILATERAL_NOMBRES = [
+  'sentadilla', 'squat',
+  'peso muerto', 'deadlift',
+  'press de banca', 'press banca', 'bench press', 'bench',
+  'dominada', 'domin', 'pull up', 'pull-up', 'pullup', 'chin up', 'chin-up',
+  'prensa', 'leg press',
+  'hip thrust',
+];
+
+/** ¿Tiene sentido ofrecer el interruptor "unilateral" para este ejercicio?
+    Normaliza igual que charts.ts (acentos fuera, minúsculas) para que
+    "Peso Muerto" y "press de banca" con mayúsculas también matcheen. */
+export function puedeSerUnilateral(ex) {
+  const n = norm(ex?.name);
+  if (!n) return true;
+  return !BILATERAL_NOMBRES.some(k => n.includes(k));
 }
 
 /** Etiqueta corta para mostrar junto al ejercicio: "Placas · Life Fitness". */

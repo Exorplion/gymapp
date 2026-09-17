@@ -35,16 +35,38 @@ export function isUnilateral(ex) {
   return !!ex?.unilateral;
 }
 
-/** Cambia el "un lado por vez" de HOY, sin tocar la rutina. */
+/** Cambia el "un lado por vez" de HOY. Si todavía no registraste ninguna
+    serie de este ejercicio hoy, el cambio queda FIJO en la rutina (D5): la
+    semana que viene la app ya sabe que este ejercicio es unilateral, tal
+    como pidió Enzo, sin tener que repetir el toggle cada sesión.
+
+    Si ya hay series registradas hoy, el cambio se BLOQUEA: esas filas ya
+    quedaron indexadas con exKey() de la lateralidad vieja (ver D3 en la
+    spec), y darlas vuelta a mitad de camino mezclaría dos historiales que
+    tienen que quedar separados. Cambiar antes de la primera serie es
+    gratis; después, no. */
 export async function toggleUnilateral(exId) {
   if (!S.draft) return;
   const ex = findEx(exId);
   if (!ex) return;
+  if (S.draft.entries[exId]?.sets?.length) {
+    toast('Ya registraste series de este ejercicio hoy — el cambio se aplica la próxima vez');
+    return;
+  }
+  const nuevo = !isUnilateral(ex);
+  ex.unilateral = nuevo;
+  // Persistir en la rutina real, no sólo en el override de hoy: encontrar el
+  // slot que contiene este ejercicio (puede ser un extra de hoy, que no vive
+  // en S.routine — ahí no hay nada que persistir más que el borrador).
+  const slotIndex = S.routine.findIndex(slot => (slot.exercises || []).some(e => e.id === exId));
+  if (slotIndex >= 0) {
+    // Import dinámico para no crear un ciclo de imports (session.js ya lo
+    // usa para persist.js/backup.js/macros.js más abajo en este archivo).
+    const { persistSlot } = await import('./rutina-logic.js');
+    await persistSlot(slotIndex);
+  }
   if (!S.draft.unilateralOverride) S.draft.unilateralOverride = {};
-  S.draft.unilateralOverride[exId] = !isUnilateral(ex);
-  // si ya hay una entrada para hoy, la etiqueta la sigue — es la misma serie,
-  // no una distinta, así que no debería quedar con la etiqueta vieja
-  if (S.draft.entries[exId]) S.draft.entries[exId].unilateral = S.draft.unilateralOverride[exId];
+  S.draft.unilateralOverride[exId] = nuevo;
   await saveDraft();
   vibrate(8);
   bump();
@@ -87,8 +109,10 @@ export function ensureVals(ex) {
   // existiera — se completa acá en vez de forzar una migración de datos.
   if (S.hoyVals[ex.id].rpe === undefined) S.hoyVals[ex.id].rpe = null;
   // `side` (izquierda/derecha) sólo importa en unilaterales; en el resto
-  // queda en null y saveSet ni lo guarda en el set.
-  if (S.hoyVals[ex.id].side === undefined) S.hoyVals[ex.id].side = null;
+  // queda en null y saveSet ni lo guarda en el set. En unilaterales arranca
+  // en 'left': Enzo siempre empieza por el izquierdo, y dejarlo en null
+  // dejaba filas sueltas que no se podían emparejar en pares (D1).
+  if (S.hoyVals[ex.id].side === undefined) S.hoyVals[ex.id].side = isUnilateral(ex) ? 'left' : null;
   return S.hoyVals[ex.id];
 }
 
@@ -347,12 +371,28 @@ export function nextPending(list) {
    leen siempre con `?.` y un default, así que un borrador guardado antes de
    este cambio sigue funcionando sin migración. */
 
-/** Series objetivo de HOY: las de la rutina más las concedidas a mano. Sin
-    esto el ejercicio se cierra solo al llegar al objetivo — que es su diseño
-    ("el objetivo es el techo"), pero deja sin salida al día que querés hacer
-    una serie más. */
+/** Series objetivo de HOY, en FILAS (una por lado en unilaterales): las de
+    la rutina más las concedidas a mano. Sin las extra el ejercicio se cierra
+    solo al llegar al objetivo — que es su diseño ("el objetivo es el
+    techo"), pero deja sin salida al día que querés hacer una serie más.
+
+    En unilaterales el objetivo se DUPLICA (D1): la fila sigue siendo un
+    lado, pero un 3×12 unilateral son 3 series reales = 6 filas, no 3. Sin
+    esto, a la fila 3 el ejercicio se daba por completo habiendo hecho sólo
+    1.5 series reales — el bug que reportó Enzo. `isUnilateral(ex)` y no
+    `ex.unilateral` a secas: respeta el override de sólo-hoy igual que el
+    resto del archivo. */
 export function targetSets(ex) {
-  return (ex?.sets || 0) + (S.draft?.extraSets?.[ex?.id] || 0);
+  const base = (ex?.sets || 0) * (isUnilateral(ex) ? 2 : 1);
+  return base + (S.draft?.extraSets?.[ex?.id] || 0);
+}
+
+/** Series REALES completadas, para mostrarle a Enzo "Serie N/3" y no
+    "Serie N/6": en unilaterales cada serie real son dos filas (un lado cada
+    una), así que se cuenta de a pares. Pura y testeable a propósito — la UI
+    (ExerciseCarousel.jsx) la llama para no reinventar la cuenta ahí. */
+export function seriesCompletas(filas, uni) {
+  return uni ? Math.floor(filas / 2) : filas;
 }
 
 export function isSkipped(exId) { return !!S.draft?.skipped?.includes(exId); }
@@ -555,12 +595,25 @@ export async function saveSet(exId) {
   await saveDraft();
   vibrate(finished ? [25, 60, 25] : 15);
   bump();
-  startRest();
+  /* Descanso partido (D2): en unilateral, fila IMPAR es "acabo de hacer un
+     lado" → descanso corto (cfg.restSide, 20s por defecto) para que Enzo
+     pueda pasar al otro brazo/pierna sin esperar el descanso completo. Fila
+     PAR es "cerré la serie de los dos lados" → descanso normal. En
+     bilateral no cambia nada: siempre es el descanso normal, como siempre. */
+  if (uni && cur.length % 2 === 1) startRest(S.cfg.restSide);
+  else startRest();
   if (finished) {
     toast(nxt ? `✓ ${ex.name} completo · sigue ${nxt.name}` : `✓ ${ex.name} completo · terminaste el día`);
     scrollCarouselTo(nxt ? nxt.id : exId);
   } else {
-    toast(`Serie ${cur.length}/${ex.sets}: ${wBoth(v.w)} × ${v.r}`);
+    const seriesReales = seriesCompletas(cur.length, uni);
+    const target = Math.ceil(techo / (uni ? 2 : 1));
+    // En unilateral, decir qué lado sigue en vez de mentir con "N/6" — lo
+    // que Enzo cuenta en el gimnasio es la serie, no el brazo (D1).
+    const msg = uni
+      ? `Serie ${seriesReales}/${target}: ${wBoth(v.w)} × ${v.r} · sigue ${v.side === 'left' ? 'izquierda' : 'derecha'}`
+      : `Serie ${cur.length}/${target}: ${wBoth(v.w)} × ${v.r}`;
+    toast(msg);
   }
 }
 

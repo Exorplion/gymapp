@@ -9,7 +9,7 @@ import { round1, fmtNum, fmtD, norm } from './format.js';
 
 interface BodyEntry { date: string; weight: number | null; }
 interface SetEntry { w: number; r: number; }
-interface SessionEntry { name: string; sets: SetEntry[]; }
+interface SessionEntry { name: string; sets: SetEntry[]; unilateral?: boolean; }
 interface Session { date: string; start: number; entries?: SessionEntry[]; }
 
 const sessions = (): Session[] => S.sessions as Session[];
@@ -48,7 +48,12 @@ export function exerciseSeries(): Record<string, SeriesPoint[]> {
         maxW = Math.max(maxW, st.w);
       });
       if (!best || !bestSet) return;
-      const key = e.name.trim();
+      // D4 (docs/superpowers/specs/2026-09-17-unilateral-design.md): sin esto,
+      // 25 kg unilaterales entrarían en la misma línea que 40 kg bilaterales
+      // del mismo ejercicio y el gráfico mostraría un derrumbe que nunca
+      // pasó. El sufijo sólo aplica si la entrada lo declara — el historial
+      // viejo (sin el campo) sigue cayendo en la clave de siempre.
+      const key = e.name.trim() + (e.unilateral ? ' (unilateral)' : '');
       (map[key] = map[key] || []).push({ date: s.date, best, maxW, w: (bestSet as SetEntry).w, r: (bestSet as SetEntry).r });
     });
   });
@@ -68,12 +73,21 @@ export const e1rm = (w: number, r: number): number => r <= 1 ? w : w * (1 + r / 
 
 export interface E1rmPoint { date: string; y: number; }
 /* mejor 1RM estimado por sesión, en orden cronológico (S.sessions viene al revés) */
+// D4: mismo sufijo que exerciseSeries() para que ambas vistas de "Progreso"
+// (Carga y 1RM) partan el mismo par bilateral/unilateral en dos series. Un
+// `name` sin sufijo (todo el uso preexistente, ej. suggestedWeight desde
+// ExerciseCarousel) sigue matcheando sólo entradas sin `unilateral` — el
+// comportamiento de siempre no cambia para quien no pide el sufijo.
+const UNI_SUFFIX = ' (unilateral)';
 export function e1rmSeries(name: string): E1rmPoint[] {
-  const key = norm(name), out: E1rmPoint[] = [];
+  const wantUni = name.endsWith(UNI_SUFFIX);
+  const baseName = wantUni ? name.slice(0, -UNI_SUFFIX.length) : name;
+  const key = norm(baseName), out: E1rmPoint[] = [];
   [...sessions()].reverse().forEach(s => {
     let best = 0;
     (s.entries || []).forEach(e => {
       if (norm(e.name) !== key) return;
+      if (!!e.unilateral !== wantUni) return;
       e.sets.forEach(st => { if (st.r <= 12) { const v = e1rm(st.w, st.r); if (v > best) best = v; } });
     });
     if (best > 0) out.push({ date: s.date, y: best });
@@ -114,7 +128,7 @@ export function project(t: Trend | null, weeks: number): Projection | null {
 export interface StrengthReadout { name: string; pts: E1rmPoint[]; t: Trend | null; last: number; }
 /* una línea honesta por ejercicio: subiendo / plano / bajando, y a qué ritmo */
 export function strengthReadout(): StrengthReadout[] {
-  const names = [...new Set(sessions().flatMap(s => (s.entries || []).map(e => e.name.trim())))];
+  const names = [...new Set(sessions().flatMap(s => (s.entries || []).map(e => e.name.trim() + (e.unilateral ? UNI_SUFFIX : ''))))];
   return names.map(n => {
     const pts = e1rmSeries(n), t = trend(pts);
     return { name: n, pts, t, last: pts.length ? pts[pts.length - 1].y : 0 };
