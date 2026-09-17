@@ -29,7 +29,7 @@ almacenamiento del origen como *best-effort* y, bajo presión de espacio, el
 sistema **desaloja el origen entero** (IndexedDB + caches + localStorage) sin
 avisar y sin dejar rastro. Es exactamente la forma que tuvo la pérdida.
 
-### Qué se hizo (PR pendiente de merge al cerrar)
+### Qué se hizo (PR #100 y #101, los dos MERGEADOS y publicados)
 
 - **`web/src/lib/persist.js`** (nuevo): `ensurePersisted()`,
   `storageEstimate()`, `daysSinceBackup()`, `necesitaBackup()`.
@@ -44,7 +44,10 @@ avisar y sin dejar rastro. Es exactamente la forma que tuvo la pérdida.
 - El botón de exportar deja de ser `ghost` cuando hace falta: nunca
   respaldaste, o pasaron 21 días (`DIAS_AVISO_BACKUP`). 21 y no 1 — los
   avisos de esta app son raros o la moneda se devalúa.
-- 14 tests nuevos, **499 en verde**.
+- **Respaldo automático** (PR #101): ver pendiente 4 más abajo. Es la mitad
+  que de verdad cierra el agujero — `persist()` puede ser denegado, pero un
+  archivo en Descargas no lo borra ningún desalojo.
+- 21 tests nuevos entre los dos PRs, **506 en verde**.
 
 ### Lo que NO arregla, y hay que tenerlo claro
 
@@ -65,8 +68,14 @@ bucket desalojable.
    archivos ya no están en el teléfono. Quedó pedido verificar en Chrome →
    Configuración de sitios → Datos almacenados si `exorplion.github.io`
    todavía reporta MB; si reportara datos, el diagnóstico cambia.
-4. Respaldo automático periódico (¿descarga sin gesto del usuario?) — no se
-   evaluó todavía.
+4. ~~Respaldo automático periódico~~ — **hecho** (PR #101). Al cerrar un
+   entrenamiento, si pasó una semana desde la última copia, la app descarga
+   un JSON sola. `tocaAutoBackup()` en persist.js; se dispara al final de
+   `completeSession()` (session.js), después del `bump()` y en try/catch.
+   Va enganchado ahí y **no a un temporizador** a propósito: una PWA no
+   corre en segundo plano, y cerrar la sesión es el toque de botón que el
+   navegador exige para no bloquear la descarga. Se apaga en Ajustes;
+   `autoBackup === undefined` cuenta como prendido.
 
 ---
 
