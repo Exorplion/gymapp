@@ -930,7 +930,14 @@ main.arrastrando{overflow:hidden;user-select:none}
    acomodar en esta tarjeta. */
 .ex-card{position:relative}
 .ex-card-icon{position:absolute;top:12px;left:14px;color:var(--accent);opacity:.9}
-.ex-card .exname{padding-left:48px;min-height:38px}
+/* padding-right: el contador (.ex-done-count) es position:absolute en la
+   esquina — no empuja el texto porque no ocupa espacio en el flujo normal.
+   Sin este padding, un nombre largo ("Extensión de tríceps overhead") pasa
+   una línea entera por DEBAJO del contador antes de que al navegador se le
+   ocurra ajustar el ancho disponible (medido: el texto llegaba a 272px con
+   el contador arrancando en 241px, 32px de superposición real). El padding
+   reserva ese rincón igual que ya hace padding-left con el ícono. */
+.ex-card .exname{padding-left:48px;padding-right:52px;min-height:38px}
 
 /* En Rutina va a la izquierda, pegado al riel. A la derecha no entra: ahí ya
    viven el ⓘ arriba y los cuatro botones de acción abajo, y el dibujo se les
@@ -967,6 +974,17 @@ main.arrastrando{overflow:hidden;user-select:none}
    así que se la trata como un dato propio, alineada a la derecha bajo la
    rueda y un toque más grande que antes (era 13px, casi invisible). */
 .reel-alt{text-align:right;margin-top:6px;font-size:var(--t-body);color:var(--mut);letter-spacing:.03em}
+/* Selector de RIR (reemplaza al de RPE 1-10, que no cabía: 10 círculos
+   llegaban al borde de la tarjeta y el "10" quedaba cortado — medido en el
+   teléfono de Enzo). 5 opciones con `flex-wrap` de respaldo: si algún ancho
+   angosto igual no las banca todas en una fila, envuelven en vez de
+   desbordar el panel. */
+/* Grid de 3 columnas y no flex-wrap: con 5 opciones y una de ellas ("0 (al
+   fallo)") bastante más larga que las demás, flex-wrap las acomodaba 4+1 —
+   cuatro apretadas arriba y un "4+" solo, angosto, abajo. 3+2 se lee mejor y
+   no cambia con el ancho de pantalla. */
+.rir-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.rir-opts .chip{padding:8px 4px;justify-content:center;text-align:center}
 .setchips{margin-top:12px}
 /* durante la sesión sólo un ejercicio está "abierto". Los que faltan se apagan
    para que no parezca que podés saltear el orden a dedo. */
@@ -1025,14 +1043,33 @@ main.arrastrando{overflow:hidden;user-select:none}
   color:var(--ok);font-weight:600;
 }
 
-.ex-actions{display:flex;gap:6px;margin-top:10px}
-.ex-actions button{
-  flex:1;min-height:38px;border-radius:var(--r-md);
+/* Cinco botones posibles hoy (− Serie / + Serie / Unilateral / Otro
+   ejercicio / Saltar): a 390px no entran en una sola fila sin apretarse, así
+   que la fila envuelve a la línea que haga falta en vez de comprimir el
+   texto. flex-basis en tercios: en un ancho angosto da 3+2 (o menos, si
+   Unilateral no aparece), en uno más ancho entran los 5 en una sola línea. */
+.ex-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ex-actions button.ex-act{
+  flex:1 1 calc(33.333% - 6px);min-height:44px;border-radius:var(--r-md);
   background:var(--card2);border:1px solid var(--line);
   color:var(--mut);font-size:var(--t-micro);font-weight:600;letter-spacing:.02em;
   display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  transition:background var(--d1) var(--ease),border-color var(--d1) var(--ease),color var(--d1) var(--ease);
 }
-.ex-actions button:active{border-color:var(--line2);color:var(--blue2)}
+.ex-actions button.ex-act:active{border-color:var(--line2);color:var(--blue2);background:rgba(var(--blue-rgb),.08)}
+/* El botón "Cambiar" (ahora "Otro ejercicio") y "Saltar" quedan con un
+   acento propio en reposo — antes los cuatro botones eran indistinguibles
+   entre sí (Enzo: "los botones de más opciones podrían tener más estética y
+   vida"). Nada de hex/px sueltos: mismos tokens de color que ya usa el
+   resto de la tarjeta. */
+.ex-actions button.ex-act svg{opacity:.85}
+/* Toggle "un lado por vez": ahora vive acá, entre botones — ya no es un chip
+   inerte en el encabezado (se solapaba con el contador, Enzo lo confirmó
+   midiendo en su teléfono). Estado activo = fondo lleno, igual criterio que
+   cualquier otro toggle de la app (ver .chip.on más abajo). */
+.ex-actions button.ex-act.uni.on{
+  background:rgba(var(--blue-rgb),.16);border-color:var(--blue2);color:var(--blue2);font-weight:700;
+}
 /* los saltados en el resumen de la sesión */
 .skip-note{
   margin-top:14px;padding:9px 12px;border-radius:var(--r-md);
@@ -1040,9 +1077,23 @@ main.arrastrando{overflow:hidden;user-select:none}
   background:rgba(var(--warn-rgb),.09);border:1px solid rgba(var(--warn-rgb),.28);color:var(--warn);
   display:flex;gap:6px;
 }
+/* El primer y el último slide no podían centrarse (medido: carrusel con
+   centro en 243px, slide en 216px — 27px corridos a la izquierda). Causa:
+   un padding fijo de 16px no le da a scrollLeft recorrido suficiente para
+   llevar el borde de un slide hasta el centro visible cuando el slide mide
+   84%/88% del ancho. La solución no es "más padding" (eso movería TODOS los
+   slides, no sólo los de las puntas) sino separadores reales que ocupan el
+   espacio que le falta a scrollLeft en cada punta — mismo truco que ya usa
+   .reel-track con `padding:0 calc(50% - mitad-del-diente)`, sólo que acá el
+   ancho del "diente" es un porcentaje variable (84% u 88%) y no un valor
+   fijo, así que no alcanza con padding: hacen falta pseudo-elementos que SÍ
+   participan del layout flex (::before/::after de un contenedor flex son
+   flex-items de verdad) para poder restarles el gap ya contado. */
 .carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;
-  margin:0 calc(-1*var(--s4)) 0;padding:0 var(--s4) 4px;scrollbar-width:none}
+  margin:0 calc(-1*var(--s4)) 0;padding-bottom:4px;scrollbar-width:none}
 .carousel::-webkit-scrollbar{display:none}
+.carousel::before,.carousel::after{content:'';flex:0 0 max(0px,calc((100% - 84%)/2 - 12px));min-width:0}
+.carousel.focus::before,.carousel.focus::after{flex-basis:max(0px,calc((100% - 88%)/2 - 12px))}
 .carousel-slide{flex:0 0 84%;scroll-snap-align:center;min-width:0}
 /* Con la sesión abierta la tarjeta ocupa todo el ancho. El peek del 84% sirve
    para ojear qué te toca antes de arrancar; en plena serie no aporta nada y
