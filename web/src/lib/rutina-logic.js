@@ -804,3 +804,16 @@ export function saveCurrentAsLib(name) {
     doSave();
   }
 }
+
+/** Renombra la rutina ACTIVA (S.cfg.routineName), a diferencia de
+    saveCurrentAsLib: no toca S.routine ni deja copia en S.lib. Antes el
+    único "guardar" disponible en el editor era saveCurrentAsLib, que de paso
+    generaba una entrada extra en "Mis rutinas" — confuso para Enzo, que sólo
+    quería ponerle nombre a la que ya está editando. Esto es sólo eso: un
+    renombrado, sin efectos secundarios sobre la biblioteca. */
+export function renameRoutine(name) {
+  name = (name || '').trim();
+  if (!name) { toast('Ingresá un nombre'); return; }
+  S.cfg.routineName = name;
+  saveCfg(); bump();
+}

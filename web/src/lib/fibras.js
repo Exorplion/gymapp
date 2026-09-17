@@ -49,6 +49,16 @@ const TABLA = [
 
   ['back extension', { p: ['Dorsal bajo'], s: ['Glúteo'] }],
   ['hiperext', { p: ['Dorsal bajo'], s: ['Glúteo'] }],
+  // Reusa la porción 'Dorsal bajo' a propósito, igual que back extension e
+  // hiperextensión: es la única zona de la lámina (bodydata.js) que cubre el
+  // erector espinal. Inventar una porción 'Lumbar' propia dejaría al puente
+  // fibras<->bodydata sin dónde pintarla (ver
+  // __tests__/fibras-bodydata-bridge.test.js) — no se puede dibujar una
+  // geometría nueva en este cambio, así que se prefiere reusar lo que ya
+  // existe antes que fingir una precisión que la lámina no tiene.
+  ['good morning', { p: ['Dorsal bajo'], s: ['Femoral', 'Glúteo'] }],
+  ['reverse hyper', { p: ['Dorsal bajo'], s: ['Glúteo'] }],
+  ['rack pull', { p: ['Femoral', 'Glúteo'], s: ['Dorsal bajo', 'Trapecio'] }],
 
   // ---- bíceps (sólo los nombres compuestos): van ANTES que pecho a propósito ----
   // "Curl inclinado" tiene que ganarle al "inclinado" genérico de pecho de

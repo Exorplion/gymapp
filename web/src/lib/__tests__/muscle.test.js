@@ -20,7 +20,9 @@ const REALES = [
   ['SLDL', 'Pierna'],
   ['Hamstring curl', 'Pierna'],
   ['Standing calf raise', 'Gemelos'],
-  ['Back extension 45°', 'Espalda'],
+  // Reclasificado a Lumbares (ver bloque "Lumbares" más abajo): el erector
+  // espinal es el motor principal, no el dorsal.
+  ['Back extension 45°', 'Lumbares'],
   ['Aductor', 'Pierna'],
   ['Abductor', 'Pierna'],
   // Agregados el 2026-09-10: Enzo quiso cambiar un remo por Kelsos en vivo y
@@ -40,6 +42,11 @@ describe('catOf', () => {
     expect(catOf('Press militar máquina')).toBe('Hombro');
     expect(catOf('Curl martillo')).toBe('Bíceps');
     expect(catOf('Hip thrust')).toBe('Glúteo');
+  });
+
+  it('MUSCLE_CATS tiene los diez grupos, con Lumbares', () => {
+    expect(MUSCLE_CATS).toHaveLength(10);
+    expect(MUSCLE_CATS).toContain('Lumbares');
   });
 
   it('el orden de la tabla importa: lo específico gana a lo genérico', () => {
@@ -394,5 +401,38 @@ describe('catsDeSesion', () => {
   it('una entrada sin cat asignado se clasifica por nombre, como en cualquier otro lado', () => {
     const sess = { entries: [{ name: 'Press banca', sets: [{ w: 60, r: 8 }] }] };
     expect(catsDeSesion(sess)).toEqual(['Pecho']);
+  });
+});
+
+// Grupo "Lumbares": decisión de Enzo entre tres opciones — sólo entran los
+// ejercicios donde el erector espinal es el motor PRINCIPAL. Peso muerto
+// (Espalda) y peso muerto rumano/SLDL (Pierna) se quedan donde estaban a
+// propósito: ahí el motor es glúteo/isquio y el lumbar trabaja de sostén.
+// Moverlos habría bajado el volumen de Pierna y subido el de Lumbares con
+// números que no serían ciertos.
+describe('Lumbares', () => {
+  const TABLA = [
+    ['Peso muerto', 'Espalda'],
+    ['Peso muerto rumano', 'Pierna'],
+    ['SLDL', 'Pierna'],
+    ['Back extension', 'Lumbares'],
+    ['Hiperextensiones', 'Lumbares'],
+    ['Good morning', 'Lumbares'],
+    ['Rack pull', 'Espalda'],
+  ];
+
+  it.each(TABLA)('clasifica %s como %s', (nombre, esperado) => {
+    expect(catOf(nombre)).toBe(esperado);
+  });
+
+  it('sinónimos también clasifican', () => {
+    expect(catOf('Reverse hyper')).toBe('Lumbares');
+    expect(catOf('Buenos días con barra')).toBe('Lumbares');
+    expect(catOf('Hiperextensión lumbar')).toBe('Lumbares');
+  });
+
+  it('no le roba matches a Pierna: rumano/sldl/rdl siguen siendo Pierna', () => {
+    expect(catOf('Peso muerto rumano a una pierna')).toBe('Pierna');
+    expect(catOf('RDL con mancuernas')).toBe('Pierna');
   });
 });

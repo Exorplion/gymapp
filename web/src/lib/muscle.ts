@@ -13,8 +13,10 @@ import { S } from './state.js';
 import { dstr, norm } from './format.js';
 import { fibrasDe } from './fibras.js';
 
-/** Los nueve grupos, en el orden en que se muestran. */
-export const MUSCLE_CATS = ['Pecho', 'Espalda', 'Hombro', 'Bíceps', 'Tríceps', 'Pierna', 'Glúteo', 'Gemelos', 'Abs'];
+/** Los diez grupos, en el orden en que se muestran.
+    'Lumbares' va pegado a 'Espalda' por vecindad anatómica (erectores
+    espinales) — no al final por comodidad de lista. */
+export const MUSCLE_CATS = ['Pecho', 'Espalda', 'Lumbares', 'Hombro', 'Bíceps', 'Tríceps', 'Pierna', 'Glúteo', 'Gemelos', 'Abs'];
 
 /** Base de ejercicios para el selector de "Nuevo ejercicio" y para clasificar. */
 export const EXCATALOG = [
@@ -24,8 +26,13 @@ export const EXCATALOG = [
   { c: 'Espalda', n: 'Dominadas' }, { c: 'Espalda', n: 'Remo con barra' }, { c: 'Espalda', n: 'Jalón al pecho' },
   { c: 'Espalda', n: 'Remo en polea' }, { c: 'Espalda', n: 'Peso muerto' },
   { c: 'Espalda', n: 'Jalón ancho' }, { c: 'Espalda', n: 'Remo espalda alta' }, { c: 'Espalda', n: 'Remo neutro' },
-  { c: 'Espalda', n: 'Back extension' }, { c: 'Espalda', n: 'Kelso shrug' },
-  { c: 'Espalda', n: 'Encogimientos' },
+  { c: 'Espalda', n: 'Kelso shrug' },
+  { c: 'Espalda', n: 'Encogimientos' }, { c: 'Espalda', n: 'Rack pull' },
+  // Lumbares: sólo donde el erector espinal es el motor principal, no donde
+  // trabaja de sostén (peso muerto y rumano se quedan en Espalda/Pierna —
+  // decisión de Enzo, ver muscle.ts:96).
+  { c: 'Lumbares', n: 'Back extension' }, { c: 'Lumbares', n: 'Hiperextensiones' },
+  { c: 'Lumbares', n: 'Good morning' }, { c: 'Lumbares', n: 'Reverse hyper' },
   { c: 'Hombro', n: 'Press militar' }, { c: 'Hombro', n: 'Elevaciones laterales' }, { c: 'Hombro', n: 'Pájaros' }, { c: 'Hombro', n: 'Face pull' },
   { c: 'Bíceps', n: 'Curl con barra' }, { c: 'Bíceps', n: 'Curl martillo' }, { c: 'Bíceps', n: 'Curl inclinado' },
   { c: 'Bíceps', n: 'Curl predicador' },
@@ -54,7 +61,12 @@ const KEYWORDS: [string, string][] = [
   // espalda
   ['jalon', 'Espalda'], ['pulldown', 'Espalda'], ['dominada', 'Espalda'], ['pull up', 'Espalda'],
   ['remo', 'Espalda'], ['row', 'Espalda'], ['espalda', 'Espalda'], ['dorsal', 'Espalda'],
-  ['back extension', 'Espalda'], ['hiperext', 'Espalda'], ['lumbar', 'Espalda'],
+  ['rack pull', 'Espalda'],
+  // Lumbares (erector espinal como motor principal). "rumano"/"sldl"/"rdl" y
+  // "peso muerto" quedan afuera a propósito — ver EXCATALOG y el comentario
+  // de más arriba: ahí el motor es isquio/glúteo, no el lumbar.
+  ['back extension', 'Lumbares'], ['hiperext', 'Lumbares'], ['reverse hyper', 'Lumbares'],
+  ['good morning', 'Lumbares'], ['buenos dias', 'Lumbares'], ['lumbar', 'Lumbares'],
   // Encogimientos: trapecio. La app no tiene grupo "Trapecio" propio, y el
   // trapecio medio/inferior es espalda alta — no hombro. El Kelso shrug
   // (encogimiento escapular tumbado/inclinado, en posición de remo) es

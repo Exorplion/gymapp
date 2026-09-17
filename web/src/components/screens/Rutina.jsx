@@ -32,29 +32,16 @@ import { coberturaDe } from '../../lib/coverage.js';
 import { gymEquipFor } from '../../lib/gyms.js';
 import { flipSort } from '../../lib/drag.js';
 import {
-  routineStats, routineName,
+  routineStats, routineName, renameRoutine,
   enterEditMode, exitEditMode, toggleSlotOpen, addWorkoutDay, removeWorkoutDay, weekdayProjection,
   deleteExercise, moveEx, saveSlot, deloadSuggestion, deloadActivo, applyDeload, endDeload,
 } from '../../lib/rutina-logic.js';
-import { toast } from '../../lib/toast.js';
 import { fmtD } from '../../lib/format.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
 import MuscleFibers from '../MuscleFibers.jsx';
 import { ArrowDown, ArrowUp, Info, Pencil, X } from '../Icon.jsx';
 import { RutinaVacia } from '../Illustration.jsx';
-
-/** Puerto del guard de sheetLibSave() (index.html): "No hay rutina que
-    guardar" si S.routine no tiene ningún turno con ejercicios. En el original
-    este chequeo vive DENTRO de sheetLibSave, así que es el único punto de
-    entrada al formulario de guardado — acá el editor tiene un segundo punto
-    de entrada (el botón "Guardar como…" de la barra de edición, además del
-    de Library.jsx en modo lista), así que el guard se repite acá para que
-    ningún camino hacia el sheet 'library'/{mode:'save'} se lo salte. */
-function openLibSaveSheet() {
-  if (!routineStats().workoutCount) { toast('No hay rutina que guardar'); return; }
-  openSheet('library', { mode: 'save' });
-}
 
 /** Envuelve moveEx (↑/↓) con la animación FLIP del original (flipSort mide
     el DOM antes/después de la mutación). moveEx() en sí NO llama bump() —
@@ -194,11 +181,17 @@ function RutinaView() {
         </div>
       )}
 
+      {/* Enzo: "en la pantalla editar rutina debería aparecer el nombre de la
+          rutina y al lado un lápiz por si el usuario quiere editar el
+          nombre, sólo allí funcionaría eso" — a diferencia de "Guardar
+          como…" (que se sacó de acá, ver abajo), esto NO crea una copia en
+          S.lib: renameRoutine() sólo pisa S.cfg.routineName. */}
+      {editing && <RoutineNameHeader />}
+
       {editing && <WeekProjection dow={dow} />}
 
       <div className="btn-row">
         <button type="button" className="btn" onClick={toggleEdit}>{editing ? '‹ Listo' : '✎ Editar rutina'}</button>
-        {editing && <button type="button" className="btn glass" onClick={openLibSaveSheet}>💾 Guardar como…</button>}
       </div>
 
       {/* Antes había CUATRO puertas hacia una rutina ("Ver rutinas y
@@ -206,7 +199,13 @@ function RutinaView() {
           como…" dentro del editor), y las tres primeras sólo aparecían con la
           rutina vacía. Ahora hay UNA sola puerta, siempre visible —no sólo
           cuando no hay rutina— y en el mismo lugar de siempre: justo arriba
-          de "Mis gimnasios", mismo estilo de nav-card. */}
+          de "Mis gimnasios", mismo estilo de nav-card. "Guardar como…" (una
+          COPIA en "Mis rutinas") sigue existiendo, pero sólo desde ahí
+          (Library.jsx) — editar la rutina activa ya persiste sola turno por
+          turno, así que dentro del editor no hay nada que "guardar": ese
+          botón sólo generaba una entrada confusa y reemplazable en la
+          biblioteca (Enzo: "no tiene mucho sentido, si es una rutina que ya
+          está definida sólo debería ser guardar y ya está"). */}
       {!editing && (
         <button type="button" className="nav-card" onClick={() => openSheet('library')}>
           <span className="nav-card-ico" aria-hidden="true">📚</span>
@@ -465,6 +464,52 @@ function WeekProjection({ dow }) {
         })}
       </div>
     </>
+  );
+}
+
+/** Nombre de la RUTINA (no de un turno), visible sólo en edición, con un
+    lápiz al lado que la vuelve editable ahí mismo — igual mecanismo que
+    SlotNameInput (estado local, persiste al perder foco o con Enter), pero
+    tocando renameRoutine() en vez de saveSlot(): esto pisa S.cfg.routineName
+    y nada más, nunca crea una entrada en S.lib. */
+function RoutineNameHeader() {
+  const [editingName, setEditingName] = useState(false);
+  const [name, setName] = useState(routineName());
+  const inputRef = useRef(null);
+  useEffect(() => { if (!editingName) setName(routineName()); }, [editingName]);
+  useEffect(() => { if (editingName) inputRef.current?.focus(); }, [editingName]);
+
+  function commit() {
+    setEditingName(false);
+    const trimmed = name.trim();
+    if (trimmed && trimmed !== routineName()) renameRoutine(trimmed);
+  }
+
+  return (
+    <div className="routine-name-head">
+      {editingName ? (
+        <input
+          ref={inputRef}
+          className="routine-name-input"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onBlur={commit}
+          onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+          placeholder="Nombre de la rutina"
+          aria-label="Nombre de la rutina"
+        />
+      ) : (
+        <span className="routine-name-txt">{routineName()}</span>
+      )}
+      <button
+        type="button"
+        className="mini"
+        aria-label="Editar nombre de la rutina"
+        onClick={() => setEditingName(v => !v)}
+      >
+        <Pencil />
+      </button>
+    </div>
   );
 }
 
