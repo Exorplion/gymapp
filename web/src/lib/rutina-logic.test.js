@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from './state.js';
-import { ensureSlot, reorderSeq, insertWorkout, insertRest, removeSlot, routineStats, routineName, undoRutina, applyDeload, endDeload, deloadActivo, weekdayProjection } from './rutina-logic.js';
+import { ensureSlot, reorderSeq, insertWorkout, insertRest, removeSlot, routineStats, routineName, undoRutina, applyDeload, endDeload, deloadActivo, weekdayProjection, summarizeSlots, slotsFrequencyText } from './rutina-logic.js';
 
 vi.mock('./db.js', () => ({ idb: { put: vi.fn(), clear: vi.fn(), del: vi.fn(), all: vi.fn() } }));
 
@@ -72,6 +72,51 @@ describe('rutina-logic — secuencia', () => {
   });
 });
 
+
+describe('summarizeSlots / slotsFrequencyText — resumen puro para Library.jsx', () => {
+  // Library.jsx muestra "la que estás usando", "las que creaste vos" y las
+  // plantillas con LA MISMA data (Enzo: "muestra PPL dice los días y
+  // frecuencia y abajo está anterior posterior con la misma data") — estas
+  // funciones son el único cálculo de ese resumen, así que las tres
+  // secciones no se pueden desincronizar entre sí.
+  it('cuenta turnos workout/rest y totales de ejercicios/series sobre CUALQUIER secuencia, no sólo S.routine', () => {
+    const slots = [
+      { type: 'workout', name: 'A', exercises: [{ id: 'e1', name: 'Press', sets: 4 }] },
+      { type: 'rest' },
+      { type: 'workout', name: 'B', exercises: [{ id: 'e2', name: 'Remo', sets: 3 }, { id: 'e3', name: 'Curl', sets: 3 }] },
+    ];
+    const st = summarizeSlots(slots);
+    expect(st).toMatchObject({ workoutCount: 2, restCount: 1, ex: 3, sets: 10, total: 3 });
+  });
+
+  it('un turno workout sin ejercicios no cuenta como entrenamiento', () => {
+    const st = summarizeSlots([{ type: 'workout', name: 'Vacío', exercises: [] }]);
+    expect(st.workoutCount).toBe(0);
+  });
+
+  it('secuencia vacía o undefined no explota', () => {
+    expect(summarizeSlots([]).total).toBe(0);
+    expect(summarizeSlots(undefined).total).toBe(0);
+  });
+
+  it('slotsFrequencyText dice cuántos turnos son entrenamiento y cuántos descanso, nunca "días/semana" (la app no sabe qué día real vas a entrenar cada turno)', () => {
+    const slots = [
+      { type: 'workout', name: 'A', exercises: [{ id: 'e1', name: 'Press', sets: 4 }] },
+      { type: 'rest' },
+      { type: 'workout', name: 'B', exercises: [{ id: 'e2', name: 'Remo', sets: 3 }] },
+    ];
+    expect(slotsFrequencyText(slots)).toBe('2 entrenamientos y 1 descanso por ciclo');
+  });
+
+  it('sin descansos, lo dice explícito en vez de omitirlo', () => {
+    const slots = [{ type: 'workout', name: 'A', exercises: [{ id: 'e1', name: 'Press', sets: 4 }] }];
+    expect(slotsFrequencyText(slots)).toBe('1 entrenamiento seguido, sin descanso fijo');
+  });
+
+  it('sin turnos, dice que no hay turnos en vez de una frecuencia inventada', () => {
+    expect(slotsFrequencyText([])).toBe('Sin turnos');
+  });
+});
 
 describe('descarga (deload) — aplicar y terminar', () => {
   beforeEach(() => {

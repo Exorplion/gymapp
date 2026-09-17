@@ -24,14 +24,14 @@ import { progresion, progresionTexto } from '../lib/progression.js';
 import {
   ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
   targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, dropSet, reemplazaA,
-  isUnilateral, toggleUnilateral, setSide,
+  isUnilateral, toggleUnilateral, setSide, seriesCompletas,
 } from '../lib/session.js';
 import { sideImbalance } from '../lib/symmetry.js';
 import { shrinkImageBlob } from '../lib/photo.js';
 import { toast } from '../lib/toast.js';
 import { jumpToSlide, scrollToSlideEl, slideCenterDist } from '../lib/carousel.js';
-import { staggerRevealOnce, squashStretch, impactBurst } from '../lib/motion.js';
-import { relatedHistory, equipLabel } from '../lib/equip.js';
+import { staggerRevealOnce, squashStretch, impactBurst, bloomOpen } from '../lib/motion.js';
+import { relatedHistory, equipLabel, puedeSerUnilateral } from '../lib/equip.js';
 import { getPhoto, savePhoto } from '../lib/gyms.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
@@ -284,17 +284,33 @@ function ExerciseSlide({ m, wd, started }) {
   const curSet = Math.min(done.length, target - 1);
   const curRir = scheme[curSet];
   const info = exInfo(ex.name);
-  // Sin historial propio: primera vez en ESTE equipo. Mostramos de dónde venís
-  // en las otras variantes, sin traducir el número (ver relatedHistory).
-  const related = last ? [] : relatedHistory(ex, S.sessions);
   // "Un lado por vez": lo que dice la rutina, salvo que la máquina de HOY te
   // haya obligado a cambiarlo (ver isUnilateral en session.js).
   const uni = isUnilateral(ex);
+  // D1/D6: lo que Enzo cuenta en el gimnasio es la SERIE, no el lado — la
+  // fila sigue siendo por lado (targetSets ya la duplicó), pero toda cifra
+  // que se le muestra a Enzo tiene que pasar por seriesCompletas() antes de
+  // pintarse. serieAMedias marca la fila impar: hiciste un lado, falta el
+  // otro — v.side ya quedó apuntando al lado pendiente (saveSet lo alterna).
+  const serieObjetivo = seriesCompletas(target, uni);
+  const serieHechas = seriesCompletas(done.length, uni);
+  const serieAMedias = uni && done.length % 2 === 1;
+  const puedeUni = puedeSerUnilateral(ex);
+  // Sin historial propio: primera vez en ESTE equipo. Mostramos de dónde venís
+  // en las otras variantes, sin traducir el número (ver relatedHistory).
+  const related = last ? [] : relatedHistory(ex, S.sessions);
+  // D3: si es unilateral y nunca se registró bajo esa clave, puede ser que
+  // SÍ haya historial bilateral del mismo ejercicio (acabás de prender el
+  // interruptor). No es el mismo dato — 40kg bilateral y 25kg unilateral no
+  // son comparables — así que sólo sirve para decir "tenés algo, pero no
+  // esto", nunca para mostrarlo como si fuera la carga unilateral.
+  const lastBilateral = (uni && !last) ? lastDataFor({ ...ex, unilateral: false }) : null;
   // Aviso raro, no diario (mismo criterio que lowMicros): sólo si el
   // desbalance izq/der es un patrón sostenido en varias sesiones.
   const imbalance = uni ? sideImbalance(ex) : null;
 
   const altRef = useRef(null), pwRef = useRef(null);
+  const moreBodyRef = useRef(null);
 
   // altRef/pwRef siguen sin controlar (refs, no state) por la misma razón de
   // siempre: son texto derivado que cambia con cada serie/peso y no vale la
@@ -328,17 +344,35 @@ function ExerciseSlide({ m, wd, started }) {
             saltaba de "1/3" a "2/3" sin ningún acuse de recibo propio: el
             chip nuevo hacía pop, el riel lateral se llenaba, pero el número
             que en verdad resume el progreso quedaba mudo. */}
-        <div key={done.length} className={`ex-done-count ${full ? 'full' : ''}`}>{done.length}/{target}</div>
+        <div key={done.length} className={`ex-done-count ${full ? 'full' : ''}`}>
+          {serieHechas}{serieAMedias ? '½' : ''}/{serieObjetivo}
+        </div>
         <ExIcon icono={iconOf(ex)} size={38} className="ex-card-icon" />
-        <div className="exname">
-          {ex.name}{' '}
-          {info && (
+        <div className="exname-row">
+          <div className="exname">
+            {ex.name}{uni && <span className="txt-blue"> (unilateral)</span>}{' '}
+            {info && (
+              <button
+                type="button"
+                className="mini info inline"
+                onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
+              >
+                <Info />
+              </button>
+            )}
+          </div>
+          {/* A la vista, al lado del nombre — no escondido en "opciones de
+              esta serie" (Enzo lo pidió explícito). Sólo si tiene sentido
+              ofrecerlo: en sentadilla o peso muerto no hay "lado" que armar
+              (puedeSerUnilateral, D6). */}
+          {puedeUni && (
             <button
               type="button"
-              className="mini info inline"
-              onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
+              className={`chip uni-toggle ${uni ? 'on' : ''}`}
+              aria-pressed={uni}
+              onClick={() => toggleUnilateral(ex.id)}
             >
-              <Info />
+              {uni ? '✓ Un lado por vez' : 'Un lado por vez'}
             </button>
           )}
         </div>
@@ -348,16 +382,28 @@ function ExerciseSlide({ m, wd, started }) {
           <div className="ex-envez">en vez de {reemplazaA(ex.id)}</div>
         )}
         <div className="extarget">
-          Objetivo {target} × {ex.reps}
-          {target > ex.sets && <span className="txt-blue"> (+{target - ex.sets} hoy)</span>}
+          Objetivo {serieObjetivo} × {ex.reps}
+          {serieObjetivo > ex.sets && <span className="txt-blue"> (+{serieObjetivo - ex.sets} hoy)</span>}
           {open && (
-            <> · serie {done.length + 1} → {curRir === 0 ? <b className="txt-blue">al fallo</b> : `RIR ${curRir}`}</>
+            <>
+              {' '}· serie {serieHechas + 1} → {curRir === 0 ? <b className="txt-blue">al fallo</b> : `RIR ${curRir}`}
+              {serieAMedias && <> · falta {v.side === 'left' ? 'izquierda' : 'derecha'}</>}
+            </>
           )}
         </div>
         {last && (
           <div className="exlast">
             Última vez: {last.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg
             {uni && ' por lado'}
+          </div>
+        )}
+        {/* D3: la ausencia de dato no es un cero. Si es unilateral y nunca se
+            registró bajo esa clave, se dice — nunca se disfraza el número
+            bilateral (que es otra carga, no traducible 1 a 1) de sugerido
+            unilateral. */}
+        {!last && uni && (
+          <div className="exlast text-mut">
+            Sin registro unilateral todavía{lastBilateral ? ' (tenés historial bilateral de este ejercicio, pero es una carga distinta)' : ''}.
           </div>
         )}
         {/* Doble progresión: la instrucción concreta de hoy. Va ANTES del
@@ -372,7 +418,10 @@ function ExerciseSlide({ m, wd, started }) {
           </div>
         )}
         {(() => {
-          const base = suggestedWeight(ex.name);
+          // D4: el 1RM estimado también se parte por lateralidad — sin el
+          // sufijo, un unilateral recién activado heredaría el sugerido
+          // bilateral (otra carga) disfrazado de dato propio.
+          const base = suggestedWeight(uni ? `${ex.name} (unilateral)` : ex.name);
           if (!base || !open || prog) return null;
           // El ajuste del chequeo de 3 preguntas (Plan Fierro · Fase 3) se
           // aplica acá — S.draft.precheckAdjust queda en 0 si no se
@@ -385,7 +434,7 @@ function ExerciseSlide({ m, wd, started }) {
             </div>
           );
         })()}
-        {!last && equipLabel(ex) && (
+        {!last && !lastBilateral && equipLabel(ex) && (
           <div className="ex-first">
             <div className="t">Primera vez en {equipLabel(ex)}</div>
             {related.length > 0 && (
@@ -400,13 +449,13 @@ function ExerciseSlide({ m, wd, started }) {
             </div>
           </div>
         )}
-        {full && <div className="ex-state ok">✓ Completo · {done.length} de {target} series</div>}
-        {waiting && <div className="ex-state">En espera · {done.length ? `${done.length}/${target} series` : 'te toca después'}</div>}
+        {full && <div className="ex-state ok">✓ Completo · {serieObjetivo} de {serieObjetivo} series</div>}
+        {waiting && <div className="ex-state">En espera · {serieHechas ? `${serieHechas}${serieAMedias ? '½' : ''}/${serieObjetivo} series` : 'te toca después'}</div>}
         {/* Saltado: la tarjeta se queda donde está, apagada. Restablecer la
             devuelve exactamente a su lugar porque saltar no toca draft.order. */}
         {skipped && (
           <>
-            <div className="ex-state skip"><Skip size={13} /> Saltado{done.length ? ` · ${done.length} serie${done.length === 1 ? '' : 's'} registrada${done.length === 1 ? '' : 's'}` : ''}</div>
+            <div className="ex-state skip"><Skip size={13} /> Saltado{serieHechas ? ` · ${serieHechas}${serieAMedias ? '½' : ''} serie${serieHechas === 1 && !serieAMedias ? '' : 's'} registrada${serieHechas === 1 && !serieAMedias ? '' : 's'}` : ''}</div>
             <button type="button" className="btn sm ghost" style={{ marginTop: 12 }} onClick={() => unskipExercise(ex.id)}>
               ↺ Restablecer
             </button>
@@ -503,7 +552,8 @@ function ExerciseSlide({ m, wd, started }) {
                 saveSet(ex.id);
               }}
             >
-              ✓ Terminé la serie {done.length + 1} de {target}
+              ✓ Terminé la serie {serieHechas + 1} de {serieObjetivo}
+              {uni && ` · lado ${v.side === 'left' ? 'izquierdo' : 'derecho'}`}
             </button>
             {/* Todo lo que NO es peso, reps y confirmar vive acá abajo,
                 cerrado. El core loop de una serie es "elegí el peso, elegí
@@ -511,26 +561,23 @@ function ExerciseSlide({ m, wd, started }) {
                 espacio es peaje que se paga entre 15 y 30 veces por sesión,
                 con el pulso a 150 y el teléfono en una mano. Nada se
                 elimina —el RPE destraba ACWR, la foto resuelve "cuál de las
-                tres máquinas era", el lado alterna solo— pero deja de
-                pedirse por adelantado: se abre cuando lo buscás.
+                tres máquinas era"— pero deja de pedirse por adelantado: se
+                abre cuando lo buscás. El toggle "un lado por vez" YA NO vive
+                acá (Enzo: tiene que estar a la vista) — subió junto al
+                nombre del ejercicio.
 
                 <details> nativo y no un estado de React a propósito: viene
                 con el teclado, el foco y el anuncio de abierto/cerrado ya
-                resueltos, que es justo el bloque B de la Tarea 2. */}
-            <details className="ex-more">
-              <summary>Más opciones de esta serie</summary>
-              <div className="ex-more-body">
-                {/* Un lado por vez: lo que dice la rutina, con un botón para
-                    anularlo sólo hoy — la máquina que te tocó puede obligarte
-                    a hacerlo distinto de cómo lo planeaste. */}
-                <button
-                  type="button"
-                  className={`chip ${uni ? 'on' : ''}`}
-                  aria-pressed={uni}
-                  onClick={() => toggleUnilateral(ex.id)}
-                >
-                  {uni ? '✓ Un lado por vez' : 'Un lado por vez'}
-                </button>
+                resueltos, que es justo el bloque B de la Tarea 2. Se estiliza
+                como el resto de la app (chip/card) en vez de dejarlo con la
+                pinta nativa del navegador — la queja concreta de Enzo era
+                que ese control desentonaba con todo lo demás. */}
+            <details
+              className="ex-more"
+              onToggle={e => { if (e.currentTarget.open) bloomOpen(moreBodyRef.current); }}
+            >
+              <summary className="chip ex-more-summary">Más opciones de esta serie</summary>
+              <div className="ex-more-body" ref={moreBodyRef}>
                 {/* key=done.length: saveSet() resetea v.rpe a null después de
                     cada serie, y el estado local de RpeSelector no puede
                     enterarse de una mutación sobre `v`. Remontarlo por serie

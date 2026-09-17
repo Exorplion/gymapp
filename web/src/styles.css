@@ -3005,3 +3005,77 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    con alto definido para poder estirarse; sin display:flex acá colapsaría
    a alto cero. */
 .sc-cuerpo{display:flex;flex-direction:column;width:220px;height:280px}
+
+/* MuscleFibers: micro-silueta de fibras al lado del encabezado de grupo en
+   Entreno. Sin texto por defecto (Enzo: "eso agrega ruido visual"); el
+   nombre de las porciones sólo aparece en .mfibras-panel, al tocar.
+   Los segmentos NO trabajados usan --line (ya neutro en claro y oscuro);
+   los trabajados usan --blue2, el mismo azul de acento que el resto de la
+   app (ring de Inicio, focus-visible, etc.) — no un color nuevo. */
+.mfibras-wrap{position:relative;display:inline-flex;vertical-align:middle}
+.mfibras-btn{
+  display:flex;align-items:center;justify-content:center;
+  padding:2px;background:none;border:none;cursor:pointer;line-height:0;
+  border-radius:var(--r-sm);
+}
+.mfibras-btn:active{transform:scale(.92)}
+.mfibras-off{fill:var(--line)}
+.mfibras-on{fill:var(--blue2)}
+.mfibras-panel{
+  position:absolute;top:calc(100% + 6px);left:0;z-index:5;white-space:nowrap;
+  background:var(--card2);border:1px solid var(--line2);border-radius:var(--r-sm);
+  padding:4px 8px;font-size:var(--t-sm);color:var(--txt);box-shadow:0 4px 16px rgba(0,0,0,.3);
+}
+@media (prefers-reduced-motion:reduce){
+  .mfibras-btn:active{transform:none}
+}
+
+/* ---- Unilateral: interruptor a la vista + botón "más opciones" rediseñado
+   (Tareas 1 y 4 del handoff 2026-09-17) ---------------------------------- */
+
+/* El toggle "Un lado por vez" vivía escondido dentro de <details> — Enzo
+   pidió que esté a la vista, junto al nombre. .exname-row lo pone en la
+   misma fila, con el nombre absorbiendo el espacio libre y el chip
+   pegado a la derecha (mismo patrón que .chip-scroll: flex + gap, sin
+   medidas nuevas inventadas). */
+.exname-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.exname-row .exname{flex:1;min-width:0}
+.uni-toggle{flex:none;font-size:var(--t-micro);padding:6px 10px}
+
+/* El <details> nativo sin estilar era, según Enzo, "el único control que no
+   sigue el lenguaje visual del resto" — se lo alinea con .chip/.card: el
+   summary pasa a ser un chip real (mismo componente que el resto de la
+   app, no un look nuevo) y el cuerpo abierto se lee como una mini-card
+   colgando debajo, no como texto suelto. Sigue siendo <details> por
+   accesibilidad (teclado + aria-expanded + anuncio de abierto/cerrado
+   gratis); sólo cambia la piel. */
+.ex-more>summary.ex-more-summary{
+  width:100%;justify-content:center;
+  background:var(--card2);border:1px solid var(--line2);
+}
+.ex-more>summary.ex-more-summary::after{margin-left:2px}
+.ex-more[open]>summary.ex-more-summary{
+  border-color:var(--blue2);color:var(--blue2);
+  border-bottom-left-radius:0;border-bottom-right-radius:0;
+}
+.ex-more-body{
+  background:var(--card2);border:1px solid var(--line2);border-top:none;
+  border-radius:0 0 var(--r-md) var(--r-md);
+  padding:var(--s3);margin-top:-1px;
+}
+.ex-more-body>.gym-photo,
+.ex-more-body>.ex-actions{margin-top:var(--s3)}
+
+/* Reestructuración de Entreno (handoff 2026-09-17, punto 2): nombre de turno
+   editable IN SITU dentro de la misma tarjeta — reemplaza al sheet
+   SlotEdit.jsx, que existía sólo para escribir este campo. Mismo tamaño y
+   tipografía que .day-name (la etiqueta estática que reemplaza) para que
+   tocar el lápiz no salte de tamaño el texto de la tarjeta. */
+.day-name-input{
+  font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-xl);
+  display:block;width:100%;line-height:1.15;
+  background:none;border:0;border-bottom:1px dashed var(--line2);
+  color:var(--txt);padding:0 0 2px;
+}
+.day-name-input:focus{outline:none;border-bottom-color:var(--blue2)}
+.day-name-input::placeholder{color:var(--mut2);font-weight:500}

@@ -21,7 +21,6 @@ import Inicio from './components/screens/Inicio.jsx';
 import Hoy, { SessStartInfo } from './components/screens/Hoy.jsx';
 import Nutricion from './components/screens/Nutricion.jsx';
 import Progreso from './components/screens/Progreso.jsx';
-import SlotEdit from './components/sheets/SlotEdit.jsx';
 import DayDrop from './components/sheets/DayDrop.jsx';
 import CopyExercises from './components/sheets/CopyExercises.jsx';
 import SessionExercise from './components/sheets/SessionExercise.jsx';
@@ -80,7 +79,6 @@ function ConfirmSheet({ title, body, confirmLabel, onConfirm, onCancel }) {
 function SheetContent({ sheet }) {
   if (!sheet) return null;
   switch (sheet.type) {
-    case 'slot-edit': return <SlotEdit {...sheet.props} />;
     case 'day-drop': return <DayDrop {...sheet.props} />;
     case 'copy-exs': return <CopyExercises {...sheet.props} />;
     case 'ex-swap': return <SessionExercise {...sheet.props} />;
@@ -169,7 +167,27 @@ export default function App() {
      se calcule contra el valor viejo antes de perderlo. */
   const [saliente, setSaliente] = useState(null); // {tab, dir} | null
   const salienteTimer = useRef(null);
-  useEffect(() => {
+  /* Este efecto tiene que ser useLayoutEffect, no useEffect: con useEffect
+     corre DESPUÉS de que el navegador ya pintó el commit donde cambió
+     store.tab. En ESE pintado, la pantalla entrante ya está montada con
+     "view enter dir-X" pero TODAVÍA sin "esperando" (listoParaAnimar sigue
+     en true, como quedó de la transición anterior) y sin su compañera
+     saliente — así que la animación pushIn arranca sola, en ese cuadro.
+     Recién en el commit siguiente aparece saliente y, un layout-effect
+     después, se agrega "esperando" y congela la animación a mitad de
+     camino: ese frenazo es el "parpadeo" que reportó Enzo.
+     Con useLayoutEffect, setSaliente corre ANTES de que el navegador pinte
+     el commit del cambio de pestaña, así que React alcanza a re-renderizar
+     con la saliente ya montada y "esperando" ya puesto (ver el
+     useLayoutEffect de abajo, encadenado por el cambio de `saliente`) en el
+     mismo ciclo, sin que exista un cuadro intermedio pintado con la
+     entrante suelta. Verificado con un MutationObserver + getAnimations()
+     sobre .view.enter (CPU frenada 6x y sin frenar, varias corridas en las
+     dos direcciones): en la primera mutación del DOM tras el cambio de
+     pestaña, .view.leave y la clase "esperando" en .view.enter aparecen
+     siempre juntos — nunca se observó un commit con la entrante montada
+     sola y sin "esperando". */
+  useLayoutEffect(() => {
     if (store.tab === tabPrevio.current) return;
     if (lastTabChangeUsedVT) { tabPrevio.current = store.tab; return; }
     /* Si el cambio vino de un deslizamiento con el dedo, el recorrido YA se

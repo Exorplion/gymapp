@@ -13,7 +13,14 @@ export const S = {
   sessions: [],         // desc por start
   meals: [], foods: [], body: [],
   cfg: {
-    unit: 'kg', rest: 90, goals: { kcal: 2600, p: 160, c: 280, f: 80 }, goalsAuto: false,
+    unit: 'kg', rest: 90,
+    // Descanso entre LADOS de un mismo ejercicio unilateral — no es el mismo
+    // descanso que entre series completas. Enzo: "descanso entre 15-20
+    // segundos entre brazo, no es una serie completa". 20s por defecto;
+    // `cfg.rest` (90s) sigue siendo el que corresponde al cerrar la serie
+    // (los dos lados hechos). Ver saveSet() en session.js.
+    restSide: 20,
+    goals: { kcal: 2600, p: 160, c: 280, f: 80 }, goalsAuto: false,
     // Descarga en curso: { desde, grupos, antes } o null. Guarda las series
     // que cada ejercicio tenía ANTES para poder devolverlas exactas — ver
     // applyDeload/endDeload en rutina-logic.js.

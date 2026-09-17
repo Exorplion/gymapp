@@ -143,14 +143,35 @@ function muscleVolume7For(weeksAgo) {
 /* ================= RUTINA ================= */
 /* Dos modos: "view" contesta qué rutina estás usando y cómo es tu semana de un
    vistazo; "edit" es el editor día por día de siempre. */
-export function routineStats() {
-  const workouts = S.routine.filter(s => s.type === 'workout' && s.exercises?.length);
-  const rest = S.routine.filter(s => s.type === 'rest');
+/** Resumen puro de una secuencia de turnos (workout/rest) — no lee S.routine
+    directo para que Library.jsx pueda mostrar la MISMA data (turnos,
+    frecuencia) de "la que estás usando", "las que creaste vos" y las
+    plantillas, sin tres cálculos distintos que se puedan desincronizar
+    (Enzo: "muestra PPL dice los días y frecuencia y abajo está anterior
+    posterior con la misma data"). */
+export function summarizeSlots(slots) {
+  const arr = slots || [];
+  const workouts = arr.filter(s => s.type === 'workout' && s.exercises?.length);
+  const rest = arr.filter(s => s.type === 'rest');
   const ex = workouts.reduce((a, s) => a + s.exercises.length, 0);
   const sets = workouts.reduce((a, s) => a + s.exercises.reduce((b, e) => b + e.sets, 0), 0);
-  return { workouts, workoutCount: workouts.length, restCount: rest.length, ex, sets };
+  return { workouts, workoutCount: workouts.length, restCount: rest.length, ex, sets, total: arr.length };
 }
+export function routineStats() { return summarizeSlots(S.routine); }
 export function routineName() { return S.cfg.routineName || (routineStats().workoutCount ? 'Rutina personalizada' : 'Sin rutina'); }
+/** Texto de frecuencia para una secuencia CUALQUIERA (la activa, una de
+    S.lib, o una plantilla ya convertida a turnos). No dice "N días/semana"
+    porque la app no sabe qué día real vas a entrenar cada turno (la
+    secuencia avanza por sesión completada, no por calendario — ver
+    weekdayProjection) — decir eso sería estimar disfrazado de hecho. Lo que
+    sí sabemos con certeza es cuántos turnos hay y cuántos son descanso, así
+    que es eso lo que se dice. */
+export function slotsFrequencyText(slots) {
+  const { workoutCount, restCount, total } = summarizeSlots(slots);
+  if (!total) return 'Sin turnos';
+  if (!restCount) return `${workoutCount} entrenamiento${workoutCount === 1 ? '' : 's'} seguido${workoutCount === 1 ? '' : 's'}, sin descanso fijo`;
+  return `${workoutCount} entrenamiento${workoutCount === 1 ? '' : 's'} y ${restCount} descanso${restCount === 1 ? '' : 's'} por ciclo`;
+}
 /* snapshot del split actual, sin ids: al aplicarlo se generan nuevos.
 
    Conserva equip/machine/illus. Antes guardaba sólo {name,sets,reps}, así que
@@ -545,6 +566,9 @@ export function weekdayProjection(hoy = new Date()) {
   });
 }
 
+/** Renombra un turno. Antes abría un sheet aparte (SlotEdit.jsx) sólo para
+    esto; ahora se llama desde el input inline de la tarjeta (Rutina.jsx), así
+    que ya no cierra ningún sheet — no hay ninguno abierto para cerrar. */
 export async function saveSlot(index, { name }) {
   const trimmed = (name || '').trim();
   // Un descanso al que le ponés nombre pasa a ser un turno de entrenamiento:
@@ -556,7 +580,6 @@ export async function saveSlot(index, { name }) {
     ensureSlot(index).name = trimmed;
   }
   await persistSlot(index);
-  closeSheet();
   bump();
 }
 
