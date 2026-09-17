@@ -1,6 +1,44 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-17 (unilateral + Entreno)
+**Última actualización:** 2026-09-17 (onboarding + anatomía real)
+
+---
+
+## SESIÓN 2026-09-17 (tercera parte) — PR #105, mergeado
+
+`main` = `a49d39b`. **566 tests.**
+
+### Lo que se hizo
+
+1. **Alta de ejercicio = onboarding de 4 pasos** dentro del MISMO sheet
+   (① nombre ② cómo se hace ③ confirmar, con el grupo ya detectado y la
+   micro-silueta ④ agregado, con "agregar otro" y la tanda acumulada).
+   Lógica pura en `web/src/lib/exercise-wizard.js`, testeada aparte del
+   markup. La EDICIÓN sigue siendo el formulario directo de siempre.
+2. **`MuscleFibers` usa las curvas reales** de `bodydata.js`, no rectángulos.
+3. **`Silhouette` acepta `porciones`** (opt-in, default = como siempre).
+4. `LICENSES/MuscleMap-MIT.txt`, test del puente fibras↔bodydata, y
+   `puedeSerUnilateral()` mirando el equipo.
+
+### Las dos cosas que conviene no volver a aprender
+
+- **Los sheets no apilan, y no hace falta que lo hagan.** Hay un solo
+  `S.sheet` (`state.js:217`). Para un flujo de varios pasos, el patrón que
+  funcionó es: el panel queda abierto y su CONTENIDO avanza por pasos. No
+  construir una pila de sheets.
+- **`saveExercise()` ahora acepta `{mantenerSheet}`** (`rutina-logic.js`).
+  Existe porque cerraba el sheet SIEMPRE, y la primera versión del asistente
+  tenía que cerrar y reabrir el panel en cada ejercicio para sobrevivir a
+  eso: funcionaba, no parpadeaba, pero reconstruía todo el DOM del
+  formulario una vez por ejercicio. **Si un flujo nuevo necesita guardar sin
+  salir, usar la opción — no reabrir el sheet.**
+- **La lámina anatómica representa las porciones de DOS formas**, y es la
+  trampa que costó una segunda vuelta: `base + parches` con `parche:true`
+  encima (Pecho, Hombro, Pierna, Abs) y **zonas HERMANAS sin base**
+  (Espalda: Trapecio/Dorsal alto/Dorsal bajo, tres zonas propias, ninguna
+  parche). Quien toque `MuscleFibers` tiene que soportar las dos, o pierde
+  grupos enteros en silencio. Y en el caso hermanas, las no entrenadas se
+  dibujan APAGADAS: si no, el músculo se ve mutilado.
 
 ---
 
@@ -39,31 +77,25 @@ Cinco pedidos de Enzo, todos verificados en Chrome con el build de producción
 
 ### Pendientes
 
-1. **Onboarding continuo de "nuevo ejercicio"** — pedido por Enzo, todavía
-   **sin diseñar**. Quiere: confirmar → ver qué agregó → seguir agregando,
-   con animaciones. **Obstáculo real**: el sistema de sheets NO apila — hay
-   un solo `S.sheet` y abrir uno reemplaza al anterior (`state.js:217`). Por
-   eso hoy cada ejercicio creado cierra el panel. Hay que construir el
-   encadenado antes que la estética.
-2. **Modelo anatómico** — tres opciones propuestas, Enzo no decidió:
-   (a) que `MuscleFibers` use las curvas reales del pecho (`upperChest`
-   /"Clavicular" y `lowerChest`/"Costal" YA existen en `bodydata.js:178-185`)
-   en vez de las franjas abstractas; (b) que `Silhouette.jsx:92` deje de
-   filtrar los parches, así Inicio puede encender porciones; (c) agregar el
-   archivo de licencia de **MuscleMap (MIT, © Melih Colpan)** — hoy sólo hay
-   un comentario de atribución en `bodydata.js:1-17` y la MIT exige incluir
-   el texto al redistribuir, cosa que hacemos al publicar.
-   **Una división en tres (clavicular/esternal/abdominal) NO es posible sin
-   dibujar**: MuscleMap trae dos parches, no tres.
-3. **El puente `fibras.js` ↔ `bodydata.js` es coincidencia de strings sin
-   ningún test.** Si un nombre de porción cambia una letra, deja de
-   encenderse en silencio. Vale un test.
-4. **El chip "Un lado por vez" aparece en ejercicios donde no aplica** (ej.
-   "Remo con barra"). `puedeSerUnilateral()` sólo excluye por nombre, no mira
-   el equipo. Decisión consciente (mostrar de más es recuperable), pero Enzo
-   puede querer afinarlo.
-5. Que Enzo confirme el parpadeo **en su teléfono** — dos cuadros se ven
-   mejor con el ojo que con un número.
+Los puntos 1 a 4 de esta lista **se hicieron** en el PR #105 (ver la sesión
+de más abajo). Lo que queda:
+
+1. Que Enzo confirme **en su teléfono**: el parpadeo al cambiar de pestaña
+   (dos cuadros se ven mejor con el ojo que con un número) y el onboarding
+   de 4 pasos.
+2. **Bíceps, Tríceps, Glúteo y Gemelos no muestran micro-silueta.** La
+   lámina de MuscleMap no los subdivide, así que no hay geometría para
+   encender. Antes mostraban franjas abstractas con etiquetas ciertas
+   ("Bíceps: braquial y braquiorradial") y eso se perdió a propósito: el
+   dato es verdadero pero la figura era inventada. **Si Enzo lo quiere de
+   vuelta hay que resolverlo de otra forma** (dibujar las porciones, o
+   mostrar el dato sin figura). No reintentar franjas sin hablarlo.
+3. **Una división del pecho en TRES (clavicular/esternal/abdominal) no es
+   posible sin dibujar**: MuscleMap trae dos parches, no tres, y los dos
+   existentes casi se tocan verticalmente. Es trabajo de ilustración.
+4. `Silhouette` ya acepta `porciones`, pero **nadie se lo pasa todavía**:
+   Inicio sigue encendiendo el grupo entero. Falta cablearlo desde donde se
+   sepan las porciones del día.
 
 ---
 
