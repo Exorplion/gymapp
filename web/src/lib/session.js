@@ -397,6 +397,38 @@ export function seriesCompletas(filas, uni) {
 
 export function isSkipped(exId) { return !!S.draft?.skipped?.includes(exId); }
 
+/** Progreso de la sesión en SERIES reales (no filas, no ejercicios):
+    hechas / objetivo del turno de hoy. `null` cuando no hay nada que medir
+    — sin sesión abierta, o con objetivo 0 — para no mostrar un 0% que
+    afirme "no avanzaste" cuando en realidad no hay nada que contar (CLAUDE.md,
+    criterio de producto).
+
+    Dos trampas ya resueltas para quien toque esto:
+    - `targetSets(ex)` cuenta FILAS (el doble en unilateral) — el objetivo acá
+      usa `ex.sets`, la cifra real de series, para no pesar doble un
+      unilateral.
+    - Los salteados (`S.draft.skipped`) salen del denominador: si no, el
+      100% se vuelve inalcanzable en cuanto saltás un ejercicio, y saltar es
+      una decisión legítima de la sesión, no un fracaso que deba bajar el
+      número. Lo hecho en un ejercicio salteado (si llegaste a registrar algo
+      antes de saltarlo) tampoco entra: ni al numerador ni al denominador,
+      para que la fracción siga siendo "de lo que me propuse hacer hoy". */
+export function sessionProgress(exs) {
+  if (!S.draft || !Array.isArray(exs)) return null;
+  let done = 0;
+  let total = 0;
+  for (const ex of exs) {
+    if (isSkipped(ex.id)) continue;
+    const uni = isUnilateral(ex);
+    const filas = setsDone(ex.id).length;
+    done += seriesCompletas(filas, uni);
+    total += ex.sets || 0;
+  }
+  if (total <= 0) return null;
+  const pct = Math.max(0, Math.min(1, done / total));
+  return { done, total, pct };
+}
+
 /** Los ejercicios de la sesión: los del día más los agregados hoy, en el orden
     del borrador. Reemplaza a orderedExs() mientras hay sesión abierta. */
 export function sessionExs(index) {

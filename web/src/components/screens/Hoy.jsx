@@ -18,11 +18,11 @@
 // dos vistas de una sesión — la del historial y la del cierre.
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { staggerRevealOnce, bloomOpen } from '../../lib/motion.js';
+import { staggerRevealOnce, bloomOpen, animateRing, countTo } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 import { S, useStore, bump, openSheet, closeSheet, saveDraft, changeTab } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS } from '../../lib/format.js';
-import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, startSession, discardSession, completeSession, moveBlock } from '../../lib/session.js';
+import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock } from '../../lib/session.js';
 import { flipSort } from '../../lib/drag.js';
 import { blocksOf, catOf, MUSCLE_CATS } from '../../lib/muscle.js';
 import { equipLabel } from '../../lib/equip.js';
@@ -185,11 +185,61 @@ function ElapsedTimer({ start }) {
   return <span id="hoy-elapsed" data-start={start}>{fmtMMSS(Math.floor((Date.now() - start) / 1000))}</span>;
 }
 
+/** Rueda de porcentaje de la sesión en vivo: series reales hechas / series
+    reales objetivo del turno de hoy (sessionProgress(), session.js — no
+    cuenta filas unilaterales dobles, no cuenta lo salteado). Calca el
+    patrón de RestTimer.jsx: SVG con data-circumference fijo, animateRing()
+    para el trazo (salta al valor final con "reducir movimiento", nunca deja
+    el anillo vacío) y countTo() para el número — nunca un contador propio.
+
+    Chica y de un vistazo a propósito: vive al lado del cuerpo muscular en el
+    hero, no reemplaza el "N/M ejercicios" de arriba (que cuenta EJERCICIOS,
+    esto cuenta SERIES, más granular) ni le saca lugar al carrusel o al botón
+    de registrar — lo que importa mientras entrenás es el toque, no el
+    adorno. */
+const RING_CIRC = 2 * Math.PI * 15.5;
+
+function SessionRing({ progress }) {
+  const ringRef = useRef(null);
+  const numRef = useRef(null);
+  const pct = progress.pct;
+  const pctLabel = Math.round(pct * 100);
+  useEffect(() => {
+    animateRing(ringRef.current, pct);
+    if (numRef.current) countTo(numRef.current, pctLabel, { format: n => `${Math.round(n)}%` });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pctLabel]);
+  return (
+    <div
+      className="session-ring"
+      role="progressbar"
+      aria-valuenow={pctLabel}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`Progreso de la sesión: ${progress.done} de ${progress.total} series, ${pctLabel} por ciento`}
+    >
+      <svg viewBox="0 0 36 36">
+        <circle className="session-ring-track" cx="18" cy="18" r="15.5" />
+        <circle
+          ref={ringRef}
+          className="session-ring-prog"
+          cx="18"
+          cy="18"
+          r="15.5"
+          data-circumference={RING_CIRC}
+        />
+      </svg>
+      <span className="session-ring-num" ref={numRef}>{pctLabel}%</span>
+    </div>
+  );
+}
+
 function ActiveHero({ day, exs, started, allDone, activeEx }) {
   const nsets = Object.values(S.draft.entries).reduce((a, e) => a + e.sets.length, 0);
   const doneEx = exs.filter(e => !isSkipped(e.id) && setsDone(e.id).length >= targetSets(e)).length;
   const nSkip = exs.filter(e => isSkipped(e.id)).length;
   const cat = activeEx ? catOf(activeEx) : null;
+  const progress = sessionProgress(exs);
   return (
     <div className="card hero">
       <div className="flex items-center gap-2.5">
@@ -212,6 +262,7 @@ function ActiveHero({ day, exs, started, allDone, activeEx }) {
             ya lo viste antes de arrancar, en BlockList): acá importa "qué
             estoy por trabajar AHORA", así que cambia ejercicio a ejercicio. */}
         {cat && <div className="active-body-mini"><Silhouette days={{ [cat]: 0 }} interactivo={false} /></div>}
+        {progress && <SessionRing progress={progress} />}
       </div>
       {allDone && (
         <div className="calcbox mt-3">
