@@ -3079,3 +3079,54 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 }
 .day-name-input:focus{outline:none;border-bottom-color:var(--blue2)}
 .day-name-input::placeholder{color:var(--mut2);font-weight:500}
+
+/* ============================================================
+   Onboarding de "Nuevo ejercicio" (ExerciseForm.jsx) — cuatro pasos
+   dentro del MISMO sheet (nombre / cómo se hace / confirmar / agregado).
+   El deslizamiento imita al de cambio de pestaña (pushInR/pushInL de
+   arriba, mismo --ease-push) pero acotado al ancho del panel, no de toda
+   la pantalla: acá sólo entra el contenido del paso, el sheet no se mueve.
+   La regla global de prefers-reduced-motion (más arriba, "*,*::before...")
+   ya achica esta animación a .01ms — no hace falta repetirla acá. */
+@keyframes exwizInR{from{transform:translateX(32px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes exwizInL{from{transform:translateX(-32px);opacity:0}to{transform:translateX(0);opacity:1}}
+.exwiz-step{animation:exwizInR var(--d3) var(--ease-push) both}
+.exwiz-step.dir-l{animation-name:exwizInL}
+
+/* Indicador de progreso: 4 barritas, sobrio — ni número de paso ni texto,
+   el mismo lenguaje visual que .wiz-progress (RoutineWizard) pero discreto
+   en vez de continuo, porque acá los pasos son unidades fijas (4), no un
+   porcentaje que avanza suelto. */
+.exwiz-progress{display:flex;gap:6px;margin-bottom:var(--s4)}
+.exwiz-progress i{
+  flex:1;height:4px;border-radius:var(--r-xs);
+  background:rgba(255,255,255,.08);
+  transition:background var(--d2) var(--ease-out);
+}
+.exwiz-progress i.on{background:var(--grad2)}
+
+/* Paso 3 (confirmar): la ficha del ejercicio antes de guardar. */
+.exwiz-confirm{
+  border:1px solid var(--line2);border-radius:var(--radius-r-lg);
+  background:var(--card2);padding:var(--s4);margin:var(--s3) 0 var(--s4);
+}
+.exwiz-confirm .nombre{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700;color:var(--txt)}
+.exwiz-confirm .datos{margin-top:4px;color:var(--mut);font-size:var(--t-sm)}
+.exwiz-confirm .grupo-row{display:flex;align-items:center;gap:8px;margin-top:var(--s3)}
+
+/* Paso 4 (agregado): check grande + lo que llevás en esta tanda. La marca
+   ✓ usa el mismo verde que el resto de la app para "hecho" (--ok), no un
+   color nuevo inventado para la ocasión. */
+.exwiz-done{display:flex;flex-direction:column;align-items:center;text-align:center;padding:var(--s4) 0 var(--s2)}
+.exwiz-done .check{
+  width:56px;height:56px;border-radius:50%;
+  background:rgba(var(--ok-rgb),.14);color:var(--ok);
+  display:grid;place-items:center;font-size:28px;margin-bottom:var(--s3);
+  animation:zoom var(--d3) var(--spring) backwards;
+}
+.exwiz-done .nombre{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700;color:var(--txt)}
+.exwiz-batch{
+  margin:var(--s4) 0;padding:var(--s3);border-radius:var(--radius-r);
+  background:var(--card2);border:1px solid var(--line2);
+  color:var(--mut);font-size:var(--t-sm);text-align:center;
+}

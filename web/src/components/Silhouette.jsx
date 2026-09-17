@@ -81,7 +81,7 @@ function claseDe(z, days) {
   return tono(days[z.cat]);
 }
 
-function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar }) {
+function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar, porciones }) {
   /* Los parches quedan fuera del cuerpo normal.
 
      Son las capas que MuscleMap dibuja ENCIMA del músculo base para resaltar
@@ -91,6 +91,21 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar }) {
      trabaja un ejercicio, no para el mapa general. */
   const zonas = cara.zonas.filter(z => !z.parche);
   const trazos = fn => zonas.map((z, i) => z.d.map((d, j) => fn(z, d, `${i}.${j}`)));
+
+  /* Opt-in: cuando el que llama SABE qué porciones se entrenaron (`porciones`,
+     `{ [cat]: string[] de sub }`) esas capas SÍ se dibujan, encima de todo,
+     con el mismo tono que ya tiene su grupo — no un color aparte, porque no es
+     una selección nueva, es zoom sobre la misma verdad. Sin la prop (el caso
+     de siempre: Inicio, BodyMap, el vistazo de fin de sesión) esta lista queda
+     vacía y el comportamiento es idéntico al de antes.
+     No son interactivas (sin role/tabIndex/data-cat): son un resaltado visual
+     sobre un grupo que ya se puede tocar entero, no un tercer botón separado
+     que anuncie el mismo músculo dos veces. Y sólo se dibuja la porción que
+     realmente se entrenó — una sin entrenar no se pinta, o se leería como
+     trabajada sin haberlo sido. */
+  const resaltados = porciones
+    ? cara.zonas.filter(z => z.parche && porciones[z.cat]?.includes(z.sub))
+    : [];
 
   /* La cara que quedó atrás sale del alcance del teclado y del lector: sigue en
      el DOM porque el giro necesita las dos montadas, pero tabular hasta un
@@ -153,6 +168,12 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar }) {
         );
       })}
 
+      {resaltados.map((z, i) => (
+        <g key={`r${i}`} className={`sil-z ${claseDe(z, days)}`}>
+          {z.d.map((d, j) => <path key={j} d={d} />)}
+        </g>
+      ))}
+
       <g className="sil-luz">
         {trazos((z, d, k) => <path key={k} d={d} />)}
       </g>
@@ -160,7 +181,7 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar }) {
   );
 }
 
-export default function Silhouette({ days = {}, interactivo = true, revelar = null }) {
+export default function Silhouette({ days = {}, interactivo = true, revelar = null, porciones = null }) {
   const [sel, setSel] = useState(null);   // { cat, ox, oy } — ox/oy en % del stage
   const [enc, setEnc] = useState(null);   // { esc, dy } — encuadre medido, ver el useLayoutEffect
   const [ang, setAng] = useState(0);      // grados; los múltiplos pares de 180 son la frente
@@ -378,10 +399,10 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
             onTransitionEnd={asentar}
           >
             <div className={`sil-face ${atras ? '' : 'on'}`}>
-              <Cara cara={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={interactivo ? tocar : undefined} activa={!atras} revelar={revelar} />
+              <Cara cara={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={interactivo ? tocar : undefined} activa={!atras} revelar={revelar} porciones={porciones} />
             </div>
             <div className={`sil-face atras ${atras ? 'on' : ''}`}>
-              <Cara cara={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={interactivo ? tocar : undefined} activa={atras} revelar={revelar} />
+              <Cara cara={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={interactivo ? tocar : undefined} activa={atras} revelar={revelar} porciones={porciones} />
             </div>
           </div>
         </div>

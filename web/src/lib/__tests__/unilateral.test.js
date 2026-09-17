@@ -52,6 +52,25 @@ describe('puedeSerUnilateral — D6: default mostrar el chip', () => {
     expect(puedeSerUnilateral({ name: 'Peck deck' })).toBe(true);
     expect(puedeSerUnilateral({ name: 'Elevaciones laterales' })).toBe(true);
   });
+
+  // Bug real visto en Chrome: "Remo con barra" mostraba el chip "un lado por
+  // vez" aunque las dos manos van pegadas a la misma barra. El nombre solo
+  // no alcanza — hace falta mirar también el equipo.
+  it('false cuando el equipo es barra, sin importar el nombre', () => {
+    expect(puedeSerUnilateral({ name: 'Remo con barra', equip: 'barra' })).toBe(false);
+  });
+
+  it('true con el mismo nombre pero equipo mancuernas', () => {
+    expect(puedeSerUnilateral({ name: 'Remo con barra', equip: 'mancuernas' })).toBe(true);
+  });
+
+  it('sin equipo declarado sigue decidiendo sólo por nombre (compat con rutinas viejas)', () => {
+    expect(puedeSerUnilateral({ name: 'Remo con barra' })).toBe(true);
+  });
+
+  it('los bilaterales por nombre siguen dando false aunque además tengan equipo barra', () => {
+    expect(puedeSerUnilateral({ name: 'Sentadilla', equip: 'barra' })).toBe(false);
+  });
 });
 
 describe('exerciseSeries — D4: separar bilateral de unilateral', () => {
