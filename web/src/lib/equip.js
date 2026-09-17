@@ -114,8 +114,16 @@ const BILATERAL_NOMBRES = [
 
 /** ¿Tiene sentido ofrecer el interruptor "unilateral" para este ejercicio?
     Normaliza igual que charts.ts (acentos fuera, minúsculas) para que
-    "Peso Muerto" y "press de banca" con mayúsculas también matcheen. */
+    "Peso Muerto" y "press de banca" con mayúsculas también matcheen.
+
+    Además del nombre, mira el equipo: una barra la agarran las dos manos a
+    la vez del mismo implemento, así que "un lado por vez" no tiene sentido
+    aunque el nombre no esté en la lista (caso real: "Remo con barra"). Sin
+    equipo declarado (rutinas viejas, plantillas) se sigue decidiendo sólo
+    por nombre, con default true — no hay que esconder el chip por falta de
+    dato. */
 export function puedeSerUnilateral(ex) {
+  if (ex?.equip === 'barra') return false;
   const n = norm(ex?.name);
   if (!n) return true;
   return !BILATERAL_NOMBRES.some(k => n.includes(k));

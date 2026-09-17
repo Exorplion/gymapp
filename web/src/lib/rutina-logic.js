@@ -656,7 +656,16 @@ export function toggleSlotOpen(index) { S.rutOpen = S.rutOpen === index ? null :
 /** Firma adaptada: el original leía $('#f-exname').value etc. directo del DOM
     (ACT['ex-save']->saveExercise); acá ExerciseForm.jsx mantiene esos campos
     como estado de componente y los pasa explícitos. */
-export async function saveExercise(index, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral }) {
+/* `mantenerSheet` existe por el asistente de alta (ExerciseForm.jsx): ahí el
+   panel NO se cierra al guardar, porque el paso siguiente ("✓ Agregado ·
+   agregar otro") se muestra adentro del mismo sheet. Sin esta opción, el
+   asistente tenía que cerrar y REABRIR el panel en cada ejercicio para
+   sobrevivir al closeSheet() de acá — funcionaba y no parpadeaba, pero
+   destruía y reconstruía todo el DOM del formulario una vez por ejercicio,
+   que es justo el costo que Enzo nota como "se siente mal".
+   El default sigue siendo cerrar: es lo que esperan la edición y cualquier
+   otro llamador que venga. */
+export async function saveExercise(index, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral }, { mantenerSheet = false } = {}) {
   name = (name || '').trim();
   const s = Math.max(1, parseInt(sets) || 4);
   const r = Math.max(1, parseInt(reps) || 10);
@@ -688,7 +697,8 @@ export async function saveExercise(index, exId, { name, sets, reps, equip, machi
     });
   }
   await persistSlot(index);
-  closeSheet(); bump(); toast('Guardado');
+  if (!mantenerSheet) closeSheet();
+  bump(); toast('Guardado');
 }
 
 export async function deleteExercise(index, exId) {
