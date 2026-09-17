@@ -33,7 +33,7 @@ export default function Preworkout() {
     return (
       <div ref={rootRef}>
         <h2>Pre-workout</h2>
-        <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5, margin: '6px 0 16px' }}>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, margin: 'var(--s2) 0 var(--s4)' }}>
           Necesito tu peso para calcular las dosis. Complétalo en tu perfil.
         </div>
         <button type="button" className="btn" onClick={() => openSheet('profile')}>

@@ -225,7 +225,7 @@ export default function RoutineWizard() {
             </div>
           );
         })}
-        <div className="txt-mut" style={{ fontSize: 12.5, margin: '4px 0 var(--s3)' }}>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', margin: 'var(--s1) 0 var(--s3)' }}>
           {chosen.length} ejercicio{chosen.length === 1 ? '' : 's'} elegido{chosen.length === 1 ? '' : 's'} · series y repeticiones se pueden ajustar después, ejercicio por ejercicio.
         </div>
         </div>

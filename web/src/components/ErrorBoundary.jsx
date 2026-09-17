@@ -50,8 +50,8 @@ export default class ErrorBoundary extends Component {
   render() {
     if (!this.state.error) return this.props.children;
     return (
-      <div className="empty" style={{ padding: '48px 24px', textAlign: 'center' }}>
-        <p style={{ margin: '0 0 16px' }}>
+      <div className="empty" style={{ padding: 'calc(var(--s6) * 1.5) var(--s5)', textAlign: 'center' }}>
+        <p style={{ margin: '0 0 var(--s4)' }}>
           Algo se rompió en esta pantalla.<br />
           Tus datos siguen guardados — recargá para seguir.
         </p>

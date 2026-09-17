@@ -40,6 +40,46 @@ GitHub Pages sirve **la raíz de `main`** y **no hay CI que buildee**: un cambio
 `gh auth status` tiene que mostrar **Exorplion** activa; si está `erojasefc` (la del
 trabajo), el push da 403 → `gh auth switch --hostname github.com --user Exorplion`.
 
+## Coherencia visual — NO negociable
+
+**Todo lo nuevo se ve como el resto de la app.** No es un pedido de estilo:
+Enzo lo reclamó tres veces distintas ("las tarjetas se ven mal, desalineadas
+y con cero estética, **siempre pasa lo mismo**"), y cada vez la causa fue la
+misma — inventar markup nuevo en vez de usar el patrón que ya existía.
+
+Antes de escribir una pantalla, un sheet o una tarjeta:
+
+1. **Buscá el patrón que ya existe y usalo.** Una tarjeta tocable con título,
+   subtítulo y chevron **ya es** `.nav-card` (`styles.css:2148`). Un panel es
+   `.card`. Un botón-chip es `.chip`. Si algo se parece a lo que estás
+   haciendo, no lo rehagas: reusalo.
+2. **Nunca combines una clase de apariencia con un reset.** `.linkcard` es un
+   **reset de botón** — `border:0; padding:0; background:none` — hecho para
+   que un `<button>` NO parezca tarjeta. `class="card linkcard"` es
+   autocontradictorio: el reset gana y te quedás con una tarjeta sin padding
+   ni borde. Fue exactamente el bug de "Mis rutinas".
+   - Para una tarjeta tocable: **`class="card cardbtn"`**. `.cardbtn` la hace
+     botón sin tocar fondo, borde ni padding.
+   - `.linkcard` sólo para un `<button>` que debe verse como texto pelado,
+     sin ninguna clase de apariencia.
+   - Para una lista: **`.group` + `.grouprow`**. `.grouprow` ya trae el reset
+     adentro, así que no hay nada que combinar.
+   - Y no confíes en la especificidad para salvarte: `card hero linkcard`
+     hoy "funciona" sólo porque `.card.hero` son dos clases y le gana al
+     reset. Eso no es un diseño, es un accidente.
+3. **Si inventás una clase, tiene que existir en `styles.css`.** `.tmpl` se
+   usó en el markup y nunca se escribió: una clase muerta no falla, no avisa,
+   y deja la tarjeta a medio estilar.
+4. **Espaciado, radios, colores y tipografía salen de tokens**, nunca de un
+   número suelto ni de un hex. Mirá `:root` en `styles.css`.
+5. **Verificá a 390px en un navegador real** antes de decir que está listo, y
+   **medí**: `getBoundingClientRect()` para ver si algo se desborda o se
+   superpone, `getComputedStyle()` para confirmar que el padding que creés que
+   está, está. Un screenshot solo no alcanza; los tests no ven esto.
+
+Trampa registrada: `innerText` devuelve **vacío** si un ancestro tiene
+`visibility:hidden`. Para inspeccionar el DOM usá `textContent`.
+
 ## Criterio de producto
 
 La app **no inventa datos que no puede sostener**. Cuando falta información se dice,
