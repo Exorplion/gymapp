@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { idbOpenOnce } from './lib/db.js';
+import { ensurePersisted } from './lib/persist.js';
 import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT, resolveAutoRest, tomarFotoSaliente } from './lib/state.js';
 import { dstr } from './lib/format.js';
 import { applyComputedGoals } from './lib/macros.js';
@@ -338,6 +339,16 @@ export default function App() {
   // ya deja S.ready=true; acá además recalculamos las metas automáticas de
   // macros (por si cambió algo del perfil) antes del primer bump().
   useEffect(() => {
+    /* Le pedimos al navegador que NO desaloje nuestros datos. Va acá, en el
+       arranque, y NO encadenado a la promesa de abajo a propósito: es
+       independiente de que la base abra, y sobre todo no puede demorar ni
+       hacer fallar el arranque. Si se rechaza o no existe la API,
+       ensurePersisted() ya devuelve null en vez de tirar (persist.js).
+       Esto es la mitad barata del arreglo del 2026-09-17; la otra mitad es
+       el respaldo exportado, que es lo único que sobrevive a un borrado
+       hecho a mano por el usuario. */
+    ensurePersisted().then(p => { S.persisted = p; bump(); });
+
     idbOpenOnce().then(loadAll).then(() => {
       applyComputedGoals();
       // El color se aplica ACÁ, apenas se conoce S.cfg, y no cuando se abre
