@@ -8,8 +8,7 @@ import {
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
 vi.mock('../toast.js', () => ({ toast: vi.fn() }));
-vi.mock('../rest.js', () => ({ startRest: vi.fn(), stopRest: vi.fn() }));
-vi.mock('../carousel.js', () => ({ scrollCarouselTo: vi.fn(), jumpToSlide: vi.fn(), slideCenterDist: vi.fn(), scrollToSlideEl: vi.fn() }));
+vi.mock('../rest.js', () => ({ startRest: vi.fn(), stopRest: vi.fn(), T: { rir: null }, pedirRir: vi.fn(), marcarRirElegido: vi.fn() }));
 vi.mock('../confetti.js', () => ({ fireConfetti: vi.fn() }));
 
 const ex = (id, name, sets = 3) => ({ id, name, sets, reps: 10 });

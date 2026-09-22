@@ -2,9 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from './state.js';
 
 vi.mock('./db.js', () => ({ idb: { put: vi.fn(), del: vi.fn() } }));
-vi.mock('./rest.js', () => ({ startRest: vi.fn(), stopRest: vi.fn() }));
+vi.mock('./rest.js', () => ({ startRest: vi.fn(), stopRest: vi.fn(), T: { rir: null }, pedirRir: vi.fn(), marcarRirElegido: vi.fn() }));
 vi.mock('./alarm.js', () => ({ pedirPermiso: vi.fn() }));
-vi.mock('./carousel.js', () => ({ scrollCarouselTo: vi.fn() }));
 
 import { startSession, completeSession, pendingSlot, ensureVals } from './session.js';
 import { isBodyweight } from './equip.js';
@@ -82,5 +81,54 @@ describe('peso corporal — dominadas y compañía (Enzo, 2026-09-09)', () => {
     S.cfg.profile = { ...(S.cfg.profile || {}), weightKg: null };
     const v = ensureVals({ id: 'x3', name: 'Fondos', reps: 8 });
     expect(v.w).toBe(0);
+  });
+});
+
+/* El peso de partida que se declara en la edición de la rutina
+   (`ex.pesoInicialKg`, Enzo 2026-09-21: "en la sesión en vivo tengo que
+   poner los pesos de nuevo"). Lo que se fija acá es el LUGAR que ocupa en la
+   cadena de ensureVals: reemplaza al default inventado, y nada más. */
+describe('peso de partida declarado en la rutina', () => {
+  beforeEach(() => {
+    S.hoyVals = {};
+    S.sessions = [];
+    S.cfg.profile = { ...(S.cfg.profile || {}), weightKg: 78 };
+  });
+
+  it('sin historial, la rueda arranca en el peso declarado y no en los 20 de siempre', () => {
+    const v = ensureVals({ id: 'd1', name: 'Press banca', equip: 'barra', reps: 8, pesoInicialKg: 45 });
+    expect(v.w).toBe(45);
+  });
+
+  it('un ejercicio SIN el campo se comporta exactamente como antes', () => {
+    expect(ensureVals({ id: 'd2', name: 'Press banca', equip: 'barra', reps: 8 }).w).toBe(20);
+    expect(ensureVals({ id: 'd3', name: 'Dominadas', reps: 8 }).w).toBe(78);
+  });
+
+  it('0 y null son "sin declarar", no un peso: no pisan el default', () => {
+    expect(ensureVals({ id: 'd4', name: 'Press banca', equip: 'barra', reps: 8, pesoInicialKg: 0 }).w).toBe(20);
+    expect(ensureVals({ id: 'd5', name: 'Press banca', equip: 'barra', reps: 8, pesoInicialKg: null }).w).toBe(20);
+  });
+
+  it('en un ejercicio de peso corporal el declarado gana igual (ahí sabés lo que hacés)', () => {
+    const v = ensureVals({ id: 'd6', name: 'Dominadas', reps: 8, pesoInicialKg: 85 });
+    expect(v.w).toBe(85);
+  });
+
+  it('el historial le gana al declarado: el dato medido manda', () => {
+    // Una sola serie de tres planificadas → la progresión no llega a
+    // "subir_peso", así que el punto de partida es la última serie.
+    S.sessions = [{ date: '2026-09-20', entries: [{ name: 'Press banca', equip: 'barra', sets: [{ w: 60, r: 8 }] }] }];
+    const v = ensureVals({ id: 'd7', name: 'Press banca', equip: 'barra', sets: 3, reps: 8, pesoInicialKg: 45 });
+    expect(v.w).toBe(60);
+  });
+
+  it('la progresión le gana al declarado: si hoy toca subir, sube', () => {
+    // Una serie planificada, hecha al tope del rango (8 + VENTANA = 11):
+    // la doble progresión manda subir 2.5% → 61.5.
+    S.sessions = [{ date: '2026-09-20', entries: [{ name: 'Press banca', equip: 'barra', sets: [{ w: 60, r: 11 }] }] }];
+    const v = ensureVals({ id: 'd8', name: 'Press banca', equip: 'barra', sets: 1, reps: 8, pesoInicialKg: 45 });
+    expect(v.w).toBe(61.5);
+    expect(v.r).toBe(8);
   });
 });

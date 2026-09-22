@@ -3,9 +3,10 @@ import { S, bump, saveDraft, saveCfg, wBoth, closeSheet } from './state.js';
 import { dstr, uid, round1, fmtD, vibrate } from './format.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
-import { startRest, stopRest } from './rest.js';
+import { T, startRest, stopRest, pedirRir, marcarRirElegido } from './rest.js';
+import { rirScheme } from './exdb.js';
+import { rpeFromRir } from './rir.js';
 import { pedirPermiso } from './alarm.js';
-import { scrollCarouselTo } from './carousel.js';
 import { exKey, isBodyweight } from './equip.js';
 import { progresion } from './progression.js';
 import { currentStreak, bestStreak } from './streak.js';
@@ -83,8 +84,17 @@ export function bodyWeightKg() {
    corporal (dominadas, fondos, plancha) la carga ES tu cuerpo, así que el
    default sale de tu peso registrado — antes arrancaban en 20 kg como
    cualquier otro, un número que ahí no significa nada. Si nunca cargaste tu
-   peso queda en 0 y saveSet te dice qué falta, en vez de inventar uno. */
+   peso queda en 0 y saveSet te dice qué falta, en vez de inventar uno.
+
+   Si la rutina declara un peso de partida (`ex.pesoInicialKg`, siempre en kg
+   — la unidad interna; lb es sólo presentación), ese gana acá y NADA MÁS:
+   reemplaza a este default, no a la progresión ni al historial (ver el orden
+   en ensureVals). Es "con cuánto arranco esto", no "cuánto levanto siempre":
+   si le ganara al historial, la rueda volvería para atrás cada sesión y la
+   doble progresión no serviría de nada. Ausente/null = sin declarar, que no
+   es lo mismo que 0 — por eso se exige número > 0 y no un simple `||`. */
 function pesoInicial(ex) {
+  if (typeof ex?.pesoInicialKg === 'number' && ex.pesoInicialKg > 0) return ex.pesoInicialKg;
   if (isBodyweight(ex)) return bodyWeightKg();
   return 20;
 }
@@ -633,10 +643,32 @@ export async function saveSet(exId) {
      PAR es "cerré la serie de los dos lados" → descanso normal. En
      bilateral no cambia nada: siempre es el descanso normal, como siempre. */
   if (uni && cur.length % 2 === 1) startRest(S.cfg.restSide);
-  else startRest();
+  else {
+    startRest();
+    /* Y recién acá se pregunta el RIR. Antes se pedía ANTES de confirmar,
+       adentro del <details> "Más opciones": nadie abre un acordeón con el
+       pulso a 150, así que el dato no llegaba nunca. Invertido el orden —
+       primero confirmás, después contestás mientras descansás— la pregunta
+       aparece sin que la busques y no le cuesta un solo toque al core loop.
+
+       En unilateral sólo en la fila PAR: la impar es la pausa corta de 20s
+       para pasar al otro brazo, la serie todavía no cerró y preguntarle el
+       RIR a medio brazo es ruido. El índice apunta a la fila recién
+       empujada (cur.length - 1), que es la que va a recibir el `rpe`. */
+    pedirRir({
+      exId,
+      setIdx: cur.length - 1,
+      pedia: rirScheme(techo, ex.name)[Math.min(cur.length - 1, techo - 1)],
+    });
+  }
   if (finished) {
     toast(nxt ? `✓ ${ex.name} completo · sigue ${nxt.name}` : `✓ ${ex.name} completo · terminaste el día`);
-    scrollCarouselTo(nxt ? nxt.id : exId);
+    /* Acá había un scrollCarouselTo(): ya no. `S.draft.cur = null` + bump()
+       hacen que ExerciseCarousel se entere solo de que cambió el ejercicio
+       en curso y centre el que sigue. Tener las dos cosas era tener DOS
+       scrolls suaves compitiendo por la misma transición, y ése era el bug
+       de "la tarjeta queda desalineada al pasar de ejercicio" — ver el
+       comentario de cabecera de lib/carousel.js con los números medidos. */
   } else {
     const seriesReales = seriesCompletas(cur.length, uni);
     const target = Math.ceil(techo / (uni ? 2 : 1));
@@ -647,6 +679,31 @@ export async function saveSet(exId) {
       : `Serie ${cur.length}/${target}: ${wBoth(v.w)} × ${v.r}`;
     toast(msg);
   }
+}
+
+/** Escribe el RIR sobre la serie YA GUARDADA, la que disparó este descanso.
+
+    Es un parche a posteriori y no un dato que se junta antes de confirmar:
+    la serie ya está en el draft con `rpe: null` desde que tocaste "Terminé".
+    Por eso no toca "la última serie" a secas sino la fila exacta que anotó
+    pedirRir() — entre medio podés haber cambiado de ejercicio, completado el
+    que estaba, o descartado el borrador, y en cualquiera de esos casos la
+    respuesta no tiene dónde ir y no se escribe nada.
+
+    `rir` en null des-selecciona (el `rpe` vuelve a null): contestar mal y
+    corregirlo tiene que ser tan barato como contestar. Devuelve si escribió,
+    para que los tests puedan distinguir "no hizo nada" de "guardó". */
+export async function setRirUltimaSerie(rir) {
+  const p = T.rir;
+  if (!p) return false;
+  const sets = S.draft?.entries?.[p.exId]?.sets;
+  const set = sets && sets[p.setIdx];
+  if (!set) return false;
+  set.rpe = rir == null ? null : rpeFromRir(rir);
+  marcarRirElegido(rir);
+  await saveDraft();
+  bump();
+  return true;
 }
 
 /* Hitos raros, no diarios (Plan Fierro · Fase 1): confetti completo SOLO en
@@ -813,7 +870,8 @@ export async function startExercise(ex) {
   await saveDraft();
   vibrate(15);
   bump();
-  scrollCarouselTo(ex.id);
+  // Sin scrollCarouselTo() acá tampoco: S.draft.cur ya cambió, y centrar el
+  // slide es trabajo de ExerciseCarousel (único dueño del scroll).
   toast(first ? `⏱ Cronómetro en marcha · ${ex.name}` : `${ex.name} · serie 1 de ${ex.sets}`);
 }
 

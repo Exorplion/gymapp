@@ -15,7 +15,6 @@
 // editable, así que el patrón de refs no controlados (`altRef`/`pwRef`) se
 // mantiene sólo para esos dos.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 import { S, wDisplay, wAlt, wStep, wToUnit, wFromUnit, openSheet } from '../lib/state.js';
 import { round1, fmtNum } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
@@ -29,10 +28,10 @@ import {
 import { sideImbalance } from '../lib/symmetry.js';
 import { shrinkImageBlob } from '../lib/photo.js';
 import { toast } from '../lib/toast.js';
-import { jumpToSlide, scrollToSlideEl } from '../lib/carousel.js';
+import { jumpToSlide, scrollToSlideEl, slideScrollLeft } from '../lib/carousel.js';
 import { staggerRevealOnce, squashStretch, impactBurst, bloomOpen, menosMovimiento } from '../lib/motion.js';
 import { relatedHistory, equipLabel, puedeSerUnilateral } from '../lib/equip.js';
-import { getPhoto, savePhoto } from '../lib/gyms.js';
+import { getPhoto, savePhoto, deletePhoto } from '../lib/gyms.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
 import ReelPicker from './ReelPicker.jsx';
@@ -73,10 +72,11 @@ function coverflowFrame(t) {
 }
 
 /** Aplica coverflowFrame() como estilo inline directamente sobre el nodo del
-    DOM — nada de setState acá. session.js llama a scrollCarouselTo() varias
-    veces por serie registrada y App.jsx recuerda muy bien (PR #98, 1fps) lo
-    que cuesta remontar o re-renderizar de más en esta pantalla: el efecto
-    tiene que seguir el dedo del usuario a costo cero de React. */
+    DOM — nada de setState acá. Esto se ejecuta en cada frame de scroll (el
+    dedo del usuario, y además cada serie registrada reposiciona el carrusel)
+    y App.jsx recuerda muy bien (PR #98, 1fps) lo que cuesta re-renderizar de
+    más en esta pantalla: el efecto tiene que seguir el dedo a costo cero de
+    React. */
 function applyCoverflowStyle(slide, frame, isCenter) {
   /* El slide ACTIVO queda plano por decisión, no por umbral.
      Antes el estado plano dependía de que la distancia calculada cayera bajo
@@ -152,22 +152,12 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
   useLayoutEffect(() => {
     const car = carRef.current;
     if (!car) return;
-    const idx = exs.length ? Math.max(0, openIdx) : 0;
-    if (!yaHuboSalto.current) {
-      jumpToSlide(car, idx);
-      yaHuboSalto.current = true;
-      // Reveal escalonado sólo la primera vez que se pinta el carrusel EN
-      // TODA LA SESIÓN (staggerRevealOnce, ver motion.js) — antes sólo se
-      // evitaba repetirlo en cada bump (yaHuboSalto), pero Hoy remonta el
-      // carrusel entero cada vez que volvés a esa pestaña (key={store.tab}
-      // en App.jsx), así que igual competía con el fundido de cambio de
-      // pestaña en cada visita.
-      staggerRevealOnce('hoy-carousel', car.children);
-    } else if (idx > 0) {
-      // jumpToSlide ignora idx<=0 a propósito (no hace falta reposicionar
-      // hacia el primer slide) — se preserva el mismo criterio acá.
-      scrollToSlideEl(car, car.children[idx], 'smooth');
-    }
+    // openIdx es -1 cuando no hay ejercicio abierto ni próximo: terminaste el
+    // último del día. Antes eso caía en Math.max(0, -1) = 0 y el carrusel se
+    // iba al PRIMER ejercicio, que no es a donde estabas mirando. Con -1 no se
+    // reposiciona nada: la vista se queda donde está (y el coverflow se repinta
+    // igual, más abajo).
+    const idx = exs.length ? openIdx : -1;
     const dotsWrap = dotsRef.current;
     // COVERFLOW: gateado por prefers-reduced-motion (menosMovimiento) — con
     // movimiento reducido el carrusel queda 100% como antes, plano y sin 3D.
@@ -218,10 +208,121 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
       if (rafId != null) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => { rafId = null; measureAndPaint(); });
     }
-    car.addEventListener('scroll', upd, { passive: true });
+    /* ---- El scroll suave llega hasta donde dijimos, o se corrige ----------
+
+       `car.scrollTo({behavior:'smooth'})` NO garantiza llegar: con
+       `scroll-snap-type: x mandatory`, cuando el layout del contenedor cambia
+       mientras la animación corre, Chrome re-evalúa el snap y ABORTA el scroll
+       programático donde estaba. Y completar un ejercicio es justo eso: la
+       tarjeta que se cierra pasa de `open` (ruedas de peso/reps, botón,
+       <details>) a `full` y el carrusel se achica a la mitad de alto en medio
+       del viaje.
+
+       Medido a 430px: pedimos scrollTo(2323.5) y el carrusel se quedó
+       clavado en 2286.4 — el slide siguiente 36.9px corrido del centro, para
+       siempre. A 390px el mismo flujo llegaba bien; por eso el bug se sentía
+       intermitente ("a veces queda desalineada").
+
+       Entonces: se recuerda a dónde pedimos ir y, cuando el scroll termina, se
+       comprueba. Si quedó corto se vuelve a pedir — suave si falta un tramo
+       que se va a ver como movimiento, instantáneo si es el resto sub-píxel
+       que deja el snap. Dos intentos como techo: si a la tercera no llegó, algo
+       más está mandando y seguir insistiendo sería pelearle al usuario.
+
+       Y se abandona el destino apenas el usuario toca el carrusel: si te
+       pusiste a mirar el ejercicio de al lado, la app no tiene derecho a
+       arrastrarte de vuelta. */
+    let destino = null;
+    let intentos = 0;
+    function irAlFoco(behavior) {
+      if (idx <= 0) return; // idx<=0: el primer slide ya está en su lugar (mismo criterio que jumpToSlide)
+      const slide = car.children[idx];
+      if (!slide) return;
+      destino = slideScrollLeft(car, slide);
+      intentos = 0;
+      scrollToSlideEl(car, slide, behavior);
+    }
+    function soltarDestino() { destino = null; }
+
+    /* Re-asentar cuando el scroll TERMINA, no sólo mientras se mueve: el
+       último evento `scroll` de una animación suave puede llegar con el
+       scrollLeft todavía en movimiento, y el coverflow quedaba pintado con un
+       frame intermedio (el slide activo con una matriz que no era la
+       identidad). `scrollend` es el evento que garantiza "ya no se mueve más";
+       donde no existe (Safari viejo) se emula con un temporizador corto
+       colgado del propio scroll, sin polling ni listeners de más. */
+    const hayScrollEnd = 'onscrollend' in car;
+    let finTimer = null;
+    function settle() {
+      if (destino != null) {
+        const falta = destino - car.scrollLeft;
+        if (Math.abs(falta) > 1 && intentos < 2) {
+          intentos++;
+          // >24px es un tramo que se ve: se completa animado, así el
+          // movimiento se lee como uno solo y no como un tirón.
+          car.scrollTo({ left: destino, behavior: Math.abs(falta) > 24 ? 'smooth' : 'auto' });
+          return; // el scrollend del nuevo scroll vuelve a pasar por acá
+        }
+        destino = null;
+      }
+      measureAndPaint();
+    }
+    function updConFin() {
+      upd();
+      if (hayScrollEnd) return;
+      clearTimeout(finTimer);
+      finTimer = setTimeout(settle, 140);
+    }
+    car.addEventListener('scroll', updConFin, { passive: true });
+    if (hayScrollEnd) car.addEventListener('scrollend', settle, { passive: true });
+    for (const ev of ['pointerdown', 'touchstart', 'wheel', 'keydown']) {
+      car.addEventListener(ev, soltarDestino, { passive: true });
+    }
+
+    /* Si cambia el ANCHO del carrusel (rotar el teléfono, la barra de
+       direcciones del navegador que aparece/desaparece), el scrollLeft que
+       centraba el slide deja de centrarlo: la cuenta depende de clientWidth.
+       Se observa SÓLO el carrusel —un elemento, no los diez slides— y sólo se
+       actúa si el ancho cambió de verdad, así que en la vida normal de la
+       pantalla este observer no hace absolutamente nada. Reposicionar con
+       'auto' y no 'smooth' a propósito: es una corrección de layout, no una
+       navegación; animarla se vería como un salto fantasma. */
+    let anchoPrevio = car.clientWidth;
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => {
+      if (car.clientWidth === anchoPrevio) return;
+      anchoPrevio = car.clientWidth;
+      irAlFoco('auto');
+      measureAndPaint();
+    }) : null;
+    if (ro) ro.observe(car);
+
+    /* El posicionamiento va DESPUÉS de dejar todo armado (irAlFoco y sus
+       listeners) y no al principio del efecto: el scroll tiene que salir con
+       su red de seguridad ya puesta. Sigue siendo la misma pasada síncrona de
+       useLayoutEffect, o sea antes de que el navegador pinte. */
+    if (!yaHuboSalto.current) {
+      jumpToSlide(car, idx);
+      yaHuboSalto.current = true;
+      // Reveal escalonado sólo la primera vez que se pinta el carrusel EN
+      // TODA LA SESIÓN (staggerRevealOnce, ver motion.js) — antes sólo se
+      // evitaba repetirlo en cada bump (yaHuboSalto), pero Hoy remonta el
+      // carrusel entero cada vez que volvés a esa pestaña (key={store.tab}
+      // en App.jsx), así que igual competía con el fundido de cambio de
+      // pestaña en cada visita.
+      staggerRevealOnce('hoy-carousel', car.children);
+    } else {
+      irAlFoco('smooth');
+    }
+
     upd();
     return () => {
-      car.removeEventListener('scroll', upd);
+      car.removeEventListener('scroll', updConFin);
+      if (hayScrollEnd) car.removeEventListener('scrollend', settle);
+      for (const ev of ['pointerdown', 'touchstart', 'wheel', 'keydown']) {
+        car.removeEventListener(ev, soltarDestino);
+      }
+      clearTimeout(finTimer);
+      if (ro) ro.disconnect();
       if (rafId != null) cancelAnimationFrame(rafId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -288,76 +389,20 @@ function ExActions({ ex, wd, uni, puedeUni }) {
   );
 }
 
-// RIR ↔ RPE: la app entera prescribe en RIR (Rutina.jsx, DayPeek.jsx,
-// ExInfo.jsx, la línea "Objetivo … → RIR N" de esta misma tarjeta) pero acá
-// abajo se seguía preguntando en RPE, la escala INVERTIDA (RPE 10 = RIR 0).
-// Enzo: "eso del esfuerzo no sé usarlo" — tenía razón, eran dos idiomas
-// distintos en la misma pantalla. Convertimos sólo en esta capa de UI: el
-// campo que se guarda en cada serie sigue siendo `rpe` (hay historial real
-// con ese campo, y el precedente de este repo es no migrar sesiones, ver
-// lib/db.js) — rir = 10 - rpe, rpe = 10 - rir.
-const RIR_OPTS = [0, 1, 2, 3, 4];
-function rirFromRpe(rpe) {
-  if (rpe == null) return null;
-  const rir = 10 - rpe;
-  return rir >= 4 ? 4 : Math.max(0, rir);
-}
-// "4+" es un balde: cualquier rpe <=6 (histórico o nuevo) cae ahí. Se elige
-// 6 como valor guardado porque es el techo exacto de ese balde (10-4=6) — un
-// rpe viejo de 5 o 3 se sigue leyendo "4+" sin tocarlo, nunca se migra.
-function rpeFromRir(rir) { return rir >= 4 ? 6 : 10 - rir; }
-
-/** RIR opcional por serie (Plan Fierro · Fase 2, corregido 2026-09-17): el
-    dato que destraba ACWR, la recuperación muscular por esfuerzo y el ajuste
-    de calorías por bandas. Se guarda en v.rpe (leído por saveSet() al
-    confirmar la serie) y se resetea solo después de cada serie — nunca se
-    arrastra a la siguiente para no dar un dato viejo por accidente.
-    Optativo de verdad: no bloquea "Terminé la serie" si no se toca.
-    `curRir` es lo que la rutina pidió para ESTA serie (rirScheme, ya
-    calculado más arriba en ExerciseSlide) — mostrarlo acá es lo que permite
-    leer "pediste RIR 2, dejaste RIR 1" de un vistazo, en vez de adivinar
-    contra un número que vive treinta píxeles más arriba. */
-function RirSelector({ v, curRir }) {
-  const [rpe, setRpe] = useState(v.rpe);
-  const rir = rirFromRpe(rpe);
-  return (
-    <div className="mt-2.5">
-      <div className="steplabel">
-        Reps en reserva (RIR) · opcional
-        {curRir != null && <span className="txt-mut"> · hoy pedía {curRir === 0 ? 'al fallo' : `RIR ${curRir}`}</span>}
-      </div>
-      <div className="rir-opts" role="group" aria-label="Repeticiones en reserva que te quedaron">
-        {RIR_OPTS.map(n => {
-          const on = rir === n;
-          return (
-            <motion.button
-              key={n}
-              type="button"
-              aria-pressed={on}
-              className={`chip ${on ? 'on' : ''}`}
-              whileTap={{ scale: 0.9 }}
-              transition={{ duration: 0.12 }}
-              onClick={() => {
-                const nextRpe = on ? null : rpeFromRir(n);
-                v.rpe = nextRpe;
-                setRpe(nextRpe);
-              }}
-            >
-              {n === 4 ? '4+' : n === 0 ? '0 (al fallo)' : n}
-            </motion.button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 /** Foto de "esta máquina, en este gym" (a pedido explícito de Enzo — ver el
     comentario de cabecera de gyms.js sobre por qué es un ángulo propio y no
     un catálogo tipo TRACKED): un campo más del registro equip[exKey], no
     una pantalla aparte. Sólo aparece con un gym activo — sin eso no hay a
-    qué gym atar la foto. Sacarla/reemplazarla es el mismo botón: tocar la
-    miniatura reabre la cámara. */
+    qué gym atar la foto. Sin foto, el chip saca una. CON foto, tocar la
+    miniatura MUESTRA la foto (sheet 'gym-photo') — antes reabría la cámara
+    directamente, y eso era destruir lo que el control decía mostrar (Enzo:
+    "solo me la debería mostrar"). Reemplazar y borrar viven adentro de ese
+    preview, detrás del confirm genérico.
+
+    El <input> de la cámara se queda ACÁ y no se duplica en el sheet: el sheet
+    lo dispara por callback. Un input `display:none` responde igual a .click()
+    aunque la pantalla de atrás esté oculta mientras el sheet se cierra, que es
+    exactamente el mismo truco del que ya dependía este componente. */
 function GymPhoto({ gymId, exName }) {
   const [url, setUrl] = useState(null);
   const inputRef = useRef(null);
@@ -411,6 +456,31 @@ function GymPhoto({ gymId, exName }) {
     setUrl(next);
   }
 
+  async function borrarFoto() {
+    try {
+      await deletePhoto(gymId, exName);
+    } catch {
+      toast('No se pudo borrar la foto');
+      return;
+    }
+    // Revocar SIEMPRE antes de soltar la referencia: si la foto ya no está en
+    // el store, una miniatura siguiendo viva sería una foto que no existe.
+    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+    urlRef.current = null;
+    setUrl(null);
+    toast('Foto borrada');
+  }
+
+  function verFoto() {
+    openSheet('gym-photo', {
+      gymId,
+      gymName: S.gyms?.find(g => g.id === gymId)?.name || '',
+      exName,
+      onReemplazar: () => inputRef.current?.click(),
+      onBorrar: borrarFoto,
+    });
+  }
+
   return (
     <div className="gym-photo">
       <input
@@ -422,7 +492,7 @@ function GymPhoto({ gymId, exName }) {
         onChange={onFile}
       />
       {url ? (
-        <button type="button" className="gym-photo-thumb" onClick={() => inputRef.current?.click()} aria-label="Cambiar foto de la máquina">
+        <button type="button" className="gym-photo-thumb" onClick={verFoto} aria-label={`Ver la foto de la máquina de ${exName}`}>
           <img src={url} alt="" />
         </button>
       ) : (
@@ -705,31 +775,32 @@ function ExerciseSlide({ m, wd, started }) {
                 cerrado. El core loop de una serie es "elegí el peso, elegí
                 las reps, confirmá": cada cosa más que compita por ese
                 espacio es peaje que se paga entre 15 y 30 veces por sesión,
-                con el pulso a 150 y el teléfono en una mano. Nada se
-                elimina —el RPE destraba ACWR, la foto resuelve "cuál de las
-                tres máquinas era"— pero deja de pedirse por adelantado: se
-                abre cuando lo buscás. El toggle "un lado por vez" YA NO vive
-                acá (Enzo: tiene que estar a la vista) — subió junto al
-                nombre del ejercicio.
+                con el pulso a 150 y el teléfono en una mano. El toggle "un
+                lado por vez" YA NO vive acá (Enzo: tiene que estar a la
+                vista) — subió junto al nombre del ejercicio.
+
+                El RIR tampoco vive más acá, y por eso el rótulo dejó de
+                decir "de esta serie": adentro ya no queda nada que sea de
+                una serie en particular —la foto de la máquina y las
+                acciones son del EJERCICIO— y el rótulo viejo pasó a ser
+                mentira. La pregunta del esfuerzo se mudó al overlay de
+                descanso (RestTimer.jsx): acá abajo, escondida detrás de un
+                acordeón y ANTES de confirmar, no la abría nadie, que es la
+                forma cara de no tener el dato (Enzo: "le doy 'terminé' e
+                inicia mi descanso, y se me olvida").
 
                 <details> nativo y no un estado de React a propósito: viene
                 con el teclado, el foco y el anuncio de abierto/cerrado ya
-                resueltos, que es justo el bloque B de la Tarea 2. Se estiliza
-                como el resto de la app (chip/card) en vez de dejarlo con la
-                pinta nativa del navegador — la queja concreta de Enzo era
-                que ese control desentonaba con todo lo demás. */}
+                resueltos. Se estiliza como el resto de la app (chip/card) en
+                vez de dejarlo con la pinta nativa del navegador — la queja
+                concreta de Enzo era que ese control desentonaba con todo lo
+                demás. */}
             <details
               className="ex-more"
               onToggle={e => { if (e.currentTarget.open) bloomOpen(moreBodyRef.current); }}
             >
-              <summary className="chip ex-more-summary">Más opciones de esta serie</summary>
+              <summary className="chip ex-more-summary">Más opciones del ejercicio</summary>
               <div className="ex-more-body" ref={moreBodyRef}>
-                {/* key=done.length: saveSet() resetea v.rpe a null después de
-                    cada serie, y el estado local de RirSelector no puede
-                    enterarse de una mutación sobre `v`. Remontarlo por serie
-                    lo deja siempre en blanco para la que viene — mismo truco
-                    que ya usa .ex-done-count más arriba. */}
-                <RirSelector key={done.length} v={v} curRir={curRir} />
                 {S.cfg.activeGym && <GymPhoto gymId={S.cfg.activeGym} exName={ex.name} />}
                 <ExActions ex={ex} wd={wd} uni={uni} puedeUni={puedeUni} />
               </div>

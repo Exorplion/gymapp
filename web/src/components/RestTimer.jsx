@@ -12,8 +12,20 @@
 // Ambos bloques (pill minimizada y overlay de pantalla completa) viven en un
 // solo componente, igual que en el original: son mutuamente excluyentes
 // según T.state y comparten el mismo <defs> de gradiente SVG.
+//
+// Acá adentro vive también la pregunta "¿cuántas te quedaron?" (RIR), y no en
+// un sheet propio encima. La razón es de toques, no de estética: al confirmar
+// la serie, saveSet() ya llama a startRest() y ESTE overlay se abre solo,
+// tapando la pantalla. Un segundo overlay apilado obligaría a un toque extra
+// sólo para sacárselo de encima, sobre la acción más repetida de toda la app
+// (15-30 veces por sesión). Metida acá son cero toques de más y la pregunta
+// aparece sin que la busques, que era justamente lo que fallaba cuando vivía
+// escondida en el <details> "Más opciones" de la tarjeta del ejercicio.
 import { useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC } from '../lib/rest.js';
+import { setRirUltimaSerie } from '../lib/session.js';
+import { RIR_OPTS, rirLabel } from '../lib/rir.js';
 import { useStore } from '../lib/state.js';
 import { fmtMMSS } from '../lib/format.js';
 import { ChevronDown } from './Icon.jsx';
@@ -118,6 +130,12 @@ export default function RestTimer() {
       <div id="rest-fs" className={T.state === 'fullscreen' || sonandoAhora ? 'show' : ''}>
         <div className={`rfs-inner${sonandoAhora ? ' ringing' : ''}`}>
           <div className="rfs-lbl">{sonandoAhora ? '¡Dale!' : 'Descanso'}</div>
+          {/* Sólo en 'fullscreen': sonando no se pregunta nada (T.rir ya se
+              limpió en rest.js) y minimizado tampoco — la pill es una franja
+              de 2cm donde el tiempo y los ±30s ya van justos; meterle cinco
+              chips la convertiría en otra cosa. Si volvés a expandir antes de
+              que termine el descanso, la pregunta sigue ahí. */}
+          {T.rir && T.state === 'fullscreen' && <PreguntaRir />}
           <div className="rfs-ring" ref={ringBoxRef}>
             <svg viewBox="0 0 200 200">
               <circle className="rfs-track" cx="100" cy="100" r="88" />
@@ -150,5 +168,48 @@ export default function RestTimer() {
         </div>
       </div>
     </>
+  );
+}
+
+/** "¿Cuántas te quedaron?" — el RIR de la serie que acaba de cerrarse.
+
+    Opcional de verdad: no contestar no bloquea nada, no insiste y no muestra
+    ningún reproche; la pregunta se va sola cuando el descanso termina. Tocar
+    otro chip corrige, tocar el mismo des-selecciona y el `rpe` vuelve a null
+    — igual que se comportaba el selector viejo. Lee el estado elegido de
+    T.rir.valor y no de un useState propio, así una corrección sobrevive a
+    minimizar y volver a expandir. */
+function PreguntaRir() {
+  const p = T.rir;
+  const elegido = p.valor;
+  return (
+    <div className="rfs-rir">
+      {/* La pregunta y su letra chica en DOS líneas y no en una sola con
+          puntos medios: el .steplabel va en mayúsculas y espaciado, así que
+          todo junto envolvía y dejaba huérfano el número que más importa de
+          esa línea ("… PEDÍA RIR / 3"). */}
+      <div className="steplabel">¿Cuántas te quedaron?</div>
+      <div className="rfs-rir-meta">
+        opcional{p.pedia != null && ` · pedía ${p.pedia === 0 ? 'al fallo' : `RIR ${p.pedia}`}`}
+      </div>
+      <div className="rir-opts" role="group" aria-label="Repeticiones en reserva que te quedaron">
+        {RIR_OPTS.map(n => {
+          const on = elegido === n;
+          return (
+            <motion.button
+              key={n}
+              type="button"
+              aria-pressed={on}
+              className={`chip ${on ? 'on' : ''}`}
+              whileTap={{ scale: 0.9 }}
+              transition={{ duration: 0.12 }}
+              onClick={e => { e.stopPropagation(); setRirUltimaSerie(on ? null : n); }}
+            >
+              {rirLabel(n)}
+            </motion.button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

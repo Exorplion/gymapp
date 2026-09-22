@@ -12,32 +12,22 @@
 // que el tick llegue tarde sólo significa que la alarma suena apenas tarde, no
 // que se pierda.
 import { S, bump } from './state.js';
-import { vibrate } from './format.js';
 import { toast } from './toast.js';
 import { prepararAlarma, pedirPermiso, sonar, callar } from './alarm.js';
 
-export const T = { end: 0, total: 0, int: null, audio: null, state: 'hidden', leftSec: 0, pct: 0 };
-
-function audioCtx() {
-  if (!T.audio) { try { T.audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
-  if (T.audio && T.audio.state === 'suspended') T.audio.resume();
-  return T.audio;
-}
-
-export function ding() {
-  vibrate([220, 110, 220, 110, 320]);
-  const ctx = audioCtx(); if (!ctx) return;
-  [0, .22, .44].forEach((t, i) => {
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type = 'sine'; o.frequency.value = i === 2 ? 1175 : 880;
-    const at = ctx.currentTime + t;
-    g.gain.setValueAtTime(0.0001, at);
-    g.gain.exponentialRampToValueAtTime(.35, at + .02);
-    g.gain.exponentialRampToValueAtTime(.0001, at + .18);
-    o.start(at); o.stop(at + .2);
-  });
-}
+// Acá vivían un AudioContext (T.audio) y un ding() de osciladores. Se fueron los
+// dos: ding() ya no lo llamaba nadie desde que la alarma pasó a ser un <audio>
+// (alarm.js), y el AudioContext se creaba y se resume()aba en cada descanso sin
+// cerrarse nunca. Un AudioContext en estado "running" ya le da a Android el foco
+// de audio multimedia, así que las teclas de volumen del teléfono dejaban de
+// controlar el timbre durante todo el descanso — por nada, porque no sonaba.
+//
+// `rir` es la pregunta "¿cuántas te quedaron?" que el overlay muestra arriba
+// del anillo: null = no hay nada que preguntar. Vive acá y no en un estado de
+// React porque quien sabe que se registró una serie es saveSet() (session.js),
+// que no es un componente — es el mismo canal por el que T ya le habla a
+// <RestTimer/> sin suscripción propia.
+export const T = { end: 0, total: 0, int: null, state: 'hidden', leftSec: 0, pct: 0, rir: null };
 
 export const REST_CIRC = 2 * Math.PI * 88;
 
@@ -56,9 +46,16 @@ export function startRest(segs) {
      forma de pararla, porque el overlay que ofrece "PARAR" ya había pasado a
      mostrar el temporizador nuevo. */
   callar();
-  audioCtx();        // crear con gesto del usuario
-  prepararAlarma();  // desbloquear el <audio> con el mismo gesto
+  // Desbloquear el <audio> con el gesto que arrancó el descanso. Sólo lo
+  // desbloquea: el recurso queda suelto hasta que la alarma tenga que sonar.
+  prepararAlarma();
   pedirPermiso();
+  /* Cada descanso arranca SIN pregunta. Esto es lo que hace que el
+     calentamiento (que llama startRest(segs) con su propia duración, ver
+     WarmupCard.jsx) nunca pregunte: no hay ninguna serie registrada a la que
+     atarle un RIR, y la respuesta se escribiría sobre la serie anterior. Sólo
+     saveSet() llama después a pedirRir(), y sólo cuando cerró la serie. */
+  T.rir = null;
   T.total = total; T.end = Date.now() + T.total * 1000;
   T.state = 'fullscreen';
   bump();
@@ -78,6 +75,28 @@ export function shiftRest(secs) {
   // el total sube con el tiempo agregado para que el anillo no se pase de vuelta
   T.total = Math.max(T.total, Math.ceil((T.end - Date.now()) / 1000));
   tickRest();
+}
+
+/** "Acabo de registrar una serie, preguntale el RIR mientras descansa."
+
+    La llama saveSet() JUSTO DESPUÉS de startRest(), porque startRest() limpia
+    la pregunta anterior. `exId`/`setIdx` apuntan a la serie ya guardada en el
+    draft, así la respuesta se escribe sobre esa y no sobre "la última" —que
+    puede haber cambiado si mientras tanto registraste otra cosa. `pedia` es
+    lo que la rutina pedía para esa serie, para poder leer "pedía RIR 2,
+    dejaste 1" sin buscar el número treinta píxeles más arriba. */
+export function pedirRir({ exId, setIdx, pedia }) {
+  T.rir = { exId, setIdx, pedia: pedia ?? null, valor: null };
+  bump();
+}
+
+/** Deja anotada la respuesta en el propio T para que el chip se vea elegido.
+    El guardado de verdad (parchear `rpe` en la serie) lo hace session.js —
+    rest.js no toca el draft, nunca lo hizo. */
+export function marcarRirElegido(valor) {
+  if (!T.rir) return;
+  T.rir.valor = valor;
+  bump();
 }
 
 export function minimizeRest() {
@@ -105,6 +124,10 @@ export function tickRest() {
 function terminar() {
   clearInterval(T.int); T.int = null;
   T.leftSec = 0; T.pct = 0;
+  /* Se terminó el descanso: la pregunta se va. Es opcional de verdad — no
+     contestarla no deja nada pendiente ni muestra ningún reproche. Y sonando
+     no se pregunta nada: está sonando y lo único que querés es callarla. */
+  T.rir = null;
   T.state = 'ringing';
   bump();
   toast('⏱ ¡Descanso terminado!');
@@ -118,6 +141,7 @@ function terminar() {
 export function stopRest() {
   clearInterval(T.int); T.int = null;
   callar();
+  T.rir = null;
   T.state = 'hidden';
   bump();
 }

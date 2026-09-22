@@ -73,27 +73,28 @@ export function muestrasAlarma() {
   return buf;
 }
 
-/** Suelta el elemento de audio del todo.
+/** Suelta el RECURSO de audio, pero no el elemento.
 
-    Pausarlo no alcanza: mientras haya un <audio> vivo en la página, Android
-    deja las teclas de volumen en el canal multimedia, y el teléfono se queda
-    así hasta que cerrás la app. Bajarle el volumen al timbre de tus mensajes
-    porque hace media hora sonó un descanso es un efecto que nadie pidió.
+    Éste es el arreglo del bug de volumen: un <audio> con `src` cargado es, para
+    Android, un reproductor de medios activo — las teclas de volumen pasan a
+    controlar el canal multimedia en vez del timbre, y se quedan así todo el
+    descanso. Pausarlo no alcanza; hay que largar el recurso (`removeAttribute` +
+    `load()`). Sin src el elemento no reclama nada.
 
-    Por eso se desmonta entero —pausar, soltar el recurso, sacarlo del DOM— y se
-    vuelve a crear en el próximo descanso. Crearlo es barato: el WAV ya está
-    sintetizado y el blob se reusa. */
+    Lo que NO se hace es sacarlo del DOM ni tirarlo: el permiso de "activado por
+    un gesto del usuario" que guardan los navegadores es POR ELEMENTO y sobrevive
+    a que se le saque y se le vuelva a poner el src. Si lo destruyéramos habría
+    que volver a desbloquearlo con otro gesto, y el gesto no existe al final del
+    descanso —ahí no hay nadie tocando la pantalla, que es justamente el caso que
+    esta alarma tiene que cubrir. */
 function soltar() {
   const el = A.el;
-  A.el = null;
-  A.listo = false;   // habrá que volver a desbloquearlo con un gesto
   if (!el) return;
   try {
     el.pause();
     el.removeAttribute('src');
     el.load();       // fuerza al navegador a largar el recurso
-    el.remove();
-  } catch { /* ya estaba desmontado */ }
+  } catch { /* nada que soltar */ }
   try {
     if (navigator.mediaSession) {
       navigator.mediaSession.playbackState = 'none';
@@ -102,8 +103,19 @@ function soltar() {
   } catch { /* sin MediaSession */ }
 }
 
-/** El elemento de audio. Se crea al preparar cada descanso y se suelta al
-    cortar la alarma.
+/** Le vuelve a poner el src. Sólo justo antes de que tenga que sonar de verdad:
+    desde acá hasta callar() el teléfono queda en modo multimedia, y ese rato
+    tiene que ser el mínimo posible. */
+function tomar(el) {
+  try {
+    if (el.getAttribute('src') !== A.url) { el.src = A.url; el.load(); }
+  } catch { /* el navegador no lo deja; quedan vibración y notificación */ }
+}
+
+/** El elemento de audio. Se crea UNA vez y vive lo que vive la página.
+
+    Nace con src para poder desbloquearse, y `prepararAlarma()` lo suelta ni bien
+    lo consigue. Ver soltar() para por qué no se destruye nunca.
 
     Devuelve null si el navegador no lo deja: la alarma se degrada a vibración y
     notificación en vez de tirar abajo el final del descanso. */
@@ -133,16 +145,28 @@ function elemento() {
  *
  * Hay que llamarla DESDE un gesto — al arrancar el descanso, que sale de tocar
  * un botón.
+ *
+ * Apenas termina de desbloquearlo le suelta el recurso: el elemento se queda
+ * activado pero sin src, así el teléfono no pasa al canal multimedia durante
+ * todo el descanso. El src vuelve recién en sonar().
+ *
+ * Como la activación es permanente, del segundo descanso en adelante esto no
+ * reproduce nada — sólo se asegura de que el recurso siga suelto.
  */
 export function prepararAlarma() {
-  if (A.listo) return;
   const el = elemento();
   if (!el) return;
+  if (A.listo) { soltar(); return; }
+  tomar(el);
   const vol = el.volume;
   el.volume = 0;
-  const p = el.play();
-  const cerrar = () => { el.pause(); el.currentTime = 0; el.volume = vol; A.listo = true; };
-  if (p && p.then) p.then(cerrar).catch(() => { el.volume = vol; });
+  let p;
+  try { p = el.play(); } catch { /* bloqueado */ }
+  const cerrar = () => { el.volume = vol; A.listo = true; soltar(); };
+  // Si lo bloquearon, igual soltamos: sin activación la alarma se degrada a
+  // vibración + notificación, pero no tiene sentido que además se quede el
+  // volumen del teléfono.
+  if (p && p.then) p.then(cerrar).catch(() => { el.volume = vol; soltar(); });
   else cerrar();
 }
 
@@ -161,6 +185,10 @@ export function sonar(texto, alCallar) {
 
   const el = elemento();
   if (el) {
+    // Recién acá vuelve el src: es el único momento en que la alarma tiene que
+    // sonar de verdad, y por lo tanto el único en que vale ocupar el canal
+    // multimedia del teléfono.
+    tomar(el);
     el.currentTime = 0;
     // sin permiso de audio quedan la vibración y la notificación
     try { el.play()?.catch?.(() => {}); } catch { /* bloqueado */ }
@@ -182,10 +210,12 @@ export function sonar(texto, alCallar) {
   }, CICLO);
 }
 
-/** La corta. Es idempotente: llamarla dos veces no rompe nada. */
+/** La corta. Es idempotente: llamarla dos veces no rompe nada.
+
+    Suelta el recurso pero deja vivo el elemento, así el teléfono vuelve al
+    volumen de timbre sin que perdamos la activación por gesto. */
 export function callar() {
   if (A.int) { clearInterval(A.int); A.int = null; }
-  if (A.el) { A.el.pause(); A.el.currentTime = 0; }
   vibrate(0);
   soltar();
   cerrarNotificacion(TAG_DESCANSO);

@@ -1819,6 +1819,16 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   stroke-dasharray:552.9;stroke-dashoffset:0;transition:stroke-dashoffset var(--d2) linear}
 .rfs-time{position:absolute;inset:0;display:grid;place-items:center;
   font-family:'Barlow Condensed';font-weight:700;font-size:56px;font-variant-numeric:tabular-nums}
+/* La pregunta de RIR adentro del overlay de descanso. Va ARRIBA del anillo a
+   propósito: lo que Enzo mira es el tiempo, así que la pregunta no puede
+   empujarlo ni competir con él — entra en el aire que quedaba entre el rótulo
+   "Descanso" y el anillo. Reusa .steplabel y .rir-opts (la misma grilla de
+   chips que tenía el selector viejo), así que acá sólo se anula el margen que
+   esos dos traen para su contexto original dentro de la tarjeta. */
+.rfs-rir{width:100%;display:flex;flex-direction:column;align-items:center;gap:6px}
+.rfs-rir .steplabel{margin-bottom:0;text-align:center}
+.rfs-rir .rir-opts{width:100%;margin-top:0}
+.rfs-rir-meta{font-size:var(--t-micro);color:var(--mut);margin-top:-2px}
 .rfs-btns{display:flex;gap:12px;width:100%}
 .rfs-btns .btn{flex:1}
 .rfs-min{position:absolute;top:-6px;right:-6px}
@@ -2428,6 +2438,22 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   border:1px solid var(--line2);
 }
 .gym-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* La misma foto, ya en grande, dentro del sheet 'gym-photo'
+   (sheets/GymPhotoView.jsx). Acá sí es el protagonista, así que se muestra
+   ENTERA (object-fit:contain) y no recortada como la miniatura: el punto es
+   reconocer la máquina, y un recorte puede comerse justo la parte que la
+   distingue. max-height para que en horizontal no empuje los botones fuera
+   de la hoja, y fondo propio porque una foto vertical deja franjas a los
+   costados y sin fondo se verían como agujeros en el panel. */
+.photo-full{
+  margin:0 0 var(--s4);border-radius:var(--r-md);overflow:hidden;
+  border:1px solid var(--line2);background:var(--card2);
+}
+.photo-full img{
+  display:block;width:100%;max-width:100%;max-height:52vh;
+  object-fit:contain;margin:0 auto;
+}
 
 /* Primera vez en una máquina: no inventamos un peso, damos contexto y una
    instrucción de calibración. */
