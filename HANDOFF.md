@@ -1,6 +1,145 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-17 (cierre — 15 PRs en el día)
+**Última actualización:** 2026-09-22
+
+---
+
+## SESIÓN 2026-09-22 — PR #114 (mergeado) + pendientes del handoff
+
+`main` = `1f434dd` tras #114. **697 tests** (eran 646 al cerrar #114, 605 el 17).
+
+### PR #114 — seis cosas que Enzo reportó juntas
+
+| Qué | Dónde |
+|---|---|
+| El descanso le robaba el canal de volumen a Android | `lib/alarm.js`, `lib/rest.js` |
+| La tarjeta quedaba desalineada al completar un ejercicio | `lib/carousel.js`, `ExerciseCarousel.jsx` |
+| El RIR se pregunta DESPUÉS de la serie, no antes | `RestTimer.jsx`, `lib/rir.js` (nuevo) |
+| La foto de la máquina se mira, no se re-saca | `sheets/GymPhotoView.jsx` (nuevo) |
+| "No entrené ese día" no registraba nada | `sheets/MarcarDia.jsx`, `screens/Inicio.jsx` |
+| Peso de partida por ejercicio | `sheets/ExerciseForm.jsx`, `lib/session.js` |
+
+### Segunda tanda — pendientes que estaban anotados acá
+
+| Qué | Dónde |
+|---|---|
+| RIR inflado en unilateral ("pedía RIR 6") | `lib/rir.js`, `lib/session.js`, `ExerciseCarousel.jsx` |
+| Botones anidados en los bloques de Entreno (HTML inválido) | `screens/Hoy.jsx` |
+| Deuda 9: la silueta de Inicio usa porciones | `lib/fibras.js`, `Silhouette.jsx`, `screens/Inicio.jsx` |
+| El mapa grande también usa porciones | `sheets/BodyMap.jsx` |
+| La ficha del músculo dejó de mentir en la cabecera | `MusclePop.jsx` |
+| Acordeón de la sesión: altura animada de verdad | `lib/motion.js`, `ExerciseCarousel.jsx` |
+| Coverflow: vecinos de opacidad 0.4 → 0.7 | `ExerciseCarousel.jsx:55` |
+
+### Las causas raíz que costaron medición — no volver a suponerlas
+
+- **La desalineación del carrusel eran TRES causas, no una.** (1) `carousel.js`
+  restaba `car.offsetLeft` de más: el `offsetLeft` del slide **ya** se mide
+  contra el carrusel (pedía 702 donde el snap real era 704). (2) `saveSet()` y
+  el `useLayoutEffect` lanzaban **dos scrolls suaves** que competían: juntos
+  Chrome reiniciaba la animación y se pasaba 33.6px durante 1.4s — eso era el
+  "rebote". (3) Con `scroll-snap`, el cambio de alto del carrusel al pasar la
+  tarjeta de `open` a `full` hace que Chrome **aborte el scroll programático
+  donde esté** (36.9px permanentes a 430px). La (3) explica por qué era
+  intermitente. Ahora el carrusel es el único dueño del scroll y recompleta lo
+  que el navegador le aborta. Medido después: 0–0.21px del centro.
+- **El volumen: el `AudioContext` existía sólo para un `ding()` muerto.** Nadie
+  lo llamaba desde que la alarma nueva lo reemplazó. El `<audio>` además
+  retenía el `src` toda la cuenta regresiva. Ahora suelta el recurso al
+  desbloquearse y lo recupera al sonar, **sin destruir el elemento**:
+  destruirlo perdería la activación por gesto y la alarma dejaría de sonar con
+  la pantalla apagada.
+- **El RIR inflado era `rirScheme(filas)` en vez de `rirScheme(series)`.** En
+  unilateral `targetSets()` duplica (una fila por lado), así que un 4×10 daba
+  `rirScheme(8) = 7/6/5/4/3/2/1/0`; como la pregunta sólo dispara en fila par,
+  Enzo veía justo el **6**. Usar `seriesCompletas()` antes de armar el esquema.
+
+### Coverflow: la recomendación CAMBIÓ, con números nuevos
+
+La medición del 17 (101 → 166 ms al registrar una serie, **+65ms**) motivó un
+"no dejarlo" escrito. **Esa medición venció**: el PR #114 sacó el scroll
+duplicado. Re-medido el 22 (build de producción, CPU 6×, mediana de 5,
+condiciones alternadas para absorber el ruido de la máquina):
+
+| | 17/09 | 22/09 |
+|---|---|---|
+| Registrar una serie | 101 → 166 ms (+65) | 74 → 79 ms (**+5.6**) |
+| Scroll del carrusel | 47.9 → 44.8 fps | 46.6 → 40.2 fps (**−6.4**) |
+
+**El argumento que sostenía sacarlo ya no existe.** Y ese +5.6ms es un **techo**:
+apagar el coverflow para medir apaga también `squashStretch`/`impactBurst`
+(mismo gate `menosMovimiento()`), así que el costo real es menor. Lo único que
+sobrevivió fue lo estético, y se corrigió bajando `CF_MAX_OPACITY_DROP` a 0.3.
+**Recomendación actual: dejarlo.** Sigue siendo decisión de Enzo;
+`git revert -m 1 0d7ba6d` lo saca.
+
+### Correcciones a ESTE documento
+
+- **El pendiente 6 ("dos acordeones abren de golpe") estaba mal.** El de Entreno
+  (`.day-collapse`, que vive en `Rutina.jsx`, **no** en `Hoy.jsx`) ya animaba
+  con `grid-template-rows 0fr→1fr`; este mismo archivo se contradecía más
+  abajo. El único que abría de golpe era el `<details>` de la sesión.
+- **La disyuntiva "`<details>` nativo O altura animada" es falsa.** Se puede
+  interceptar el click del `<summary>`, frenar el toggle con `preventDefault()`
+  y escribir `open` a mano: al abrir, `open=true` primero (sin nodo no hay
+  altura que medir); al cerrar, animar y recién en `onfinish` poner
+  `open=false`. Se conserva teclado/foco/anuncio y se gana la transición.
+  Está en `detailsSlide()` (`lib/motion.js`).
+
+### Defensas nuevas (tests que fallan si la regresión vuelve)
+
+- `a11y-markup.test.js` recorre **todos** los `.jsx` contando profundidad de
+  `<button>`: falla si alguien vuelve a anidar botones en cualquier archivo.
+  Strippea comentarios primero — `RestTimer.jsx` escribe `<button>` en prosa.
+- `acordeon.test.js` fija el orden de escritura del `open` y que no vuelva a
+  aparecer un `bloomOpen()` **encima** de la animación de altura (el doble
+  movimiento que `Sheet.jsx` ya documentó haber tenido que retirar).
+- `silueta-porciones.test.js` verifica que las clases nuevas **existan de
+  verdad en `styles.css`** — una clase muerta no falla, no avisa, y deja la
+  cosa a medio estilar (el bug de `.tmpl`).
+
+### Bugs encontrados de paso, que nadie había reportado
+
+- **El teclado se metía en los ejercicios de un bloque cerrado**: a
+  `.block-collapse` le faltaba `visibility`. `overflow:hidden` recorta el
+  dibujo pero **no** saca del orden de tabulación.
+- **`prefers-reduced-motion` no aplicaba al acordeón de Hoy**: la regla
+  apuntaba a `.block-collapse` y por especificidad perdía contra
+  `.block-collapse.open`.
+- **`+ Serie` dejaba el RIR en `undefined`**: el índice se iba del esquema.
+  Ahora `rirPedido()` lo acota a los extremos.
+- **El zoom del mapa encuadraba la porción equivocada**: con tres hermanas del
+  mismo `cat`, `[data-cat]` siempre matcheaba la primera. Ahora usa
+  `[data-cat][data-sub]`.
+
+### Pendientes que siguen abiertos
+
+**Sólo Enzo puede cerrarlos:**
+
+1. **Instalar la PWA y exportar un JSON.** Sigue siendo lo mismo del 17 y sigue
+   sin hacerse. `persist()` **puede ser denegado** si la app no está instalada,
+   y el respaldo automático sólo corre al cerrar un entrenamiento. Perdió todos
+   sus datos una vez por desalojo: hasta que no haga las dos cosas, el agujero
+   está abierto.
+2. **Probar la alarma con el teléfono bloqueado.** Que el canal de volumen
+   vuelva al timbre sólo se confirma en un Android real. Si la alarma **no**
+   sonara con la pantalla apagada, el sospechoso es el ciclo quitar/poner `src`
+   de `alarm.js`, no un bug nuevo. Ver `[[volumen-telefono-timer-descanso]]`.
+3. **Decidir el coverflow** (ver arriba: ahora la recomendación es dejarlo).
+4. **Las series y reps de la plantilla Anterior/Posterior las inventó Claude.**
+   Anotado en `templates.js`. Faltan los números reales de Enzo.
+
+**De código, anotados y no hechos:**
+
+5. `MusclePop` muestra el desglose del **grupo** aunque toques una porción; sólo
+   la cabecera y la fibra marcada son de la porción. Se evaluó y se dejó así: el
+   dato por fibra ya está en el cuerpo.
+6. Deudas 10-14 del cierre del 17 siguen igual (bíceps/tríceps/glúteo/gemelos
+   sin subdivisión en la lámina — **no reintentar franjas abstractas**; pecho en
+   3 porciones imposible; lumbares sin zona propia; migrar a `motion`;
+   KokonutUI necesita `components.json` y el alias `@/`).
+7. IA en Nutrición: requiere cuenta de API con saldo, la clave la pondría Enzo
+   en Ajustes. Falta confirmar si la API acepta llamadas desde el navegador.
 
 ---
 

@@ -188,6 +188,67 @@ export function staggerRevealOnce(key, els, opts) {
   screenReveal(els, opts);
 }
 
+/** Abre/cierra un <details> con movimiento, SIN dejar de ser un <details>.
+
+    El problema: el navegador es el dueño del atributo `open` y muestra u
+    oculta el contenido él mismo, de una. Por eso animar un <details> se
+    considera incómodo y la salida fácil es tirarlo y rehacer el acordeón con
+    estado de React. Acá NO se hace eso a propósito: el <details> de la sesión
+    se eligió porque trae el teclado (Enter/Espacio sobre el <summary>), el
+    foco y el anuncio de abierto/cerrado del lector de pantalla ya resueltos.
+    Rehacerlo a mano sería cambiar accesibilidad real por una transición.
+
+    La técnica: se intercepta el click del <summary> (que es también el que
+    dispara el teclado, así que el atajo sigue funcionando), se frena el
+    toggle nativo con preventDefault() y se maneja el `open` acá:
+      - al ABRIR se pone open=true primero —hay que tener el nodo en el
+        layout para saber cuánto mide— y se anima el cuerpo de 0 a esa altura;
+      - al CERRAR se anima primero y recién al terminar se pone open=false,
+        que es el único orden posible: con open=false el contenido ya no está.
+
+    La altura se anima con box-sizing:border-box (global en styles.css:321),
+    así que height:0 se come también el padding y el borde del cuerpo: no hay
+    "media tarjeta" quedando visible en el cierre.
+
+    Reemplaza, no se superpone: acá antes corría un bloomOpen() (escala +
+    desplazamiento) encima del salto de altura del navegador. Eran dos
+    movimientos a la vez, exactamente el problema que Sheet.jsx ya documenta
+    haber tenido que sacar. Un solo gesto: la altura.
+
+    Dura D.objeto y no D.panel porque esto se abre entre 15 y 30 veces por
+    sesión, con el pulso a 150: acá una animación lenta es un peaje. */
+export function detailsSlide(det, body, { duration = D.objeto } = {}) {
+  if (!det) return;
+  const abrir = !det.open;
+  /* Con "reducir movimiento" se hace lo que hacía el navegador solo:
+     abrir/cerrar instantáneo. No se puede simplemente no correr — esta
+     función es la que ESCRIBE el `open`, porque ya frenamos el toggle
+     nativo. */
+  if (menosMovimiento() || !body?.animate) { det.open = abrir; return; }
+
+  // Un toggle rápido no debe dejar dos animaciones peleando por el mismo
+  // height; la anterior se cancela y su limpieza corre igual (oncancel).
+  colapsos.get(body)?.cancel();
+
+  if (abrir) det.open = true;
+  const alto = body.offsetHeight;
+  const previo = body.style.cssText;
+  body.style.overflow = 'hidden';
+  const anim = body.animate(
+    [
+      { height: abrir ? '0px' : `${alto}px`, opacity: abrir ? 0 : 1 },
+      { height: abrir ? `${alto}px` : '0px', opacity: abrir ? 1 : 0 },
+    ],
+    { duration, easing: EASE_OUT },
+  );
+  const limpiar = () => { body.style.cssText = previo; colapsos.delete(body); };
+  anim.oncancel = limpiar;
+  anim.onfinish = () => { limpiar(); if (!abrir) det.open = false; };
+  colapsos.set(body, anim);
+}
+
+const colapsos = new WeakMap();
+
 // Cierre de anillo de progreso (0..1) sobre un <circle> con
 // data-circumference ya seteado. Ref: anillos de Apple Fitness.
 export function animateRing(circleEl, progress, { duration = 900 } = {}) {

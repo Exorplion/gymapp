@@ -9,7 +9,9 @@
 // contenido de T.rir, no que "se llamó a una función".
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from '../state.js';
-import { saveSet, ensureVals, setRirUltimaSerie, toggleUnilateral } from '../session.js';
+import { saveSet, ensureVals, setRirUltimaSerie, toggleUnilateral, seriesCompletas } from '../session.js';
+import { rirScheme } from '../exdb.js';
+import { RIR_OPTS, rirPedido } from '../rir.js';
 import { T, startRest, pedirRir } from '../rest.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
@@ -136,5 +138,81 @@ describe('RIR en unilateral', () => {
     // y el rpe cae en la fila 2, la que acaba de cerrar la serie
     await setRirUltimaSerie(2);
     expect(setsDe('u').map(s => s.rpe)).toEqual([null, 8]);
+  });
+});
+
+/* Bug reportado por Enzo (2026-09-22): en unilateral la pregunta del descanso
+   decía "pedía RIR 6", un valor que no existe entre los chips (0/1/2/3/4+).
+   Causa: el esquema se armaba sobre targetSets(), que cuenta FILAS — un 4×10
+   unilateral son 8 filas, y rirScheme(8) = 7/6/5/4/3/2/1/0. El esquema tiene
+   que ir sobre SERIES REALES. */
+describe('el esquema de RIR va sobre series reales, no sobre filas', () => {
+  it('un unilateral de 4 series pide 3/2/1/0, no los escalones de 8 filas', async () => {
+    armar([ex('u', 'Curl martillo', 4, true)]);
+    const e = S.routine[0].exercises[0];
+    toggleUnilateral('u');
+    const pedidos = [];
+    for (let fila = 0; fila < 8; fila++) {
+      await serie(e);
+      if (T.rir) pedidos.push(T.rir.pedia);
+    }
+    expect(pedidos).toEqual([3, 2, 1, 0]);
+  });
+
+  it('nunca prescribe un valor fuera de la escala que la app ofrece', async () => {
+    armar([ex('u', 'Curl martillo', 4, true)]);
+    const e = S.routine[0].exercises[0];
+    toggleUnilateral('u');
+    for (let fila = 0; fila < 8; fila++) {
+      await serie(e);
+      if (T.rir) expect(RIR_OPTS).toContain(T.rir.pedia);
+    }
+  });
+
+  it('bilateral: sin regresión, sigue dando el mismo esquema de siempre', async () => {
+    armar([ex('b', 'Press banca', 4)]);
+    const e = S.routine[0].exercises[0];
+    const pedidos = [];
+    for (let fila = 0; fila < 4; fila++) {
+      await serie(e);
+      pedidos.push(T.rir.pedia);
+    }
+    expect(pedidos).toEqual(rirScheme(4, 'Press banca'));
+  });
+});
+
+/* La tarjeta del ejercicio (ExerciseCarousel.jsx) calcula el MISMO número con
+   la misma receta: esquema sobre seriesCompletas(objetivo) e índice sobre
+   seriesCompletas(filasHechas). Se replica acá como función pura para fijar
+   el contrato — si alguien toca una de las dos cuentas, este test avisa. */
+const rirDeTarjeta = (filasHechas, filasObjetivo, uni, name) =>
+  rirPedido(rirScheme(seriesCompletas(filasObjetivo, uni), name), seriesCompletas(filasHechas, uni));
+
+describe('la tarjeta y la pregunta del descanso piden lo mismo', () => {
+  it('las dos filas de una misma serie unilateral piden el mismo RIR', () => {
+    // 4 series reales = 8 filas. Filas 0 y 1 son la serie 1, 2 y 3 la serie 2…
+    const porFila = Array.from({ length: 8 }, (_, f) => rirDeTarjeta(f, 8, true, 'Curl martillo'));
+    expect(porFila).toEqual([3, 3, 2, 2, 1, 1, 0, 0]);
+  });
+
+  it('bilateral: la tarjeta sigue mostrando el escalón de siempre', () => {
+    const porFila = Array.from({ length: 4 }, (_, f) => rirDeTarjeta(f, 4, false, 'Press banca'));
+    expect(porFila).toEqual([3, 2, 1, 0]);
+  });
+
+  it('una serie extra concedida a mano no deja la tarjeta sin número', () => {
+    // el índice se pasa del último escalón: corresponde el último (al fallo)
+    expect(rirDeTarjeta(9, 8, true, 'Curl martillo')).toBe(0);
+  });
+});
+
+describe('rirPedido', () => {
+  it('acota al techo de la escala: un RIR 5 se ofrece como 4+', () => {
+    expect(rirPedido([5, 4, 3, 2, 1, 0], 0)).toBe(4);
+  });
+
+  it('sin esquema no inventa un número', () => {
+    expect(rirPedido([], 0)).toBe(null);
+    expect(rirPedido(null, 0)).toBe(null);
   });
 });

@@ -10,11 +10,20 @@
 import { useEffect, useRef } from 'react';
 import { S, closeSheet, changeTab } from '../../lib/state.js';
 import { daysSinceAll, stalestGroups, muscleVolume, uncategorized, recoveryPct } from '../../lib/muscle.js';
+import { diasPorPorcion } from '../../lib/fibras.js';
+import { dstr } from '../../lib/format.js';
 import { sheetReveal } from '../../lib/motion.js';
 import Silhouette from '../Silhouette.jsx';
 
 export default function BodyMap() {
   const dias = daysSinceAll();
+  /* Las porciones ya existían en la silueta de Inicio, pero ahí el cuerpo mide
+     ~112px y la diferencia entre dorsal alto y dorsal bajo entra en un par de
+     píxeles. Acá el cuerpo se dibuja a 420px: es EL lugar donde el dato por
+     porción se ve. Mismo objeto `{ sub → días }` de siempre — una porción sin
+     registro no viene, y la silueta la pinta apagada en vez de heredar el tono
+     del grupo (que sería afirmar que entrenaste el trapecio por hacer jalón). */
+  const porciones = diasPorPorcion(S.sessions, dstr());
   const viejos = stalestGroups();
   const mv = muscleVolume(7);
   const mvCats = Object.entries(mv).sort((a, b) => b[1] - a[1]);
@@ -30,8 +39,12 @@ export default function BodyMap() {
       <h2 className="font-cond text-2xl font-bold text-txt">Tu cuerpo</h2>
       <div className="mt-1 mb-4 text-sm text-mut">Tocá un músculo para ver cuándo lo entrenaste.</div>
 
-      <div className="flex h-[min(52vh,420px)] justify-center my-1.5">
-        <Silhouette days={dias} />
+      {/* `sil-grande`: el contorno de porción (.sil-porcion) se dibuja en
+          unidades del SVG, así que su grosor en pantalla depende del tamaño al
+          que se renderiza el cuerpo. Calibrado para la miniatura quedaba en
+          medio píxel acá y no se veía. Ver styles.css. */}
+      <div className="sil-grande flex h-[min(52vh,420px)] justify-center my-1.5">
+        <Silhouette days={dias} porciones={porciones} />
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-micro text-mut">
@@ -40,6 +53,20 @@ export default function BodyMap() {
         <LegendSw color="bg-blue3">4-6 d</LegendSw>
         <LegendSw color="bg-line2">7+ d</LegendSw>
       </div>
+
+      {/* Si la figura enciende porciones, la leyenda tiene que decirlo: si no,
+          ver media espalda prendida con la ficha diciendo "Espalda, hace 1 día"
+          se lee como un bug. La ficha resume el GRUPO —es lo que groupStats()
+          sabe— y eso también se aclara acá en vez de dejar que se contradigan.
+          Sólo aparece cuando hay al menos una porción con registro: sin dato no
+          hay nada distinto que explicar. */}
+      {Object.keys(porciones).length > 0 && (
+        <div className="mt-1.5 text-micro leading-relaxed text-mut">
+          Los músculos que la lámina divide —espalda, pecho, cuádriceps, abdomen— se encienden
+          por porción, con el contorno claro marcando cuál. Al tocar una, la ficha dice su
+          frescura; los números resumen el grupo entero.
+        </div>
+      )}
 
       {viejos.length > 0 && <StaleLine grupos={viejos} dias={dias} />}
 

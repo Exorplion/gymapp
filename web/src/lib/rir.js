@@ -28,3 +28,27 @@ export function rpeFromRir(rir) { return rir >= 4 ? 6 : 10 - rir; }
 /** El rótulo del chip. 0 y 4 no son números sueltos: son los dos extremos
     de la escala y hay que decir qué significan, o "0" se lee como "no sé". */
 export function rirLabel(n) { return n === 4 ? '4+' : n === 0 ? '0 (al fallo)' : String(n); }
+
+/** El RIR que se le PIDE a una serie: un escalón del esquema, pero acotado a
+    lo que la app efectivamente ofrece como respuesta (RIR_OPTS).
+
+    Existe por dos razones, y las dos son del mismo tipo: prescribir un número
+    que Enzo no puede contestar no es información, es ruido.
+    - El índice se acota a los extremos del esquema. Una serie extra concedida
+      a mano ("+ Serie") empuja el índice más allá del último escalón; ahí
+      corresponde el último (el del fallo), no `undefined`.
+    - El valor se acota al techo de la escala. Los chips son 0/1/2/3/4+, así
+      que un "RIR 5" no tiene chip donde caer: se muestra como 4+, que es
+      exactamente lo que ese balde significa ("cuatro o más en reserva").
+
+    Lo que NO arregla esta función es el bug de raíz: si el esquema se armó
+    sobre FILAS en vez de sobre series reales, el número sigue estando mal
+    aunque caiga adentro de la escala. Por eso quien la llama tiene que
+    pasarle un esquema armado sobre series reales — ver el comentario en
+    ExerciseCarousel.jsx y en saveSet() de session.js. */
+export function rirPedido(scheme, serieIdx) {
+  if (!Array.isArray(scheme) || !scheme.length) return null;
+  const i = Math.max(0, Math.min(serieIdx, scheme.length - 1));
+  const n = scheme[i];
+  return n == null ? null : Math.min(n, RIR_OPTS[RIR_OPTS.length - 1]);
+}

@@ -37,9 +37,32 @@ function kilos(v) {
   return String(v);
 }
 
-export default function MusclePop({ stats, onClose }) {
+/* `porcion` es opcional: `{ nombre, dias }` de la PORCIÓN que se tocó en la
+   figura (ver Silhouette.jsx). Existe porque el mapa grande enciende porciones
+   —trapecio, dorsal alto, dorsal bajo— y la cabecera mostraba el dato del grupo
+   grueso: tocabas el trapecio pintado gris de "nunca" y la ficha te decía
+   "Espalda · hoy". El cuerpo de la ficha sigue siendo del grupo (es lo que
+   groupStats mide); lo que cambia es de qué habla el título. */
+/**
+ * Qué dice la cabecera: el nombre y los días de los que se va a hablar.
+ *
+ * Pura y exportada a propósito — es la regla que se rompía (el badge decía
+ * "hoy" sobre un trapecio nunca entrenado) y acá se puede testear sin montar
+ * React, igual que claseDeZona en Silhouette.jsx.
+ *
+ * `porcion.dias` puede ser `null`: una porción sin registro es "nunca", y eso
+ * NO se sustituye por el dato del grupo — sería justo la mentira que esto
+ * viene a arreglar.
+ */
+export function cabeceraDe(cat, dias, porcion = null) {
+  if (!porcion) return { nombre: cat, dias };
+  return { nombre: `${cat} · ${porcion.nombre.toLowerCase()}`, dias: porcion.dias ?? null };
+}
+
+export default function MusclePop({ stats, porcion = null, onClose }) {
   const { cat, dias, sets, sesiones, porSemana, volumen, mejor, top, fibras, ventana } = stats;
   const nunca = dias === null;
+  const { nombre: nombreHead, dias: diasHead } = cabeceraDe(cat, dias, porcion);
   const popRef = useRef(null);
 
   // Bloom-open al aparecer como hoja desde abajo: sale del borde, no salta de golpe.
@@ -50,16 +73,19 @@ export default function MusclePop({ stats, onClose }) {
       ref={popRef}
       className="mpop"
       role="dialog"
-      aria-label={`Estadísticas de ${cat}`}
+      aria-label={porcion ? `Estadísticas de ${cat}, ${porcion.nombre.toLowerCase()}` : `Estadísticas de ${cat}`}
     >
       {/* El nombre manda y la frescura va debajo, no al lado. Antes el badge
           de días competía con el nombre por el mismo renglón; apilados se
           leen en orden y la cabecera deja de ser una fila de tres cosas. */}
       <div className="mpop-head">
         <div className="mpop-title">
-          <span className="mpop-name">{cat}</span>
-          <span className={`mpop-when t${dias === null ? 'n' : dias <= 1 ? '0' : dias <= 3 ? '1' : dias <= 6 ? '2' : '3'}`}>
-            {diasTexto(dias)}
+          {/* "Espalda · trapecio": el grupo da contexto y la porción dice qué
+              tocaste. En minúscula porque es una parte del de al lado, no otro
+              título. */}
+          <span className="mpop-name">{nombreHead}</span>
+          <span className={`mpop-when t${diasHead === null ? 'n' : diasHead <= 1 ? '0' : diasHead <= 3 ? '1' : diasHead <= 6 ? '2' : '3'}`}>
+            {diasTexto(diasHead)}
           </span>
         </div>
         <button type="button" className="mpop-x" onClick={onClose} aria-label="Cerrar"><X /></button>
@@ -99,7 +125,11 @@ export default function MusclePop({ stats, onClose }) {
             {fibras ? (
               <div className="mpop-fibras">
                 {fibras.map(f => (
-                  <div key={f.fibra} className="mpop-fibra">
+                  /* La porción tocada se marca en el desglose para no obligar
+                     a buscarla con el ojo. Sutil —un punto y el nombre en
+                     claro, con tokens— porque el dato sigue siendo la lista;
+                     esto es sólo dónde mirar primero. */
+                  <div key={f.fibra} className={`mpop-fibra${porcion && f.fibra === porcion.nombre ? ' on' : ''}`}>
                     <div className="mpop-fibra-nombre">{f.fibra}</div>
                     <ul className="mpop-list">
                       {f.ejercicios.map(e => (

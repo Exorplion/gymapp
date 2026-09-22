@@ -25,6 +25,7 @@ import { S, useStore, openSheet, changeTab, esDiaLibre } from '../../lib/state.j
 import { WDS, MO, dstr, fmtD, fmtNum, round1 } from '../../lib/format.js';
 import { pendingSlot, sessionForSlot, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
 import { daysSinceAll, stalestGroups, untrainedGroups, MUSCLE_CATS } from '../../lib/muscle.js';
+import { diasPorPorcion } from '../../lib/fibras.js';
 import { semanaDe } from '../../lib/week.js';
 import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
@@ -68,6 +69,14 @@ export default function Inicio() {
   const libreHoy = hayRutina && esDiaLibre(dstr());
 
   const dias = daysSinceAll();
+  /* Un escalón más fino que `dias`: hace cuántos días se trabajó cada PORCIÓN.
+     Sin esto la silueta encendía el grupo grueso entero —un jalón prendía la
+     espalda completa, trapecio incluido— y eso afirmaba de más. Las porciones
+     sin registro no vienen en el objeto y la silueta las pinta apagadas: sin
+     dato es sin dato. Los grupos que la lámina no subdivide (bíceps, tríceps,
+     glúteo, gemelos) no tienen porción, así que siguen encendiéndose enteros
+     con `dias`, exactamente como antes. */
+  const porciones = diasPorPorcion(S.sessions, dstr());
   const viejos = stalestGroups();
   const racha = currentStreak();
   // La fecha es puramente informativa acá — ubica al usuario en el
@@ -151,7 +160,7 @@ export default function Inicio() {
       <MemoriaLine slot={slot} />
 
       <div className="ini-grid" ref={gridRef}>
-        <BodyTile dias={dias} viejos={viejos} />
+        <BodyTile dias={dias} viejos={viejos} porciones={porciones} />
         <RachaTile racha={racha} />
         <StaleTile grupos={viejos} dias={dias} />
         <MacrosTile />
@@ -264,11 +273,11 @@ function MemoriaLine({ slot }) {
     mapa completo al tocar. No es un botón con texto porque el propio
     dibujo ya dice de qué se trata — un ícono nunca va a explicar esto mejor
     que el cuerpo real coloreado. */
-function BodyTile({ dias, viejos }) {
+function BodyTile({ dias, viejos, porciones }) {
   return (
     <button type="button" className="ini-tile ini-tile-body" onClick={() => openSheet('body-map')}>
       <div className="ini-tile-lbl">Tu cuerpo<span className="ini-tile-go">Ver mapa ›</span></div>
-      <div className="ini-tile-thumb"><Silhouette days={dias} interactivo={false} /></div>
+      <div className="ini-tile-thumb"><Silhouette days={dias} interactivo={false} porciones={porciones} /></div>
       {viejos.length > 0 && <div className="ini-tile-hint">Hace tiempo no entrenás {viejos[0]}</div>}
     </button>
   );

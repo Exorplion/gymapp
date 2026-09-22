@@ -386,6 +386,26 @@ function BlockList({ index, exs }) {
     flipSort(() => flushSync(() => bump()));
   }
 
+  /* El encabezado entero es "tocar para abrir/cerrar", pero adentro tiene los
+     botones ▲▼ de reordenar — por eso NO puede ser un <button>: anidar
+     interactivos no es HTML válido, el navegador repara el DOM moviendo nodos
+     y React termina reconciliando contra un árbol distinto del que cree tener.
+     Mismo patrón que ya usa #restbar (RestTimer.jsx): role="button" +
+     tabIndex lo dejan alcanzable por teclado igual, y los ▲▼ siguen siendo
+     botones de verdad, hermanos del contenedor en el árbol de foco.
+
+     Los ▲▼ van adentro del encabezado a propósito: sacarlos afuera sumaría
+     una fila entera a cada bloque y alejaría los controles del título que
+     mueven. El chequeo target===currentTarget resuelve el conflicto sin
+     mover nada. */
+  function onKeyToggle(e, cat, open) {
+    /* Sin esto, apretar Enter sobre ▲ dispararía ADEMÁS el toggle del bloque:
+       el botón interno frena su click con stopPropagation(), pero el keydown
+       original es otro evento y sigue burbujeando hasta acá. */
+    if (e.target !== e.currentTarget) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenCat(open ? null : cat); }
+  }
+
   return (
     <div className="block-list" data-sort="hoy-blocks" ref={listRef}>
       <BodyPreview cats={blocks.map(b => b.cat)} />
@@ -393,11 +413,13 @@ function BlockList({ index, exs }) {
         const open = openCat === b.cat;
         return (
           <div className="block-card" data-sid={b.cat} key={b.cat}>
-            <button
-              type="button"
+            <div
               className="block-head"
+              role="button"
+              tabIndex={0}
               aria-expanded={open}
               onClick={() => setOpenCat(open ? null : b.cat)}
+              onKeyDown={e => onKeyToggle(e, b.cat, open)}
             >
               <span className="chev">{open ? '⌄' : '›'}</span>
               <span className="t">{b.cat}</span>
@@ -408,7 +430,7 @@ function BlockList({ index, exs }) {
                   <button type="button" disabled={i === blocks.length - 1} aria-label={`Mover ${b.cat} después`} onClick={() => mover(b.cat, 1)}>▼</button>
                 </span>
               )}
-            </button>
+            </div>
             <div className={`block-collapse${open ? ' open' : ''}`}>
               <div className="block-collapse-inner">
                 <div className="block-exs">
