@@ -6,8 +6,7 @@ import { dstr } from '../format.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
 vi.mock('../toast.js', () => ({ toast: vi.fn() }));
-vi.mock('../rest.js', () => ({ startRest: vi.fn(), stopRest: vi.fn() }));
-vi.mock('../carousel.js', () => ({ scrollCarouselTo: vi.fn() }));
+vi.mock('../rest.js', () => ({ startRest: vi.fn(), stopRest: vi.fn(), T: { rir: null }, pedirRir: vi.fn(), marcarRirElegido: vi.fn() }));
 vi.mock('../alarm.js', () => ({ pedirPermiso: vi.fn() }));
 
 // La semana real de Enzo, la que destapó todo esto: entrenó el martes y el

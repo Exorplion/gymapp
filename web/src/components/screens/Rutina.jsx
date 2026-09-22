@@ -23,7 +23,7 @@
 // rutina vacía.
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { S, bump, useStore, openSheet, changeTab } from '../../lib/state.js';
+import { S, bump, useStore, openSheet, changeTab, wDisplay } from '../../lib/state.js';
 import { staggerRevealOnce } from '../../lib/motion.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
 import { equipLabel } from '../../lib/equip.js';
@@ -42,6 +42,17 @@ import ExIcon from '../ExIcon.jsx';
 import MuscleFibers from '../MuscleFibers.jsx';
 import { ArrowDown, ArrowUp, Info, Pencil, X } from '../Icon.jsx';
 import { RutinaVacia } from '../Illustration.jsx';
+
+/* El peso de partida declarado (ExerciseForm), sólo si está declarado: sin
+   dato no se muestra nada — ni un "—" ni un 0, que serían afirmar algo que
+   la rutina no dice. "desde" y no "peso" a propósito: es el arranque de la
+   primera sesión, no lo que levantás siempre (ver pesoInicial en
+   lib/session.js). */
+function pesoPartidaTexto(ex) {
+  const kg = ex?.pesoInicialKg;
+  if (typeof kg !== 'number' || kg <= 0) return null;
+  return `desde ${wDisplay(kg)} ${S.cfg.unit}`;
+}
 
 /** Envuelve moveEx (↑/↓) con la animación FLIP del original (flipSort mide
     el DOM antes/después de la mutación). moveEx() en sí NO llama bump() —
@@ -639,6 +650,7 @@ function SlotCard({ slot, index, n, editing }) {
                     <span className="m">
                       RIR {rirScheme(ex.sets, ex.name).join('/')}
                       {equipLabel(ex) && <span className="eq-tag">{equipLabel(ex)}</span>}
+                      {pesoPartidaTexto(ex) && ` · ${pesoPartidaTexto(ex)}`}
                     </span>
                     <span className="acts">
                       <button type="button" className="mini" data-act="ex-up" disabled={i === 0} onClick={() => handleMoveEx(index, ex.id, -1)}><ArrowUp /></button>
@@ -675,6 +687,7 @@ function SlotCard({ slot, index, n, editing }) {
                       <span className="s">
                         {equipLabel(e) && <span className="eq-tag">{equipLabel(e)}</span>}
                         RIR {rirScheme(e.sets).join('/')}
+                        {pesoPartidaTexto(e) && ` · ${pesoPartidaTexto(e)}`}
                       </span>
                     </span>
                     <span className="x">{e.sets}×{e.reps}</span>

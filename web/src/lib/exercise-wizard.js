@@ -18,6 +18,9 @@ export function emptyForm() {
   return {
     name: '', sets: 4, reps: 10, equip: '', cat: '', machine: '',
     unilateral: false, photo: '', illus: '',
+    // Peso de partida: texto, en la unidad que ve el usuario, y vacío por
+    // defecto. Vacío es "sin declarar" — no es 0, y no bloquea el alta.
+    pesoInicial: '',
   };
 }
 

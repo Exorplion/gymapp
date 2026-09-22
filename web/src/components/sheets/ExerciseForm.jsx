@@ -32,12 +32,12 @@ import { MUSCLE_CATS, catOf } from '../../lib/muscle.js';
 import { shrinkImage } from '../../lib/photo.js';
 import { illusUrl } from '../../lib/illustrations.js';
 import IllusPick from './IllusPick.jsx';
-import { norm } from '../../lib/format.js';
+import { norm, round1 } from '../../lib/format.js';
 import { EXCATALOG } from '../../lib/muscle.js';
 import { exMatchesQuery } from '../../lib/exdb.js';
 import { recommendedExercises, saveExercise } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
-import { closeSheet } from '../../lib/state.js';
+import { closeSheet, S, wToUnit, wFromUnit } from '../../lib/state.js';
 import { Mic, RecordDot } from '../Icon.jsx';
 import { cn } from '../../lib/utils.js';
 import { Button } from '../ui/primitives.jsx';
@@ -64,6 +64,64 @@ function WizardProgress({ step }) {
       {Array.from({ length: TOTAL_PASOS }, (_, i) => (
         <i key={i} className={i < step ? 'on' : ''} />
       ))}
+    </div>
+  );
+}
+
+/* El campo se escribe en la unidad que ve el usuario y se guarda en kg —
+   `S.cfg.unit` es presentación, el modelo es siempre kg (ver state.js).
+   Vacío, en blanco o basura devuelven null: "sin declarar", que NO es 0 y no
+   tiene que bloquear el guardado. */
+function kgDesdeCampo(txt) {
+  const t = String(txt ?? '').trim().replace(',', '.');
+  if (!t) return null;
+  const n = parseFloat(t);
+  if (!isFinite(n) || n <= 0) return null;
+  return round1(wFromUnit(n));
+}
+
+/** Lo inverso, para precargar el formulario de edición sin arrastrar
+    decimales largos de la conversión a lb. */
+function campoDesdeKg(kg) {
+  return typeof kg === 'number' && kg > 0 ? String(round1(wToUnit(kg))) : '';
+}
+
+/* Peso de partida — opcional a propósito. Sólo alimenta el arranque de la
+   rueda cuando el ejercicio todavía NO tiene series registradas (ver
+   pesoInicial() en lib/session.js): existe para que un ejercicio nuevo no
+   aparezca en la sesión con 20 kg inventados. No le gana al historial ni a
+   la progresión, y el texto de ayuda lo dice para que no se lea como "el
+   peso fijo del ejercicio". */
+function PesoInicialField({ value, onChange }) {
+  const unidad = S.cfg?.unit === 'lb' ? 'lb' : 'kg';
+  /* Usa `inputCls` y no la clase `.field` de MachineField: dentro de ESTE
+     formulario el patrón de un campo de texto ya es inputCls (mirá Nombre,
+     Series, Reps), y `.field` trae un input de 56px que al lado de los de
+     44px se lee como de otro formulario. */
+  return (
+    <div className="mt-3">
+      <label htmlFor="exform-peso-inicial" className="mb-1.5 block text-sm font-medium text-mut">
+        Peso de partida · opcional
+      </label>
+      <div className="flex items-center gap-2">
+        <input
+          id="exform-peso-inicial"
+          type="number"
+          inputMode="decimal"
+          step="any"
+          min="0"
+          className={cn(inputCls, 'flex-1')}
+          placeholder="Con cuánto arrancás"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+        />
+        <span className="flex-none text-sm font-medium text-mut">{unidad}</span>
+      </div>
+      <div className="mt-1.5 text-sm text-mut">
+        Lo usa la sesión en vivo mientras no haya series registradas de este
+        ejercicio. Después mandan tu historial y la progresión. Vacío = sin
+        declarar.
+      </div>
     </div>
   );
 }
@@ -160,6 +218,7 @@ function CreateWizard({ wd }) {
       name: form.name, sets: form.sets, reps: form.reps, equip: form.equip,
       machine: form.machine, photo: form.photo, illus: form.illus,
       cat: form.cat, unilateral: form.unilateral,
+      pesoInicialKg: kgDesdeCampo(form.pesoInicial),
     }, { mantenerSheet: true });
     setDir('r');
     setWiz(confirmAdded(wiz, nombre));
@@ -290,6 +349,8 @@ function CreateWizard({ wd }) {
                 </div>
               </div>
             </div>
+
+            <PesoInicialField value={form.pesoInicial} onChange={v => setWizField('pesoInicial', v)} />
 
             <label className={eyebrowCls}>Cómo se hace</label>
             <div className="flex flex-wrap gap-2">
@@ -478,6 +539,8 @@ function EditForm({ wd, ex }) {
   const [cat, setCat] = useState(ex.cat || '');
   const [machine, setMachine] = useState(ex.machine || '');
   const [unilateral, setUnilateral] = useState(!!ex.unilateral);
+  // En la unidad que se ve; se convierte a kg recién al guardar.
+  const [pesoInicial, setPesoInicial] = useState(() => campoDesdeKg(ex.pesoInicialKg));
   const [photo, setPhoto] = useState(ex.photo || '');
   const [illus, setIllus] = useState(ex.illus || '');
   const [picking, setPicking] = useState(false);
@@ -497,7 +560,12 @@ function EditForm({ wd, ex }) {
   function step(setter, d) { setter(v => Math.max(1, (parseInt(v) || 0) + d)); }
 
   const auto = catOf({ name });
-  function handleSave() { saveExercise(wd, ex.id, { name, sets, reps, equip, machine, photo, illus, cat, unilateral }); }
+  function handleSave() {
+    saveExercise(wd, ex.id, {
+      name, sets, reps, equip, machine, photo, illus, cat, unilateral,
+      pesoInicialKg: kgDesdeCampo(pesoInicial),
+    });
+  }
 
   return (
     <div ref={rootRef}>
@@ -533,6 +601,8 @@ function EditForm({ wd, ex }) {
           </div>
         </div>
       </div>
+
+      <PesoInicialField value={pesoInicial} onChange={setPesoInicial} />
 
       <label className={eyebrowCls}>Cómo se hace</label>
       <div className="flex flex-wrap gap-2">

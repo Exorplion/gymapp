@@ -15,7 +15,8 @@
 // completarlo de memoria o con lo de la última vez, y eso entraría al historial
 // como si fuera medido: alimentaría PRs, progresión y tonelaje con números
 // inventados. La sesión queda marcada como registrada a mano, sin series.
-import { S, closeSheet } from '../../lib/state.js';
+import { S, closeSheet, esDiaLibre, setDiaLibre } from '../../lib/state.js';
+import { toast } from '../../lib/toast.js';
 import { registrarDiaEntrenado } from '../../lib/session.js';
 import { fmtDFull } from '../../lib/format.js';
 import { catOf } from '../../lib/muscle.js';
@@ -23,9 +24,26 @@ import { catOf } from '../../lib/muscle.js';
 export default function MarcarDia({ fecha }) {
   const ya = S.sessions.filter(s => s.date === fecha);
   const turnos = S.routine.filter(s => s.type === 'workout' && s.exercises?.length);
+  const libre = esDiaLibre(fecha);
 
   async function marcar(slotId) {
-    await registrarDiaEntrenado(fecha, slotId);
+    /* Anotar que SÍ entrenaste manda sobre la declaración anterior: si el día
+       estaba marcado libre y después resulta que fuiste, la marca sobra y
+       dejarla haría que Inicio contradijera a la sesión que acabás de
+       registrar. */
+    const sess = await registrarDiaEntrenado(fecha, slotId);
+    if (sess) await setDiaLibre(fecha, false);
+    closeSheet();
+  }
+
+  /* Antes este botón sólo cerraba el sheet: declarar que no entrenaste no
+     dejaba rastro, así que Inicio te seguía empujando a entrenar el mismo día
+     que ya habías decidido descansar. Ahora guarda la decisión, y por eso
+     dejó de estar solo al fondo con cara de "cancelar" — el descarte es el
+     "Cerrar" de al lado. */
+  async function alternarLibre() {
+    await setDiaLibre(fecha, !libre);
+    toast(libre ? 'Listo, ya no figura como día libre' : `Día libre: ${fmtDFull(fecha)}`);
     closeSheet();
   }
 
@@ -73,9 +91,18 @@ export default function MarcarDia({ fecha }) {
         </>
       )}
 
-      <button type="button" className="btn dim" style={{ marginTop: 16 }} onClick={closeSheet}>
-        No entrené ese día
-      </button>
+      {libre && (
+        <div className="sheet-sub">Este día ya figura como <b>día libre</b>.</div>
+      )}
+
+      <div className="btn-row">
+        <button type="button" className="btn dim" onClick={alternarLibre}>
+          {libre ? 'Quitar día libre' : 'Marcar día libre'}
+        </button>
+        <button type="button" className="btn ghost" onClick={closeSheet}>
+          Cerrar
+        </button>
+      </div>
     </>
   );
 }

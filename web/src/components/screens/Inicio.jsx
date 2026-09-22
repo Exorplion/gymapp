@@ -21,7 +21,7 @@
 // (ver rutina-logic.js). Esta tira no muestra el plan, muestra los hechos, y
 // los hechos sí tienen fecha. El plan se ve y se edita en Rutina.
 import { useEffect, useRef } from 'react';
-import { S, useStore, openSheet, changeTab } from '../../lib/state.js';
+import { S, useStore, openSheet, changeTab, esDiaLibre } from '../../lib/state.js';
 import { WDS, MO, dstr, fmtD, fmtNum, round1 } from '../../lib/format.js';
 import { pendingSlot, sessionForSlot, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
 import { daysSinceAll, stalestGroups, untrainedGroups, MUSCLE_CATS } from '../../lib/muscle.js';
@@ -56,6 +56,16 @@ export default function Inicio() {
   const hecha = slot ? sessionForSlot(slot.id) : null;
   const draft = S.draft;
   const enCurso = !!draft;
+  /* Va DESPUÉS de "en curso" y de "completado" en la cadena de estados: los
+     hechos le ganan a la declaración. Si arrancaste a entrenar igual, o ya
+     cerraste la sesión, el día libre que habías marcado a la mañana no puede
+     seguir siendo el titular.
+
+     Y pide tener rutina: sin split armado, lo que la app necesita decirte es
+     "armá tu rutina", no felicitarte por un descanso de un plan que no
+     existe. */
+  const hayRutina = S.routine.some(s => s.type === 'workout' && s.exercises?.length);
+  const libreHoy = hayRutina && esDiaLibre(dstr());
 
   const dias = daysSinceAll();
   const viejos = stalestGroups();
@@ -92,6 +102,17 @@ export default function Inicio() {
         VER LO QUE HICISTE
       </button>
     );
+  } else if (libreHoy) {
+    /* Lo declaraste libre: la app deja de empujarte, pero no te cierra la
+       puerta. El CTA queda en `dim` como el del descanso del plan —"podés,
+       nadie te lo impide"— y el turno pendiente sigue ahí, esperándote
+       mañana, porque tomarte el día no te hace perder el turno. */
+    eyebrow = 'Día libre · hoy';
+    titulo = 'Descanso tomado';
+    sub = slot?.type === 'workout' && slot.exercises?.length
+      ? `${slot.name || 'Tu turno'} te espera para la próxima`
+      : 'Vos lo decidiste, así queda';
+    cta = <button type="button" className="ini-cta dim" onClick={irAHoy}>ENTRENAR IGUAL</button>;
   } else if (slot?.type === 'workout' && slot.exercises?.length) {
     eyebrow = fecha;
     titulo = slot.name || 'Entrenamiento';
@@ -107,7 +128,6 @@ export default function Inicio() {
       </button>
     );
   } else {
-    const hayRutina = S.routine.some(s => s.type === 'workout' && s.exercises?.length);
     eyebrow = fecha;
     titulo = hayRutina ? 'Descanso' : 'Sin rutina';
     sub = hayRutina ? 'Hoy no toca entrenar' : 'Armá tu split para empezar';
@@ -164,7 +184,10 @@ export default function Inicio() {
     que "no entrenaste", y pintarlos igual sería afirmar algo sobre el futuro. */
 function SemanaReal() {
   const dias = semanaDe();
-  const sinRegistro = dias.filter(d => !d.esFuturo && !d.esHoy && !d.sesiones.length);
+  /* Un día declarado libre no es un día "sin registrar": ya contestaste la
+     pregunta. Reclamarlo igual sería la app pidiéndote que le confirmes algo
+     que vos mismo le dijiste. */
+  const sinRegistro = dias.filter(d => !d.esFuturo && !d.esHoy && !d.sesiones.length && !esDiaLibre(d.fecha));
   const ayer = sinRegistro[sinRegistro.length - 1];
 
   return (
@@ -184,7 +207,8 @@ function SemanaReal() {
               aria-label={
                 hecho ? `${d.etiqueta} ${d.numero}: ${nombre}`
                   : d.esFuturo ? `${d.etiqueta} ${d.numero}: todavía no llegó`
-                    : `${d.etiqueta} ${d.numero}: sin registrar, tocá para anotar qué entrenaste`
+                    : esDiaLibre(d.fecha) ? `${d.etiqueta} ${d.numero}: día libre, tocá para cambiarlo`
+                      : `${d.etiqueta} ${d.numero}: sin registrar, tocá para anotar qué entrenaste`
               }
               onClick={() => { if (!d.esFuturo) openSheet('marcar-dia', { fecha: d.fecha }); }}
             >

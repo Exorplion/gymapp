@@ -4,6 +4,35 @@ import { tiempoDeSesion, resumenDeSesion } from '../ongoing.js';
 import { S } from '../state.js';
 import { T, startRest, stopRest, tickRest, recuperarRest, shiftRest, minimizeRest } from '../rest.js';
 
+/* DOM mínimo para poder testear el <audio> de la alarma.
+
+   El proyecto corre vitest en entorno de node (sin jsdom, que ni siquiera está
+   instalado), pero el bug del volumen del teléfono es exactamente un bug de qué
+   hace la app con el elemento: si retiene el recurso, Android le da el canal
+   multimedia. Con estos stubs alcanza — lo que importa es el src, no que suene.
+
+   Va a nivel de módulo y no en un beforeEach porque alarm.js se acuerda de si
+   alguna vez falló crear el elemento: si un test corriera sin DOM, quedaría
+   marcado como fallado para todo el archivo. */
+const CUERPO = [];
+globalThis.document = {
+  body: { appendChild: el => CUERPO.push(el) },
+  querySelector: sel => (sel === 'audio' ? CUERPO[0] || null : null),
+  addEventListener: () => {},
+};
+globalThis.Audio = class {
+  constructor(src) { this.attrs = {}; this.volume = 1; this.currentTime = 0; if (src) this.src = src; }
+  get src() { return this.attrs.src; }
+  set src(v) { this.attrs.src = v; }
+  getAttribute(n) { return n in this.attrs ? this.attrs[n] : null; }
+  removeAttribute(n) { delete this.attrs[n]; }
+  load() {}
+  play() { return Promise.resolve(); }
+  pause() {}
+};
+globalThis.URL.createObjectURL = () => 'blob:alarma';
+globalThis.Blob = globalThis.Blob || class {};
+
 /** Lee el WAV como muestras con signo, salteando las 44 bytes de cabecera. */
 function muestras() {
   const v = new DataView(muestrasAlarma());
@@ -135,6 +164,65 @@ describe('el reloj de descanso', () => {
     S.cfg.rest = 0;
     startRest();
     expect(T.state).toBe('hidden');
+  });
+});
+
+// El bug: durante el descanso las teclas de volumen del Android controlaban el
+// canal multimedia en vez del timbre, y no volvían hasta que terminaba. La causa
+// era un <audio> con el recurso cargado vivo todo el descanso. Lo que hay que
+// sostener son dos cosas a la vez: que mientras se cuenta no haya recurso
+// tomado, y que el elemento siga existiendo (ahí vive la activación por gesto
+// que permite que la alarma suene con la pantalla apagada).
+describe('el <audio> de la alarma no se queda con el volumen del teléfono', () => {
+  const audio = () => document.querySelector('audio');
+  const conRecurso = () => { const el = audio(); return !!(el && el.getAttribute('src')); };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 6, 10, 0, 0));
+    S.cfg.rest = 90;
+    T.state = 'hidden'; T.end = 0; T.int = null;
+  });
+  afterEach(() => { stopRest(); vi.useRealTimers(); });
+
+  /* El desbloqueo del elemento termina en un .then() del play(), así que hay que
+     dejar correr las microtareas antes de mirar. En el teléfono eso pasa en el
+     mismo instante en que tocás el botón. */
+  const arrancar = async () => { startRest(); await Promise.resolve(); await Promise.resolve(); };
+
+  it('durante el descanso no retiene el recurso de audio', async () => {
+    await arrancar();
+    expect(conRecurso()).toBe(false);
+    vi.advanceTimersByTime(30000);
+    expect(conRecurso()).toBe(false);
+  });
+
+  it('lo toma recién cuando la alarma tiene que sonar', async () => {
+    await arrancar();
+    vi.advanceTimersByTime(90000);
+    expect(T.state).toBe('ringing');
+    expect(conRecurso()).toBe(true);
+  });
+
+  it('al cortarla lo suelta, así el volumen vuelve al timbre', async () => {
+    await arrancar();
+    vi.advanceTimersByTime(90000);
+    stopRest();
+    expect(conRecurso()).toBe(false);
+  });
+
+  // Destruir el elemento arreglaría el volumen pero rompería la alarma de fondo:
+  // la activación por gesto es por elemento y no hay gesto al final del descanso.
+  it('nunca destruye el elemento: ahí vive la activación por gesto', async () => {
+    await arrancar();
+    const el = audio();
+    expect(el).not.toBe(null);
+    vi.advanceTimersByTime(90000);
+    stopRest();
+    expect(audio()).toBe(el);
+    await arrancar();
+    expect(audio()).toBe(el);
+    expect(CUERPO.length).toBe(1);
   });
 });
 

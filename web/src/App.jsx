@@ -46,6 +46,7 @@ import Settings from './components/sheets/Settings.jsx';
 import BodyMap from './components/sheets/BodyMap.jsx';
 import Gyms from './components/sheets/Gyms.jsx';
 import GymEquip from './components/sheets/GymEquip.jsx';
+import GymPhotoView from './components/sheets/GymPhotoView.jsx';
 import RoutineWizard from './components/sheets/RoutineWizard.jsx';
 import YearRecap from './components/sheets/YearRecap.jsx';
 
@@ -107,6 +108,7 @@ function SheetContent({ sheet }) {
     case 'body-map': return <BodyMap {...sheet.props} />;
     case 'gyms': return <Gyms {...sheet.props} />;
     case 'gym-equip': return <GymEquip {...sheet.props} />;
+    case 'gym-photo': return <GymPhotoView {...sheet.props} />;
     case 'year-recap': return <YearRecap {...sheet.props} />;
     default: return null;
   }

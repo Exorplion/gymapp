@@ -703,7 +703,12 @@ export function toggleSlotOpen(index) { S.rutOpen = S.rutOpen === index ? null :
    que es justo el costo que Enzo nota como "se siente mal".
    El default sigue siendo cerrar: es lo que esperan la edición y cualquier
    otro llamador que venga. */
-export async function saveExercise(index, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral }, { mantenerSheet = false } = {}) {
+/* `pesoInicialKg` llega ya en kg (la unidad interna) y puede venir null: eso
+   es "sin declarar", y se guarda como undefined — nunca como 0, que sería
+   afirmar que el ejercicio arranca sin carga. Lo consume pesoInicial() en
+   lib/session.js. */
+export async function saveExercise(index, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral, pesoInicialKg }, { mantenerSheet = false } = {}) {
+  const pKg = typeof pesoInicialKg === 'number' && pesoInicialKg > 0 ? pesoInicialKg : undefined;
   name = (name || '').trim();
   const s = Math.max(1, parseInt(sets) || 4);
   const r = Math.max(1, parseInt(reps) || 10);
@@ -722,6 +727,9 @@ export async function saveExercise(index, exId, { name, sets, reps, equip, machi
       // vacío = volver al automático de catOf(), no "sin grupo"
       ex.cat = cat || undefined;
       ex.unilateral = unilateral || undefined;
+      // Vaciar el campo en el formulario borra el dato: vuelve a "sin
+      // declarar" y la sesión retoma su default de siempre.
+      ex.pesoInicialKg = pKg;
     }
   } else {
     d.exercises.push({
@@ -732,6 +740,7 @@ export async function saveExercise(index, exId, { name, sets, reps, equip, machi
       illus: illus || undefined,
       cat: cat || undefined,
       unilateral: unilateral || undefined,
+      pesoInicialKg: pKg,
     });
   }
   await persistSlot(index);

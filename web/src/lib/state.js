@@ -35,6 +35,19 @@ export const S = {
        Ajustes; `undefined` cuenta como prendido para que las instalaciones
        que ya existen queden cubiertas sin tener que tocar nada. */
     autoBackup: true,
+    /* Días que VOS declaraste libres: ['YYYY-MM-DD', ...].
+       Hasta ahora "no entrenaste" y "declaraste que no ibas a entrenar" eran
+       indistinguibles — los dos eran simplemente la ausencia de una sesión —
+       y por eso Inicio te seguía diciendo "ENTRENAR" el día que ya habías
+       decidido descansar. Esto es lo único que la app no podía deducir sola:
+       una decisión.
+       Va en `cfg` y no en un store propio porque es un puñado de strings
+       cortos por año, se lee en cada render de Inicio (tenerlo ya en memoria
+       con el resto de la config es gratis) y no tiene ningún campo más que
+       la fecha: un store con un solo campo sería una tabla para nada.
+       `[]` por default, y todo lector usa `|| []`: un cfg viejo guardado
+       antes de esta versión no tiene la clave. */
+    diasLibres: [],
   },
   draft: null,          // sesión en curso
   tab: 'inicio',        // la portada; 'hoy' sigue existiendo, pero se entra desde acá
@@ -181,6 +194,36 @@ export function resolveAutoRest() {
 }
 
 export const saveCfg = () => idb.put('settings', { key: 'cfg', value: S.cfg });
+
+/** ¿Declaraste libre ese día? */
+export function esDiaLibre(fecha) {
+  return (S.cfg.diasLibres || []).includes(fecha);
+}
+
+/** Declarar (o quitar) un día como libre.
+
+    NO toca `seqIndex`: tomarte el día no te hace perder el turno. Si mañana
+    te tocaba "Posterior A", mañana te sigue tocando "Posterior A" — la
+    secuencia de Fierro avanza cuando entrenás, no por calendario (ver
+    rutina-logic.js), y el único avance automático es el de los turnos de tipo
+    `rest`, que resolveAutoRest() consume por día transcurrido porque ESOS sí
+    son parte del plan. Un día libre declarado es una excepción al plan, no un
+    paso dentro de él.
+
+    Tampoco toca la racha: streak.ts ya trata cualquier día sin sesión como
+    descanso y sólo corta cuando el hueco supera la tolerancia de tu propia
+    rutina. Declararlo no lo hace más ni menos descanso de lo que ya era, así
+    que la racha sigue exactamente igual — se evaluó y se dejó como está a
+    propósito: premiar por declarar sería convertir un botón en una forma de
+    estirar la racha sin entrenar. */
+export function setDiaLibre(fecha, libre = true) {
+  const actual = S.cfg.diasLibres || [];
+  const ya = actual.includes(fecha);
+  if (libre === ya) return Promise.resolve();
+  S.cfg.diasLibres = libre ? [...actual, fecha].sort() : actual.filter(f => f !== fecha);
+  bump();
+  return saveCfg();
+}
 export const saveDraft = () => S.draft ? idb.put('settings', { key: 'draft', value: S.draft }) : idb.del('settings', 'draft');
 
 // Funciones de peso — dependen de S.cfg.unit para mostrar kg o lb
