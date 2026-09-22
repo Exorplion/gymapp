@@ -2083,6 +2083,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .block-head{
   display:flex;align-items:center;gap:8px;padding:12px 12px;width:100%;text-align:left;
   background:none;border:0;color:inherit;font:inherit;
+  /* Es un <div role="button">, no un <button> (no se puede anidar los ▲▼
+     adentro de un botón — ver el comentario en Hoy.jsx), así que el cursor
+     de mano hay que pedirlo a mano. */
+  cursor:pointer;
 }
 .block-head .chev{color:var(--mut2);font-size:var(--t-body);transition:transform var(--d2) var(--ease);flex:none}
 .block-head[aria-expanded="true"] .chev{transform:rotate(90deg);color:var(--cyan)}
@@ -2101,8 +2105,22 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .block-move button:disabled{opacity:.3}
 .block-move button:not(:disabled):active{color:var(--cyan);border-color:var(--cyan)}
 
-.block-collapse{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--d3) var(--ease)}
-.block-collapse.open{grid-template-rows:1fr}
+/* Acordeón de bloques de Hoy: misma técnica que .day-collapse en Entreno
+   (grid-template-rows 0fr→1fr, que sí transiciona; display no), y el
+   contenido queda montado para que el CIERRE también se anime.
+   `visibility` se suma por lo mismo que en .day-collapse: overflow:hidden
+   recorta el dibujo pero NO saca del orden de tabulación lo que hay adentro,
+   así que sin esto el teclado se metía en los ejercicios de un bloque
+   cerrado. El 0s del final la apaga recién cuando terminó de plegarse, y sin
+   demora al abrir. */
+.block-collapse{
+  display:grid;grid-template-rows:0fr;visibility:hidden;
+  transition:grid-template-rows var(--d3) var(--ease),visibility 0s var(--d3);
+}
+.block-collapse.open{
+  grid-template-rows:1fr;visibility:visible;
+  transition:grid-template-rows var(--d3) var(--ease),visibility 0s;
+}
 .block-collapse-inner{overflow:hidden;min-height:0}
 .block-exs{padding:0 12px 12px;display:flex;flex-direction:column;gap:6px}
 .block-ex-row{display:flex;align-items:center;gap:8px}
@@ -2112,7 +2130,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .block-ex-row .grow .t{display:block;font-size:var(--t-sm);font-weight:600}
 .block-ex-row .grow .s{display:block;font-size:var(--t-micro);color:var(--mut);margin-top:1px;text-align:left}
-@media (prefers-reduced-motion:reduce){.block-collapse{transition:none}.block-head .chev{transition:none}}
+/* `.block-collapse.open` también, y no sólo `.block-collapse`: la regla de
+   .open trae su propia `transition` con dos clases de especificidad, así que
+   una sola clase acá no le ganaba y el acordeón seguía animando al abrir con
+   "reducir movimiento" puesto. */
+@media (prefers-reduced-motion:reduce){.block-collapse,.block-collapse.open{transition:none}.block-head .chev{transition:none}}
 
 /* ============================================================
    Rediseño — tarjeta hero de HOY
@@ -2614,6 +2636,27 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .sil-luz{mix-blend-mode:overlay;pointer-events:none}
 .sil-luz path{fill:url(#sil-luz);stroke:none}
 
+/* La porción trabajada, dibujada ENCIMA de su músculo base (clavicular sobre
+   el pecho, vasto interno sobre el cuádriceps). El color ya lo pone su tono de
+   frescura; esto es sólo el contorno que la despega del base, que muchas veces
+   tiene exactamente el mismo tono —entrenaste el grupo y la porción el mismo
+   día— y sin contorno el resaltado sería invisible. Claro y fino a propósito:
+   el ámbar de "7+ días" y el --accent de la selección ya están tomados. */
+.sil-porcion{stroke:rgba(255,255,255,.55);stroke-width:var(--sil-porcion-w,2);pointer-events:none}
+
+/* El grosor se calibra por TAMAÑO DE RENDER, no de una vez.
+
+   `stroke-width` va en unidades del SVG y la lámina mide ~1444 de alto, así que
+   el mismo 2 se convierte en 0.15px en la miniatura de Inicio (112px) y en
+   0.58px en el mapa grande (420px): las dos veces menos de un píxel. En la
+   miniatura da igual —ahí el dato lo lleva el color, la porción es un parche de
+   pocos píxeles— pero el mapa grande es justamente donde se abre para mirar el
+   detalle, y un contorno de medio píxel se pierde. 7 unidades ≈ 2px reales a
+   420px (medido en Chrome a 390 y 430px de viewport): legible sin taparle el
+   color al músculo, que es el que lleva el dato. Se aplica sólo acá para no engordar la miniatura, donde 2px sobre un cuerpo
+   de 112px taparían el músculo en vez de marcarlo. */
+.sil-grande{--sil-porcion-w:7}
+
 .sil-tap{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .sil-tap:focus{outline:none}
 .sil-tap:focus-visible,.sil-sel{stroke:var(--accent);stroke-width:4}
@@ -2730,6 +2773,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   color:var(--mut2);margin-bottom:1px;
 }
 .mpop-fibra .mpop-list{margin-bottom:5px}
+/* La porción que tocaste en la figura. Sólo sube el contraste del rótulo y le
+   pone un punto delante: marcarla con fondo o borde la convertiría en otra
+   cosa que la lista, y sigue siendo la misma lista. */
+.mpop-fibra.on>.mpop-fibra-nombre{color:var(--txt)}
+.mpop-fibra.on>.mpop-fibra-nombre::before{content:"● "; color:var(--cyan)}
 
 /* Pie único: tope, volumen y la ventana en la misma línea, separados por una
    línea de arriba que los despega de la lista con scroll. */

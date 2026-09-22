@@ -18,6 +18,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { S, wDisplay, wAlt, wStep, wToUnit, wFromUnit, openSheet } from '../lib/state.js';
 import { round1, fmtNum } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
+import { rirPedido } from '../lib/rir.js';
 import { suggestedWeight } from '../lib/charts.js';
 import { progresion, progresionTexto } from '../lib/progression.js';
 import {
@@ -29,7 +30,7 @@ import { sideImbalance } from '../lib/symmetry.js';
 import { shrinkImageBlob } from '../lib/photo.js';
 import { toast } from '../lib/toast.js';
 import { jumpToSlide, scrollToSlideEl, slideScrollLeft } from '../lib/carousel.js';
-import { staggerRevealOnce, squashStretch, impactBurst, bloomOpen, menosMovimiento } from '../lib/motion.js';
+import { staggerRevealOnce, squashStretch, impactBurst, detailsSlide, menosMovimiento } from '../lib/motion.js';
 import { relatedHistory, equipLabel, puedeSerUnilateral } from '../lib/equip.js';
 import { getPhoto, savePhoto, deletePhoto } from '../lib/gyms.js';
 import { iconOf } from '../lib/exicon.js';
@@ -51,7 +52,14 @@ import '../styles-coverflow.css';
 // le pasa el resultado a esta función.
 const CF_MAX_ANGLE = 32; // grados, vecino inmediato
 const CF_MAX_SCALE_DROP = 0.15;
-const CF_MAX_OPACITY_DROP = 0.6;
+/* Los vecinos bajan a 0.7, no a 0.4. Era la única objeción que sobrevivió a
+   la re-medición del coverflow (2026-09-22): el costo de latencia que casi
+   lo hace descartar bajó de +65ms a +5.6ms cuando el PR #114 saco el scroll
+   duplicado, pero sobre fondo oscuro un 0.4 no es "atenuado", es
+   desaparecido — el ejercicio que viene dejaba de leerse. La profundidad ya
+   la cuentan el rotateY, la escala y el translateZ; la opacidad sólo tenía
+   que insinuar que eso no es lo que estás tocando ahora. */
+const CF_MAX_OPACITY_DROP = 0.3;
 const CF_MAX_Z = 70; // px hundidos hacia adentro
 const CF_FLAT_EPSILON = 0.03; // por debajo de esto, el slide activo queda EXACTAMENTE plano
 
@@ -508,11 +516,6 @@ function ExerciseSlide({ m, wd, started }) {
   const { ex, done, target, skipped, full, open, isNext, waiting } = m;
   const v = ensureVals(ex);
   const last = lastDataFor(ex);
-  // el esquema se arma sobre el objetivo de HOY: con una serie extra concedida
-  // hay que darle un RIR también a esa
-  const scheme = rirScheme(target, ex.name);
-  const curSet = Math.min(done.length, target - 1);
-  const curRir = scheme[curSet];
   const info = exInfo(ex.name);
   // "Un lado por vez": lo que dice la rutina, salvo que la máquina de HOY te
   // haya obligado a cambiarlo (ver isUnilateral en session.js).
@@ -525,6 +528,27 @@ function ExerciseSlide({ m, wd, started }) {
   const serieObjetivo = seriesCompletas(target, uni);
   const serieHechas = seriesCompletas(done.length, uni);
   const serieAMedias = uni && done.length % 2 === 1;
+  /* El esquema de esfuerzo va sobre SERIES REALES, nunca sobre filas. Es la
+     confusión que se repite en este archivo y vale escribirla una vez más:
+     `target` (targetSets) cuenta FILAS, y en unilateral cada serie real son
+     dos filas. Armarlo sobre filas convertía un 4×10 unilateral en un esquema
+     de 8 escalones — rirScheme(8) = 7/6/5/4/3/2/1/0 — y le mostraba a Enzo
+     "pedía RIR 6", un valor que ni siquiera existe entre los chips (0..4+).
+     Sobre series reales el esquema vuelve a tener 4 escalones: 3/2/1/0.
+
+     El índice también es en series: `seriesCompletas(done.length, uni)` hace
+     que las DOS filas de la misma serie caigan en el mismo escalón. Es la
+     misma serie, un lado y el otro — no tiene sentido pedirle RIR 2 a la
+     izquierda y RIR 1 a la derecha.
+
+     En bilateral seriesCompletas() es la identidad, así que acá no cambia
+     absolutamente nada respecto de lo que ya funcionaba.
+
+     El índice tiene que coincidir clavado con el que calcula saveSet() en
+     session.js para la pregunta del descanso ("pedía RIR N"): si se tocan
+     estas cuentas, se tocan las dos. */
+  const scheme = rirScheme(serieObjetivo, ex.name);
+  const curRir = rirPedido(scheme, serieHechas);
   const puedeUni = puedeSerUnilateral(ex);
   // Sin historial propio: primera vez en ESTE equipo. Mostramos de dónde venís
   // en las otras variantes, sin traducir el número (ver relatedHistory).
@@ -540,7 +564,10 @@ function ExerciseSlide({ m, wd, started }) {
   const imbalance = uni ? sideImbalance(ex) : null;
 
   const altRef = useRef(null), pwRef = useRef(null);
-  const moreBodyRef = useRef(null);
+  // El <details> y su cuerpo: uno para escribir el `open` a mano, el otro
+  // para animarle la altura. Refs y no estado: abrir esto no tiene que
+  // rerenderizar el carrusel (ver el comentario del coverflow más abajo).
+  const moreRef = useRef(null), moreBodyRef = useRef(null);
 
   // altRef/pwRef siguen sin controlar (refs, no state) por la misma razón de
   // siempre: son texto derivado que cambia con cada serie/peso y no vale la
@@ -794,12 +821,22 @@ function ExerciseSlide({ m, wd, started }) {
                 resueltos. Se estiliza como el resto de la app (chip/card) en
                 vez de dejarlo con la pinta nativa del navegador — la queja
                 concreta de Enzo era que ese control desentonaba con todo lo
-                demás. */}
-            <details
-              className="ex-more"
-              onToggle={e => { if (e.currentTarget.open) bloomOpen(moreBodyRef.current); }}
-            >
-              <summary className="chip ex-more-summary">Más opciones del ejercicio</summary>
+                demás.
+
+                Sigue siendo <details> incluso después de darle movimiento:
+                el toggle se maneja desde el click del <summary>
+                (detailsSlide, motion.js) en vez de rehacer el acordeón con
+                estado de React. Cambiar accesibilidad de verdad por una
+                transición sería un retroceso neto. */}
+            <details className="ex-more" ref={moreRef}>
+              <summary
+                className="chip ex-more-summary"
+                /* onClick y no onToggle: el toggle nativo hay que frenarlo
+                   ANTES de que pase, y el click del <summary> es también el
+                   evento que produce Enter/Espacio, así que el teclado sigue
+                   entrando por el mismo camino. */
+                onClick={e => { e.preventDefault(); detailsSlide(moreRef.current, moreBodyRef.current); }}
+              >Más opciones del ejercicio</summary>
               <div className="ex-more-body" ref={moreBodyRef}>
                 {S.cfg.activeGym && <GymPhoto gymId={S.cfg.activeGym} exName={ex.name} />}
                 <ExActions ex={ex} wd={wd} uni={uni} puedeUni={puedeUni} />

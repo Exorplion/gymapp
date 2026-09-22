@@ -17,6 +17,7 @@
 // "trabaja" y no como un porcentaje: un número daría una precisión que no
 // existe.
 import { norm } from './format.js';
+import { CUERPOS } from './bodydata.js';
 
 /* La tabla va de lo MÁS específico a lo más genérico, igual que catOf: el orden
    ES la lógica. "Curl femoral" tiene que caer en femoral antes de que "curl" lo
@@ -205,6 +206,74 @@ export const esGrupo = n => GRUPOS.has(n);
     medial-lateral no tienen subzona propia en la lámina, así que se pintan
     con el grupo entero. Es menos preciso que el nombre, y prefiero que el
     dibujo diga de menos antes que señalar el músculo equivocado. */
+/* Los nombres de porción que la lámina SÍ sabe dibujar, sacados de bodydata.js
+   y no escritos a mano: si alguien regenera la lámina y una zona cambia de
+   nombre, esta lista se entera sola. Lo que no está acá es un grupo entero
+   (Bíceps, Glúteo, Femoral…) y se pinta como grupo, igual que siempre — ver
+   GRUPOS/esGrupo más arriba. */
+const SUBS_DE_LAMINA = new Set();
+for (const sexo of ['m', 'f']) {
+  for (const cara of ['frente', 'espalda']) {
+    for (const z of CUERPOS[sexo][cara].zonas) if (z.sub) SUBS_DE_LAMINA.add(z.sub);
+  }
+}
+
+/** Días enteros entre dos fechas YYYY-MM-DD, en hora local.
+    El mediodía evita que el horario de verano corra el resultado un día.
+    (Es la misma cuenta que hace muscle.ts para los grupos; se repite acá en
+    vez de importarla porque muscle.ts YA importa este módulo y cerrar el
+    círculo rompería el orden de inicialización de sus constantes.) */
+function diasEntre(desde, hasta) {
+  const a = new Date(desde + 'T12:00:00');
+  const b = new Date(hasta + 'T12:00:00');
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+
+/**
+ * Hace cuántos días se trabajó cada PORCIÓN, para poder encender en la silueta
+ * la porción y no el grupo grueso.
+ *
+ * Es el mismo criterio que `daysSinceGroup()` pero un escalón más fino, y con
+ * la misma honestidad: una porción de la que no hay registro simplemente NO
+ * aparece en el mapa. No se rellena con el dato del grupo (eso sería afirmar
+ * que entrenaste el trapecio porque hiciste un jalón) ni con un cero.
+ *
+ * Sólo cuentan las porciones PRINCIPALES (`p`) de cada ejercicio: las
+ * secundarias son asistencia, y pintarlas como trabajadas sería decir de más.
+ * Y sólo las que la lámina sabe dibujar — 'Femoral' o 'Bíceps braquial' son
+ * porciones reales pero sin forma propia, así que se siguen pintando con su
+ * grupo entero.
+ *
+ * Puro a propósito (recibe las sesiones y el día de hoy): así se testea sin
+ * tocar IndexedDB ni el reloj.
+ *
+ * @param {{date?: string, entries?: {name?: string, sets?: unknown[]}[]}[]} sesiones
+ * @param {string} hoy — fecha YYYY-MM-DD
+ * @returns {Record<string, number>} sub → días. Las porciones sin registro no
+ *   están en el objeto (ausente = sin dato, distinto de 0).
+ */
+export function diasPorPorcion(sesiones, hoy) {
+  const ultima = new Map();
+  for (const s of sesiones || []) {
+    if (!s?.date) continue;
+    for (const e of s.entries || []) {
+      // Sin series registradas el ejercicio estaba en la lista pero no se
+      // hizo: mismo criterio que daysSinceGroup().
+      if (!e?.sets?.length) continue;
+      const fib = fibrasDe(e);
+      if (!fib) continue;
+      for (const sub of fib.p) {
+        if (!SUBS_DE_LAMINA.has(sub)) continue;
+        const prev = ultima.get(sub);
+        if (prev === undefined || s.date > prev) ultima.set(sub, s.date);
+      }
+    }
+  }
+  const out = {};
+  for (const [sub, fecha] of ultima) out[sub] = Math.max(0, diasEntre(fecha, hoy));
+  return out;
+}
+
 export const ZONA_DE = {
   Femoral: 'Pierna',
   Aductores: 'Pierna',

@@ -50,6 +50,41 @@ describe('botones sólo-ícono', () => {
   });
 });
 
+/* Un <button> adentro de otro <button> no es HTML válido y React lo grita en
+   consola en cada render. Pasó de verdad: el encabezado de cada bloque
+   muscular en Hoy.jsx era un <button> y llevaba adentro los ▲▼ de reordenar.
+   No es cosmético — el navegador repara el DOM moviendo nodos, React queda
+   reconciliando contra otro árbol, y los lectores de pantalla no saben
+   anunciar un control dentro de otro control.
+
+   La salida cuando un contenedor entero tiene que ser tocable pero lleva
+   botones adentro ya está en el repo: <div role="button"> + tabIndex +
+   onKeyDown con el chequeo target===currentTarget (RestTimer.jsx, Hoy.jsx). */
+function sinComentarios(src) {
+  // El comentario de RestTimer.jsx EXPLICA el problema escribiendo "<button>"
+  // en prosa; contarlo como markup sería un falso positivo eterno.
+  return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+}
+
+describe('botones anidados', () => {
+  it('ningún <button> contiene otro <button>', () => {
+    const anidados = [];
+    for (const ruta of jsxDeTodoElArbol(RAIZ)) {
+      const src = sinComentarios(readFileSync(ruta, 'utf8'));
+      let prof = 0;
+      for (const m of src.matchAll(/<button\b|<\/button>/g)) {
+        if (m[0] === '</button>') { prof = Math.max(0, prof - 1); continue; }
+        prof++;
+        if (prof > 1) {
+          const linea = src.slice(0, m.index).split('\n').length;
+          anidados.push(`${ruta.split(/[\\/]/).pop()}:${linea}`);
+        }
+      }
+    }
+    expect(anidados, `<button> anidados:\n${anidados.join('\n')}`).toEqual([]);
+  });
+});
+
 describe('sheets', () => {
   const dir = join(RAIZ, 'sheets');
 

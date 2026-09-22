@@ -74,14 +74,33 @@ function tono(d) {
   return 'sil-d3';
 }
 
-/** La clase de una zona. El pelo y lo que no rastreamos tienen la suya. */
-function claseDe(z, days) {
+/** La clase de una zona. El pelo y lo que no rastreamos tienen la suya.
+ *
+ *  Con `porciones` (opt-in: `{ sub → días }`, ver diasPorPorcion en fibras.js)
+ *  una zona que ES una porción habla por sí misma en vez de heredar el tono
+ *  del grupo grueso. Eso es todo el arreglo: hasta ahora un jalón encendía la
+ *  espalda ENTERA —trapecio incluido— cuando lo único que se sabía es que se
+ *  trabajó el dorsal bajo.
+ *
+ *  Una porción sin registro cae en `tono(null)` = `sil-none`, que es el mismo
+ *  gris callado de "nunca entrenado". Es la lectura correcta: no hay dato de
+ *  esa porción. Y se dibuja igual, apagada pero PRESENTE — las hermanas
+ *  (Trapecio, Dorsal alto, Dorsal bajo) son entre las tres la espalda
+ *  completa, así que esconder una deja el músculo mutilado en vez de
+ *  parcialmente entrenado.
+ *
+ *  Sin `porciones` el comportamiento es exactamente el de siempre: el tono del
+ *  grupo para todas sus zonas. Un grupo que la lámina no subdivide (Bíceps,
+ *  Tríceps, Glúteo, Gemelos) no tiene `sub` en ninguna zona, así que tampoco
+ *  cambia nada para él aunque le pasen porciones. */
+export function claseDeZona(z, days = {}, porciones = null) {
   if (z.cat === 'pelo') return 'sil-pelo';
   if (!z.cat) return 'sil-neutro';
+  if (porciones && z.sub) return tono(porciones[z.sub] ?? null);
   return tono(days[z.cat]);
 }
 
-function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar, porciones }) {
+function Cara({ cara, days, etiqueta, sel, selSub, onPick, activa, revelar, porciones }) {
   /* Los parches quedan fuera del cuerpo normal.
 
      Son las capas que MuscleMap dibuja ENCIMA del músculo base para resaltar
@@ -92,19 +111,24 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar, porciones })
   const zonas = cara.zonas.filter(z => !z.parche);
   const trazos = fn => zonas.map((z, i) => z.d.map((d, j) => fn(z, d, `${i}.${j}`)));
 
-  /* Opt-in: cuando el que llama SABE qué porciones se entrenaron (`porciones`,
-     `{ [cat]: string[] de sub }`) esas capas SÍ se dibujan, encima de todo,
-     con el mismo tono que ya tiene su grupo — no un color aparte, porque no es
-     una selección nueva, es zoom sobre la misma verdad. Sin la prop (el caso
-     de siempre: Inicio, BodyMap, el vistazo de fin de sesión) esta lista queda
-     vacía y el comportamiento es idéntico al de antes.
+  /* Opt-in: cuando el que llama SABE hace cuántos días se trabajó cada porción
+     (`porciones`, `{ sub → días }`) los parches SÍ se dibujan, encima de todo,
+     con el tono de SU porción y no el del grupo. Sin la prop (el vistazo de fin
+     de sesión, el mini de Hoy, el asistente de rutina) esta lista queda vacía y
+     el comportamiento es idéntico al de antes.
+
+     Acá el modelo es el otro de los dos que usa la lámina: un parche va ENCIMA
+     de un músculo base que existe y se pinta entero (el pecho, el cuádriceps).
+     Por eso una porción sin registro no se dibuja —el base ya está ahí abajo
+     diciendo lo del grupo— mientras que una hermana sin registro SÍ se dibuja
+     apagada (no hay base debajo que la reemplace). Los dos casos están
+     soportados a propósito: tratar a todo como parches perdía Espalda entera.
+
      No son interactivas (sin role/tabIndex/data-cat): son un resaltado visual
      sobre un grupo que ya se puede tocar entero, no un tercer botón separado
-     que anuncie el mismo músculo dos veces. Y sólo se dibuja la porción que
-     realmente se entrenó — una sin entrenar no se pinta, o se leería como
-     trabajada sin haberlo sido. */
+     que anuncie el mismo músculo dos veces. */
   const resaltados = porciones
-    ? cara.zonas.filter(z => z.parche && porciones[z.cat]?.includes(z.sub))
+    ? cara.zonas.filter(z => z.parche && porciones[z.sub] != null)
     : [];
 
   /* La cara que quedó atrás sale del alcance del teclado y del lector: sigue en
@@ -123,7 +147,7 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar, porciones })
 
       {zonas.map((z, i) => {
         const dibujos = z.d.map((d, j) => <path key={j} d={d} />);
-        const cls = claseDe(z, days);
+        const cls = claseDeZona(z, days, porciones);
         if (!z.cat || z.cat === 'pelo') {
           return <g key={i} className={`sil-z ${cls}`}>{dibujos}</g>;
         }
@@ -144,7 +168,10 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar, porciones })
             </g>
           );
         }
-        const activo = sel === z.cat;
+        /* Con porciones, Espalda son TRES botones hermanos con el mismo
+           `cat`: comparar sólo el grupo los marcaría a los tres como
+           elegidos cuando tocaste uno. */
+        const activo = sel === z.cat && (!porciones || (selSub ?? null) === (z.sub ?? null));
         return (
           <g
             key={i}
@@ -153,14 +180,26 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar, porciones })
                currentTarget del evento no sirve: la medición ocurre en el
                commit siguiente, después de que React reconcilió. */
             data-cat={z.cat}
+            /* El encuadre mide la zona tocada; con hermanas del mismo grupo
+               hace falta distinguirlas o siempre mediría la primera. */
+            data-sub={z.sub || undefined}
             className={`sil-z sil-tap ${cls} ${activo ? 'sil-sel' : ''}`}
             role="button"
             tabIndex={activa ? 0 : -1}
-            aria-label={`${z.cat}, ${diasTexto(days[z.cat])}. Ver estadísticas.`}
+            /* Con porciones, cada hermana dice SU nombre y SU frescura: si no,
+               Espalda repetiría tres veces la misma etiqueta y el lector de
+               pantalla anunciaría tres botones indistinguibles. */
+            aria-label={porciones && z.sub
+              ? `${z.cat}, ${z.sub.toLowerCase()}, ${diasTexto(porciones[z.sub] ?? null)}. Ver estadísticas.`
+              : `${z.cat}, ${diasTexto(days[z.cat])}. Ver estadísticas.`}
             aria-pressed={activo}
-            onClick={e => onPick(z.cat, e.currentTarget, e.clientX, e.clientY)}
+            /* Se propaga la PORCIÓN tocada, no sólo el grupo. Sin `porciones`
+               la figura pinta el grupo entero, así que el toque también es
+               del grupo: mandar el `sub` ahí haría que la ficha hablara de
+               una porción que el dibujo no está distinguiendo. */
+            onClick={e => onPick(z.cat, porciones ? z.sub : null, e.currentTarget, e.clientX, e.clientY)}
             onKeyDown={e => {
-              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(z.cat, e.currentTarget); }
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(z.cat, porciones ? z.sub : null, e.currentTarget); }
             }}
           >
             {dibujos}
@@ -168,8 +207,13 @@ function Cara({ cara, days, etiqueta, sel, onPick, activa, revelar, porciones })
         );
       })}
 
+      {/* `sil-porcion` es sólo un contorno: hace falta porque si la porción se
+          trabajó el mismo día que el grupo, parche y base quedan del MISMO
+          tono y el resaltado sería invisible. El contorno dice "esta parte",
+          sin tocar el color —que es el que lleva el dato— y sin apagar el
+          músculo base, que no tendríamos con qué justificar. */}
       {resaltados.map((z, i) => (
-        <g key={`r${i}`} className={`sil-z ${claseDe(z, days)}`}>
+        <g key={`r${i}`} className={`sil-z sil-porcion ${claseDeZona(z, days, porciones)}`}>
           {z.d.map((d, j) => <path key={j} d={d} />)}
         </g>
       ))}
@@ -272,7 +316,9 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
        que ese punto no se mueve al escalar. */
   useLayoutEffect(() => {
     if (!sel || !stage.current || !caja.current) return;
-    const g = stage.current.querySelector(`[data-cat="${CSS.escape(sel.cat)}"]`);
+    const g = stage.current.querySelector(sel.sub
+      ? `[data-cat="${CSS.escape(sel.cat)}"][data-sub="${CSS.escape(sel.sub)}"]`
+      : `[data-cat="${CSS.escape(sel.cat)}"]`);
     if (!g) return;
     const s = stage.current.getBoundingClientRect();
     const r = g.getBoundingClientRect();
@@ -299,11 +345,13 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
       silueta) — no puede salirse de cuadro porque ya no se posiciona contra
       una coordenada de toque, es un layout fijo dentro de un padre que ya
       estaba contenido en pantalla. */
-  const tocar = (cat, el, clientX, clientY) => {
+  const tocar = (cat, sub, el, clientX, clientY) => {
     // Si el dedo venía girando el cuerpo, el click de cierre no es un toque:
     // soltar sobre un músculo no es lo mismo que elegirlo.
     if (gesto.current?.giro) { gesto.current = null; return; }
-    if (sel?.cat === cat) return cerrar();
+    // Volver a tocar lo MISMO cierra; tocar una hermana (mismo grupo, otra
+    // porción) no es lo mismo, y tiene que reabrir con su propio dato.
+    if (sel?.cat === cat && (sel?.sub ?? null) === (sub ?? null)) return cerrar();
     const s = stage.current?.getBoundingClientRect();
     const m = el.getBoundingClientRect();
     if (!s) return;
@@ -323,6 +371,7 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
     setEnc(null);
     setSel({
       cat,
+      sub: sub || null,
       ox: ((px - s.left) / s.width) * 100,
       oy: ((py - s.top) / s.height) * 100,
     });
@@ -399,10 +448,10 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
             onTransitionEnd={asentar}
           >
             <div className={`sil-face ${atras ? '' : 'on'}`}>
-              <Cara cara={frente} days={days} etiqueta="Frente" sel={sel?.cat} onPick={interactivo ? tocar : undefined} activa={!atras} revelar={revelar} porciones={porciones} />
+              <Cara cara={frente} days={days} etiqueta="Frente" sel={sel?.cat} selSub={sel?.sub} onPick={interactivo ? tocar : undefined} activa={!atras} revelar={revelar} porciones={porciones} />
             </div>
             <div className={`sil-face atras ${atras ? 'on' : ''}`}>
-              <Cara cara={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} onPick={interactivo ? tocar : undefined} activa={atras} revelar={revelar} porciones={porciones} />
+              <Cara cara={espalda} days={days} etiqueta="Espalda" sel={sel?.cat} selSub={sel?.sub} onPick={interactivo ? tocar : undefined} activa={atras} revelar={revelar} porciones={porciones} />
             </div>
           </div>
         </div>
@@ -422,7 +471,17 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
       {interactivo && sel && (
         <>
           <button type="button" className="sil-tapa" onClick={cerrar} aria-label="Cerrar estadísticas" />
-          <MusclePop stats={groupStats(sel.cat)} onClose={cerrar} />
+          {/* La ficha resume el GRUPO (es lo que groupStats sabe), pero la
+              cabecera tiene que hablar de lo que tocaste. Si tocaste una
+              porción, va su nombre y SU frescura — `?? null` a propósito: una
+              porción sin registro es "nunca", no "hoy" ni un cero. Sin
+              porción (bíceps, glúteo, o el músculo base de un grupo con
+              parches) no se manda nada y la cabecera queda como siempre. */}
+          <MusclePop
+            stats={groupStats(sel.cat)}
+            porcion={sel.sub ? { nombre: sel.sub, dias: porciones?.[sel.sub] ?? null } : null}
+            onClose={cerrar}
+          />
         </>
       )}
 

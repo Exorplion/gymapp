@@ -5,6 +5,7 @@ import { idb } from './db.js';
 import { toast } from './toast.js';
 import { T, startRest, stopRest, pedirRir, marcarRirElegido } from './rest.js';
 import { rirScheme } from './exdb.js';
+import { rirPedido } from './rir.js';
 import { rpeFromRir } from './rir.js';
 import { pedirPermiso } from './alarm.js';
 import { exKey, isBodyweight } from './equip.js';
@@ -655,10 +656,20 @@ export async function saveSet(exId) {
        para pasar al otro brazo, la serie todavía no cerró y preguntarle el
        RIR a medio brazo es ruido. El índice apunta a la fila recién
        empujada (cur.length - 1), que es la que va a recibir el `rpe`. */
+    /* El esquema va sobre SERIES REALES, no sobre filas: `techo` (targetSets)
+       cuenta filas y en unilateral son el doble. Con filas, un 4×10
+       unilateral armaba rirScheme(8) = 7/6/5/4/3/2/1/0 y la pregunta del
+       descanso decía "pedía RIR 6" — un número que no existe entre los chips
+       (0/1/2/3/4+). El índice es el de la serie que ACABA de cerrarse:
+       seriesCompletas(cur.length, uni) - 1. En bilateral seriesCompletas()
+       es la identidad, así que sigue siendo cur.length - 1, exactamente lo
+       de antes. Esta cuenta tiene que dar igual que la de la tarjeta
+       (ExerciseCarousel.jsx) o la prescripción y la pregunta se contradicen. */
+    const techoSeries = seriesCompletas(techo, uni);
     pedirRir({
       exId,
       setIdx: cur.length - 1,
-      pedia: rirScheme(techo, ex.name)[Math.min(cur.length - 1, techo - 1)],
+      pedia: rirPedido(rirScheme(techoSeries, ex.name), seriesCompletas(cur.length, uni) - 1),
     });
   }
   if (finished) {
