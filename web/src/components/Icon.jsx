@@ -161,3 +161,53 @@ export function ArrowDown({ size = 16, className, style }) {
     </svg>
   );
 }
+
+/* Los de la tarjeta de ejercicio rediseñada (2026-09-24): el botón de
+   opciones, "hacer después", la foto de la máquina y sumar/quitar serie. */
+export function Dots({ size = 18, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <circle cx="5.5" cy="12" r="1.3" /><circle cx="12" cy="12" r="1.3" /><circle cx="18.5" cy="12" r="1.3" />
+    </svg>
+  );
+}
+
+export function Later({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <circle cx="12" cy="12" r="8" /><path d="M12 8v4l2.5 2.5" /><path d="M4 4l2.5 2.5" />
+    </svg>
+  );
+}
+
+export function Camera({ size = 17, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /><circle cx="12" cy="13" r="3.2" />
+    </svg>
+  );
+}
+
+export function Plus({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+export function Minus({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+export function Sides({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M8 7l-4 5 4 5M16 7l4 5-4 5M4 12h16" />
+    </svg>
+  );
+}

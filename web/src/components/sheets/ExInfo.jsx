@@ -4,6 +4,8 @@
 // esquema de sets/reps se busca recorriendo TODOS los días de S.routine por
 // exId, no sólo `wd`.
 import { useRef } from 'react';
+import { motion } from 'motion/react';
+import { hojaProps, seccion } from '../../lib/variants.js';
 import { illusUrl } from '../../lib/illustrations.js';
 import { equipLabel } from '../../lib/equip.js';
 import { S } from '../../lib/state.js';
@@ -26,7 +28,7 @@ export default function ExInfo({ name, exId }) {
   const fibras = fibrasDe(name);
 
   return (
-    <div ref={rootRef}>
+    <motion.div ref={rootRef} {...hojaProps}>
       <h2 className="font-cond text-2xl font-bold text-txt">{name}</h2>
       {/* Qué porción trabaja, sobre el mismo cuerpo del mapa de Inicio. Va
           primero: es lo que contesta "¿para qué hago esto?" de un vistazo,
@@ -36,34 +38,38 @@ export default function ExInfo({ name, exId }) {
           gimnasio. La foto va segunda: la ilustración enseña el movimiento, la
           foto sirve para reconocer dónde hacerlo. */}
       {(ex?.illus || ex?.photo) && (
-        <div className="mt-3 flex gap-2 overflow-hidden rounded-[var(--radius-r-lg)] border border-line2">
+        <motion.div variants={seccion} className="mt-3 flex gap-2 overflow-hidden rounded-[var(--radius-r-lg)] border border-line2">
           {ex.illus && <img src={illusUrl(ex.illus)} alt="" loading="lazy" className="block w-full" />}
           {ex.photo && <img src={ex.photo} alt="" className="block w-full" />}
-        </div>
+        </motion.div>
       )}
       {equipLabel(ex) && (
-        <div className="mt-2 text-micro text-mut">
+        <motion.div variants={seccion} className="mt-2 text-micro text-mut">
           <span className="inline-flex items-center rounded-full bg-white/8 px-2.5 py-1 text-micro font-semibold uppercase tracking-wide text-mut">{equipLabel(ex)}</span>
-        </div>
+        </motion.div>
       )}
       {info ? (
         <>
-          <h3 className="mt-4 mb-1.5 font-cond text-lg font-semibold text-txt">Músculos</h3>
-          <div className="text-body leading-relaxed text-txt">{info.m}</div>
-          <h3 className="mt-4 mb-1.5 font-cond text-lg font-semibold text-txt">Por qué elegirlo</h3>
-          <div className="text-sm leading-relaxed text-txt">
-            {info.w.split('⚠').map((part, i, arr) => (
-              <span key={i}>{part}{i < arr.length - 1 && <span className="text-warn">⚠</span>}</span>
-            ))}
-          </div>
+          <motion.div variants={seccion}>
+            <h3 className="mt-4 mb-1.5 font-cond text-lg font-semibold text-txt">Músculos</h3>
+            <div className="text-body leading-relaxed text-txt">{info.m}</div>
+          </motion.div>
+          <motion.div variants={seccion}>
+            <h3 className="mt-4 mb-1.5 font-cond text-lg font-semibold text-txt">Por qué elegirlo</h3>
+            <div className="text-sm leading-relaxed text-txt">
+              {info.w.split('⚠').map((part, i, arr) => (
+                <span key={i}>{part}{i < arr.length - 1 && <span className="text-warn">⚠</span>}</span>
+              ))}
+            </div>
+          </motion.div>
         </>
       ) : (
-        <div className="my-2 text-sm leading-relaxed text-mut">
+        <motion.div variants={seccion} className="my-2 text-sm leading-relaxed text-mut">
           No tengo ficha educativa de este ejercicio todavía. Igual puedes registrarlo y seguir su progresión con normalidad.
-        </div>
+        </motion.div>
       )}
       {scheme && (
-        <>
+        <motion.div variants={seccion}>
           <h3 className="mt-4 mb-1.5 font-cond text-lg font-semibold text-txt">Esfuerzo por serie (RIR)</h3>
           <div className="mb-2 flex flex-wrap gap-2">
             {scheme.map((r, i) => (
@@ -79,8 +85,8 @@ export default function ExInfo({ name, exId }) {
             Solo el <b className="text-txt">último set</b> va al fallo (RIR 0). Los primeros dejan reps en reserva para no arruinar el volumen con fatiga.
             {isLowerBackLift(name) && <> <span className="text-warn">En este ejercicio nunca vayas al fallo (zona lumbar): máximo RIR 1.</span></>}
           </div>
-        </>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }

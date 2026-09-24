@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { warmupSets, tocaCalentar, bloqueDe, MOVILIDAD, RAMPA, DESCANSO } from '../warmup.js';
+import { warmupSets, tocaCalentar, bloqueDe, CALENTAMIENTO_GENERAL, calentamientoGeneral, RAMPA, DESCANSO } from '../warmup.js';
 
 const press = { id: 'e1', name: 'Press banca', cat: 'Pecho' };
 const sentadilla = { id: 'e2', name: 'Sentadilla', cat: 'Pierna' };
@@ -71,10 +71,21 @@ describe('bloqueDe', () => {
   });
 });
 
-describe('MOVILIDAD', () => {
-  it('tiene una lista para cada bloque', () => {
-    expect(MOVILIDAD.superior.length).toBeGreaterThan(0);
-    expect(MOVILIDAD.inferior.length).toBeGreaterThan(0);
+describe('calentamiento general', () => {
+  // Enzo: "máximo dos ejercicios, bien trabajados".
+  it('son como mucho dos ejercicios por bloque, cada uno con dosis y cómo', () => {
+    for (const b of ['superior', 'inferior']) {
+      const { ejercicios } = CALENTAMIENTO_GENERAL[b];
+      expect(ejercicios.length).toBeGreaterThan(0);
+      expect(ejercicios.length).toBeLessThanOrEqual(2);
+      for (const e of ejercicios) expect(e.nombre && e.dosis && e.como).toBeTruthy();
+    }
+  });
+
+  it('lo decide el primer ejercicio: jalón → manguito, sentadilla → cadera', () => {
+    expect(calentamientoGeneral([{ name: 'Jalón ancho' }, { name: 'SLDL' }]).foco).toBe('Manguito rotador');
+    expect(calentamientoGeneral([{ name: 'Sentadilla' }, { name: 'Press banca' }]).foco).toBe('Cadera y tobillo');
+    expect(calentamientoGeneral([]).foco).toBe('Manguito rotador');
   });
 });
 

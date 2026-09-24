@@ -60,8 +60,8 @@ describe('trainingFraction', () => {
 describe('cycledGoals', () => {
   it('el día de entreno suma carbos y el de descanso los resta', () => {
     conSesiones([0, 2, 4, 6, 8, 10, 12]); // f = 0.5
-    const entreno = cycledGoals(HOY);
-    const descanso = cycledGoals(diasAtras(1));
+    const entreno = cycledGoals(HOY, HOY);
+    const descanso = cycledGoals(diasAtras(1), HOY);
     expect(entreno.tipo).toBe('entreno');
     expect(entreno.deltaCarbs).toBeGreaterThan(0);
     expect(descanso.tipo).toBe('descanso');
@@ -87,32 +87,32 @@ describe('cycledGoals', () => {
   it('la proteína y la grasa NO se ciclan', () => {
     conSesiones([0, 2, 4, 6, 8, 10, 12]);
     for (const d of [HOY, diasAtras(1)]) {
-      expect(cycledGoals(d).p).toBe(160);
-      expect(cycledGoals(d).f).toBe(80);
+      expect(cycledGoals(d, HOY).p).toBe(160);
+      expect(cycledGoals(d, HOY).f).toBe(80);
     }
   });
 
   it('las calorías se mueven exactamente 4 kcal por gramo de carbo', () => {
     conSesiones([0, 2, 4, 6, 8, 10, 12]);
-    const g = cycledGoals(HOY);
+    const g = cycledGoals(HOY, HOY);
     expect(g.kcal - 2600).toBe(g.deltaCarbs * 4);
   });
 
   it('sin objetivo de carbos devuelve null en vez de ciclar sobre cero', () => {
     conSesiones([0, 2, 4, 6, 8, 10, 12]);
     S.cfg.goals = { kcal: 2600, p: 160, c: 0, f: 80 };
-    expect(cycledGoals(HOY)).toBe(null);
+    expect(cycledGoals(HOY, HOY)).toBe(null);
   });
 
   it('sin ritmo de entrenamiento devuelve null y el llamador usa la meta plana', () => {
-    expect(cycledGoals(HOY)).toBe(null);
+    expect(cycledGoals(HOY, HOY)).toBe(null);
   });
 });
 
 describe('cycleExplain', () => {
   it('dice el número concreto y de dónde sale', () => {
     conSesiones([0, 2, 4, 6, 8, 10, 12]);
-    const texto = cycleExplain(cycledGoals(HOY));
+    const texto = cycleExplain(cycledGoals(HOY, HOY));
     expect(texto).toContain('g de carbohidratos');
     expect(texto).toContain('el total de la semana no cambia');
   });

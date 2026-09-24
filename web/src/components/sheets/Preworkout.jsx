@@ -14,20 +14,18 @@
 // posterior), así que este botón cerraba el sheet con un toast explicativo
 // en su lugar; ahora que Profile.jsx existe y está registrado en el switch
 // de App.jsx, abre el formulario real.
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { S, bump, closeSheet, openSheet } from '../../lib/state.js';
 import { fmtNum, round1, dstr, uid, vibrate } from '../../lib/format.js';
 import { profileWeight } from '../../lib/macros.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
-import { bloomOpen } from '../../lib/motion.js';
 
 const PW = { meal: false, sensitive: false };
 
 export default function Preworkout() {
   const w = profileWeight();
   const rootRef = useRef(null);
-  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
 
   if (!w) {
     return (

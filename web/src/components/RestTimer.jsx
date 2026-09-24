@@ -22,17 +22,21 @@
 // aparece sin que la busques, que era justamente lo que fallaba cuando vivía
 // escondida en el <details> "Más opciones" de la tarjeta del ejercicio.
 import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC } from '../lib/rest.js';
 import { setRirUltimaSerie } from '../lib/session.js';
 import { RIR_OPTS, rirLabel } from '../lib/rir.js';
 import { useStore } from '../lib/state.js';
+import { useAtras } from '../lib/useAtras.js';
 import { fmtMMSS } from '../lib/format.js';
 import { ChevronDown } from './Icon.jsx';
 import { animateRing, impactBurst, squashStretch } from '../lib/motion.js';
 
 export default function RestTimer() {
   useStore(); // se suscribe a bump(); T se lee directo (T.leftSec/T.pct/T.state) igual que S
+  // El descanso a pantalla completa se minimiza con el gesto de volver, en
+  // vez de cerrar la app con el cronómetro corriendo.
+  useAtras(T.state === 'fullscreen', minimizeRest);
 
   const ringRef = useRef(null);
   const ringBoxRef = useRef(null);

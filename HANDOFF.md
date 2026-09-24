@@ -1,6 +1,163 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-22
+**Última actualización:** 2026-09-24
+
+---
+
+## SESIÓN 2026-09-24 — Recordatorio de peso, animaciones y porciones nuevas
+
+Enzo confirmó que **ya cerró** los pendientes que dependían de él (PWA
+instalada + JSON exportado, alarma probada con el teléfono bloqueado,
+coverflow decidido, series/reps de Anterior/Posterior). No volver a pedírselos.
+**715 tests** (eran 697).
+
+### Recordatorio diario de peso (opción "push por GitHub Actions", elegida por Enzo)
+
+Una PWA no puede agendar una notificación a hora fija con la app cerrada
+(Notification Triggers está abandonado; Periodic Background Sync no respeta
+horas). Única salida sin servidor: una Action con cron manda un Web Push.
+
+| Pieza | Dónde |
+|---|---|
+| Suscripción, estado real, activar/apagar | `lib/push.js` (clave pública VAPID en el código, es pública por diseño) |
+| UI: sección "Avisos" en Ajustes | `components/AvisosAjustes.jsx` |
+| Recibir el push y abrir el formulario al tocarlo | `public/sw-notif.js` (`push` + `notificationclick` con `postMessage`) |
+| `?accion=peso` → abre "Registro corporal" | `lib/acciones.js`, `App.jsx` |
+| Atajo al mantener apretado el ícono | `shortcuts` en `vite.config.js` |
+| Envío diario 4:00 Lima (09:00 UTC) | `.github/workflows/recordatorio-peso.yml` + `.github/scripts/recordatorio-peso.mjs` |
+
+Secretos del repo: `VAPID_PRIVATE_KEY` y `PUSH_SUBSCRIPTION` (el JSON que copia
+Ajustes → Avisos). Sin ellos la Action sale bien con una nota; con 404/410
+(suscripción dada de baja) sale bien con advertencia — Ajustes muestra
+"Revisar" y pide reactivar. **GitHub pausa los cron tras 60 días sin commits.**
+
+De paso: `avisosActivos()`/`S.cfg.avisos` **no estaban conectados a nada**
+(nadie los escribía ni los leía). Ahora `avisoActivo(tipo)` apaga por separado
+la notificación de fin de descanso (el sonido sigue) y la de sesión en curso.
+
+### Animaciones
+
+- `framer-motion` → `motion` (2 imports). CLAUDE.md actualizado.
+- **Ajustes, Perfil, Pre-workout, Ejercicio de sesión y Tu Año seguían con un
+  `bloomOpen()` en la raíz**, encima de la subida del panel: el doble
+  movimiento que Sheet.jsx ya documentaba. Ajustes, ficha de ejercicio y Tu
+  Año entran ahora con variants (`lib/variants.js`: esperan `D.objeto` a que
+  llegue el panel; el `<h2>` no se anima para que la hoja no llegue vacía).
+  En Perfil/Pre-workout/Ejercicio de sesión simplemente se sacó.
+- Confirmaciones: `Sheet variante="dialogo"` → tarjeta flotante con
+  `dlgIn`/`dlgOut`, que **reemplaza** a `shup` (no se suma).
+- `MotionConfig reducedMotion="user"` en `main.jsx`.
+- Trampa de verificación: el panel del navegador de Claude Code corre con
+  `visibilityState: hidden` → no hay rAF y las animaciones quedan en el
+  cuadro 0 (contenido en opacidad 0). No es un bug de la app: cada
+  screenshot avanza cuadros. Medir con `getComputedTiming()`, no suponer.
+
+### Lámina: porciones que ya estaban dibujadas y la app juntaba
+
+Medido con `getBBox()` pieza por pieza, en los dos cuerpos (el femenino tiene
+otro orden en el lado derecho del glúteo):
+
+- **"Dorsal bajo" era el erector espinal.** El slug `lowerBack` de MuscleMap
+  es la zona lumbar; un jalón encendía los lumbares. Ahora: `lowerBack` →
+  `cat: 'Lumbares'` (zona propia, cierra la deuda 12); "Dorsal bajo" = el
+  dorsal ancho (pieza grande de `upperBack`); "Dorsal alto" = redondo e
+  infraespinoso.
+- Tríceps (cara de atrás): cabeza larga / cabeza lateral.
+- Glúteo: mayor / medio. Gemelos: gastrocnemio / sóleo.
+- **Bíceps NO se puede**: es una sola forma por lado. Tampoco pecho en 3.
+- Un grupo entero en `p` ("Tríceps" en pushdown, "Gemelos" genérico) cuenta
+  para todas sus hermanas (`porcionesDeLamina()` en fibras.js). Sin eso,
+  partir el músculo dejaba la cara de atrás apagada tras entrenarlo.
+- `MusclePop` al tocar una porción: ahora **toda** la ficha es de la porción
+  (`groupStats(cat, 28, porcion)`), no sólo la cabecera. Cierra el pendiente 5.
+
+### Arreglado de paso
+
+- `cycle.test.js` volvió a caducar solo (4 tests) por llamar `cycledGoals()`
+  sin la fecha. Ahora todas las llamadas pasan `HOY`.
+- `npm ci` necesita `--legacy-peer-deps` (vite-plugin-pwa 1.2 declara vite ≤7).
+- `tsc --noEmit` da 1 error preexistente (faltan los tipos de node).
+
+### Segunda tanda (misma fecha) — rediseño de la sesión, aprobado por Enzo
+
+Enzo vio un mockup de 5 pasos y dijo "sí a todo". Lo que cambió:
+
+- **Hoy (antes de entrenar):** el cuerpo con los grupos del día va en la
+  esquina del héroe "Toca hoy" (`CuerpoDeHoy`); Pre-workout y Registrar por
+  voz son dos `.chip` adentro del héroe (no se borraron). Los bloques
+  plegables pasaron a `PlanHoy`: lista abierta, numerada, agrupada por bloque
+  (`.group`/`.grouprow`), con la meta de hoy a la derecha
+  (`lib/objetivoHoy.js`, sobre la doble progresión) y un resumen "↑ N para
+  subir peso · M para superar reps". ▲▼ y lápiz sólo en modo "Editar".
+- **Antes de empezar:** se sacaron los tres recuadros de explicación; se
+  sumó "Pre-workout (opcional)" → `S.draft.preworkout` → `sess.preworkout`.
+- **Calentamiento general** (hoja `calentamiento`): se abre solo tras "Abrir
+  sesión". Manguito rotador (2 ejercicios) o cadera y tobillo si el primer
+  ejercicio es de pierna (`CALENTAMIENTO_GENERAL` en warmup.ts, reemplaza a
+  `MOVILIDAD`). Se puede saltar. `WarmupCard.jsx` se borró: la rampa
+  50/75/90 vive ahora ADENTRO de la tarjeta del ejercicio (`.ex-aprox`,
+  `marcarCalentado()` en session.js).
+- **Flujo:** "Empezar rutina" (antes "Iniciar ejercicio") se toca UNA vez;
+  al completar un ejercicio el siguiente se activa solo (`saveSet`,
+  `skipExercise` → `siguienteActivo()`). **"Hacer después"** (nuevo,
+  `hacerDespues()`): la máquina está ocupada → al final de `draft.order`,
+  sigue pendiente. "Saltar" pasó a llamarse "Omitir".
+- **Tarjeta:** encabezado en fila (dibujo · nombre + etiquetas `.ex-tag` ·
+  miniatura de la foto `.ex-foto` + botón `.ex-opts` ⋯); "Última vez | Hoy"
+  lado a lado (`.ex-cmp`); serie con barra de segmentos (`.ex-seg`); ruedas
+  lado a lado (`.setrows.dos`, dientes de 44px → se ven 3 números). El
+  acordeón "Más opciones" se fue: la hoja `ex-opciones` (ExOpciones.jsx) tiene
+  hacer después, ±serie, unilateral, cambiar, foto y omitir.
+- **Animación:** la tarjeta activa se despliega hacia abajo (motion, altura
+  0→auto + piezas escalonadas, `desplegar`/`pieza` en ExerciseCarousel). Sólo
+  la primera vez que se abre en la sesión de la app (`yaAbiertas`), para no
+  repetirla en cada cambio de pestaña.
+- Fotos: `guardarFotoMaquina()` en gyms.js (la usan la tarjeta y la hoja) y
+  `S.fotoRev` para que la miniatura se relea sola.
+
+Trampa nueva: **una grilla `1fr 1fr` con una rueda adentro se estira al
+ancho de TODOS los dientes** (medido 2134px). Usar `minmax(0,1fr)`.
+
+### También en #116 (misma fecha)
+
+- **Gesto de volver de Android** (`lib/atras.js` + `useAtras`): cada capa
+  (hoja, ficha del músculo, descanso a pantalla completa, fin de sesión,
+  pestaña fuera de Inicio) empuja una entrada al historial con su
+  profundidad; volver cierra la última. Antes cerraba la app entera.
+- **Mapa sin "circulitos"**: los parches de MuscleMap (óvalos de pecho,
+  deltoides, abdomen) ya no se dibujan en la silueta, ni con porciones.
+- **`.sil-stage{overflow:clip}`**: el zoom al músculo tocado se salía del
+  recuadro y pisaba subtítulo, leyenda y lista.
+- Recordatorio de peso a las **4:00 Lima** (cron `0 9 * * *`).
+
+**PR #116 MERGEADO el 2026-09-24** (Enzo lo pidió).
+
+### Pendientes
+
+1. **Secretos del recordatorio:** `VAPID_PRIVATE_KEY` lo corre Enzo (el
+   clasificador bloquea `gh secret set`; en PowerShell hace falta `& "…gh.exe"`
+   y `--body $k`). El par VAPID se generó en el scratchpad de la sesión del
+   24/09: si se perdió, regenerar y cambiar `VAPID_PUBLIC` en
+   `web/src/lib/push.js` y en el workflow. Después: Ajustes → Avisos →
+   Activar → pegar el código como `PUSH_SUBSCRIPTION`, y probar con Actions →
+   "Run workflow".
+2. **Modelo anatómico 3D — decisión de Enzo pendiente.** Quiere 3D, gratis,
+   que muestre fibras, y acepta herramientas de IA. Opciones que se le dieron:
+   - **Recomendada:** `slfresh/fitmitwith-anatomy-atlas` (GitHub): GLB para
+     celular (~129k triángulos, 218 músculos con `extras` muscleId/label/side),
+     derivado de Z-Anatomy/BodyParts3D, **CC BY-SA 4.0** (crédito + misma
+     licencia en la adaptación). Render con three.js, rotar y tocar músculos.
+     Limitaciones: ningún atlas abierto trae dirección de fibras (se simula con
+     un shader de estrías por eje del músculo — aproximación); no está
+     documentado qué cabezas vienen separadas; el femenino es "ilustrativo";
+     más peso y más GPU; 2-3 sesiones de trabajo.
+   - IA 2D (imagen tipo écorché con fibras) + máscaras por zona encima: se ve
+     muy bien pero es plana (frente/espalda) y hay que recortar las zonas.
+   - IA text-to-3D: descartada — sale una sola malla sin músculos separados.
+3. IA en Nutrición: sigue dependiendo de una cuenta de API de Enzo.
+4. Deudas: `detailsSlide()` quedó sin uso en la app (sólo sus tests);
+   CSS muerto de `.ex-more`, `.ex-actions`, `.ex-done-count`, `.ex-card-icon`.
+   KokonutUI sin cambios.
 
 ---
 

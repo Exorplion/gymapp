@@ -41,8 +41,8 @@ function kilos(v) {
    figura (ver Silhouette.jsx). Existe porque el mapa grande enciende porciones
    —trapecio, dorsal alto, dorsal bajo— y la cabecera mostraba el dato del grupo
    grueso: tocabas el trapecio pintado gris de "nunca" y la ficha te decía
-   "Espalda · hoy". El cuerpo de la ficha sigue siendo del grupo (es lo que
-   groupStats mide); lo que cambia es de qué habla el título. */
+   "Espalda · hoy". Desde 2026-09-24 también el cuerpo de la ficha es de la
+   porción: Silhouette le pide a groupStats las cifras acotadas. */
 /**
  * Qué dice la cabecera: el nombre y los días de los que se va a hablar.
  *
@@ -101,7 +101,7 @@ export default function MusclePop({ stats, porcion = null, onClose }) {
       {sets === 0 ? (
         <p className="mpop-vacio">
           {nunca
-            ? 'Todavía no registraste nada de este grupo.'
+            ? `Todavía no registraste nada de ${porcion ? 'esta porción' : 'este grupo'}.`
             : `Sin series en los últimos ${ventana} días.`}
         </p>
       ) : (

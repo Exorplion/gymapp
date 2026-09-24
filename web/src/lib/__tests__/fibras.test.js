@@ -100,8 +100,8 @@ describe('las porciones que nombra se pueden pintar', () => {
   it('todo grupo tiene a qué zona del cuerpo corresponde', () => {
     for (const g of [
       'Bíceps', 'Bíceps braquial', 'Braquiorradial',
-      'Tríceps', 'Tríceps cabeza larga',
-      'Hombro', 'Glúteo', 'Gemelos', 'Femoral', 'Aductores',
+      'Tríceps',
+      'Hombro', 'Glúteo', 'Gemelos', 'Femoral', 'Aductores', 'Lumbares',
     ]) {
       expect(esGrupo(g), g).toBe(true);
       expect(ZONA_DE[g], g).toBeTruthy();

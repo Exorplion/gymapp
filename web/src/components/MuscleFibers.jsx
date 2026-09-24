@@ -32,7 +32,7 @@
 // (Bíceps, Tríceps, Glúteo, Gemelos) no tiene nada honesto que resaltar:
 // porcionesDe() devuelve [] y el componente no dibuja nada.
 import { useState, useRef, useEffect } from 'react';
-import { fibrasDe } from '../lib/fibras.js';
+import { fibrasDe, porcionesDeLamina } from '../lib/fibras.js';
 import { cuerpo } from '../lib/bodydata.js';
 import { S } from '../lib/state.js';
 import { popIn, D } from '../lib/motion.js';
@@ -107,7 +107,9 @@ export function porcionesDe(cat, exercises) {
   for (const ex of exercises || []) {
     const fib = fibrasDe(ex);
     if (!fib) continue;
-    for (const p of fib.p || []) {
+    // Un grupo entero ("Tríceps" en un pushdown) cuenta para todas sus
+    // hermanas: si no, partir el músculo en cabezas lo dejaba sin ícono.
+    for (const p of (fib.p || []).flatMap(porcionesDeLamina)) {
       if (!subs.includes(p)) continue;
       acc.set(p, (acc.get(p) || 0) + volumenDe(ex));
     }

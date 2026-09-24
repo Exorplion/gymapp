@@ -65,5 +65,17 @@ export function cerrarNotificacion(tag) {
 export const TAG_DESCANSO = 'fierro-descanso';
 export const TAG_SESION = 'fierro-sesion';
 
-/** ¿El usuario quiere notificaciones? Por defecto sí; se apaga en Ajustes. */
-export const avisosActivos = () => S.cfg.avisos !== false;
+export const TAG_PESO = 'fierro-peso';
+
+/** ¿El usuario quiere este tipo de aviso? Por defecto sí; se apaga en
+    Ajustes → Avisos, uno por uno.
+
+    Antes existía `avisosActivos()` leyendo `S.cfg.avisos`, pero ni la clave
+    se escribía en ningún lado ni la función se llamaba: era un interruptor
+    que no estaba conectado a nada. `avisos === false` se sigue respetando
+    como "todo apagado" por si algún respaldo viejo lo trae. */
+export function avisoActivo(tipo) {
+  const a = S.cfg.avisos;
+  if (a === false) return false;
+  return a?.[tipo] !== false;
+}

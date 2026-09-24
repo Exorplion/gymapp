@@ -11,11 +11,16 @@ exacto. Evita reintentar caminos ya descartados.
 
 ## Stack
 
-React 19 · Vite · Tailwind v4 · shadcn/Radix · framer-motion + GSAP · vitest.
+React 19 · Vite · Tailwind v4 · shadcn/Radix · motion + GSAP · vitest.
 Sin backend, por decisión explícita — no proponerlo salvo que Enzo lo pida.
+La única excepción, pedida por Enzo el 2026-09-24: el recordatorio diario de peso
+lo manda una GitHub Action con cron (Web Push, ver `web/src/lib/push.js`).
 
-Usar `framer-motion` (import path legacy), **no** `motion/react`. Mezclarlos rompe
-`AnimatePresence`.
+Usar `motion` (`import { motion } from 'motion/react'`). `framer-motion` se sacó
+el 2026-09-24: **no** volver a instalarlo — tener los dos rompe `AnimatePresence`.
+Las entradas de contenido de las hojas van con las variants de
+`web/src/lib/variants.js` (esperan a que el panel suba; nunca un `bloomOpen()`
+sobre la raíz de una hoja).
 
 ## Comandos
 

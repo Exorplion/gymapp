@@ -325,11 +325,27 @@ describe('groupStats', () => {
       ]);
     });
 
-    // Glúteo no tiene sub-fibra: todo cae en la misma bolsa, así que mostrar
-    // el desglose no agregaría nada sobre la lista plana de siempre.
+    // Hip thrust y patada caen los dos en glúteo mayor: una sola bolsa, así
+    // que mostrar el desglose no agregaría nada sobre la lista plana.
     it('sin más de una fibra distinta, no arma el desglose', () => {
       S.sessions = [sesion('a', '2026-08-09', [['Hip thrust', serie], ['Patada de glúteo', s2]])];
       expect(groupStats('Glúteo').fibras).toBe(null);
+    });
+
+    // Tocar una porción en el mapa: la ficha entera es de esa porción, no
+    // del grupo con la cabecera cambiada.
+    it('acotado a una porción, cuenta sólo los ejercicios que la trabajan', () => {
+      S.sessions = [sesion('a', '2026-08-09', [['Jalón ancho', s2], ['Remo neutro', serie]])];
+      const g = groupStats('Espalda', 28, 'Dorsal alto');
+      expect(g).toMatchObject({ porcion: 'Dorsal alto', sets: 1, sesiones: 1, fibras: null });
+      expect(g.top).toEqual([{ name: 'Remo neutro', sets: 1 }]);
+      expect(groupStats('Espalda', 28, 'Trapecio')).toMatchObject({ sets: 0, top: [] });
+    });
+
+    it('un grupo entero en el ejercicio cuenta para cada porción', () => {
+      S.sessions = [sesion('a', '2026-08-09', [['Tricep pushdown', s2]])];
+      expect(groupStats('Tríceps', 28, 'Tríceps cabeza larga').sets).toBe(2);
+      expect(groupStats('Tríceps', 28, 'Tríceps cabeza lateral').sets).toBe(2);
     });
 
     it('un ejercicio sin fibra reconocida cae bajo el nombre del grupo entero, no un "otros" inventado', () => {

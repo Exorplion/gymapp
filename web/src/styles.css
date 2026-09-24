@@ -937,7 +937,65 @@ main.arrastrando{overflow:hidden;user-select:none}
    ocurra ajustar el ancho disponible (medido: el texto llegaba a 272px con
    el contador arrancando en 241px, 32px de superposición real). El padding
    reserva ese rincón igual que ya hace padding-left con el ícono. */
-.ex-card .exname{padding-left:48px;padding-right:52px;min-height:38px}
+.ex-card .exname{line-height:1.1}
+
+/* ---------- la tarjeta de ejercicio (2026-09-24) ----------
+   Encabezado en fila: dibujo · nombre y etiquetas · foto y opciones. Antes el
+   ícono y el contador iban con position:absolute y el nombre los esquivaba
+   con padding; con la foto y el ⋯ sumados, una fila flex es lo que no se
+   desarma con un nombre largo. */
+.exh{display:flex;align-items:flex-start;gap:var(--s3)}
+.exh-icon{flex:none;color:var(--accent);opacity:.9;margin-top:2px}
+.exh-main{flex:1;min-width:0}
+.exh-side{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:var(--s2)}
+.ex-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ex-tag{
+  display:inline-flex;align-items:center;padding:2px 9px;border-radius:var(--r-full);
+  background:var(--card2);border:1px solid var(--line);
+  font-size:var(--t-micro);font-weight:600;color:var(--mut);font-variant-numeric:tabular-nums;
+}
+.ex-foto{width:48px;height:48px;padding:0;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--line2);background:var(--card2);cursor:pointer}
+.ex-foto img{width:100%;height:100%;object-fit:cover;display:block}
+.ex-opts{
+  width:40px;height:40px;border-radius:var(--r-md);border:1px solid var(--line2);background:var(--card2);
+  color:var(--blue2);display:grid;place-items:center;cursor:pointer;
+}
+/* "Última vez" | "Hoy": el número grande contesta de un vistazo. */
+.ex-cmp{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);margin-top:var(--s3)}
+.ex-cmp-col{
+  display:flex;flex-direction:column;gap:2px;min-width:0;
+  padding:var(--s2) var(--s3);border-radius:var(--r-md);background:var(--card2);border:1px solid var(--line);
+}
+.ex-cmp-col.hoy{border-color:var(--line2)}
+.ex-cmp-col.up{background:rgba(var(--ok-rgb),.08);border-color:rgba(var(--ok-rgb),.35)}
+.ex-cmp-lbl{font-size:var(--t-nano);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.ex-cmp-col b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.ex-cmp-col small{font-size:var(--t-micro);color:var(--mut);line-height:1.35}
+.ex-cmp-col.up .ex-cmp-lbl,.ex-cmp-col.up b{color:var(--ok)}
+.ex-pre{margin-top:var(--s4)}
+.ex-pre-links{display:flex;justify-content:center;gap:var(--s5);margin-top:var(--s1)}
+.ex-pre-links .linkcard,.ex-later,.ex-aprox-acts .linkcard{
+  display:inline-flex;align-items:center;gap:5px;min-height:40px;padding:0 var(--s1);
+  font-size:var(--t-sm);font-weight:500;color:var(--mut);
+}
+.ex-later{color:var(--blue2)}
+/* El despliegue anima la altura (motion, ExerciseCarousel.jsx): sin esto las
+   piezas se ven fuera de la caja mientras crece. */
+.ex-live{overflow:hidden}
+.ex-serie{margin-top:var(--s3)}
+.ex-serie-top{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);font-size:var(--t-sm);color:var(--mut)}
+.ex-serie-top .cond{font-size:var(--t-lg);color:var(--txt)}
+.ex-seg{display:flex;gap:4px;margin-top:6px}
+.ex-seg i{flex:1;height:4px;border-radius:var(--r-full);background:var(--line2);transition:background var(--d2) var(--ease)}
+.ex-seg i.on{background:var(--ok)}
+.ex-seg i.cur{background:var(--accent)}
+.ex-aprox{
+  display:flex;align-items:center;gap:var(--s2);margin-top:var(--s3);padding:var(--s2) var(--s3);
+  border-radius:var(--r-md);background:rgba(var(--warn-rgb),.08);border:1px solid rgba(var(--warn-rgb),.3);
+}
+.ex-aprox-t{flex:1;min-width:0;font-size:var(--t-sm);line-height:1.35;font-variant-numeric:tabular-nums}
+.ex-aprox-acts{display:flex;align-items:center;gap:var(--s1);flex:none}
+.ex-lados{display:flex;gap:var(--s2);margin-top:var(--s3)}
 
 /* En Rutina va a la izquierda, pegado al riel. A la derecha no entra: ahí ya
    viven el ⓘ arriba y los cuatro botones de acción abajo, y el dibujo se les
@@ -969,6 +1027,22 @@ main.arrastrando{overflow:hidden;user-select:none}
    ocupaban 108px: al número le quedaba espacio negativo y se perdía dentro de
    la tarjeta. Apilados, cada número se queda con ~141px. */
 .setrows{display:flex;flex-direction:column;gap:var(--s3);margin:14px 0 12px}
+/* Desde 2026-09-24 van lado a lado: el apilado era por los botones ± de la
+   rueda de reps, que ya no existen. A media tarjeta cada rueda muestra su
+   número y un vecino por lado, y la tarjeta recupera media pantalla. */
+/* minmax(0,1fr) y no 1fr: la pista de la rueda tiene cientos de dientes, y
+   con el mínimo automático de la grilla la columna se estiraba a su ancho
+   entero (medido: 2134px). */
+.setrows.dos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s3)}
+.setrows.dos>div{min-width:0}
+/* A media tarjeta, dientes de 44px en vez de 52: entran el número elegido y
+   uno a cada lado enteros. La matemática de la rueda (lib/reel.ts) mide el
+   DOM, así que no depende de este número. */
+.setrows.dos .reel-tooth{width:44px}
+.setrows.dos .reel-tooth.on{font-size:var(--t-xl)}
+.setrows.dos .reel-tooth.on.editing,.setrows.dos .reel-tooth.on.editing input{min-width:44px}
+.setrows.dos .reel-track{padding:0 calc(50% - 22px)}
+.setrows.dos .reel-indicator{width:44px}
 /* Conversión kg↔lb del peso: ya no vive pegada a un input de respaldo (se
    sacó, ver ReelPicker.jsx) — es la única cosa que sigue afuera de la rueda,
    así que se la trata como un dato propio, alineada a la derecha bajo la
@@ -1894,6 +1968,28 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 @media (prefers-reduced-motion:reduce){
   #sheet.closing{display:none}
 }
+/* ---------- variante diálogo (confirmaciones) ---------- */
+/* Una confirmación es una pregunta de dos botones, no una hoja para leer:
+   flota despegada de los bordes, con las cuatro esquinas redondeadas, y entra
+   con un resorte corto (escala + subida chica) EN LUGAR de `shup`. El
+   `animation` se redefine, no se suma otra encima: dos animaciones sobre el
+   mismo transform es el doble movimiento que Sheet.jsx ya tuvo que sacar.
+   Si una hoja abierta pasa a confirmar (Ajustes → "Borrar todo"), el cambio
+   de nombre de animación la reinicia: el panel se "recoge" en el diálogo. */
+#sheet.dialogo .panel{
+  left:var(--s3);right:var(--s3);
+  bottom:calc(var(--s3) + env(safe-area-inset-bottom));
+  border-bottom:1px solid rgba(255,255,255,.14);
+  border-radius:var(--r-lg);
+  padding:var(--s5) var(--s5) var(--s4);
+  animation:dlgIn var(--d3) var(--spring);
+  box-shadow:var(--glass-hi),0 24px 60px -12px rgba(0,0,0,.8);
+}
+#sheet.dialogo .handle{display:none}
+#sheet.dialogo h2{margin-bottom:var(--s2)}
+@keyframes dlgIn{from{transform:translateY(24px) scale(.94);opacity:0}}
+@keyframes dlgOut{to{transform:translateY(16px) scale(.96);opacity:0}}
+#sheet.dialogo.closing .panel{animation:dlgOut var(--d2) var(--ease-out) forwards}
 #sheet .handle{width:44px;height:5px;border-radius:var(--r-xs);background:var(--line2);margin:6px auto 16px}
 /* En el mockup los títulos de sheet van en itálica y caja normal
    ("Historial"), no en versales: es el mismo gesto del título de pantalla,
@@ -2051,15 +2147,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .pw-btn .chev{margin-left:auto;color:var(--blue2)}
 .pw-btn.accent{background:linear-gradient(135deg,rgba(255,93,115,.18),rgba(12,19,34,.4));border-color:rgba(255,93,115,.45)}
 
-/* Los ejercicios de hoy agrupados por bloque muscular (Hoy.jsx: BlockList).
-   Cada bloque es una tarjeta desplegable: el header dice nombre + cantidad y
-   trae ▲▼ para mover el BLOQUE ENTERO (nunca ejercicios sueltos entre
-   grupos); tocarlo despliega sus ejercicios, cada uno editable.
-
-   La animación de despliegue usa el truco de grid-template-rows 0fr→1fr en
-   vez de max-height: anima a la altura real del contenido (max-height
-   necesita un tope fijo adivinado) y no requiere medir nada en JS. */
-.block-body{display:flex;height:104px;margin-bottom:10px}
+/* El cuerpo chico del héroe de la sesión en curso (ActiveHero). */
 .active-body-mini{display:flex;height:52px;width:34px;flex:none}
 
 /* Rueda de progreso de la sesión (Hoy.jsx, SessionRing): series reales
@@ -2078,20 +2166,39 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   letter-spacing:.2px;background:var(--grad2);-webkit-background-clip:text;background-clip:text;
   color:transparent;
 }
-.block-list{margin-bottom:var(--s3)}
-.block-card{border-radius:var(--r-md);background:var(--card2);border:1px solid var(--line);margin-bottom:8px;overflow:hidden}
-.block-head{
-  display:flex;align-items:center;gap:8px;padding:12px 12px;width:100%;text-align:left;
-  background:none;border:0;color:inherit;font:inherit;
-  /* Es un <div role="button">, no un <button> (no se puede anidar los ▲▼
-     adentro de un botón — ver el comentario en Hoy.jsx), así que el cursor
-     de mano hay que pedirlo a mano. */
-  cursor:pointer;
+/* ---------- Hoy: el plan del día (Hoy.jsx, PlanHoy) ----------
+   Reemplaza a los bloques plegables (2026-09-24). Una lista agrupada por
+   bloque muscular —.group + .grouprow, el patrón de listas de la app— con la
+   meta de hoy a la derecha de cada ejercicio. Los ▲▼ de mover bloques
+   (.block-move) sólo aparecen en modo edición. */
+.plan-hoy{margin:var(--s4) 0 var(--s3)}
+.plan-head{display:flex;align-items:center;justify-content:space-between;margin:0 2px var(--s1)}
+.plan-title{margin:0;font-size:var(--t-body);font-weight:700;font-style:normal;letter-spacing:.14em;text-transform:uppercase;color:var(--blue2)}
+.plan-edit{background:none;border:0;color:var(--blue2);font:inherit;font-size:var(--t-sm);font-weight:600;padding:var(--s2);margin:calc(-1 * var(--s2));cursor:pointer}
+.plan-resumen{font-size:var(--t-sm);color:var(--mut);margin:0 2px var(--s3)}
+.plan-resumen .up{color:var(--ok);font-weight:600}
+.plan-block{margin-bottom:var(--s3)}
+.plan-block-head{
+  display:flex;align-items:center;justify-content:space-between;min-height:28px;margin:0 2px var(--s2);
+  font-size:var(--t-micro);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);
 }
-.block-head .chev{color:var(--mut2);font-size:var(--t-body);transition:transform var(--d2) var(--ease);flex:none}
-.block-head[aria-expanded="true"] .chev{transform:rotate(90deg);color:var(--cyan)}
-.block-head .t{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--t-body);letter-spacing:.02em}
-.block-head .s{flex:1;font-size:var(--t-micro);color:var(--mut);text-align:right;margin-right:4px}
+/* La fila NO es un botón: adentro van dos (ver la ficha, y el lápiz en modo
+   edición), y anidar botones no es HTML válido (a11y-markup.test.js). */
+.plan-row{padding:0;cursor:default}
+.plan-row-main{
+  display:flex;align-items:center;gap:var(--s3);flex:1;min-width:0;min-height:56px;
+  padding:var(--s3) var(--s4);background:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer;
+}
+.plan-row .mini{margin-right:var(--s3)}
+.plan-num{
+  flex:none;width:24px;height:24px;border-radius:var(--r-full);border:1px solid var(--line2);
+  display:grid;place-items:center;font-size:var(--t-micro);font-weight:700;color:var(--mut);font-variant-numeric:tabular-nums;
+}
+.plan-meta{flex:none;display:flex;flex-direction:column;align-items:flex-end;text-align:right;line-height:1.15}
+.plan-meta b{font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;font-variant-numeric:tabular-nums;color:var(--txt)}
+.plan-meta small{font-size:var(--t-micro);color:var(--mut)}
+.plan-meta.up b{color:var(--ok)}
+.plan-edit-acts{display:flex;flex-direction:column;gap:var(--s2)}
 .block-move{display:flex;gap:4px}
 .block-move button{
   /* 26x26 era la mitad del mínimo táctil, en un control que se usa con el
@@ -2105,36 +2212,28 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .block-move button:disabled{opacity:.3}
 .block-move button:not(:disabled):active{color:var(--cyan);border-color:var(--cyan)}
 
-/* Acordeón de bloques de Hoy: misma técnica que .day-collapse en Entreno
-   (grid-template-rows 0fr→1fr, que sí transiciona; display no), y el
-   contenido queda montado para que el CIERRE también se anime.
-   `visibility` se suma por lo mismo que en .day-collapse: overflow:hidden
-   recorta el dibujo pero NO saca del orden de tabulación lo que hay adentro,
-   así que sin esto el teclado se metía en los ejercicios de un bloque
-   cerrado. El 0s del final la apaga recién cuando terminó de plegarse, y sin
-   demora al abrir. */
-.block-collapse{
-  display:grid;grid-template-rows:0fr;visibility:hidden;
-  transition:grid-template-rows var(--d3) var(--ease),visibility 0s var(--d3);
+
+/* ---------- calentamiento general (sheets/Calentamiento.jsx) ---------- */
+.calent-row{align-items:flex-start}
+.calent-row .plan-num{margin-top:2px}
+.calent-dosis{display:block;font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-body);color:var(--accent);margin-top:2px}
+.calent-check{
+  flex:none;width:26px;height:26px;margin-top:2px;border-radius:var(--r-full);border:1.5px solid var(--line2);
+  display:grid;place-items:center;transition:background var(--d1) var(--ease),border-color var(--d1) var(--ease);
 }
-.block-collapse.open{
-  grid-template-rows:1fr;visibility:visible;
-  transition:grid-template-rows var(--d3) var(--ease),visibility 0s;
-}
-.block-collapse-inner{overflow:hidden;min-height:0}
-.block-exs{padding:0 12px 12px;display:flex;flex-direction:column;gap:6px}
-.block-ex-row{display:flex;align-items:center;gap:8px}
-.block-ex-row .grow{
-  flex:1;min-width:0;text-align:left;background:var(--card);border:1px solid var(--line);
-  border-radius:var(--r-md);padding:10px 12px;color:inherit;font:inherit;
-}
-.block-ex-row .grow .t{display:block;font-size:var(--t-sm);font-weight:600}
-.block-ex-row .grow .s{display:block;font-size:var(--t-micro);color:var(--mut);margin-top:1px;text-align:left}
-/* `.block-collapse.open` también, y no sólo `.block-collapse`: la regla de
-   .open trae su propia `transition` con dos clases de especificidad, así que
-   una sola clase acá no le ganaba y el acordeón seguía animando al abrir con
-   "reducir movimiento" puesto. */
-@media (prefers-reduced-motion:reduce){.block-collapse,.block-collapse.open{transition:none}.block-head .chev{transition:none}}
+.calent-row.hecho .calent-check{background:var(--ok);border-color:transparent;color:var(--on-grad)}
+
+/* ---------- opciones del ejercicio (sheets/ExOpciones.jsx) ---------- */
+.opc-ico{flex:none;color:var(--blue2)}
+.opc-peligro .grouprow-t,.opc-peligro .opc-ico{color:var(--red)}
+
+/* El cuerpo del día en la esquina del héroe (2026-09-24). El texto de la
+   izquierda le deja lugar con padding: el nombre del día es lo más grande de
+   la pantalla y no puede pasar por debajo del dibujo. */
+.hero-hoy-body{position:absolute;top:var(--s3);right:var(--s3);width:76px;height:128px;display:flex;pointer-events:none;z-index:1}
+.hero-hoy .hero-day,.hero-hoy .hero-stats{padding-right:84px}
+.hero-acts{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)}
+.hero-acts .chip{gap:6px}
 
 /* ============================================================
    Rediseño — tarjeta hero de HOY
@@ -2535,6 +2634,14 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .sil-stage{
   flex:1;min-height:0;width:100%;position:relative;
   touch-action:pan-y;cursor:grab;
+  /* El zoom agranda el cuerpo hasta 2-3×, y sin recorte se salía del
+     recuadro: la cabeza tapaba el subtítulo y las piernas la leyenda y la
+     lista de abajo (captura de Enzo, 2026-09-24). `clip` y no `hidden`: no
+     crea un contenedor con scroll, así que el arrastre para girar y el
+     scroll vertical de la hoja siguen igual. El recorte va en el stage y no
+     en .sil-zoom/.sil-flip: sobre el elemento con preserve-3d aplanaría el
+     giro. */
+  overflow:hidden;overflow:clip;
 }
 .sil-stage.girando{cursor:grabbing}
 

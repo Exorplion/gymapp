@@ -20,7 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { staggerRevealOnce, bloomOpen, animateRing, countTo } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
-import { S, useStore, bump, openSheet, closeSheet, saveDraft, changeTab } from '../../lib/state.js';
+import { S, useStore, bump, openSheet, closeSheet, changeTab, wDisplay } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS } from '../../lib/format.js';
 import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock } from '../../lib/session.js';
 import { flipSort } from '../../lib/drag.js';
@@ -29,9 +29,7 @@ import { equipLabel } from '../../lib/equip.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
 import { createGym, setActiveGym } from '../../lib/gyms.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
-import WarmupCard from '../WarmupCard.jsx';
-import { tocaCalentar, bloqueDe, DESCANSO } from '../../lib/warmup.js';
-import { startRest } from '../../lib/rest.js';
+import { objetivoHoy, resumenPlan } from '../../lib/objetivoHoy.js';
 import { toast } from '../../lib/toast.js';
 import { Bolt, Mic, Pencil, RecordDot } from '../Icon.jsx';
 import { HoySinPlan } from '../Illustration.jsx';
@@ -52,29 +50,6 @@ export default function Hoy() {
   const curId = active ? S.draft.cur : null;
   const nextEx = active ? nextPending(exs) : null;
   const allDone = active && exs.length > 0 && !nextEx;
-
-  // El próximo ejercicio a hacer decide qué calentamiento corresponde — no
-  // necesariamente el primero del día: puede ser el primero de un bloque
-  // nuevo (ver lib/warmup.js).
-  const exCalentar = active ? (nextEx || exs[0]) : null;
-
-  /* El calentamiento se marca hecho por BLOQUE en el borrador y no en un
-     estado local: así sobrevive a cerrar la app en el medio, que es
-     exactamente cuando pasa —dejás el teléfono, calentás, volvés—. Si
-     viviera en React, al volver te lo ofrecería otra vez. */
-  async function cerrarCalentamiento(conDescanso) {
-    if (!S.draft || !exCalentar) return;
-    const bloque = bloqueDe(exCalentar);
-    if (bloque) {
-      if (!Array.isArray(S.draft.warmBlocks)) S.draft.warmBlocks = [];
-      if (!S.draft.warmBlocks.includes(bloque)) S.draft.warmBlocks.push(bloque);
-    }
-    await saveDraft();
-    bump();
-    if (conDescanso) startRest(DESCANSO);
-  }
-  const terminarCalentamiento = () => cerrarCalentamiento(true);
-  const saltarCalentamiento = () => cerrarCalentamiento(false);
 
   // Bloom-open sutil para la tarjeta vacía "sin ejercicios hoy" al montar.
   const emptyCardRef = useRef(null);
@@ -99,17 +74,6 @@ export default function Hoy() {
       ) : (
         <PreSessionHero day={day} index={index} exs={exs} />
       )}
-      {/* el pre-workout se toma 30-60 min ANTES: durante la sesión ya no sirve de
-          nada y solo compite con las tarjetas de ejercicio */}
-      {!active && exs.length > 0 && (
-        <button type="button" className="pw-btn" onClick={() => openSheet('preworkout')}>
-          <Bolt size={20} className="pwi" /><span className="pwt">Pre-workout</span>
-          <span className="text-mut text-micro font-medium">fluidos · carbos · cafeína</span>
-          <span className="chev">›</span>
-        </button>
-      )}
-      {/* registro retroactivo: para cuando entrenaste sin ir anotando serie por serie */}
-      {!active && SR_CLASS && <VoiceLogButton />}
 
       {!exs.length ? (
         <div className="card" ref={emptyCardRef}><div className="empty">
@@ -127,27 +91,14 @@ export default function Hoy() {
         // Antes de arrancar: sólo los bloques, editables y desplegables — el
         // carrusel es de EJECUCIÓN (serie, descanso, cronómetro), no tiene
         // nada que hacer en la etapa de "mirar y planear qué toca hoy".
-        <>
-          <BlockList index={index} exs={exs} />
-          {exs.length > 1 && (
-            <button type="button" className="btn sm ghost mb-[var(--s3)]" onClick={() => openSheet('reorder-hoy')}>
-              ↕ Reordenar dentro de un bloque
-            </button>
-          )}
-        </>
+        <PlanHoy index={index} exs={exs} />
       ) : (
         <>
-          {/* El calentamiento va antes del carrusel, sobre el próximo ejercicio
-              a hacer — no fijo en el primero del día: reaparece cada vez que
-              ese próximo ejercicio cae en un bloque muscular que todavía no
-              calentaste (ver lib/warmup.js). */}
-          {exCalentar && tocaCalentar(S.draft, exCalentar) && (
-            <WarmupCard
-              ex={exCalentar}
-              onListo={terminarCalentamiento}
-              onSaltar={saltarCalentamiento}
-            />
-          )}
+          {/* La rampa de aproximación (50/75/90%) ya no va en una tarjeta
+              aparte arriba del carrusel: vive adentro de la tarjeta del
+              ejercicio que la necesita (ExerciseCarousel.jsx). El
+              calentamiento general se ofrece una vez, al abrir la sesión
+              (hoja 'calentamiento'). */}
           <ExerciseCarousel exs={exs} wd={index} active={active} started={started} curId={curId} nextEx={nextEx} />
           <div className="flex gap-2 mt-[var(--s2)]">
             {/* Decidiste hacer algo que no estaba en el plan. Vale sólo para hoy;
@@ -321,8 +272,13 @@ function RestHero() {
 function PreSessionHero({ day, index, exs }) {
   const totalSets = exs.reduce((a, e) => a + e.sets, 0);
   const estMin = Math.round(totalSets * ((S.cfg.rest || 90) + 40) / 60);
+  const cats = [...new Set(exs.map(e => catOf(e)).filter(Boolean))];
   return (
-    <div className="card hero">
+    <div className="card hero hero-hoy">
+      {/* El cuerpo con los grupos de hoy, en la esquina (Enzo, 2026-09-24):
+          antes era un bloque propio entre los botones y la lista, y empujaba
+          los ejercicios media pantalla hacia abajo. */}
+      {cats.length > 0 && <CuerpoDeHoy cats={cats} />}
       <div className="flex items-center gap-2">
         <span className="w-[7px] h-[7px] rounded-[4px] bg-cyan shadow-[0_0_8px_var(--cyan)]"></span>
         <div className="eyebrow">Toca hoy</div>
@@ -345,126 +301,136 @@ function PreSessionHero({ day, index, exs }) {
         </div>
       </div>
       {exs.length > 0 && (
-        <button type="button" className="btn hero-cta" onClick={() => openSheet('sess-start-info', { index })}>
-          Empezar entrenamiento
-        </button>
+        <>
+          <button type="button" className="btn hero-cta" onClick={() => openSheet('sess-start-info', { index })}>
+            Empezar entrenamiento
+          </button>
+          {/* Pre-workout y voz no se usan todos los días: dos accesos chicos
+              adentro de la misma tarjeta, no dos tarjetas enteras que
+              separaban el plan del botón de empezar. */}
+          <div className="hero-acts">
+            <button type="button" className="chip" onClick={() => openSheet('preworkout')}>
+              <Bolt size={15} /> Pre-workout
+            </button>
+            {SR_CLASS && <VoiceLogButton />}
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-/** Los ejercicios de hoy agrupados por bloque muscular, con un vistazo del
-    cuerpo arriba (qué grupos se encienden hoy), controles ▲▼ para mover
-    BLOQUES enteros —nunca ejercicios sueltos, así un grupo nunca queda a
-    medio mezclar con otro— y cada bloque desplegable para ver y editar sus
-    ejercicios sin salir de Hoy. Sólo antes de arrancar: una vez que el
-    reloj corre, orderedExs() ya no admite reacomodo (ver su comentario en
-    session.js), así que este bloque ni se muestra con sesión activa. */
-function BlockList({ index, exs }) {
+/** El plan de hoy: los ejercicios en el orden en que se van a hacer,
+    numerados y agrupados por bloque muscular, con lo que toca superar en
+    cada uno a la derecha.
+
+    Antes eran bloques plegables con ▲▼ siempre a la vista: para ver qué
+    tocaba había que abrirlos de a uno, y nada decía si hoy había algo que
+    ganarle a la vez pasada (Enzo: "no me despierta nada"). Ahora la lista
+    está abierta y dice la meta; los controles de ordenar y editar aparecen
+    sólo en modo edición, que es cuando se usan. */
+function PlanHoy({ index, exs }) {
+  const [editando, setEditando] = useState(false);
   const blocks = blocksOf(exs);
-  // El primer bloque arranca desplegado: es "qué toca primero", la
-  // pregunta que trajo a alguien a esta pantalla — no una lista cerrada
-  // que hay que aprender a abrir.
-  const [openCat, setOpenCat] = useState(blocks[0]?.cat ?? null);
+  const { subir, superar } = resumenPlan(exs);
   const listRef = useRef(null);
-  // Reveal escalonado de los bloques musculares — sólo la primera vez que se
-  // ve Hoy en la sesión (staggerRevealOnce, ver motion.js), no en cada
-  // cambio de pestaña.
   useEffect(() => {
-    const cards = listRef.current?.querySelectorAll(':scope > .block-card');
-    if (cards?.length) staggerRevealOnce('hoy', cards);
+    const items = listRef.current?.querySelectorAll(':scope > .plan-block');
+    if (items?.length) staggerRevealOnce('hoy', items);
   }, []);
   /* Mueve el bloque y RECIÉN DESPUÉS pinta el nuevo orden adentro de
-     flipSort: así flipSort mide el "antes" con el DOM viejo, deja que
-     flushSync(bump) pinte el "después" de un tirón, y anima la diferencia
-     con un transform — el mismo truco que ya usa Rutina.jsx para sus
-     flechas ↑/↓ (handleMoveEx, drag.js). Sin esto el bloque cambia de
-     posición de un salto: sólo el texto se ve distinto, nunca el
-     movimiento. */
+     flipSort: así flipSort mide el "antes" con el DOM viejo y anima la
+     diferencia con un transform (drag.js). */
   async function mover(cat, dir) {
     await moveBlock(index, blocks, cat, dir);
     flipSort(() => flushSync(() => bump()));
   }
-
-  /* El encabezado entero es "tocar para abrir/cerrar", pero adentro tiene los
-     botones ▲▼ de reordenar — por eso NO puede ser un <button>: anidar
-     interactivos no es HTML válido, el navegador repara el DOM moviendo nodos
-     y React termina reconciliando contra un árbol distinto del que cree tener.
-     Mismo patrón que ya usa #restbar (RestTimer.jsx): role="button" +
-     tabIndex lo dejan alcanzable por teclado igual, y los ▲▼ siguen siendo
-     botones de verdad, hermanos del contenedor en el árbol de foco.
-
-     Los ▲▼ van adentro del encabezado a propósito: sacarlos afuera sumaría
-     una fila entera a cada bloque y alejaría los controles del título que
-     mueven. El chequeo target===currentTarget resuelve el conflicto sin
-     mover nada. */
-  function onKeyToggle(e, cat, open) {
-    /* Sin esto, apretar Enter sobre ▲ dispararía ADEMÁS el toggle del bloque:
-       el botón interno frena su click con stopPropagation(), pero el keydown
-       original es otro evento y sigue burbujeando hasta acá. */
-    if (e.target !== e.currentTarget) return;
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenCat(open ? null : cat); }
-  }
-
+  let n = 0;
   return (
-    <div className="block-list" data-sort="hoy-blocks" ref={listRef}>
-      <BodyPreview cats={blocks.map(b => b.cat)} />
-      {blocks.map((b, i) => {
-        const open = openCat === b.cat;
-        return (
-          <div className="block-card" data-sid={b.cat} key={b.cat}>
-            <div
-              className="block-head"
-              role="button"
-              tabIndex={0}
-              aria-expanded={open}
-              onClick={() => setOpenCat(open ? null : b.cat)}
-              onKeyDown={e => onKeyToggle(e, b.cat, open)}
-            >
-              <span className="chev">{open ? '⌄' : '›'}</span>
-              <span className="t">{b.cat}</span>
-              <span className="s">{b.exs.length} ejercicio{b.exs.length === 1 ? '' : 's'}</span>
-              {blocks.length > 1 && (
-                <span className="block-move" onClick={e => e.stopPropagation()}>
-                  <button type="button" disabled={i === 0} aria-label={`Mover ${b.cat} antes`} onClick={() => mover(b.cat, -1)}>▲</button>
-                  <button type="button" disabled={i === blocks.length - 1} aria-label={`Mover ${b.cat} después`} onClick={() => mover(b.cat, 1)}>▼</button>
-                </span>
-              )}
-            </div>
-            <div className={`block-collapse${open ? ' open' : ''}`}>
-              <div className="block-collapse-inner">
-                <div className="block-exs">
-                  {b.exs.map(ex => (
-                    <div className="block-ex-row" key={ex.id}>
-                      <button type="button" className="grow" onClick={() => openSheet('ex-info', { name: ex.name, exId: ex.id })}>
-                        <span className="t">{ex.name}</span>
-                        <span className="s">{equipLabel(ex) ? `${equipLabel(ex)} · ` : ''}{ex.sets}×{ex.reps}</span>
-                      </button>
-                      <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}><Pencil /></button>
-                    </div>
-                  ))}
-                  <button type="button" className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => openSheet('ex-form', { wd: index, ex: null })}>
-                    + Agregar ejercicio
-                  </button>
-                </div>
-              </div>
-            </div>
+    <section className="plan-hoy" data-sort="hoy-blocks" ref={listRef} aria-label="Plan de hoy">
+      <div className="plan-head">
+        <h2 className="plan-title">Plan de hoy</h2>
+        <button type="button" className="plan-edit" aria-pressed={editando} onClick={() => setEditando(v => !v)}>
+          {editando ? 'Listo' : 'Editar'}
+        </button>
+      </div>
+      {(subir > 0 || superar > 0) && (
+        <div className="plan-resumen">
+          {subir > 0 && <span className="up">↑ {subir} para subir peso</span>}
+          {subir > 0 && superar > 0 && ' · '}
+          {superar > 0 && <span>{superar} para superar reps</span>}
+        </div>
+      )}
+      {blocks.map((b, i) => (
+        <div className="plan-block" data-sid={b.cat} key={b.cat}>
+          <div className="plan-block-head">
+            <span>{b.cat} · {b.exs.length}</span>
+            {editando && blocks.length > 1 && (
+              <span className="block-move">
+                <button type="button" disabled={i === 0} aria-label={`Mover ${b.cat} antes`} onClick={() => mover(b.cat, -1)}>▲</button>
+                <button type="button" disabled={i === blocks.length - 1} aria-label={`Mover ${b.cat} después`} onClick={() => mover(b.cat, 1)}>▼</button>
+              </span>
+            )}
           </div>
-        );
-      })}
-    </div>
+          <div className="group">
+            {b.exs.map(ex => {
+              n += 1;
+              return (
+                <div className="grouprow plan-row" key={ex.id}>
+                  <button type="button" className="plan-row-main" onClick={() => openSheet('ex-info', { name: ex.name, exId: ex.id })}>
+                    <span className="plan-num">{n}</span>
+                    <span className="grouprow-grow">
+                      <span className="grouprow-t">{ex.name}</span>
+                      <span className="grouprow-s">{ex.sets}×{ex.reps}{equipLabel(ex) ? ` · ${equipLabel(ex)}` : ''}</span>
+                    </span>
+                    <Meta ex={ex} />
+                  </button>
+                  {editando && (
+                    <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}><Pencil /></button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      {editando && (
+        <div className="plan-edit-acts">
+          <button type="button" className="btn sm ghost" onClick={() => openSheet('ex-form', { wd: index, ex: null })}>+ Agregar ejercicio</button>
+          {exs.length > 1 && (
+            <button type="button" className="btn sm ghost" onClick={() => openSheet('reorder-hoy')}>↕ Reordenar dentro de un bloque</button>
+          )}
+        </div>
+      )}
+    </section>
   );
+}
+
+/** Lo que toca superar hoy, a la derecha de cada ejercicio del plan. */
+function Meta({ ex }) {
+  const o = objetivoHoy(ex);
+  const kg = o.peso != null ? `${wDisplay(o.peso)} ${S.cfg.unit === 'lb' ? 'lb' : 'kg'}` : null;
+  if (o.tipo === 'subir') {
+    return <span className="plan-meta up"><b>{kg} ↑</b><small>antes {wDisplay(o.antes)}</small></span>;
+  }
+  if (o.tipo === 'sostener' || o.tipo === 'sumar') {
+    return <span className="plan-meta"><b>{kg}</b><small>superar reps</small></span>;
+  }
+  if (o.tipo === 'sugerido') {
+    return <span className="plan-meta"><b>~{kg}</b><small>sugerido</small></span>;
+  }
+  return <span className="plan-meta"><small>primera vez</small></span>;
 }
 
 /** El cuerpo con los grupos de HOY encendidos — mismo componente y mismos
     colores que Inicio/BodyMap, pero acá "encendido" no es recencia (hace
     cuántos días), es "está en el plan de hoy sí o no": por eso arma su
     propio `days` en vez de reusar daysSinceAll(). */
-function BodyPreview({ cats }) {
+function CuerpoDeHoy({ cats }) {
   const set = new Set(cats);
   const days = {};
   MUSCLE_CATS.forEach(c => { days[c] = set.has(c) ? 0 : null; });
-  return <div className="block-body"><Silhouette days={days} interactivo={false} /></div>;
+  return <div className="hero-hoy-body" aria-hidden="true"><Silhouette days={days} interactivo={false} /></div>;
 }
 
 /** Las tres preguntas de autorregulación diaria (Plan Fierro · Fase 3, patrón
@@ -472,8 +438,8 @@ function BodyPreview({ cats }) {
     sugerido del día. Vive fuera del componente, mismo patrón que PW
     (Preworkout.jsx) — mutable a nivel de módulo, no persistido, se resetea
     solo al cerrar/reabrir el sheet. */
-const PRECHECK = { sleep: null, sore: null, motivation: null };
-function resetPrecheck() { PRECHECK.sleep = null; PRECHECK.sore = null; PRECHECK.motivation = null; }
+const PRECHECK = { sleep: null, sore: null, motivation: null, pre: null };
+function resetPrecheck() { PRECHECK.sleep = null; PRECHECK.sore = null; PRECHECK.motivation = null; PRECHECK.pre = null; }
 
 /** ±10% si dormiste mal o estás dolorido; sin marcar nada, sin ajuste. Se
     guarda en S.draft.precheckAdjust al abrir la sesión — ExerciseCarousel lo
@@ -526,16 +492,19 @@ export function SessStartInfo({ index }) {
 
   async function abrir() {
     if (selGym !== (S.cfg.activeGym || '')) await setActiveGym(selGym || null);
-    await startSession(index, precheckAdjust());
+    await startSession(index, precheckAdjust(), { preworkout: PRECHECK.pre });
     resetPrecheck();
+    // El calentamiento general, antes de cualquier máquina. Se puede saltar:
+    // si ya calentaste y te olvidaste de abrir la sesión, no te frena.
+    openSheet('calentamiento', { index });
   }
   function cancelar() { resetPrecheck(); closeSheet(); }
 
   return (
     <>
-      <h2>Iniciar entrenamiento</h2>
+      <h2>Antes de empezar</h2>
       <div className="sheet-sub">
-        Vas a abrir la sesión de <b className="txt-blue">{day?.name || 'Entrenamiento'}</b> · {n} ejercicio{n === 1 ? '' : 's'}.
+        <b className="txt-blue">{day?.name || 'Entrenamiento'}</b> · {n} ejercicio{n === 1 ? '' : 's'}
       </div>
 
       <div className="calcbox">
@@ -578,16 +547,12 @@ export function SessStartInfo({ index }) {
         </div>
       )}
 
+      {/* Qué comiste antes (2026-09-24): opcional, se guarda con la sesión.
+          El cálculo de cuánto tomar sigue a un toque, sin salir de acá. */}
       <div className="calcbox" style={{ marginTop: 10 }}>
-        <div style={{ fontSize: 14, lineHeight: 1.55 }}>
-          ⏱ <b>El cronómetro arranca cuando toques "Iniciar ejercicio"</b>, no ahora. Así el tiempo mide lo que entrenaste y no lo que tardaste en cambiarte, calentar y llegar a la máquina.
-        </div>
-      </div>
-      <div className="calcbox" style={{ marginTop: 10 }}>
-        <div style={{ fontSize: 14, lineHeight: 1.55 }}>↕ Antes de arrancar podés <b>reacomodar el orden</b> con el botón "Reordenar", por si la máquina está ocupada.</div>
-      </div>
-      <div className="calcbox" style={{ marginTop: 10 }}>
-        <div style={{ fontSize: 14, lineHeight: 1.55 }}>✓ Vas de a un ejercicio: al llegar a las series objetivo se cierra solo y pasás al siguiente.</div>
+        <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 8 }}>Pre-workout <span className="txt-mut">(opcional)</span></div>
+        <div className="chips">{chip('pre', 'nada', 'Nada')}{chip('pre', 'liviano', 'Algo liviano')}{chip('pre', 'comida', 'Comida')}</div>
+        <button type="button" className="linkcard txt-blue" style={{ fontSize: 13, marginTop: 8 }} onClick={() => openSheet('preworkout')}>Ver cuánto tomar ›</button>
       </div>
       <button type="button" className="btn" style={{ marginTop: 16 }} onClick={abrir}>Abrir sesión</button>
       <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={cancelar}>Cancelar</button>
@@ -623,11 +588,14 @@ function VoiceLogButton() {
   }
 
   return (
-    <button type="button" className={`pw-btn${recording ? ' accent' : ''}`} onClick={toggle}>
-      <span className="pwi">{recording ? <RecordDot size={20} /> : <Mic size={20} />}</span>
-      <span className="pwt">{recording ? 'Escuchando…' : 'Registrar por voz'}</span>
-      <span className="txt-mut" style={{ fontSize: 12.5, fontWeight: 500 }}>contá qué entrenaste hoy</span>
-      <span className="chev">›</span>
+    <button
+      type="button"
+      className={`chip${recording ? ' on' : ''}`}
+      onClick={toggle}
+      title="Contá qué entrenaste y se anota solo"
+      aria-label={recording ? 'Escuchando: tocá para cancelar' : 'Registrar por voz lo que entrenaste'}
+    >
+      {recording ? <RecordDot size={15} /> : <Mic size={15} />} {recording ? 'Escuchando…' : 'Registrar por voz'}
     </button>
   );
 }

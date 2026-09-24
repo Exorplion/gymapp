@@ -3,7 +3,7 @@ import { S } from '../state.js';
 import {
   targetSets, sessionExs, nextPending, isSkipped,
   skipExercise, unskipExercise, addExtraSet, addSessionExercise, replaceSessionExercise,
-  dropSet, reemplazaA, isUnilateral, toggleUnilateral, saveSet,
+  dropSet, reemplazaA, isUnilateral, toggleUnilateral, saveSet, hacerDespues,
 } from '../session.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
@@ -20,6 +20,36 @@ beforeEach(() => {
     open: 1, start: null, cur: null, entries: {},
     order: ['a', 'b', 'c'], skipped: [], extraSets: {}, extras: [],
   };
+});
+
+// El flujo de 2026-09-24: "Empezar rutina" se toca una vez; después cada
+// ejercicio se activa solo, y "Hacer después" manda uno al final.
+describe('activación automática y hacer después', () => {
+  it('antes de empezar la rutina, saltar no activa nada solo', async () => {
+    await skipExercise('a');
+    expect(S.draft.cur).toBe(null);
+  });
+
+  it('con la rutina en marcha, saltar activa el siguiente pendiente', async () => {
+    S.draft.start = 1; S.draft.cur = 'a';
+    await skipExercise('a');
+    expect(S.draft.cur).toBe('b');
+  });
+
+  it('hacer después pasa el ejercicio al final y activa el que sigue', async () => {
+    S.draft.start = 1; S.draft.cur = 'a';
+    await hacerDespues('a');
+    expect(S.draft.order).toEqual(['b', 'c', 'a']);
+    expect(S.draft.cur).toBe('b');
+    expect(isSkipped('a')).toBe(false);   // sigue pendiente: no es omitir
+  });
+
+  it('si es el único que queda, hacer después lo deja activo', async () => {
+    S.draft.start = 1; S.draft.cur = 'c';
+    S.draft.entries = { a: { sets: [{}, {}, {}] }, b: { sets: [{}, {}, {}] } };
+    await hacerDespues('c');
+    expect(S.draft.cur).toBe('c');
+  });
 });
 
 describe('targetSets', () => {

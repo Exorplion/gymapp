@@ -35,11 +35,29 @@ describe('porcionesDe', () => {
     expect(porcionesDe('Pecho', undefined)).toEqual([]);
   });
 
-  it('un grupo sin parches reales en la lámina (Glúteo) siempre devuelve vacío', () => {
-    // Glúteo no tiene ninguna porción resaltada por MuscleMap: todo cae en el
-    // mismo músculo entero. Mostrar una porción ahí sería inventar geometría.
-    const out = porcionesDe('Glúteo', [{ name: 'Hip thrust', sets: 4 }]);
+  it('un grupo sin porciones reales en la lámina (Bíceps) siempre devuelve vacío', () => {
+    // El bíceps es UNA forma por lado en la lámina: mostrar una porción ahí
+    // sería inventar geometría.
+    const out = porcionesDe('Bíceps', [{ name: 'Curl martillo', sets: 4 }]);
     expect(out).toEqual([]);
+  });
+
+  it('Glúteo: el hip thrust enciende el mayor y el abductor el medio', () => {
+    expect(porcionesDe('Glúteo', [{ name: 'Hip thrust', sets: 4 }])).toEqual([{ sub: 'Glúteo mayor', sets: 4 }]);
+    expect(porcionesDe('Glúteo', [{ name: 'Abductor en máquina', sets: 3 }])).toEqual([{ sub: 'Glúteo medio', sets: 3 }]);
+  });
+
+  it('un ejercicio que nombra el GRUPO entero cuenta para todas sus hermanas', () => {
+    // Pushdown dice 'Tríceps' (no hay estudio que diga qué cabeza prioriza):
+    // entrenó el tríceps entero, no ninguna cabeza.
+    const out = porcionesDe('Tríceps', [{ name: 'Tricep pushdown', sets: 3 }]);
+    expect(out.map(p => p.sub).sort()).toEqual(['Tríceps cabeza larga', 'Tríceps cabeza lateral']);
+    expect(out.every(p => p.sets === 3)).toBe(true);
+  });
+
+  it('gemelos sentado va al sóleo, el genérico a las dos piezas', () => {
+    expect(porcionesDe('Gemelos', [{ name: 'Gemelos sentado', sets: 4 }])).toEqual([{ sub: 'Sóleo', sets: 4 }]);
+    expect(porcionesDe('Gemelos', [{ name: 'Calf raise', sets: 4 }]).map(p => p.sub).sort()).toEqual(['Gastrocnemio', 'Sóleo']);
   });
 
   it('Espalda tiene sus porciones como zonas HERMANAS (sin parche): un jalón enciende Dorsal bajo y NO Trapecio/Dorsal alto', () => {

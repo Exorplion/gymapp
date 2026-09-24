@@ -10,6 +10,8 @@ import { currentStreak } from './lib/streak.js';
 import { sessionExs } from './lib/session.js';
 import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
 import { aplicarPaleta } from './lib/theme.js';
+import { accionDeArranque, ejecutarAccion } from './lib/acciones.js';
+import { useAtras } from './lib/useAtras.js';
 import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
@@ -49,6 +51,8 @@ import GymEquip from './components/sheets/GymEquip.jsx';
 import GymPhotoView from './components/sheets/GymPhotoView.jsx';
 import RoutineWizard from './components/sheets/RoutineWizard.jsx';
 import YearRecap from './components/sheets/YearRecap.jsx';
+import Calentamiento from './components/sheets/Calentamiento.jsx';
+import ExOpciones from './components/sheets/ExOpciones.jsx';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
 // globales en index.html). No es uno de los 5 sheets nombrados en el plan de
@@ -90,6 +94,8 @@ function SheetContent({ sheet }) {
     case 'day-peek': return <DayPeek {...sheet.props} />;
     case 'ex-info': return <ExInfo {...sheet.props} />;
     case 'confirm': return <ConfirmSheet {...sheet.props} />;
+    case 'calentamiento': return <Calentamiento {...sheet.props} />;
+    case 'ex-opciones': return <ExOpciones {...sheet.props} />;
     case 'reorder-hoy': return <ReorderHoy {...sheet.props} />;
     case 'marcar-dia': return <MarcarDia {...sheet.props} />;
     case 'gym-match': return <GymMatch {...sheet.props} />;
@@ -376,6 +382,9 @@ export default function App() {
       // recién cambiaría al tuyo si entrabas a Ajustes.
       aplicarPaleta(S.cfg.themeColor);
       bump();
+      // Recién con los datos cargados: el formulario de peso usa S.body para
+      // el placeholder con tu último registro.
+      accionDeArranque();
     }).catch(err => {
       /* Sin este catch, cualquier fallo del arranque dejaba la app en una
          pantalla vacía PERMANENTE: no corría el bump(), así que React nunca
@@ -398,6 +407,18 @@ export default function App() {
   // que sin este efecto el drag quedaría muerto.
   useEffect(() => {
     initDragListeners();
+  }, []);
+
+  /* Tocar el recordatorio con la app ya abierta: el service worker no la
+     recarga, le manda un mensaje (sw-notif.js) y la acción corre acá. */
+  useEffect(() => {
+    const sw = navigator.serviceWorker;
+    if (!sw) return;
+    const alMensaje = e => {
+      if (e.data?.tipo === 'fierro-accion' && S.ready && !S.bootError) ejecutarAccion(e.data.accion);
+    };
+    sw.addEventListener('message', alMensaje);
+    return () => sw.removeEventListener('message', alMensaje);
   }, []);
 
   /* Cambio de día con la app abierta.
@@ -452,6 +473,13 @@ export default function App() {
     });
     return ocultarSesion;
   }, [haySesion]);
+
+  /* El gesto de volver de Android (lib/atras.js). Sin esto cerraba la app
+     entera. Orden de lo que se cierra: la hoja abierta primero, después la
+     pestaña vuelve a Inicio (Hoy cuenta como fuera de Inicio), y recién ahí
+     volver sale de la app. */
+  useAtras(!!store.sheet, closeSheet);
+  useAtras(store.tab !== 'inicio', () => changeTab('inicio'));
 
   /* El arranque falló: se dice, con la causa y una salida. Antes esto era
      indistinguible de "todavía cargando" — las dos cosas eran una pantalla
@@ -565,7 +593,7 @@ export default function App() {
           cambian de pestaña en toda la app (Hoy, Inicio, BodyMap). */}
       <TabBar active={store.tab === 'hoy' ? 'inicio' : store.tab} onChange={changeTab} />
       <Toast />
-      <Sheet open={!!store.sheet} onClose={closeSheet}>
+      <Sheet open={!!store.sheet} onClose={closeSheet} variante={store.sheet?.type === 'confirm' ? 'dialogo' : undefined}>
         <SheetContent sheet={store.sheet} />
       </Sheet>
       <RestTimer />
