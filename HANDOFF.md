@@ -78,6 +78,46 @@ otro orden en el lado derecho del glúteo):
 - `npm ci` necesita `--legacy-peer-deps` (vite-plugin-pwa 1.2 declara vite ≤7).
 - `tsc --noEmit` da 1 error preexistente (faltan los tipos de node).
 
+### Segunda tanda (misma fecha) — rediseño de la sesión, aprobado por Enzo
+
+Enzo vio un mockup de 5 pasos y dijo "sí a todo". Lo que cambió:
+
+- **Hoy (antes de entrenar):** el cuerpo con los grupos del día va en la
+  esquina del héroe "Toca hoy" (`CuerpoDeHoy`); Pre-workout y Registrar por
+  voz son dos `.chip` adentro del héroe (no se borraron). Los bloques
+  plegables pasaron a `PlanHoy`: lista abierta, numerada, agrupada por bloque
+  (`.group`/`.grouprow`), con la meta de hoy a la derecha
+  (`lib/objetivoHoy.js`, sobre la doble progresión) y un resumen "↑ N para
+  subir peso · M para superar reps". ▲▼ y lápiz sólo en modo "Editar".
+- **Antes de empezar:** se sacaron los tres recuadros de explicación; se
+  sumó "Pre-workout (opcional)" → `S.draft.preworkout` → `sess.preworkout`.
+- **Calentamiento general** (hoja `calentamiento`): se abre solo tras "Abrir
+  sesión". Manguito rotador (2 ejercicios) o cadera y tobillo si el primer
+  ejercicio es de pierna (`CALENTAMIENTO_GENERAL` en warmup.ts, reemplaza a
+  `MOVILIDAD`). Se puede saltar. `WarmupCard.jsx` se borró: la rampa
+  50/75/90 vive ahora ADENTRO de la tarjeta del ejercicio (`.ex-aprox`,
+  `marcarCalentado()` en session.js).
+- **Flujo:** "Empezar rutina" (antes "Iniciar ejercicio") se toca UNA vez;
+  al completar un ejercicio el siguiente se activa solo (`saveSet`,
+  `skipExercise` → `siguienteActivo()`). **"Hacer después"** (nuevo,
+  `hacerDespues()`): la máquina está ocupada → al final de `draft.order`,
+  sigue pendiente. "Saltar" pasó a llamarse "Omitir".
+- **Tarjeta:** encabezado en fila (dibujo · nombre + etiquetas `.ex-tag` ·
+  miniatura de la foto `.ex-foto` + botón `.ex-opts` ⋯); "Última vez | Hoy"
+  lado a lado (`.ex-cmp`); serie con barra de segmentos (`.ex-seg`); ruedas
+  lado a lado (`.setrows.dos`, dientes de 44px → se ven 3 números). El
+  acordeón "Más opciones" se fue: la hoja `ex-opciones` (ExOpciones.jsx) tiene
+  hacer después, ±serie, unilateral, cambiar, foto y omitir.
+- **Animación:** la tarjeta activa se despliega hacia abajo (motion, altura
+  0→auto + piezas escalonadas, `desplegar`/`pieza` en ExerciseCarousel). Sólo
+  la primera vez que se abre en la sesión de la app (`yaAbiertas`), para no
+  repetirla en cada cambio de pestaña.
+- Fotos: `guardarFotoMaquina()` en gyms.js (la usan la tarjeta y la hoja) y
+  `S.fotoRev` para que la miniatura se relea sola.
+
+Trampa nueva: **una grilla `1fr 1fr` con una rueda adentro se estira al
+ancho de TODOS los dientes** (medido 2134px). Usar `minmax(0,1fr)`.
+
 ### Pendientes
 
 1. **Poner los dos secretos** y probar con Actions → "Run workflow".

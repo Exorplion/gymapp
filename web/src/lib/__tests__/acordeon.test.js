@@ -119,42 +119,30 @@ describe('detailsSlide — gate de movimiento reducido', () => {
   });
 });
 
-/* La razón de existir de todo el rodeo del preventDefault es NO perder la
-   accesibilidad que el <details> da gratis. Si alguien "simplifica" esto a un
-   {abierto && <div>} con estado de React, el movimiento sigue andando y la
-   pérdida es invisible hasta que alguien navega con teclado o con lector.
-   Esta guardia es barata y es exactamente el camino que estuvimos por tomar. */
-describe('el acordeón de la sesión sigue siendo <details> nativo', () => {
+/* 2026-09-24: el acordeón "Más opciones del ejercicio" se fue. Enzo: estaba
+   al fondo de la tarjeta y si no scrolleabas no sabías que existía. Las
+   opciones son ahora un botón arriba, con nombre, que abre una hoja (un
+   diálogo de verdad: foco atrapado, Escape, anuncio — Sheet.jsx). Estas
+   guardias fijan eso para que no vuelva a esconderse. detailsSlide() sigue en
+   motion.js y testeado arriba, por si otro acordeón lo necesita. */
+describe('las opciones del ejercicio están a la vista', () => {
   const jsx = fuente('../../components/ExerciseCarousel.jsx');
 
-  it('usa <details> + <summary>, no un div con estado', () => {
-    expect(jsx).toMatch(/<details className="ex-more"/);
-    expect(jsx).toMatch(/<summary\b/);
+  it('es un botón con nombre accesible que abre la hoja de opciones', () => {
+    expect(jsx).toMatch(/className="ex-opts"/);
+    expect(jsx).toMatch(/aria-label=\{`Opciones de \$\{ex\.name\}`\}/);
+    expect(jsx).toMatch(/openSheet\('ex-opciones'/);
   });
 
-  it('el toggle se maneja frenando el click del summary', () => {
-    expect(jsx).toMatch(/e\.preventDefault\(\); detailsSlide\(/);
-  });
-
-  it('ya no queda el bloomOpen encima (era el doble movimiento)', () => {
+  it('no volvió el acordeón al fondo ni el bloomOpen encima', () => {
+    expect(jsx).not.toMatch(/<details/);
     expect(jsx).not.toMatch(/bloomOpen/);
   });
-});
 
-describe('acordeón de bloques de Hoy (.block-collapse)', () => {
-  const css = fuente('../../styles.css');
-
-  it('anima la altura con grid-template-rows y un tiempo de los cuatro pasos', () => {
-    expect(css).toMatch(/\.block-collapse\{[^}]*grid-template-rows var\(--d3\)/s);
-  });
-
-  it('esconde con visibility para que el teclado no entre en un bloque cerrado', () => {
-    expect(css).toMatch(/\.block-collapse\{[^}]*visibility:hidden/s);
-    expect(css).toMatch(/\.block-collapse\.open\{[^}]*visibility:visible/s);
-  });
-
-  it('reducir movimiento apaga las dos reglas, no sólo la cerrada', () => {
-    const m = css.match(/@media \(prefers-reduced-motion:reduce\)\{\.block-collapse[^\n]*/);
-    expect(m?.[0]).toContain('.block-collapse.open');
+  it('la clase existe en styles.css (una clase muerta no avisa)', () => {
+    const css = fuente('../../styles.css');
+    for (const c of ['ex-opts', 'ex-cmp', 'ex-seg', 'ex-aprox', 'ex-live', 'exh', 'ex-tag', 'ex-foto']) {
+      expect(css, c).toMatch(new RegExp(`\\.${c}[{ ,.:]`));
+    }
   });
 });

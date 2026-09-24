@@ -22,6 +22,7 @@ import { S, bump, saveCfg } from './state.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
 import { persistSlot } from './rutina-logic.js';
+import { shrinkImageBlob } from './photo.js';
 
 export const saveGyms = () => idb.put('settings', { key: 'gyms', value: S.gyms });
 
@@ -128,6 +129,37 @@ export async function getPhoto(gymId, exName) {
 
 export async function deletePhoto(gymId, exName) {
   await idb.del('gymPhotos', photoId(gymId, exName));
+  S.fotoRev = (S.fotoRev || 0) + 1;
+  bump();
+}
+
+/** Del <input type="file"> de la cámara a la foto guardada, con los mismos
+    dos cuidados de siempre: comprimir ANTES de guardar (480px / JPEG 70 →
+    ~50 KB en vez de varios MB) y avisar si falla, en vez de mostrar una foto
+    que no quedó. Vive acá porque la sacan dos lugares: la tarjeta del
+    ejercicio y la hoja de opciones.
+
+    `S.fotoRev` sube con cada cambio: la miniatura de la tarjeta lo tiene en
+    sus dependencias y se vuelve a leer sola. Devuelve si guardó. */
+export async function guardarFotoMaquina(gymId, exName, file) {
+  if (!gymId || !file) return false;
+  let blob;
+  try {
+    blob = await shrinkImageBlob(file);
+  } catch {
+    toast('No se pudo leer esa imagen');
+    return false;
+  }
+  try {
+    await savePhoto(gymId, exName, blob);
+  } catch {
+    toast('No se pudo guardar la foto (¿sin espacio?)');
+    return false;
+  }
+  S.fotoRev = (S.fotoRev || 0) + 1;
+  bump();
+  toast('Foto guardada');
+  return true;
 }
 
 /** Activa un gym y aplica su equipo guardado a los ejercicios del turno de

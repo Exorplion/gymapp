@@ -13,7 +13,11 @@
 //   - cualquier otra cosa         → falla, y te llega el mail
 import webpush from 'web-push';
 
-const { VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY, PUSH_SUBSCRIPTION, VAPID_SUBJECT } = process.env;
+// trim(): pegar el secreto desde PowerShell o la web suele sumarle un salto de
+// línea, y web-push rechaza la clave si no decodifica a 32 bytes exactos.
+const env = k => (process.env[k] || '').trim();
+const VAPID_PRIVATE_KEY = env('VAPID_PRIVATE_KEY'), VAPID_PUBLIC_KEY = env('VAPID_PUBLIC_KEY');
+const PUSH_SUBSCRIPTION = env('PUSH_SUBSCRIPTION'), VAPID_SUBJECT = env('VAPID_SUBJECT');
 
 if (!VAPID_PRIVATE_KEY || !PUSH_SUBSCRIPTION) {
   console.log('::notice::Faltan los secretos VAPID_PRIVATE_KEY y/o PUSH_SUBSCRIPTION: el recordatorio todavía no está configurado.');

@@ -69,6 +69,9 @@ const BLOQUE_DE: Record<string, 'superior' | 'inferior'> = {
   Pecho: 'superior', Espalda: 'superior', Hombro: 'superior',
   Bíceps: 'superior', Tríceps: 'superior', Abs: 'superior',
   Pierna: 'inferior', Glúteo: 'inferior', Gemelos: 'inferior',
+  // Lumbares va con inferior: back extension y good morning son bisagra de
+  // cadera, la misma demanda articular que el peso muerto.
+  Lumbares: 'inferior',
 };
 
 /** El bloque (superior/inferior) de un ejercicio, o null si no se pudo
@@ -79,15 +82,43 @@ export function bloqueDe(ex: ExLike | string | null | undefined): 'superior' | '
   return (cat && BLOQUE_DE[cat]) || null;
 }
 
-/** Movilidad dinámica antes de la rampa numérica, específica del bloque al
-    que estás por entrar. La rampa calienta EL EJERCICIO —el patrón, el peso—
-    pero no la articulación entera; unos minutos de movilidad son lo que
-    tapa esa diferencia, sobre todo en el primer ejercicio de piernas del día.
-    Nada de esto se registra: es preparación, no series. */
-export const MOVILIDAD: Record<'superior' | 'inferior', string[]> = {
-  superior: ['Círculos de hombro, 10 hacia cada lado', 'Remo con banda floja o pull-apart, 15', 'Rotación de tronco suave, 10 por lado'],
-  inferior: ['Sentadilla con el propio peso, 10', 'Zancadas caminando, 8 por pierna', 'Balanceo de cadera (leg swings), 10 por lado'],
+/** El calentamiento GENERAL, el que va una sola vez al abrir la sesión y
+    antes de cualquier máquina (hoja 'calentamiento', 2026-09-24).
+
+    Es lo que Enzo ya hacía por su cuenta — rotaciones interna y externa y
+    face pulls para el manguito rotador — y pidió tenerlo en la app: dos
+    ejercicios como máximo, bien hechos. En días que arrancan con pierna el
+    manguito no tiene nada que hacer y se cambia por cadera y tobillo.
+
+    Reemplaza a la lista de movilidad de tres ítems que mostraba la tarjeta de
+    calentamiento: la rampa (RAMPA, más arriba) sigue siendo por ejercicio y
+    vive ahora adentro de la tarjeta del ejercicio. Nada de esto se registra:
+    es preparación, no series. */
+export interface EjercicioCalentamiento { nombre: string; dosis: string; como: string; }
+export const CALENTAMIENTO_GENERAL: Record<'superior' | 'inferior', { foco: string; ejercicios: EjercicioCalentamiento[] }> = {
+  superior: {
+    foco: 'Manguito rotador',
+    ejercicios: [
+      { nombre: 'Rotación externa e interna con banda', dosis: '2 × 12 c/u por brazo', como: 'Codo pegado al cuerpo a 90°. Girá lento: 2 s de ida y 2 s de vuelta.' },
+      { nombre: 'Face pull liviano', dosis: '2 × 15', como: 'Tirá hacia la frente con los codos altos. Pausa de 1 s atrás.' },
+    ],
+  },
+  inferior: {
+    foco: 'Cadera y tobillo',
+    ejercicios: [
+      { nombre: 'Puente de glúteo', dosis: '2 × 12', como: 'Apretá los glúteos 1 s arriba, sin arquear la zona lumbar.' },
+      { nombre: 'Movilidad de tobillo y cadera', dosis: '10 por lado', como: 'Rodilla hacia adelante sobre la punta del pie con el talón apoyado; después balanceo de pierna.' },
+    ],
+  },
 };
+
+/** Qué calentamiento general corresponde: el del bloque del PRIMER ejercicio
+    que se va a hacer — es a esa articulación a la que vas a entrar en frío.
+    Sin ninguno clasificable, el de tren superior (el más común). */
+export function calentamientoGeneral(exs: (ExLike | string)[] | null | undefined) {
+  const primero = (exs || []).map(bloqueDe).find(Boolean) || 'superior';
+  return CALENTAMIENTO_GENERAL[primero];
+}
 
 interface Draft { warmBlocks?: string[]; }
 

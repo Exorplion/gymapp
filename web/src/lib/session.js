@@ -11,6 +11,7 @@ import { pedirPermiso } from './alarm.js';
 import { exKey, isBodyweight } from './equip.js';
 import { progresion } from './progression.js';
 import { currentStreak, bestStreak } from './streak.js';
+import { bloqueDe, DESCANSO } from './warmup.js';
 
 /** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
     ejercicio completo; un string sigue funcionando y se compara sólo por
@@ -462,7 +463,7 @@ export async function skipExercise(exId) {
   if (!S.draft) return;
   if (!S.draft.skipped) S.draft.skipped = [];
   if (!S.draft.skipped.includes(exId)) S.draft.skipped.push(exId);
-  if (S.draft.cur === exId) S.draft.cur = null;
+  if (S.draft.cur === exId) S.draft.cur = siguienteActivo();
   await saveDraft();
   vibrate(15);
   bump();
@@ -634,7 +635,10 @@ export async function saveSet(exId) {
   const finished = cur.length >= techo;
   const exs = sessionExs(S.routine.findIndex(s => s.id === S.draft.slotId));
   const nxt = finished ? nextPending(exs) : null;
-  if (finished) S.draft.cur = null;
+  /* Con la rutina ya empezada, el siguiente se ACTIVA solo (2026-09-24, Enzo:
+     "iniciar ejercicio" en cada máquina sobraba — se empieza la rutina una
+     vez). Si la máquina está ocupada, "Hacer después" lo manda al final. */
+  if (finished) S.draft.cur = nxt ? nxt.id : null;
   await saveDraft();
   vibrate(finished ? [25, 60, 25] : 15);
   bump();
@@ -770,6 +774,7 @@ export async function completeSession() {
     start: startAt, end: Date.now(), duration: Math.max(1, Math.round((Date.now() - startAt) / 60000)), entries,
     ...(skipped.length ? { skipped } : {}),
     ...(added.length ? { added } : {}),
+    ...(d.preworkout ? { preworkout: d.preworkout } : {}),
   };
   // Snapshot ANTES de insertar la sesión — los tres milestones (tonelaje,
   // sesiones, racha) se miden por si el umbral se CRUZA con esta sesión, no
@@ -841,7 +846,7 @@ export async function completeSession() {
 /** Abre el borrador de sesión (weekday `wd`, con el orden ya reacomodado si
     hubo drag-to-reorder antes de arrancar). El cronómetro NO arranca acá —
     arranca en startExercise(), cuando de verdad estás en la máquina. */
-export async function startSession(index, precheckAdjust = 0) {
+export async function startSession(index, precheckAdjust = 0, { preworkout = null } = {}) {
   const slot = S.routine[index];
   if (!slot?.exercises?.length) { toast('Este turno no tiene ejercicios'); return; }
   // Acá y no al terminar el primer descanso: abrir la sesión es un toque de
@@ -856,12 +861,58 @@ export async function startSession(index, precheckAdjust = 0) {
     // Chequeo de 3 preguntas (Plan Fierro · Fase 3): ±% sobre el peso
     // sugerido de HOY, ver precheckAdjust() en Hoy.jsx. 0 = sin ajuste.
     precheckAdjust,
+    // Qué comiste antes ('nada' | 'liviano' | 'comida'), opcional. Se guarda
+    // con la sesión para poder cruzarlo después con cómo te fue.
+    preworkout,
   };
   await saveDraft();
   closeSheet();
   vibrate(15);
   bump();
-  toast('Sesión abierta · tocá "Iniciar ejercicio" cuando estés en la máquina');
+}
+
+/** El ejercicio que se activa cuando el actual se cierra (completo, saltado o
+    mandado al final): el próximo pendiente, pero sólo si la rutina ya
+    arrancó. Antes de "Empezar rutina" no se activa nada solo. */
+function siguienteActivo() {
+  if (!S.draft?.start) return null;
+  const exs = sessionExs(S.routine.findIndex(s => s.id === S.draft.slotId));
+  return nextPending(exs)?.id ?? null;
+}
+
+/** La rampa de aproximación de este ejercicio quedó hecha: se marca su
+    BLOQUE (superior/inferior) como calentado en el borrador — así sobrevive a
+    cerrar la app en el medio, que es justo cuando pasa — y arranca el
+    descanso largo antes de la primera serie de trabajo. */
+export async function marcarCalentado(ex, conDescanso = true) {
+  if (!S.draft || !ex) return;
+  const bloque = bloqueDe(ex);
+  if (bloque) {
+    if (!Array.isArray(S.draft.warmBlocks)) S.draft.warmBlocks = [];
+    if (!S.draft.warmBlocks.includes(bloque)) S.draft.warmBlocks.push(bloque);
+  }
+  await saveDraft();
+  bump();
+  if (conDescanso) startRest(DESCANSO);
+}
+
+/** "Hacer después": la máquina está ocupada, así que el ejercicio pasa al
+    final de la sesión, sigue pendiente, y se activa el siguiente. No es
+    saltarlo — saltar es no hacerlo. */
+export async function hacerDespues(exId) {
+  if (!S.draft) return;
+  const index = S.routine.findIndex(s => s.id === S.draft.slotId);
+  const ids = sessionExs(index).map(e => e.id).filter(id => id !== exId);
+  ids.push(exId);
+  S.draft.order = ids;
+  const eraActual = S.draft.cur === exId;
+  if (eraActual) S.draft.cur = siguienteActivo();
+  await saveDraft();
+  vibrate(15);
+  bump();
+  const ex = findEx(exId);
+  const sig = S.draft.cur && S.draft.cur !== exId ? findEx(S.draft.cur) : null;
+  toast(sig ? `${ex?.name || 'Ejercicio'} al final · sigue ${sig.name}` : `${ex?.name || 'Ejercicio'} pasa al final`);
 }
 
 export async function discardSession() {
@@ -883,7 +934,7 @@ export async function startExercise(ex) {
   bump();
   // Sin scrollCarouselTo() acá tampoco: S.draft.cur ya cambió, y centrar el
   // slide es trabajo de ExerciseCarousel (único dueño del scroll).
-  toast(first ? `⏱ Cronómetro en marcha · ${ex.name}` : `${ex.name} · serie 1 de ${ex.sets}`);
+  toast(first ? `⏱ Rutina en marcha · ${ex.name}` : `${ex.name} · serie 1 de ${ex.sets}`);
 }
 
 /** Borra una serie ya registrada (chip ✕). Si el ejercicio quedaba cerrado

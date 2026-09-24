@@ -51,6 +51,8 @@ import GymEquip from './components/sheets/GymEquip.jsx';
 import GymPhotoView from './components/sheets/GymPhotoView.jsx';
 import RoutineWizard from './components/sheets/RoutineWizard.jsx';
 import YearRecap from './components/sheets/YearRecap.jsx';
+import Calentamiento from './components/sheets/Calentamiento.jsx';
+import ExOpciones from './components/sheets/ExOpciones.jsx';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
 // globales en index.html). No es uno de los 5 sheets nombrados en el plan de
@@ -92,6 +94,8 @@ function SheetContent({ sheet }) {
     case 'day-peek': return <DayPeek {...sheet.props} />;
     case 'ex-info': return <ExInfo {...sheet.props} />;
     case 'confirm': return <ConfirmSheet {...sheet.props} />;
+    case 'calentamiento': return <Calentamiento {...sheet.props} />;
+    case 'ex-opciones': return <ExOpciones {...sheet.props} />;
     case 'reorder-hoy': return <ReorderHoy {...sheet.props} />;
     case 'marcar-dia': return <MarcarDia {...sheet.props} />;
     case 'gym-match': return <GymMatch {...sheet.props} />;

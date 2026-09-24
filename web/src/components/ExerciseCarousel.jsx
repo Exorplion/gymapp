@@ -16,27 +16,27 @@
 // mantiene sólo para esos dos.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { S, wDisplay, wAlt, wStep, wToUnit, wFromUnit, openSheet } from '../lib/state.js';
+import { motion } from 'motion/react';
 import { round1, fmtNum } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
 import { rirPedido } from '../lib/rir.js';
-import { suggestedWeight } from '../lib/charts.js';
-import { progresion, progresionTexto } from '../lib/progression.js';
+import { objetivoHoy } from '../lib/objetivoHoy.js';
+import { tocaCalentar, warmupSets } from '../lib/warmup.js';
 import {
   ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
-  targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, dropSet, reemplazaA,
-  isUnilateral, toggleUnilateral, setSide, seriesCompletas,
+  targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, reemplazaA,
+  isUnilateral, setSide, seriesCompletas, hacerDespues, marcarCalentado,
 } from '../lib/session.js';
 import { sideImbalance } from '../lib/symmetry.js';
-import { shrinkImageBlob } from '../lib/photo.js';
 import { toast } from '../lib/toast.js';
 import { jumpToSlide, scrollToSlideEl, slideScrollLeft } from '../lib/carousel.js';
-import { staggerRevealOnce, squashStretch, impactBurst, detailsSlide, menosMovimiento } from '../lib/motion.js';
-import { relatedHistory, equipLabel, puedeSerUnilateral } from '../lib/equip.js';
-import { getPhoto, savePhoto, deletePhoto } from '../lib/gyms.js';
+import { staggerRevealOnce, squashStretch, impactBurst, menosMovimiento, D, EASE_OUT } from '../lib/motion.js';
+import { relatedHistory, equipLabel } from '../lib/equip.js';
+import { getPhoto, deletePhoto, guardarFotoMaquina } from '../lib/gyms.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
 import ReelPicker from './ReelPicker.jsx';
-import { Info, Skip, Swap } from './Icon.jsx';
+import { Info, Skip, Dots, Later } from './Icon.jsx';
 // EXPERIMENTO — coverflow 3D (pedido de Enzo, ver motion.dev/examples/react-carousel-coverflow).
 // Revertir = borrar este import + el archivo + el bloque "COVERFLOW" de abajo.
 import '../styles-coverflow.css';
@@ -223,7 +223,7 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
        mientras la animación corre, Chrome re-evalúa el snap y ABORTA el scroll
        programático donde estaba. Y completar un ejercicio es justo eso: la
        tarjeta que se cierra pasa de `open` (ruedas de peso/reps, botón,
-       <details>) a `full` y el carrusel se achica a la mitad de alto en medio
+       opciones) a `full` y el carrusel se achica a la mitad de alto en medio
        del viaje.
 
        Medido a 430px: pedimos scrollTo(2323.5) y el carrusel se quedó
@@ -354,67 +354,35 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
   );
 }
 
-/** Las tres salidas que el gimnasio real necesita y la app no daba: una serie
-    de más, cambiar de ejercicio porque la máquina está ocupada, y saltarlo
-    porque no te da el tiempo. Botones explícitos y no un menú escondido: se
-    tocan jadeando y con las manos húmedas. */
-function ExActions({ ex, wd, uni, puedeUni }) {
-  function confirmarSalto() {
-    openSheet('confirm', {
-      title: `¿Saltar ${ex.name}?`,
-      body: 'Queda marcado como saltado y pasás al siguiente. Podés restablecerlo en cualquier momento y vuelve a su lugar.',
-      confirmLabel: 'Saltar',
-      onConfirm: () => skipExercise(ex.id),
-    });
-  }
-  return (
-    <div className="ex-actions">
-      {/* Sumar y quitar juntos: decidir "hoy hago una menos" es tan común como
-          "hoy hago una más", y hasta ahora sólo se podía hacia arriba. */}
-      <button type="button" className="ex-act" onClick={() => dropSet(ex.id)}>− Serie</button>
-      <button type="button" className="ex-act" onClick={() => addExtraSet(ex.id)}>+ Serie</button>
-      {/* Un botón de verdad, entre botones — no un chip inerte compitiendo con
-          el título (Enzo, ver el handoff 2026-09-17). Sólo aparece donde
-          puedeSerUnilateral(ex) lo permite; el estado on/off se lee igual que
-          cualquier otro toggle de la app (fondo lleno + aria-pressed). */}
-      {puedeUni && (
-        <button
-          type="button"
-          className={`ex-act uni ${uni ? 'on' : ''}`}
-          aria-pressed={uni}
-          onClick={() => toggleUnilateral(ex.id)}
-        >
-          {uni ? '✓ Unilateral' : 'Unilateral'}
-        </button>
-      )}
-      {/* "Cambiar" no decía QUÉ cambia. Enzo: "está malísimo" — ahora dice la
-          acción completa, en la voz de la app. */}
-      <button type="button" className="ex-act" onClick={() => openSheet('ex-swap', { wd, exId: ex.id })}>
-        <Swap /> Otro ejercicio
-      </button>
-      <button type="button" className="ex-act" onClick={confirmarSalto}><Skip /> Saltar</button>
-    </div>
-  );
+/** Omitir desde la tarjeta en espera: la misma confirmación que la hoja de
+    opciones. Omitir no es "hacer después": el ejercicio no se hace hoy. */
+function confirmarOmitir(ex) {
+  openSheet('confirm', {
+    title: `¿Omitir ${ex.name}?`,
+    body: 'Queda marcado como omitido y pasás al siguiente. Podés restablecerlo en cualquier momento y vuelve a su lugar.',
+    confirmLabel: 'Omitir',
+    onConfirm: () => skipExercise(ex.id),
+  });
 }
 
-/** Foto de "esta máquina, en este gym" (a pedido explícito de Enzo — ver el
-    comentario de cabecera de gyms.js sobre por qué es un ángulo propio y no
-    un catálogo tipo TRACKED): un campo más del registro equip[exKey], no
-    una pantalla aparte. Sólo aparece con un gym activo — sin eso no hay a
-    qué gym atar la foto. Sin foto, el chip saca una. CON foto, tocar la
-    miniatura MUESTRA la foto (sheet 'gym-photo') — antes reabría la cámara
-    directamente, y eso era destruir lo que el control decía mostrar (Enzo:
-    "solo me la debería mostrar"). Reemplazar y borrar viven adentro de ese
-    preview, detrás del confirm genérico.
+/** La foto de "esta máquina, en este gym" (a pedido explícito de Enzo — ver
+    el comentario de cabecera de gyms.js), como MINIATURA en el encabezado de
+    la tarjeta (2026-09-24): se ve de un vistazo y un toque la abre en grande.
+    Antes era un chip adentro del acordeón de "más opciones", donde nadie la
+    encontraba.
 
-    El <input> de la cámara se queda ACÁ y no se duplica en el sheet: el sheet
-    lo dispara por callback. Un input `display:none` responde igual a .click()
-    aunque la pantalla de atrás esté oculta mientras el sheet se cierra, que es
-    exactamente el mismo truco del que ya dependía este componente. */
-function GymPhoto({ gymId, exName }) {
+    Sin foto no se dibuja nada: sacarla vive en la hoja de opciones (⋯). Tocar
+    la miniatura MUESTRA la foto (sheet 'gym-photo'); reemplazar y borrar viven
+    adentro de ese preview. El <input> de la cámara se queda acá porque
+    'gym-photo' lo dispara por callback para reemplazar.
+
+    `S.fotoRev` en las dependencias: la hoja de opciones guarda una foto nueva
+    y sube ese número (gyms.js), y la miniatura se vuelve a leer sola. */
+function FotoMaquina({ gymId, exName }) {
   const [url, setUrl] = useState(null);
   const inputRef = useRef(null);
   const urlRef = useRef(null);
+  const rev = S.fotoRev || 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -426,42 +394,19 @@ function GymPhoto({ gymId, exName }) {
       setUrl(next);
     }).catch(() => {
       // Leer la foto puede fallar (IndexedDB bloqueada por otra pestaña). Sin
-      // este catch era un rechazo no manejado y la miniatura no aparecía nunca
-      // sin ninguna señal de por qué.
+      // este catch era un rechazo no manejado y la miniatura no aparecía nunca.
       if (!cancelled) setUrl(null);
     });
     return () => {
       cancelled = true;
-      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+      if (urlRef.current) { URL.revokeObjectURL(urlRef.current); urlRef.current = null; }
     };
-  }, [gymId, exName]);
+  }, [gymId, exName, rev]);
 
   async function onFile(e) {
     const file = e.target.files?.[0];
     e.target.value = '';
-    if (!file) return;
-    // Comprimir ANTES de guardar (480px / JPEG 70 → ~50 KB en vez de varios
-    // MB), y no mostrar la miniatura hasta que la escritura haya terminado
-    // bien: antes se hacía setUrl() pase lo que pase, así que si el guardado
-    // fallaba por cuota el usuario veía su foto y creía que había quedado —
-    // al volver no estaba.
-    let blob;
-    try {
-      blob = await shrinkImageBlob(file);
-    } catch {
-      toast('No se pudo leer esa imagen');
-      return;
-    }
-    try {
-      await savePhoto(gymId, exName, blob);
-    } catch {
-      toast('No se pudo guardar la foto (¿sin espacio?)');
-      return;
-    }
-    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
-    const next = URL.createObjectURL(blob);
-    urlRef.current = next;
-    setUrl(next);
+    await guardarFotoMaquina(gymId, exName, file);
   }
 
   async function borrarFoto() {
@@ -471,11 +416,6 @@ function GymPhoto({ gymId, exName }) {
       toast('No se pudo borrar la foto');
       return;
     }
-    // Revocar SIEMPRE antes de soltar la referencia: si la foto ya no está en
-    // el store, una miniatura siguiendo viva sería una foto que no existe.
-    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
-    urlRef.current = null;
-    setUrl(null);
     toast('Foto borrada');
   }
 
@@ -489,28 +429,75 @@ function GymPhoto({ gymId, exName }) {
     });
   }
 
+  if (!url) return null;
   return (
-    <div className="gym-photo">
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{ display: 'none' }}
-        onChange={onFile}
-      />
-      {url ? (
-        <button type="button" className="gym-photo-thumb" onClick={verFoto} aria-label={`Ver la foto de la máquina de ${exName}`}>
-          <img src={url} alt="" />
-        </button>
-      ) : (
-        <button type="button" className="chip" onClick={() => inputRef.current?.click()}>
-          📷 Foto de la máquina
-        </button>
-      )}
+    <>
+      <input ref={inputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={onFile} />
+      <button type="button" className="ex-foto" onClick={verFoto} aria-label={`Ver la foto de la máquina de ${exName}`}>
+        <img src={url} alt="" />
+      </button>
+    </>
+  );
+}
+
+/** "Última vez" y "Hoy", lado a lado (2026-09-24). Antes eran dos renglones
+    de texto gris ("Objetivo 4 × 10", "Última vez: 60×10 · 60×10…") más un
+    párrafo de progresión abajo: tres lecturas para una sola pregunta — ¿qué
+    tengo que hacer hoy contra lo de la vez pasada? Dos columnas con el número
+    grande la contestan de un vistazo. El número de Hoy sale de
+    objetivoHoy() — la doble progresión, o el sugerido por 1RM — nunca de un
+    relleno. */
+function Comparativa({ last, obj, uni }) {
+  const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
+  let ultima = null;
+  if (last?.length) {
+    const top = Math.max(...last.map(s => s.w));
+    const parejas = last.every(s => Math.abs(s.w - top) < 0.01);
+    ultima = {
+      peso: `${wDisplay(top)} ${unidad}`,
+      detalle: parejas ? `${last.map(s => s.r).join(' · ')} reps` : last.map(s => `${wDisplay(s.w)}×${s.r}`).join(' · '),
+    };
+  }
+  const hoyPeso = obj.peso != null
+    ? `${obj.tipo === 'sugerido' ? '~' : ''}${wDisplay(obj.peso)} ${unidad}${obj.tipo === 'subir' ? ' ↑' : ''}`
+    : '—';
+  return (
+    <div className="ex-cmp">
+      <div className="ex-cmp-col">
+        <span className="ex-cmp-lbl">Última vez{uni ? ' · por lado' : ''}</span>
+        {ultima ? <><b>{ultima.peso}</b><small>{ultima.detalle}</small></> : <small>sin registro</small>}
+      </div>
+      <div className={`ex-cmp-col hoy${obj.tipo === 'subir' ? ' up' : ''}`}>
+        <span className="ex-cmp-lbl">Hoy</span>
+        <b>{hoyPeso}</b>
+        <small>{obj.texto}</small>
+      </div>
     </div>
   );
 }
+
+/* Las tarjetas que ya se abrieron en esta sesión de la app: la que se abre
+   por primera vez se despliega hacia abajo; la que ya estaba abierta (volviste
+   a Hoy desde otra pestaña, y Hoy se remonta entero) aparece ya abierta. Si
+   se animara en cada visita sería el "segundo movimiento" que motion.js
+   documenta haber sacado de los cambios de pestaña. */
+const yaAbiertas = new Set();
+
+/* El despliegue de la tarjeta activa: la altura crece y adentro las piezas
+   entran en orden — serie, aproximación, ruedas, botón. Mismos tiempos que el
+   resto de la app (D.panel para lo grande, pasos cortos entre piezas). */
+const curvaSalida = EASE_OUT.match(/[\d.]+/g).map(Number);
+const desplegar = {
+  oculto: { height: 0, opacity: 0 },
+  visible: {
+    height: 'auto', opacity: 1,
+    transition: { duration: D.panel / 1000, ease: curvaSalida, when: 'beforeChildren', staggerChildren: 0.05 },
+  },
+};
+const pieza = {
+  oculto: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: D.objeto / 1000, ease: curvaSalida } },
+};
 
 function ExerciseSlide({ m, wd, started }) {
   const { ex, done, target, skipped, full, open, isNext, waiting } = m;
@@ -528,51 +515,37 @@ function ExerciseSlide({ m, wd, started }) {
   const serieObjetivo = seriesCompletas(target, uni);
   const serieHechas = seriesCompletas(done.length, uni);
   const serieAMedias = uni && done.length % 2 === 1;
-  /* El esquema de esfuerzo va sobre SERIES REALES, nunca sobre filas. Es la
-     confusión que se repite en este archivo y vale escribirla una vez más:
-     `target` (targetSets) cuenta FILAS, y en unilateral cada serie real son
-     dos filas. Armarlo sobre filas convertía un 4×10 unilateral en un esquema
-     de 8 escalones — rirScheme(8) = 7/6/5/4/3/2/1/0 — y le mostraba a Enzo
-     "pedía RIR 6", un valor que ni siquiera existe entre los chips (0..4+).
-     Sobre series reales el esquema vuelve a tener 4 escalones: 3/2/1/0.
-
-     El índice también es en series: `seriesCompletas(done.length, uni)` hace
-     que las DOS filas de la misma serie caigan en el mismo escalón. Es la
-     misma serie, un lado y el otro — no tiene sentido pedirle RIR 2 a la
-     izquierda y RIR 1 a la derecha.
-
-     En bilateral seriesCompletas() es la identidad, así que acá no cambia
-     absolutamente nada respecto de lo que ya funcionaba.
-
-     El índice tiene que coincidir clavado con el que calcula saveSet() en
-     session.js para la pregunta del descanso ("pedía RIR N"): si se tocan
-     estas cuentas, se tocan las dos. */
+  /* El esquema de esfuerzo va sobre SERIES REALES, nunca sobre filas: en
+     unilateral cada serie real son dos filas, y armarlo sobre filas convertía
+     un 4×10 en rirScheme(8) = 7/6/5/4/3/2/1/0 ("pedía RIR 6"). El índice
+     también es en series, y tiene que coincidir clavado con el que calcula
+     saveSet() en session.js para la pregunta del descanso: si se tocan estas
+     cuentas, se tocan las dos. */
   const scheme = rirScheme(serieObjetivo, ex.name);
   const curRir = rirPedido(scheme, serieHechas);
-  const puedeUni = puedeSerUnilateral(ex);
   // Sin historial propio: primera vez en ESTE equipo. Mostramos de dónde venís
   // en las otras variantes, sin traducir el número (ver relatedHistory).
   const related = last ? [] : relatedHistory(ex, S.sessions);
-  // D3: si es unilateral y nunca se registró bajo esa clave, puede ser que
-  // SÍ haya historial bilateral del mismo ejercicio (acabás de prender el
-  // interruptor). No es el mismo dato — 40kg bilateral y 25kg unilateral no
-  // son comparables — así que sólo sirve para decir "tenés algo, pero no
-  // esto", nunca para mostrarlo como si fuera la carga unilateral.
+  // D3: si es unilateral y nunca se registró bajo esa clave, puede haber
+  // historial bilateral — es otra carga, así que sólo sirve para decir
+  // "tenés algo, pero no esto", nunca como si fuera la carga unilateral.
   const lastBilateral = (uni && !last) ? lastDataFor({ ...ex, unilateral: false }) : null;
-  // Aviso raro, no diario (mismo criterio que lowMicros): sólo si el
-  // desbalance izq/der es un patrón sostenido en varias sesiones.
+  // Aviso raro, no diario: sólo si el desbalance izq/der es un patrón sostenido.
   const imbalance = uni ? sideImbalance(ex) : null;
+  const obj = (!full && !skipped) ? objetivoHoy(ex, { uni, ajuste: S.draft?.precheckAdjust || 0 }) : null;
+
+  /* La rampa de aproximación (50/75/90%), ahora ADENTRO de la tarjeta del
+     ejercicio que la necesita y sólo antes de su primera serie. Se calcula
+     sobre el peso de HOY que dice la tarjeta (objetivoHoy) o la última vez:
+     nunca sobre el relleno de 20 kg de ensureVals(), que daría tres pesos
+     inventados con toda la pinta de ser reales. */
+  const calentar = open && done.length === 0 && tocaCalentar(S.draft, ex);
+  const rampa = calentar ? warmupSets(obj?.peso ?? last?.at(-1)?.w, wStep()) : [];
 
   const altRef = useRef(null), pwRef = useRef(null);
-  // El <details> y su cuerpo: uno para escribir el `open` a mano, el otro
-  // para animarle la altura. Refs y no estado: abrir esto no tiene que
-  // rerenderizar el carrusel (ver el comentario del coverflow más abajo).
-  const moreRef = useRef(null), moreBodyRef = useRef(null);
-
-  // altRef/pwRef siguen sin controlar (refs, no state) por la misma razón de
-  // siempre: son texto derivado que cambia con cada serie/peso y no vale la
-  // pena un bump() de toda la app por eso. Ya no hay ningún input que
-  // sincronizar acá — peso/reps viven enteros dentro de ReelPicker.jsx.
+  // altRef/pwRef sin controlar (refs, no state): son texto derivado que cambia
+  // con cada peso y no vale un bump() de toda la app — peso/reps viven enteros
+  // dentro de ReelPicker.jsx.
   function syncDependents() {
     if (altRef.current) altRef.current.textContent = wAlt(v.w);
     if (pwRef.current) {
@@ -586,119 +559,94 @@ function ExerciseSlide({ m, wd, started }) {
   function setW(newW) { v.w = Math.max(0, round1(newW)); syncDependents(); }
   function setR(newR) { v.r = Math.max(1, Math.round(newR)); }
 
-  const prog = open ? progresion(ex) : null;
+  const animar = useMemo(() => open && !yaAbiertas.has(ex.id) && !menosMovimiento(), [open, ex.id]);
+  useEffect(() => { if (open) yaAbiertas.add(ex.id); }, [open, ex.id]);
+
   const pwarnInitial = open ? progressionWarn(ex.name, v.w) : null;
   const cls = [full ? 'full doneex' : '', open ? 'cur' : '', waiting ? 'wait' : '', skipped ? 'skipped' : ''].filter(Boolean).join(' ');
+  const gymId = S.cfg.activeGym;
+  const rirTxt = scheme?.length ? `RIR ${scheme[0]} → ${scheme[scheme.length - 1] === 0 ? 'fallo' : scheme[scheme.length - 1]}` : null;
+  const unidad = S.cfg.unit === 'kg' ? 'kg' : 'lb';
 
   return (
     <div className="carousel-slide" data-exid={ex.id}>
       <div className={`card ex-card ${cls}`} id={`exc-${ex.id}`} style={{ '--done': Math.min(1, done.length / target) }}>
-        {/* key=done.length: fuerza a React a remontar el nodo cada vez que el
-            número cambia, así el "pop" de styles.css se repite en cada serie
-            (el mismo truco que ya usa App.jsx con key={store.tab} para la
-            animación de deslizamiento — sin un key nuevo, React reusa el
-            nodo y el @keyframes nunca vuelve a correr). Antes esta cuenta
-            saltaba de "1/3" a "2/3" sin ningún acuse de recibo propio: el
-            chip nuevo hacía pop, el riel lateral se llenaba, pero el número
-            que en verdad resume el progreso quedaba mudo. */}
-        <div key={done.length} className={`ex-done-count ${full ? 'full' : ''}`}>
-          {serieHechas}{serieAMedias ? '½' : ''}/{serieObjetivo}
-        </div>
-        <ExIcon icono={iconOf(ex)} size={38} className="ex-card-icon" />
-        <div className="exname-row">
-          <div className="exname">
-            {ex.name}{uni && <span className="txt-blue"> (unilateral)</span>}{' '}
-            {info && (
+        {/* Encabezado: el dibujo del movimiento, el nombre con sus datos fijos
+            como etiquetas, y a la derecha lo que es DE ESTA máquina (la foto)
+            y las opciones. Las opciones arriba y como botón, no en un
+            acordeón al fondo: Enzo, "si no hacés scroll no te das cuenta". */}
+        <div className="exh">
+          <ExIcon icono={iconOf(ex)} size={34} className="exh-icon" />
+          <div className="exh-main">
+            <div className="exname">
+              {ex.name}{uni && <span className="txt-blue"> · unilateral</span>}{' '}
+              {info && (
+                <button
+                  type="button"
+                  className="mini info inline"
+                  aria-label={`Qué trabaja ${ex.name}`}
+                  onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
+                >
+                  <Info />
+                </button>
+              )}
+            </div>
+            {/* Cambiaste éste por otro: el original ya no está en la lista,
+                pero queda dicho de dónde salió. */}
+            {reemplazaA(ex.id) && <div className="ex-envez">en vez de {reemplazaA(ex.id)}</div>}
+            <div className="ex-tags">
+              <span className="ex-tag">
+                {serieObjetivo} × {ex.reps}
+                {serieObjetivo > ex.sets && <span className="txt-blue"> (+{serieObjetivo - ex.sets})</span>}
+              </span>
+              {equipLabel(ex) && <span className="ex-tag">{equipLabel(ex)}</span>}
+              {rirTxt && !full && !skipped && <span className="ex-tag">{rirTxt}</span>}
+            </div>
+          </div>
+          <div className="exh-side">
+            {gymId && <FotoMaquina gymId={gymId} exName={ex.name} />}
+            {open && (
               <button
                 type="button"
-                className="mini info inline"
-                onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
+                className="ex-opts"
+                aria-label={`Opciones de ${ex.name}`}
+                onClick={() => openSheet('ex-opciones', { exId: ex.id, wd })}
               >
-                <Info />
+                <Dots />
               </button>
             )}
           </div>
         </div>
-        {/* Cambiaste éste por otro: el original ya no está en la lista, pero
-            queda dicho de dónde salió. */}
-        {reemplazaA(ex.id) && (
-          <div className="ex-envez">en vez de {reemplazaA(ex.id)}</div>
-        )}
-        <div className="extarget">
-          Objetivo {serieObjetivo} × {ex.reps}
-          {serieObjetivo > ex.sets && <span className="txt-blue"> (+{serieObjetivo - ex.sets} hoy)</span>}
-          {open && (
-            <>
-              {' '}· serie {serieHechas + 1} → {curRir === 0 ? <b className="txt-blue">al fallo</b> : `RIR ${curRir}`}
-              {serieAMedias && <> · falta {v.side === 'left' ? 'izquierda' : 'derecha'}</>}
-            </>
-          )}
-        </div>
-        {last && (
-          <div className="exlast">
-            Última vez: {last.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg
-            {uni && ' por lado'}
-          </div>
-        )}
-        {/* D3: la ausencia de dato no es un cero. Si es unilateral y nunca se
-            registró bajo esa clave, se dice — nunca se disfraza el número
-            bilateral (que es otra carga, no traducible 1 a 1) de sugerido
-            unilateral. */}
-        {!last && uni && (
+
+        {obj && (last || obj.tipo !== 'primera') && <Comparativa last={last} obj={obj} uni={uni} />}
+        {/* D3: la ausencia de dato no es un cero. */}
+        {!last && uni && !full && !skipped && (
           <div className="exlast text-mut">
             Sin registro unilateral todavía{lastBilateral ? ' (tenés historial bilateral de este ejercicio, pero es una carga distinta)' : ''}.
           </div>
         )}
-        {/* Doble progresión: la instrucción concreta de hoy. Va ANTES del
-            sugerido por 1RM y lo reemplaza cuando existe — un 1RM estimado da
-            un número correcto pero no una instrucción: no sabe qué hiciste la
-            semana pasada, así que no puede decirte si hoy te toca avanzar o
-            sostener. Cuando no hay historial todavía, el sugerido por 1RM
-            sigue siendo lo mejor que se puede decir. */}
-        {open && prog && (
-          <div className={`prog-next${prog.accion === 'subir_peso' ? ' up' : ''}`}>
-            {prog.accion === 'subir_peso' ? '↑ ' : ''}{progresionTexto(prog)}
-          </div>
-        )}
-        {(() => {
-          // D4: el 1RM estimado también se parte por lateralidad — sin el
-          // sufijo, un unilateral recién activado heredaría el sugerido
-          // bilateral (otra carga) disfrazado de dato propio.
-          const base = suggestedWeight(uni ? `${ex.name} (unilateral)` : ex.name);
-          if (!base || !open || prog) return null;
-          // El ajuste del chequeo de 3 preguntas (Plan Fierro · Fase 3) se
-          // aplica acá — S.draft.precheckAdjust queda en 0 si no se
-          // contestó nada, así que no cambia nada para quien no lo usa.
-          const adj = S.draft?.precheckAdjust || 0;
-          const sug = round1(base * (1 + adj));
-          return (
-            <div className="text-mut text-micro mt-1">
-              Sugerido hoy: ~{fmtNum(sug)} kg (80% de tu 1RM estimado{adj !== 0 ? `, ${adj > 0 ? '+' : ''}${Math.round(adj * 100)}% por tu chequeo` : ''})
-            </div>
-          );
-        })()}
-        {!last && !lastBilateral && equipLabel(ex) && (
+        {!last && !lastBilateral && !full && !skipped && (
           <div className="ex-first">
-            <div className="t">Primera vez en {equipLabel(ex)}</div>
+            <div className="t">Primera vez{equipLabel(ex) ? ` en ${equipLabel(ex)}` : ''}</div>
             {related.length > 0 && (
               <div className="s">
                 Este ejercicio lo venís haciendo en {related.map(r => `${r.label} (${fmtNum(round1(r.w))}×${r.r})`).join(' · ')}.
               </div>
             )}
             <div className="s">
-              Ese número no se traslada: cada sistema mueve una carga distinta. Arrancá
-              claramente liviano y subí hasta que las {ex.reps} reps te queden con 2 en
-              reserva. Lo que anotes hoy queda como tu punto de partida acá.
+              Arrancá claramente liviano y subí hasta que las {ex.reps} reps te queden con 2 en
+              reserva. Lo que anotes hoy queda como tu punto de partida.
             </div>
           </div>
         )}
+
         {full && <div className="ex-state ok">✓ Completo · {serieObjetivo} de {serieObjetivo} series</div>}
         {waiting && <div className="ex-state">En espera · {serieHechas ? `${serieHechas}${serieAMedias ? '½' : ''}/${serieObjetivo} series` : 'te toca después'}</div>}
-        {/* Saltado: la tarjeta se queda donde está, apagada. Restablecer la
-            devuelve exactamente a su lugar porque saltar no toca draft.order. */}
+        {/* Omitido: la tarjeta se queda donde está, apagada. Restablecer la
+            devuelve exactamente a su lugar porque omitir no toca draft.order. */}
         {skipped && (
           <>
-            <div className="ex-state skip"><Skip size={13} /> Saltado{serieHechas ? ` · ${serieHechas}${serieAMedias ? '½' : ''} serie${serieHechas === 1 && !serieAMedias ? '' : 's'} registrada${serieHechas === 1 && !serieAMedias ? '' : 's'}` : ''}</div>
+            <div className="ex-state skip"><Skip size={13} /> Omitido{serieHechas ? ` · ${serieHechas}${serieAMedias ? '½' : ''} serie${serieHechas === 1 && !serieAMedias ? '' : 's'} registrada${serieHechas === 1 && !serieAMedias ? '' : 's'}` : ''}</div>
             <button type="button" className="btn sm ghost" style={{ marginTop: 12 }} onClick={() => unskipExercise(ex.id)}>
               ↺ Restablecer
             </button>
@@ -709,41 +657,72 @@ function ExerciseSlide({ m, wd, started }) {
             + Una serie más
           </button>
         )}
+
+        {/* Antes de empezar: una sola acción grande. "Empezar rutina" se
+            toca UNA vez (arranca el cronómetro); después cada ejercicio se
+            activa solo al terminar el anterior. Todo lo demás (series,
+            unilateral, cambiar) recién tiene sentido con el ejercicio en
+            marcha, así que acá sólo quedan las dos salidas del "no puedo
+            hacerlo ahora". */}
         {isNext && (
-          <>
-            <button type="button" className="btn" style={{ marginTop: 14 }} onClick={() => startExercise(ex)}>
-              ▶ Iniciar ejercicio
+          <div className="ex-pre">
+            <button type="button" className="btn" onClick={() => startExercise(ex)}>
+              {started ? '▶ Hacer ahora' : '▶ Empezar rutina'}
             </button>
-            <div className="txt-mut" style={{ fontSize: 12, textAlign: 'center', marginTop: 8 }}>
-              Dale cuando estés en la máquina{!started ? ' — acá arranca el cronómetro' : ''}
+            <div className="ex-pre-links">
+              <button type="button" className="linkcard" onClick={() => hacerDespues(ex.id)}><Later size={14} /> Hacer después</button>
+              <button type="button" className="linkcard" onClick={() => confirmarOmitir(ex)}><Skip size={13} /> Omitir ejercicio</button>
             </div>
-            <ExActions ex={ex} wd={wd} uni={uni} puedeUni={puedeUni} />
-          </>
+          </div>
         )}
+
         {open && (
-          <>
+          <motion.div className="ex-live" variants={desplegar} initial={animar ? 'oculto' : false} animate="visible">
+            <motion.div variants={pieza} className="ex-serie">
+              <div className="ex-serie-top">
+                <span>
+                  <b className="cond">Serie {serieHechas + 1} de {serieObjetivo}</b>
+                  {' · '}{curRir === 0 ? <b className="txt-blue">al fallo</b> : `RIR ${curRir}`}
+                  {serieAMedias && <> · falta {v.side === 'left' ? 'izquierda' : 'derecha'}</>}
+                </span>
+                <button type="button" className="linkcard ex-later" onClick={() => hacerDespues(ex.id)}>
+                  <Later size={14} /> Hacer después
+                </button>
+              </div>
+              <div className="ex-seg" aria-hidden="true">
+                {Array.from({ length: serieObjetivo }, (_, i) => (
+                  <i key={i} className={i < serieHechas ? 'on' : i === serieHechas ? 'cur' : ''} />
+                ))}
+              </div>
+            </motion.div>
+
+            {calentar && (
+              <motion.div variants={pieza} className="ex-aprox">
+                <div className="ex-aprox-t">
+                  <span className="txt-warn">Aproximación</span>{' · '}
+                  {rampa.length
+                    ? rampa.map(s => `${wDisplay(s.w)}×${s.reps}`).join(' · ')
+                    : '3 series subiendo hasta tu peso de trabajo: 5, 3 y 1 reps'}
+                </div>
+                <div className="ex-aprox-acts">
+                  <button type="button" className="chip" onClick={() => marcarCalentado(ex, true)}>Hecho</button>
+                  <button type="button" className="linkcard" onClick={() => marcarCalentado(ex, false)}>Saltar</button>
+                </div>
+              </motion.div>
+            )}
+
             <div className="prog-warn" ref={pwRef} style={{ display: pwarnInitial ? '' : 'none' }}>
               {pwarnInitial ? `⚠ ${pwarnInitial}` : ''}
             </div>
             {uni && (
-              <div className="setrows" style={{ marginBottom: 8 }}>
-                <button
-                  type="button"
-                  className={`chip ${v.side === 'left' ? 'on' : ''}`}
-                  aria-pressed={v.side === 'left'}
-                  onClick={() => setSide(ex.id, 'left')}
-                >
+              <motion.div variants={pieza} className="ex-lados">
+                <button type="button" className={`chip ${v.side === 'left' ? 'on' : ''}`} aria-pressed={v.side === 'left'} onClick={() => setSide(ex.id, 'left')}>
                   Izquierda
                 </button>
-                <button
-                  type="button"
-                  className={`chip ${v.side === 'right' ? 'on' : ''}`}
-                  aria-pressed={v.side === 'right'}
-                  onClick={() => setSide(ex.id, 'right')}
-                >
+                <button type="button" className={`chip ${v.side === 'right' ? 'on' : ''}`} aria-pressed={v.side === 'right'} onClick={() => setSide(ex.id, 'right')}>
                   Derecha
                 </button>
-              </div>
+              </motion.div>
             )}
             {imbalance && (
               <div className="prog-warn" style={{ marginBottom: 8 }}>
@@ -752,9 +731,14 @@ function ExerciseSlide({ m, wd, started }) {
                 últimas sesiones.
               </div>
             )}
-            <div className="setrows">
+            {/* Peso y reps lado a lado: las ruedas ya no tienen botones ±
+                (eran la razón de apilarlas), así que a media tarjeta cada una
+                muestra su número y los vecinos, y le devuelve media pantalla
+                de alto al resto de la tarjeta (Enzo: "la rueda es muy
+                grande"). */}
+            <motion.div variants={pieza} className="setrows dos">
               <div>
-                <div className="steplabel">Peso ({S.cfg.unit === 'kg' ? 'kg' : 'lb'}){uni ? ' por lado' : ''}</div>
+                <div className="steplabel">Peso ({unidad}){uni ? ' / lado' : ''}</div>
                 <ReelPicker
                   key={`w-${done.length}`}
                   value={v.w}
@@ -779,71 +763,28 @@ function ExerciseSlide({ m, wd, started }) {
                   label="Reps"
                 />
               </div>
-            </div>
-            <button
-              type="button"
-              className="btn"
-              onClick={e => {
-                // "Juice" de videojuego: squash & stretch en el botón + una
-                // ráfaga de partículas en el punto de toque, sobre la acción
-                // más repetida de toda la app — el equivalente a un "hit"
-                // en un juego. saveSet() se llama después de disparar el
-                // feedback: la animación es puramente visual y no bloquea
-                // ni depende del resultado.
-                squashStretch(e.currentTarget);
-                impactBurst(e.clientX, e.clientY, { color: 'var(--ok)' });
-                saveSet(ex.id);
-              }}
-            >
-              ✓ Terminé la serie {serieHechas + 1} de {serieObjetivo}
-              {uni && ` · lado ${v.side === 'left' ? 'izquierdo' : 'derecho'}`}
-            </button>
-            {/* Todo lo que NO es peso, reps y confirmar vive acá abajo,
-                cerrado. El core loop de una serie es "elegí el peso, elegí
-                las reps, confirmá": cada cosa más que compita por ese
-                espacio es peaje que se paga entre 15 y 30 veces por sesión,
-                con el pulso a 150 y el teléfono en una mano. El toggle "un
-                lado por vez" YA NO vive acá (Enzo: tiene que estar a la
-                vista) — subió junto al nombre del ejercicio.
-
-                El RIR tampoco vive más acá, y por eso el rótulo dejó de
-                decir "de esta serie": adentro ya no queda nada que sea de
-                una serie en particular —la foto de la máquina y las
-                acciones son del EJERCICIO— y el rótulo viejo pasó a ser
-                mentira. La pregunta del esfuerzo se mudó al overlay de
-                descanso (RestTimer.jsx): acá abajo, escondida detrás de un
-                acordeón y ANTES de confirmar, no la abría nadie, que es la
-                forma cara de no tener el dato (Enzo: "le doy 'terminé' e
-                inicia mi descanso, y se me olvida").
-
-                <details> nativo y no un estado de React a propósito: viene
-                con el teclado, el foco y el anuncio de abierto/cerrado ya
-                resueltos. Se estiliza como el resto de la app (chip/card) en
-                vez de dejarlo con la pinta nativa del navegador — la queja
-                concreta de Enzo era que ese control desentonaba con todo lo
-                demás.
-
-                Sigue siendo <details> incluso después de darle movimiento:
-                el toggle se maneja desde el click del <summary>
-                (detailsSlide, motion.js) en vez de rehacer el acordeón con
-                estado de React. Cambiar accesibilidad de verdad por una
-                transición sería un retroceso neto. */}
-            <details className="ex-more" ref={moreRef}>
-              <summary
-                className="chip ex-more-summary"
-                /* onClick y no onToggle: el toggle nativo hay que frenarlo
-                   ANTES de que pase, y el click del <summary> es también el
-                   evento que produce Enter/Espacio, así que el teclado sigue
-                   entrando por el mismo camino. */
-                onClick={e => { e.preventDefault(); detailsSlide(moreRef.current, moreBodyRef.current); }}
-              >Más opciones del ejercicio</summary>
-              <div className="ex-more-body" ref={moreBodyRef}>
-                {S.cfg.activeGym && <GymPhoto gymId={S.cfg.activeGym} exName={ex.name} />}
-                <ExActions ex={ex} wd={wd} uni={uni} puedeUni={puedeUni} />
-              </div>
-            </details>
-          </>
+            </motion.div>
+            <motion.div variants={pieza}>
+              <button
+                type="button"
+                className="btn ok"
+                onClick={e => {
+                  // "Juice" de videojuego: squash & stretch en el botón + una
+                  // ráfaga de partículas en el punto de toque, sobre la acción
+                  // más repetida de toda la app. saveSet() va después: la
+                  // animación es visual y no depende del resultado.
+                  squashStretch(e.currentTarget);
+                  impactBurst(e.clientX, e.clientY, { color: 'var(--ok)' });
+                  saveSet(ex.id);
+                }}
+              >
+                ✓ Terminé la serie {serieHechas + 1}
+                {uni && ` · ${v.side === 'left' ? 'izquierda' : 'derecha'}`}
+              </button>
+            </motion.div>
+          </motion.div>
         )}
+
         {done.length > 0 && (
           <div className="chips setchips">
             {done.map((s, i) => (
