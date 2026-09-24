@@ -1,7 +1,7 @@
 // Recordatorio diario de peso, por Web Push.
 //
 // Por qué push y no una notificación programada: una PWA no puede agendar
-// "avisame mañana a las 7:30" con la app cerrada. La API que lo permitía
+// "avisame mañana a las 4:00" con la app cerrada. La API que lo permitía
 // (Notification Triggers) Chrome la abandonó, y Periodic Background Sync
 // corre cuando el navegador quiere, no a una hora. Lo único que despierta al
 // teléfono a una hora fija es un push que llega de afuera.

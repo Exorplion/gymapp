@@ -24,7 +24,7 @@ horas). Única salida sin servidor: una Action con cron manda un Web Push.
 | Recibir el push y abrir el formulario al tocarlo | `public/sw-notif.js` (`push` + `notificationclick` con `postMessage`) |
 | `?accion=peso` → abre "Registro corporal" | `lib/acciones.js`, `App.jsx` |
 | Atajo al mantener apretado el ícono | `shortcuts` en `vite.config.js` |
-| Envío diario 7:30 Lima (12:30 UTC) | `.github/workflows/recordatorio-peso.yml` + `.github/scripts/recordatorio-peso.mjs` |
+| Envío diario 4:00 Lima (09:00 UTC) | `.github/workflows/recordatorio-peso.yml` + `.github/scripts/recordatorio-peso.mjs` |
 
 Secretos del repo: `VAPID_PRIVATE_KEY` y `PUSH_SUBSCRIPTION` (el JSON que copia
 Ajustes → Avisos). Sin ellos la Action sale bien con una nota; con 404/410

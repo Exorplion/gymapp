@@ -1,0 +1,46 @@
+# Recordatorio diario de peso — Web Push, sin servidor.
+#
+# Es la única forma de que una PWA avise a una hora fija con la app cerrada.
+# Ver web/src/lib/push.js para el porqué y el paso de configuración.
+#
+# Secretos (Settings → Secrets and variables → Actions):
+#   VAPID_PRIVATE_KEY  mitad privada del par VAPID (la pública está en push.js)
+#   PUSH_SUBSCRIPTION  el JSON que copia Ajustes → Avisos en el teléfono
+#
+# OJO: GitHub pausa los cron de un repo público tras 60 días sin commits, y
+# avisa por mail antes. Cualquier commit (o "Enable workflow" en Actions) lo
+# reactiva.
+name: Recordatorio de peso
+
+on:
+  schedule:
+    # 09:00 UTC = 4:00 en Lima (UTC-5, sin horario de verano). GitHub puede
+    # demorar los cron en punto unos minutos cuando hay mucha carga.
+    - cron: '0 9 * * *'
+  # Para probarlo a mano: Actions → Recordatorio de peso → Run workflow.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar web-push
+        run: npm install --no-save --no-package-lock web-push@3
+        working-directory: .github/scripts
+      - name: Enviar
+        working-directory: .github/scripts
+        run: node recordatorio-peso.mjs
+        env:
+          VAPID_PUBLIC_KEY: BEdM1fJEXexyz9H-gt3Gr7-QWkcEG_BYuJNe7fE5V11xdkTEl_DXhGgQq4F2B2sdaoUGNPVnAj-s7wxS3J90Muc
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          PUSH_SUBSCRIPTION: ${{ secrets.PUSH_SUBSCRIPTION }}

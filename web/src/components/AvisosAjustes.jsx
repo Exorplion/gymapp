@@ -21,7 +21,7 @@ const TIPOS = [
 /** Lo que dice la fila del recordatorio según el estado real. */
 const ETIQUETA = {
   'cargando': '…',
-  'activo': '7:30',
+  'activo': '4:00',
   'apagado': 'No',
   'desconectado': 'Revisar',
   'bloqueado': 'Bloqueado',
@@ -97,7 +97,7 @@ export default function AvisosAjustes() {
         <div className="grouprow" style={{ cursor: 'default' }}>
           <span className="grouprow-grow">
             <span className="grouprow-t">Recordatorio de peso</span>
-            <span className="grouprow-s">Todos los días a las 7:30, aunque la app esté cerrada.</span>
+            <span className="grouprow-s">Todos los días a las 4:00, aunque la app esté cerrada.</span>
           </span>
           <span className="grouprow-v">{ETIQUETA[estado]}</span>
         </div>
