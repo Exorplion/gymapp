@@ -45,6 +45,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { cuerpo } from '../lib/bodydata.js';
 import { groupStats, diasTexto } from '../lib/muscle.js';
+import { useAtras } from '../lib/useAtras.js';
 import { vibrate } from '../lib/format.js';
 import { tapRing, menosMovimiento, popIn } from '../lib/motion.js';
 import { S } from '../lib/state.js';
@@ -127,9 +128,14 @@ function Cara({ cara, days, etiqueta, sel, selSub, onPick, activa, revelar, porc
      No son interactivas (sin role/tabIndex/data-cat): son un resaltado visual
      sobre un grupo que ya se puede tocar entero, no un tercer botón separado
      que anuncie el mismo músculo dos veces. */
-  const resaltados = porciones
-    ? cara.zonas.filter(z => z.parche && porciones[z.sub] != null)
-    : [];
+  /* 2026-09-24: los parches YA NO se dibujan en el mapa, ni con porciones.
+     MuscleMap los trae como óvalos (dos por pectoral, uno por deltoides, uno
+     por bloque de abdomen) y con el contorno blanco se leían como "circulitos"
+     pegados al cuerpo — Enzo lo marcó dos veces. La porción sigue en el
+     desglose de la ficha; en la figura sólo se subdivide lo que la lámina
+     dibuja como piezas hermanas (espalda, y de espaldas tríceps, glúteo y
+     gemelos), que no necesitan contorno porque son formas propias. */
+  const resaltados = [];
 
   /* La cara que quedó atrás sale del alcance del teclado y del lector: sigue en
      el DOM porque el giro necesita las dos montadas, pero tabular hasta un
@@ -246,6 +252,8 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
   const atras = Math.abs(Math.round(ang / 180) % 2) === 1;
 
   const cerrar = useCallback(() => { setSel(null); setEnc(null); }, []);
+  // Con la ficha abierta, el gesto de volver la cierra (lib/atras.js).
+  useAtras(!!sel, cerrar);
 
   /** El cuerpo terminó de moverse: vuelve a aceptar toques y el gesto se olvida.
 

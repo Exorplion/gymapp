@@ -9,6 +9,7 @@
 // propio, sin pasar por el sistema de S.sheet.
 import { useEffect, useRef, useState } from 'react';
 import { S, useStore, openSheet } from '../lib/state.js';
+import { useAtras } from '../lib/useAtras.js';
 import { currentStreak } from '../lib/streak.js';
 import { catsDeSesion } from '../lib/muscle.js';
 import { fmtNum, round1 } from '../lib/format.js';
@@ -141,6 +142,9 @@ export default function SessionComplete() {
     return () => cancels.forEach(c => c());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sess?.id]);
+
+  // Volver desde la celebración hace lo mismo que tocarla: salta al resumen.
+  useAtras(!!sess, cerrar);
 
   if (!sess) return null;
 

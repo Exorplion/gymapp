@@ -11,6 +11,7 @@ import { sessionExs } from './lib/session.js';
 import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
 import { aplicarPaleta } from './lib/theme.js';
 import { accionDeArranque, ejecutarAccion } from './lib/acciones.js';
+import { useAtras } from './lib/useAtras.js';
 import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
@@ -468,6 +469,13 @@ export default function App() {
     });
     return ocultarSesion;
   }, [haySesion]);
+
+  /* El gesto de volver de Android (lib/atras.js). Sin esto cerraba la app
+     entera. Orden de lo que se cierra: la hoja abierta primero, después la
+     pestaña vuelve a Inicio (Hoy cuenta como fuera de Inicio), y recién ahí
+     volver sale de la app. */
+  useAtras(!!store.sheet, closeSheet);
+  useAtras(store.tab !== 'inicio', () => changeTab('inicio'));
 
   /* El arranque falló: se dice, con la causa y una salida. Antes esto era
      indistinguible de "todavía cargando" — las dos cosas eran una pantalla

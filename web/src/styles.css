@@ -2557,6 +2557,14 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .sil-stage{
   flex:1;min-height:0;width:100%;position:relative;
   touch-action:pan-y;cursor:grab;
+  /* El zoom agranda el cuerpo hasta 2-3×, y sin recorte se salía del
+     recuadro: la cabeza tapaba el subtítulo y las piernas la leyenda y la
+     lista de abajo (captura de Enzo, 2026-09-24). `clip` y no `hidden`: no
+     crea un contenedor con scroll, así que el arrastre para girar y el
+     scroll vertical de la hoja siguen igual. El recorte va en el stage y no
+     en .sil-zoom/.sil-flip: sobre el elemento con preserve-3d aplanaría el
+     giro. */
+  overflow:hidden;overflow:clip;
 }
 .sil-stage.girando{cursor:grabbing}
 

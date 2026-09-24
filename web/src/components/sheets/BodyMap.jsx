@@ -39,10 +39,6 @@ export default function BodyMap() {
       <h2 className="font-cond text-2xl font-bold text-txt">Tu cuerpo</h2>
       <div className="mt-1 mb-4 text-sm text-mut">Tocá un músculo para ver cuándo lo entrenaste.</div>
 
-      {/* `sil-grande`: el contorno de porción (.sil-porcion) se dibuja en
-          unidades del SVG, así que su grosor en pantalla depende del tamaño al
-          que se renderiza el cuerpo. Calibrado para la miniatura quedaba en
-          medio píxel acá y no se veía. Ver styles.css. */}
       <div className="sil-grande flex h-[min(52vh,420px)] justify-center my-1.5">
         <Silhouette days={dias} porciones={porciones} />
       </div>
@@ -62,9 +58,9 @@ export default function BodyMap() {
           hay nada distinto que explicar. */}
       {Object.keys(porciones).length > 0 && (
         <div className="mt-1.5 text-micro leading-relaxed text-mut">
-          Los músculos que la lámina divide —espalda, pecho, cuádriceps, abdomen, y de
-          espaldas tríceps, glúteo y gemelos— se encienden por porción, con el contorno
-          claro marcando cuál. Al tocar una, la ficha muestra sólo esa porción.
+          Los músculos que la lámina divide en piezas —la espalda y, vistos de
+          atrás, tríceps, glúteo y gemelos— se encienden por porción. Al tocar una, la
+          ficha muestra sólo esa porción.
         </div>
       )}
 
