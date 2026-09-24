@@ -31,6 +31,11 @@ export const FIBRAS_DEL_GRUPO = {
 /** De las fibras conocidas de `cat`, cuáles cubren los `nombres` de
     ejercicio elegidos y cuáles faltan. `null` si el grupo no tiene fibras
     distinguibles con evidencia real (ver FIBRAS_DEL_GRUPO). */
+/* Porciones más finas que la fibra que se cubre: el hip thrust pasó a decir
+   'Glúteo mayor' (la lámina ahora lo dibuja aparte), pero para la pregunta de
+   cobertura de Pierna sigue contando como glúteo. */
+const CUENTA_COMO = { 'Glúteo mayor': 'Glúteo', 'Glúteo medio': 'Glúteo' };
+
 export function coberturaDe(cat, nombres) {
   const fibras = FIBRAS_DEL_GRUPO[cat];
   if (!fibras) return null;
@@ -38,7 +43,7 @@ export function coberturaDe(cat, nombres) {
   for (const n of nombres || []) {
     const f = fibrasDe(n);
     if (!f) continue;
-    [...f.p, ...(f.s || [])].forEach(x => { if (fibras.includes(x)) cubiertas.add(x); });
+    [...f.p, ...(f.s || [])].map(x => CUENTA_COMO[x] || x).forEach(x => { if (fibras.includes(x)) cubiertas.add(x); });
   }
   return {
     fibras,

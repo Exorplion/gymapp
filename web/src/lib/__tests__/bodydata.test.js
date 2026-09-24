@@ -53,23 +53,14 @@ describe('la lámina', () => {
   });
 
   // Si un grupo no aparece en ninguna cara, tocarlo en la app sería imposible y
-  // el mapa muscular mentiría por omisión.
-  //
-  // 'Lumbares' es la excepción deliberada: la lámina (bodydata.js) no tiene
-  // una zona propia para el erector espinal, sólo "Dorsal bajo" bajo
-  // cat:"Espalda" (lib/bodydata.js, slug "lowerBack") — la misma silueta que
-  // ya usa el dorsal bajo. Dibujar una zona nueva está fuera del alcance de
-  // este cambio (bodydata.js no se toca acá) y fibras.js reusa a propósito
-  // "Dorsal bajo" como porción para back extension/hiperextensión en vez de
-  // inventar una porción que la lámina no podría encender (ver fibras.js).
-  // Consecuencia aceptada: el highlight de "Lumbares" en la silueta cae en
-  // la misma región visual que el dorsal bajo — es una limitación conocida,
-  // no un bug.
+  // el mapa muscular mentiría por omisión. Sin excepciones desde 2026-09-24:
+  // Lumbares tiene su zona (el erector espinal, que antes se rotulaba
+  // "Dorsal bajo").
   it('los grupos con zona propia aparecen en algún lado, en los dos cuerpos', () => {
     for (const sexo of ['m', 'f']) {
       const presentes = new Set();
       for (const c of ['frente', 'espalda']) CUERPOS[sexo][c].zonas.forEach(z => z.cat && presentes.add(z.cat));
-      for (const g of MUSCLE_CATS.filter(g => g !== 'Lumbares')) expect(presentes.has(g), `${sexo} sin ${g}`).toBe(true);
+      for (const g of MUSCLE_CATS) expect(presentes.has(g), `${sexo} sin ${g}`).toBe(true);
     }
   });
 

@@ -12,7 +12,7 @@
 // antes. Degradar con gracia, no inventarle porciones que no existen.
 import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import { diasPorPorcion } from '../fibras.js';
+import { diasPorPorcion, fibrasDe } from '../fibras.js';
 import { claseDeZona } from '../../components/Silhouette.jsx';
 import { cabeceraDe } from '../../components/MusclePop.jsx';
 import { diasTexto } from '../muscle.js';
@@ -127,10 +127,11 @@ describe('claseDeZona — base + parches (Pecho)', () => {
 });
 
 describe('claseDeZona — grupos que la lámina no subdivide', () => {
-  // Bíceps, Tríceps, Glúteo y Gemelos no tienen NINGUNA zona con `sub`: la
-  // lámina no los divide y no se les inventan franjas (ver HANDOFF.md, deuda
-  // 10). Pasarles porciones no puede cambiarles nada.
-  for (const [cara, cat] of [['frente', 'Bíceps'], ['frente', 'Tríceps'], ['espalda', 'Glúteo'], ['frente', 'Gemelos']]) {
+  // En estas caras el grupo es UNA forma sin `sub`: el bíceps en las dos, y
+  // tríceps/gemelos vistos de frente (la cara de atrás sí los divide, ver
+  // abajo). Lumbares es una zona propia sin porciones. Pasarles porciones no
+  // puede cambiarles nada.
+  for (const [cara, cat] of [['frente', 'Bíceps'], ['frente', 'Tríceps'], ['frente', 'Gemelos'], ['espalda', 'Lumbares']]) {
     it(`${cat} no tiene subzonas y se enciende entero, con o sin porciones`, () => {
       const zonas = zonasDe(cara, cat);
       expect(zonas.length).toBeGreaterThan(0);
@@ -145,6 +146,42 @@ describe('claseDeZona — grupos que la lámina no subdivide', () => {
   it('un grupo sin registro sigue neutro y callado, no en cero', () => {
     const z = zonasDe('frente', 'Gemelos')[0];
     expect(claseDeZona(z, { Gemelos: null }, {})).toBe('sil-none');
+  });
+});
+
+// Las piezas que la lámina SÍ dibujaba por separado y la app juntaba: medidas
+// con getBBox() el 2026-09-24 (ver cabecera de bodydata.js).
+describe('la cara de atrás divide tríceps, glúteo y gemelos en hermanas', () => {
+  const ESPERADO = {
+    'Tríceps': ['Tríceps cabeza larga', 'Tríceps cabeza lateral'],
+    'Glúteo': ['Glúteo mayor', 'Glúteo medio'],
+    'Gemelos': ['Gastrocnemio', 'Sóleo'],
+  };
+  for (const [cat, subs] of Object.entries(ESPERADO)) {
+    it(`${cat}: ${subs.join(' + ')}, sin parches, en los dos cuerpos`, () => {
+      for (const sexo of ['m', 'f']) {
+        const zonas = CUERPOS[sexo].espalda.zonas.filter(z => z.cat === cat);
+        expect(zonas.map(z => z.sub).sort(), sexo).toEqual(subs);
+        expect(zonas.every(z => !z.parche), sexo).toBe(true);
+        // una pieza por lado, como mínimo
+        for (const z of zonas) expect(z.d.length, `${sexo} ${z.sub}`).toBeGreaterThanOrEqual(2);
+      }
+    });
+  }
+
+  it('el pushdown enciende las dos cabezas del tríceps, no las deja apagadas', () => {
+    const d = diasPorPorcion([{ date: '2026-09-20', entries: [{ name: 'Tricep pushdown', sets: [{ w: 30, r: 12 }] }] }], '2026-09-21');
+    expect(d['Tríceps cabeza larga']).toBe(1);
+    expect(d['Tríceps cabeza lateral']).toBe(1);
+  });
+
+  it('Lumbares es su propia zona y el jalón ya no la enciende', () => {
+    for (const sexo of ['m', 'f']) {
+      expect(CUERPOS[sexo].espalda.zonas.some(z => z.cat === 'Lumbares'), sexo).toBe(true);
+    }
+    const d = diasPorPorcion([{ date: '2026-09-20', entries: [{ name: 'Jalón al pecho', sets: [{ w: 60, r: 10 }] }] }], '2026-09-20');
+    expect(Object.keys(d)).toEqual(['Dorsal bajo']);
+    expect(fibrasDe('Back extension').p).toEqual(['Lumbares']);
   });
 });
 

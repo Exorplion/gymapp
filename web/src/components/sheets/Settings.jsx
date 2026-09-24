@@ -41,7 +41,9 @@ import { storageEstimate, daysSinceBackup, necesitaBackup } from '../../lib/pers
 import { exportFoodsMD, importFoodsMD } from '../../lib/foodmd.js';
 import { toast } from '../../lib/toast.js';
 import { aplicarPaleta, paletaDesde, COLOR_DEFECTO } from '../../lib/theme.js';
-import { bloomOpen } from '../../lib/motion.js';
+import { motion } from 'motion/react';
+import { hojaProps, seccion } from '../../lib/variants.js';
+import AvisosAjustes from '../AvisosAjustes.jsx';
 
 function MacroPreview({ m }) {
   return (
@@ -66,8 +68,6 @@ export default function Settings() {
   const [buscando, setBuscando] = useState(false);
   // null mientras no se midió: el bloque de abajo no afirma nada hasta tenerlo.
   const [espacio, setEspacio] = useState(null);
-
-  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
 
   useEffect(() => { storageEstimate().then(setEspacio); }, []);
 
@@ -249,161 +249,192 @@ export default function Settings() {
   }
 
   return (
-    <div ref={rootRef}>
+    <motion.div ref={rootRef} {...hojaProps}>
+      {/* El título NO se anima: sube con el panel. Si también esperara, la
+          hoja llegaría vacía y se rellenaría después — el error que
+          screenReveal() (motion.js) documenta haber cometido con las
+          pantallas. */}
       <h2>Ajustes</h2>
 
-      <h3>Color</h3>
-      <div className="theme-picker">
-        <label className="theme-swatch-main" style={{ background: colorActual }}>
-          <input type="color" value={colorActual} onChange={e => setTheme(e.target.value)} aria-label="Elegir color" />
-        </label>
-        <div className="theme-preview">
-          {['accent', 'blue', 'blue2', 'blue3', 'cyan'].map(k => (
-            <i key={k} style={{ background: paleta[k] }} />
-          ))}
-        </div>
-        {S.cfg.themeColor && (
-          <button type="button" className="btn ghost sm" onClick={resetTheme}>Restablecer</button>
-        )}
-      </div>
-      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)', lineHeight: 1.45 }}>
-        Elegís un color y la app arma el resto de la paleta a partir de ese
-        matiz — no lo pega tal cual, lo combina con la misma receta de
-        siempre para que el texto se siga leyendo sobre el fondo oscuro.
-      </div>
-
-      <h3>Unidad de peso</h3>
-      <div className="seg">
-        <button type="button" className={S.cfg.unit === 'kg' ? 'on' : ''} aria-pressed={S.cfg.unit === 'kg'} onClick={() => setUnit('kg')}>Kilos (kg)</button>
-        <button type="button" className={S.cfg.unit === 'lb' ? 'on' : ''} aria-pressed={S.cfg.unit === 'lb'} onClick={() => setUnit('lb')}>Libras (lb)</button>
-      </div>
-
-      <h3>Cuerpo del mapa muscular</h3>
-      <div className="seg">
-        <button type="button" className={cuerpoSexo() !== 'f' ? 'on' : ''} aria-pressed={cuerpoSexo() !== 'f'} onClick={() => setCuerpo('m')}>Hombre</button>
-        <button type="button" className={cuerpoSexo() === 'f' ? 'on' : ''} aria-pressed={cuerpoSexo() === 'f'} onClick={() => setCuerpo('f')}>Mujer</button>
-      </div>
-      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)', lineHeight: 1.45 }}>
-        Cambia la silueta de Inicio. Los grupos musculares y tus datos son los mismos.
-      </div>
-
-      <h3>Descanso entre series</h3>
-      <div className="step">
-        <button type="button" onClick={() => stepRest(-15)}>−</button>
-        <div className="val">
-          <input readOnly value={S.cfg.rest ? fmtMMSS(S.cfg.rest) : 'OFF'} />
-          <span className="alt">−/+ 15 seg · 0 = sin timer</span>
-        </div>
-        <button type="button" onClick={() => stepRest(15)}>+</button>
-      </div>
-
-      <h3>Al mover un día sobre otro ocupado</h3>
-      <div className="seg">
-        <button type="button" className={(S.cfg.dayDrop || 'ask') === 'ask' ? 'on' : ''} aria-pressed={(S.cfg.dayDrop || 'ask') === 'ask'} onClick={() => setDayDrop('ask')}>Preguntar</button>
-        <button type="button" className={S.cfg.dayDrop === 'shift' ? 'on' : ''} aria-pressed={S.cfg.dayDrop === 'shift'} onClick={() => setDayDrop('shift')}>Correr</button>
-        <button type="button" className={S.cfg.dayDrop === 'swap' ? 'on' : ''} aria-pressed={S.cfg.dayDrop === 'swap'} onClick={() => setDayDrop('swap')}>Intercambiar</button>
-      </div>
-      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)', lineHeight: 1.45 }}>
-        <b>Correr</b>: el día que estaba ahí se va al próximo día libre. <b>Intercambiar</b>: los dos cambian de lugar.
-      </div>
-
-      <h3>Metas nutricionales diarias</h3>
-      <div className="seg">
-        <button type="button" className={S.cfg.goalsAuto ? 'on' : ''} aria-pressed={S.cfg.goalsAuto} onClick={() => setGoalMode(true)}>Desde perfil</button>
-        <button type="button" className={S.cfg.goalsAuto ? '' : 'on'} aria-pressed={!S.cfg.goalsAuto} onClick={() => setGoalMode(false)}>Manual</button>
-      </div>
-      {S.cfg.goalsAuto ? (
-        <>
-          <div className="calcbox" style={{ marginTop: 12 }}>
-            {m ? <MacroPreview m={m} /> : <div className="txt-mut" style={{ fontSize: 13 }}>Completa tu perfil para calcular las metas.</div>}
+      <motion.section variants={seccion}>
+        <h3>Color</h3>
+        <div className="theme-picker">
+          <label className="theme-swatch-main" style={{ background: colorActual }}>
+            <input type="color" value={colorActual} onChange={e => setTheme(e.target.value)} aria-label="Elegir color" />
+          </label>
+          <div className="theme-preview">
+            {['accent', 'blue', 'blue2', 'blue3', 'cyan'].map(k => (
+              <i key={k} style={{ background: paleta[k] }} />
+            ))}
           </div>
-          <button type="button" className="btn ghost sm" style={{ marginTop: 10 }} onClick={() => openSheet('profile')}>✎ Editar perfil</button>
-        </>
-      ) : (
-        <div className="f4" style={{ marginTop: 12 }}>
-          <div className="field"><label htmlFor="meta-kcal">Kcal</label><input id="meta-kcal" type="number" inputMode="numeric" defaultValue={g.kcal} onBlur={e => setGoal('kcal', e.target.value)} /></div>
-          <div className="field"><label htmlFor="meta-prot">Prot</label><input id="meta-prot" type="number" inputMode="numeric" defaultValue={g.p} onBlur={e => setGoal('p', e.target.value)} /></div>
-          <div className="field"><label htmlFor="meta-carb">Carb</label><input id="meta-carb" type="number" inputMode="numeric" defaultValue={g.c} onBlur={e => setGoal('c', e.target.value)} /></div>
-          <div className="field"><label htmlFor="meta-grasa">Grasa</label><input id="meta-grasa" type="number" inputMode="numeric" defaultValue={g.f} onBlur={e => setGoal('f', e.target.value)} /></div>
+          {S.cfg.themeColor && (
+            <button type="button" className="btn ghost sm" onClick={resetTheme}>Restablecer</button>
+          )}
         </div>
-      )}
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)', lineHeight: 1.45 }}>
+          Elegís un color y la app arma el resto de la paleta a partir de ese
+          matiz — no lo pega tal cual, lo combina con la misma receta de
+          siempre para que el texto se siga leyendo sobre el fondo oscuro.
+        </div>
+      </motion.section>
 
-      <h3>Datos de prueba</h3>
-      <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
-        Carga tu rutina Anterior/Posterior, ~1 mes de nutrición y ~5 semanas de sesiones reconstruidas desde tus pesos anotados. Sirve para ver la app llena; se borra aparte sin tocar lo demás.
-      </div>
-      <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={startSeedLoad}>🧪 Cargar mi registro</button>
-      {nSeed > 0 && (
-        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={startSeedWipe}>Borrar lo cargado ({nSeed} registros)</button>
-      )}
+      <motion.section variants={seccion}>
+        <h3>Unidad de peso</h3>
+        <div className="seg">
+          <button type="button" className={S.cfg.unit === 'kg' ? 'on' : ''} aria-pressed={S.cfg.unit === 'kg'} onClick={() => setUnit('kg')}>Kilos (kg)</button>
+          <button type="button" className={S.cfg.unit === 'lb' ? 'on' : ''} aria-pressed={S.cfg.unit === 'lb'} onClick={() => setUnit('lb')}>Libras (lb)</button>
+        </div>
+      </motion.section>
 
-      <h3>Mi base de alimentos</h3>
-      <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
-        Bajá la tabla en Markdown, editala donde quieras y volvé a subirla. Se
-        actualizan los que ya tenías y se agregan los nuevos — nada se borra.
-      </div>
-      <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => exportFoodsMD()}>⬇ Exportar alimentos a MD</button>
-      <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => mdRef.current?.click()}>⬆ Importar alimentos MD</button>
-      <input ref={mdRef} type="file" accept=".md,text/markdown,text/plain" hidden onChange={onMdFile} />
+      <motion.section variants={seccion}>
+        <h3>Cuerpo del mapa muscular</h3>
+        <div className="seg">
+          <button type="button" className={cuerpoSexo() !== 'f' ? 'on' : ''} aria-pressed={cuerpoSexo() !== 'f'} onClick={() => setCuerpo('m')}>Hombre</button>
+          <button type="button" className={cuerpoSexo() === 'f' ? 'on' : ''} aria-pressed={cuerpoSexo() === 'f'} onClick={() => setCuerpo('f')}>Mujer</button>
+        </div>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)', lineHeight: 1.45 }}>
+          Cambia la silueta de Inicio. Los grupos musculares y tus datos son los mismos.
+        </div>
+      </motion.section>
 
-      <h3>Respaldo</h3>
+      <motion.section variants={seccion}>
+        <h3>Descanso entre series</h3>
+        <div className="step">
+          <button type="button" onClick={() => stepRest(-15)}>−</button>
+          <div className="val">
+            <input readOnly value={S.cfg.rest ? fmtMMSS(S.cfg.rest) : 'OFF'} />
+            <span className="alt">−/+ 15 seg · 0 = sin timer</span>
+          </div>
+          <button type="button" onClick={() => stepRest(15)}>+</button>
+        </div>
+      </motion.section>
 
-      {/* Estado real del almacenamiento. Existe por la pérdida total del
-          2026-09-17: la app no tenía forma de decir que sus datos estaban
-          en una repisa que el sistema podía tirar. Cada estado dice lo que
-          sabe y nada más — `null` es "no se pudo saber", no "está todo
-          bien". Ver el encabezado de lib/persist.js. */}
-      <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
-        {S.persisted === true && <>✓ Tu teléfono tiene <b>reservado</b> este espacio. El sistema no lo borra solo.</>}
-        {/* Sin el glifo ⋮ a propósito: en la tipografía de la app se lee
-            como dos puntos ("menú : del navegador") y confunde. */}
-        {S.persisted === false && (
-          <><b className="txt-warn">⚠ El navegador no reservó este espacio.</b> Si el teléfono
-          se queda sin memoria puede borrar <b>todo</b> de golpe y sin avisar. Para que lo
-          reserve, instalá la app: menú del navegador (los tres puntitos de arriba a la
-          derecha) → "Agregar a pantalla de inicio". Y hasta entonces, exportá seguido.</>
+      <motion.section variants={seccion}>
+        <h3>Avisos</h3>
+        <AvisosAjustes />
+      </motion.section>
+
+      <motion.section variants={seccion}>
+        <h3>Al mover un día sobre otro ocupado</h3>
+        <div className="seg">
+          <button type="button" className={(S.cfg.dayDrop || 'ask') === 'ask' ? 'on' : ''} aria-pressed={(S.cfg.dayDrop || 'ask') === 'ask'} onClick={() => setDayDrop('ask')}>Preguntar</button>
+          <button type="button" className={S.cfg.dayDrop === 'shift' ? 'on' : ''} aria-pressed={S.cfg.dayDrop === 'shift'} onClick={() => setDayDrop('shift')}>Correr</button>
+          <button type="button" className={S.cfg.dayDrop === 'swap' ? 'on' : ''} aria-pressed={S.cfg.dayDrop === 'swap'} onClick={() => setDayDrop('swap')}>Intercambiar</button>
+        </div>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)', lineHeight: 1.45 }}>
+          <b>Correr</b>: el día que estaba ahí se va al próximo día libre. <b>Intercambiar</b>: los dos cambian de lugar.
+        </div>
+      </motion.section>
+
+      <motion.section variants={seccion}>
+        <h3>Metas nutricionales diarias</h3>
+        <div className="seg">
+          <button type="button" className={S.cfg.goalsAuto ? 'on' : ''} aria-pressed={S.cfg.goalsAuto} onClick={() => setGoalMode(true)}>Desde perfil</button>
+          <button type="button" className={S.cfg.goalsAuto ? '' : 'on'} aria-pressed={!S.cfg.goalsAuto} onClick={() => setGoalMode(false)}>Manual</button>
+        </div>
+        {S.cfg.goalsAuto ? (
+          <>
+            <div className="calcbox" style={{ marginTop: 12 }}>
+              {m ? <MacroPreview m={m} /> : <div className="txt-mut" style={{ fontSize: 13 }}>Completa tu perfil para calcular las metas.</div>}
+            </div>
+            <button type="button" className="btn ghost sm" style={{ marginTop: 10 }} onClick={() => openSheet('profile')}>✎ Editar perfil</button>
+          </>
+        ) : (
+          <div className="f4" style={{ marginTop: 12 }}>
+            <div className="field"><label htmlFor="meta-kcal">Kcal</label><input id="meta-kcal" type="number" inputMode="numeric" defaultValue={g.kcal} onBlur={e => setGoal('kcal', e.target.value)} /></div>
+            <div className="field"><label htmlFor="meta-prot">Prot</label><input id="meta-prot" type="number" inputMode="numeric" defaultValue={g.p} onBlur={e => setGoal('p', e.target.value)} /></div>
+            <div className="field"><label htmlFor="meta-carb">Carb</label><input id="meta-carb" type="number" inputMode="numeric" defaultValue={g.c} onBlur={e => setGoal('c', e.target.value)} /></div>
+            <div className="field"><label htmlFor="meta-grasa">Grasa</label><input id="meta-grasa" type="number" inputMode="numeric" defaultValue={g.f} onBlur={e => setGoal('f', e.target.value)} /></div>
+          </div>
         )}
-        {S.persisted === null && <>No se pudo saber si este navegador reserva el espacio.</>}
-        {espacio && <><br />Ocupado: <b>{(espacio.usage / 1048576).toFixed(1)} MB</b>.</>}
-        <br />
-        {diasBackup === null
-          ? <b className="txt-warn">Nunca exportaste un respaldo.</b>
-          : <>Último respaldo: <b>{diasBackup === 0 ? 'hoy' : `hace ${diasBackup} día${diasBackup === 1 ? '' : 's'}`}</b>.</>}
-      </div>
+      </motion.section>
 
-      {/* El respaldo exportado es lo ÚNICO que sobrevive a un borrado del
-          usuario o del sistema: vive en Descargas, fuera del almacenamiento
-          que el navegador puede desalojar. Cuando hace falta de verdad, el
-          botón deja de ser un "ghost" más de la lista. */}
-      <button type="button" className={avisarBackup ? 'btn' : 'btn ghost'} style={{ marginBottom: 10 }} onClick={() => exportJSON()}>⬇ Exportar todo a JSON</button>
+      <motion.section variants={seccion}>
+        <h3>Datos de prueba</h3>
+        <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+          Carga tu rutina Anterior/Posterior, ~1 mes de nutrición y ~5 semanas de sesiones reconstruidas desde tus pesos anotados. Sirve para ver la app llena; se borra aparte sin tocar lo demás.
+        </div>
+        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={startSeedLoad}>🧪 Cargar mi registro</button>
+        {nSeed > 0 && (
+          <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={startSeedWipe}>Borrar lo cargado ({nSeed} registros)</button>
+        )}
+      </motion.section>
 
-      {/* Prendido de fábrica. El default lo eligió la pérdida del
-          2026-09-17, no una preferencia: acordarse de respaldar es
-          justamente lo que falla. */}
-      <div className="seg" style={{ marginBottom: 10 }}>
-        <button type="button" className={autoOn ? 'on' : ''} aria-pressed={autoOn} onClick={() => setAutoBackup(true)}>Respaldo automático</button>
-        <button type="button" className={autoOn ? '' : 'on'} aria-pressed={!autoOn} onClick={() => setAutoBackup(false)}>Sólo manual</button>
-      </div>
-      <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
-        {autoOn
-          ? 'Al cerrar un entrenamiento, si pasó una semana desde tu última copia, la app guarda un JSON en Descargas sola. Ahí no lo alcanza ningún borrado del navegador.'
-          : 'Nadie va a respaldar por vos. Si el teléfono borra los datos, se pierde lo que no hayas exportado a mano.'}
-      </div>
-      <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => importRef.current?.click()}>⬆ Importar JSON</button>
-      <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={onImportFile} />
-      <button type="button" className="btn danger" onClick={startWipeAll}>Borrar todos los datos</button>
+      <motion.section variants={seccion}>
+        <h3>Mi base de alimentos</h3>
+        <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+          Bajá la tabla en Markdown, editala donde quieras y volvé a subirla. Se
+          actualizan los que ya tenías y se agregan los nuevos — nada se borra.
+        </div>
+        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => exportFoodsMD()}>⬇ Exportar alimentos a MD</button>
+        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => mdRef.current?.click()}>⬆ Importar alimentos MD</button>
+        <input ref={mdRef} type="file" accept=".md,text/markdown,text/plain" hidden onChange={onMdFile} />
+      </motion.section>
 
-      <h3>Versión</h3>
-      <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
-        Instalada: <b className="txt-blue">{__BUILD__}</b><br />
-        Si acabás de pedir un cambio y no lo ves, es que tu teléfono todavía
-        tiene la versión anterior guardada. Este botón la va a buscar.
-      </div>
-      <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={buscarUpdate} disabled={buscando}>
-        {buscando ? 'Buscando…' : '⟳ Buscar actualización'}
-      </button>
+      <motion.section variants={seccion}>
+        <h3>Respaldo</h3>
 
-      <div className="txt-mut" style={{ fontSize: 12, textAlign: 'center', marginTop: 16 }}>FIERRO v1 · datos 100% en tu dispositivo</div>
-    </div>
+        {/* Estado real del almacenamiento. Existe por la pérdida total del
+            2026-09-17: la app no tenía forma de decir que sus datos estaban
+            en una repisa que el sistema podía tirar. Cada estado dice lo que
+            sabe y nada más — `null` es "no se pudo saber", no "está todo
+            bien". Ver el encabezado de lib/persist.js. */}
+        <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+          {S.persisted === true && <>✓ Tu teléfono tiene <b>reservado</b> este espacio. El sistema no lo borra solo.</>}
+          {/* Sin el glifo ⋮ a propósito: en la tipografía de la app se lee
+              como dos puntos ("menú : del navegador") y confunde. */}
+          {S.persisted === false && (
+            <><b className="txt-warn">⚠ El navegador no reservó este espacio.</b> Si el teléfono
+            se queda sin memoria puede borrar <b>todo</b> de golpe y sin avisar. Para que lo
+            reserve, instalá la app: menú del navegador (los tres puntitos de arriba a la
+            derecha) → "Agregar a pantalla de inicio". Y hasta entonces, exportá seguido.</>
+          )}
+          {S.persisted === null && <>No se pudo saber si este navegador reserva el espacio.</>}
+          {espacio && <><br />Ocupado: <b>{(espacio.usage / 1048576).toFixed(1)} MB</b>.</>}
+          <br />
+          {diasBackup === null
+            ? <b className="txt-warn">Nunca exportaste un respaldo.</b>
+            : <>Último respaldo: <b>{diasBackup === 0 ? 'hoy' : `hace ${diasBackup} día${diasBackup === 1 ? '' : 's'}`}</b>.</>}
+        </div>
+
+        {/* El respaldo exportado es lo ÚNICO que sobrevive a un borrado del
+            usuario o del sistema: vive en Descargas, fuera del almacenamiento
+            que el navegador puede desalojar. Cuando hace falta de verdad, el
+            botón deja de ser un "ghost" más de la lista. */}
+        <button type="button" className={avisarBackup ? 'btn' : 'btn ghost'} style={{ marginBottom: 10 }} onClick={() => exportJSON()}>⬇ Exportar todo a JSON</button>
+
+        {/* Prendido de fábrica. El default lo eligió la pérdida del
+            2026-09-17, no una preferencia: acordarse de respaldar es
+            justamente lo que falla. */}
+        <div className="seg" style={{ marginBottom: 10 }}>
+          <button type="button" className={autoOn ? 'on' : ''} aria-pressed={autoOn} onClick={() => setAutoBackup(true)}>Respaldo automático</button>
+          <button type="button" className={autoOn ? '' : 'on'} aria-pressed={!autoOn} onClick={() => setAutoBackup(false)}>Sólo manual</button>
+        </div>
+        <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+          {autoOn
+            ? 'Al cerrar un entrenamiento, si pasó una semana desde tu última copia, la app guarda un JSON en Descargas sola. Ahí no lo alcanza ningún borrado del navegador.'
+            : 'Nadie va a respaldar por vos. Si el teléfono borra los datos, se pierde lo que no hayas exportado a mano.'}
+        </div>
+        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => importRef.current?.click()}>⬆ Importar JSON</button>
+        <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={onImportFile} />
+        <button type="button" className="btn danger" onClick={startWipeAll}>Borrar todos los datos</button>
+      </motion.section>
+
+      <motion.section variants={seccion}>
+        <h3>Versión</h3>
+        <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+          Instalada: <b className="txt-blue">{__BUILD__}</b><br />
+          Si acabás de pedir un cambio y no lo ves, es que tu teléfono todavía
+          tiene la versión anterior guardada. Este botón la va a buscar.
+        </div>
+        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={buscarUpdate} disabled={buscando}>
+          {buscando ? 'Buscando…' : '⟳ Buscar actualización'}
+        </button>
+      </motion.section>
+
+      <motion.section variants={seccion}>
+        <div className="txt-mut" style={{ fontSize: 12, textAlign: 'center', marginTop: 16 }}>FIERRO v1 · datos 100% en tu dispositivo</div>
+      </motion.section>
+    </motion.div>
   );
 }

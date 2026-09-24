@@ -10,6 +10,7 @@ import { currentStreak } from './lib/streak.js';
 import { sessionExs } from './lib/session.js';
 import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
 import { aplicarPaleta } from './lib/theme.js';
+import { accionDeArranque, ejecutarAccion } from './lib/acciones.js';
 import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
@@ -376,6 +377,9 @@ export default function App() {
       // recién cambiaría al tuyo si entrabas a Ajustes.
       aplicarPaleta(S.cfg.themeColor);
       bump();
+      // Recién con los datos cargados: el formulario de peso usa S.body para
+      // el placeholder con tu último registro.
+      accionDeArranque();
     }).catch(err => {
       /* Sin este catch, cualquier fallo del arranque dejaba la app en una
          pantalla vacía PERMANENTE: no corría el bump(), así que React nunca
@@ -398,6 +402,18 @@ export default function App() {
   // que sin este efecto el drag quedaría muerto.
   useEffect(() => {
     initDragListeners();
+  }, []);
+
+  /* Tocar el recordatorio con la app ya abierta: el service worker no la
+     recarga, le manda un mensaje (sw-notif.js) y la acción corre acá. */
+  useEffect(() => {
+    const sw = navigator.serviceWorker;
+    if (!sw) return;
+    const alMensaje = e => {
+      if (e.data?.tipo === 'fierro-accion' && S.ready && !S.bootError) ejecutarAccion(e.data.accion);
+    };
+    sw.addEventListener('message', alMensaje);
+    return () => sw.removeEventListener('message', alMensaje);
   }, []);
 
   /* Cambio de día con la app abierta.
@@ -565,7 +581,7 @@ export default function App() {
           cambian de pestaña en toda la app (Hoy, Inicio, BodyMap). */}
       <TabBar active={store.tab === 'hoy' ? 'inicio' : store.tab} onChange={changeTab} />
       <Toast />
-      <Sheet open={!!store.sheet} onClose={closeSheet}>
+      <Sheet open={!!store.sheet} onClose={closeSheet} variante={store.sheet?.type === 'confirm' ? 'dialogo' : undefined}>
         <SheetContent sheet={store.sheet} />
       </Sheet>
       <RestTimer />

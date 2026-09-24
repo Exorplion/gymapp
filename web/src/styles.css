@@ -1894,6 +1894,28 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 @media (prefers-reduced-motion:reduce){
   #sheet.closing{display:none}
 }
+/* ---------- variante diálogo (confirmaciones) ---------- */
+/* Una confirmación es una pregunta de dos botones, no una hoja para leer:
+   flota despegada de los bordes, con las cuatro esquinas redondeadas, y entra
+   con un resorte corto (escala + subida chica) EN LUGAR de `shup`. El
+   `animation` se redefine, no se suma otra encima: dos animaciones sobre el
+   mismo transform es el doble movimiento que Sheet.jsx ya tuvo que sacar.
+   Si una hoja abierta pasa a confirmar (Ajustes → "Borrar todo"), el cambio
+   de nombre de animación la reinicia: el panel se "recoge" en el diálogo. */
+#sheet.dialogo .panel{
+  left:var(--s3);right:var(--s3);
+  bottom:calc(var(--s3) + env(safe-area-inset-bottom));
+  border-bottom:1px solid rgba(255,255,255,.14);
+  border-radius:var(--r-lg);
+  padding:var(--s5) var(--s5) var(--s4);
+  animation:dlgIn var(--d3) var(--spring);
+  box-shadow:var(--glass-hi),0 24px 60px -12px rgba(0,0,0,.8);
+}
+#sheet.dialogo .handle{display:none}
+#sheet.dialogo h2{margin-bottom:var(--s2)}
+@keyframes dlgIn{from{transform:translateY(24px) scale(.94);opacity:0}}
+@keyframes dlgOut{to{transform:translateY(16px) scale(.96);opacity:0}}
+#sheet.dialogo.closing .panel{animation:dlgOut var(--d2) var(--ease-out) forwards}
 #sheet .handle{width:44px;height:5px;border-radius:var(--r-xs);background:var(--line2);margin:6px auto 16px}
 /* En el mockup los títulos de sheet van en itálica y caja normal
    ("Historial"), no en versales: es el mismo gesto del título de pantalla,

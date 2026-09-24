@@ -17,7 +17,7 @@
 // está cubierto es lo que pasa siempre: pantalla apagada, otra app encima, o la
 // app en segundo plano.
 import { vibrate } from './format.js';
-import { notificar, cerrarNotificacion, TAG_DESCANSO } from './notify.js';
+import { notificar, cerrarNotificacion, avisoActivo, TAG_DESCANSO } from './notify.js';
 
 export { pedirPermiso } from './notify.js';
 
@@ -196,7 +196,9 @@ export function sonar(texto, alCallar) {
 
   const pulso = () => vibrate([400, 200, 400, 200, 400]);
   pulso();
-  notificar('Descanso terminado', {
+  // Sonido y vibración no dependen de esto: apagar el AVISO en Ajustes saca
+  // la notificación de la barra, no la alarma.
+  if (avisoActivo('descanso')) notificar('Descanso terminado', {
     body: texto,
     tag: TAG_DESCANSO,
     renotify: true,

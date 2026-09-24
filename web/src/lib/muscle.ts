@@ -11,7 +11,7 @@
 // "Press inclinado mancuernas". El match iba en una sola dirección.
 import { S } from './state.js';
 import { dstr, norm } from './format.js';
-import { fibrasDe } from './fibras.js';
+import { fibrasDe, porcionesDeLamina } from './fibras.js';
 
 /** Los diez grupos, en el orden en que se muestran.
     'Lumbares' va pegado a 'Espalda' por vecindad anatómica (erectores
@@ -200,8 +200,13 @@ const SUBGRUPO_DE: Record<string, string> = {
   'Vasto interno': 'Cuádriceps',
   Femoral: 'Isquiotibiales',
   Glúteo: 'Glúteo',
+  'Glúteo mayor': 'Glúteo',
+  'Glúteo medio': 'Glúteo medio',
   Aductores: 'Aductores',
   Gemelos: 'Gemelos',
+  Gastrocnemio: 'Gemelos',
+  'Sóleo': 'Sóleo',
+  Lumbares: 'Lumbares',
   'Dorsal alto': 'Espalda alta',
   'Dorsal bajo': 'Dorsal',
   /* Trapecio (medio) y dorsal alto son dos NOMBRES de la misma región, no dos
@@ -384,6 +389,8 @@ export function diasTexto(d: number | null | undefined): string {
 export interface FibraBreakdown { fibra: string; sets: number; ejercicios: { name: string; sets: number }[]; }
 export interface GroupStats {
   cat: string;
+  /** La porción a la que se acotó todo, o null si es el grupo entero. */
+  porcion: string | null;
   ventana: number;
   dias: number | null;
   sets: number;
@@ -408,7 +415,15 @@ export interface GroupStats {
  * Todo lo que devuelve es un hecho medido. No hay ninguna recomendación: la
  * app no sabe si entrenaste poco o mucho, sólo cuánto.
  */
-export function groupStats(cat: string, ventana = 28): GroupStats {
+export function groupStats(cat: string, ventana = 28, porcion: string | null = null): GroupStats {
+  /* Con `porcion` (tocaste el trapecio, no "Espalda") TODO se acota a los
+     ejercicios que trabajan esa porción: series, sesiones, volumen, tope y
+     lista. Antes sólo la cabecera hablaba de la porción y el cuerpo de la
+     ficha seguía siendo del grupo: tocabas el trapecio y leías las series de
+     tus jalones. Un grupo entero en `p` ("Tríceps" en un pushdown) cuenta
+     para todas sus porciones — el mismo reparto que usa la silueta. */
+  const trabajaPorcion = (e: ExLike) =>
+    !porcion || ((fibrasDe(e)?.p || []) as string[]).flatMap(porcionesDeLamina).includes(porcion);
   const cutoff = dstr(new Date(Date.now() - ventana * 86400000));
   let sets = 0, volumen = 0, sesiones = 0, mejor: { w: number; r?: number; name?: string } | null = null;
   const porEx = new Map<string, number>();
@@ -421,7 +436,7 @@ export function groupStats(cat: string, ventana = 28): GroupStats {
     if (s.date < cutoff) continue;
     let tocado = false;
     for (const e of s.entries || []) {
-      if (catOf(e) !== cat) continue;
+      if (catOf(e) !== cat || !trabajaPorcion(e)) continue;
       const ss = (e.sets || []).filter(x => x && x.r);
       if (!ss.length) continue;
       tocado = true;
@@ -452,7 +467,8 @@ export function groupStats(cat: string, ventana = 28): GroupStats {
      grupo donde todo cae en una sola bolsa (Glúteo, Gemelos) no gana nada
      mostrando "Glúteo: Hip thrust" en vez de la lista plana de siempre —
      sería la misma información con un paso extra. */
-  const fibras: FibraBreakdown[] | null = porFibra.size > 1
+  // Acotado a una porción, el desglose por fibra sobra: ya es una sola.
+  const fibras: FibraBreakdown[] | null = !porcion && porFibra.size > 1
     ? [...porFibra.entries()]
       .map(([fibra, ejPorNombre]) => {
         const ejercicios = [...ejPorNombre.entries()]
@@ -465,6 +481,7 @@ export function groupStats(cat: string, ventana = 28): GroupStats {
 
   return {
     cat,
+    porcion,
     ventana,
     dias: daysSinceGroup(cat),
     sets,

@@ -18,7 +18,7 @@
 // pasaron 15. Una notificación que se actualice sola con el teléfono dormido es
 // una capacidad de app nativa que la web no tiene.
 
-import { notificar, cerrarNotificacion, TAG_SESION as TAG } from './notify.js';
+import { notificar, cerrarNotificacion, avisoActivo, TAG_SESION as TAG } from './notify.js';
 
 /** Cada cuánto se reescribe. El minuto es la unidad que se lee de reojo. */
 const REFRESCO = 30000;
@@ -43,6 +43,8 @@ export function resumenDeSesion({ hechos, total, series }) {
 }
 
 function pintar(titulo, cuerpo) {
+  // Apagado en Ajustes a mitad de sesión: se retira la que ya estaba.
+  if (!avisoActivo('sesion')) { if (O.ultimo) { O.ultimo = ''; cerrarNotificacion(TAG); } return; }
   const clave = titulo + '|' + cuerpo;
   if (clave === O.ultimo) return;   // nada cambió: no la repintes
   O.ultimo = clave;

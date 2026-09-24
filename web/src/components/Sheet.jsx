@@ -15,7 +15,12 @@ import { useEffect, useRef, useState } from 'react';
 const FOCUSABLES = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 const CIERRE_MS = 220; // mismo tiempo que .panel usa para abrir (shup .22s)
 
-export default function Sheet({ open, onClose, children }) {
+/* `variante="dialogo"`: una confirmación no es una hoja con contenido que se
+   lee, es una pregunta de dos botones. Flota despegada de los bordes y entra
+   con un resorte corto en vez de subir desde abajo (styles.css,
+   #sheet.dialogo). REEMPLAZA a `shup`, no se le suma: la misma lección del
+   bloomOpen de más abajo. */
+export default function Sheet({ open, onClose, children, variante }) {
   const panelRef = useRef(null);
   const previoRef = useRef(null);
   const [closing, setClosing] = useState(false);
@@ -30,6 +35,10 @@ export default function Sheet({ open, onClose, children }) {
      ESO es lo que se pinta durante la animación de cierre. */
   const childrenRef = useRef(children);
   if (open) childrenRef.current = children;
+  // Igual que el contenido: al cerrar, S.sheet ya es null y la variante se
+  // perdería a mitad de la animación — el diálogo saldría como hoja.
+  const varianteRef = useRef(variante);
+  if (open) varianteRef.current = variante;
 
   /* mostrando = todavía hay algo que pintar (abierto de verdad, o cerrando
      con la animación en curso). closing sólo se prende en la transición
@@ -128,7 +137,11 @@ export default function Sheet({ open, onClose, children }) {
   }, [open, onClose]);
 
   return (
-    <div id="sheet" className={mostrando ? (closing ? 'open closing' : 'open') : ''}>
+    <div id="sheet" className={[
+      mostrando && 'open',
+      mostrando && closing && 'closing',
+      mostrando && varianteRef.current,
+    ].filter(Boolean).join(' ')}>
       <div className="bk" onClick={onClose}></div>
       <div
         className="panel"

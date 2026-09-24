@@ -8,7 +8,7 @@
 //
 // Nada de esto toca S.routine: vive en el borrador. Al cerrar la sesión, el
 // resumen ofrece dejarlo fijo en la rutina del día.
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { S, closeSheet } from '../../lib/state.js';
 import { WD } from '../../lib/format.js';
 import { addSessionExercise, replaceSessionExercise, sessionExs } from '../../lib/session.js';
@@ -16,7 +16,6 @@ import { recommendedExercises } from '../../lib/rutina-logic.js';
 import { EQUIP, isMachineBound } from '../../lib/equip.js';
 import MachineField from '../MachineField.jsx';
 import { toast } from '../../lib/toast.js';
-import { bloomOpen } from '../../lib/motion.js';
 
 export default function SessionExercise({ wd, exId = null }) {
   const esCambio = !!exId;
@@ -39,7 +38,6 @@ export default function SessionExercise({ wd, exId = null }) {
   const nameRef = useRef(null);
   const rootRef = useRef(null);
 
-  useEffect(() => { if (rootRef.current) bloomOpen(rootRef.current); }, []);
   // Sólo cuenta como "sólo cambié el equipo" si nada del resto se tocó: así el
   // mensaje de confirmación no dice "cambiaste el equipo" cuando en realidad
   // cambiaste el ejercicio entero y de paso el equipo también cambió.

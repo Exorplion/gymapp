@@ -48,18 +48,15 @@ const TABLA = [
   ['remo', { p: ['Dorsal alto', 'Dorsal bajo'], s: ['Bíceps'] }],
   ['row', { p: ['Dorsal alto', 'Dorsal bajo'], s: ['Bíceps'] }],
 
-  ['back extension', { p: ['Dorsal bajo'], s: ['Glúteo'] }],
-  ['hiperext', { p: ['Dorsal bajo'], s: ['Glúteo'] }],
-  // Reusa la porción 'Dorsal bajo' a propósito, igual que back extension e
-  // hiperextensión: es la única zona de la lámina (bodydata.js) que cubre el
-  // erector espinal. Inventar una porción 'Lumbar' propia dejaría al puente
-  // fibras<->bodydata sin dónde pintarla (ver
-  // __tests__/fibras-bodydata-bridge.test.js) — no se puede dibujar una
-  // geometría nueva en este cambio, así que se prefiere reusar lo que ya
-  // existe antes que fingir una precisión que la lámina no tiene.
-  ['good morning', { p: ['Dorsal bajo'], s: ['Femoral', 'Glúteo'] }],
-  ['reverse hyper', { p: ['Dorsal bajo'], s: ['Glúteo'] }],
-  ['rack pull', { p: ['Femoral', 'Glúteo'], s: ['Dorsal bajo', 'Trapecio'] }],
+  // Lumbares tiene zona propia desde 2026-09-24: la pieza que la lámina
+  // llamaba "lowerBack" era el erector espinal, y se la había rotulado
+  // "Dorsal bajo" — así un jalón encendía los lumbares. Ahora "Dorsal bajo"
+  // es el dorsal ancho y el erector es 'Lumbares' (ver bodydata.js).
+  ['back extension', { p: ['Lumbares'], s: ['Glúteo mayor'] }],
+  ['hiperext', { p: ['Lumbares'], s: ['Glúteo mayor'] }],
+  ['good morning', { p: ['Lumbares'], s: ['Femoral', 'Glúteo mayor'] }],
+  ['reverse hyper', { p: ['Lumbares'], s: ['Glúteo mayor'] }],
+  ['rack pull', { p: ['Femoral', 'Glúteo mayor'], s: ['Lumbares', 'Trapecio'] }],
 
   // ---- bíceps (sólo los nombres compuestos): van ANTES que pecho a propósito ----
   // "Curl inclinado" tiene que ganarle al "inclinado" genérico de pecho de
@@ -104,10 +101,10 @@ const TABLA = [
   ['hamstring curl', { p: ['Femoral'] }],
   ['leg curl', { p: ['Femoral'] }],
   ['femoral', { p: ['Femoral'] }],
-  ['peso muerto rumano', { p: ['Femoral'], s: ['Glúteo', 'Dorsal bajo'] }],
+  ['peso muerto rumano', { p: ['Femoral'], s: ['Glúteo mayor', 'Lumbares'] }],
   ['rumano', { p: ['Femoral'], s: ['Glúteo'] }],
   ['sldl', { p: ['Femoral'], s: ['Glúteo'] }],
-  ['peso muerto', { p: ['Femoral', 'Glúteo'], s: ['Dorsal bajo', 'Trapecio'] }],
+  ['peso muerto', { p: ['Femoral', 'Glúteo mayor'], s: ['Lumbares', 'Trapecio'] }],
 
   ['extensiones de cuadricep', { p: ['Vasto interno', 'Vasto externo'] }],
   ['leg extension', { p: ['Vasto interno', 'Vasto externo'] }],
@@ -119,11 +116,29 @@ const TABLA = [
   ['lunge', { p: ['Vasto externo'], s: ['Glúteo'] }],
   ['bulgara', { p: ['Vasto externo'], s: ['Glúteo'] }],
 
-  ['hip thrust', { p: ['Glúteo'], s: ['Femoral'] }],
-  ['patada', { p: ['Glúteo'] }],
+  // Glúteo mayor (extensión de cadera) contra glúteo medio (abducción): son
+  // las dos piezas que la lámina dibuja por separado en la cara de atrás.
+  ['hip thrust', { p: ['Glúteo mayor'], s: ['Femoral'] }],
+  ['puente de gluteo', { p: ['Glúteo mayor'], s: ['Femoral'] }],
+  ['patada', { p: ['Glúteo mayor'] }],
   ['aductor', { p: ['Aductores'] }],
-  ['abductor', { p: ['Glúteo'] }],
+  ['abductor', { p: ['Glúteo medio'] }],
+  ['abduccion', { p: ['Glúteo medio'] }],
 
+  // Gemelos: con la rodilla doblada el gastrocnemio queda acortado y el que
+  // trabaja es el sóleo; de pie (rodilla estirada) el gastrocnemio carga más.
+  // Por eso se afinan sólo las variantes que dicen la postura; la genérica
+  // queda en el grupo entero, que enciende las dos piezas.
+  ['talones sentado', { p: ['Sóleo'] }],
+  ['gemelo sentado', { p: ['Sóleo'] }],
+  ['gemelos sentado', { p: ['Sóleo'] }],
+  ['pantorrilla sentado', { p: ['Sóleo'] }],
+  ['calf sentado', { p: ['Sóleo'] }],
+  ['seated calf', { p: ['Sóleo'] }],
+  ['soleo', { p: ['Sóleo'] }],
+  ['talones de pie', { p: ['Gastrocnemio'] }],
+  ['gemelos de pie', { p: ['Gastrocnemio'] }],
+  ['standing calf', { p: ['Gastrocnemio'] }],
   ['calf', { p: ['Gemelos'] }],
   ['gemelo', { p: ['Gemelos'] }],
   ['pantorrilla', { p: ['Gemelos'] }],
@@ -192,8 +207,8 @@ export function fibrasDe(ex) {
    la precisión que el dibujo no puede. */
 const GRUPOS = new Set([
   'Bíceps', 'Bíceps braquial', 'Braquiorradial',
-  'Tríceps', 'Tríceps cabeza larga',
-  'Hombro', 'Glúteo', 'Gemelos', 'Femoral', 'Aductores',
+  'Tríceps',
+  'Hombro', 'Glúteo', 'Gemelos', 'Femoral', 'Aductores', 'Lumbares',
 ]);
 
 /** ¿Este nombre es un grupo entero (o una porción sin parche propio) y no una
@@ -202,9 +217,10 @@ export const esGrupo = n => GRUPOS.has(n);
 
 /** Cómo se pinta cada nombre sobre el cuerpo.
 
-    Femoral, Aductores, Bíceps braquial, Braquiorradial y Tríceps
-    medial-lateral no tienen subzona propia en la lámina, así que se pintan
-    con el grupo entero. Es menos preciso que el nombre, y prefiero que el
+    Femoral, Aductores, Bíceps braquial y Braquiorradial no tienen subzona
+    propia en la lámina, así que se pintan con el grupo entero. (La cabeza
+    larga del tríceps SÍ la tiene desde 2026-09-24: la cara de atrás dibuja
+    las cabezas por separado.) Es menos preciso que el nombre, y prefiero que el
     dibujo diga de menos antes que señalar el músculo equivocado. */
 /* Los nombres de porción que la lámina SÍ sabe dibujar, sacados de bodydata.js
    y no escritos a mano: si alguien regenera la lámina y una zona cambia de
@@ -212,10 +228,37 @@ export const esGrupo = n => GRUPOS.has(n);
    (Bíceps, Glúteo, Femoral…) y se pinta como grupo, igual que siempre — ver
    GRUPOS/esGrupo más arriba. */
 const SUBS_DE_LAMINA = new Set();
+/* Las porciones HERMANAS de cada grupo (sin parche): las que entre todas son
+   el músculo entero en alguna cara — Espalda, y desde 2026-09-24 también
+   Tríceps, Glúteo y Gemelos en la cara de atrás. */
+const HERMANAS_DE = new Map();
 for (const sexo of ['m', 'f']) {
   for (const cara of ['frente', 'espalda']) {
-    for (const z of CUERPOS[sexo][cara].zonas) if (z.sub) SUBS_DE_LAMINA.add(z.sub);
+    for (const z of CUERPOS[sexo][cara].zonas) {
+      if (!z.sub) continue;
+      SUBS_DE_LAMINA.add(z.sub);
+      if (!z.parche && z.cat) {
+        if (!HERMANAS_DE.has(z.cat)) HERMANAS_DE.set(z.cat, new Set());
+        HERMANAS_DE.get(z.cat).add(z.sub);
+      }
+    }
   }
+}
+
+/** A qué porciones de la lámina se traduce un nombre de `p`.
+
+    Una porción con forma propia es ella misma. El nombre de un grupo ENTERO
+    ("Tríceps" en un pushdown, "Gemelos" en un calf genérico) se reparte en
+    todas sus hermanas: el ejercicio trabajó el músculo completo. Sin esto, al
+    partir el tríceps en cabezas, un pushdown dejaba la cara de atrás
+    APAGADA — la silueta habría dicho "no entrenaste tríceps" justo después
+    de entrenarlo. Un nombre que no es ni porción ni grupo con hermanas
+    ('Femoral', 'Bíceps braquial') no se traduce a nada: se sigue pintando
+    con el grupo, como siempre. */
+export function porcionesDeLamina(nombre) {
+  if (SUBS_DE_LAMINA.has(nombre)) return [nombre];
+  if (esGrupo(nombre) && HERMANAS_DE.has(nombre)) return [...HERMANAS_DE.get(nombre)];
+  return [];
 }
 
 /** Días enteros entre dos fechas YYYY-MM-DD, en hora local.
@@ -262,8 +305,7 @@ export function diasPorPorcion(sesiones, hoy) {
       if (!e?.sets?.length) continue;
       const fib = fibrasDe(e);
       if (!fib) continue;
-      for (const sub of fib.p) {
-        if (!SUBS_DE_LAMINA.has(sub)) continue;
+      for (const sub of fib.p.flatMap(porcionesDeLamina)) {
         const prev = ultima.get(sub);
         if (prev === undefined || s.date > prev) ultima.set(sub, s.date);
       }
@@ -281,7 +323,7 @@ export const ZONA_DE = {
   'Bíceps braquial': 'Bíceps',
   Braquiorradial: 'Bíceps',
   Tríceps: 'Tríceps',
-  'Tríceps cabeza larga': 'Tríceps',
+  Lumbares: 'Lumbares',
   Hombro: 'Hombro',
   Glúteo: 'Glúteo',
   Gemelos: 'Gemelos',

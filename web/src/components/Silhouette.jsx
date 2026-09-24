@@ -471,14 +471,14 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
       {interactivo && sel && (
         <>
           <button type="button" className="sil-tapa" onClick={cerrar} aria-label="Cerrar estadísticas" />
-          {/* La ficha resume el GRUPO (es lo que groupStats sabe), pero la
-              cabecera tiene que hablar de lo que tocaste. Si tocaste una
-              porción, va su nombre y SU frescura — `?? null` a propósito: una
-              porción sin registro es "nunca", no "hoy" ni un cero. Sin
-              porción (bíceps, glúteo, o el músculo base de un grupo con
-              parches) no se manda nada y la cabecera queda como siempre. */}
+          {/* La ficha habla de lo que tocaste: si fue una porción, las
+              cifras, la lista y la cabecera son de ESA porción (groupStats
+              acotado), con SU frescura — `?? null` a propósito: una porción
+              sin registro es "nunca", no "hoy" ni un cero. Sin porción
+              (bíceps, o el músculo base de un grupo con parches) es el grupo
+              entero, como siempre. */}
           <MusclePop
-            stats={groupStats(sel.cat)}
+            stats={groupStats(sel.cat, 28, sel.sub || null)}
             porcion={sel.sub ? { nombre: sel.sub, dias: porciones?.[sel.sub] ?? null } : null}
             onClose={cerrar}
           />

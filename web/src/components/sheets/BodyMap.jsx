@@ -56,15 +56,15 @@ export default function BodyMap() {
 
       {/* Si la figura enciende porciones, la leyenda tiene que decirlo: si no,
           ver media espalda prendida con la ficha diciendo "Espalda, hace 1 día"
-          se lee como un bug. La ficha resume el GRUPO —es lo que groupStats()
-          sabe— y eso también se aclara acá en vez de dejar que se contradigan.
+          se lee como un bug. Al tocar una porción, la ficha entera (cifras y
+          lista) es de esa porción — groupStats() acotado.
           Sólo aparece cuando hay al menos una porción con registro: sin dato no
           hay nada distinto que explicar. */}
       {Object.keys(porciones).length > 0 && (
         <div className="mt-1.5 text-micro leading-relaxed text-mut">
-          Los músculos que la lámina divide —espalda, pecho, cuádriceps, abdomen— se encienden
-          por porción, con el contorno claro marcando cuál. Al tocar una, la ficha dice su
-          frescura; los números resumen el grupo entero.
+          Los músculos que la lámina divide —espalda, pecho, cuádriceps, abdomen, y de
+          espaldas tríceps, glúteo y gemelos— se encienden por porción, con el contorno
+          claro marcando cuál. Al tocar una, la ficha muestra sólo esa porción.
         </div>
       )}
 

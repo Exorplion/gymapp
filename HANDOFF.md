@@ -1,6 +1,88 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-22
+**Última actualización:** 2026-09-24
+
+---
+
+## SESIÓN 2026-09-24 — Recordatorio de peso, animaciones y porciones nuevas
+
+Enzo confirmó que **ya cerró** los pendientes que dependían de él (PWA
+instalada + JSON exportado, alarma probada con el teléfono bloqueado,
+coverflow decidido, series/reps de Anterior/Posterior). No volver a pedírselos.
+**715 tests** (eran 697).
+
+### Recordatorio diario de peso (opción "push por GitHub Actions", elegida por Enzo)
+
+Una PWA no puede agendar una notificación a hora fija con la app cerrada
+(Notification Triggers está abandonado; Periodic Background Sync no respeta
+horas). Única salida sin servidor: una Action con cron manda un Web Push.
+
+| Pieza | Dónde |
+|---|---|
+| Suscripción, estado real, activar/apagar | `lib/push.js` (clave pública VAPID en el código, es pública por diseño) |
+| UI: sección "Avisos" en Ajustes | `components/AvisosAjustes.jsx` |
+| Recibir el push y abrir el formulario al tocarlo | `public/sw-notif.js` (`push` + `notificationclick` con `postMessage`) |
+| `?accion=peso` → abre "Registro corporal" | `lib/acciones.js`, `App.jsx` |
+| Atajo al mantener apretado el ícono | `shortcuts` en `vite.config.js` |
+| Envío diario 7:30 Lima (12:30 UTC) | `.github/workflows/recordatorio-peso.yml` + `.github/scripts/recordatorio-peso.mjs` |
+
+Secretos del repo: `VAPID_PRIVATE_KEY` y `PUSH_SUBSCRIPTION` (el JSON que copia
+Ajustes → Avisos). Sin ellos la Action sale bien con una nota; con 404/410
+(suscripción dada de baja) sale bien con advertencia — Ajustes muestra
+"Revisar" y pide reactivar. **GitHub pausa los cron tras 60 días sin commits.**
+
+De paso: `avisosActivos()`/`S.cfg.avisos` **no estaban conectados a nada**
+(nadie los escribía ni los leía). Ahora `avisoActivo(tipo)` apaga por separado
+la notificación de fin de descanso (el sonido sigue) y la de sesión en curso.
+
+### Animaciones
+
+- `framer-motion` → `motion` (2 imports). CLAUDE.md actualizado.
+- **Ajustes, Perfil, Pre-workout, Ejercicio de sesión y Tu Año seguían con un
+  `bloomOpen()` en la raíz**, encima de la subida del panel: el doble
+  movimiento que Sheet.jsx ya documentaba. Ajustes, ficha de ejercicio y Tu
+  Año entran ahora con variants (`lib/variants.js`: esperan `D.objeto` a que
+  llegue el panel; el `<h2>` no se anima para que la hoja no llegue vacía).
+  En Perfil/Pre-workout/Ejercicio de sesión simplemente se sacó.
+- Confirmaciones: `Sheet variante="dialogo"` → tarjeta flotante con
+  `dlgIn`/`dlgOut`, que **reemplaza** a `shup` (no se suma).
+- `MotionConfig reducedMotion="user"` en `main.jsx`.
+- Trampa de verificación: el panel del navegador de Claude Code corre con
+  `visibilityState: hidden` → no hay rAF y las animaciones quedan en el
+  cuadro 0 (contenido en opacidad 0). No es un bug de la app: cada
+  screenshot avanza cuadros. Medir con `getComputedTiming()`, no suponer.
+
+### Lámina: porciones que ya estaban dibujadas y la app juntaba
+
+Medido con `getBBox()` pieza por pieza, en los dos cuerpos (el femenino tiene
+otro orden en el lado derecho del glúteo):
+
+- **"Dorsal bajo" era el erector espinal.** El slug `lowerBack` de MuscleMap
+  es la zona lumbar; un jalón encendía los lumbares. Ahora: `lowerBack` →
+  `cat: 'Lumbares'` (zona propia, cierra la deuda 12); "Dorsal bajo" = el
+  dorsal ancho (pieza grande de `upperBack`); "Dorsal alto" = redondo e
+  infraespinoso.
+- Tríceps (cara de atrás): cabeza larga / cabeza lateral.
+- Glúteo: mayor / medio. Gemelos: gastrocnemio / sóleo.
+- **Bíceps NO se puede**: es una sola forma por lado. Tampoco pecho en 3.
+- Un grupo entero en `p` ("Tríceps" en pushdown, "Gemelos" genérico) cuenta
+  para todas sus hermanas (`porcionesDeLamina()` en fibras.js). Sin eso,
+  partir el músculo dejaba la cara de atrás apagada tras entrenarlo.
+- `MusclePop` al tocar una porción: ahora **toda** la ficha es de la porción
+  (`groupStats(cat, 28, porcion)`), no sólo la cabecera. Cierra el pendiente 5.
+
+### Arreglado de paso
+
+- `cycle.test.js` volvió a caducar solo (4 tests) por llamar `cycledGoals()`
+  sin la fecha. Ahora todas las llamadas pasan `HOY`.
+- `npm ci` necesita `--legacy-peer-deps` (vite-plugin-pwa 1.2 declara vite ≤7).
+- `tsc --noEmit` da 1 error preexistente (faltan los tipos de node).
+
+### Pendientes
+
+1. **Poner los dos secretos** y probar con Actions → "Run workflow".
+2. IA en Nutrición: sigue dependiendo de una cuenta de API de Enzo.
+3. Deudas 13-14 (KokonutUI) sin cambios; la 13 (migrar a `motion`) está hecha.
 
 ---
 

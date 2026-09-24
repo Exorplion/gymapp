@@ -43,6 +43,16 @@ export default defineConfig({
           { src: 'icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
           { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
+        // Mantener apretado el ícono → "Registrar peso". Misma URL que abre
+        // la notificación del recordatorio diario (lib/acciones.js).
+        shortcuts: [
+          {
+            name: 'Registrar peso',
+            short_name: 'Peso',
+            url: './?accion=peso',
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+        ],
       },
       workbox: {
         /* Los 4 PNG de ícono (324 KB, más de un tercio del precache) SALEN del
