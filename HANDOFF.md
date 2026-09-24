@@ -134,13 +134,13 @@ ancho de TODOS los dientes** (medido 2134px). Usar `minmax(0,1fr)`.
 
 ### Pendientes
 
-1. **Secretos del recordatorio:** `VAPID_PRIVATE_KEY` lo corre Enzo (el
-   clasificador bloquea `gh secret set`; en PowerShell hace falta `& "…gh.exe"`
-   y `--body $k`). El par VAPID se generó en el scratchpad de la sesión del
-   24/09: si se perdió, regenerar y cambiar `VAPID_PUBLIC` en
-   `web/src/lib/push.js` y en el workflow. Después: Ajustes → Avisos →
-   Activar → pegar el código como `PUSH_SUBSCRIPTION`, y probar con Actions →
-   "Run workflow".
+1. ~~Secretos del recordatorio~~ — **HECHO el 2026-09-24.** `VAPID_PRIVATE_KEY`
+   (la puso Enzo) y `PUSH_SUBSCRIPTION` (su teléfono) están en el repo. Prueba
+   manual con "Run workflow": `Enviado (201)`. Si cambia de teléfono o
+   reinstala la app: Ajustes → Avisos → copiar el código otra vez y
+   actualizar `PUSH_SUBSCRIPTION`. El par VAPID vivía en un scratchpad: si
+   hubiera que regenerarlo, cambiar también `VAPID_PUBLIC` en push.js y en el
+   workflow, y re-suscribir.
 2. **Modelo anatómico 3D — decisión de Enzo pendiente.** Quiere 3D, gratis,
    que muestre fibras, y acepta herramientas de IA. Opciones que se le dieron:
    - **Recomendada:** `slfresh/fitmitwith-anatomy-atlas` (GitHub): GLB para
