@@ -118,11 +118,46 @@ Enzo vio un mockup de 5 pasos y dijo "sí a todo". Lo que cambió:
 Trampa nueva: **una grilla `1fr 1fr` con una rueda adentro se estira al
 ancho de TODOS los dientes** (medido 2134px). Usar `minmax(0,1fr)`.
 
+### También en #116 (misma fecha)
+
+- **Gesto de volver de Android** (`lib/atras.js` + `useAtras`): cada capa
+  (hoja, ficha del músculo, descanso a pantalla completa, fin de sesión,
+  pestaña fuera de Inicio) empuja una entrada al historial con su
+  profundidad; volver cierra la última. Antes cerraba la app entera.
+- **Mapa sin "circulitos"**: los parches de MuscleMap (óvalos de pecho,
+  deltoides, abdomen) ya no se dibujan en la silueta, ni con porciones.
+- **`.sil-stage{overflow:clip}`**: el zoom al músculo tocado se salía del
+  recuadro y pisaba subtítulo, leyenda y lista.
+- Recordatorio de peso a las **4:00 Lima** (cron `0 9 * * *`).
+
+**PR #116 MERGEADO el 2026-09-24** (Enzo lo pidió).
+
 ### Pendientes
 
-1. **Poner los dos secretos** y probar con Actions → "Run workflow".
-2. IA en Nutrición: sigue dependiendo de una cuenta de API de Enzo.
-3. Deudas 13-14 (KokonutUI) sin cambios; la 13 (migrar a `motion`) está hecha.
+1. **Secretos del recordatorio:** `VAPID_PRIVATE_KEY` lo corre Enzo (el
+   clasificador bloquea `gh secret set`; en PowerShell hace falta `& "…gh.exe"`
+   y `--body $k`). El par VAPID se generó en el scratchpad de la sesión del
+   24/09: si se perdió, regenerar y cambiar `VAPID_PUBLIC` en
+   `web/src/lib/push.js` y en el workflow. Después: Ajustes → Avisos →
+   Activar → pegar el código como `PUSH_SUBSCRIPTION`, y probar con Actions →
+   "Run workflow".
+2. **Modelo anatómico 3D — decisión de Enzo pendiente.** Quiere 3D, gratis,
+   que muestre fibras, y acepta herramientas de IA. Opciones que se le dieron:
+   - **Recomendada:** `slfresh/fitmitwith-anatomy-atlas` (GitHub): GLB para
+     celular (~129k triángulos, 218 músculos con `extras` muscleId/label/side),
+     derivado de Z-Anatomy/BodyParts3D, **CC BY-SA 4.0** (crédito + misma
+     licencia en la adaptación). Render con three.js, rotar y tocar músculos.
+     Limitaciones: ningún atlas abierto trae dirección de fibras (se simula con
+     un shader de estrías por eje del músculo — aproximación); no está
+     documentado qué cabezas vienen separadas; el femenino es "ilustrativo";
+     más peso y más GPU; 2-3 sesiones de trabajo.
+   - IA 2D (imagen tipo écorché con fibras) + máscaras por zona encima: se ve
+     muy bien pero es plana (frente/espalda) y hay que recortar las zonas.
+   - IA text-to-3D: descartada — sale una sola malla sin músculos separados.
+3. IA en Nutrición: sigue dependiendo de una cuenta de API de Enzo.
+4. Deudas: `detailsSlide()` quedó sin uso en la app (sólo sus tests);
+   CSS muerto de `.ex-more`, `.ex-actions`, `.ex-done-count`, `.ex-card-icon`.
+   KokonutUI sin cambios.
 
 ---
 
