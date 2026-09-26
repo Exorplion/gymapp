@@ -23,7 +23,7 @@ import { cn } from '../../lib/utils.js';
 import { S, useStore, bump, openSheet, closeSheet, changeTab, wDisplay } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS, dstr } from '../../lib/format.js';
 import { opcionesDescanso } from '../../lib/descansoHoy.js';
-import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, indiceHoy, elegirTurnoHoy } from '../../lib/session.js';
+import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, moverEnBloque, indiceHoy, elegirTurnoHoy } from '../../lib/session.js';
 import { flipSort } from '../../lib/drag.js';
 import { blocksOf, catOf, MUSCLE_CATS } from '../../lib/muscle.js';
 import { equipLabel } from '../../lib/equip.js';
@@ -32,7 +32,7 @@ import { createGym, setActiveGym } from '../../lib/gyms.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
 import { objetivoHoy, resumenPlan } from '../../lib/objetivoHoy.js';
 import { toast } from '../../lib/toast.js';
-import { Bolt, Mic, Pencil, RecordDot, Dots, Plus } from '../Icon.jsx';
+import { Bolt, Mic, Pencil, RecordDot, Dots, Plus, Check } from '../Icon.jsx';
 import { HoySinPlan } from '../Illustration.jsx';
 import Silhouette from '../Silhouette.jsx';
 
@@ -428,22 +428,30 @@ function PlanHoy({ index, exs }) {
     await moveBlock(index, blocks, cat, dir);
     flipSort(() => flushSync(() => bump()));
   }
+  // Lo mismo, un ejercicio dentro de su grupo (2026-09-26).
+  async function moverEj(exId, dir) {
+    if (await moverEnBloque(index, exs, exId, dir)) flipSort(() => flushSync(() => bump()));
+  }
   let n = 0;
   return (
     <section className="plan-hoy" data-sort="hoy-blocks" ref={listRef} aria-label="Plan de hoy">
+      {/* 2026-09-26: "Editar" era texto azul suelto pegado al título y el
+          resumen colgaba debajo sin forma (Enzo: "no se ve estético").
+          Ahora es un botón con borde que pasa a "Listo" relleno, y el
+          resumen son dos datos en fila bajo el título. */}
       <div className="plan-head">
         <h2 className="plan-title">Plan de hoy</h2>
-        <button type="button" className="plan-edit" aria-pressed={editando} onClick={() => setEditando(v => !v)}>
-          {editando ? 'Listo' : 'Editar'}
+        <button type="button" className={`plan-edit${editando ? ' on' : ''}`} aria-pressed={editando} onClick={() => setEditando(v => !v)}>
+          {editando ? <><Check size={15} /> Listo</> : <><Pencil /> Editar</>}
         </button>
       </div>
-      {(subir > 0 || superar > 0) && (
+      {(subir > 0 || superar > 0) && !editando && (
         <div className="plan-resumen">
-          {subir > 0 && <span className="up">↑ {subir} para subir peso</span>}
-          {subir > 0 && superar > 0 && ' · '}
-          {superar > 0 && <span>{superar} para superar reps</span>}
+          {subir > 0 && <span className="up"><b>↑ {subir}</b> para subir peso</span>}
+          {superar > 0 && <span><b>{superar}</b> para superar reps</span>}
         </div>
       )}
+      {editando && <div className="plan-resumen">Mové los grupos y, adentro, cada ejercicio con ▲▼.</div>}
       {blocks.map((b, i) => (
         <div className="plan-block" data-sid={b.cat} key={b.cat}>
           <div className="plan-block-head">
@@ -456,7 +464,7 @@ function PlanHoy({ index, exs }) {
             )}
           </div>
           <div className="group">
-            {b.exs.map(ex => {
+            {b.exs.map((ex, k) => {
               n += 1;
               return (
                 <div className="grouprow plan-row" key={ex.id}>
@@ -466,8 +474,17 @@ function PlanHoy({ index, exs }) {
                       <span className="grouprow-t">{ex.name}</span>
                       <span className="grouprow-s">{ex.sets}×{ex.reps}{equipLabel(ex) ? ` · ${equipLabel(ex)}` : ''}</span>
                     </span>
-                    <Meta ex={ex} />
+                    {/* Editando, la meta se esconde: con ▲▼ y lápiz no quedaba
+                        lugar y el nombre se partía palabra por palabra
+                        encima de "superar reps". */}
+                    {!editando && <Meta ex={ex} />}
                   </button>
+                  {editando && b.exs.length > 1 && (
+                    <span className="block-move ex-move">
+                      <button type="button" disabled={k === 0} aria-label={`Subir ${ex.name}`} onClick={() => moverEj(ex.id, -1)}>▲</button>
+                      <button type="button" disabled={k === b.exs.length - 1} aria-label={`Bajar ${ex.name}`} onClick={() => moverEj(ex.id, 1)}>▼</button>
+                    </span>
+                  )}
                   {editando && (
                     <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}><Pencil /></button>
                   )}
@@ -480,9 +497,6 @@ function PlanHoy({ index, exs }) {
       {editando && (
         <div className="plan-edit-acts">
           <button type="button" className="btn sm ghost" onClick={() => openSheet('ex-form', { wd: index, ex: null })}>+ Agregar ejercicio</button>
-          {exs.length > 1 && (
-            <button type="button" className="btn sm ghost" onClick={() => openSheet('reorder-hoy')}>↕ Reordenar dentro de un bloque</button>
-          )}
         </div>
       )}
     </section>

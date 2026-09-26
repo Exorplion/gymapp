@@ -1,6 +1,7 @@
 // Puerto de funciones de sesión desde index.html
 import { S, bump, saveDraft, saveCfg, wBoth, closeSheet } from './state.js';
 import { dstr, uid, round1, fmtD, vibrate } from './format.js';
+import { blocksOf } from './muscle.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
 import { T, startRest, stopRest, pedirRir, marcarRirElegido } from './rest.js';
@@ -187,6 +188,23 @@ export async function moveBlock(index, blocks, cat, dir) {
   const next = blocks.slice();
   [next[i], next[j]] = [next[j], next[i]];
   await setExOrder(index, next.flatMap(b => b.exs.map(e => e.id)));
+}
+
+/** Mueve un ejercicio un lugar dentro de SU grupo muscular (2026-09-26).
+    moveBlock mueve grupos enteros; faltaba el orden de adentro (Enzo: "quiero
+    iniciar con pec deck"). Nunca cruza al grupo vecino, así los bloques
+    siguen juntos. Devuelve false si no había lugar a donde moverlo. */
+export async function moverEnBloque(index, exs, exId, dir) {
+  const blocks = blocksOf(exs);
+  const b = blocks.find(x => x.exs.some(e => e.id === exId));
+  if (!b) return false;
+  const i = b.exs.findIndex(e => e.id === exId);
+  const j = i + dir;
+  if (j < 0 || j >= b.exs.length) return false;
+  const lista = b.exs.slice();
+  [lista[i], lista[j]] = [lista[j], lista[i]];
+  await setExOrder(index, blocks.flatMap(x => (x === b ? lista : x.exs).map(e => e.id)));
+  return true;
 }
 
 export function setsDone(exId) { return S.draft?.entries[exId]?.sets || []; }
