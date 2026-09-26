@@ -14,9 +14,9 @@
 // unidad (`alt`, kg↔lb) y el aviso de progresión, ninguno de los dos
 // editable, así que el patrón de refs no controlados (`altRef`/`pwRef`) se
 // mantiene sólo para esos dos.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { S, wDisplay, wAlt, wStep, wToUnit, wFromUnit, openSheet } from '../lib/state.js';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { round1, fmtNum } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
 import { rirPedido } from '../lib/rir.js';
@@ -29,6 +29,7 @@ import {
 } from '../lib/session.js';
 import { sideImbalance } from '../lib/symmetry.js';
 import { toast } from '../lib/toast.js';
+import { T } from '../lib/rest.js';
 import { jumpToSlide, scrollToSlideEl, slideScrollLeft } from '../lib/carousel.js';
 import { staggerRevealOnce, squashStretch, impactBurst, menosMovimiento, D, EASE_OUT } from '../lib/motion.js';
 import { relatedHistory, equipLabel } from '../lib/equip.js';
@@ -447,7 +448,7 @@ function FotoMaquina({ gymId, exName }) {
     grande la contestan de un vistazo. El número de Hoy sale de
     objetivoHoy() — la doble progresión, o el sugerido por 1RM — nunca de un
     relleno. */
-function Comparativa({ last, obj, uni }) {
+function ultimaVez(last) {
   const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
   let ultima = null;
   if (last?.length) {
@@ -458,6 +459,12 @@ function Comparativa({ last, obj, uni }) {
       detalle: parejas ? `${last.map(s => s.r).join(' · ')} reps` : last.map(s => `${wDisplay(s.w)}×${s.r}`).join(' · '),
     };
   }
+  return ultima;
+}
+
+function Comparativa({ last, obj, uni }) {
+  const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
+  const ultima = ultimaVez(last);
   const hoyPeso = obj.peso != null
     ? `${obj.tipo === 'sugerido' ? '~' : ''}${wDisplay(obj.peso)} ${unidad}${obj.tipo === 'subir' ? ' ↑' : ''}`
     : '—';
@@ -472,6 +479,45 @@ function Comparativa({ last, obj, uni }) {
         <b>{hoyPeso}</b>
         <small>{obj.texto}</small>
       </div>
+    </div>
+  );
+}
+
+/* La comparativa, como aviso (2026-09-25, pedido de Enzo): las dos cajas
+   fijas ocupaban media tarjeta para algo que se lee UNA vez, al arrancar el
+   ejercicio. Ahora aparece flotando sobre la tarjeta cuando el ejercicio se
+   activa, se va sola a los AVISO_MS (la rayita de abajo lo cuenta) o al
+   tocarla, y la etiqueta "Últ." del encabezado la vuelve a traer — en la
+   serie 3 también hace falta saber qué hiciste la vez pasada.
+   Una vez por ejercicio y por sesión (id del borrador): volver a Hoy desde
+   otra pestaña remonta la tarjeta y no tiene que repetirlo. */
+const yaAvisadas = new Set();
+const AVISO_MS = 4000;
+
+function AvisoUltimaVez({ visible, onCerrar, last, obj, uni }) {
+  useEffect(() => {
+    if (!visible) return;
+    const t = setTimeout(onCerrar, AVISO_MS);
+    return () => clearTimeout(t);
+  }, [visible, onCerrar]);
+  return (
+    <div className="ex-aviso-ancla">
+      <AnimatePresence>
+        {visible && (
+          <motion.div
+            className="ex-aviso"
+            role="status"
+            onClick={onCerrar}
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: D.objeto / 1000, ease: curvaSalida } }}
+            exit={{ opacity: 0, y: -6, scale: 0.98, transition: { duration: D.toque / 1000 } }}
+          >
+            <button type="button" className="ex-aviso-x" aria-label="Cerrar" onClick={e => { e.stopPropagation(); onCerrar(); }}>✕</button>
+            <Comparativa last={last} obj={obj} uni={uni} />
+            <i className="ex-aviso-reloj" aria-hidden="true" style={{ animationDuration: `${AVISO_MS}ms` }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -562,6 +608,24 @@ function ExerciseSlide({ m, wd, started }) {
   const animar = useMemo(() => open && !yaAbiertas.has(ex.id) && !menosMovimiento(), [open, ex.id]);
   useEffect(() => { if (open) yaAbiertas.add(ex.id); }, [open, ex.id]);
 
+  const hayComparativa = !!obj && (!!last || obj.tipo !== 'primera');
+  const ultima = ultimaVez(last);
+  const [aviso, setAviso] = useState(false);
+  const cerrarAviso = useCallback(() => setAviso(false), []);
+  /* Al activarse el ejercicio: después del despliegue de la tarjeta, no
+     encima de él (serían dos movimientos peleándose por la mirada). Y nunca
+     debajo del descanso a pantalla completa: tras la última serie el
+     siguiente se activa solo, pero lo que se ve es el reloj — el aviso se
+     habría ido sin que nadie lo leyera. Espera a que el reloj se achique o
+     termine, y recién ahí se marca como mostrado. */
+  const tapado = T.state === 'fullscreen' || T.state === 'ringing';
+  useEffect(() => {
+    const clave = `${S.draft?.id}|${ex.id}`;
+    if (!open || !hayComparativa || tapado || yaAvisadas.has(clave)) return;
+    const t = setTimeout(() => { yaAvisadas.add(clave); setAviso(true); }, animar ? D.panel : 0);
+    return () => clearTimeout(t);
+  }, [open, hayComparativa, ex.id, animar, tapado]);
+
   const pwarnInitial = open ? progressionWarn(ex.name, v.w) : null;
   const cls = [full ? 'full doneex' : '', open ? 'cur' : '', waiting ? 'wait' : '', skipped ? 'skipped' : ''].filter(Boolean).join(' ');
   const gymId = S.cfg.activeGym;
@@ -601,6 +665,11 @@ function ExerciseSlide({ m, wd, started }) {
               </span>
               {equipLabel(ex) && <span className="ex-tag">{equipLabel(ex)}</span>}
               {rirTxt && !full && !skipped && <span className="ex-tag">{rirTxt}</span>}
+              {hayComparativa && ultima && (
+                <button type="button" className="ex-tag ult" aria-label={`La última vez: ${ultima.peso}. Ver la comparación con hoy`} onClick={() => setAviso(a => !a)}>
+                  Últ. {ultima.peso}
+                </button>
+              )}
             </div>
           </div>
           <div className="exh-side">
@@ -618,7 +687,7 @@ function ExerciseSlide({ m, wd, started }) {
           </div>
         </div>
 
-        {obj && (last || obj.tipo !== 'primera') && <Comparativa last={last} obj={obj} uni={uni} />}
+        {hayComparativa && <AvisoUltimaVez visible={aviso} onCerrar={cerrarAviso} last={last} obj={obj} uni={uni} />}
         {/* D3: la ausencia de dato no es un cero. */}
         {!last && uni && !full && !skipped && (
           <div className="exlast text-mut">
