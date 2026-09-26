@@ -22,6 +22,7 @@ import { S, bump, saveCfg } from './state.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
 import { persistSlot } from './rutina-logic.js';
+import { indiceHoy } from './session.js';
 import { shrinkImageBlob } from './photo.js';
 
 export const saveGyms = () => idb.put('settings', { key: 'gyms', value: S.gyms });
@@ -171,7 +172,7 @@ export async function guardarFotoMaquina(gymId, exName, file) {
 export async function setActiveGym(id) {
   S.cfg.activeGym = id;
   const gym = S.gyms.find(g => g.id === id);
-  const idx = S.cfg.seqIndex;
+  const idx = indiceHoy();
   const slot = S.routine[idx];
   if (gym && slot?.exercises?.length) {
     let changed = false;

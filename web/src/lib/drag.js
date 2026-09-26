@@ -6,7 +6,7 @@
 // limpio y que las firmas exportadas sean correctas (ver task-3-brief.md).
 import { S, bump } from './state.js';
 import { vibrate } from './format.js';
-import { setExOrder } from './session.js';
+import { setExOrder, indiceHoy } from './session.js';
 // Task 5 completa lo que Task 3 dejó en TODO (ver comentarios más abajo):
 // rutina-logic.js no importa nada de este archivo, así que este import es
 // unidireccional — no hay ciclo drag.js<->rutina-logic.js.
@@ -191,7 +191,7 @@ export function keepScroll(fn) {
 }
 
 export async function commitSort(kind, wd, ids) {
-  if (kind === 'hoy') return setExOrder(S.cfg.seqIndex, ids);
+  if (kind === 'hoy') return setExOrder(indiceHoy(), ids);
   // El editor de Rutina sólo arrastra turnos de ENTRENAMIENTO (los
   // descansos ya no viven en el DOM arrastrable, ver Rutina.jsx) — así que
   // `ids` acá es siempre la lista de entrenamientos en su orden nuevo, y

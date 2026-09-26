@@ -11,14 +11,14 @@
 // no se guardan, igual que la rampa — es preparación, no series.
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { S, closeSheet } from '../../lib/state.js';
-import { sessionExs } from '../../lib/session.js';
+import { closeSheet } from '../../lib/state.js';
+import { sessionExs, indiceHoy } from '../../lib/session.js';
 import { calentamientoGeneral } from '../../lib/warmup.js';
 import { hojaProps, seccion } from '../../lib/variants.js';
 import { Check } from '../Icon.jsx';
 
 export default function Calentamiento({ index }) {
-  const plan = calentamientoGeneral(sessionExs(index ?? S.cfg.seqIndex));
+  const plan = calentamientoGeneral(sessionExs(index ?? indiceHoy()));
   const [hechos, setHechos] = useState(() => new Set());
   const todos = hechos.size === plan.ejercicios.length;
 

@@ -200,6 +200,27 @@ export function sessionForSlot(slotId) {
 /** El turno pendiente según el puntero de la secuencia. */
 export function pendingSlot() { return S.routine[S.cfg.seqIndex] || null; }
 
+/* El turno que eligió "entrenar igual" en un día de descanso. En memoria y
+   con fecha: es una decisión de HOY, no cambia la secuencia (eso lo hace
+   completeSession, que avanza desde el turno que de verdad se hizo). */
+let elegido = null;
+export function elegirTurnoHoy(index) { elegido = index == null ? null : { index, fecha: dstr() }; }
+
+/** El turno que muestra Hoy. Con sesión abierta, SIEMPRE el de la sesión:
+    en un descanso el puntero sigue en el descanso mientras entrenás otro, y
+    leerlo de ahí dejaba la pantalla mirando un turno y la sesión otro
+    (ninguna tarjeta quedaba activa). Sin sesión: el elegido en el descanso,
+    si lo hay y sigue siendo hoy; si no, el pendiente. */
+export function indiceHoy() {
+  if (S.draft?.slotId) {
+    const i = S.routine.findIndex(s => s.id === S.draft.slotId);
+    if (i >= 0) return i;
+  }
+  if (elegido && elegido.fecha === dstr() && S.routine[S.cfg.seqIndex]?.type === 'rest'
+      && S.routine[elegido.index]?.type === 'workout') return elegido.index;
+  return S.cfg.seqIndex;
+}
+
 /** Récords de `sess`: la mejor serie de cada ejercicio contra el máximo de las
     sesiones ANTERIORES a ella. Sirve para cualquier sesión, esté o no todavía
     en S.sessions — reemplaza a calcSessionPRs(), que asumía que la sesión no
