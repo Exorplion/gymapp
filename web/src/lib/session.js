@@ -939,21 +939,41 @@ export async function marcarCalentado(ex, conDescanso = true) {
 /** "Hacer después": la máquina está ocupada, así que el ejercicio pasa al
     final de la sesión, sigue pendiente, y se activa el siguiente. No es
     saltarlo — saltar es no hacerlo. */
-export async function hacerDespues(exId) {
+/** Mueve un ejercicio de la sesión para hacerlo más tarde (2026-09-25).
+    `despuesDe`: el id del ejercicio tras el cual queda; null = al final.
+    Antes "Hacer después" lo mandaba al final sin preguntar y sin forma de
+    volver atrás: un toque de casualidad te cambiaba el orden entero. Ahora
+    la hoja 'despues' pregunta a dónde, y el aviso trae "Deshacer", que
+    devuelve el orden y el ejercicio en curso tal como estaban. */
+export async function moverEjercicio(exId, despuesDe = null) {
   if (!S.draft) return;
   const index = S.routine.findIndex(s => s.id === S.draft.slotId);
+  const antes = { order: S.draft.order ? [...S.draft.order] : null, cur: S.draft.cur };
   const ids = sessionExs(index).map(e => e.id).filter(id => id !== exId);
-  ids.push(exId);
+  const at = despuesDe ? ids.indexOf(despuesDe) + 1 : 0;
+  ids.splice(at > 0 ? at : ids.length, 0, exId);
   S.draft.order = ids;
-  const eraActual = S.draft.cur === exId;
-  if (eraActual) S.draft.cur = siguienteActivo();
+  if (S.draft.cur === exId) S.draft.cur = siguienteActivo();
   await saveDraft();
   vibrate(15);
   bump();
   const ex = findEx(exId);
-  const sig = S.draft.cur && S.draft.cur !== exId ? findEx(S.draft.cur) : null;
-  toast(sig ? `${ex?.name || 'Ejercicio'} al final · sigue ${sig.name}` : `${ex?.name || 'Ejercicio'} pasa al final`);
+  const ref = despuesDe ? findEx(despuesDe) : null;
+  const nombre = ex?.name || 'Ejercicio';
+  toast(ref ? `${nombre} va después de ${ref.name}` : `${nombre} pasa al final`, {
+    actionLabel: 'Deshacer',
+    onAction: async () => {
+      if (!S.draft) return;
+      S.draft.order = antes.order;
+      S.draft.cur = antes.cur;
+      await saveDraft();
+      bump();
+    },
+  });
 }
+
+/** "Hacer después" sin elegir lugar: al final. */
+export function hacerDespues(exId) { return moverEjercicio(exId, null); }
 
 export async function discardSession() {
   S.draft = null;

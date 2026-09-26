@@ -25,7 +25,7 @@ import { tocaCalentar, warmupSets } from '../lib/warmup.js';
 import {
   ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
   targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, reemplazaA,
-  isUnilateral, setSide, seriesCompletas, hacerDespues, marcarCalentado,
+  isUnilateral, setSide, seriesCompletas, marcarCalentado,
 } from '../lib/session.js';
 import { sideImbalance } from '../lib/symmetry.js';
 import { toast } from '../lib/toast.js';
@@ -849,7 +849,7 @@ function ExerciseSlide({ m, wd, started }) {
               {started ? '▶ Hacer ahora' : '▶ Empezar rutina'}
             </button>
             <div className="ex-pre-links">
-              <button type="button" className="linkcard" onClick={() => hacerDespues(ex.id)}><Later size={14} /> Hacer después</button>
+              <button type="button" className="linkcard" onClick={() => openSheet('despues', { exId: ex.id })}><Later size={14} /> Hacer después</button>
               <button type="button" className="linkcard" onClick={() => confirmarOmitir(ex)}><Skip size={13} /> Omitir ejercicio</button>
             </div>
           </div>
@@ -873,7 +873,7 @@ function ExerciseSlide({ m, wd, started }) {
                     </>
                   )}
                 </span>
-                <button type="button" className="ex-despues" onClick={() => hacerDespues(ex.id)}>
+                <button type="button" className="ex-despues" onClick={() => openSheet('despues', { exId: ex.id })}>
                   <Later size={14} /> Después
                 </button>
               </div>

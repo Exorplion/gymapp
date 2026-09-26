@@ -2371,6 +2371,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 /* ---------- opciones del ejercicio (sheets/ExOpciones.jsx) ---------- */
 .opc-ico{flex:none;color:var(--blue2)}
+/* Hoja "Después" (Despues.jsx): el número de orden de cada lugar posible. */
+.despues-n{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:var(--r-full);border:1px solid var(--line2);font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-sm);color:var(--blue2)}
 .opc-peligro .grouprow-t,.opc-peligro .opc-ico{color:var(--red)}
 
 /* El cuerpo del día en la esquina del héroe (2026-09-24). El texto de la
