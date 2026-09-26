@@ -21,7 +21,7 @@
 // (15-30 veces por sesión). Metida acá son cero toques de más y la pregunta
 // aparece sin que la busques, que era justamente lo que fallaba cuando vivía
 // escondida en el <details> "Más opciones" de la tarjeta del ejercicio.
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC, cerrarPreguntaRir } from '../lib/rest.js';
 import { setRirUltimaSerie } from '../lib/session.js';
@@ -46,6 +46,23 @@ export default function RestTimer() {
   const timeFsRef = useRef(null);
   const sonabaAntes = useRef(false);
   const sonandoAhora = T.state === 'ringing';
+  /* La pantalla completa también SALE animada (2026-09-26, auditoría de
+     salidas): antes entraba con un fundido y se iba de golpe (display:none)
+     al minimizar, saltar o terminar. `saliendo` la deja pintada D.objeto ms
+     más con la clase .out, que corre el fundido de salida. */
+  const visibleFs = T.state === 'fullscreen' || sonandoAhora;
+  const [saliendo, setSaliendo] = useState(false);
+  const eraVisible = useRef(visibleFs);
+  useEffect(() => {
+    if (eraVisible.current && !visibleFs) {
+      setSaliendo(true);
+      const t = setTimeout(() => setSaliendo(false), D.objeto);
+      eraVisible.current = visibleFs;
+      return () => clearTimeout(t);
+    }
+    eraVisible.current = visibleFs;
+    if (visibleFs) setSaliendo(false);
+  }, [visibleFs]);
   const timeStr = fmtMMSS(T.leftSec);
   const pctClamped = Math.max(0, Math.min(1, T.pct));
   const fillPct = pctClamped * 100;
@@ -134,7 +151,7 @@ export default function RestTimer() {
         <div id="rest-track"><i id="rest-fill" style={{ width: `${fillPct}%` }}></i></div>
       </div>
 
-      <div id="rest-fs" className={T.state === 'fullscreen' || sonandoAhora ? 'show' : ''}>
+      <div id="rest-fs" className={visibleFs ? 'show' : saliendo ? 'show out' : ''} aria-hidden={!visibleFs}>
         <div className={`rfs-inner${sonandoAhora ? ' ringing' : ''}`}>
           <div className="rfs-lbl">{sonandoAhora ? '¡Dale!' : 'Descanso'}</div>
           {/* Sólo en 'fullscreen': sonando no se pregunta nada (T.rir ya se
