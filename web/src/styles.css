@@ -2018,6 +2018,18 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .rfs-rir .steplabel{margin-bottom:0;text-align:center}
 .rfs-rir .rir-opts{width:100%;margin-top:0}
 .rfs-rir-meta{font-size:var(--t-micro);color:var(--mut);margin-top:-2px}
+/* 2026-09-25: título legible y opciones en una barra segmentada. La caja
+   anima su altura al irse (overflow:hidden para que no se vea el contenido
+   saliéndose mientras se achica). */
+.rfs-rir-caja{width:100%;overflow:hidden}
+.rfs-rir-t{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);letter-spacing:.04em;color:var(--txt)}
+.rir-seg{display:grid;grid-template-columns:repeat(5,1fr);width:100%;margin-top:var(--s1);border-radius:var(--r-md);border:1px solid var(--line2);background:var(--card);overflow:hidden}
+.rir-seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-left:1px solid var(--line);color:var(--txt);transition:background var(--d2) var(--ease),color var(--d2) var(--ease)}
+.rir-seg button:first-child{border-left:0}
+.rir-seg b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;line-height:1}
+.rir-seg small{font-size:var(--t-nano);color:var(--mut);letter-spacing:.06em;text-transform:uppercase}
+.rir-seg button.on{background:var(--grad2);color:var(--on-grad)}
+.rir-seg button.on small{color:var(--on-grad)}
 .rfs-btns{display:flex;gap:12px;width:100%}
 .rfs-btns .btn{flex:1}
 .rfs-min{position:absolute;top:-6px;right:-6px}
