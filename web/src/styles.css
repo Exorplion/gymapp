@@ -2339,43 +2339,97 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    y deja volver a la lista de turnos (Hoy.jsx, RestHero). */
 .hoy-elegido{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);margin:0 2px var(--s2);font-size:var(--t-micro);color:var(--mut)}
 .hoy-elegido .linkcard{color:var(--blue2);font-weight:600;min-height:40px;padding:0 var(--s1)}
-.plan-head{display:flex;align-items:center;justify-content:space-between;margin:0 2px var(--s1)}
-.plan-title{margin:0;font-size:var(--t-body);font-weight:700;font-style:normal;letter-spacing:.14em;text-transform:uppercase;color:var(--blue2)}
-.plan-edit{
-  display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 var(--s3);
-  border-radius:var(--r-full);border:1px solid var(--line2);background:var(--card2);
-  color:var(--blue3);font:inherit;font-size:var(--t-sm);font-weight:600;cursor:pointer;
+/* ---- Plan de hoy, pasada estética (2026-09-26) ----
+   Enzo: "Plan de hoy suena harto", los nombres de los ejercicios "débiles,
+   neutros", las burbujas de orden desalineadas. Se toma el lenguaje del
+   héroe (el nombre del turno: condensada itálica) y el vidrio de las
+   tarjetas de Inicio (.ini-tile: blur + borde azul translúcido). */
+.plan-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin:0 2px var(--s2)}
+.plan-title{
+  margin:0;font-family:'Barlow Condensed',sans-serif;font-size:var(--t-2xl);font-weight:700;font-style:italic;
+  letter-spacing:.02em;text-transform:none;line-height:1;text-wrap:balance;
+  background:linear-gradient(96deg,var(--txt) 10%,var(--accent) 64%,var(--cyan));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 14px rgba(var(--cyan-rgb),.28));
 }
+.plan-edit{
+  display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 var(--s3);flex:none;
+  border-radius:var(--r-full);border:1px solid var(--glass-border);
+  background:rgba(var(--blue-rgb),.10);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  color:var(--blue3);font:inherit;font-size:var(--t-sm);font-weight:600;cursor:pointer;
+  transition-property:transform,background-color,color;transition-duration:var(--d1);transition-timing-function:var(--ease);
+}
+.plan-edit:active{transform:scale(.96)}
 .plan-edit svg{width:15px;height:15px}
 .plan-edit.on{background:var(--grad2);border-color:transparent;color:var(--on-grad)}
-.plan-resumen{display:flex;flex-wrap:wrap;gap:var(--s1) var(--s4);font-size:var(--t-sm);color:var(--mut);margin:var(--s1) 2px var(--s3)}
-.plan-resumen b{font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;color:var(--txt);margin-right:2px}
+/* El resumen: dos pastillas de vidrio con el número grande. */
+.plan-resumen{display:flex;flex-wrap:wrap;gap:var(--s2);font-size:var(--t-sm);color:var(--mut);margin:0 0 var(--s4)}
+.plan-resumen>span{
+  display:inline-flex;align-items:baseline;gap:6px;padding:6px var(--s3);border-radius:var(--r-full);
+  background:rgba(255,255,255,.04);border:1px solid var(--line);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);text-wrap:pretty;
+}
+.plan-resumen b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;line-height:1;color:var(--txt);font-variant-numeric:tabular-nums}
+.plan-resumen .up{color:var(--ok);font-weight:600;border-color:rgba(var(--ok-rgb),.35);background:rgba(var(--ok-rgb),.07)}
 .plan-resumen .up b{color:var(--ok)}
-.plan-resumen .up{color:var(--ok);font-weight:600}
-.plan-block{margin-bottom:var(--s3)}
+.plan-block{margin-bottom:var(--s4)}
 .plan-block-head{
-  display:flex;align-items:center;justify-content:space-between;min-height:28px;margin:0 2px var(--s2);
-  font-size:var(--t-micro);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);
+  display:flex;align-items:center;justify-content:space-between;min-height:30px;margin:0 2px var(--s2);
+}
+/* Nombre del grupo con la rayita de acento de los rótulos de Inicio y el
+   contador en su burbuja. */
+.plan-block-t{
+  display:inline-flex;align-items:center;gap:var(--s2);
+  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blue2);
+}
+.plan-block-t::before{content:"";width:3px;height:1em;border-radius:var(--r-full);background:var(--grad2)}
+.plan-block-n{
+  display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:var(--r-full);
+  background:rgba(var(--blue-rgb),.16);color:var(--blue3);font-size:var(--t-micro);letter-spacing:0;font-variant-numeric:tabular-nums;
+}
+/* La tarjeta del bloque en vidrio, como .ini-tile. */
+.plan-block .group{
+  background:linear-gradient(155deg,rgba(var(--blue-rgb),.12),rgba(12,19,34,.82) 46%,rgba(12,19,34,.92));
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border-color:var(--glass-border);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 40px -26px rgba(0,0,0,.9);
 }
 /* La fila NO es un botón: adentro van dos (ver la ficha, y el lápiz en modo
    edición), y anidar botones no es HTML válido (a11y-markup.test.js). */
 .plan-row{padding:0;cursor:default}
 .plan-row-main{
-  display:flex;align-items:center;gap:var(--s3);flex:1;min-width:0;min-height:56px;
+  display:flex;align-items:center;gap:var(--s3);flex:1;min-width:0;min-height:64px;
   padding:var(--s3) var(--s4);background:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer;
+  transition-property:background-color;transition-duration:var(--d1);
 }
+.plan-row-main:active{background:rgba(var(--blue-rgb),.08)}
 .plan-row .mini{margin-right:var(--s3)}
 /* ▲▼ de un ejercicio dentro de su grupo (moverEnBloque). */
 .plan-row .ex-move{flex:none;margin-right:var(--s2)}
-.plan-row-main{min-width:0}
-.plan-num{
-  flex:none;width:24px;height:24px;border-radius:var(--r-full);border:1px solid var(--line2);
-  display:grid;place-items:center;font-size:var(--t-micro);font-weight:700;color:var(--mut);font-variant-numeric:tabular-nums;
+/* El nombre del ejercicio: condensada, más grande y blanca. Antes era el
+   texto de lista genérico (.grouprow-t) y se perdía al lado del número. */
+.plan-row .grouprow-t{
+  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;letter-spacing:.01em;
+  line-height:1.15;color:var(--txt);text-wrap:balance;
 }
-.plan-meta{flex:none;display:flex;flex-direction:column;align-items:flex-end;text-align:right;line-height:1.15}
-.plan-meta b{font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;font-variant-numeric:tabular-nums;color:var(--txt)}
-.plan-meta small{font-size:var(--t-micro);color:var(--mut)}
+.plan-row .grouprow-s{font-variant-numeric:tabular-nums;margin-top:3px}
+/* Número de orden: 28 px, cifra condensada centrada (tabular + line-height
+   1 para que el "1" no se corra), aro de vidrio. El primero brilla: es por
+   donde arrancás. */
+.plan-num{
+  flex:none;width:28px;height:28px;border-radius:var(--r-full);display:grid;place-items:center;
+  border:1px solid var(--glass-border);background:rgba(var(--blue-rgb),.10);
+  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;line-height:1;
+  color:var(--blue3);font-variant-numeric:tabular-nums;
+}
+.plan-num.first{background:var(--grad2);border-color:transparent;color:var(--on-grad);box-shadow:0 0 16px -2px rgba(var(--cyan-rgb),.6)}
+.plan-meta{flex:none;display:flex;flex-direction:column;align-items:flex-end;text-align:right;line-height:1.1}
+.plan-meta b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;font-variant-numeric:tabular-nums;color:var(--txt)}
+.plan-meta b i{font-style:normal;font-size:var(--t-sm);font-weight:600;color:var(--mut);margin-left:2px}
+.plan-meta b em{font-style:normal;margin-left:3px}
+.plan-meta small{font-size:var(--t-micro);color:var(--mut);letter-spacing:.02em}
 .plan-meta.up b{color:var(--ok)}
+.plan-meta.up b i{color:rgba(var(--ok-rgb),.7)}
 .plan-edit-acts{display:flex;flex-direction:column;gap:var(--s2)}
 .block-move{display:flex;gap:4px}
 .block-move button{

@@ -455,7 +455,7 @@ function PlanHoy({ index, exs }) {
       {blocks.map((b, i) => (
         <div className="plan-block" data-sid={b.cat} key={b.cat}>
           <div className="plan-block-head">
-            <span>{b.cat} · {b.exs.length}</span>
+            <span className="plan-block-t">{b.cat}<span className="plan-block-n">{b.exs.length}</span></span>
             {editando && blocks.length > 1 && (
               <span className="block-move">
                 <button type="button" disabled={i === 0} aria-label={`Mover ${b.cat} antes`} onClick={() => mover(b.cat, -1)}>▲</button>
@@ -469,7 +469,7 @@ function PlanHoy({ index, exs }) {
               return (
                 <div className="grouprow plan-row" key={ex.id}>
                   <button type="button" className="plan-row-main" onClick={() => openSheet('ex-info', { name: ex.name, exId: ex.id })}>
-                    <span className="plan-num">{n}</span>
+                    <span className={`plan-num${n === 1 ? ' first' : ''}`}>{n}</span>
                     <span className="grouprow-grow">
                       <span className="grouprow-t">{ex.name}</span>
                       <span className="grouprow-s">{ex.sets}×{ex.reps}{equipLabel(ex) ? ` · ${equipLabel(ex)}` : ''}</span>
@@ -506,9 +506,10 @@ function PlanHoy({ index, exs }) {
 /** Lo que toca superar hoy, a la derecha de cada ejercicio del plan. */
 function Meta({ ex }) {
   const o = objetivoHoy(ex);
-  const kg = o.peso != null ? `${wDisplay(o.peso)} ${S.cfg.unit === 'lb' ? 'lb' : 'kg'}` : null;
+  const u = S.cfg.unit === 'lb' ? 'lb' : 'kg';
+  const kg = o.peso != null ? <>{wDisplay(o.peso)}<i>{u}</i></> : null;
   if (o.tipo === 'subir') {
-    return <span className="plan-meta up"><b>{kg} ↑</b><small>antes {wDisplay(o.antes)}</small></span>;
+    return <span className="plan-meta up"><b>{kg}<em>↑</em></b><small>antes {wDisplay(o.antes)}</small></span>;
   }
   if (o.tipo === 'sostener' || o.tipo === 'sumar') {
     return <span className="plan-meta"><b>{kg}</b><small>superar reps</small></span>;
