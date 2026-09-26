@@ -3173,11 +3173,17 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
   background:linear-gradient(135deg,rgba(255,255,255,.10),transparent 40%);
 }
+/* 2026-09-25: el rótulo de cada tile, con el mismo tratamiento que los títulos
+   de sección de la app (.plan-title: condensada, mayúsculas, azul). Antes iba
+   en el tamaño más chico y el gris más apagado, y no se leía (Enzo: "no
+   resaltan"). Una rayita de acento a la izquierda lo ata al número. */
 .ini-tile-lbl{
-  display:flex;align-items:center;justify-content:space-between;
-  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-micro);font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);
+  display:flex;align-items:center;gap:var(--s2);
+  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--blue2);
 }
+.ini-tile-lbl::before{content:"";flex:none;width:3px;height:.95em;border-radius:var(--r-full);background:var(--grad2)}
+.ini-tile-lbl .ini-tile-go{margin-left:auto}
 
 /* Tu cuerpo: el vistazo de Silhouette se encoge a una franja quieta —
    interactivo=false ya apaga el arrastre y el tocar músculos, así que sólo
