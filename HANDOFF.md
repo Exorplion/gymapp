@@ -8,6 +8,25 @@
 
 **726 tests** (eran 715 + los de modo prueba).
 
+### Entrenar igual en un día de descanso (`lib/descansoHoy.js`, Hoy.jsx)
+
+Antes: "Entrenar igual" llevaba a Hoy, y en un descanso caía la tarjeta de
+"este turno no tiene ejercicios, configuralo en Rutina" (pensada para un
+turno de entrenamiento VACÍO). Parecía un error. Ahora `RestHero` dice el
+último entrenamiento, los días de descanso y cuál toca, y lista todos los
+turnos: el siguiente de la secuencia primero ("Recomendado", con cuál viene
+después), el resto con "hace N días", y el de ayer avisa que repetirlo no
+deja descansar. Tocar uno muestra su plan con "‹ Elegir otro".
+
+- `indiceHoy()` (session.js) es el ÚNICO lugar que decide qué turno muestra
+  Hoy: con sesión abierta, el de `draft.slotId`; sin sesión, el elegido en el
+  descanso (en memoria, con fecha); si no, `S.cfg.seqIndex`. Lo usan Hoy,
+  ReorderHoy, commitSort('hoy'), setActiveGym y Calentamiento. **Antes todos
+  leían `seqIndex` directo**: una sesión de otro turno dejaba la pantalla
+  mirando el descanso y ninguna tarjeta se activaba.
+- La secuencia no se toca al elegir: `completeSession` ya avanza desde el
+  turno hecho (Anterior B en el descanso → mañana Posterior B). Verificado.
+
 ### Modo prueba (`lib/modoPrueba.js`)
 
 Enzo simulaba entrenamientos en su app real (abrir sesión → ver tarjetas →

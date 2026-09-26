@@ -21,8 +21,9 @@ import { flushSync } from 'react-dom';
 import { staggerRevealOnce, bloomOpen, animateRing, countTo } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 import { S, useStore, bump, openSheet, closeSheet, changeTab, wDisplay } from '../../lib/state.js';
-import { WDS, MO, fmtMMSS } from '../../lib/format.js';
-import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock } from '../../lib/session.js';
+import { WDS, MO, fmtMMSS, dstr } from '../../lib/format.js';
+import { opcionesDescanso } from '../../lib/descansoHoy.js';
+import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, indiceHoy, elegirTurnoHoy } from '../../lib/session.js';
 import { flipSort } from '../../lib/drag.js';
 import { blocksOf, catOf, MUSCLE_CATS } from '../../lib/muscle.js';
 import { equipLabel } from '../../lib/equip.js';
@@ -40,9 +41,14 @@ const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || wi
 export default function Hoy() {
   useStore();
   const today = new Date();
-  const index = S.cfg.seqIndex;
+  // Con sesión abierta, el turno de la sesión; en un descanso, el que
+  // elegiste para entrenar igual; si no, el pendiente (session.js).
+  const index = indiceHoy();
   const day = S.routine[index];
   const active = !!S.draft;
+  // Elegiste entrenar en un día de descanso y todavía no abriste la sesión:
+  // se ve el plan de ese turno, con la salida para volver a elegir.
+  const entrenaEnDescanso = !active && S.routine[S.cfg.seqIndex]?.type === 'rest' && day?.type === 'workout';
   // Con sesión abierta la lista sale del borrador: incluye lo que agregaste
   // hoy, que no está en la rutina.
   const exs = active ? sessionExs(index) : orderedExs(index, day?.exercises || []);
@@ -72,10 +78,18 @@ export default function Hoy() {
       ) : day?.type === 'rest' ? (
         <RestHero />
       ) : (
-        <PreSessionHero day={day} index={index} exs={exs} />
+        <>
+          {entrenaEnDescanso && (
+            <div className="hoy-elegido">
+              <span>Entrenando en tu día de descanso</span>
+              <button type="button" className="linkcard" onClick={() => { elegirTurnoHoy(null); bump(); }}>‹ Elegir otro</button>
+            </div>
+          )}
+          <PreSessionHero day={day} index={index} exs={exs} />
+        </>
       )}
 
-      {!exs.length ? (
+      {day?.type === 'rest' && !active ? null : !exs.length ? (
         <div className="card" ref={emptyCardRef}><div className="empty">
           <HoySinPlan className="big" />
           <p>Este turno todavía no tiene ejercicios.<br />Configuralo en la pestaña Rutina.</p>
@@ -253,15 +267,58 @@ function confirmSessDiscard() {
     otro día (completeSession() ya adelanta seqIndex al completar un
     entrenamiento; resolveAutoRest() en state.js hace lo mismo con el
     descanso cuando pasa un día calendario). */
+/** Descanso según la secuencia. Antes decía sólo "Descanso" y debajo caía la
+    tarjeta de "este turno no tiene ejercicios, configuralo en Rutina" — que
+    es para un turno de entrenamiento vacío, y en un descanso parecía un
+    error (Enzo, 2026-09-25). Ahora dice de dónde venís y qué te toca, y deja
+    elegir cualquier turno para entrenar igual. Elegir no toca la secuencia:
+    al cerrar la sesión el puntero avanza desde el turno que hiciste. */
 function RestHero() {
+  const o = opcionesDescanso({ routine: S.routine, seqIndex: S.cfg.seqIndex, sessions: S.sessions, hoy: dstr() });
+  const hace = d => (d === 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`);
+  function elegir(i) { elegirTurnoHoy(i); bump(); scrollTo({ top: 0, behavior: 'instant' }); }
   return (
-    <div className="card hero">
-      <div className="eyebrow">Hoy</div>
-      <div className="hero-day">Descanso</div>
-      <div className="text-mut text-sm mt-1.5">
-        Mañana seguís con el próximo turno de tu rutina.
+    <>
+      <div className="card hero">
+        <div className="eyebrow">Hoy te toca descansar</div>
+        <div className="hero-day">Descanso</div>
+        <div className="text-mut text-sm mt-1.5">
+          {o.ultimo && (
+            <>Último entrenamiento: <b className="text-txt">{o.ultimo.nombre}</b>, {hace(o.ultimo.dias)}
+              {o.diasDescanso > 0 && <> · {o.diasDescanso} día{o.diasDescanso === 1 ? '' : 's'} de descanso</>}.<br /></>
+          )}
+          {o.recomendado
+            ? <>Lo recomendable es descansar. Si igual querés entrenar, te toca <b className="text-txt">{o.recomendado.nombre}</b>.</>
+            : 'Mañana seguís con el próximo turno de tu rutina.'}
+        </div>
       </div>
-    </div>
+
+      {o.opciones.length > 0 && (
+        <section className="plan-hoy" aria-label="Entrenar igual">
+          <div className="plan-head">
+            <h2 className="plan-title">¿Entrenar igual? Elegí cuál</h2>
+          </div>
+          <div className="group">
+            {o.opciones.map(op => (
+              <button key={op.id} type="button" className="grouprow" onClick={() => elegir(op.index)}>
+                <span className="grouprow-grow">
+                  <span className="grouprow-t">{op.nombre}</span>
+                  <span className="grouprow-s">
+                    {op.recomendado
+                      ? `Es el que sigue en tu secuencia${o.despues && o.despues !== op.nombre ? ` · después viene ${o.despues}` : ''}`
+                      : op.dias === null ? 'Todavía no lo hiciste'
+                      : op.reciente ? `${hace(op.dias)[0].toUpperCase()}${hace(op.dias).slice(1)} · repetirlo no deja descansar esos músculos`
+                      : `${hace(op.dias)[0].toUpperCase()}${hace(op.dias).slice(1)}`}
+                  </span>
+                </span>
+                {op.recomendado && <span className="grouprow-v">Recomendado</span>}
+                <span className="grouprow-chev" aria-hidden="true">›</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+    </>
   );
 }
 

@@ -5,12 +5,12 @@
 // necesita el markup correcto, no hace falta ninguna lógica nueva.
 import { useEffect, useRef } from 'react';
 import { S, closeSheet, bump } from '../../lib/state.js';
-import { orderedExs, sessionExs, setExOrder } from '../../lib/session.js';
+import { orderedExs, sessionExs, setExOrder, indiceHoy } from '../../lib/session.js';
 import { sheetReveal } from '../../lib/motion.js';
 import { ArrowDown, ArrowUp } from '../Icon.jsx';
 
 export default function ReorderHoy() {
-  const index = S.cfg.seqIndex;
+  const index = indiceHoy();
   // Con sesión abierta se reordena sobre la lista de la sesión (incluye lo
   // agregado en vivo); si no hay sesión, sobre la rutina del turno.
   const exs = S.draft ? sessionExs(index) : orderedExs(index, S.routine[index]?.exercises || []);
