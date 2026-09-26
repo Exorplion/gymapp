@@ -99,6 +99,15 @@ export function marcarRirElegido(valor) {
   bump();
 }
 
+/** Contestada, la pregunta se va y queda sólo el reloj (Enzo, 2026-09-25).
+    Vive en T y no en el componente: minimizar y volver a expandir no la
+    trae de vuelta. */
+export function cerrarPreguntaRir() {
+  if (!T.rir) return;
+  T.rir.cerrada = true;
+  bump();
+}
+
 export function minimizeRest() {
   if (T.state !== 'fullscreen') return;
   T.state = 'minimized';

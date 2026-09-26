@@ -96,7 +96,7 @@ export default function Progreso() {
                 {wk && wk.curAvg != null ? `último ${fmtNum(round1(lastW.weight))} kg · ` : `${fmtNum(kg2lb(lastW.weight))} lb · `}
                 {fmtDFull(lastW.date)}
                 {wk && wk.delta != null && (
-                  <> · <b className={wk.delta <= 0 ? 'text-ok' : 'text-blue2'}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></>
+                  <> · <b className={`${wk.delta <= 0 ? 'text-ok' : 'text-blue2'} whitespace-nowrap`}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></>
                 )}
               </div>
             )}
@@ -247,7 +247,7 @@ function SesionesSection() {
         Tus sesiones
         {S.sessions.length > 8 && (
           <button
-            type="button" className="btn sm ghost w-auto h-8 px-3 ml-auto"
+            type="button" className="sect-link"
             onClick={() => openSheet('history')}
           >
             Ver todas

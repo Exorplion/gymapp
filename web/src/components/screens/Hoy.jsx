@@ -23,7 +23,7 @@ import { cn } from '../../lib/utils.js';
 import { S, useStore, bump, openSheet, closeSheet, changeTab, wDisplay } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS, dstr } from '../../lib/format.js';
 import { opcionesDescanso } from '../../lib/descansoHoy.js';
-import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, indiceHoy, elegirTurnoHoy } from '../../lib/session.js';
+import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, moverEnBloque, indiceHoy, elegirTurnoHoy } from '../../lib/session.js';
 import { flipSort } from '../../lib/drag.js';
 import { blocksOf, catOf, MUSCLE_CATS } from '../../lib/muscle.js';
 import { equipLabel } from '../../lib/equip.js';
@@ -32,7 +32,7 @@ import { createGym, setActiveGym } from '../../lib/gyms.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
 import { objetivoHoy, resumenPlan } from '../../lib/objetivoHoy.js';
 import { toast } from '../../lib/toast.js';
-import { Bolt, Mic, Pencil, RecordDot } from '../Icon.jsx';
+import { Bolt, Mic, Pencil, RecordDot, Dots, Plus, Check } from '../Icon.jsx';
 import { HoySinPlan } from '../Illustration.jsx';
 import Silhouette from '../Silhouette.jsx';
 
@@ -66,15 +66,19 @@ export default function Hoy() {
   return (
     <>
       {/* Hoy dejó de ser pestaña: se entra desde Inicio, así que necesita su
-          propia salida. */}
-      <div className="vtitle">
-        <button type="button" className="back-btn" aria-label="Volver a Inicio" onClick={() => changeTab('inicio')}>‹</button>
-        <h1>Hoy</h1>
-        <span className="sub">{WDS[today.getDay()]} {today.getDate()} {MO[today.getMonth()]}</span>
-      </div>
+          propia salida. Con la sesión abierta el título se va: la barra de
+          la sesión ocupa su lugar y la pantalla entera tiene que entrar sin
+          scroll (Enzo, 2026-09-25). Se vuelve con Inicio o con el gesto. */}
+      {!active && (
+        <div className="vtitle">
+          <button type="button" className="back-btn" aria-label="Volver a Inicio" onClick={() => changeTab('inicio')}>‹</button>
+          <h1>Hoy</h1>
+          <span className="sub">{WDS[today.getDay()]} {today.getDate()} {MO[today.getMonth()]}</span>
+        </div>
+      )}
 
       {active ? (
-        <ActiveHero day={day} exs={exs} started={started} allDone={allDone} activeEx={nextEx || (curId ? exs.find(e => e.id === curId) : null)} />
+        <SesionBarra day={day} index={index} exs={exs} started={started} allDone={allDone} />
       ) : day?.type === 'rest' ? (
         <RestHero />
       ) : (
@@ -114,21 +118,6 @@ export default function Hoy() {
               calentamiento general se ofrece una vez, al abrir la sesión
               (hoja 'calentamiento'). */}
           <ExerciseCarousel exs={exs} wd={index} active={active} started={started} curId={curId} nextEx={nextEx} />
-          <div className="flex gap-2 mt-[var(--s2)]">
-            {/* Decidiste hacer algo que no estaba en el plan. Vale sólo para hoy;
-                al cerrar la sesión se ofrece dejarlo fijo. */}
-            <button type="button" className="btn sm ghost flex-[2]" onClick={() => openSheet('ex-swap', { wd: index })}>
-              + Agregar ejercicio
-            </button>
-            {/* Antes sólo se podía reacomodar el orden ANTES de arrancar
-                (BlockList, más arriba): un ejercicio agregado en vivo quedaba
-                pegado al final sin forma de moverlo. commitSort() ya escribe en
-                S.draft.order cuando hay sesión abierta (setExOrder, session.js),
-                así que ReorderHoy funciona igual acá que antes de arrancar. */}
-            <button type="button" className="btn sm ghost flex-1" onClick={() => openSheet('reorder-hoy')}>
-              ↕ Reordenar
-            </button>
-          </div>
         </>
       )}
 
@@ -199,59 +188,96 @@ function SessionRing({ progress }) {
   );
 }
 
-function ActiveHero({ day, exs, started, allDone, activeEx }) {
+/** La sesión en curso, en una barra (2026-09-25). Antes era una tarjeta de
+    ~150 px con el cuerpo, el anillo y dos botones grandes, más el título
+    "HOY" encima: entre los dos empujaban la tarjeta del ejercicio fuera de la
+    pantalla. Enzo: la sesión en vivo tiene que entrar entera, sin scroll —
+    lo único que hacés ahí es registrar series. Queda lo que se mira de reojo
+    (avance, nombre, reloj) y dos botones: Terminar, que pregunta qué hacer
+    (TerminarSesion), y ···, con lo que se usa poco (SesionMenu). */
+function SesionBarra({ day, index, exs, started, allDone }) {
   const nsets = Object.values(S.draft.entries).reduce((a, e) => a + e.sets.length, 0);
   const doneEx = exs.filter(e => !isSkipped(e.id) && setsDone(e.id).length >= targetSets(e)).length;
   const nSkip = exs.filter(e => isSkipped(e.id)).length;
-  const cat = activeEx ? catOf(activeEx) : null;
   const progress = sessionProgress(exs);
   return (
-    <div className="card hero">
-      <div className="flex items-center gap-2.5">
-        <span
-          className={cn(
-            'w-[9px] h-[9px] rounded-[5px] animate-pulse',
-            started ? 'bg-ok shadow-[0_0_12px_var(--ok)]' : 'bg-warn shadow-[0_0_12px_var(--warn)]',
-          )}
-        ></span>
-        <div className="grow flex-1">
-          <div className="cond text-xl font-bold">{day?.name || 'Entrenamiento'}</div>
-          <div className="text-mut text-sm">
+    <>
+      <div className={cn('ses-barra', allDone && 'lista')}>
+        {progress && <SessionRing progress={progress} />}
+        <div className="ses-barra-main">
+          <div className="ses-barra-t">{day?.name || 'Entrenamiento'}</div>
+          <div className="ses-barra-s">
             {started
-              ? <><ElapsedTimer start={S.draft.start} /> · {doneEx}/{exs.length - nSkip} ejercicios · {nsets} serie{nsets === 1 ? '' : 's'}{nSkip > 0 ? ` · ${nSkip} saltado${nSkip === 1 ? '' : 's'}` : ''}</>
-              : 'Sesión abierta · el reloj arranca cuando inicies el primer ejercicio'}
+              ? <><b><ElapsedTimer start={S.draft.start} /></b> · {doneEx}/{exs.length - nSkip} ejerc. · {nsets} serie{nsets === 1 ? '' : 's'}</>
+              : 'Sin empezar'}
           </div>
         </div>
-        {/* El cuerpo se reenciende en vivo con el grupo del ejercicio que
-            estás a punto de hacer — no un vistazo fijo del día entero (eso
-            ya lo viste antes de arrancar, en BlockList): acá importa "qué
-            estoy por trabajar AHORA", así que cambia ejercicio a ejercicio. */}
-        {cat && <div className="active-body-mini"><Silhouette days={{ [cat]: 0 }} interactivo={false} /></div>}
-        {progress && <SessionRing progress={progress} />}
+        <button type="button" className="ses-terminar" onClick={() => openSheet('terminar-sesion')}>Terminar</button>
+        <button type="button" className="ses-mas" aria-label="Más opciones de la sesión" onClick={() => openSheet('sesion-menu', { wd: index })}>
+          <Dots />
+        </button>
       </div>
       {allDone && (
-        <div className="calcbox mt-3">
-          <div className="text-sm leading-normal">
-            🎉 Terminaste los {exs.length - nSkip} ejercicios que hiciste hoy.
-            {nSkip > 0 && ` Saltaste ${nSkip}.`} Cerrá la sesión para guardarla.
-          </div>
+        <div className="ses-lista">
+          Terminaste los {exs.length - nSkip} ejercicios{nSkip > 0 ? ` (omitiste ${nSkip})` : ''}. Tocá <b>Terminar</b> para guardar.
         </div>
       )}
-      <div className="flex gap-2.5 mt-3.5">
-        <button type="button" className="btn sm ok flex-[2]" onClick={confirmSessDone}>✓ Completar sesión</button>
-        <button type="button" className="btn sm dim flex-1" onClick={confirmSessDiscard}>Descartar</button>
-      </div>
-    </div>
+    </>
   );
 }
 
-function confirmSessDone() {
-  openSheet('confirm', {
-    title: 'Completar sesión',
-    body: '¿Completar y guardar la sesión?',
-    confirmLabel: 'Completar',
-    onConfirm: () => completeSession(),
-  });
+/** Lo que abre "Terminar": un aviso, no una hoja (variante "dialogo" en
+    App.jsx, con su entrada y su salida). Completar es la acción principal;
+    Descartar pasa por una confirmación más porque borra todo lo registrado. */
+export function TerminarSesion() {
+  const nsets = S.draft ? Object.values(S.draft.entries).reduce((a, e) => a + e.sets.length, 0) : 0;
+  return (
+    <>
+      <h2>Terminar la sesión</h2>
+      <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 18 }}>
+        {nsets
+          ? `Llevás ${nsets} serie${nsets === 1 ? '' : 's'} registrada${nsets === 1 ? '' : 's'}.`
+          : 'Todavía no registraste ninguna serie.'}
+      </div>
+      <button type="button" className="btn ok" disabled={!nsets} onClick={() => { closeSheet(); completeSession(); }}>✓ Completar y guardar</button>
+      <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+        <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={closeSheet}>Seguir entrenando</button>
+        <button type="button" className="btn sm danger" style={{ flex: 1 }} onClick={confirmSessDiscard}>Descartar</button>
+      </div>
+    </>
+  );
+}
+
+/** El ··· de la barra: lo que antes era una fila de dos botones debajo del
+    carrusel. Se usa poco y ocupaba ~60 px en cada serie. */
+export function SesionMenu({ wd }) {
+  const y = fn => () => { closeSheet(); fn(); };
+  return (
+    <>
+      <h2>Sesión</h2>
+      <div className="group" style={{ marginBottom: 'var(--s3)' }}>
+        {/* Decidiste hacer algo que no estaba en el plan. Vale sólo para hoy;
+            al cerrar la sesión se ofrece dejarlo fijo. */}
+        <button type="button" className="grouprow" onClick={y(() => openSheet('ex-swap', { wd }))}>
+          <Plus className="opc-ico" />
+          <span className="grouprow-grow">
+            <span className="grouprow-t">Agregar ejercicio</span>
+            <span className="grouprow-s">Sólo para hoy. Al terminar podés dejarlo fijo en la rutina.</span>
+          </span>
+        </button>
+        {/* commitSort() escribe en S.draft.order con la sesión abierta
+            (setExOrder), así que ReorderHoy funciona igual que antes de
+            arrancar. */}
+        <button type="button" className="grouprow" onClick={y(() => openSheet('reorder-hoy'))}>
+          <span className="opc-ico" aria-hidden="true">↕</span>
+          <span className="grouprow-grow">
+            <span className="grouprow-t">Reordenar ejercicios</span>
+            <span className="grouprow-s">Cambiá el orden de lo que te falta.</span>
+          </span>
+        </button>
+      </div>
+    </>
+  );
 }
 
 function confirmSessDiscard() {
@@ -402,22 +428,30 @@ function PlanHoy({ index, exs }) {
     await moveBlock(index, blocks, cat, dir);
     flipSort(() => flushSync(() => bump()));
   }
+  // Lo mismo, un ejercicio dentro de su grupo (2026-09-26).
+  async function moverEj(exId, dir) {
+    if (await moverEnBloque(index, exs, exId, dir)) flipSort(() => flushSync(() => bump()));
+  }
   let n = 0;
   return (
     <section className="plan-hoy" data-sort="hoy-blocks" ref={listRef} aria-label="Plan de hoy">
+      {/* 2026-09-26: "Editar" era texto azul suelto pegado al título y el
+          resumen colgaba debajo sin forma (Enzo: "no se ve estético").
+          Ahora es un botón con borde que pasa a "Listo" relleno, y el
+          resumen son dos datos en fila bajo el título. */}
       <div className="plan-head">
         <h2 className="plan-title">Plan de hoy</h2>
-        <button type="button" className="plan-edit" aria-pressed={editando} onClick={() => setEditando(v => !v)}>
-          {editando ? 'Listo' : 'Editar'}
+        <button type="button" className={`plan-edit${editando ? ' on' : ''}`} aria-pressed={editando} onClick={() => setEditando(v => !v)}>
+          {editando ? <><Check size={15} /> Listo</> : <><Pencil /> Editar</>}
         </button>
       </div>
-      {(subir > 0 || superar > 0) && (
+      {(subir > 0 || superar > 0) && !editando && (
         <div className="plan-resumen">
-          {subir > 0 && <span className="up">↑ {subir} para subir peso</span>}
-          {subir > 0 && superar > 0 && ' · '}
-          {superar > 0 && <span>{superar} para superar reps</span>}
+          {subir > 0 && <span className="up"><b>↑ {subir}</b> para subir peso</span>}
+          {superar > 0 && <span><b>{superar}</b> para superar reps</span>}
         </div>
       )}
+      {editando && <div className="plan-resumen">Mové los grupos y, adentro, cada ejercicio con ▲▼.</div>}
       {blocks.map((b, i) => (
         <div className="plan-block" data-sid={b.cat} key={b.cat}>
           <div className="plan-block-head">
@@ -430,7 +464,7 @@ function PlanHoy({ index, exs }) {
             )}
           </div>
           <div className="group">
-            {b.exs.map(ex => {
+            {b.exs.map((ex, k) => {
               n += 1;
               return (
                 <div className="grouprow plan-row" key={ex.id}>
@@ -440,8 +474,17 @@ function PlanHoy({ index, exs }) {
                       <span className="grouprow-t">{ex.name}</span>
                       <span className="grouprow-s">{ex.sets}×{ex.reps}{equipLabel(ex) ? ` · ${equipLabel(ex)}` : ''}</span>
                     </span>
-                    <Meta ex={ex} />
+                    {/* Editando, la meta se esconde: con ▲▼ y lápiz no quedaba
+                        lugar y el nombre se partía palabra por palabra
+                        encima de "superar reps". */}
+                    {!editando && <Meta ex={ex} />}
                   </button>
+                  {editando && b.exs.length > 1 && (
+                    <span className="block-move ex-move">
+                      <button type="button" disabled={k === 0} aria-label={`Subir ${ex.name}`} onClick={() => moverEj(ex.id, -1)}>▲</button>
+                      <button type="button" disabled={k === b.exs.length - 1} aria-label={`Bajar ${ex.name}`} onClick={() => moverEj(ex.id, 1)}>▼</button>
+                    </span>
+                  )}
                   {editando && (
                     <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}><Pencil /></button>
                   )}
@@ -454,9 +497,6 @@ function PlanHoy({ index, exs }) {
       {editando && (
         <div className="plan-edit-acts">
           <button type="button" className="btn sm ghost" onClick={() => openSheet('ex-form', { wd: index, ex: null })}>+ Agregar ejercicio</button>
-          {exs.length > 1 && (
-            <button type="button" className="btn sm ghost" onClick={() => openSheet('reorder-hoy')}>↕ Reordenar dentro de un bloque</button>
-          )}
         </div>
       )}
     </section>

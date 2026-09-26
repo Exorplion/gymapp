@@ -1,6 +1,7 @@
 // Puerto de funciones de sesión desde index.html
 import { S, bump, saveDraft, saveCfg, wBoth, closeSheet } from './state.js';
 import { dstr, uid, round1, fmtD, vibrate } from './format.js';
+import { blocksOf } from './muscle.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
 import { T, startRest, stopRest, pedirRir, marcarRirElegido } from './rest.js';
@@ -101,6 +102,15 @@ function pesoInicial(ex) {
   return 20;
 }
 
+/** El lado que falta en un unilateral: con un número impar de series
+    anotadas, el contrario al último; si no, izquierda (Enzo siempre empieza
+    por ahí). */
+export function ladoPendiente(exId) {
+  const hechas = S.draft?.entries?.[exId]?.sets || [];
+  if (hechas.length % 2 === 0) return 'left';
+  return hechas[hechas.length - 1]?.side === 'left' ? 'right' : hechas[hechas.length - 1]?.side === 'right' ? 'left' : 'right';
+}
+
 export function ensureVals(ex) {
   if (!S.hoyVals[ex.id]) {
     const last = lastDataFor(ex);
@@ -124,7 +134,14 @@ export function ensureVals(ex) {
   // queda en null y saveSet ni lo guarda en el set. En unilaterales arranca
   // en 'left': Enzo siempre empieza por el izquierdo, y dejarlo en null
   // dejaba filas sueltas que no se podían emparejar en pares (D1).
-  if (S.hoyVals[ex.id].side === undefined) S.hoyVals[ex.id].side = isUnilateral(ex) ? 'left' : null;
+  // 2026-09-25: y el lado que toca se DEDUCE de lo ya anotado, no se fija en
+  // 'left'. Dos casos rompían: pasar un ejercicio a unilateral a mitad de
+  // sesión (side ya era null, nunca se completaba: series sin lado que no
+  // alternaban) y recargar la app con una serie a medias (volvía a pedir
+  // izquierda aunque faltara la derecha).
+  const v = S.hoyVals[ex.id];
+  if (isUnilateral(ex)) { if (!v.side) v.side = ladoPendiente(ex.id); }
+  else if (v.side === undefined) v.side = null;
   return S.hoyVals[ex.id];
 }
 
@@ -171,6 +188,23 @@ export async function moveBlock(index, blocks, cat, dir) {
   const next = blocks.slice();
   [next[i], next[j]] = [next[j], next[i]];
   await setExOrder(index, next.flatMap(b => b.exs.map(e => e.id)));
+}
+
+/** Mueve un ejercicio un lugar dentro de SU grupo muscular (2026-09-26).
+    moveBlock mueve grupos enteros; faltaba el orden de adentro (Enzo: "quiero
+    iniciar con pec deck"). Nunca cruza al grupo vecino, así los bloques
+    siguen juntos. Devuelve false si no había lugar a donde moverlo. */
+export async function moverEnBloque(index, exs, exId, dir) {
+  const blocks = blocksOf(exs);
+  const b = blocks.find(x => x.exs.some(e => e.id === exId));
+  if (!b) return false;
+  const i = b.exs.findIndex(e => e.id === exId);
+  const j = i + dir;
+  if (j < 0 || j >= b.exs.length) return false;
+  const lista = b.exs.slice();
+  [lista[i], lista[j]] = [lista[j], lista[i]];
+  await setExOrder(index, blocks.flatMap(x => (x === b ? lista : x.exs).map(e => e.id)));
+  return true;
 }
 
 export function setsDone(exId) { return S.draft?.entries[exId]?.sets || []; }
@@ -923,21 +957,41 @@ export async function marcarCalentado(ex, conDescanso = true) {
 /** "Hacer después": la máquina está ocupada, así que el ejercicio pasa al
     final de la sesión, sigue pendiente, y se activa el siguiente. No es
     saltarlo — saltar es no hacerlo. */
-export async function hacerDespues(exId) {
+/** Mueve un ejercicio de la sesión para hacerlo más tarde (2026-09-25).
+    `despuesDe`: el id del ejercicio tras el cual queda; null = al final.
+    Antes "Hacer después" lo mandaba al final sin preguntar y sin forma de
+    volver atrás: un toque de casualidad te cambiaba el orden entero. Ahora
+    la hoja 'despues' pregunta a dónde, y el aviso trae "Deshacer", que
+    devuelve el orden y el ejercicio en curso tal como estaban. */
+export async function moverEjercicio(exId, despuesDe = null) {
   if (!S.draft) return;
   const index = S.routine.findIndex(s => s.id === S.draft.slotId);
+  const antes = { order: S.draft.order ? [...S.draft.order] : null, cur: S.draft.cur };
   const ids = sessionExs(index).map(e => e.id).filter(id => id !== exId);
-  ids.push(exId);
+  const at = despuesDe ? ids.indexOf(despuesDe) + 1 : 0;
+  ids.splice(at > 0 ? at : ids.length, 0, exId);
   S.draft.order = ids;
-  const eraActual = S.draft.cur === exId;
-  if (eraActual) S.draft.cur = siguienteActivo();
+  if (S.draft.cur === exId) S.draft.cur = siguienteActivo();
   await saveDraft();
   vibrate(15);
   bump();
   const ex = findEx(exId);
-  const sig = S.draft.cur && S.draft.cur !== exId ? findEx(S.draft.cur) : null;
-  toast(sig ? `${ex?.name || 'Ejercicio'} al final · sigue ${sig.name}` : `${ex?.name || 'Ejercicio'} pasa al final`);
+  const ref = despuesDe ? findEx(despuesDe) : null;
+  const nombre = ex?.name || 'Ejercicio';
+  toast(ref ? `${nombre} va después de ${ref.name}` : `${nombre} pasa al final`, {
+    actionLabel: 'Deshacer',
+    onAction: async () => {
+      if (!S.draft) return;
+      S.draft.order = antes.order;
+      S.draft.cur = antes.cur;
+      await saveDraft();
+      bump();
+    },
+  });
 }
+
+/** "Hacer después" sin elegir lugar: al final. */
+export function hacerDespues(exId) { return moverEjercicio(exId, null); }
 
 export async function discardSession() {
   S.draft = null;

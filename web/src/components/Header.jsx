@@ -9,6 +9,16 @@ import { useEffect, useRef } from 'react';
 import { Flame } from './Icon.jsx';
 import { pulseLike, countTo } from '../lib/motion.js';
 import { enModoPrueba, salirModoPrueba } from '../lib/modoPrueba.js';
+import { openSheet } from '../lib/state.js';
+
+function confirmarSalir() {
+  openSheet('confirm', {
+    title: 'Salir del modo prueba',
+    body: 'Se borra la copia con todo lo que hiciste acá y volvés a tu app real, tal como estaba.',
+    confirmLabel: 'Salir',
+    onConfirm: () => salirModoPrueba(),
+  })
+}
 
 export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenStreak = () => {}, onOpenSessions = () => {} }) {
   const flameRef = useRef(null);
@@ -30,12 +40,25 @@ export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenSt
 
   return (
     <header className="top">
-      <div className="brand">
-        <svg viewBox="0 0 24 24" fill="none" strokeWidth="2">
-          <path d="M3 10v4M6 8v8M9 6v12M15 6v12M18 8v8M21 10v4M9 12h6" />
-        </svg>
-        FIERRO
-      </div>
+      {/* Modo prueba: la pastilla ámbar ocupa el lugar de la marca. Antes era
+          una franja de todo el ancho debajo del header (2026-09-25): comía
+          ~45 px en cada pantalla y la sesión en vivo, que tiene que entrar
+          sin scroll, dejaba de entrar. En el lugar de la marca se ve igual
+          de siempre — lo peligroso es olvidarse en qué base estás anotando —
+          y tocarla ofrece salir. */}
+      {enModoPrueba() ? (
+        <button type="button" className="pastilla-prueba" onClick={confirmarSalir}>
+          <span className="pastilla-prueba-dot" aria-hidden="true" />
+          Modo prueba
+        </button>
+      ) : (
+        <div className="brand">
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2">
+            <path d="M3 10v4M6 8v8M9 6v12M15 6v12M18 8v8M21 10v4M9 12h6" />
+          </svg>
+          FIERRO
+        </div>
+      )}
       <div className="header-actions">
         <button className="icon-btn streak-btn" id="streak-btn" aria-label="Racha" onClick={onOpenStreak}>
           <Flame ref={flameRef} className="streak-flame" />
@@ -56,15 +79,6 @@ export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenSt
           </svg>
         </button>
       </div>
-      {/* Modo prueba: la franja va DENTRO del header (sticky) para que no se
-          pueda perder de vista con el scroll — lo peligroso sería olvidarse
-          de en cuál de las dos bases estás anotando. */}
-      {enModoPrueba() && (
-        <div className="banda-prueba" role="status">
-          <span><b>Modo prueba</b> · tu app real no se toca</span>
-          <button type="button" className="chip warn" onClick={() => salirModoPrueba()}>Salir</button>
-        </div>
-      )}
     </header>
   );
 }

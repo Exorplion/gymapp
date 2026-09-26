@@ -359,8 +359,11 @@ function CoberturaCard() {
 
   return (
     <div className="notice">
-      <div className="text-sm text-txt font-medium">Porciones que tu rutina todavía no toca</div>
-      <div className="s text-mut mt-1">
+      {/* Título arriba de la explicación en tamaño: antes el texto (.s, sin
+          regla dentro de .notice) salía más grande que el título (auditoría
+          2026-09-26). */}
+      <div className="text-body text-txt font-semibold">Porciones que tu rutina todavía no toca</div>
+      <div className="text-sm text-mut mt-1 leading-normal">
         Cada músculo tiene porciones que responden a ejercicios distintos. Estas no las
         cubre ninguno de los que elegiste.
       </div>

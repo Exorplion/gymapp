@@ -232,7 +232,14 @@ export function wDisplay(kg) {
 }
 
 export function wAlt(kg) {
-  return S.cfg.unit === 'kg' ? `${fmtNum(kg2lb(kg))} lb` : `${fmtNum(round1(kg))} kg`;
+  const { n, u } = wAltPartes(kg);
+  return `${n} ${u}`;
+}
+
+/** La otra unidad, separada: la tarjeta pinta el número y la unidad con
+    estilos distintos ("≈ 99.2 lb", el número en azul). */
+export function wAltPartes(kg) {
+  return S.cfg.unit === 'kg' ? { n: fmtNum(kg2lb(kg)), u: 'lb' } : { n: fmtNum(round1(kg)), u: 'kg' };
 }
 
 export function wBoth(kg) {

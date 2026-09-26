@@ -11,7 +11,7 @@
 import { useRef } from 'react';
 import { S, closeSheet, openSheet } from '../../lib/state.js';
 import {
-  sessionExs, hacerDespues, addExtraSet, dropSet, toggleUnilateral, isUnilateral, skipExercise,
+  sessionExs, addExtraSet, dropSet, toggleUnilateral, isUnilateral, skipExercise,
 } from '../../lib/session.js';
 import { puedeSerUnilateral } from '../../lib/equip.js';
 import { guardarFotoMaquina } from '../../lib/gyms.js';
@@ -49,11 +49,11 @@ export default function ExOpciones({ exId, wd }) {
     <>
       <h2>{ex.name}</h2>
       <div className="group" style={{ marginBottom: 'var(--s3)' }}>
-        <button type="button" className="grouprow" onClick={y(() => hacerDespues(ex.id))}>
+        <button type="button" className="grouprow" onClick={y(() => openSheet('despues', { exId: ex.id }))}>
           <Later className="opc-ico" />
           <span className="grouprow-grow">
             <span className="grouprow-t">Hacer después</span>
-            <span className="grouprow-s">Pasa al final y sigue pendiente. Para cuando la máquina está ocupada.</span>
+            <span className="grouprow-s">Elegís después de cuál. Para cuando la máquina está ocupada.</span>
           </span>
         </button>
         <button type="button" className="grouprow" onClick={y(() => addExtraSet(ex.id))}>

@@ -21,16 +21,19 @@
 // (15-30 veces por sesión). Metida acá son cero toques de más y la pregunta
 // aparece sin que la busques, que era justamente lo que fallaba cuando vivía
 // escondida en el <details> "Más opciones" de la tarjeta del ejercicio.
-import { useEffect, useRef } from 'react';
-import { motion } from 'motion/react';
-import { T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC } from '../lib/rest.js';
+import { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC, cerrarPreguntaRir } from '../lib/rest.js';
 import { setRirUltimaSerie } from '../lib/session.js';
-import { RIR_OPTS, rirLabel } from '../lib/rir.js';
+import { RIR_OPTS } from '../lib/rir.js';
 import { useStore } from '../lib/state.js';
 import { useAtras } from '../lib/useAtras.js';
 import { fmtMMSS } from '../lib/format.js';
 import { ChevronDown } from './Icon.jsx';
-import { animateRing, impactBurst, squashStretch } from '../lib/motion.js';
+import { animateRing, impactBurst, squashStretch, D, EASE_OUT } from '../lib/motion.js';
+
+// La curva de salida de la app, en el formato que pide motion.
+const CURVA = EASE_OUT.match(/[\d.]+/g).map(Number);
 
 export default function RestTimer() {
   useStore(); // se suscribe a bump(); T se lee directo (T.leftSec/T.pct/T.state) igual que S
@@ -43,6 +46,23 @@ export default function RestTimer() {
   const timeFsRef = useRef(null);
   const sonabaAntes = useRef(false);
   const sonandoAhora = T.state === 'ringing';
+  /* La pantalla completa también SALE animada (2026-09-26, auditoría de
+     salidas): antes entraba con un fundido y se iba de golpe (display:none)
+     al minimizar, saltar o terminar. `saliendo` la deja pintada D.objeto ms
+     más con la clase .out, que corre el fundido de salida. */
+  const visibleFs = T.state === 'fullscreen' || sonandoAhora;
+  const [saliendo, setSaliendo] = useState(false);
+  const eraVisible = useRef(visibleFs);
+  useEffect(() => {
+    if (eraVisible.current && !visibleFs) {
+      setSaliendo(true);
+      const t = setTimeout(() => setSaliendo(false), D.objeto);
+      eraVisible.current = visibleFs;
+      return () => clearTimeout(t);
+    }
+    eraVisible.current = visibleFs;
+    if (visibleFs) setSaliendo(false);
+  }, [visibleFs]);
   const timeStr = fmtMMSS(T.leftSec);
   const pctClamped = Math.max(0, Math.min(1, T.pct));
   const fillPct = pctClamped * 100;
@@ -131,7 +151,7 @@ export default function RestTimer() {
         <div id="rest-track"><i id="rest-fill" style={{ width: `${fillPct}%` }}></i></div>
       </div>
 
-      <div id="rest-fs" className={T.state === 'fullscreen' || sonandoAhora ? 'show' : ''}>
+      <div id="rest-fs" className={visibleFs ? 'show' : saliendo ? 'show out' : ''} aria-hidden={!visibleFs}>
         <div className={`rfs-inner${sonandoAhora ? ' ringing' : ''}`}>
           <div className="rfs-lbl">{sonandoAhora ? '¡Dale!' : 'Descanso'}</div>
           {/* Sólo en 'fullscreen': sonando no se pregunta nada (T.rir ya se
@@ -139,7 +159,21 @@ export default function RestTimer() {
               de 2cm donde el tiempo y los ±30s ya van justos; meterle cinco
               chips la convertiría en otra cosa. Si volvés a expandir antes de
               que termine el descanso, la pregunta sigue ahí. */}
-          {T.rir && T.state === 'fullscreen' && <PreguntaRir />}
+          {/* Contestada, sale con altura y fundido (no desaparece de golpe):
+              el reloj sube a ocupar su lugar. */}
+          <AnimatePresence initial={false}>
+            {T.rir && !T.rir.cerrada && T.state === 'fullscreen' && (
+              <motion.div
+                key="rir"
+                className="rfs-rir-caja"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto', transition: { duration: D.panel / 1000, ease: CURVA } }}
+                exit={{ opacity: 0, height: 0, transition: { duration: D.panel / 1000, ease: CURVA } }}
+              >
+                <PreguntaRir />
+              </motion.div>
+            )}
+          </AnimatePresence>
           <div className="rfs-ring" ref={ringBoxRef}>
             <svg viewBox="0 0 200 200">
               <circle className="rfs-track" cx="100" cy="100" r="88" />
@@ -183,20 +217,22 @@ export default function RestTimer() {
     — igual que se comportaba el selector viejo. Lee el estado elegido de
     T.rir.valor y no de un useState propio, así una corrección sobrevive a
     minimizar y volver a expandir. */
+/* 2026-09-25: al contestar, la opción queda marcada un instante (lo que
+   tardás en ver que se anotó) y la pregunta se va. Antes se quedaba hasta el
+   final del descanso, ocupando la mitad de la pantalla del reloj. Y en vez de
+   cinco chips sueltos, una sola barra segmentada: se lee como UNA pregunta. */
+const PAUSA_CONFIRMAR = 450;
+
 function PreguntaRir() {
   const p = T.rir;
   const elegido = p.valor;
   return (
     <div className="rfs-rir">
-      {/* La pregunta y su letra chica en DOS líneas y no en una sola con
-          puntos medios: el .steplabel va en mayúsculas y espaciado, así que
-          todo junto envolvía y dejaba huérfano el número que más importa de
-          esa línea ("… PEDÍA RIR / 3"). */}
-      <div className="steplabel">¿Cuántas te quedaron?</div>
+      <div className="rfs-rir-t">¿Cuántas reps te quedaban?</div>
       <div className="rfs-rir-meta">
-        opcional{p.pedia != null && ` · pedía ${p.pedia === 0 ? 'al fallo' : `RIR ${p.pedia}`}`}
+        Opcional{p.pedia != null && ` · pedía ${p.pedia === 0 ? 'al fallo' : `RIR ${p.pedia}`}`}
       </div>
-      <div className="rir-opts" role="group" aria-label="Repeticiones en reserva que te quedaron">
+      <div className="rir-seg" role="group" aria-label="Repeticiones en reserva que te quedaron">
         {RIR_OPTS.map(n => {
           const on = elegido === n;
           return (
@@ -204,12 +240,18 @@ function PreguntaRir() {
               key={n}
               type="button"
               aria-pressed={on}
-              className={`chip ${on ? 'on' : ''}`}
-              whileTap={{ scale: 0.9 }}
+              aria-label={n === 0 ? '0, al fallo' : n === 4 ? '4 o más' : String(n)}
+              className={on ? 'on' : ''}
+              whileTap={{ scale: 0.92 }}
               transition={{ duration: 0.12 }}
-              onClick={e => { e.stopPropagation(); setRirUltimaSerie(on ? null : n); }}
+              onClick={e => {
+                e.stopPropagation();
+                setRirUltimaSerie(n);
+                setTimeout(cerrarPreguntaRir, PAUSA_CONFIRMAR);
+              }}
             >
-              {rirLabel(n)}
+              <b>{n === 4 ? '4+' : n}</b>
+              {n === 0 && <small>fallo</small>}
             </motion.button>
           );
         })}

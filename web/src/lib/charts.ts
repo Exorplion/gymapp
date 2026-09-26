@@ -292,7 +292,12 @@ export function drawChart(cv: ChartCanvas, pts: ChartPoint[], opts: DrawChartOpt
   x.beginPath(); x.arc(spx, Y(sp.y), 8, 0, 7); x.stroke();
   const valTxt = `${fmtNum(sp.y)}${opts.unit ? ' ' + opts.unit : ''}${sp.r ? ' × ' + sp.r : ''}`;
   x.fillStyle = '#EAF0FC'; x.font = '700 13px "Barlow Condensed", sans-serif'; x.textAlign = 'center';
-  x.fillText(`${fmtD(sp.date)} · ${valTxt}`, spx, Math.max(14, Y(sp.y) - 14));
+  // Centrado sobre el punto, pero sin salirse del canvas: en el último punto
+  // (el caso de todos los días) la mitad derecha quedaba cortada — "74.:"
+  // (auditoría 2026-09-26).
+  const etiqueta = `${fmtD(sp.date)} · ${valTxt}`;
+  const media = x.measureText(etiqueta).width / 2;
+  x.fillText(etiqueta, Math.min(W - media - 2, Math.max(media + 2, spx)), Math.max(14, Y(sp.y) - 14));
   cv._pts = pts; cv._X = X;
 }
 export function pickChartPoint(cv: ChartCanvas, clientX: number): void {

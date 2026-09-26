@@ -1,8 +1,65 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-25
+**Última actualización:** 2026-09-26
 
 ---
+
+## SESIÓN 2026-09-25 (segunda parte) — La sesión en vivo entra en una pantalla
+
+Enzo pidió 5 bloques: (1) sesión en vivo compacta y sin scroll, (2) "Hacer
+después" que pregunte a dónde + deshacer, (3) la pregunta del RIR en el
+descanso, (4) tipografía de Inicio, (5) auditoría visual. Transversal:
+**animaciones de salida** en confirmaciones y hojas.
+
+**Bloque 1** — diseño elegido por Enzo con maquetas (compañero visual,
+`.superpowers/brainstorm/37719-1790394424/`): rampa con pasos, botón píldora,
+tabla con encabezado Izquierda/Derecha, tablero con rótulos, "Sesión anterior".
+
+| Pieza | Dónde |
+|---|---|
+| Barra de sesión (anillo, nombre, reloj, Terminar, ···) | `SesionBarra` en Hoy.jsx — reemplaza al título "HOY" y a ActiveHero con sesión abierta |
+| Terminar → Completar / Seguir / Descartar | `TerminarSesion` (Hoy.jsx), variante diálogo (`DIALOGOS` en App.jsx), sale con `dlgOut` |
+| ··· → Agregar ejercicio / Reordenar | `SesionMenu` (Hoy.jsx) — antes era una fila bajo el carrusel |
+| Tablero Series / RIR / Sesión anterior | `.ex-meta` (ExerciseCarousel.jsx); "Sesión anterior" abre el aviso |
+| Rampa de aproximación con pasos | `Rampa` — avance en memoria por sesión (`pasosRampa`) |
+| Botón "Serie N lista · 45 kg × 6" | `.btn-serie`, el valor se actualiza con las ruedas (`valRef`) |
+| Series hechas en tabla | `TablaSeries` / `filasDeSeries` — borrar confirma y borra la fila entera |
+| "≈ 99.2 lb" centrado bajo la rueda | `wAltPartes()` (state.js) + `.reel-alt b` |
+| Sin colchón inferior con sesión | `main.full` también con `tab==='hoy' && draft` (App.jsx) |
+| Modo prueba como pastilla en el lugar de la marca | Header.jsx — la franja `.banda-prueba` comía ~45 px y rompía el "sin scroll" |
+
+Medido en Chrome: 390×844 → `scrollHeight` 844 (antes 998); 430×932 → 932.
+Entra también con unilateral de 2 filas, con "Primera vez" y en modo prueba.
+
+**Arreglo de paso:** el lado del unilateral se deduce de lo anotado
+(`ladoPendiente()`, session.js). Pasar a unilateral a mitad de sesión guardaba
+series con `side: null` que no alternaban; recargar volvía a "izquierda".
+
+**Trampas:** `overflow:hidden` de `.ex-live` recortaba el brillo del botón en
+un rectángulo → `overflow:clip` + `overflow-clip-margin`. Custom properties
+nuevas (`--avance`) hay que declararlas con valor por defecto o
+`tokens.test.js` falla.
+
+**El RIR que se marca en el descanso sólo alimenta `recoveryPct()`** (ficha del
+mapa muscular). No toca la progresión — ver bloque 3.
+
+**Bloques 2 a 5** (2026-09-26, rama `feat/bloques-2-5`, apilada sobre el bloque 1):
+
+- **2 · "Después"** → hoja `despues` (Despues.jsx): "Después de X" o "Al final",
+  y el aviso trae "Deshacer" (`moverEjercicio`, session.js; `hacerDespues` =
+  al final). También desde ExOpciones y el "Hacer después" antes de empezar.
+- **3 · RIR en el descanso** → al contestar, la opción queda marcada 450 ms y
+  la pregunta sale con altura + fundido (`cerrarPreguntaRir`, rest.js — vive
+  en T: minimizar/expandir no la trae). Barra segmentada `.rir-seg`.
+  **Decisión abierta de Enzo:** que el RIR alimente la progresión (hoy sólo
+  `recoveryPct`) o sacar la pregunta.
+- **4 · Inicio** → `.ini-tile-lbl` con el estilo de `.plan-title` + rayita.
+- **5 · Auditoría** → `docs/auditoria-visual-2026-09-26.md` (arreglado,
+  revisado y pendiente). Salida nueva: descanso a pantalla completa (`.out`).
+
+**Trampa:** editar un .jsx en varios pasos con el dev server corriendo puede
+dejar a Vite con un estado intermedio (ReferenceError de una constante que
+todavía no existía). No es un bug: recargar.
 
 ## SESIÓN 2026-09-25 — Modo prueba y "la última vez" como aviso
 
