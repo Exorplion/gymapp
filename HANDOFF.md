@@ -43,6 +43,24 @@ nuevas (`--avance`) hay que declararlas con valor por defecto o
 **El RIR que se marca en el descanso sólo alimenta `recoveryPct()`** (ficha del
 mapa muscular). No toca la progresión — ver bloque 3.
 
+**Bloques 2 a 5** (2026-09-26, rama `feat/bloques-2-5`, apilada sobre el bloque 1):
+
+- **2 · "Después"** → hoja `despues` (Despues.jsx): "Después de X" o "Al final",
+  y el aviso trae "Deshacer" (`moverEjercicio`, session.js; `hacerDespues` =
+  al final). También desde ExOpciones y el "Hacer después" antes de empezar.
+- **3 · RIR en el descanso** → al contestar, la opción queda marcada 450 ms y
+  la pregunta sale con altura + fundido (`cerrarPreguntaRir`, rest.js — vive
+  en T: minimizar/expandir no la trae). Barra segmentada `.rir-seg`.
+  **Decisión abierta de Enzo:** que el RIR alimente la progresión (hoy sólo
+  `recoveryPct`) o sacar la pregunta.
+- **4 · Inicio** → `.ini-tile-lbl` con el estilo de `.plan-title` + rayita.
+- **5 · Auditoría** → `docs/auditoria-visual-2026-09-26.md` (arreglado,
+  revisado y pendiente). Salida nueva: descanso a pantalla completa (`.out`).
+
+**Trampa:** editar un .jsx en varios pasos con el dev server corriendo puede
+dejar a Vite con un estado intermedio (ReferenceError de una constante que
+todavía no existía). No es un bug: recargar.
+
 ## SESIÓN 2026-09-25 — Modo prueba y "la última vez" como aviso
 
 **726 tests** (eran 715 + los de modo prueba).
