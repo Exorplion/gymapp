@@ -1,8 +1,46 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-24
+**Última actualización:** 2026-09-25
 
 ---
+
+## SESIÓN 2026-09-25 — Modo prueba y "la última vez" como aviso
+
+**726 tests** (eran 715 + los de modo prueba).
+
+### Modo prueba (`lib/modoPrueba.js`)
+
+Enzo simulaba entrenamientos en su app real (abrir sesión → ver tarjetas →
+descartar). Ahora: Ajustes → **Modo prueba** copia la base `fierro` entera a
+`fierro-prueba` y la app arranca sobre la copia. Franja ámbar en el header
+(`.banda-prueba`) con "Salir", que borra la copia y vuelve a la real.
+
+- Por qué no "otra URL publicada": IndexedDB es por origen, cualquier copia
+  en exorplion.github.io ve la misma base. Lo que separa es el NOMBRE.
+- La marca vive en `localStorage` (`fierro-modo-prueba`) — se lee antes de
+  abrir la base (`elegirBase()` en App.jsx). Único uso de localStorage.
+- En prueba: sin respaldo automático (session.js) y sin tocar la suscripción
+  push del recordatorio (es del navegador, no de la base; AvisosAjustes.jsx).
+- Entrar SIEMPRE rehace la copia desde la real (lo de la prueba anterior se
+  pierde a propósito).
+
+### "Última vez | Hoy" → aviso flotante (ExerciseCarousel.jsx)
+
+Las dos cajas fijas (`Comparativa`) se sacaron de la tarjeta. Ahora
+`AvisoUltimaVez` las muestra flotando (`.ex-aviso`, ancla de alto 0: no mueve
+nada) cuando el ejercicio se activa; se va solo a los 4 s (`AVISO_MS`, la
+rayita `.ex-aviso-reloj` lo cuenta), o al tocarlo. La etiqueta azul
+**"Últ. 47.5 kg"** (`.ex-tag.ult`) lo vuelve a traer.
+
+- Una vez por ejercicio y sesión (`yaAvisadas`, clave `draft.id|ex.id`).
+- **Trampa encontrada al probar:** tras la última serie el siguiente se
+  activa solo, pero encima está el descanso a pantalla completa — el aviso se
+  iba sin que nadie lo viera. Ahora espera a que `T.state` no sea
+  `fullscreen`/`ringing` y recién ahí se marca como mostrado.
+- Trampa de prueba (no es bug): `startSession(i)` con `S.cfg.seqIndex`
+  apuntando a otro turno deja la sesión y la pantalla en días distintos
+  (ninguna tarjeta queda activa). Para simular, igualar `seqIndex` antes.
+
 
 ## SESIÓN 2026-09-24 — Recordatorio de peso, animaciones y porciones nuevas
 

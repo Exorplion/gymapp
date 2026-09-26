@@ -411,6 +411,18 @@ header.top{
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   border-bottom:1px solid var(--line);
 }
+/* Modo prueba (modoPrueba.js): segundo renglón del header, siempre a la
+   vista. Ámbar, el mismo aviso cálido que .chip.warn: no es un error, pero
+   tiene que distinguirse de la app de todos los días. */
+header.top:has(.banda-prueba){flex-wrap:wrap;row-gap:var(--s2)}
+.banda-prueba{
+  flex-basis:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
+  padding:6px 6px 6px 12px;border-radius:var(--r-full);
+  background:rgba(var(--warn-rgb),.1);border:1px solid rgba(var(--warn-rgb),.32);
+  font-size:var(--t-micro);color:var(--warn);
+}
+.banda-prueba b{font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.banda-prueba .chip{padding:5px 12px;font-size:var(--t-micro)}
 .brand{
   font-family:'Barlow Condensed';font-weight:700;font-style:italic;
   font-size:var(--t-xl);letter-spacing:.2em;
@@ -972,6 +984,34 @@ main.arrastrando{overflow:hidden;user-select:none}
 .ex-cmp-col b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
 .ex-cmp-col small{font-size:var(--t-micro);color:var(--mut);line-height:1.35}
 .ex-cmp-col.up .ex-cmp-lbl,.ex-cmp-col.up b{color:var(--ok)}
+/* La comparativa como aviso flotante (ExerciseCarousel, AvisoUltimaVez):
+   el ancla no ocupa alto, así que abrir o cerrar el aviso no mueve nada de la
+   tarjeta. Superficie flotante = la sombra con borde azul de las tarjetas que
+   se levantan al arrastrar. */
+.ex-aviso-ancla{position:relative;height:0;z-index:3}
+.ex-aviso{
+  position:absolute;top:var(--s2);left:0;right:0;
+  padding:var(--s3);border-radius:var(--r-md);cursor:pointer;
+  background:var(--card);
+  box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(var(--blue-rgb),.3);
+}
+.ex-aviso .ex-cmp{margin-top:0}
+.ex-aviso-x{
+  position:absolute;top:-10px;right:-8px;width:26px;height:26px;border-radius:var(--r-full);
+  display:grid;place-items:center;font-size:var(--t-micro);color:var(--mut);
+  background:var(--card2);border:1px solid var(--line2);
+}
+/* La rayita que se acaba: dice, sin texto, que el aviso se va solo. */
+.ex-aviso-reloj{
+  position:absolute;left:var(--s3);right:var(--s3);bottom:5px;height:2px;border-radius:var(--r-xs);
+  background:rgba(var(--blue-rgb),.5);transform-origin:left;
+  animation:avisoReloj linear forwards; /* la duración la pone AVISO_MS, inline */
+}
+@keyframes avisoReloj{to{transform:scaleX(0)}}
+@media (prefers-reduced-motion:reduce){.ex-aviso-reloj{animation:none;opacity:0}}
+/* La etiqueta que vuelve a traer el aviso: la única tocable de la fila, en
+   el azul de los enlaces para que no se lea como un dato más. */
+.ex-tag.ult{font-family:inherit;color:var(--blue2);border-color:rgba(var(--blue-rgb),.35);cursor:pointer}
 .ex-pre{margin-top:var(--s4)}
 .ex-pre-links{display:flex;justify-content:center;gap:var(--s5);margin-top:var(--s1)}
 .ex-pre-links .linkcard,.ex-later,.ex-aprox-acts .linkcard{

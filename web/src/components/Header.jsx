@@ -8,6 +8,7 @@
 import { useEffect, useRef } from 'react';
 import { Flame } from './Icon.jsx';
 import { pulseLike, countTo } from '../lib/motion.js';
+import { enModoPrueba, salirModoPrueba } from '../lib/modoPrueba.js';
 
 export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenStreak = () => {}, onOpenSessions = () => {} }) {
   const flameRef = useRef(null);
@@ -55,6 +56,15 @@ export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenSt
           </svg>
         </button>
       </div>
+      {/* Modo prueba: la franja va DENTRO del header (sticky) para que no se
+          pueda perder de vista con el scroll — lo peligroso sería olvidarse
+          de en cuál de las dos bases estás anotando. */}
+      {enModoPrueba() && (
+        <div className="banda-prueba" role="status">
+          <span><b>Modo prueba</b> · tu app real no se toca</span>
+          <button type="button" className="chip warn" onClick={() => salirModoPrueba()}>Salir</button>
+        </div>
+      )}
     </header>
   );
 }

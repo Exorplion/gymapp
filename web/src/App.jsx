@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { idbOpenOnce } from './lib/db.js';
+import { elegirBase } from './lib/modoPrueba.js';
 import { ensurePersisted } from './lib/persist.js';
 import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT, resolveAutoRest, tomarFotoSaliente } from './lib/state.js';
 import { dstr } from './lib/format.js';
@@ -375,6 +376,8 @@ export default function App() {
        hecho a mano por el usuario. */
     ensurePersisted().then(p => { S.persisted = p; bump(); });
 
+    // Real o de prueba: se decide antes de abrir (ver modoPrueba.js).
+    elegirBase();
     idbOpenOnce().then(loadAll).then(() => {
       applyComputedGoals();
       // El color se aplica ACÁ, apenas se conoce S.cfg, y no cuando se abre
