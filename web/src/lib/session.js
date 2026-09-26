@@ -101,6 +101,15 @@ function pesoInicial(ex) {
   return 20;
 }
 
+/** El lado que falta en un unilateral: con un número impar de series
+    anotadas, el contrario al último; si no, izquierda (Enzo siempre empieza
+    por ahí). */
+export function ladoPendiente(exId) {
+  const hechas = S.draft?.entries?.[exId]?.sets || [];
+  if (hechas.length % 2 === 0) return 'left';
+  return hechas[hechas.length - 1]?.side === 'left' ? 'right' : hechas[hechas.length - 1]?.side === 'right' ? 'left' : 'right';
+}
+
 export function ensureVals(ex) {
   if (!S.hoyVals[ex.id]) {
     const last = lastDataFor(ex);
@@ -124,7 +133,14 @@ export function ensureVals(ex) {
   // queda en null y saveSet ni lo guarda en el set. En unilaterales arranca
   // en 'left': Enzo siempre empieza por el izquierdo, y dejarlo en null
   // dejaba filas sueltas que no se podían emparejar en pares (D1).
-  if (S.hoyVals[ex.id].side === undefined) S.hoyVals[ex.id].side = isUnilateral(ex) ? 'left' : null;
+  // 2026-09-25: y el lado que toca se DEDUCE de lo ya anotado, no se fija en
+  // 'left'. Dos casos rompían: pasar un ejercicio a unilateral a mitad de
+  // sesión (side ya era null, nunca se completaba: series sin lado que no
+  // alternaban) y recargar la app con una serie a medias (volvía a pedir
+  // izquierda aunque faltara la derecha).
+  const v = S.hoyVals[ex.id];
+  if (isUnilateral(ex)) { if (!v.side) v.side = ladoPendiente(ex.id); }
+  else if (v.side === undefined) v.side = null;
   return S.hoyVals[ex.id];
 }
 

@@ -411,18 +411,15 @@ header.top{
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   border-bottom:1px solid var(--line);
 }
-/* Modo prueba (modoPrueba.js): segundo renglón del header, siempre a la
-   vista. Ámbar, el mismo aviso cálido que .chip.warn: no es un error, pero
-   tiene que distinguirse de la app de todos los días. */
-header.top:has(.banda-prueba){flex-wrap:wrap;row-gap:var(--s2)}
-.banda-prueba{
-  flex-basis:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
-  padding:6px 6px 6px 12px;border-radius:var(--r-full);
-  background:rgba(var(--warn-rgb),.1);border:1px solid rgba(var(--warn-rgb),.32);
-  font-size:var(--t-micro);color:var(--warn);
+/* Modo prueba (modoPrueba.js): pastilla ámbar en el lugar de la marca.
+   Ámbar, el mismo aviso cálido que .chip.warn: no es un error, pero tiene
+   que distinguirse de la app de todos los días. */
+.pastilla-prueba{
+  display:inline-flex;align-items:center;gap:var(--s2);height:36px;padding:0 var(--s3);
+  border-radius:var(--r-full);background:rgba(var(--warn-rgb),.12);border:1px solid rgba(var(--warn-rgb),.45);
+  font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-sm);letter-spacing:.14em;text-transform:uppercase;color:var(--warn);
 }
-.banda-prueba b{font-weight:700;letter-spacing:.12em;text-transform:uppercase}
-.banda-prueba .chip{padding:5px 12px;font-size:var(--t-micro)}
+.pastilla-prueba-dot{width:8px;height:8px;border-radius:var(--r-full);background:var(--warn);box-shadow:0 0 10px var(--warn)}
 .brand{
   font-family:'Barlow Condensed';font-weight:700;font-style:italic;
   font-size:var(--t-xl);letter-spacing:.2em;
@@ -775,6 +772,8 @@ main.arrastrando{overflow:hidden;user-select:none}
 }
 .step .val .alt{font-size:var(--t-micro);color:var(--mut);letter-spacing:.05em;display:block;margin-top:-4px}
 .steplabel{font-size:var(--t-micro);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.setrows .steplabel{font-family:'Barlow Condensed';font-size:var(--t-sm);font-weight:700;color:var(--txt)}
+.setrows .steplabel span{color:var(--mut2);font-weight:600;letter-spacing:.06em;margin-left:4px}
 
 /* ---------- rueda de gestos (peso/reps) ---------- */
 /* Scroll-snap nativo, igual que .carousel — el gesto lo maneja el navegador,
@@ -1022,6 +1021,10 @@ main.arrastrando{overflow:hidden;user-select:none}
 /* El despliegue anima la altura (motion, ExerciseCarousel.jsx): sin esto las
    piezas se ven fuera de la caja mientras crece. */
 .ex-live{overflow:hidden}
+/* Pero con margen: el brillo del botón de registrar (.btn-serie) quedaba
+   recortado en un rectángulo oscuro de bordes rectos. overflow:clip deja
+   que el brillo asome sin soltar el recorte del despliegue. */
+@supports (overflow-clip-margin:1px){.ex-live{overflow:clip;overflow-clip-margin:20px}}
 .ex-serie{margin-top:var(--s3)}
 .ex-serie-top{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);font-size:var(--t-sm);color:var(--mut)}
 .ex-serie-top .cond{font-size:var(--t-lg);color:var(--txt)}
@@ -1035,7 +1038,75 @@ main.arrastrando{overflow:hidden;user-select:none}
 }
 .ex-aprox-t{flex:1;min-width:0;font-size:var(--t-sm);line-height:1.35;font-variant-numeric:tabular-nums}
 .ex-aprox-acts{display:flex;align-items:center;gap:var(--s1);flex:none}
-.ex-lados{display:flex;gap:var(--s2);margin-top:var(--s3)}
+/* ---------- Tarjeta de la sesión en vivo, 2026-09-25 ----------
+   Diseño elegido por Enzo con maquetas: tablero en vez de burbujas, rampa de
+   aproximación con pasos, botón píldora que dice lo que guarda y series en
+   tabla. Todo para que la sesión entre en una pantalla. */
+.ex-equipo{font-size:var(--t-micro);font-weight:500;color:var(--mut2);margin-top:1px}
+.ex-meta{display:flex;margin-top:var(--s3);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.ex-meta>*{flex:none;padding:6px var(--s3);border-left:1px solid var(--line);text-align:left;min-width:0}
+.ex-meta>:first-child{border-left:0;padding-left:0}
+/* La última columna se lleva el resto: "Sesión anterior" es el rótulo largo. */
+.ex-meta>:last-child{flex:1}
+.ex-meta small{display:block;font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.12em;text-transform:uppercase;color:var(--mut2);white-space:nowrap}
+.ex-meta b{display:block;font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Tocable: abre la comparación flotante. Azul + ›, el lenguaje de enlace. */
+.ex-meta-ant{font:inherit;color:inherit;cursor:pointer}
+.ex-meta-ant b{color:var(--blue2)}
+.ex-meta-ant b::after{content:" ›";color:var(--mut2)}
+/* "Después" como botón: antes era texto azul suelto y no se veía tocable. */
+.ex-despues{
+  flex:none;display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 var(--s3);
+  border-radius:var(--r-full);border:1px solid var(--line2);background:var(--card2);
+  font-size:var(--t-micro);font-weight:600;color:var(--blue3);
+}
+.ex-lado{font:inherit;font-weight:600;color:var(--blue2);cursor:pointer}
+/* Rampa: tres pasos unidos por una línea que se llena. --avance (0..1) lo
+   pone Rampa según los pasos hechos. */
+.ex-rampa{margin-top:var(--s3)}
+.ex-rampa-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s1)}
+.ex-rampa-hd span{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-sm);letter-spacing:.14em;text-transform:uppercase;color:var(--warn)}
+.ex-rampa-hd .linkcard{font-size:var(--t-micro);color:var(--mut);min-height:32px;padding:0 var(--s1)}
+.ex-rampa-pasos{position:relative;display:flex;justify-content:space-between;--avance:0}
+.ex-rampa-pasos::before,.ex-rampa-pasos::after{
+  content:"";position:absolute;top:15px;left:calc(100% / 6);right:calc(100% / 6);height:2px;border-radius:var(--r-full);
+}
+.ex-rampa-pasos::before{background:rgba(var(--warn-rgb),.3)}
+.ex-rampa-pasos::after{background:var(--ok);transform-origin:left;transform:scaleX(var(--avance));transition:transform var(--d3) var(--ease)}
+.ex-paso{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;font:inherit;color:inherit;cursor:pointer}
+.ex-paso i{
+  display:grid;place-items:center;width:32px;height:32px;border-radius:var(--r-full);font-style:normal;
+  border:2px solid rgba(var(--warn-rgb),.55);background:var(--card);
+  font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-nano);color:var(--warn);
+  transition:background var(--d2) var(--ease),border-color var(--d2) var(--ease),transform var(--d2) var(--spring);
+}
+.ex-paso.cur i{box-shadow:0 0 0 4px rgba(var(--warn-rgb),.16)}
+.ex-paso.hecho i{background:var(--ok);border-color:var(--ok);color:var(--on-grad);transform:scale(1.06)}
+.ex-paso b{margin-top:4px;font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.ex-paso span{font-size:var(--t-micro);color:var(--mut)}
+/* Botón de registrar: píldora oscura con borde verde que brilla, el check en
+   un círculo y a la derecha lo que queda anotado. */
+.btn-serie{
+  display:flex;align-items:center;gap:var(--s3);width:100%;min-height:58px;padding:0 var(--s4) 0 6px;
+  border-radius:var(--r-full);border:1.5px solid rgba(var(--ok-rgb),.55);
+  background:linear-gradient(96deg,rgba(var(--ok-rgb),.12),rgba(var(--ok-rgb),.03)),var(--bg2);
+  box-shadow:0 0 26px -10px rgba(var(--ok-rgb),.7),inset 0 1px 0 rgba(255,255,255,.06);
+  color:var(--ok);cursor:pointer;
+}
+.btn-serie-ok{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:var(--r-full);background:var(--grad-ok);color:var(--on-grad);box-shadow:0 4px 14px -4px rgba(var(--ok-rgb),.8)}
+.btn-serie-t{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);letter-spacing:.1em;text-transform:uppercase}
+.btn-serie small{margin-left:auto;font-size:var(--t-sm);color:var(--mut);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Series hechas: una fila por serie. */
+.ex-tabla{width:100%;margin-top:var(--s3);border-collapse:collapse;font-variant-numeric:tabular-nums}
+.ex-tabla th{padding:0 0 4px;text-align:left;font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.14em;text-transform:uppercase;color:var(--mut2)}
+.ex-tabla td{padding:3px 0;border-top:1px solid var(--line);font-size:var(--t-sm);color:var(--mut)}
+.ex-tabla td b{font-family:'Barlow Condensed';font-size:var(--t-lg);color:var(--txt)}
+.ex-tabla .c{text-align:center}
+.ex-tabla td.n{width:22px;font-family:'Barlow Condensed';font-weight:700;color:var(--mut2)}
+.ex-tabla td.x{width:36px;text-align:right}
+.ex-tabla td.x button{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:var(--r-sm);color:var(--mut2)}
+/* La fila recién anotada entra con el mismo "pop" que tenían los chips. */
+.ex-tabla tbody tr:last-child{animation:pop var(--d2) cubic-bezier(.2,.8,.3,1.2)}
 
 /* En Rutina va a la izquierda, pegado al riel. A la derecha no entra: ahí ya
    viven el ⓘ arriba y los cuatro botones de acción abajo, y el dibujo se les
@@ -1087,7 +1158,11 @@ main.arrastrando{overflow:hidden;user-select:none}
    sacó, ver ReelPicker.jsx) — es la única cosa que sigue afuera de la rueda,
    así que se la trata como un dato propio, alineada a la derecha bajo la
    rueda y un toque más grande que antes (era 13px, casi invisible). */
-.reel-alt{text-align:right;margin-top:6px;font-size:var(--t-body);color:var(--mut);letter-spacing:.03em}
+.reel-alt{text-align:center;margin-top:6px;font-size:var(--t-sm);color:var(--mut);letter-spacing:.03em}
+/* 2026-09-25: centrada bajo la rueda de peso y dicha como equivalencia
+   ("≈ 99.2 lb", el número en azul claro). A la derecha y gris no se
+   entendía qué era (Enzo: "no se nota que es la conversión"). */
+.reel-alt b{font-family:'Barlow Condensed';font-size:var(--t-body);font-weight:600;color:var(--blue3);font-variant-numeric:tabular-nums}
 /* Selector de RIR (reemplaza al de RPE 1-10, que no cabía: 10 círculos
    llegaban al borde de la tarjeta y el "10" quedaba cortado — medido en el
    teléfono de Enzo). 5 opciones con `flex-wrap` de respaldo: si algún ancho
@@ -2206,6 +2281,33 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   letter-spacing:.2px;background:var(--grad2);-webkit-background-clip:text;background-clip:text;
   color:transparent;
 }
+/* ---------- Hoy: la barra de la sesión en curso (Hoy.jsx, SesionBarra) ----------
+   Reemplaza al título "HOY" + la tarjeta grande de la sesión mientras
+   entrenás (2026-09-25): la pantalla entera tiene que entrar sin scroll. Lo
+   que se mira de reojo (anillo, nombre, reloj) y dos botones. */
+.ses-barra{
+  display:flex;align-items:center;gap:var(--s3);
+  margin:var(--s3) 0 0;padding:var(--s2) var(--s2) var(--s2) var(--s3);min-height:58px;
+  border-radius:var(--r-md);border:1px solid var(--line);
+  background:linear-gradient(96deg,rgba(var(--blue-rgb),.16),rgba(255,255,255,.02)),var(--bg2);
+}
+.ses-barra{margin-bottom:var(--s3)}
+.ses-barra .session-ring{width:40px;height:40px}
+.ses-barra .session-ring-num{font-size:11px}
+.ses-barra-main{flex:1;min-width:0}
+.ses-barra-t{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);line-height:1.05;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ses-barra-s{font-size:var(--t-micro);color:var(--mut);margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ses-barra-s b{color:var(--txt);font-weight:600}
+.ses-terminar{
+  flex:none;height:40px;padding:0 var(--s3);border-radius:var(--r-md);
+  border:1px solid rgba(var(--ok-rgb),.45);color:var(--ok);
+  font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-sm);letter-spacing:.1em;text-transform:uppercase;
+}
+/* Todo hecho: Terminar pasa a ser LA acción que queda. */
+.ses-barra.lista .ses-terminar{background:var(--grad-ok);color:var(--on-grad);border-color:transparent;box-shadow:0 6px 20px -8px rgba(var(--ok-rgb),.6)}
+.ses-mas{flex:none;width:40px;height:40px;border-radius:var(--r-md);border:1px solid var(--line2);color:var(--blue2);display:grid;place-items:center}
+.ses-lista{margin:calc(var(--s1) * -1) 0 var(--s2);font-size:var(--t-micro);color:var(--mut);text-align:center}
+.ses-lista b{color:var(--ok)}
 /* ---------- Hoy: el plan del día (Hoy.jsx, PlanHoy) ----------
    Reemplaza a los bloques plegables (2026-09-24). Una lista agrupada por
    bloque muscular —.group + .grouprow, el patrón de listas de la app— con la

@@ -127,3 +127,24 @@ describe('toggleUnilateral: persistencia (D5)', () => {
     expect(toast).toHaveBeenCalled();
   });
 });
+
+describe('el lado que toca se deduce de lo anotado (2026-09-25)', () => {
+  it('pasar a unilateral a mitad de sesión deja un lado y alterna', async () => {
+    const press = S.routine[0].exercises[1];
+    S.draft.cur = 'b';
+    ensureVals(press);                 // bilateral: side queda en null
+    expect(S.hoyVals.b.side).toBeNull();
+    await toggleUnilateral('b');
+    const v = ensureVals(press);
+    expect(v.side).toBe('left');
+    await saveSet('b');
+    await saveSet('b');
+    expect(S.draft.entries.b.sets.map(s => s.side)).toEqual(['left', 'right']);
+  });
+
+  it('al recargar con una serie a medias pide el lado que falta', () => {
+    S.draft.entries.a = { name: 'Curl', sets: [{ w: 10, r: 12, side: 'left' }] };
+    S.hoyVals = {};                    // recargar: los valores en memoria se pierden
+    expect(ensureVals(S.routine[0].exercises[0]).side).toBe('right');
+  });
+});

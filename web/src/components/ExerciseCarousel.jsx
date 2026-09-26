@@ -15,7 +15,7 @@
 // editable, así que el patrón de refs no controlados (`altRef`/`pwRef`) se
 // mantiene sólo para esos dos.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { S, wDisplay, wAlt, wStep, wToUnit, wFromUnit, openSheet } from '../lib/state.js';
+import { S, wDisplay, wAltPartes, wStep, wToUnit, wFromUnit, openSheet } from '../lib/state.js';
 import { motion, AnimatePresence } from 'motion/react';
 import { round1, fmtNum } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
@@ -37,7 +37,7 @@ import { getPhoto, deletePhoto, guardarFotoMaquina } from '../lib/gyms.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
 import ReelPicker from './ReelPicker.jsx';
-import { Info, Skip, Dots, Later } from './Icon.jsx';
+import { Info, Skip, Dots, Later, Check, X } from './Icon.jsx';
 // EXPERIMENTO — coverflow 3D (pedido de Enzo, ver motion.dev/examples/react-carousel-coverflow).
 // Revertir = borrar este import + el archivo + el bloque "COVERFLOW" de abajo.
 import '../styles-coverflow.css';
@@ -471,7 +471,7 @@ function Comparativa({ last, obj, uni }) {
   return (
     <div className="ex-cmp">
       <div className="ex-cmp-col">
-        <span className="ex-cmp-lbl">Última vez{uni ? ' · por lado' : ''}</span>
+        <span className="ex-cmp-lbl">Sesión anterior{uni ? ' · por lado' : ''}</span>
         {ultima ? <><b>{ultima.peso}</b><small>{ultima.detalle}</small></> : <small>sin registro</small>}
       </div>
       <div className={`ex-cmp-col hoy${obj.tipo === 'subir' ? ' up' : ''}`}>
@@ -480,6 +480,108 @@ function Comparativa({ last, obj, uni }) {
         <small>{obj.texto}</small>
       </div>
     </div>
+  );
+}
+
+/* La rampa de aproximación como pasos (2026-09-25). Antes era un renglón
+   "Aproximación · 22.5×5 · 35×3 · 40×1" con un solo "Hecho". Ahora cada
+   escalón se toca al hacerlo y se pone verde; el último marca el
+   calentamiento como hecho (y arranca el descanso, como antes). El avance
+   vive en memoria por sesión: volver a Hoy desde otra pestaña no lo pierde. */
+const pasosRampa = new Map();
+
+function Rampa({ ex, rampa }) {
+  const clave = `${S.draft?.id}|${ex.id}`;
+  const [hechos, setHechos] = useState(() => pasosRampa.get(clave) || 0);
+  function tocar(i) {
+    const n = i + 1;
+    if (n <= hechos) return;
+    pasosRampa.set(clave, n);
+    setHechos(n);
+    if (n >= rampa.length) marcarCalentado(ex, true);
+  }
+  const avance = rampa.length > 1 ? Math.min(1, Math.max(0, hechos - 1) / (rampa.length - 1)) : 0;
+  return (
+    <div className="ex-rampa">
+      <div className="ex-rampa-hd">
+        <span>Aproximación</span>
+        <button type="button" className="linkcard" onClick={() => marcarCalentado(ex, false)}>Saltar</button>
+      </div>
+      <div className="ex-rampa-pasos" style={{ '--avance': avance }}>
+        {rampa.map((s, i) => (
+          <button
+            key={i}
+            type="button"
+            className={`ex-paso${i < hechos ? ' hecho' : i === hechos ? ' cur' : ''}`}
+            aria-label={`${Math.round(s.pct * 100)}%: ${wDisplay(s.w)} por ${s.reps}${i < hechos ? ', hecho' : ''}`}
+            onClick={() => tocar(i)}
+          >
+            <i>{i < hechos ? <Check size={15} /> : `${Math.round(s.pct * 100)}%`}</i>
+            <b>{wDisplay(s.w)}</b>
+            <span>× {s.reps}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* Las series hechas como tabla (2026-09-25). Antes cada serie era un chip,
+   y un unilateral de 2 series eran 4 chips ("15×10 I · 15×10 D…"). Ahora
+   una fila por serie; en unilateral "Izquierda / Derecha" se dice UNA vez,
+   en el encabezado. Borrar pide confirmación y borra la fila entera: antes
+   un toque en el chip borraba al instante, y borrar un solo lado corría
+   todas las filas de abajo. */
+function filasDeSeries(done, uni) {
+  if (!uni) return done.map((s, i) => ({ idx: [i], w: [s.w], r: s.r }));
+  const filas = [];
+  for (let i = 0; i < done.length; i += 2) {
+    const par = done.slice(i, i + 2).map((s, k) => ({ ...s, i: i + k }));
+    const izq = par.find(s => s.side === 'left') || (par[0].side !== 'right' ? par[0] : null);
+    const der = par.find(s => s !== izq) || null;
+    filas.push({ idx: par.map(s => s.i), w: par.map(s => s.w), izq: izq?.r ?? null, der: der?.r ?? null });
+  }
+  return filas;
+}
+
+function TablaSeries({ exId, done, uni, unidad }) {
+  const filas = filasDeSeries(done, uni);
+  function borrar(f, n) {
+    openSheet('confirm', {
+      title: `¿Borrar la serie ${n}?`,
+      body: uni ? 'Se borran los dos lados de esa serie.' : 'Se borra lo que anotaste en esa serie.',
+      confirmLabel: 'Borrar',
+      onConfirm: async () => { for (const i of [...f.idx].sort((a, b) => b - a)) await deleteSet(exId, i); },
+    });
+  }
+  return (
+    <table className="ex-tabla">
+      <thead>
+        <tr>
+          <th scope="col"><span className="sr-only">Serie</span></th>
+          <th scope="col">Peso</th>
+          {uni ? <><th scope="col" className="c">Izquierda</th><th scope="col" className="c">Derecha</th></> : <th scope="col" className="c">Reps</th>}
+          <th scope="col"><span className="sr-only">Borrar</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {filas.map((f, k) => {
+          const pesos = [...new Set(f.w.map(w => wDisplay(w)))];
+          return (
+            <tr key={k}>
+              <td className="n">{k + 1}</td>
+              <td><b>{pesos.join(' / ')}</b> {unidad}</td>
+              {uni
+                ? <><td className="c"><b>{f.izq ?? '—'}</b></td><td className="c"><b>{f.der ?? '—'}</b></td></>
+                : <td className="c"><b>{f.r}</b></td>}
+              <td className="x">
+                <button type="button" aria-label={`Borrar la serie ${k + 1}`} onClick={() => borrar(f, k + 1)}><X size={14} /></button>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 
@@ -588,12 +690,14 @@ function ExerciseSlide({ m, wd, started }) {
   const calentar = open && done.length === 0 && tocaCalentar(S.draft, ex);
   const rampa = calentar ? warmupSets(obj?.peso ?? last?.at(-1)?.w, wStep()) : [];
 
-  const altRef = useRef(null), pwRef = useRef(null);
+  const unidad = S.cfg.unit === 'kg' ? 'kg' : 'lb';
+  const altRef = useRef(null), pwRef = useRef(null), valRef = useRef(null);
   // altRef/pwRef sin controlar (refs, no state): son texto derivado que cambia
   // con cada peso y no vale un bump() de toda la app — peso/reps viven enteros
   // dentro de ReelPicker.jsx.
   function syncDependents() {
-    if (altRef.current) altRef.current.textContent = wAlt(v.w);
+    if (altRef.current) altRef.current.textContent = wAltPartes(v.w).n;
+    if (valRef.current) valRef.current.textContent = `${wDisplay(v.w)} ${unidad} × ${v.r}`;
     if (pwRef.current) {
       const warn = progressionWarn(ex.name, v.w);
       pwRef.current.style.display = warn ? '' : 'none';
@@ -603,7 +707,7 @@ function ExerciseSlide({ m, wd, started }) {
   // La rueda (gesto, rueda fina o edición manual — ver ReelPicker.jsx)
   // entrega siempre un valor absoluto en kg.
   function setW(newW) { v.w = Math.max(0, round1(newW)); syncDependents(); }
-  function setR(newR) { v.r = Math.max(1, Math.round(newR)); }
+  function setR(newR) { v.r = Math.max(1, Math.round(newR)); syncDependents(); }
 
   const animar = useMemo(() => open && !yaAbiertas.has(ex.id) && !menosMovimiento(), [open, ex.id]);
   useEffect(() => { if (open) yaAbiertas.add(ex.id); }, [open, ex.id]);
@@ -629,8 +733,7 @@ function ExerciseSlide({ m, wd, started }) {
   const pwarnInitial = open ? progressionWarn(ex.name, v.w) : null;
   const cls = [full ? 'full doneex' : '', open ? 'cur' : '', waiting ? 'wait' : '', skipped ? 'skipped' : ''].filter(Boolean).join(' ');
   const gymId = S.cfg.activeGym;
-  const rirTxt = scheme?.length ? `RIR ${scheme[0]} → ${scheme[scheme.length - 1] === 0 ? 'fallo' : scheme[scheme.length - 1]}` : null;
-  const unidad = S.cfg.unit === 'kg' ? 'kg' : 'lb';
+  const rirTxt = scheme?.length ? `${scheme[0]} → ${scheme[scheme.length - 1] === 0 ? 'fallo' : scheme[scheme.length - 1]}` : null;
 
   return (
     <div className="carousel-slide" data-exid={ex.id}>
@@ -658,19 +761,7 @@ function ExerciseSlide({ m, wd, started }) {
             {/* Cambiaste éste por otro: el original ya no está en la lista,
                 pero queda dicho de dónde salió. */}
             {reemplazaA(ex.id) && <div className="ex-envez">en vez de {reemplazaA(ex.id)}</div>}
-            <div className="ex-tags">
-              <span className="ex-tag">
-                {serieObjetivo} × {ex.reps}
-                {serieObjetivo > ex.sets && <span className="txt-blue"> (+{serieObjetivo - ex.sets})</span>}
-              </span>
-              {equipLabel(ex) && <span className="ex-tag">{equipLabel(ex)}</span>}
-              {rirTxt && !full && !skipped && <span className="ex-tag">{rirTxt}</span>}
-              {hayComparativa && ultima && (
-                <button type="button" className="ex-tag ult" aria-label={`La última vez: ${ultima.peso}. Ver la comparación con hoy`} onClick={() => setAviso(a => !a)}>
-                  Últ. {ultima.peso}
-                </button>
-              )}
-            </div>
+            {equipLabel(ex) && <div className="ex-equipo">{equipLabel(ex)}</div>}
           </div>
           <div className="exh-side">
             {gymId && <FotoMaquina gymId={gymId} exName={ex.name} />}
@@ -687,11 +778,30 @@ function ExerciseSlide({ m, wd, started }) {
           </div>
         </div>
 
+        {/* Los datos fijos del ejercicio como tablero, no como burbujas
+            (Enzo, 2026-09-25: "que parezca menos generado por IA"). "Sesión
+            anterior" y no "Última": última podía ser cualquier cosa. */}
+        {!skipped && (
+          <div className="ex-meta">
+            <div>
+              <small>Series</small>
+              <b>{serieObjetivo} × {ex.reps}{serieObjetivo > ex.sets && <span className="txt-blue"> +{serieObjetivo - ex.sets}</span>}</b>
+            </div>
+            {rirTxt && !full && <div><small>RIR</small><b>{rirTxt}</b></div>}
+            {hayComparativa && ultima ? (
+              <button type="button" className="ex-meta-ant" aria-label={`Sesión anterior: ${ultima.peso}. Ver la comparación con hoy`} onClick={() => setAviso(a => !a)}>
+                <small>Sesión anterior</small><b>{ultima.peso}</b>
+              </button>
+            ) : (
+              <div><small>Sesión anterior</small><b className="text-mut">—</b></div>
+            )}
+          </div>
+        )}
         {hayComparativa && <AvisoUltimaVez visible={aviso} onCerrar={cerrarAviso} last={last} obj={obj} uni={uni} />}
         {/* D3: la ausencia de dato no es un cero. */}
         {!last && uni && !full && !skipped && (
           <div className="exlast text-mut">
-            Sin registro unilateral todavía{lastBilateral ? ' (tenés historial bilateral de este ejercicio, pero es una carga distinta)' : ''}.
+            Primera vez unilateral{lastBilateral ? ' · tu historial es bilateral, otra carga' : ''}.
           </div>
         )}
         {!last && !lastBilateral && !full && !skipped && (
@@ -752,10 +862,19 @@ function ExerciseSlide({ m, wd, started }) {
                 <span>
                   <b className="cond">Serie {serieHechas + 1} de {serieObjetivo}</b>
                   {' · '}{curRir === 0 ? <b className="txt-blue">al fallo</b> : `RIR ${curRir}`}
-                  {serieAMedias && <> · falta {v.side === 'left' ? 'izquierda' : 'derecha'}</>}
+                  {/* Unilateral: el lado que toca, tocable para cambiarlo. Antes
+                      eran dos chips "Izquierda / Derecha" en una fila propia. */}
+                  {uni && (
+                    <>
+                      {' · '}
+                      <button type="button" className="ex-lado" aria-label={`Lado: ${v.side === 'left' ? 'izquierda' : 'derecha'}. Tocá para cambiar`} onClick={() => setSide(ex.id, v.side === 'left' ? 'right' : 'left')}>
+                        {v.side === 'left' ? 'izquierda' : 'derecha'} ⇄
+                      </button>
+                    </>
+                  )}
                 </span>
-                <button type="button" className="linkcard ex-later" onClick={() => hacerDespues(ex.id)}>
-                  <Later size={14} /> Hacer después
+                <button type="button" className="ex-despues" onClick={() => hacerDespues(ex.id)}>
+                  <Later size={14} /> Después
                 </button>
               </div>
               <div className="ex-seg" aria-hidden="true">
@@ -766,33 +885,24 @@ function ExerciseSlide({ m, wd, started }) {
             </motion.div>
 
             {calentar && (
-              <motion.div variants={pieza} className="ex-aprox">
-                <div className="ex-aprox-t">
-                  <span className="txt-warn">Aproximación</span>{' · '}
-                  {rampa.length
-                    ? rampa.map(s => `${wDisplay(s.w)}×${s.reps}`).join(' · ')
-                    : '3 series subiendo hasta tu peso de trabajo: 5, 3 y 1 reps'}
-                </div>
-                <div className="ex-aprox-acts">
-                  <button type="button" className="chip" onClick={() => marcarCalentado(ex, true)}>Hecho</button>
-                  <button type="button" className="linkcard" onClick={() => marcarCalentado(ex, false)}>Saltar</button>
-                </div>
+              <motion.div variants={pieza}>
+                {rampa.length ? <Rampa ex={ex} rampa={rampa} /> : (
+                  <div className="ex-aprox">
+                    <div className="ex-aprox-t">
+                      <span className="txt-warn">Aproximación</span>{' · '}3 series subiendo hasta tu peso de trabajo: 5, 3 y 1 reps
+                    </div>
+                    <div className="ex-aprox-acts">
+                      <button type="button" className="chip" onClick={() => marcarCalentado(ex, true)}>Hecho</button>
+                      <button type="button" className="linkcard" onClick={() => marcarCalentado(ex, false)}>Saltar</button>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
 
             <div className="prog-warn" ref={pwRef} style={{ display: pwarnInitial ? '' : 'none' }}>
               {pwarnInitial ? `⚠ ${pwarnInitial}` : ''}
             </div>
-            {uni && (
-              <motion.div variants={pieza} className="ex-lados">
-                <button type="button" className={`chip ${v.side === 'left' ? 'on' : ''}`} aria-pressed={v.side === 'left'} onClick={() => setSide(ex.id, 'left')}>
-                  Izquierda
-                </button>
-                <button type="button" className={`chip ${v.side === 'right' ? 'on' : ''}`} aria-pressed={v.side === 'right'} onClick={() => setSide(ex.id, 'right')}>
-                  Derecha
-                </button>
-              </motion.div>
-            )}
             {imbalance && (
               <div className="prog-warn" style={{ marginBottom: 8 }}>
                 ⚠ {imbalance.strongerSide === 'left' ? 'Izquierda' : 'Derecha'} viene
@@ -807,7 +917,7 @@ function ExerciseSlide({ m, wd, started }) {
                 grande"). */}
             <motion.div variants={pieza} className="setrows dos">
               <div>
-                <div className="steplabel">Peso ({unidad}){uni ? ' / lado' : ''}</div>
+                <div className="steplabel">Peso <span>{unidad}{uni ? ' / lado' : ''}</span></div>
                 <ReelPicker
                   key={`w-${done.length}`}
                   value={v.w}
@@ -819,7 +929,9 @@ function ExerciseSlide({ m, wd, started }) {
                   onChange={setW}
                   label="Peso"
                 />
-                <div className="reel-alt" ref={altRef}>{wAlt(v.w)}</div>
+                {/* La otra unidad, centrada bajo SU rueda y dicha como
+                    equivalencia (≈), no como un dato más. */}
+                <div className="reel-alt">≈ <b ref={altRef}>{wAltPartes(v.w).n}</b> {wAltPartes(v.w).u}</div>
               </div>
               <div>
                 <div className="steplabel">Reps</div>
@@ -836,7 +948,7 @@ function ExerciseSlide({ m, wd, started }) {
             <motion.div variants={pieza}>
               <button
                 type="button"
-                className="btn ok"
+                className="btn-serie"
                 onClick={e => {
                   // "Juice" de videojuego: squash & stretch en el botón + una
                   // ráfaga de partículas en el punto de toque, sobre la acción
@@ -847,28 +959,17 @@ function ExerciseSlide({ m, wd, started }) {
                   saveSet(ex.id);
                 }}
               >
-                ✓ Terminé la serie {serieHechas + 1}
-                {uni && ` · ${v.side === 'left' ? 'izquierda' : 'derecha'}`}
+                <span className="btn-serie-ok" aria-hidden="true"><Check size={22} /></span>
+                <span className="btn-serie-t">{uni ? (v.side === 'left' ? 'Izquierda' : 'Derecha') : `Serie ${serieHechas + 1}`} lista</span>
+                {/* Lo que va a quedar anotado: se confirma de un vistazo antes
+                    de tocar. Se actualiza con las ruedas (syncDependents). */}
+                <small ref={valRef}>{wDisplay(v.w)} {unidad} × {v.r}</small>
               </button>
             </motion.div>
           </motion.div>
         )}
 
-        {done.length > 0 && (
-          <div className="chips setchips">
-            {done.map((s, i) => (
-              <button
-                key={i}
-                type="button"
-                className="chip blue"
-                aria-label={`Borrar serie: ${fmtNum(round1(s.w))} kg por ${s.r}`}
-                onClick={() => deleteSet(ex.id, i)}
-              >
-                {fmtNum(round1(s.w))}kg × {s.r}<span className="x">✕</span>
-              </button>
-            ))}
-          </div>
-        )}
+        {done.length > 0 && <TablaSeries exId={ex.id} done={done} uni={uni} unidad={unidad} />}
       </div>
     </div>
   );

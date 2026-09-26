@@ -21,7 +21,7 @@ import RestTimer from './components/RestTimer.jsx';
 import SessionComplete from './components/SessionComplete.jsx';
 import Rutina from './components/screens/Rutina.jsx';
 import Inicio from './components/screens/Inicio.jsx';
-import Hoy, { SessStartInfo } from './components/screens/Hoy.jsx';
+import Hoy, { SessStartInfo, TerminarSesion, SesionMenu } from './components/screens/Hoy.jsx';
 import Nutricion from './components/screens/Nutricion.jsx';
 import Progreso from './components/screens/Progreso.jsx';
 import DayDrop from './components/sheets/DayDrop.jsx';
@@ -82,6 +82,10 @@ function ConfirmSheet({ title, body, confirmLabel, onConfirm, onCancel }) {
 // switch(data-act) del dispatcher ACT{} original, pero acotado a "qué
 // contenido va dentro de <Sheet/>". Las pantallas siguientes (Hoy, Nutrición,
 // Progreso, Ajustes) van a sumar sus propios casos acá mismo.
+/* Las hojas que son una pregunta corta, no contenido: salen como tarjeta
+   flotante (Sheet variante="dialogo"). */
+const DIALOGOS = new Set(['confirm', 'terminar-sesion']);
+
 function SheetContent({ sheet }) {
   if (!sheet) return null;
   switch (sheet.type) {
@@ -95,6 +99,8 @@ function SheetContent({ sheet }) {
     case 'day-peek': return <DayPeek {...sheet.props} />;
     case 'ex-info': return <ExInfo {...sheet.props} />;
     case 'confirm': return <ConfirmSheet {...sheet.props} />;
+    case 'terminar-sesion': return <TerminarSesion {...sheet.props} />;
+    case 'sesion-menu': return <SesionMenu {...sheet.props} />;
     case 'calentamiento': return <Calentamiento {...sheet.props} />;
     case 'ex-opciones': return <ExOpciones {...sheet.props} />;
     case 'reorder-hoy': return <ReorderHoy {...sheet.props} />;
@@ -529,10 +535,11 @@ export default function App() {
         }}
       />
       {/* Inicio no scrollea: necesita que main deje de reservar el colchón
-          inferior que sí usan las pantallas largas. */}
+          inferior que sí usan las pantallas largas. La sesión en vivo
+          tampoco (2026-09-25): tiene que entrar entera en la pantalla. */}
       <main
         ref={mainRef}
-        className={`${store.tab === 'inicio' ? 'full' : ''}${arrastre ? ' arrastrando' : ''}`}
+        className={`${store.tab === 'inicio' || (store.tab === 'hoy' && store.draft) ? 'full' : ''}${arrastre ? ' arrastrando' : ''}`}
         onPointerDown={alBajar}
         onPointerMove={alMover}
         onPointerUp={alSoltar}
@@ -596,7 +603,7 @@ export default function App() {
           cambian de pestaña en toda la app (Hoy, Inicio, BodyMap). */}
       <TabBar active={store.tab === 'hoy' ? 'inicio' : store.tab} onChange={changeTab} />
       <Toast />
-      <Sheet open={!!store.sheet} onClose={closeSheet} variante={store.sheet?.type === 'confirm' ? 'dialogo' : undefined}>
+      <Sheet open={!!store.sheet} onClose={closeSheet} variante={DIALOGOS.has(store.sheet?.type) ? 'dialogo' : undefined}>
         <SheetContent sheet={store.sheet} />
       </Sheet>
       <RestTimer />
