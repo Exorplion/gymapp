@@ -834,7 +834,10 @@ export async function completeSession() {
      entrenamiento que YA está guardado en disco. */
   try {
     const { tocaAutoBackup } = await import('./persist.js');
-    if (tocaAutoBackup(S.cfg, S.sessions.length)) {
+    const { enModoPrueba } = await import('./modoPrueba.js');
+    // Un respaldo de la copia de prueba en Descargas se confundiría con uno
+    // de verdad: en modo prueba no se baja nada.
+    if (!enModoPrueba() && tocaAutoBackup(S.cfg, S.sessions.length)) {
       const { exportJSON } = await import('./backup.js');
       await exportJSON({ auto: true });
     }

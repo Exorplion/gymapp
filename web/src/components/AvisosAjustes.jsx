@@ -12,6 +12,7 @@ import {
   estadoRecordatorio, activarRecordatorio, apagarRecordatorio, suscripcionActual,
 } from '../lib/push.js';
 import { toast } from '../lib/toast.js';
+import { enModoPrueba } from '../lib/modoPrueba.js';
 
 const TIPOS = [
   { k: 'descanso', t: 'Fin del descanso', s: 'En la barra del teléfono. El sonido y la vibración siguen igual.', tag: TAG_DESCANSO },
@@ -122,12 +123,20 @@ export default function AvisosAjustes() {
         </>
       )}
 
-      {(estado === 'apagado' || estado === 'desconectado') && (
+      {/* La suscripción push es del navegador, no de la base: apagarla o
+          renovarla desde la copia de prueba le cortaría el recordatorio a
+          la app real. */}
+      {enModoPrueba() && (
+        <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+          En modo prueba el recordatorio no se puede cambiar: se maneja desde tu app real.
+        </div>
+      )}
+      {!enModoPrueba() && (estado === 'apagado' || estado === 'desconectado') && (
         <button type="button" className="btn" style={{ marginBottom: 10 }} onClick={activar} disabled={ocupado}>
           {ocupado ? 'Activando…' : estado === 'desconectado' ? 'Volver a activar' : 'Activar recordatorio de peso'}
         </button>
       )}
-      {estado === 'activo' && (
+      {!enModoPrueba() && estado === 'activo' && (
         <>
           <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={volverACopiar}>Copiar el código otra vez</button>
           <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={apagar} disabled={ocupado}>Apagar el recordatorio</button>

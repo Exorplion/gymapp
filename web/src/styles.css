@@ -411,6 +411,18 @@ header.top{
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   border-bottom:1px solid var(--line);
 }
+/* Modo prueba (modoPrueba.js): segundo renglón del header, siempre a la
+   vista. Ámbar, el mismo aviso cálido que .chip.warn: no es un error, pero
+   tiene que distinguirse de la app de todos los días. */
+header.top:has(.banda-prueba){flex-wrap:wrap;row-gap:var(--s2)}
+.banda-prueba{
+  flex-basis:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
+  padding:6px 6px 6px 12px;border-radius:var(--r-full);
+  background:rgba(var(--warn-rgb),.1);border:1px solid rgba(var(--warn-rgb),.32);
+  font-size:var(--t-micro);color:var(--warn);
+}
+.banda-prueba b{font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.banda-prueba .chip{padding:5px 12px;font-size:var(--t-micro)}
 .brand{
   font-family:'Barlow Condensed';font-weight:700;font-style:italic;
   font-size:var(--t-xl);letter-spacing:.2em;

@@ -44,6 +44,35 @@ import { aplicarPaleta, paletaDesde, COLOR_DEFECTO } from '../../lib/theme.js';
 import { motion } from 'motion/react';
 import { hojaProps, seccion } from '../../lib/variants.js';
 import AvisosAjustes from '../AvisosAjustes.jsx';
+import { enModoPrueba, entrarModoPrueba, salirModoPrueba } from '../../lib/modoPrueba.js';
+
+/** Entrar y salir del modo prueba (modoPrueba.js). No pide confirmación:
+    entrar sólo copia, y salir sólo tira la copia — ninguno de los dos toca
+    la base real. */
+function ModoPrueba() {
+  const [ocupado, setOcupado] = useState(false);
+  const en = enModoPrueba();
+  async function entrar() {
+    setOcupado(true);
+    try { await entrarModoPrueba(); } catch (e) {
+      console.error('[FIERRO] no se pudo entrar al modo prueba:', e);
+      toast(e.message || 'No se pudo armar la copia de prueba');
+      setOcupado(false);
+    }
+  }
+  return (
+    <>
+      <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+        {en
+          ? <>Estás en una <b>copia</b> de tus datos. Entrená, registrá y descartá lo que quieras: al salir la copia se borra entera y tu app vuelve tal como estaba.</>
+          : 'Una copia de tus datos para simular un entrenamiento y probar cosas nuevas. Nada de lo que hagas ahí llega a tu progreso real.'}
+      </div>
+      {en
+        ? <button type="button" className="btn" style={{ marginBottom: 10 }} onClick={() => salirModoPrueba()}>Salir y descartar la copia</button>
+        : <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={entrar} disabled={ocupado}>{ocupado ? 'Copiando tus datos…' : 'Entrar al modo prueba'}</button>}
+    </>
+  );
+}
 
 function MacroPreview({ m }) {
   return (
@@ -347,6 +376,11 @@ export default function Settings() {
             <div className="field"><label htmlFor="meta-grasa">Grasa</label><input id="meta-grasa" type="number" inputMode="numeric" defaultValue={g.f} onBlur={e => setGoal('f', e.target.value)} /></div>
           </div>
         )}
+      </motion.section>
+
+      <motion.section variants={seccion}>
+        <h3>Modo prueba</h3>
+        <ModoPrueba />
       </motion.section>
 
       <motion.section variants={seccion}>
