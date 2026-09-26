@@ -113,7 +113,7 @@ describe('cycleExplain', () => {
   it('dice el número concreto y de dónde sale', () => {
     conSesiones([0, 2, 4, 6, 8, 10, 12]);
     const texto = cycleExplain(cycledGoals(HOY, HOY));
-    expect(texto).toContain('g de carbohidratos');
+    expect(texto).toContain('carbohidratos');
     expect(texto).toContain('el total de la semana no cambia');
   });
 });

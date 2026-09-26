@@ -142,11 +142,12 @@ export function cycledGoals(dateStr = dstr(), hoy = dstr()): GoalsCiclados | nul
 export function cycleExplain(gc: GoalsCiclados): string {
   const dias = Math.round(gc.fraccion * VENTANA);
   if (gc.tipo === 'entreno') {
-    return `Hoy entrenaste: +${gc.deltaCarbs} g de carbohidratos para reponer glucógeno. `
-      + `Sale de los días que descansás (${VENTANA - dias} de los últimos ${VENTANA}), no de comer de más: `
+    // Sin repetir los gramos: el título de la tarjeta ya los dice
+    // (Nutricion.jsx, auditoría 2026-09-26).
+    return `Los carbohidratos extra reponen el glucógeno que gastaste. `
+      + `Salen de los días que descansás (${VENTANA - dias} de los últimos ${VENTANA}), no de comer de más: `
       + `el total de la semana no cambia.`;
   }
-  return `Hoy no entrenaste: ${gc.deltaCarbs} g de carbohidratos. `
-    + `Esos gramos se mueven a los días que sí entrenás (${dias} de los últimos ${VENTANA}); `
+  return `Esos carbohidratos se mueven a los días que sí entrenás (${dias} de los últimos ${VENTANA}); `
     + `el total de la semana no cambia.`;
 }

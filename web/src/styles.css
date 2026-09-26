@@ -1549,7 +1549,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .sc-pr{font-size:var(--t-sm);font-weight:700;color:var(--warn);flex:none}
 .sc-meta{font-size:var(--t-micro);color:var(--mut)}
 .sc-meta.strong{color:var(--blue2);font-weight:500}
-.sc-exs{font-size:var(--t-micro);color:var(--mut2);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-exs{font-size:var(--t-micro);color:var(--mut);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sess-week{
   font-family:'Barlow Condensed';font-size:var(--t-micro);font-weight:700;
   letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
@@ -1610,7 +1610,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   font-size:var(--t-nano);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
   color:var(--blue3);
 }
-.day-exs-head span{letter-spacing:.02em;text-transform:none;font-weight:600;color:var(--mut2)}
+.day-exs-head span{letter-spacing:.02em;text-transform:none;font-weight:600;color:var(--mut)}
 
 /* La banda de grupo muscular ocupa el ancho entero de la tarjeta: los
    márgenes negativos cancelan el padding de .ex-row y el padding propio lo
@@ -2153,10 +2153,15 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .empty p{font-size:var(--t-body);line-height:1.5;margin-bottom:18px}
 .sect{
   font-family:'Barlow Condensed';font-size:var(--t-body);font-weight:700;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--mut);margin:22px 2px 10px;
+  text-transform:uppercase;color:var(--blue2);margin:22px 2px 10px;
   display:flex;align-items:center;gap:10px;
 }
 .sect::after{content:"";flex:1;height:1px;background:var(--line)}
+/* Acción secundaria de un título ("Ver todas"): texto azul, después de la
+   raya — el mismo lenguaje que "Editar" en Plan de hoy. Como .btn estiraba
+   al 100% y partía el título en dos renglones (auditoría 2026-09-26). */
+.sect::after{order:1}
+.sect-link{order:2;flex:none;font-family:Barlow,sans-serif;font-size:var(--t-sm);font-weight:600;letter-spacing:0;text-transform:none;color:var(--blue2);min-height:40px;padding:0 var(--s1)}
 /* Un grupo de acciones apiladas: el espacio entre ellas lo pone el
    contenedor, no cada botón con su propio margen. Es la diferencia entre
    "estos dos botones son un grupo" y "estos dos botones quedaron cerca". */
@@ -2246,7 +2251,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .ptext.center{text-align:center}
 
 /* ---------- perfil / macros ---------- */
-.profcard{display:flex;align-items:center;gap:12px;cursor:pointer}
+.profcard{display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left}
 .profcard .pavatar{width:44px;height:44px;flex:none;border-radius:var(--r-md);background:var(--grad);display:grid;place-items:center;font-size:var(--t-xl);box-shadow:var(--glow)}
 .profcard .pt{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);line-height:1.1}
 .macro3 .rng{font-size:var(--t-nano);color:var(--mut2);font-weight:600;letter-spacing:.02em}
@@ -2634,6 +2639,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    nutriFeedback() (meals.js), que ya trae .fdot con su color según el caso. */
 .nutri-fb{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
 .nutri-fb .feedback{display:flex;align-items:flex-start;gap:10px;font-size:var(--t-sm);line-height:1.45}
+/* El primer aviso no repite la raya de .nutri-fb: eran dos líneas con una
+   franja vacía en el medio (auditoría 2026-09-26). */
+.nutri-fb .feedback:first-child{margin-top:0;padding-top:0;border-top:0}
 
 /* Chips de acceso rápido: píldoras completas, con el + en cian */
 .chip-scroll .chip.blue{
@@ -3239,7 +3247,9 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   background:var(--card2);border:1px solid var(--line);
   transition:border-color var(--d1) var(--ease-out);
 }
-.wkreal-d .wd{font-size:var(--t-nano);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut2)}
+/* 2026-09-26 (auditoría): 10 px en el gris más apagado no se leía; un paso
+   más grande y el gris de texto secundario. */
+.wkreal-d .wd{font-size:var(--t-micro);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
 .wkreal-d .nu{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;line-height:1;color:var(--mut)}
 .wkreal-d .dot{width:5px;height:5px;border-radius:var(--r-full);background:var(--line2)}
 .wkreal-d.on{border-color:rgba(var(--ok-rgb),.34);background:rgba(var(--ok-rgb),.08)}
