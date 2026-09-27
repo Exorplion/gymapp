@@ -1,6 +1,61 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-26
+**Última actualización:** 2026-09-27
+
+---
+
+## PENDIENTES AL 2026-09-27 — leer primero
+
+`main` = **#122** mergeado y publicado, **744 tests**. Todo lo de las sesiones
+2026-09-25/26 está en vivo: #118 modo prueba, #119 entrenar igual en un
+descanso, #120/#121 sesión en vivo en una pantalla + bloques 2–5, #122 Plan de
+hoy rediseñado (título en la condensada itálica del héroe con degradado,
+pastillas de vidrio, grupos con rayita + contador, nombres en condensada,
+número de orden centrado con el primero encendido — Hoy.jsx `PlanHoy`,
+styles.css "Plan de hoy, pasada estética").
+
+### 1. Auditoría TOTAL (pedido de Enzo, textual)
+
+> "úsala [make-interfaces-feel-better] para hacer auditoría, o busca otras
+> skills que sirvan para auditar lo visual, las animaciones, la fluidez de la
+> app y mejora todo, absolutamente todo, en todas las pantallas, en todos los
+> momentos, en todos los frames".
+
+Plan:
+1. **Skills:** `ecc:make-interfaces-feel-better` (radios concéntricos,
+   alineación óptica, sombras en capas, `text-wrap: balance/pretty`,
+   `tabular-nums`, entrar con opacidad + translateY + blur, salir más corto
+   ~150 ms, press `scale(.96)`, nunca `transition: all`, hit areas ≥ 40 px),
+   `ui-ux-pro-max`, `ecc:motion-foundations` / `ecc:motion-patterns`,
+   `accessibility`, `ecc:react-performance`.
+2. **Recorrido:** TODAS las pantallas y hojas a 390 y 430 px con
+   `seedRegistro()`: Inicio; Hoy antes / durante / al terminar la sesión;
+   Entreno + editor de rutina + Mis rutinas + gimnasios; Comida + hojas de
+   comida; Progreso + historial + ficha de ejercicio; Ajustes + Perfil;
+   descanso; fin de sesión; ficha de músculo; modo prueba.
+3. **Barrido automático:** `transition: all`, `will-change`, animaciones sin
+   salida, hit areas < 40 px, texto < 12 px, cifras sin `tabular-nums`,
+   títulos sin `text-wrap: balance`.
+4. **Fluidez:** build de producción + CPU 6× + mediana de 5 corridas (cambio
+   de pestaña, registrar serie, abrir/cerrar hojas, scroll de listas).
+5. **Informe primero** (`docs/auditoria-total-2026-09.md`), después arreglos
+   por pantalla, un PR por tanda. Enzo autorizó publicar sin preguntar.
+
+### 2. Decisiones de Enzo pendientes
+
+- **RIR:** hoy sólo alimenta `recoveryPct()` (muscle.ts). Opciones: que la
+  progresión lo use (RIR ≥ 3 en la última serie → proponer subir peso antes;
+  fallo sin completar reps → sostener) o sacar la pregunta.
+- **Tarjeta "Medidas" en Progreso:** dos valores y el resto vacío.
+- **Permiso:** que Enzo agregue `Bash(gh pr merge *)` en `/permissions`
+  (Claude no puede auto-otorgárselo; el clasificador lo bloquea).
+
+### Trampas nuevas
+
+- Llamar funciones de la app desde la consola de Chrome después de un HMR
+  puede tocar OTRA copia del módulo (`?t=`): para acciones, usar botones del DOM.
+- `gh pr edit --body` con texto que trae "·" pasado por Python en Windows
+  rompe el encoding: usar `gh pr comment` o un archivo.
 
 ---
 
