@@ -1,101 +1,51 @@
 /* ============================================================
-   FIERRO — dark steel & electric blue
+   FIERRO — base grafito y un acento elegido
    ============================================================ */
 @import "tailwindcss";
 
-/* Tailwind v4 (CSS-first config): expone los mismos tokens de --root abajo
-   como utilidades (bg-card, text-accent, etc.) para los componentes shadcn/ui
-   en components/ui/. No reemplaza los --root de abajo: ambos leen el mismo
-   valor para que el look no cambie al migrar un componente a Tailwind. */
+/* ---- COLOR: POR FUNCIÓN, NO POR MATIZ (rediseño 2026-09-27) --------------
+   Antes los tokens se llamaban --blue, --blue2, --cyan…: la app se pensó
+   azul, y el color que elegías en Ajustes se metía en casilleros que se
+   llamaban "azul". Quedaban 68 azules fijos, el vidrio navy, la arista
+   celeste, el gráfico, el mapa muscular… (relevamiento del 2026-09-27).
+
+   Ahora hay tres familias y ninguna se nombra por su color:
+     · BASE grafito: fondo, superficies, vidrio, textos y líneas. Fija, igual
+       para todos, neutra (sin tinte): la identidad de la app.
+     · ACENTO: sale de UN matiz elegido en Ajustes. lib/theme.js lo deriva en
+       OKLCH y pisa estas variables en <html>; los valores de acá son los de
+       Hielo (el de fábrica) y un test exige que coincidan con theme.js.
+     · ESTADOS: verde logrado, rojo peligro, ámbar alerta. Reservados: el
+       acento nunca se acerca a menos de 20° de ellos.
+
+   Fuera de este bloque NO va ningún color literal (colores-literales.test.js):
+   un blanco de brillo es rgba(var(--hi-rgb),α), una sombra
+   rgba(var(--shade-rgb),α). Así, si algún día hay modo claro, se cambia acá.
+
+   Tailwind lee estos mismos tokens con `@theme inline`: la utilidad
+   `text-accent` compila a `color:var(--accent)`, y sigue al acento elegido.
+   Con `@theme` a secas compilaba al valor fijo y 39 utilidades se quedaban
+   en el azul de fábrica aunque eligieras otro color. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-on-accent: var(--on-accent);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-flame: var(--flame);
+}
+
+/* Tailwind v4 (CSS-first config): radios, fuentes y escala tipográfica. */
 @theme {
-  /* ---- FUENTE ÚNICA DE VERDAD DEL COLOR ----------------------------------
-     Los `--x` de :root de abajo NO repiten estos valores: los referencian con
-     var(--color-x). Antes las dos listas estaban escritas a mano por
-     separado, y eso ya causó un bug real: al subir --mut2 por contraste sólo
-     se tocó :root, así que las utilidades Tailwind (text-mut2 y compañía, 59
-     usos en los .jsx) seguían pintando el valor viejo que no pasaba WCAG.
-     Con una sola lista, eso no puede volver a pasar.
-
-     ---- DIRECCIÓN: "acero" (análogo frío sobre grafito) --------------------
-     El problema original no era el gusto sino que el 90% de la interfaz vivía
-     en UNA familia de matiz sin jerarquía: el azul significaba a la vez marca,
-     acción, énfasis, enlace y serie de gráfico. Nada podía destacar, porque el
-     color por defecto ya era el color de énfasis.
-
-     Un intento anterior lo resolvió metiendo un acento naranja y degradando el
-     azul a "color de datos". Fallaba por una razón simple: naranja y azul son
-     OPUESTOS en la rueda, y lo opuesto produce tensión, no armonía. Se notaba
-     sobre todo contra el modelo anatómico, que es una superficie azul grande y
-     protagónica. Descartado por Enzo, con razón.
-
-     Esta paleta busca la armonía donde de verdad está: en matices VECINOS. Es
-     un recorrido continuo —índigo → azul → celeste → cian → verde azulado— en
-     el que dos colores cualesquiera son adyacentes, así que CHOCAR ES
-     IMPOSIBLE POR CONSTRUCCIÓN. Hasta el verde de "subiste" es vecino del
-     cian, en vez de ser un color de otra familia pegado encima.
-
-     Lo que resuelve el problema original no es cambiar de matiz, entonces,
-     sino jerarquizar por LUMINOSIDAD y SATURACIÓN dentro de la familia: el
-     acento es el punto más claro y saturado del recorrido, y todo lo demás
-     baja desde ahí. El modelo anatómico y los gráficos ya viven en esta
-     familia, así que entran nativos.
-
-     El único color de afuera es el rojo de "bajaste", y aparece poco: un
-     color que rompe la armonía a propósito, y sólo cuando algo va mal, es
-     justamente lo que lo hace legible como alarma.
-
-     Contraste verificado sobre --card (#14161A): txt ~17:1 · mut 7.4:1 ·
-     mut2 5.5:1 · accent 8.4:1 · ok 9.7:1 · warn ~11:1 · red 6.6:1 ·
-     on-grad sobre accent 8.7:1. Ninguno por debajo de AA. */
-  /* ---- SEGUNDA VUELTA: "acero negro" (Enzo, 2026-09-09) ------------------
-     Pedido: "puede ser negro pero con tonos azul de fondo bordes marcos, no
-     sé tono metálico". La familia de matiz NO cambia —sigue siendo el
-     recorrido análogo frío de arriba, que se eligió por una razón geométrica
-     que no caducó— lo que cambia son las SUPERFICIES.
-
-     Antes eran grises neutros (#14161A) con bordes de blanco translúcido. El
-     blanco plano es justamente lo que hace que una superficie se lea como
-     plástico: el metal no devuelve luz blanca y pareja, devuelve el color de
-     lo que lo rodea, y con un borde más claro arriba que abajo (la luz cae
-     de arriba). Por eso acá el fondo baja a negro casi puro, las superficies
-     suben apenas en azul en vez de en gris, y los bordes pasan a ser azul
-     translúcido en lugar de blanco.
-
-     El contraste del texto MEJORA con este cambio, no empeora: las
-     superficies se oscurecen y el texto claro queda encima con más
-     diferencia que antes. Medido sobre las cuatro superficies nuevas, el peor
-     caso de texto es mut2 sobre --card2 con 5.21:1 (AA pide 4.5); sobre
-     --card da txt 17.1:1, mut 7.7:1, mut2 5.65:1, accent 8.8:1. Ninguno baja
-     de AA. */
-  --color-bg: #050609;       /* negro: el fondo de la app */
-  --color-bg2: #0B0E14;      /* negro azulado: barras y zócalos */
-  --color-card: #0E1219;     /* superficie: negro con azul, no gris */
-  --color-card2: #151B25;    /* superficie elevada */
-  /* Bordes/marcos: azul translúcido, no blanco. El "metal" es esto más el
-     --edge-metal de abajo (arriba claro, abajo oscuro). */
-  --color-line: rgba(var(--blue2-rgb),.18);
-  --color-line2: rgba(var(--blue3-rgb),.34);
-  --color-txt: #F1F5F9;
-  --color-mut: #9CA7B5;
-  --color-mut2: #838E9E;
-  /* El recorrido, del más profundo al más claro. Cada uno es vecino del
-     siguiente: por eso combinan entre sí sin que haya que pensarlo. */
-  --color-deep: #2563EB;     /* índigo: arranque de los gradientes */
-  --color-blue: #3B82F6;
-  --color-blue2: #60A5FA;
-  --color-blue3: #93C5FD;
-  --color-accent: #38BDF8;   /* ACCIÓN: el punto más claro y saturado */
-  --color-cyan: #22D3EE;     /* verde azulado: el vecino del acento */
-  --color-ok: #34D399;       /* subiste, PR — vecino del cian, armoniza */
-  --color-warn: #FBBF24;     /* atención, calentamiento — usado poco */
-  --color-red: #F87171;      /* bajaste: el único de afuera, y es a propósito */
-  /* La racha. Era el único color de la app que se usaba en seis lugares sin
-     tener nombre: estaba escrito a mano como var(--flame) en la llama del header,
-     en el número de la racha, en la barra de grasa, en el primer ejercicio y
-     en la tarjeta de sesión. Seis copias del mismo naranja significan que
-     cambiarlo es buscar y reemplazar, y que nadie sabe si son el mismo color
-     a propósito o por casualidad. Son a propósito: es el fuego. */
-  --color-flame: #FFC46B;
   --radius-r: 18px;
   --radius-r-lg: 26px;
   --font-cond: 'Barlow Condensed', sans-serif;
@@ -128,76 +78,84 @@
 }
 
 :root{
-  /* Alias de @theme, NO copias: ver el comentario de arriba sobre por qué
-     tener dos listas escritas a mano ya causó un bug de contraste real. */
-  --bg:var(--color-bg);
-  --bg2:var(--color-bg2);
-  --card:var(--color-card);
-  --card2:var(--color-card2);
-  --line:var(--color-line);
-  --line2:var(--color-line2);
-  /* Grises tomados del mockup (docs/design-tokens-hoy.md). Estaban cerca
-     pero no eran los mismos, y en tipografía chica la diferencia se nota. */
-  --txt:var(--color-txt);
-  --mut:var(--color-mut);
-  /* Subido de #64749A el 2026-09-05: aquel valor NO llegaba a 4.5:1 (WCAG
-     1.4.3 AA) sobre NINGUNA superficie de la app — 3.98:1 sobre --card,
-     3.68:1 sobre --card2, 3.18:1 sobre la tabbar. Y es el token de casi todo
-     el texto chico (8.5-11.5px). Texto chico, contraste bajo y pantalla al
-     sol del gimnasio es el peor caso posible. #8493BC da ~5.3:1 sobre
-     --card2 sin cambiar la sensación de "gris tenue". */
-  --mut2:var(--color-mut2);
-  --accent:var(--color-accent);
-  --deep:var(--color-deep);
-  --blue:var(--color-blue);
-  --blue2:var(--color-blue2);
-  --blue3:var(--color-blue3);
-  --cyan:var(--color-cyan);
-  /* Los dos gradientes recorren la familia de un extremo al otro (índigo →
-     acento → cian), así que son el mismo degradado que ya usa la app, sólo
-     que ordenado a propósito en vez de por acumulación. */
-  --grad:linear-gradient(135deg,var(--deep) 0%,var(--accent) 100%);
-  --grad2:linear-gradient(112deg,var(--deep),var(--accent) 58%,var(--cyan));
-  /* Gemelo ámbar de --grad2, para el CTA que vive dentro de la tarjeta de
-     calentamiento, que es cálida por diseño (calentar = calor). Un botón
-     frío ahí adentro vuelve a ser el cuerpo extraño que este gemelo vino a
-     evitar. El ámbar es un color de la paleta (--warn) y una sola tarjeta
-     cuenta como "usado poco". */
-  --grad-warn:linear-gradient(112deg,#E0A020,#FBBF24 58%,#FDE08A);
-  /* Gemelo verde, para el CTA de "hecho/completo". Existía suelto y escrito
-     dos veces (.btn.ok y .ini-cta.ok) con el verde de la paleta ANTERIOR
-     (#2EE6A8), que no es --ok (#34D399): dos verdes distintos a un toque de
-     distancia. */
-  --grad-ok:linear-gradient(135deg,#0E9F6E,var(--ok));
-  /* Texto SIEMPRE oscuro sobre el gradiente, nunca blanco: el acento es un
-     celeste muy claro, así que el blanco encima no llegaría a AA. Este azul
-     casi negro da 8.7:1 y se mantiene dentro de la familia fría. */
-  --on-grad:#04121C;
-  --ok:var(--color-ok);
-  --warn:var(--color-warn);
-  --red:var(--color-red);
-  --flame:var(--color-flame);
-  /* ---- CANALES RGB (auditoría 2026-09-10) ---------------------------------
-     El rediseño "acero" cambió los TOKENS, pero dejó 50 rgba() con los
-     valores de la paleta ANTERIOR escritos a mano: el azul de los halos,
-     anillos, chips y sombras seguía siendo #2E7DFF (46,125,255), no el
-     #3B82F6 de ahora. Dos consecuencias reales, las dos invisibles de a una
-     pero acumulativas: los efectos iban un poco corridos de matiz respecto
-     del resto, y —lo importante— NO seguían el color elegido en Ajustes,
-     porque `aplicarPaleta()` sólo pisa custom properties y un literal no es
-     una. Elegías otro color y los halos se quedaban azules.
+  /* ---- BASE GRAFITO (fija) ------------------------------------------------
+     Un negro apenas levantado: las tarjetas se separan mejor del fondo, el
+     vidrio se nota más y cansa menos la vista (maqueta 04, opción B, elegida
+     por Enzo). Contraste medido en theme.test.js: el peor caso es --text-3
+     sobre la esquina tintada de una hero, ≥ 4.5 con cualquier acento. */
+  --bg:#101113;
+  --bg-rgb:16,17,19;
+  --surface:#18191c;         /* tarjeta opaca */
+  --surface-2:#202125;       /* control, tarjeta elevada */
+  /* El vidrio: grafito translúcido sin tinte. El saturate baja de 1.5 a 1.2:
+     a 1.5 amplificaba lo que hubiera detrás (antes, el resplandor azul) y
+     teñía todas las superficies. */
+  --glass-rgb:34,35,39;
+  --glass:rgba(var(--glass-rgb),.66);
+  --glass-strong:rgba(var(--glass-rgb),.9);   /* header, barra, hojas: van sobre contenido que se mueve */
+  --glass-blur:blur(22px) saturate(1.2);
+  --glass-border:rgba(var(--hi-rgb),.10);
+  --text:#f3f4f6;
+  --text-2:#b1b1b9;
+  --text-3:#97979f;
+  --line:rgba(var(--hi-rgb),.09);
+  --line-2:rgba(var(--hi-rgb),.16);
+  /* Luz y sombra neutras: brillos del vidrio y sombras proyectadas. */
+  --hi-rgb:255,255,255;
+  --shade-rgb:0,0,0;
 
-     No se puede meter una var() adentro de rgba() sin esto: rgba() necesita
-     los tres canales sueltos. Por eso el token es el TRIPLETE, no el color.
-     `theme.js` los reescribe junto con el resto de la paleta. */
-  --blue-rgb:59,130,246;
-  --blue2-rgb:96,165,250;
-  --deep-rgb:37,99,235;
-  --cyan-rgb:34,211,238;
+  /* ---- ACENTO (Hielo; lib/theme.js lo pisa con el elegido) ---------------
+     --accent        oklch(.80 C h): énfasis, íconos, cifras, foco
+     --accent-strong oklch(.62 C' h): arranque del degradado, rellenos, halos
+     --on-accent     texto oscuro sobre el acento y sobre el degradado */
+  --accent:#49cffc;
+  --accent-strong:#0094bb;
+  --on-accent:#02141b;
+  --accent-rgb:73,207,252;
+  --accent-strong-rgb:0,148,187;
+  --accent-grad:linear-gradient(112deg,var(--accent-strong),var(--accent));
+  --accent-glow:0 16px 40px -14px rgba(var(--accent-strong-rgb),.55);
+  /* La arista del vidrio: arriba devuelve luz (del acento, apenas), abajo
+     sombra. Esa diferencia es lo que hace que se lea como borde de vidrio y
+     no como un contorno pintado. */
+  --edge-metal:inset 0 1px 0 rgba(var(--accent-rgb),.22), inset 0 -1px 0 rgba(var(--shade-rgb),.5);
+  --grad-metal:linear-gradient(180deg,rgba(var(--hi-rgb),.045),rgba(var(--hi-rgb),0) 46%);
+  /* Mapa muscular: tres escalones de luz del mismo matiz (hi/md/lo son las
+     paradas de cada degradado). Cuanto más reciente, más luz. */
+  --mapa-0-hi:#c9efff; --mapa-0-md:#49cffc; --mapa-0-lo:#006e8c;
+  --mapa-1-hi:#58b9dc; --mapa-1-md:#008db3; --mapa-1-lo:#004458;
+  --mapa-2-hi:#42778b; --mapa-2-md:#20576b; --mapa-2-lo:#002b39;
+  /* El cuarto escalón (7+ días) es "atención": ámbar de estado, no acento. */
+  --mapa-3-hi:#F6C98B; --mapa-3-md:#E39C43; --mapa-3-lo:#6B3F10;
+  /* Sin registro y lo que no se rastrea: grafito neutro. El pelo, castaño. */
+  --mapa-n-hi:#44454b; --mapa-n-md:#2c2d32; --mapa-n-lo:#18191c;
+  --mapa-ne-hi:#3c3d42; --mapa-ne-md:#28292d; --mapa-ne-lo:#161719;
+  --pelo-hi:#8A6A4A; --pelo-md:#5C4430; --pelo-lo:#33241A;
+
+  /* ---- ESTADOS (fijos) -----------------------------------------------------
+     Verde: logrado, subiste, PR. Rojo: bajaste, peligro. Ámbar: alerta,
+     aproximación. Llama: la racha. Cada uno con su tono fuerte para el
+     arranque de un degradado y su texto oscuro encima. */
+  --ok:#34D399;
   --ok-rgb:52,211,153;
+  --ok-strong:#0E9F6E;
+  --on-ok:#062b18;
+  --danger:#F87171;
+  --danger-rgb:248,113,113;
+  --danger-strong:#E8455F;
+  --warn:#FBBF24;
   --warn-rgb:251,191,36;
-  --red-rgb:248,113,113;
-  --blue3-rgb:147,197,253;
+  --warn-strong:#E0A020;
+  --warn-soft:#FDE08A;
+  --on-warn:#2A1603;
+  --flame:#FFC46B;
+  --flame-rgb:255,196,107;
+  --grad-ok:linear-gradient(135deg,var(--ok-strong),var(--ok));
+  /* Gemelo ámbar del degradado del acento, para el CTA de la tarjeta de
+     calentamiento (calentar = calor). */
+  --grad-warn:linear-gradient(112deg,var(--warn-strong),var(--warn) 58%,var(--warn-soft));
+  --glow-warn:0 16px 40px -14px rgba(var(--warn-rgb),.5);
+
   --r:18px;
   --r-lg:26px;
   /* ---- RADIOS (auditoria 2026-09-09) --------------------------------------
@@ -214,17 +172,6 @@
        --r-full pildora / circulo */
   --r-xs:4px; --r-sm:8px; --r-md:12px; --r-full:999px;
   --tabs-h:91px;
-  --glow:0 16px 40px -14px rgba(56,189,248,.55);
-  --glow-warn:0 16px 40px -14px rgba(251,191,36,.5);
-  --glass-blur:blur(22px) saturate(1.5);
-  /* Subido de .16 a .30 el 2026-09-10: el marco existía pero no se veía.
-     Un azul claro al 16% sobre un fondo casi negro da ~1.15:1 contra la
-     superficie — está ahí, pero por debajo del umbral en el que el ojo lo
-     lee como una arista, y peor todavía en una pantalla al sol del gimnasio
-     (Enzo: "la paleta negra con los border azul metalizado no aparece").
-     Al 30% la arista se distingue sin volverse un contorno duro. */
-  --glass-border:rgba(var(--blue3-rgb),.30);
-  --glass-hi:var(--edge-metal);
   /* escala de espaciado: antes había márgenes sueltos (4, 6, 10, 13, 14px…)
      sin ritmo; todo lo estructural se apoya ahora en estos seis pasos */
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
@@ -255,17 +202,6 @@
   --t-nano:var(--text-nano); --t-micro:var(--text-micro); --t-sm:var(--text-sm);
   --t-body:var(--text-body); --t-lg:var(--text-lg); --t-xl:var(--text-xl);
   --t-2xl:var(--text-2xl); --t-display:var(--text-display); --t-hero:var(--text-hero);
-  /* ---- MARCO METÁLICO -----------------------------------------------------
-     Un borde de un solo color se lee plano. El metal se reconoce porque la
-     arista de ARRIBA devuelve más luz que la de abajo: eso es todo el truco,
-     y es un inset box-shadow, no una imagen ni un blur más. --edge-metal se
-     pone junto al borde de una tarjeta; --grad-metal es el relleno sutil que
-     evita que una superficie grande se vea como un rectángulo muerto. */
-  /* El contraste ARRIBA/abajo es lo que hace que se lea metal y no un borde
-     pintado: subió la luz de arriba (.18 → .40) y se profundizó la sombra de
-     abajo. Sin esa diferencia el marco se ve plano por más color que tenga. */
-  --edge-metal:inset 0 1px 0 rgba(191,219,254,.40), inset 0 -1px 0 rgba(0,0,0,.62);
-  --grad-metal:linear-gradient(180deg,rgba(var(--blue2-rgb),.09),rgba(var(--blue2-rgb),0) 46%);
   /* ---- TIEMPOS (auditoría 2026-09-09) -------------------------------------
      La app tenía 17 duraciones distintas en CSS (.15 .18 .2 .22 .24 .25 .28
      .3 .32 .34 .38 .45 .5…) y otras 17 en JS, entre WAAPI, GSAP y CSS. Eso
@@ -328,7 +264,7 @@ html{scroll-behavior:smooth}
   body{
     font-family:'Barlow',system-ui,sans-serif;
     background:var(--bg);
-    color:var(--txt);
+    color:var(--text);
     min-height:100dvh;
     overscroll-behavior-y:none;
     -webkit-font-smoothing:antialiased;
@@ -341,7 +277,7 @@ body::before{
   background:
     radial-gradient(90% 40% at 50% -5%, rgba(38,98,255,.16), transparent 65%),
     radial-gradient(70% 30% at 100% 100%, rgba(30,70,180,.08), transparent 60%),
-    radial-gradient(60% 34% at 100% 100%, rgba(var(--cyan-rgb),.10), transparent 62%);
+    radial-gradient(60% 34% at 100% 100%, rgba(var(--accent-rgb),.10), transparent 62%);
 }
 body::after{
   content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.045;
@@ -367,7 +303,7 @@ h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif}
    así que sin el halo el foco se confundiría con el propio botón. WCAG 2.2
    exige 3:1 (2.4.11 Focus Appearance); el halo lo garantiza contra cualquier
    fondo. */
-:focus-visible{outline:2px solid var(--blue2);outline-offset:2px;border-radius:var(--r-sm);
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm);
   box-shadow:0 0 0 4px var(--bg)}
 
 /* ÁREA TÁCTIL — WCAG 2.2 SC 2.5.8 (Target Size, AA) exige 24x24 CSS px; la
@@ -400,7 +336,7 @@ button:active{transform:scale(.96);transition-duration:.05s}
 [data-act]:not(button):active{transform:scale(.98);transition-duration:.05s}
 input[type=number]{-moz-appearance:textfield}
 input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none}
-::placeholder{color:var(--mut2)}
+::placeholder{color:var(--text-3)}
 
 /* ---------- header ---------- */
 /* backdrop-filter va SIN su par -webkit-: el build agrega el prefijo solo, y
@@ -428,21 +364,21 @@ header.top{
   font-family:'Barlow Condensed';font-weight:700;font-style:italic;
   font-size:var(--t-xl);letter-spacing:.2em;
   /* el gradiente del mockup llega hasta el cian; el anterior moría en azul */
-  background:linear-gradient(96deg,var(--txt) 8%,var(--accent) 62%,var(--cyan) 96%);
+  background:linear-gradient(96deg,var(--text) 8%,var(--accent) 62%,var(--accent) 96%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
   display:flex;align-items:center;gap:8px;
 }
-.brand svg{width:24px;height:24px;stroke:var(--blue2);filter:drop-shadow(0 0 8px rgba(62,150,255,.7))}
+.brand svg{width:24px;height:24px;stroke:var(--accent);filter:drop-shadow(0 0 8px rgba(62,150,255,.7))}
 .icon-btn{
   width:38px;height:38px;border-radius:var(--r-md);display:grid;place-items:center;
-  border:1px solid rgba(255,255,255,.1);color:var(--mut);
+  border:1px solid rgba(255,255,255,.1);color:var(--text-2);
   background:linear-gradient(150deg,rgba(255,255,255,.09),rgba(255,255,255,.02));
   transition:var(--d1);
 }
 .icon-btn svg{width:19px;height:19px}
-.icon-btn:active{border-color:var(--line2);color:var(--blue2)}
-.icon-btn.accent{border-color:var(--blue2);color:var(--blue2);background:rgba(var(--blue-rgb),.14)}
-.icon-btn.accent:active{background:rgba(var(--blue-rgb),.24)}
+.icon-btn:active{border-color:var(--line-2);color:var(--accent)}
+.icon-btn.accent{border-color:var(--accent);color:var(--accent);background:rgba(var(--accent-strong-rgb),.14)}
+.icon-btn.accent:active{background:rgba(var(--accent-strong-rgb),.24)}
 .header-actions{display:flex;gap:8px;align-items:center}
 /* La racha es el único acento cálido de la interfaz: en ámbar destaca sobre
    un fondo que es todo azul y cian. En azul se perdía entre los demás. */
@@ -458,8 +394,8 @@ header.top{
 .icon-btn svg.streak-flame{width:15px;height:15px;color:var(--flame);flex:none}
 .streak-n{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-body);letter-spacing:.04em;color:var(--flame)}
 .heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.heatmap .cell{aspect-ratio:1;border-radius:var(--r-xs);background:var(--card2);border:1px solid var(--line)}
-.heatmap .cell.done{background:var(--grad2);border-color:transparent;animation:zoom var(--d3) var(--ease) backwards}
+.heatmap .cell{aspect-ratio:1;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--line)}
+.heatmap .cell.done{background:var(--accent-grad);border-color:transparent;animation:zoom var(--d3) var(--ease) backwards}
 .heatmap .cell.rest{opacity:.28}
 .heatmap .cell.miss{background:rgba(255,93,115,.12);border-color:rgba(255,93,115,.3)}
 
@@ -680,8 +616,8 @@ main.arrastrando{overflow:hidden;user-select:none}
 @keyframes zoom{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes sweep{0%,20%{left:-60%}80%,100%{left:130%}}
 @keyframes rise{from{width:0}}
-@keyframes glowring{0%,100%{filter:drop-shadow(0 0 6px rgba(var(--cyan-rgb),.35))}50%{filter:drop-shadow(0 0 18px rgba(var(--cyan-rgb),.7))}}
-@keyframes flash{0%,100%{background-color:transparent}50%{background-color:rgba(var(--blue-rgb),.14)}}
+@keyframes glowring{0%,100%{filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),.35))}50%{filter:drop-shadow(0 0 18px rgba(var(--accent-rgb),.7))}}
+@keyframes flash{0%,100%{background-color:transparent}50%{background-color:rgba(var(--accent-strong-rgb),.14)}}
 /* punto pulsante del estado de sesión activa en el hero de Hoy — en el
    original vivía como un <style> inyectado inline dentro de renderHoy()
    (índice ~1002), no en el <style> global, así que el puerto estático de
@@ -701,7 +637,7 @@ main.arrastrando{overflow:hidden;user-select:none}
   letter-spacing:.02em;line-height:.9;
 }
 .vtitle .sub{
-  color:var(--mut);font-size:var(--t-sm);font-weight:500;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text-2);font-size:var(--t-sm);font-weight:500;letter-spacing:.06em;text-transform:uppercase;
 }
 
 /* ---------- cards ---------- */
@@ -710,20 +646,20 @@ main.arrastrando{overflow:hidden;user-select:none}
   border:1px solid var(--glass-border);border-radius:var(--r);
   padding:var(--s4);margin-bottom:var(--s3);
   backdrop-filter:var(--glass-blur);
-  box-shadow:var(--glass-hi),0 14px 34px -18px rgba(0,0,0,.6);
+  box-shadow:var(--edge-metal),0 14px 34px -18px rgba(0,0,0,.6);
 }
 .card.hero{
-  background:linear-gradient(158deg,rgba(var(--deep-rgb),.3),rgba(255,255,255,.03) 58%),rgba(12,19,34,.85);
+  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.3),rgba(255,255,255,.03) 58%),rgba(12,19,34,.85);
   border-color:rgba(120,170,255,.22);border-radius:var(--r-lg);
   padding:20px;position:relative;overflow:hidden;
 }
 /* El halo del mockup es cian y bastante más grande (210px) que el azul de
    160px que había: es lo que le da profundidad a la tarjeta. */
 .card.hero::before{content:"";position:absolute;top:-52px;right:-52px;width:210px;height:210px;
-  background:radial-gradient(circle,rgba(var(--cyan-rgb),.28),transparent 66%);pointer-events:none}
+  background:radial-gradient(circle,rgba(var(--accent-rgb),.28),transparent 66%);pointer-events:none}
 /* tres niveles en vez de uno: destacada (hero) > normal > sutil (sub).
    Cuando todo tiene el mismo peso, nada destaca y todo se lee como ruido. */
-.card.sub{background:rgba(var(--blue2-rgb),.035);border-color:rgba(var(--blue2-rgb),.09);padding:var(--s3)}
+.card.sub{background:rgba(var(--accent-rgb),.035);border-color:rgba(var(--accent-rgb),.09);padding:var(--s3)}
 
 /* ---------- buttons ---------- */
 .btn{
@@ -731,7 +667,7 @@ main.arrastrando{overflow:hidden;user-select:none}
   width:100%;min-height:52px;border-radius:var(--r);
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);
   letter-spacing:.09em;text-transform:uppercase;
-  background:var(--grad2);color:var(--on-grad);box-shadow:var(--glow);
+  background:var(--accent-grad);color:var(--on-accent);box-shadow:var(--accent-glow);
   transition:var(--d1);position:relative;overflow:hidden;
 }
 .btn:not(.sm):not(.ghost):not(.dim):not(.danger)::after{
@@ -740,10 +676,10 @@ main.arrastrando{overflow:hidden;user-select:none}
   animation:sweep 3.2s ease-in-out infinite;pointer-events:none;
 }
 .btn.sm{min-height:44px;font-size:var(--t-body);border-radius:var(--r-md)}
-.btn.ghost{background:var(--card2);box-shadow:none;border:1px solid var(--line2);color:var(--blue2)}
-.btn.dim{background:var(--card2);box-shadow:none;border:1px solid var(--line);color:var(--mut)}
-.btn.danger{background:rgba(255,93,115,.12);box-shadow:none;border:1px solid rgba(255,93,115,.35);color:var(--red)}
-.btn.ok{background:var(--grad-ok);box-shadow:0 6px 24px -6px rgba(var(--ok-rgb),.4);color:var(--on-grad)}
+.btn.ghost{background:var(--surface-2);box-shadow:none;border:1px solid var(--line-2);color:var(--accent)}
+.btn.dim{background:var(--surface-2);box-shadow:none;border:1px solid var(--line);color:var(--text-2)}
+.btn.danger{background:rgba(255,93,115,.12);box-shadow:none;border:1px solid rgba(255,93,115,.35);color:var(--danger)}
+.btn.ok{background:var(--grad-ok);box-shadow:0 6px 24px -6px rgba(var(--ok-rgb),.4);color:var(--on-ok)}
 .btn:disabled{opacity:.4;box-shadow:none}
 /* botón con una segunda línea que explica la consecuencia. Los .btn son
    versalitas apretadas: el subtexto necesita romper la caja (minúsculas, sin
@@ -755,29 +691,29 @@ main.arrastrando{overflow:hidden;user-select:none}
 }
 .check-row{
   display:flex;align-items:center;gap:10px;
-  margin-top:var(--s3);padding:2px;font-size:var(--t-sm);color:var(--mut);
+  margin-top:var(--s3);padding:2px;font-size:var(--t-sm);color:var(--text-2);
 }
-.check-row input{width:18px;height:18px;flex:none;accent-color:var(--blue)}
+.check-row input{width:18px;height:18px;flex:none;accent-color:var(--accent-strong)}
 
 /* ---------- steppers ---------- */
 .step{display:flex;align-items:center;gap:6px}
 .step button{
   width:48px;height:48px;flex:none;border-radius:var(--r-md);
-  background:var(--card2);border:1px solid var(--line2);
-  color:var(--blue2);font-size:var(--t-2xl);font-weight:600;line-height:1;
+  background:var(--surface-2);border:1px solid var(--line-2);
+  color:var(--accent);font-size:var(--t-2xl);font-weight:600;line-height:1;
 }
 .step .val{
   flex:1;text-align:center;min-width:0;
 }
 .step .val input{
   width:100%;text-align:center;background:none;border:none;outline:none;
-  font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-display);color:var(--txt);
+  font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-display);color:var(--text);
   font-variant-numeric:tabular-nums;
 }
-.step .val .alt{font-size:var(--t-micro);color:var(--mut);letter-spacing:.05em;display:block;margin-top:-4px}
-.steplabel{font-size:var(--t-micro);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
-.setrows .steplabel{font-family:'Barlow Condensed';font-size:var(--t-sm);font-weight:700;color:var(--txt)}
-.setrows .steplabel span{color:var(--mut2);font-weight:600;letter-spacing:.06em;margin-left:4px}
+.step .val .alt{font-size:var(--t-micro);color:var(--text-2);letter-spacing:.05em;display:block;margin-top:-4px}
+.steplabel{font-size:var(--t-micro);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text-2);margin-bottom:6px}
+.setrows .steplabel{font-family:'Barlow Condensed';font-size:var(--t-sm);font-weight:700;color:var(--text)}
+.setrows .steplabel span{color:var(--text-3);font-weight:600;letter-spacing:.06em;margin-left:4px}
 
 /* ---------- rueda de gestos (peso/reps) ---------- */
 /* Scroll-snap nativo, igual que .carousel — el gesto lo maneja el navegador,
@@ -788,7 +724,7 @@ main.arrastrando{overflow:hidden;user-select:none}
    overflow:hidden en .reel quedaba recortada por completo (invisible), y lo
    único que se veía era el backdrop translúcido detrás ("mantengo
    presionado y la pantalla sólo hace un blur", bug reportado por Enzo). */
-.reel{position:relative;height:64px;border-radius:var(--r);background:var(--card2);border:1px solid var(--line2)}
+.reel{position:relative;height:64px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--line-2)}
 .reel-track{
   display:flex;align-items:center;height:100%;overflow-x:auto;border-radius:var(--r);
   scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;
@@ -797,10 +733,10 @@ main.arrastrando{overflow:hidden;user-select:none}
 .reel-track::-webkit-scrollbar{display:none}
 .reel-tooth{
   flex:none;width:52px;scroll-snap-align:center;text-align:center;
-  font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-lg);color:var(--mut);
+  font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-lg);color:var(--text-2);
   font-variant-numeric:tabular-nums;transition:color var(--d1),font-size var(--d1),font-weight var(--d1);
 }
-.reel-tooth.on{color:var(--txt);font-size:var(--t-2xl);font-weight:800}
+.reel-tooth.on{color:var(--text);font-size:var(--t-2xl);font-weight:800}
 /* El diente centrado es tocable (tap corto → edición manual; mantener
    presionado → rueda fina, ver ReelPicker.jsx). cursor:pointer es la única
    pista visual que hace falta —es el mismo número grande de siempre, no un
@@ -813,7 +749,7 @@ main.arrastrando{overflow:hidden;user-select:none}
 }
 .reel-indicator{
   position:absolute;left:50%;top:6px;bottom:6px;width:52px;transform:translateX(-50%);
-  border-radius:var(--r-md);background:var(--grad2);opacity:.14;pointer-events:none;
+  border-radius:var(--r-md);background:var(--accent-grad);opacity:.14;pointer-events:none;
 }
 
 /* Rueda fina vertical (mantener presionado): flota sobre la rueda gruesa en
@@ -825,7 +761,7 @@ main.arrastrando{overflow:hidden;user-select:none}
 .reel-fine{
   position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%);
   z-index:61;width:76px;height:168px;border-radius:var(--r);overflow:hidden;
-  background:var(--card2);border:1px solid var(--line2);
+  background:var(--surface-2);border:1px solid var(--line-2);
   box-shadow:0 22px 50px -20px rgba(0,0,0,.8);
   animation:zoom var(--d1) var(--ease-out) backwards;
 }
@@ -838,12 +774,12 @@ main.arrastrando{overflow:hidden;user-select:none}
 .reel-tooth-v{
   flex:none;height:44px;display:flex;align-items:center;justify-content:center;
   scroll-snap-align:center;font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-lg);
-  color:var(--mut);font-variant-numeric:tabular-nums;transition:color var(--d1),font-size var(--d1),font-weight var(--d1);
+  color:var(--text-2);font-variant-numeric:tabular-nums;transition:color var(--d1),font-size var(--d1),font-weight var(--d1);
 }
-.reel-tooth-v.on{color:var(--txt);font-size:var(--t-2xl);font-weight:800}
+.reel-tooth-v.on{color:var(--text);font-size:var(--t-2xl);font-weight:800}
 .reel-fine-indicator{
   position:absolute;top:50%;left:6px;right:6px;height:44px;transform:translateY(-50%);
-  border-radius:var(--r-md);background:var(--grad2);opacity:.14;pointer-events:none;
+  border-radius:var(--r-md);background:var(--accent-grad);opacity:.14;pointer-events:none;
 }
 
 /* ---------- chips ---------- */
@@ -851,7 +787,7 @@ main.arrastrando{overflow:hidden;user-select:none}
 .chip{
   display:inline-flex;align-items:center;gap:6px;
   padding:8px 12px;border-radius:var(--r-full);font-size:var(--t-sm);font-weight:600;
-  background:var(--card2);border:1px solid var(--line2);color:var(--txt);
+  background:var(--surface-2);border:1px solid var(--line-2);color:var(--text);
 }
 /* Elegir la rutina de destino: una por renglón, porque lo que se lee es el
    nombre ("Posterior B") y en fila apretada no entra. */
@@ -861,18 +797,18 @@ main.arrastrando{overflow:hidden;user-select:none}
 }
 .chip-dia{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;
-  letter-spacing:.1em;color:var(--mut2);min-width:15px;flex:none;
+  letter-spacing:.1em;color:var(--text-3);min-width:15px;flex:none;
 }
 .chip.blue .chip-dia{color:inherit;opacity:.75}
 .chip-nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
-.chip-sub{font-size:var(--t-micro);font-weight:500;color:var(--mut2);flex:none}
+.chip-sub{font-size:var(--t-micro);font-weight:500;color:var(--text-3);flex:none}
 .chip.blue .chip-sub{color:inherit;opacity:.7}
 
 @keyframes pop{from{transform:scale(.7);opacity:0}}
 /* solo la serie recién guardada hace "pop"; antes lo hacían todos los chips en
    cada re-render y la fila entera parpadeaba */
 .setchips .chip:last-child{animation:pop var(--d2) cubic-bezier(.2,.8,.3,1.2)}
-.chip.blue{background:rgba(var(--blue-rgb),.14);border-color:rgba(var(--blue-rgb),.4);color:var(--blue3)}
+.chip.blue{background:rgba(var(--accent-strong-rgb),.14);border-color:rgba(var(--accent-strong-rgb),.4);color:var(--accent)}
 /* Tono ámbar para el chip que ACCIONA sobre un aviso cálido ("Se está
    enfriando" → "+ Hoy"). El .chip pelado es el mismo gris que un chip
    informativo, así que la única acción de esa tarjeta no se distinguía de una
@@ -893,8 +829,8 @@ main.arrastrando{overflow:hidden;user-select:none}
    un tinte.
    Antes esta clase no tenía ninguna regla: elegir equipo, grupo muscular o
    cualquier chip "on" no daba señal visual de haberse registrado. */
-.chip.on{background:var(--grad2);color:var(--on-grad);border-color:transparent;font-weight:700}
-.chip .x{color:var(--mut);font-size:var(--t-body);padding:0 2px}
+.chip.on{background:var(--accent-grad);color:var(--on-accent);border-color:transparent;font-weight:700}
+.chip .x{color:var(--text-2);font-size:var(--t-body);padding:0 2px}
 /* punto = ese día ya tiene entrenamiento. Sin esto, elegir destino en el
    selector de día es a ciegas: no sabés cuál vas a desplazar. */
 .chip-dot{width:5px;height:5px;border-radius:var(--r-full);background:currentColor;opacity:.55}
@@ -902,8 +838,8 @@ main.arrastrando{overflow:hidden;user-select:none}
 .chip-scroll::-webkit-scrollbar{display:none}
 .chip-scroll .chip{flex:none;padding:10px 14px;font-size:var(--t-body)}
 .ac-list{margin-top:6px;display:flex;flex-direction:column;gap:6px}
-.ac-item{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:var(--r-md);font-size:var(--t-sm);font-weight:600;background:var(--card2);border:1px solid var(--line2);color:var(--txt)}
-.ac-item:active{border-color:var(--blue2);background:rgba(var(--blue-rgb),.14)}
+.ac-item{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:var(--r-md);font-size:var(--t-sm);font-weight:600;background:var(--surface-2);border:1px solid var(--line-2);color:var(--text)}
+.ac-item:active{border-color:var(--accent);background:rgba(var(--accent-strong-rgb),.14)}
 
 /* ---------- ejercicio (Hoy) ---------- */
 /* riel de avance: llena de arriba a abajo según las series completadas del
@@ -911,16 +847,16 @@ main.arrastrando{overflow:hidden;user-select:none}
 .ex-card{position:relative;overflow:hidden;--done:0}
 .ex-card::before{
   content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
-  background:linear-gradient(180deg,var(--blue2),var(--blue));
+  background:linear-gradient(180deg,var(--accent),var(--accent-strong));
   transform:scaleY(var(--done));transform-origin:top;
   transition:transform var(--d4) var(--ease);
 }
 .ex-card.full::before{background:linear-gradient(180deg,var(--ok),#0E9F6E)}
 .ex-card .exname{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;letter-spacing:.02em}
-.ex-card .extarget{color:var(--mut);font-size:var(--t-sm);font-weight:500;margin-top:2px}
-.ex-card .exlast{color:var(--blue2);font-size:var(--t-sm);font-weight:500;margin-top:2px}
+.ex-card .extarget{color:var(--text-2);font-size:var(--t-sm);font-weight:500;margin-top:2px}
+.ex-card .exlast{color:var(--accent);font-size:var(--t-sm);font-weight:500;margin-top:2px}
 .ex-card .exname .info.inline{display:inline-grid;vertical-align:middle;width:26px;height:26px;font-size:var(--t-sm);margin-left:2px}
-.mini.info{color:var(--blue2);font-size:var(--t-body);font-weight:700}
+.mini.info{color:var(--accent);font-size:var(--t-body);font-weight:700}
 /* Los botones .mini pasaron de tener un carácter adentro (✎ ✕ ↑ ↓) a tener
    un ícono de trazo, igual que .icon-btn, que ya traía su propia regla. Sin
    un tamaño acá el SVG toma el del viewBox (24px) y desborda el botón. */
@@ -937,8 +873,8 @@ main.arrastrando{overflow:hidden;user-select:none}
 .exi .exi-b,.exi .exi-e,.exi .exi-p{fill:none;stroke-linecap:round;stroke-linejoin:round}
 .exi .exi-b{stroke:currentColor;stroke-width:3.2}
 .exi .exi-h{fill:currentColor;stroke:none}
-.exi .exi-e{stroke:var(--mut2);stroke-width:2.3}
-.exi .exi-p{stroke:var(--line2);stroke-width:2}
+.exi .exi-e{stroke:var(--text-3);stroke-width:2.3}
+.exi .exi-p{stroke:var(--line-2);stroke-width:2}
 
 /* En Hoy va arriba a la izquierda, en el hueco que dejan el nombre y el
    contador de series — no le roba ancho al nombre, que es lo que más costó
@@ -966,26 +902,26 @@ main.arrastrando{overflow:hidden;user-select:none}
 .ex-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .ex-tag{
   display:inline-flex;align-items:center;padding:2px 9px;border-radius:var(--r-full);
-  background:var(--card2);border:1px solid var(--line);
-  font-size:var(--t-micro);font-weight:600;color:var(--mut);font-variant-numeric:tabular-nums;
+  background:var(--surface-2);border:1px solid var(--line);
+  font-size:var(--t-micro);font-weight:600;color:var(--text-2);font-variant-numeric:tabular-nums;
 }
-.ex-foto{width:48px;height:48px;padding:0;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--line2);background:var(--card2);cursor:pointer}
+.ex-foto{width:48px;height:48px;padding:0;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--line-2);background:var(--surface-2);cursor:pointer}
 .ex-foto img{width:100%;height:100%;object-fit:cover;display:block}
 .ex-opts{
-  width:40px;height:40px;border-radius:var(--r-md);border:1px solid var(--line2);background:var(--card2);
-  color:var(--blue2);display:grid;place-items:center;cursor:pointer;
+  width:40px;height:40px;border-radius:var(--r-md);border:1px solid var(--line-2);background:var(--surface-2);
+  color:var(--accent);display:grid;place-items:center;cursor:pointer;
 }
 /* "Última vez" | "Hoy": el número grande contesta de un vistazo. */
 .ex-cmp{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);margin-top:var(--s3)}
 .ex-cmp-col{
   display:flex;flex-direction:column;gap:2px;min-width:0;
-  padding:var(--s2) var(--s3);border-radius:var(--r-md);background:var(--card2);border:1px solid var(--line);
+  padding:var(--s2) var(--s3);border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--line);
 }
-.ex-cmp-col.hoy{border-color:var(--line2)}
+.ex-cmp-col.hoy{border-color:var(--line-2)}
 .ex-cmp-col.up{background:rgba(var(--ok-rgb),.08);border-color:rgba(var(--ok-rgb),.35)}
-.ex-cmp-lbl{font-size:var(--t-nano);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.ex-cmp-lbl{font-size:var(--t-nano);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-2)}
 .ex-cmp-col b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
-.ex-cmp-col small{font-size:var(--t-micro);color:var(--mut);line-height:1.35}
+.ex-cmp-col small{font-size:var(--t-micro);color:var(--text-2);line-height:1.35}
 .ex-cmp-col.up .ex-cmp-lbl,.ex-cmp-col.up b{color:var(--ok)}
 /* La comparativa como aviso flotante (ExerciseCarousel, AvisoUltimaVez):
    el ancla no ocupa alto, así que abrir o cerrar el aviso no mueve nada de la
@@ -995,33 +931,33 @@ main.arrastrando{overflow:hidden;user-select:none}
 .ex-aviso{
   position:absolute;top:var(--s2);left:0;right:0;
   padding:var(--s3);border-radius:var(--r-md);cursor:pointer;
-  background:var(--card);
-  box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(var(--blue-rgb),.3);
+  background:var(--surface);
+  box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(var(--accent-strong-rgb),.3);
 }
 .ex-aviso .ex-cmp{margin-top:0}
 .ex-aviso-x{
   position:absolute;top:-10px;right:-8px;width:26px;height:26px;border-radius:var(--r-full);
-  display:grid;place-items:center;font-size:var(--t-micro);color:var(--mut);
-  background:var(--card2);border:1px solid var(--line2);
+  display:grid;place-items:center;font-size:var(--t-micro);color:var(--text-2);
+  background:var(--surface-2);border:1px solid var(--line-2);
 }
 /* La rayita que se acaba: dice, sin texto, que el aviso se va solo. */
 .ex-aviso-reloj{
   position:absolute;left:var(--s3);right:var(--s3);bottom:5px;height:2px;border-radius:var(--r-xs);
-  background:rgba(var(--blue-rgb),.5);transform-origin:left;
+  background:rgba(var(--accent-strong-rgb),.5);transform-origin:left;
   animation:avisoReloj linear forwards; /* la duración la pone AVISO_MS, inline */
 }
 @keyframes avisoReloj{to{transform:scaleX(0)}}
 @media (prefers-reduced-motion:reduce){.ex-aviso-reloj{animation:none;opacity:0}}
 /* La etiqueta que vuelve a traer el aviso: la única tocable de la fila, en
    el azul de los enlaces para que no se lea como un dato más. */
-.ex-tag.ult{font-family:inherit;color:var(--blue2);border-color:rgba(var(--blue-rgb),.35);cursor:pointer}
+.ex-tag.ult{font-family:inherit;color:var(--accent);border-color:rgba(var(--accent-strong-rgb),.35);cursor:pointer}
 .ex-pre{margin-top:var(--s4)}
 .ex-pre-links{display:flex;justify-content:center;gap:var(--s5);margin-top:var(--s1)}
 .ex-pre-links .linkcard,.ex-later,.ex-aprox-acts .linkcard{
   display:inline-flex;align-items:center;gap:5px;min-height:40px;padding:0 var(--s1);
-  font-size:var(--t-sm);font-weight:500;color:var(--mut);
+  font-size:var(--t-sm);font-weight:500;color:var(--text-2);
 }
-.ex-later{color:var(--blue2)}
+.ex-later{color:var(--accent)}
 /* El despliegue anima la altura (motion, ExerciseCarousel.jsx): sin esto las
    piezas se ven fuera de la caja mientras crece. */
 .ex-live{overflow:hidden}
@@ -1030,10 +966,10 @@ main.arrastrando{overflow:hidden;user-select:none}
    que el brillo asome sin soltar el recorte del despliegue. */
 @supports (overflow-clip-margin:1px){.ex-live{overflow:clip;overflow-clip-margin:20px}}
 .ex-serie{margin-top:var(--s3)}
-.ex-serie-top{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);font-size:var(--t-sm);color:var(--mut)}
-.ex-serie-top .cond{font-size:var(--t-lg);color:var(--txt)}
+.ex-serie-top{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);font-size:var(--t-sm);color:var(--text-2)}
+.ex-serie-top .cond{font-size:var(--t-lg);color:var(--text)}
 .ex-seg{display:flex;gap:4px;margin-top:6px}
-.ex-seg i{flex:1;height:4px;border-radius:var(--r-full);background:var(--line2);transition:background var(--d2) var(--ease)}
+.ex-seg i{flex:1;height:4px;border-radius:var(--r-full);background:var(--line-2);transition:background var(--d2) var(--ease)}
 .ex-seg i.on{background:var(--ok)}
 .ex-seg i.cur{background:var(--accent)}
 .ex-aprox{
@@ -1046,31 +982,31 @@ main.arrastrando{overflow:hidden;user-select:none}
    Diseño elegido por Enzo con maquetas: tablero en vez de burbujas, rampa de
    aproximación con pasos, botón píldora que dice lo que guarda y series en
    tabla. Todo para que la sesión entre en una pantalla. */
-.ex-equipo{font-size:var(--t-micro);font-weight:500;color:var(--mut2);margin-top:1px}
+.ex-equipo{font-size:var(--t-micro);font-weight:500;color:var(--text-3);margin-top:1px}
 .ex-meta{display:flex;margin-top:var(--s3);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .ex-meta>*{flex:none;padding:6px var(--s3);border-left:1px solid var(--line);text-align:left;min-width:0}
 .ex-meta>:first-child{border-left:0;padding-left:0}
 /* La última columna se lleva el resto: "Sesión anterior" es el rótulo largo. */
 .ex-meta>:last-child{flex:1}
-.ex-meta small{display:block;font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.12em;text-transform:uppercase;color:var(--mut2);white-space:nowrap}
+.ex-meta small{display:block;font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);white-space:nowrap}
 .ex-meta b{display:block;font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums;white-space:nowrap}
 /* Tocable: abre la comparación flotante. Azul + ›, el lenguaje de enlace. */
 .ex-meta-ant{font:inherit;color:inherit;cursor:pointer}
-.ex-meta-ant b{color:var(--blue2)}
-.ex-meta-ant b::after{content:" ›";color:var(--mut2)}
+.ex-meta-ant b{color:var(--accent)}
+.ex-meta-ant b::after{content:" ›";color:var(--text-3)}
 /* "Después" como botón: antes era texto azul suelto y no se veía tocable. */
 .ex-despues{
   flex:none;display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 var(--s3);
-  border-radius:var(--r-full);border:1px solid var(--line2);background:var(--card2);
-  font-size:var(--t-micro);font-weight:600;color:var(--blue3);
+  border-radius:var(--r-full);border:1px solid var(--line-2);background:var(--surface-2);
+  font-size:var(--t-micro);font-weight:600;color:var(--accent);
 }
-.ex-lado{font:inherit;font-weight:600;color:var(--blue2);cursor:pointer}
+.ex-lado{font:inherit;font-weight:600;color:var(--accent);cursor:pointer}
 /* Rampa: tres pasos unidos por una línea que se llena. --avance (0..1) lo
    pone Rampa según los pasos hechos. */
 .ex-rampa{margin-top:var(--s3)}
 .ex-rampa-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s1)}
 .ex-rampa-hd span{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-sm);letter-spacing:.14em;text-transform:uppercase;color:var(--warn)}
-.ex-rampa-hd .linkcard{font-size:var(--t-micro);color:var(--mut);min-height:32px;padding:0 var(--s1)}
+.ex-rampa-hd .linkcard{font-size:var(--t-micro);color:var(--text-2);min-height:32px;padding:0 var(--s1)}
 .ex-rampa-pasos{position:relative;display:flex;justify-content:space-between;--avance:0}
 .ex-rampa-pasos::before,.ex-rampa-pasos::after{
   content:"";position:absolute;top:15px;left:calc(100% / 6);right:calc(100% / 6);height:2px;border-radius:var(--r-full);
@@ -1080,35 +1016,35 @@ main.arrastrando{overflow:hidden;user-select:none}
 .ex-paso{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;font:inherit;color:inherit;cursor:pointer}
 .ex-paso i{
   display:grid;place-items:center;width:32px;height:32px;border-radius:var(--r-full);font-style:normal;
-  border:2px solid rgba(var(--warn-rgb),.55);background:var(--card);
+  border:2px solid rgba(var(--warn-rgb),.55);background:var(--surface);
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-nano);color:var(--warn);
   transition:background var(--d2) var(--ease),border-color var(--d2) var(--ease),transform var(--d2) var(--spring);
 }
 .ex-paso.cur i{box-shadow:0 0 0 4px rgba(var(--warn-rgb),.16)}
-.ex-paso.hecho i{background:var(--ok);border-color:var(--ok);color:var(--on-grad);transform:scale(1.06)}
+.ex-paso.hecho i{background:var(--ok);border-color:var(--ok);color:var(--on-ok);transform:scale(1.06)}
 .ex-paso b{margin-top:4px;font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
-.ex-paso span{font-size:var(--t-micro);color:var(--mut)}
+.ex-paso span{font-size:var(--t-micro);color:var(--text-2)}
 /* Botón de registrar: píldora oscura con borde verde que brilla, el check en
    un círculo y a la derecha lo que queda anotado. */
 .btn-serie{
   display:flex;align-items:center;gap:var(--s3);width:100%;min-height:58px;padding:0 var(--s4) 0 6px;
   border-radius:var(--r-full);border:1.5px solid rgba(var(--ok-rgb),.55);
-  background:linear-gradient(96deg,rgba(var(--ok-rgb),.12),rgba(var(--ok-rgb),.03)),var(--bg2);
+  background:linear-gradient(96deg,rgba(var(--ok-rgb),.12),rgba(var(--ok-rgb),.03)),var(--surface);
   box-shadow:0 0 26px -10px rgba(var(--ok-rgb),.7),inset 0 1px 0 rgba(255,255,255,.06);
   color:var(--ok);cursor:pointer;
 }
-.btn-serie-ok{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:var(--r-full);background:var(--grad-ok);color:var(--on-grad);box-shadow:0 4px 14px -4px rgba(var(--ok-rgb),.8)}
+.btn-serie-ok{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:var(--r-full);background:var(--grad-ok);color:var(--on-ok);box-shadow:0 4px 14px -4px rgba(var(--ok-rgb),.8)}
 .btn-serie-t{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);letter-spacing:.1em;text-transform:uppercase}
-.btn-serie small{margin-left:auto;font-size:var(--t-sm);color:var(--mut);font-variant-numeric:tabular-nums;white-space:nowrap}
+.btn-serie small{margin-left:auto;font-size:var(--t-sm);color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
 /* Series hechas: una fila por serie. */
 .ex-tabla{width:100%;margin-top:var(--s3);border-collapse:collapse;font-variant-numeric:tabular-nums}
-.ex-tabla th{padding:0 0 4px;text-align:left;font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.14em;text-transform:uppercase;color:var(--mut2)}
-.ex-tabla td{padding:3px 0;border-top:1px solid var(--line);font-size:var(--t-sm);color:var(--mut)}
-.ex-tabla td b{font-family:'Barlow Condensed';font-size:var(--t-lg);color:var(--txt)}
+.ex-tabla th{padding:0 0 4px;text-align:left;font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.ex-tabla td{padding:3px 0;border-top:1px solid var(--line);font-size:var(--t-sm);color:var(--text-2)}
+.ex-tabla td b{font-family:'Barlow Condensed';font-size:var(--t-lg);color:var(--text)}
 .ex-tabla .c{text-align:center}
-.ex-tabla td.n{width:22px;font-family:'Barlow Condensed';font-weight:700;color:var(--mut2)}
+.ex-tabla td.n{width:22px;font-family:'Barlow Condensed';font-weight:700;color:var(--text-3)}
 .ex-tabla td.x{width:36px;text-align:right}
-.ex-tabla td.x button{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:var(--r-sm);color:var(--mut2)}
+.ex-tabla td.x button{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:var(--r-sm);color:var(--text-3)}
 /* La fila recién anotada entra con el mismo "pop" que tenían los chips. */
 .ex-tabla tbody tr:last-child{animation:pop var(--d2) cubic-bezier(.2,.8,.3,1.2)}
 
@@ -1119,18 +1055,18 @@ main.arrastrando{overflow:hidden;user-select:none}
 /* Sin position:absolute: ahora es una celda de la grilla de .ex-row (ver el
    comentario largo más abajo). Quedarse absoluto era lo que lo dejaba
    pisando la banda de grupo. */
-.ex-row-icon{color:var(--blue2);opacity:.6}
+.ex-row-icon{color:var(--accent);opacity:.6}
 
 /* En el resumen de la semana y en el detalle de una sesión las filas ya son
    flex, así que el dibujo entra como un elemento más y no hace falta sacarlo
    del flujo. */
-.day-ex-icon{color:var(--blue2);opacity:.6}
-.entry-icon{color:var(--blue2);opacity:.55}
+.day-ex-icon{color:var(--accent);opacity:.6}
+.entry-icon{color:var(--accent);opacity:.55}
 
 .ex-done-count{
   position:absolute;top:14px;right:14px;
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-body);letter-spacing:.05em;
-  color:var(--mut);background:var(--card2);border:1px solid var(--line);
+  color:var(--text-2);background:var(--surface-2);border:1px solid var(--line);
   padding:4px 10px;border-radius:var(--r-full);
   animation:countPop var(--d3) var(--ease);
   transition:color var(--d3) var(--ease),background var(--d3) var(--ease),border-color var(--d3) var(--ease);
@@ -1162,11 +1098,11 @@ main.arrastrando{overflow:hidden;user-select:none}
    sacó, ver ReelPicker.jsx) — es la única cosa que sigue afuera de la rueda,
    así que se la trata como un dato propio, alineada a la derecha bajo la
    rueda y un toque más grande que antes (era 13px, casi invisible). */
-.reel-alt{text-align:center;margin-top:6px;font-size:var(--t-sm);color:var(--mut);letter-spacing:.03em}
+.reel-alt{text-align:center;margin-top:6px;font-size:var(--t-sm);color:var(--text-2);letter-spacing:.03em}
 /* 2026-09-25: centrada bajo la rueda de peso y dicha como equivalencia
    ("≈ 99.2 lb", el número en azul claro). A la derecha y gris no se
    entendía qué era (Enzo: "no se nota que es la conversión"). */
-.reel-alt b{font-family:'Barlow Condensed';font-size:var(--t-body);font-weight:600;color:var(--blue3);font-variant-numeric:tabular-nums}
+.reel-alt b{font-family:'Barlow Condensed';font-size:var(--t-body);font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
 /* Selector de RIR (reemplaza al de RPE 1-10, que no cabía: 10 círculos
    llegaban al borde de la tarjeta y el "10" quedaba cortado — medido en el
    teléfono de Enzo). 5 opciones con `flex-wrap` de respaldo: si algún ancho
@@ -1184,12 +1120,12 @@ main.arrastrando{overflow:hidden;user-select:none}
 .ex-card.wait{opacity:.5}
 .ex-card.wait .exname{font-size:var(--t-lg)}
 .ex-card.cur{
-  background:linear-gradient(158deg,rgba(var(--cyan-rgb),.16),rgba(255,255,255,.03) 58%),var(--card);
-  border-color:rgba(var(--cyan-rgb),.36);border-radius:var(--r-lg);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 26px 54px -28px rgba(var(--cyan-rgb),.5);
+  background:linear-gradient(158deg,rgba(var(--accent-rgb),.16),rgba(255,255,255,.03) 58%),var(--surface);
+  border-color:rgba(var(--accent-rgb),.36);border-radius:var(--r-lg);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 26px 54px -28px rgba(var(--accent-rgb),.5);
 }
 .ex-card.doneex{opacity:.72}
-.ex-state{margin-top:10px;font-size:var(--t-micro);font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);display:flex;align-items:center;gap:5px}
+.ex-state{margin-top:10px;font-size:var(--t-micro);font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-2);display:flex;align-items:center;gap:5px}
 .ex-state.ok{color:var(--ok)}
 .ex-state.skip{color:var(--warn)}
 /* El saltado no desaparece: se queda en su lugar, apagado, con su botón de
@@ -1210,7 +1146,7 @@ main.arrastrando{overflow:hidden;user-select:none}
   list-style:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:6px;
   min-height:38px;border-radius:var(--r-md);
-  color:var(--mut2);font-size:var(--t-micro);font-weight:600;letter-spacing:.02em;
+  color:var(--text-3);font-size:var(--t-micro);font-weight:600;letter-spacing:.02em;
 }
 .ex-more>summary::-webkit-details-marker{display:none}
 .ex-more>summary::after{
@@ -1218,7 +1154,7 @@ main.arrastrando{overflow:hidden;user-select:none}
   transform:rotate(90deg);transition:transform var(--d2) var(--ease-out);
 }
 .ex-more[open]>summary::after{transform:rotate(-90deg)}
-.ex-more>summary:active{color:var(--blue2)}
+.ex-more>summary:active{color:var(--accent)}
 .ex-more-body{padding-top:var(--s2);border-top:1px solid var(--line)}
 .ex-more-body>.chip{margin-bottom:var(--s2)}
 
@@ -1228,8 +1164,8 @@ main.arrastrando{overflow:hidden;user-select:none}
    lo de la semana pasada. */
 .prog-next{
   margin-top:8px;padding:8px 10px;border-radius:var(--r-md);
-  background:rgba(var(--blue-rgb),.09);border:1px solid rgba(var(--blue-rgb),.24);
-  color:var(--blue3);font-size:var(--t-micro);line-height:1.4;
+  background:rgba(var(--accent-strong-rgb),.09);border:1px solid rgba(var(--accent-strong-rgb),.24);
+  color:var(--accent);font-size:var(--t-micro);line-height:1.4;
 }
 .prog-next.up{
   background:rgba(var(--ok-rgb),.10);border-color:rgba(var(--ok-rgb),.30);
@@ -1244,12 +1180,12 @@ main.arrastrando{overflow:hidden;user-select:none}
 .ex-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .ex-actions button.ex-act{
   flex:1 1 calc(33.333% - 6px);min-height:44px;border-radius:var(--r-md);
-  background:var(--card2);border:1px solid var(--line);
-  color:var(--mut);font-size:var(--t-micro);font-weight:600;letter-spacing:.02em;
+  background:var(--surface-2);border:1px solid var(--line);
+  color:var(--text-2);font-size:var(--t-micro);font-weight:600;letter-spacing:.02em;
   display:inline-flex;align-items:center;justify-content:center;gap:5px;
   transition:background var(--d1) var(--ease),border-color var(--d1) var(--ease),color var(--d1) var(--ease);
 }
-.ex-actions button.ex-act:active{border-color:var(--line2);color:var(--blue2);background:rgba(var(--blue-rgb),.08)}
+.ex-actions button.ex-act:active{border-color:var(--line-2);color:var(--accent);background:rgba(var(--accent-strong-rgb),.08)}
 /* El botón "Cambiar" (ahora "Otro ejercicio") y "Saltar" quedan con un
    acento propio en reposo — antes los cuatro botones eran indistinguibles
    entre sí (Enzo: "los botones de más opciones podrían tener más estética y
@@ -1261,7 +1197,7 @@ main.arrastrando{overflow:hidden;user-select:none}
    midiendo en su teléfono). Estado activo = fondo lleno, igual criterio que
    cualquier otro toggle de la app (ver .chip.on más abajo). */
 .ex-actions button.ex-act.uni.on{
-  background:rgba(var(--blue-rgb),.16);border-color:var(--blue2);color:var(--blue2);font-weight:700;
+  background:rgba(var(--accent-strong-rgb),.16);border-color:var(--accent);color:var(--accent);font-weight:700;
 }
 /* los saltados en el resumen de la sesión */
 .skip-note{
@@ -1304,8 +1240,8 @@ main.arrastrando{overflow:hidden;user-select:none}
    Si el coverflow se revierte, esta regla vuelve a 100%. */
 .carousel.focus .carousel-slide{flex:0 0 88%}
 .carousel-dots{display:flex;justify-content:center;gap:6px;margin:10px 0 4px}
-.carousel-dots i{width:6px;height:6px;border-radius:var(--r-xs);background:var(--card2);border:1px solid var(--line2);transition:var(--d2)}
-.carousel-dots i.on{width:18px;background:var(--grad2);border-color:transparent}
+.carousel-dots i{width:6px;height:6px;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--line-2);transition:var(--d2)}
+.carousel-dots i.on{width:18px;background:var(--accent-grad);border-color:transparent}
 /* ---------- reordenar arrastrando ---------- */
 /* mantené presionada una fila y arrastrala: las demás se corren solas para
    abrirle lugar, como en la lista de tareas del teléfono */
@@ -1317,14 +1253,14 @@ main.arrastrando{overflow:hidden;user-select:none}
 [data-sid].settling{position:relative;z-index:30;
   transition:transform .26s var(--ease),box-shadow var(--d3) ease,border-color var(--d3) ease,background-color var(--d3) ease}
 .ex-card.dragging{
-  border-color:rgba(var(--blue-rgb),.5);
-  box-shadow:0 26px 52px -20px rgba(0,0,0,.85),0 0 0 1px rgba(var(--blue-rgb),.35);
+  border-color:rgba(var(--accent-strong-rgb),.5);
+  box-shadow:0 26px 52px -20px rgba(0,0,0,.85),0 0 0 1px rgba(var(--accent-strong-rgb),.35);
 }
 /* las filas de Rutina no tienen fondo propio: al levantarlas hay que darles uno
    o se ven transparentes encima de las demás */
 .row.dragging{
-  background:var(--card2);border-radius:var(--r-md);border-bottom-color:transparent;
-  box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(var(--blue-rgb),.3);
+  background:var(--surface-2);border-radius:var(--r-md);border-bottom-color:transparent;
+  box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(var(--accent-strong-rgb),.3);
 }
 /* Fila de turno en edición (handoff 2026-09-17, punto 3, Enzo: "los botones
    de reordenar y el botón de limpiar también están desalineados"): el
@@ -1343,14 +1279,14 @@ main.arrastrando{overflow:hidden;user-select:none}
 .day-headrow .day-handle{cursor:grab;flex:none;width:44px;height:44px}
 .day-headrow .mini.red{width:44px;height:44px}
 .card.day.dragging{
-  box-shadow:0 26px 52px -20px rgba(0,0,0,.85),0 0 0 1px rgba(var(--blue-rgb),.35);
+  box-shadow:0 26px 52px -20px rgba(0,0,0,.85),0 0 0 1px rgba(var(--accent-strong-rgb),.35);
 }
 body.dragging-on{user-select:none;-webkit-user-select:none;cursor:grabbing}
 body.dragging-on [data-sid]:not(.dragging){filter:saturate(.8) brightness(.92)}
 /* mientras se arrastra un día no puede haber una altura animándose: los rects
    del preview se miden justo después de colapsar el día abierto */
 body.dragging-on .day-body{transition:none}
-.drag-hint{display:flex;align-items:center;gap:6px;font-size:var(--t-micro);margin:0 0 var(--s3);padding:0 2px;color:var(--mut)}
+.drag-hint{display:flex;align-items:center;gap:6px;font-size:var(--t-micro);margin:0 0 var(--s3);padding:0 2px;color:var(--text-2)}
 .drag-hint.tight{margin:0 0 6px;padding:0 4px}
 
 /* ---------- arrastrar un día sobre otro ----------
@@ -1359,8 +1295,8 @@ body.dragging-on .day-body{transition:none}
    sobre la que vas a soltar, y al soltar cada día afectado cuenta con una
    animación qué le pasó (recibió, se corrió, o quedó libre). */
 .card.day.drop-target{
-  border-color:rgba(var(--blue-rgb),.55);
-  box-shadow:0 0 0 1px rgba(var(--blue-rgb),.35),0 0 30px -6px rgba(var(--blue-rgb),.45);
+  border-color:rgba(var(--accent-strong-rgb),.55);
+  box-shadow:0 0 0 1px rgba(var(--accent-strong-rgb),.35),0 0 30px -6px rgba(var(--accent-strong-rgb),.45);
   transform:scale(1.012);
   transition:transform var(--d1) var(--ease),box-shadow var(--d1) ease,border-color var(--d1) ease;
 }
@@ -1379,12 +1315,12 @@ body.dragging-on .card.day.drop-target{filter:none}
 /* el que quedó vacío: se apaga en el lugar */
 .card.day.fx-left{animation:dayLeft .52s var(--spring)}
 @keyframes dayArrive{
-  0%{transform:translateY(-10px) scale(.985);box-shadow:0 0 0 1px rgba(var(--blue-rgb),.5),0 0 34px -4px rgba(var(--blue-rgb),.55)}
-  60%{box-shadow:0 0 0 1px rgba(var(--blue-rgb),.3),0 0 24px -8px rgba(var(--blue-rgb),.35)}
+  0%{transform:translateY(-10px) scale(.985);box-shadow:0 0 0 1px rgba(var(--accent-strong-rgb),.5),0 0 34px -4px rgba(var(--accent-strong-rgb),.55)}
+  60%{box-shadow:0 0 0 1px rgba(var(--accent-strong-rgb),.3),0 0 24px -8px rgba(var(--accent-strong-rgb),.35)}
   100%{transform:none;box-shadow:none}
 }
 @keyframes dayBumped{
-  0%{transform:translateY(-8px) scale(.99);box-shadow:0 0 0 1px rgba(127,209,255,.45),0 0 30px -6px rgba(var(--cyan-rgb),.4)}
+  0%{transform:translateY(-8px) scale(.99);box-shadow:0 0 0 1px rgba(127,209,255,.45),0 0 30px -6px rgba(var(--accent-rgb),.4)}
   100%{transform:none;box-shadow:none}
 }
 @keyframes dayLeft{
@@ -1404,23 +1340,23 @@ body.dragging-on .card.day.drop-target{filter:none}
 .food-hit{
   display:flex;align-items:center;gap:8px;width:100%;text-align:left;
   padding:10px 12px;border-radius:var(--r-md);
-  background:var(--card2);border:1px solid var(--line);
+  background:var(--surface-2);border:1px solid var(--line);
 }
 .food-hit .grow{flex:1;min-width:0;display:flex;align-items:center;gap:6px}
 .food-hit .t{font-size:var(--t-sm);font-weight:600}
-.food-hit .s{font-size:var(--t-micro);color:var(--mut);flex:none}
-.food-hit.nuevo{border-style:dashed;border-color:var(--line2)}
-.food-hit:active{border-color:var(--blue2)}
+.food-hit .s{font-size:var(--t-micro);color:var(--text-2);flex:none}
+.food-hit.nuevo{border-style:dashed;border-color:var(--line-2)}
+.food-hit:active{border-color:var(--accent)}
 
 .cart-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}
 .cart-row .n{flex:1;min-width:0;font-size:var(--t-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cart-row input{
   width:66px;flex:none;text-align:center;padding:5px 4px;border-radius:var(--r-sm);
-  background:var(--card2);border:1px solid var(--line2);
+  background:var(--surface-2);border:1px solid var(--line-2);
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);font-variant-numeric:tabular-nums;
 }
-.cart-row .u{font-size:var(--t-micro);color:var(--mut);flex:none}
-.cart-row .k{font-size:var(--t-micro);color:var(--blue2);font-weight:600;flex:none;min-width:56px;text-align:right}
+.cart-row .u{font-size:var(--t-micro);color:var(--text-2);flex:none}
+.cart-row .k{font-size:var(--t-micro);color:var(--accent);font-weight:600;flex:none;min-width:56px;text-align:right}
 .cart-total{display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;font-size:var(--t-sm)}
 
 /* ---------- el día por momentos ---------- */
@@ -1428,7 +1364,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .slot-head{
   display:flex;justify-content:space-between;align-items:baseline;
   margin:0 2px 6px;font-size:var(--t-micro);font-weight:700;
-  letter-spacing:.12em;text-transform:uppercase;color:var(--mut);
+  letter-spacing:.12em;text-transform:uppercase;color:var(--text-2);
 }
 
 /* ---------- un ejercicio dentro de "Lo que hiciste" ----------
@@ -1442,12 +1378,12 @@ body.dragging-on .card.day.drop-target{filter:none}
 .entry-name-edit{
   flex:1;min-width:0;text-align:left;
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;
-  letter-spacing:.02em;color:var(--txt);
+  letter-spacing:.02em;color:var(--text);
   padding:2px 8px;margin-left:-8px;border-radius:var(--r-sm);
-  border:1px dashed var(--line2);background:none;
+  border:1px dashed var(--line-2);background:none;
 }
-.entry-name-edit .pen{font-size:var(--t-micro);color:var(--blue2);margin-left:4px}
-.entry-name-edit:active{border-color:var(--blue2)}
+.entry-name-edit .pen{font-size:var(--t-micro);color:var(--accent);margin-left:4px}
+.entry-name-edit:active{border-color:var(--accent)}
 
 /* ---------- el riel de veredicto ----------
    Lo que le da vida a la lista. Su color dice cómo te fue en ESE ejercicio, y
@@ -1461,18 +1397,18 @@ body.dragging-on .card.day.drop-target{filter:none}
 .dcard.entry{position:relative;overflow:hidden;padding-left:22px}
 .dcard.entry::before{
   content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
-  background:var(--rail,var(--line2));
+  background:var(--rail,var(--line-2));
   transform-origin:top;
 }
 .dcard.entry.v-sube{--rail:linear-gradient(180deg,var(--ok),#0E9F6E)}
 .dcard.entry.v-baja{--rail:linear-gradient(180deg,var(--warn),#E8A21D)}
-.dcard.entry.v-igual{--rail:linear-gradient(180deg,var(--blue2),var(--blue))}
-.dcard.entry.v-nuevo{--rail:linear-gradient(180deg,var(--line2),transparent)}
+.dcard.entry.v-igual{--rail:linear-gradient(180deg,var(--accent),var(--accent-strong))}
+.dcard.entry.v-nuevo{--rail:linear-gradient(180deg,var(--line-2),transparent)}
 /* el récord es el único que se permite brillar */
 .dcard.entry.v-pr{
-  --rail:var(--grad2);
-  border-color:rgba(var(--cyan-rgb),.3);
-  box-shadow:0 0 0 1px rgba(var(--cyan-rgb),.12),0 18px 40px -26px rgba(var(--cyan-rgb),.5);
+  --rail:var(--accent-grad);
+  border-color:rgba(var(--accent-rgb),.3);
+  box-shadow:0 0 0 1px rgba(var(--accent-rgb),.12),0 18px 40px -26px rgba(var(--accent-rgb),.5);
 }
 .entry-pr{font-size:var(--t-body);flex:none;filter:drop-shadow(0 0 6px rgba(var(--warn-rgb),.5))}
 
@@ -1493,7 +1429,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   font-variant-numeric:tabular-nums;
 }
 .load .kg small{
-  font-size:var(--t-sm);font-style:normal;font-weight:600;color:var(--mut);
+  font-size:var(--t-sm);font-style:normal;font-weight:600;color:var(--text-2);
   margin-left:3px;letter-spacing:.04em;
 }
 /* Cada serie dice qué serie es y qué son esos números. Agrupar por peso no
@@ -1507,13 +1443,13 @@ body.dragging-on .card.day.drop-target{filter:none}
 }
 .load .rep .s{
   font-size:var(--t-nano);font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--mut2);white-space:nowrap;
+  color:var(--text-3);white-space:nowrap;
 }
 .load .rep .r{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;
-  color:var(--blue3);line-height:1;font-variant-numeric:tabular-nums;
+  color:var(--accent);line-height:1;font-variant-numeric:tabular-nums;
 }
-.load .rep .r small{font-size:var(--t-nano);font-weight:600;color:var(--mut);margin-left:2px;letter-spacing:.04em}
+.load .rep .r small{font-size:var(--t-nano);font-weight:600;color:var(--text-2);margin-left:2px;letter-spacing:.04em}
 /* con un solo peso la fila respira; con varios se compacta para que la tarjeta
    no se vuelva una torre */
 .load:not(:only-child) .kg{font-size:var(--t-2xl)}
@@ -1525,15 +1461,15 @@ body.dragging-on .card.day.drop-target{filter:none}
 .set-edit:last-of-type{border-bottom:none}
 .set-edit .i{
   width:22px;height:22px;flex:none;display:grid;place-items:center;border-radius:var(--r-sm);
-  background:var(--card2);color:var(--mut);font-size:var(--t-micro);font-weight:700;
+  background:var(--surface-2);color:var(--text-2);font-size:var(--t-micro);font-weight:700;
 }
 .set-edit input{
   width:64px;flex:none;text-align:center;padding:6px 4px;border-radius:var(--r-sm);
-  background:var(--card2);border:1px solid var(--line2);
+  background:var(--surface-2);border:1px solid var(--line-2);
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);
   font-variant-numeric:tabular-nums;
 }
-.set-edit .u{font-size:var(--t-micro);color:var(--mut);flex:none}
+.set-edit .u{font-size:var(--t-micro);color:var(--text-2);flex:none}
 .set-edit .mini{margin-left:auto}
 
 /* ---------- tarjeta de sesión (Progreso / todas las sesiones) ----------
@@ -1547,16 +1483,16 @@ body.dragging-on .card.day.drop-target{filter:none}
   border:1px solid var(--glass-border);border-radius:var(--r);padding:12px 14px;
   transition:transform var(--d1) var(--ease),border-color var(--d1) ease;
 }
-.sess-card:active{transform:scale(.99);border-color:var(--line2)}
+.sess-card:active{transform:scale(.99);border-color:var(--line-2)}
 .sc-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .sc-name{font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;letter-spacing:.02em;flex:1;min-width:0}
 .sc-pr{font-size:var(--t-sm);font-weight:700;color:var(--warn);flex:none}
-.sc-meta{font-size:var(--t-micro);color:var(--mut)}
-.sc-meta.strong{color:var(--blue2);font-weight:500}
-.sc-exs{font-size:var(--t-micro);color:var(--mut);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-meta{font-size:var(--t-micro);color:var(--text-2)}
+.sc-meta.strong{color:var(--accent);font-weight:500}
+.sc-exs{font-size:var(--t-micro);color:var(--text-2);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sess-week{
   font-family:'Barlow Condensed';font-size:var(--t-micro);font-weight:700;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--text-2);
   margin:var(--s4) 2px var(--s2);
 }
 
@@ -1569,7 +1505,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   background:rgba(var(--warn-rgb),.08);border:1px solid rgba(var(--warn-rgb),.26);
 }
 .sin-grupo .t{display:block;font-size:var(--t-sm);font-weight:600;color:var(--warn)}
-.sin-grupo .s{display:block;font-size:var(--t-micro);color:var(--mut);margin-top:2px;
+.sin-grupo .s{display:block;font-size:var(--t-micro);color:var(--text-2);margin-top:2px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sin-grupo .a{display:block;font-size:var(--t-micro);font-weight:700;color:var(--warn);margin-top:6px}
 
@@ -1578,16 +1514,16 @@ body.dragging-on .card.day.drop-target{filter:none}
 .pick-row{
   display:flex;align-items:center;gap:10px;
   padding:9px 11px;border-radius:var(--r-md);
-  background:var(--card2);border:1px solid var(--line);
+  background:var(--surface-2);border:1px solid var(--line);
 }
-.pick-row input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:var(--blue)}
+.pick-row input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:var(--accent-strong)}
 .pick-row .i{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-micro);font-weight:700;
-  color:var(--mut2);flex:none;min-width:12px;
+  color:var(--text-3);flex:none;min-width:12px;
 }
 .pick-row .grow{flex:1;min-width:0}
 .pick-row .t{display:block;font-size:var(--t-sm);font-weight:600}
-.pick-row .s{display:block;font-size:var(--t-micro);color:var(--mut);margin-top:1px}
+.pick-row .s{display:block;font-size:var(--t-micro);color:var(--text-2);margin-top:1px}
 /* el que el destino ya tiene: se ve, pero apagado, para que la cuenta cierre */
 .pick-row.dim{opacity:.55}
 
@@ -1610,11 +1546,11 @@ body.dragging-on .card.day.drop-target{filter:none}
 .day-exs-head{
   display:flex;align-items:baseline;justify-content:space-between;gap:8px;
   padding:0 2px 5px;margin-bottom:5px;
-  border-bottom:1px solid rgba(var(--blue-rgb),.18);
+  border-bottom:1px solid rgba(var(--accent-strong-rgb),.18);
   font-size:var(--t-nano);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--blue3);
+  color:var(--accent);
 }
-.day-exs-head span{letter-spacing:.02em;text-transform:none;font-weight:600;color:var(--mut)}
+.day-exs-head span{letter-spacing:.02em;text-transform:none;font-weight:600;color:var(--text-2)}
 
 /* La banda de grupo muscular ocupa el ancho entero de la tarjeta: los
    márgenes negativos cancelan el padding de .ex-row y el padding propio lo
@@ -1623,10 +1559,10 @@ body.dragging-on .card.day.drop-target{filter:none}
 .ex-group-tag{
   grid-column:1 / -1;grid-row:1;
   margin:-12px -14px 10px -16px;padding:6px 14px 6px 16px;
-  background:rgba(var(--blue-rgb),.10);
-  border-bottom:1px solid rgba(var(--blue-rgb),.20);
+  background:rgba(var(--accent-strong-rgb),.10);
+  border-bottom:1px solid rgba(var(--accent-strong-rgb),.20);
   font-size:var(--t-nano);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--blue3);
+  color:var(--accent);
 }
 
 /* La tarjeta de ejercicio, rehecha como grilla (2026-09-15).
@@ -1661,7 +1597,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   padding:12px 14px 12px 16px;margin-bottom:8px;
   transition:border-color var(--d1) var(--ease-out),background var(--d1) var(--ease-out);
 }
-.ex-row:active{border-color:rgba(var(--blue-rgb),.28)}
+.ex-row:active{border-color:rgba(var(--accent-strong-rgb),.28)}
 .ex-row-icon{grid-column:1;grid-row:2 / span 3;align-self:center}
 .ex-row-top{grid-column:2;grid-row:2}
 .ex-row .n{grid-column:2;grid-row:3}
@@ -1672,7 +1608,7 @@ body.dragging-on .card.day.drop-target{filter:none}
    estás decidiendo mientras editás. */
 .ex-row::before{
   content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
-  background:linear-gradient(180deg,var(--blue2),var(--blue));
+  background:linear-gradient(180deg,var(--accent),var(--accent-strong));
   transform:scaleY(var(--fill,1));transform-origin:top;
   animation:railIn var(--d4) var(--ease) backwards;animation-delay:calc(var(--i,0) * 35ms);
 }
@@ -1702,9 +1638,9 @@ body.dragging-on .card.day.drop-target{filter:none}
    parecía "2.9" (auditoría 2026-09-27, E4). Al ~65 % del dígito, más clara,
    con aire a los lados y subida al centro de la cifra — chica y sobre la
    línea de base es justo donde va un punto. */
-.ex-row .presc i{font-style:normal;font-size:.65em;color:var(--mut);margin:0 .12em;vertical-align:.12em}
+.ex-row .presc i{font-style:normal;font-size:.65em;color:var(--text-2);margin:0 .12em;vertical-align:.12em}
 .ex-row .m{
-  flex:1;min-width:0;font-size:var(--t-micro);color:var(--mut);
+  flex:1;min-width:0;font-size:var(--t-micro);color:var(--text-2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .ex-row .acts{display:flex;gap:5px;flex:none}
@@ -1713,15 +1649,15 @@ body.dragging-on .card.day.drop-target{filter:none}
    herramientas y no como tu rutina */
 .ex-row .acts .mini{
   width:32px;height:32px;border-radius:var(--r-sm);font-size:var(--t-sm);
-  background:transparent;border-color:rgba(255,255,255,.07);color:var(--mut2);
+  background:transparent;border-color:rgba(255,255,255,.07);color:var(--text-3);
 }
-.ex-row .acts .mini:active{background:var(--card2);color:var(--blue2)}
+.ex-row .acts .mini:active{background:var(--surface-2);color:var(--accent)}
 .ex-row .acts .mini.red{color:rgba(255,107,107,.75)}
 .ex-row .acts .mini:disabled{opacity:.3}
 /* al levantarla para arrastrar, la tarjeta gana relieve sobre las vecinas */
 .ex-row.dragging{
-  background:var(--card2);
-  box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(var(--blue-rgb),.3);
+  background:var(--surface-2);
+  box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(var(--accent-strong-rgb),.3);
 }
 
 /* ---------- filas de lista (rutina / comidas / historial) ---------- */
@@ -1737,13 +1673,13 @@ body.dragging-on .card.day.drop-target{filter:none}
    por default. */
 .linkcard{background:none;border:0;padding:0;text-align:left;cursor:pointer;font:inherit;color:inherit}
 .row .t{font-weight:600;font-size:var(--t-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.row .s{color:var(--mut);font-size:var(--t-sm);margin-top:1px}
+.row .s{color:var(--text-2);font-size:var(--t-sm);margin-top:1px}
 .mini{
   width:40px;height:40px;flex:none;border-radius:var(--r-md);display:grid;place-items:center;
-  background:var(--card2);border:1px solid var(--line);color:var(--mut);font-size:var(--t-body);
+  background:var(--surface-2);border:1px solid var(--line);color:var(--text-2);font-size:var(--t-body);
 }
-.mini:active{color:var(--blue2);border-color:var(--line2)}
-.mini.red{color:var(--red)}
+.mini:active{color:var(--accent);border-color:var(--line-2)}
+.mini.red{color:var(--danger)}
 .mini:disabled{opacity:.25}
 
 /* Botón de "Mis ejercicios" (Rutina.jsx) para asignar equipo en el gym
@@ -1751,10 +1687,10 @@ body.dragging-on .card.day.drop-target{filter:none}
    así que necesita su propio ancho automático y sin wrap. */
 .gym-eq-btn{
   flex:none;padding:8px 12px;border-radius:var(--r-md);white-space:nowrap;
-  background:var(--card2);border:1px solid var(--line);color:var(--mut);font-size:var(--t-micro);font-weight:600;
+  background:var(--surface-2);border:1px solid var(--line);color:var(--text-2);font-size:var(--t-micro);font-weight:600;
 }
-.gym-eq-btn.on{color:var(--cyan);border-color:rgba(var(--cyan-rgb),.4);background:rgba(var(--cyan-rgb),.08)}
-.gym-eq-btn:active{border-color:var(--line2)}
+.gym-eq-btn.on{color:var(--accent);border-color:rgba(var(--accent-rgb),.4);background:rgba(var(--accent-rgb),.08)}
+.gym-eq-btn:active{border-color:var(--line-2)}
 
 /* ---------- rutina: resumen de la semana ---------- */
 /* la semana entera en una tira de 7: se lee de un vistazo, sin scrollear */
@@ -1765,7 +1701,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .wkstrip .wd .tick{position:absolute;top:3px;right:4px;font-size:var(--t-nano);font-weight:700;color:var(--ok);line-height:1}
 /* el hero del día ya entrenado: la misma forma que el de empezar, en verde */
 .done-hero{
-  background:linear-gradient(158deg,rgba(16,185,129,.14),rgba(255,255,255,.03) 58%),var(--card);
+  background:linear-gradient(158deg,rgba(16,185,129,.14),rgba(255,255,255,.03) 58%),var(--surface);
   border-color:rgba(16,185,129,.3);
 }
 .done-pr{
@@ -1775,38 +1711,38 @@ body.dragging-on .card.day.drop-target{filter:none}
 /* "Entrenar de nuevo" es una salida, no el camino principal: texto, no botón */
 .done-again{
   display:block;width:100%;margin-top:10px;padding:6px;
-  font-size:var(--t-sm);font-weight:600;color:var(--mut);background:none;border:none;
+  font-size:var(--t-sm);font-weight:600;color:var(--text-2);background:none;border:none;
 }
-.done-again:active{color:var(--blue2)}
+.done-again:active{color:var(--accent)}
 .wkstrip .wd{border-radius:var(--r-md);padding:9px 2px 8px;text-align:center;
   background:rgba(255,255,255,.024);border:1px solid rgba(255,255,255,.06);
   transition:background var(--d1) var(--ease),border-color var(--d1) var(--ease)}
-.wkstrip .wd .l{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.1em;color:var(--mut2)}
-.wkstrip .wd .n{font-size:var(--t-nano);line-height:1.2;margin-top:3px;color:var(--mut2);
+.wkstrip .wd .l{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.1em;color:var(--text-3)}
+.wkstrip .wd .n{font-size:var(--t-nano);line-height:1.2;margin-top:3px;color:var(--text-3);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Día que se entrena: azul translúcido, SIEMPRE — no depende de cuál esté
    elegido. Es lo que deja leer la semana de un vistazo. */
 .wkstrip .wd.has{background:linear-gradient(160deg,rgba(79,168,255,.22),rgba(255,255,255,.03));
   border-color:rgba(120,170,255,.3)}
 .wkstrip .wd.has .l{color:var(--accent)}
-.wkstrip .wd.has .n{color:var(--txt)}
+.wkstrip .wd.has .n{color:var(--text)}
 /* Elegido: se suma al estado anterior con un anillo, sin reemplazarlo. */
 .wkstrip .wd.on{border-color:rgba(140,210,255,.75);box-shadow:0 0 0 1px rgba(140,210,255,.35)}
 .wkstrip .wd.today .l{text-decoration:underline;text-underline-offset:3px}
-.rt-eyebrow{font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:600}
+.rt-eyebrow{font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);font-weight:600}
 .rt-name{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-display);font-weight:700;font-style:italic;line-height:1.06;margin-top:2px}
 .dayline{display:flex;align-items:center;gap:var(--s3);padding:13px 4px;width:100%;text-align:left;
   background:none;border:none;border-bottom:1px solid var(--line);color:inherit}
 .dayline:last-child{border-bottom:none}
 .dayline .badge{width:42px;flex:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--t-sm);
-  letter-spacing:.06em;color:var(--blue2);background:rgba(var(--blue-rgb),.12);
-  border:1px solid rgba(var(--blue-rgb),.28);border-radius:var(--r-sm);padding:5px 0;text-align:center}
-.dayline.rest .badge{color:var(--mut2);background:rgba(12,19,34,.5);border-color:var(--line)}
+  letter-spacing:.06em;color:var(--accent);background:rgba(var(--accent-strong-rgb),.12);
+  border:1px solid rgba(var(--accent-strong-rgb),.28);border-radius:var(--r-sm);padding:5px 0;text-align:center}
+.dayline.rest .badge{color:var(--text-3);background:rgba(12,19,34,.5);border-color:var(--line)}
 .dayline .grow{flex:1;min-width:0}
 .dayline .t{font-weight:600;font-size:var(--t-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dayline.rest .t{color:var(--mut);font-weight:500}
-.dayline .s{color:var(--mut);font-size:var(--t-micro);margin-top:1px}
-.dayline:active{background:rgba(var(--blue-rgb),.06)}
+.dayline.rest .t{color:var(--text-2);font-weight:500}
+.dayline .s{color:var(--text-2);font-size:var(--t-micro);margin-top:1px}
+.dayline:active{background:rgba(var(--accent-strong-rgb),.06)}
 .lib-tag{font-size:var(--t-micro);letter-spacing:.06em;text-transform:uppercase;font-weight:700;
   color:var(--ok);background:rgba(var(--ok-rgb),.12);border-radius:var(--r-sm);padding:2px 6px;margin-left:6px}
 
@@ -1816,17 +1752,17 @@ body.dragging-on .card.day.drop-target{filter:none}
 }
 .day-wd{
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-sm);letter-spacing:.16em;
-  color:var(--blue2);text-transform:uppercase;display:block;
+  color:var(--accent);text-transform:uppercase;display:block;
 }
 .day-name{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-xl);display:block;line-height:1.15}
 /* `off` y no `empty`: .empty es el bloque de estado vacío de una pantalla
    entera (text-align:center; padding:36px 20px), y al compartir nombre le
    metía ese padding al nombre del día — la tarjeta de un día sin asignar
    medía el triple de alto, con el texto centrado. */
-.day-name.off{color:var(--mut2);font-weight:500}
-.day-meta{margin-left:auto;color:var(--mut);font-size:var(--t-sm);font-weight:600;display:flex;align-items:center;gap:8px}
-.chev{transition:var(--d2);display:inline-block;color:var(--mut2)}
-.day.open .chev{transform:rotate(90deg);color:var(--blue2)}
+.day-name.off{color:var(--text-3);font-weight:500}
+.day-meta{margin-left:auto;color:var(--text-2);font-size:var(--t-sm);font-weight:600;display:flex;align-items:center;gap:8px}
+.chev{transition:var(--d2);display:inline-block;color:var(--text-3)}
+.day.open .chev{transform:rotate(90deg);color:var(--accent)}
 /* acordeón animable: grid-template-rows 0fr→1fr sí transiciona (display no).
    Antes usaba display:none/block + animation:vin, que re-disparaba en cada
    renderRutina() y hacía parpadear la configuración de ejercicios. */
@@ -1843,71 +1779,96 @@ body.dragging-on .card.day.drop-target{filter:none}
 /* ---------- barras de progreso (nutrición) ---------- */
 .pbar{height:8px;border-radius:var(--r-xs);background:rgba(255,255,255,.05);overflow:hidden}
 .pbar>i{display:block;height:100%;border-radius:var(--r-xs);
-  background:linear-gradient(90deg,var(--deep),var(--blue2) 60%,var(--cyan));
+  background:linear-gradient(90deg,var(--accent-strong),var(--accent) 60%,var(--accent));
   transition:width var(--d4) var(--ease-out)}
 .pbar>i.over{background:linear-gradient(135deg,#E8A21D,#FFB454)}
 .macro3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
-.macro3 .m .lbl{display:flex;justify-content:space-between;font-size:var(--t-micro);color:var(--mut);font-weight:600;margin-bottom:5px}
+.macro3 .m .lbl{display:flex;justify-content:space-between;font-size:var(--t-micro);color:var(--text-2);font-weight:600;margin-bottom:5px}
 .macro3 .pbar{height:7px}
-.macro3 .m:nth-child(1) .pbar>i{background:linear-gradient(90deg,var(--blue),#5EA2FF)}
+.macro3 .m:nth-child(1) .pbar>i{background:linear-gradient(90deg,var(--accent-strong),#5EA2FF)}
 .macro3 .m:nth-child(2) .pbar>i{background:linear-gradient(90deg,#0E9F6E,#2EE6A8)}
 .macro3 .m:nth-child(3) .pbar>i{background:linear-gradient(90deg,#E8A21D,#FFB454)}
 .kcal-ring{position:relative;width:92px;height:92px;flex:none}
 .kcal-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-.kr-track{fill:none;stroke:var(--card2);stroke-width:9}
+.kr-track{fill:none;stroke:var(--surface-2);stroke-width:9}
 .kr-prog{fill:none;stroke:url(#restGrad);stroke-width:9;stroke-linecap:round;stroke-dasharray:326.7;transition:stroke-dashoffset var(--d4) var(--ease)}
 .kr-val{position:absolute;inset:0;display:grid;place-items:center;text-align:center;line-height:1.15}
 
 .bignum{font-family:'Barlow Condensed';font-weight:700;font-size:52px;line-height:1;font-variant-numeric:tabular-nums}
-.bignum small{font-size:var(--t-xl);color:var(--mut);font-weight:600;letter-spacing:.04em}
+.bignum small{font-size:var(--t-xl);color:var(--text-2);font-weight:600;letter-spacing:.04em}
 
 /* ---------- nav fechas ---------- */
 .datenav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .datenav .d{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-xl);letter-spacing:.04em;text-transform:uppercase}
-.datenav .d small{display:block;font-size:var(--t-micro);color:var(--mut);letter-spacing:.12em;font-weight:600}
+.datenav .d small{display:block;font-size:var(--t-micro);color:var(--text-2);letter-spacing:.12em;font-weight:600}
 
 /* ---------- gráficos ---------- */
 canvas.chart{width:100%;height:200px;display:block}
 .seg{display:flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:var(--r);padding:4px;gap:5px}
 .seg button{
   flex:1;padding:9px 0;border-radius:var(--r-md);font-family:'Barlow Condensed';
-  font-weight:600;font-size:var(--t-body);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);
+  font-weight:600;font-size:var(--t-body);letter-spacing:.08em;text-transform:uppercase;color:var(--text-2);
 }
-.seg button.on{background:var(--grad2);color:var(--on-grad);font-weight:700;box-shadow:var(--glow)}
+.seg button.on{background:var(--accent-grad);color:var(--on-accent);font-weight:700;box-shadow:var(--accent-glow)}
 
-/* ---------- selector de color (Ajustes) ---------- */
-.theme-picker{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-/* El <input type=color> nativo es casi imposible de estilar por dentro —
-   se lo deja invisible y del tamaño de la etiqueta, que sí se puede pintar:
-   lo que se ve es un círculo sólido del color elegido, no el widget crudo
-   del navegador. */
-.theme-swatch-main{
-  position:relative;width:52px;height:52px;border-radius:50%;flex:none;
-  border:2px solid rgba(255,255,255,.18);box-shadow:0 0 0 4px rgba(255,255,255,.04);
-  cursor:pointer;overflow:hidden;
+/* ---------- acento (Ajustes) ----------
+   Seis muestras en una fila: los cinco presets y "Propio". Cada muestra es
+   un botón de 44 px de alto como mínimo (hit area), con el nombre debajo.
+   La elegida se marca con un anillo del color de texto, no del acento: sobre
+   una muestra del acento, un anillo del acento no se vería. */
+.acento-muestras{display:grid;grid-template-columns:repeat(6,1fr);gap:var(--s1)}
+.acento-muestra{
+  display:flex;flex-direction:column;align-items:center;gap:6px;min-height:64px;padding:var(--s1) 0;
+  font-size:var(--t-nano);font-weight:600;letter-spacing:.04em;color:var(--text-2);
+  border-radius:var(--r-md);transition:transform var(--d1) var(--ease-out),color var(--d1);
 }
-.theme-swatch-main input{
+.acento-muestra:active{transform:scale(.96)}
+.acento-muestra i{
+  position:relative;display:block;width:36px;height:36px;border-radius:var(--r-full);flex:none;
+  border:1px solid var(--line-2);box-shadow:0 0 0 3px transparent;
+  transition:box-shadow var(--d2) var(--ease-out),transform var(--d2) var(--spring);
+}
+.acento-muestra[aria-pressed="true"],.acento-muestra.on{color:var(--text)}
+.acento-muestra[aria-pressed="true"] i,.acento-muestra.on i{
+  box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--text);transform:scale(1.06);
+}
+/* "Propio" sin elegir: un círculo de vidrio con un +, no un arcoíris — un
+   arcoíris metería en pantalla justo los colores que el acento no puede ser. */
+.acento-muestra.propio i{background:var(--surface-2);display:grid;place-items:center}
+.acento-muestra.propio:not(.on) i::after{content:"+";font-size:var(--t-xl);line-height:1;color:var(--text-2)}
+/* El <input type=color> nativo es casi imposible de estilar por dentro: va
+   invisible y del tamaño de la muestra, que es lo que se ve. */
+.acento-muestra.propio input{
   position:absolute;inset:-4px;width:calc(100% + 8px);height:calc(100% + 8px);
   opacity:0;cursor:pointer;padding:0;border:0;
 }
-/* El input real es opacity:0 — su propio anillo de foco sería invisible
-   (la opacidad tapa TODA la capa, outline incluido). Sin esto, alguien
-   navegando con teclado llega acá y no hay ninguna señal de dónde está
-   parado (WCAG 2.4.7). El círculo que SÍ se ve es el que recibe el anillo. */
-.theme-swatch-main:focus-within{outline:2px solid var(--blue2);outline-offset:3px}
-.theme-preview{display:flex;gap:6px}
-.theme-preview i{width:16px;height:16px;border-radius:50%;flex:none;display:block;
-  border:1px solid rgba(255,255,255,.1)}
+/* El input real es opacity:0, así que su anillo de foco sería invisible
+   (WCAG 2.4.7): el anillo va en la muestra que sí se ve. */
+.acento-muestra:focus-visible i,.acento-muestra.propio:focus-within i{outline:2px solid var(--accent);outline-offset:3px}
+.acento-nota{margin-top:var(--s2);font-size:var(--t-sm);color:var(--text-2);line-height:1.45}
+.acento-previa{margin-top:var(--s3);display:flex;flex-direction:column;gap:var(--s2)}
+.acento-previa-fila{display:flex;align-items:center;justify-content:space-between;gap:var(--s2)}
+.acento-previa-num{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--t-display);line-height:1;
+  color:var(--accent);font-variant-numeric:tabular-nums;
+}
+.acento-previa-num small{font-size:var(--t-body);color:var(--text-2);font-weight:600}
+.acento-previa-estados{display:flex;gap:var(--s3);font-size:var(--t-micro);font-weight:600;color:var(--text-2)}
+.acento-previa-estados span{display:inline-flex;align-items:center;gap:5px}
+.acento-previa-estados span::before{content:"";width:8px;height:8px;border-radius:var(--r-full);background:currentColor}
+.acento-previa-estados .ok{color:var(--ok)}
+.acento-previa-estados .danger{color:var(--danger)}
+.acento-previa-estados .warn{color:var(--warn)}
 
 /* ---------- PR ---------- */
 .pr-card{
   display:flex;align-items:center;gap:14px;
-  background:linear-gradient(135deg,rgba(var(--blue-rgb),.12),rgba(12,19,34,.4));
-  border:1px solid rgba(var(--blue-rgb),.28);
+  background:linear-gradient(135deg,rgba(var(--accent-strong-rgb),.12),rgba(12,19,34,.4));
+  border:1px solid rgba(var(--accent-strong-rgb),.28);
 }
-.pr-troph{width:44px;height:44px;border-radius:var(--r-md);background:var(--grad2);display:grid;place-items:center;
-  box-shadow:var(--glow);font-size:var(--t-xl);flex:none}
-.pr-w{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-2xl);line-height:1;color:var(--blue3)}
+.pr-troph{width:44px;height:44px;border-radius:var(--r-md);background:var(--accent-grad);display:grid;place-items:center;
+  box-shadow:var(--accent-glow);font-size:var(--t-xl);flex:none}
+.pr-w{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-2xl);line-height:1;color:var(--accent)}
 .confetti-host{position:fixed;inset:0;z-index:80;pointer-events:none;overflow:hidden}
 .confetti-host i{position:absolute;top:-12px;width:8px;height:14px;border-radius:var(--r-xs);
   opacity:.95;animation:confettiFall linear forwards;transform:rotate(var(--rot))}
@@ -1915,23 +1876,23 @@ canvas.chart{width:100%;height:200px;display:block}
 
 /* ---------- inputs formulario ---------- */
 .field{margin-bottom:14px}
-.field label{display:block;font-size:var(--t-micro);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.field label{display:block;font-size:var(--t-micro);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-2);margin-bottom:6px}
 .field input,.field select{
   width:100%;padding:14px;border-radius:var(--r-md);font-size:var(--t-lg);font-weight:500;
-  background:var(--card2);border:1px solid var(--line2);outline:none;
+  background:var(--surface-2);border:1px solid var(--line-2);outline:none;
 }
-.field input:focus,.field select:focus{border-color:var(--blue)}
+.field input:focus,.field select:focus{border-color:var(--accent-strong)}
 /* padding-right: la flecha ocupa de 14 a 28 px desde el borde; sin esto el
    texto de la opción corría por debajo y se perdía el final (auditoría
    2026-09-27, A1). */
 .field select{padding-right:calc(var(--s6) + var(--s2));appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%238B97B4' stroke-width='2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
 /* Una línea de ayuda debajo de un campo (p.ej. lo que implica la opción
    elegida en un select, que así no tiene que entrar en la opción). */
-.field-hint{font-size:var(--t-sm);line-height:1.4;color:var(--mut);margin-top:var(--s2)}
+.field-hint{font-size:var(--t-sm);line-height:1.4;color:var(--text-2);margin-top:var(--s2)}
 .f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .f4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
-.check{display:flex;align-items:center;gap:10px;font-size:var(--t-body);color:var(--mut);font-weight:500;padding:4px 0 14px}
-.check input{width:20px;height:20px;accent-color:var(--blue)}
+.check{display:flex;align-items:center;gap:10px;font-size:var(--t-body);color:var(--text-2);font-weight:500;padding:4px 0 14px}
+.check input{width:20px;height:20px;accent-color:var(--accent-strong)}
 
 /* ---------- tabbar ---------- */
 /* píldora flotante, separada de los bordes, en vez de una barra a todo lo
@@ -1954,7 +1915,7 @@ nav.tabbar{
 }
 /* las etiquetas también estaban al límite: --mut2 sobre un fondo casi
    transparente. Con la barra opaca, un tono más claro las despega del todo. */
-nav.tabbar button{color:var(--mut)}
+nav.tabbar button{color:var(--text-2)}
 nav.tabbar button{
   flex:1;max-width:110px;display:flex;flex-direction:column;align-items:center;gap:3px;
   /* Sin `color` acá a propósito: la regla de arriba (nav.tabbar button) ya
@@ -1965,7 +1926,7 @@ nav.tabbar button{
 }
 nav.tabbar button svg{width:24px;height:24px;stroke:currentColor;fill:none;fill-opacity:0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke-width var(--d1) var(--ease),fill-opacity var(--d1) var(--ease)}
 nav.tabbar button span{font-family:'Barlow Condensed';font-size:var(--t-micro);font-weight:600;letter-spacing:.12em;text-transform:uppercase}
-nav.tabbar button.on{color:var(--on-grad)}
+nav.tabbar button.on{color:var(--on-accent)}
 /* la píldora activa se rellena de gradiente, así que el ícono pasa a oscuro
    sobre ella en vez de brillar sobre el fondo oscuro.
 
@@ -1981,7 +1942,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
    aquí para allá" */
 .tab-ind{
   position:absolute;top:7px;left:0;height:calc(100% - 14px);width:80px;border-radius:var(--r);
-  background:var(--grad2);box-shadow:0 6px 20px -4px rgba(var(--cyan-rgb),.55);pointer-events:none;
+  background:var(--accent-grad);box-shadow:0 6px 20px -4px rgba(var(--accent-rgb),.55);pointer-events:none;
   transition:transform var(--d3) var(--ease),width var(--d3) var(--ease);
 }
 
@@ -1990,23 +1951,23 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   position:fixed;left:12px;right:12px;z-index:45;
   bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 10px);
   background:linear-gradient(140deg,#0E1B38,#0A1220);
-  border:1px solid rgba(var(--blue-rgb),.45);border-radius:var(--r);
-  padding:12px 16px;box-shadow:0 10px 40px -8px rgba(var(--blue-rgb),.5);
+  border:1px solid rgba(var(--accent-strong-rgb),.45);border-radius:var(--r);
+  padding:12px 16px;box-shadow:0 10px 40px -8px rgba(var(--accent-strong-rgb),.5);
   transform:translateY(140%);opacity:0;transition:var(--d3) var(--ease-out);
   max-width:492px;margin:0 auto;
 }
 #restbar.show{transform:none;opacity:1}
 #restbar .rb-top{display:flex;align-items:center;gap:14px}
-#restbar .rb-lbl{font-size:var(--t-micro);font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--blue2)}
+#restbar .rb-lbl{font-size:var(--t-micro);font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
 #rest-time{font-family:'Barlow Condensed';font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
 #restbar .rb-btns{margin-left:auto;display:flex;gap:8px}
 #restbar .rb-btns button{
-  padding:10px 14px;border-radius:var(--r-md);background:rgba(var(--blue-rgb),.15);
-  border:1px solid rgba(var(--blue-rgb),.4);color:var(--blue3);
+  padding:10px 14px;border-radius:var(--r-md);background:rgba(var(--accent-strong-rgb),.15);
+  border:1px solid rgba(var(--accent-strong-rgb),.4);color:var(--accent);
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-body);letter-spacing:.06em;
 }
 #rest-track{height:5px;border-radius:var(--r-xs);background:rgba(255,255,255,.08);margin-top:10px;overflow:hidden}
-#rest-fill{display:block;height:100%;border-radius:var(--r-xs);background:var(--grad);width:100%;transition:width var(--d2) linear}
+#rest-fill{display:block;height:100%;border-radius:var(--r-xs);background:var(--accent-grad);width:100%;transition:width var(--d2) linear}
 
 /* ---------- rest timer: pantalla completa ---------- */
 #rest-fs{position:fixed;inset:0;z-index:65;display:none;place-items:center;
@@ -2018,10 +1979,10 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 #rest-fs.out{animation:fdout var(--d2) var(--ease) forwards;pointer-events:none}
 #rest-fs.out .rfs-inner{animation:dlgOut var(--d2) var(--ease) forwards}
 .rfs-inner{display:flex;flex-direction:column;align-items:center;gap:22px;padding:24px;position:relative;width:100%;max-width:360px}
-.rfs-lbl{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-body);letter-spacing:.2em;text-transform:uppercase;color:var(--blue2)}
+.rfs-lbl{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-body);letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
 .rfs-ring{position:relative;width:240px;height:240px;animation:glowring 2.4s ease-in-out infinite}
 .rfs-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-.rfs-track{fill:none;stroke:var(--card2);stroke-width:10}
+.rfs-track{fill:none;stroke:var(--surface-2);stroke-width:10}
 .rfs-prog{fill:none;stroke:url(#restGrad);stroke-width:10;stroke-linecap:round;
   stroke-dasharray:552.9;stroke-dashoffset:0;transition:stroke-dashoffset var(--d2) linear}
 .rfs-time{position:absolute;inset:0;display:grid;place-items:center;
@@ -2035,19 +1996,19 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .rfs-rir{width:100%;display:flex;flex-direction:column;align-items:center;gap:6px}
 .rfs-rir .steplabel{margin-bottom:0;text-align:center}
 .rfs-rir .rir-opts{width:100%;margin-top:0}
-.rfs-rir-meta{font-size:var(--t-micro);color:var(--mut);margin-top:-2px}
+.rfs-rir-meta{font-size:var(--t-micro);color:var(--text-2);margin-top:-2px}
 /* 2026-09-25: título legible y opciones en una barra segmentada. La caja
    anima su altura al irse (overflow:hidden para que no se vea el contenido
    saliéndose mientras se achica). */
 .rfs-rir-caja{width:100%;overflow:hidden}
-.rfs-rir-t{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);letter-spacing:.04em;color:var(--txt)}
-.rir-seg{display:grid;grid-template-columns:repeat(5,1fr);width:100%;margin-top:var(--s1);border-radius:var(--r-md);border:1px solid var(--line2);background:var(--card);overflow:hidden}
-.rir-seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-left:1px solid var(--line);color:var(--txt);transition:background var(--d2) var(--ease),color var(--d2) var(--ease)}
+.rfs-rir-t{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);letter-spacing:.04em;color:var(--text)}
+.rir-seg{display:grid;grid-template-columns:repeat(5,1fr);width:100%;margin-top:var(--s1);border-radius:var(--r-md);border:1px solid var(--line-2);background:var(--surface);overflow:hidden}
+.rir-seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-left:1px solid var(--line);color:var(--text);transition:background var(--d2) var(--ease),color var(--d2) var(--ease)}
 .rir-seg button:first-child{border-left:0}
 .rir-seg b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;line-height:1}
-.rir-seg small{font-size:var(--t-nano);color:var(--mut);letter-spacing:.06em;text-transform:uppercase}
-.rir-seg button.on{background:var(--grad2);color:var(--on-grad)}
-.rir-seg button.on small{color:var(--on-grad)}
+.rir-seg small{font-size:var(--t-nano);color:var(--text-2);letter-spacing:.06em;text-transform:uppercase}
+.rir-seg button.on{background:var(--accent-grad);color:var(--on-accent)}
+.rir-seg button.on small{color:var(--on-accent)}
 .rfs-btns{display:flex;gap:12px;width:100%}
 .rfs-btns .btn{flex:1}
 .rfs-min{position:absolute;top:-6px;right:-6px}
@@ -2085,7 +2046,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   border-radius:26px 26px 0 0;
   padding:10px 20px calc(24px + env(safe-area-inset-bottom));
   animation:shup var(--d2) var(--spring);
-  box-shadow:var(--glass-hi),0 -20px 60px -20px rgba(0,0,0,.7);
+  box-shadow:var(--edge-metal),0 -20px 60px -20px rgba(0,0,0,.7);
 }
 /* Sin opacity: la hoja entra sólida, sólo sube desde abajo del marco — el
    fundido de .4→1 se leía como el mismo parpadeo que tenían las pestañas.
@@ -2128,25 +2089,25 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   border-radius:var(--r-lg);
   padding:var(--s5) var(--s5) var(--s4);
   animation:dlgIn var(--d3) var(--spring);
-  box-shadow:var(--glass-hi),0 24px 60px -12px rgba(0,0,0,.8);
+  box-shadow:var(--edge-metal),0 24px 60px -12px rgba(0,0,0,.8);
 }
 #sheet.dialogo .handle{display:none}
 #sheet.dialogo h2{margin-bottom:var(--s2)}
 @keyframes dlgIn{from{transform:translateY(24px) scale(.94);opacity:0}}
 @keyframes dlgOut{to{transform:translateY(16px) scale(.96);opacity:0}}
 #sheet.dialogo.closing .panel{animation:dlgOut var(--d2) var(--ease-out) forwards}
-#sheet .handle{width:44px;height:5px;border-radius:var(--r-xs);background:var(--line2);margin:6px auto 16px}
+#sheet .handle{width:44px;height:5px;border-radius:var(--r-xs);background:var(--line-2);margin:6px auto 16px}
 /* En el mockup los títulos de sheet van en itálica y caja normal
    ("Historial"), no en versales: es el mismo gesto del título de pantalla,
    un escalón más abajo. */
 #sheet h2{font-size:var(--t-2xl);font-weight:700;font-style:italic;letter-spacing:.01em;margin-bottom:16px}
-#sheet h3{font-size:var(--t-body);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blue2);margin:22px 0 10px}
+#sheet h3{font-size:var(--t-body);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:22px 0 10px}
 
 /* ---------- toast ---------- */
 #toast{
   position:fixed;left:50%;transform:translateX(-50%) translateY(20px);
   bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 90px);
-  background:#12203C;border:1px solid rgba(var(--blue-rgb),.5);color:var(--txt);
+  background:#12203C;border:1px solid rgba(var(--accent-strong-rgb),.5);color:var(--text);
   padding:11px 20px;border-radius:var(--r-full);font-size:var(--t-body);font-weight:600;
   opacity:0;pointer-events:none;transition:var(--d2);z-index:70;white-space:nowrap;
   box-shadow:0 8px 30px -6px rgba(0,0,0,.6);
@@ -2157,17 +2118,17 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
    botones. Entra desde el borde de arriba, que ahí no hay nada. */
 #toast.over-sheet{bottom:auto;top:calc(env(safe-area-inset-top) + 14px);transform:translateX(-50%) translateY(-20px)}
 #toast.over-sheet.show{transform:translateX(-50%) translateY(0)}
-.toast-act{background:none;border:none;color:var(--blue2);font-weight:700;font-size:var(--t-sm);padding:0 0 0 4px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
+.toast-act{background:none;border:none;color:var(--accent);font-weight:700;font-size:var(--t-sm);padding:0 0 0 4px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
 
 /* ---------- misc ---------- */
 .empty{
-  text-align:center;padding:36px 20px;color:var(--mut);
+  text-align:center;padding:36px 20px;color:var(--text-2);
 }
-.empty .big{display:block;margin:0 auto 14px;color:var(--mut2)}
+.empty .big{display:block;margin:0 auto 14px;color:var(--text-3)}
 .empty p{font-size:var(--t-body);line-height:1.5;margin-bottom:18px}
 .sect{
   font-family:'Barlow Condensed';font-size:var(--t-body);font-weight:700;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--blue2);margin:22px 2px 10px;
+  text-transform:uppercase;color:var(--accent);margin:22px 2px 10px;
   display:flex;align-items:center;gap:10px;
 }
 .sect::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -2175,12 +2136,12 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
    raya — el mismo lenguaje que "Editar" en Plan de hoy. Como .btn estiraba
    al 100% y partía el título en dos renglones (auditoría 2026-09-26). */
 .sect::after{order:1}
-.sect-link{order:2;flex:none;font-family:Barlow,sans-serif;font-size:var(--t-sm);font-weight:600;letter-spacing:0;text-transform:none;color:var(--blue2);min-height:40px;padding:0 var(--s1)}
+.sect-link{order:2;flex:none;font-family:Barlow,sans-serif;font-size:var(--t-sm);font-weight:600;letter-spacing:0;text-transform:none;color:var(--accent);min-height:40px;padding:0 var(--s1)}
 /* Un grupo de acciones apiladas: el espacio entre ellas lo pone el
    contenedor, no cada botón con su propio margen. Es la diferencia entre
    "estos dos botones son un grupo" y "estos dos botones quedaron cerca". */
 .act-stack{display:flex;flex-direction:column;gap:var(--s3);margin-top:var(--s4)}
-.txt-blue{color:var(--blue2)} .txt-ok{color:var(--ok)} .txt-red{color:var(--red)} .txt-mut{color:var(--mut)} .txt-warn{color:var(--warn)}
+.txt-blue{color:var(--accent)} .txt-ok{color:var(--ok)} .txt-red{color:var(--danger)} .txt-mut{color:var(--text-2)} .txt-warn{color:var(--warn)}
 /* Un <button> real metido en medio de una oración ("· usar último
    registrado") — alcanzable por teclado, a diferencia del <span onClick> que
    reemplaza. Quita todo el cromado que el navegador le pone a un botón por
@@ -2202,18 +2163,18 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
    como margin:'-8px 0 16px' — el -8px sube la línea contra el h2, que ya trae
    su propio margen inferior. */
 .sheet-sub{
-  font-size:var(--t-body);line-height:1.5;color:var(--mut);
+  font-size:var(--t-body);line-height:1.5;color:var(--text-2);
   margin:-8px 0 var(--s4);
 }
-.sheet-sub b{color:var(--txt);font-weight:600}
+.sheet-sub b{color:var(--text);font-weight:600}
 
 /* Etiqueta corta en versalitas. .hero-eyebrow es la variante celeste del hero;
    ésta es la neutra, para cualquier profundidad. */
 .eyebrow{
   font-size:var(--t-micro);font-weight:700;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--mut);
+  text-transform:uppercase;color:var(--text-2);
 }
-.eyebrow.ok{color:var(--ok)} .eyebrow.warn{color:var(--warn)} .eyebrow.blue{color:var(--blue2)}
+.eyebrow.ok{color:var(--ok)} .eyebrow.warn{color:var(--warn)} .eyebrow.blue{color:var(--accent)}
 /* un <label> fuera de .field: hasta ahora salía como texto suelto mientras el
    de al lado, por estar dentro de .field, salía en versalitas. Es literalmente
    el problema que se vino a arreglar, en la misma pantalla. */
@@ -2229,7 +2190,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 }
 .stats .l{
   display:block;font-size:var(--t-micro);letter-spacing:.08em;
-  text-transform:uppercase;color:var(--mut);margin-top:2px;
+  text-transform:uppercase;color:var(--text-2);margin-top:2px;
 }
 
 /* Tarjeta de dato: encabezado + cuerpo. Para las vistas de detalle, donde
@@ -2248,53 +2209,53 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .dcard-foot{
   display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);
   margin-top:10px;padding-top:9px;border-top:1px solid var(--line);
-  font-size:var(--t-sm);color:var(--mut);
+  font-size:var(--t-sm);color:var(--text-2);
 }
 
 /* Nota informativa. .calcbox ya existía; le faltaban los tonos, que estaban
    escritos a mano con rgba() en cada lugar que los necesitaba. */
 .calcbox.warn{background:rgba(var(--warn-rgb),.09);border-color:rgba(var(--warn-rgb),.28);color:var(--warn)}
 .calcbox.ok{background:rgba(16,185,129,.09);border-color:rgba(16,185,129,.28);color:var(--ok)}
-.calcbox.blue{background:rgba(var(--blue-rgb),.09);border-color:rgba(var(--blue-rgb),.28)}
+.calcbox.blue{background:rgba(var(--accent-strong-rgb),.09);border-color:rgba(var(--accent-strong-rgb),.28)}
 
 /* Texto de párrafo dentro de un sheet: la combinación tamaño+interlínea que
    estaba suelta 34 veces (lineHeight 1.5 y 1.55). */
-.ptext{font-size:var(--t-body);line-height:1.55;color:var(--txt)}
-.ptext.sm{font-size:var(--t-sm);line-height:1.5;color:var(--mut)}
-.ptext.mut{color:var(--mut)}
+.ptext{font-size:var(--t-body);line-height:1.55;color:var(--text)}
+.ptext.sm{font-size:var(--t-sm);line-height:1.5;color:var(--text-2)}
+.ptext.mut{color:var(--text-2)}
 .ptext.center{text-align:center}
 
 /* ---------- perfil / macros ---------- */
 .profcard{display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left}
-.profcard .pavatar{width:44px;height:44px;flex:none;border-radius:var(--r-md);background:var(--grad);display:grid;place-items:center;font-size:var(--t-xl);box-shadow:var(--glow)}
+.profcard .pavatar{width:44px;height:44px;flex:none;border-radius:var(--r-md);background:var(--accent-grad);display:grid;place-items:center;font-size:var(--t-xl);box-shadow:var(--accent-glow)}
 .profcard .pt{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);line-height:1.1}
-.macro3 .rng{font-size:var(--t-nano);color:var(--mut2);font-weight:600;letter-spacing:.02em}
+.macro3 .rng{font-size:var(--t-nano);color:var(--text-3);font-weight:600;letter-spacing:.02em}
 .pbar>i.warn{background:linear-gradient(135deg,#E8A21D,#FFB454)!important}
 .pbar>i.red{background:linear-gradient(135deg,#E8455F,#FF5D73)!important}
 .feedback{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
-.feedback .fdot{width:9px;height:9px;border-radius:var(--r-xs);margin-top:5px;flex:none;background:var(--mut)}
-.feedback.blue .fdot{background:var(--blue2);box-shadow:0 0 10px var(--blue)}
+.feedback .fdot{width:9px;height:9px;border-radius:var(--r-xs);margin-top:5px;flex:none;background:var(--text-2)}
+.feedback.blue .fdot{background:var(--accent);box-shadow:0 0 10px var(--accent-strong)}
 .feedback.ok .fdot{background:var(--ok);box-shadow:0 0 10px var(--ok)}
 .feedback.warn .fdot{background:var(--warn);box-shadow:0 0 10px var(--warn)}
-.feedback.red .fdot{background:var(--red);box-shadow:0 0 10px var(--red)}
-.feedback .ftx{font-size:var(--t-sm);line-height:1.45;color:var(--txt)}
+.feedback.red .fdot{background:var(--danger);box-shadow:0 0 10px var(--danger)}
+.feedback .ftx{font-size:var(--t-sm);line-height:1.45;color:var(--text)}
 .rangerow{margin:16px 0 6px}
-.rangerow .rlbl{display:flex;justify-content:space-between;font-size:var(--t-micro);font-weight:600;color:var(--mut);margin-bottom:8px}
-.rangerow .rlbl b{color:var(--blue3);font-family:'Barlow Condensed';font-size:var(--t-body)}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:var(--r-xs);background:var(--card2);border:1px solid var(--line2);outline:none}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--blue2);border:3px solid #0A101C;box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 1px var(--blue)}
-input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--blue2);border:3px solid #0A101C}
-.calcbox{background:var(--card2);border:1px solid var(--line);border-radius:var(--r-md);padding:12px 14px;margin-top:6px}
-.calcbox .cr{display:flex;justify-content:space-between;font-size:var(--t-sm);padding:4px 0;color:var(--mut)}
-.calcbox .cr b{color:var(--txt);font-weight:600}
+.rangerow .rlbl{display:flex;justify-content:space-between;font-size:var(--t-micro);font-weight:600;color:var(--text-2);margin-bottom:8px}
+.rangerow .rlbl b{color:var(--accent);font-family:'Barlow Condensed';font-size:var(--t-body)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--line-2);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);border:3px solid #0A101C;box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 1px var(--accent-strong)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid #0A101C}
+.calcbox{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:12px 14px;margin-top:6px}
+.calcbox .cr{display:flex;justify-content:space-between;font-size:var(--t-sm);padding:4px 0;color:var(--text-2)}
+.calcbox .cr b{color:var(--text);font-weight:600}
 .calcbox .cr.big{font-size:var(--t-body);padding-top:9px;margin-top:5px;border-top:1px solid var(--line)}
-.calcbox .cr.big b{font-family:'Barlow Condensed';font-size:var(--t-xl);color:var(--blue3)}
-.gtx{font-size:var(--t-sm);line-height:1.55;color:var(--txt)}
+.calcbox .cr.big b{font-family:'Barlow Condensed';font-size:var(--t-xl);color:var(--accent)}
+.gtx{font-size:var(--t-sm);line-height:1.55;color:var(--text)}
 .pw-btn{display:flex;align-items:center;gap:10px;width:100%;padding:13px 16px;border-radius:var(--r);margin-bottom:12px;
-  background:linear-gradient(135deg,rgba(var(--blue-rgb),.14),rgba(12,19,34,.4));border:1px solid rgba(var(--blue-rgb),.3);text-align:left}
+  background:linear-gradient(135deg,rgba(var(--accent-strong-rgb),.14),rgba(12,19,34,.4));border:1px solid rgba(var(--accent-strong-rgb),.3);text-align:left}
 .pw-btn .pwi{font-size:var(--t-xl)}
 .pw-btn .pwt{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);letter-spacing:.03em}
-.pw-btn .chev{margin-left:auto;color:var(--blue2)}
+.pw-btn .chev{margin-left:auto;color:var(--accent)}
 .pw-btn.accent{background:linear-gradient(135deg,rgba(255,93,115,.18),rgba(12,19,34,.4));border-color:rgba(255,93,115,.45)}
 
 /* El cuerpo chico del héroe de la sesión en curso (ActiveHero). */
@@ -2306,14 +2267,14 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    vez de color plano, como .ini-tile en Inicio. */
 .session-ring{position:relative;width:52px;height:52px;flex:none;display:grid;place-items:center}
 .session-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-.session-ring-track{fill:none;stroke:var(--card2);stroke-width:3}
+.session-ring-track{fill:none;stroke:var(--surface-2);stroke-width:3}
 .session-ring-prog{
   fill:none;stroke:url(#restGrad);stroke-width:3;stroke-linecap:round;
   stroke-dasharray:97.39;stroke-dashoffset:97.39;
 }
 .session-ring-num{
   position:absolute;font-family:'Barlow Condensed';font-weight:700;font-size:12.5px;
-  letter-spacing:.2px;background:var(--grad2);-webkit-background-clip:text;background-clip:text;
+  letter-spacing:.2px;background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;
   color:transparent;
 }
 /* ---------- Hoy: la barra de la sesión en curso (Hoy.jsx, SesionBarra) ----------
@@ -2324,24 +2285,24 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   display:flex;align-items:center;gap:var(--s3);
   margin:var(--s3) 0 0;padding:var(--s2) var(--s2) var(--s2) var(--s3);min-height:58px;
   border-radius:var(--r-md);border:1px solid var(--line);
-  background:linear-gradient(96deg,rgba(var(--blue-rgb),.16),rgba(255,255,255,.02)),var(--bg2);
+  background:linear-gradient(96deg,rgba(var(--accent-strong-rgb),.16),rgba(255,255,255,.02)),var(--surface);
 }
 .ses-barra{margin-bottom:var(--s3)}
 .ses-barra .session-ring{width:40px;height:40px}
 .ses-barra .session-ring-num{font-size:11px}
 .ses-barra-main{flex:1;min-width:0}
 .ses-barra-t{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);line-height:1.05;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ses-barra-s{font-size:var(--t-micro);color:var(--mut);margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ses-barra-s b{color:var(--txt);font-weight:600}
+.ses-barra-s{font-size:var(--t-micro);color:var(--text-2);margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ses-barra-s b{color:var(--text);font-weight:600}
 .ses-terminar{
   flex:none;height:40px;padding:0 var(--s3);border-radius:var(--r-md);
   border:1px solid rgba(var(--ok-rgb),.45);color:var(--ok);
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-sm);letter-spacing:.1em;text-transform:uppercase;
 }
 /* Todo hecho: Terminar pasa a ser LA acción que queda. */
-.ses-barra.lista .ses-terminar{background:var(--grad-ok);color:var(--on-grad);border-color:transparent;box-shadow:0 6px 20px -8px rgba(var(--ok-rgb),.6)}
-.ses-mas{flex:none;width:40px;height:40px;border-radius:var(--r-md);border:1px solid var(--line2);color:var(--blue2);display:grid;place-items:center}
-.ses-lista{margin:calc(var(--s1) * -1) 0 var(--s2);font-size:var(--t-micro);color:var(--mut);text-align:center}
+.ses-barra.lista .ses-terminar{background:var(--grad-ok);color:var(--on-ok);border-color:transparent;box-shadow:0 6px 20px -8px rgba(var(--ok-rgb),.6)}
+.ses-mas{flex:none;width:40px;height:40px;border-radius:var(--r-md);border:1px solid var(--line-2);color:var(--accent);display:grid;place-items:center}
+.ses-lista{margin:calc(var(--s1) * -1) 0 var(--s2);font-size:var(--t-micro);color:var(--text-2);text-align:center}
 .ses-lista b{color:var(--ok)}
 /* ---------- Hoy: el plan del día (Hoy.jsx, PlanHoy) ----------
    Reemplaza a los bloques plegables (2026-09-24). Una lista agrupada por
@@ -2351,8 +2312,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .plan-hoy{margin:var(--s4) 0 var(--s3)}
 /* Entrenar igual en un descanso: recuerda de dónde vino el plan que se ve
    y deja volver a la lista de turnos (Hoy.jsx, RestHero). */
-.hoy-elegido{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);margin:0 2px var(--s2);font-size:var(--t-micro);color:var(--mut)}
-.hoy-elegido .linkcard{color:var(--blue2);font-weight:600;min-height:40px;padding:0 var(--s1)}
+.hoy-elegido{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);margin:0 2px var(--s2);font-size:var(--t-micro);color:var(--text-2)}
+.hoy-elegido .linkcard{color:var(--accent);font-weight:600;min-height:40px;padding:0 var(--s1)}
 /* ---- Plan de hoy, pasada estética (2026-09-26) ----
    Enzo: "Plan de hoy suena harto", los nombres de los ejercicios "débiles,
    neutros", las burbujas de orden desalineadas. Se toma el lenguaje del
@@ -2362,28 +2323,28 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .plan-title{
   margin:0;font-family:'Barlow Condensed',sans-serif;font-size:var(--t-2xl);font-weight:700;font-style:italic;
   letter-spacing:.02em;text-transform:none;line-height:1;text-wrap:balance;
-  background:linear-gradient(96deg,var(--txt) 10%,var(--accent) 64%,var(--cyan));
+  background:linear-gradient(96deg,var(--text) 10%,var(--accent) 64%,var(--accent));
   -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 0 14px rgba(var(--cyan-rgb),.28));
+  filter:drop-shadow(0 0 14px rgba(var(--accent-rgb),.28));
 }
 .plan-edit{
   display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 var(--s3);flex:none;
   border-radius:var(--r-full);border:1px solid var(--glass-border);
-  background:rgba(var(--blue-rgb),.10);backdrop-filter:var(--glass-blur);
-  color:var(--blue3);font:inherit;font-size:var(--t-sm);font-weight:600;cursor:pointer;
+  background:rgba(var(--accent-strong-rgb),.10);backdrop-filter:var(--glass-blur);
+  color:var(--accent);font:inherit;font-size:var(--t-sm);font-weight:600;cursor:pointer;
   transition-property:transform,background-color,color;transition-duration:var(--d1);transition-timing-function:var(--ease);
 }
 .plan-edit:active{transform:scale(.96)}
 .plan-edit svg{width:15px;height:15px}
-.plan-edit.on{background:var(--grad2);border-color:transparent;color:var(--on-grad)}
+.plan-edit.on{background:var(--accent-grad);border-color:transparent;color:var(--on-accent)}
 /* El resumen: dos pastillas de vidrio con el número grande. */
-.plan-resumen{display:flex;flex-wrap:wrap;gap:var(--s2);font-size:var(--t-sm);color:var(--mut);margin:0 0 var(--s4)}
+.plan-resumen{display:flex;flex-wrap:wrap;gap:var(--s2);font-size:var(--t-sm);color:var(--text-2);margin:0 0 var(--s4)}
 .plan-resumen>span{
   display:inline-flex;align-items:baseline;gap:6px;padding:6px var(--s3);border-radius:var(--r-full);
   background:rgba(255,255,255,.04);border:1px solid var(--line);
   backdrop-filter:var(--glass-blur);text-wrap:pretty;
 }
-.plan-resumen b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;line-height:1;color:var(--txt);font-variant-numeric:tabular-nums}
+.plan-resumen b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
 .plan-resumen .up{color:var(--ok);font-weight:600;border-color:rgba(var(--ok-rgb),.35);background:rgba(var(--ok-rgb),.07)}
 .plan-resumen .up b{color:var(--ok)}
 .plan-block{margin-bottom:var(--s4)}
@@ -2394,16 +2355,16 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    contador en su burbuja. */
 .plan-block-t{
   display:inline-flex;align-items:center;gap:var(--s2);
-  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blue2);
+  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
 }
-.plan-block-t::before{content:"";width:3px;height:1em;border-radius:var(--r-full);background:var(--grad2)}
+.plan-block-t::before{content:"";width:3px;height:1em;border-radius:var(--r-full);background:var(--accent-grad)}
 .plan-block-n{
   display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:var(--r-full);
-  background:rgba(var(--blue-rgb),.16);color:var(--blue3);font-size:var(--t-micro);letter-spacing:0;font-variant-numeric:tabular-nums;
+  background:rgba(var(--accent-strong-rgb),.16);color:var(--accent);font-size:var(--t-micro);letter-spacing:0;font-variant-numeric:tabular-nums;
 }
 /* La tarjeta del bloque en vidrio, como .ini-tile. */
 .plan-block .group{
-  background:linear-gradient(155deg,rgba(var(--blue-rgb),.12),rgba(12,19,34,.82) 46%,rgba(12,19,34,.92));
+  background:linear-gradient(155deg,rgba(var(--accent-strong-rgb),.12),rgba(12,19,34,.82) 46%,rgba(12,19,34,.92));
   backdrop-filter:var(--glass-blur);
   border-color:var(--glass-border);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 40px -26px rgba(0,0,0,.9);
@@ -2416,7 +2377,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   padding:var(--s3) var(--s4);background:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer;
   transition-property:background-color;transition-duration:var(--d1);
 }
-.plan-row-main:active{background:rgba(var(--blue-rgb),.08)}
+.plan-row-main:active{background:rgba(var(--accent-strong-rgb),.08)}
 .plan-row .mini{margin-right:var(--s3)}
 /* ▲▼ de un ejercicio dentro de su grupo (moverEnBloque). */
 .plan-row .ex-move{flex:none;margin-right:var(--s2)}
@@ -2424,7 +2385,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    texto de lista genérico (.grouprow-t) y se perdía al lado del número. */
 .plan-row .grouprow-t{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;letter-spacing:.01em;
-  line-height:1.15;color:var(--txt);text-wrap:balance;
+  line-height:1.15;color:var(--text);text-wrap:balance;
 }
 .plan-row .grouprow-s{font-variant-numeric:tabular-nums;margin-top:3px}
 /* Número de orden: 28 px, cifra condensada centrada (tabular + line-height
@@ -2432,16 +2393,16 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    donde arrancás. */
 .plan-num{
   flex:none;width:28px;height:28px;border-radius:var(--r-full);display:grid;place-items:center;
-  border:1px solid var(--glass-border);background:rgba(var(--blue-rgb),.10);
+  border:1px solid var(--glass-border);background:rgba(var(--accent-strong-rgb),.10);
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;line-height:1;
-  color:var(--blue3);font-variant-numeric:tabular-nums;
+  color:var(--accent);font-variant-numeric:tabular-nums;
 }
-.plan-num.first{background:var(--grad2);border-color:transparent;color:var(--on-grad);box-shadow:0 0 16px -2px rgba(var(--cyan-rgb),.6)}
+.plan-num.first{background:var(--accent-grad);border-color:transparent;color:var(--on-accent);box-shadow:0 0 16px -2px rgba(var(--accent-rgb),.6)}
 .plan-meta{flex:none;display:flex;flex-direction:column;align-items:flex-end;text-align:right;line-height:1.1}
-.plan-meta b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;font-variant-numeric:tabular-nums;color:var(--txt)}
-.plan-meta b i{font-style:normal;font-size:var(--t-sm);font-weight:600;color:var(--mut);margin-left:2px}
+.plan-meta b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.plan-meta b i{font-style:normal;font-size:var(--t-sm);font-weight:600;color:var(--text-2);margin-left:2px}
 .plan-meta b em{font-style:normal;margin-left:3px}
-.plan-meta small{font-size:var(--t-micro);color:var(--mut);letter-spacing:.02em}
+.plan-meta small{font-size:var(--t-micro);color:var(--text-2);letter-spacing:.02em}
 .plan-meta.up b{color:var(--ok)}
 .plan-meta.up b i{color:rgba(var(--ok-rgb),.7)}
 .plan-edit-acts{display:flex;flex-direction:column;gap:var(--s2)}
@@ -2452,11 +2413,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
      invisible: ▲ y ▼ están apilados, así que expandir la zona sensible hacia
      arriba y abajo haría que se pisen entre sí y termines tocando el
      contrario. La única salida honesta es agrandarlos de verdad. */
-  width:36px;height:36px;border-radius:var(--r-sm);background:var(--card);border:1px solid var(--line2);
-  color:var(--mut2);font-size:var(--t-sm);display:grid;place-items:center;
+  width:36px;height:36px;border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--line-2);
+  color:var(--text-3);font-size:var(--t-sm);display:grid;place-items:center;
 }
 .block-move button:disabled{opacity:.3}
-.block-move button:not(:disabled):active{color:var(--cyan);border-color:var(--cyan)}
+.block-move button:not(:disabled):active{color:var(--accent);border-color:var(--accent)}
 
 
 /* ---------- calentamiento general (sheets/Calentamiento.jsx) ---------- */
@@ -2464,16 +2425,16 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .calent-row .plan-num{margin-top:2px}
 .calent-dosis{display:block;font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-body);color:var(--accent);margin-top:2px}
 .calent-check{
-  flex:none;width:26px;height:26px;margin-top:2px;border-radius:var(--r-full);border:1.5px solid var(--line2);
+  flex:none;width:26px;height:26px;margin-top:2px;border-radius:var(--r-full);border:1.5px solid var(--line-2);
   display:grid;place-items:center;transition:background var(--d1) var(--ease),border-color var(--d1) var(--ease);
 }
-.calent-row.hecho .calent-check{background:var(--ok);border-color:transparent;color:var(--on-grad)}
+.calent-row.hecho .calent-check{background:var(--ok);border-color:transparent;color:var(--on-ok)}
 
 /* ---------- opciones del ejercicio (sheets/ExOpciones.jsx) ---------- */
-.opc-ico{flex:none;color:var(--blue2)}
+.opc-ico{flex:none;color:var(--accent)}
 /* Hoja "Después" (Despues.jsx): el número de orden de cada lugar posible. */
-.despues-n{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:var(--r-full);border:1px solid var(--line2);font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-sm);color:var(--blue2)}
-.opc-peligro .grouprow-t,.opc-peligro .opc-ico{color:var(--red)}
+.despues-n{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:var(--r-full);border:1px solid var(--line-2);font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-sm);color:var(--accent)}
+.opc-peligro .grouprow-t,.opc-peligro .opc-ico{color:var(--danger)}
 
 /* El cuerpo del día en la esquina del héroe (2026-09-24). El texto de la
    izquierda le deja lugar con padding: el nombre del día es lo más grande de
@@ -2502,7 +2463,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .hero-stats .cond{font-size:var(--t-2xl);font-weight:700;line-height:1}
 .hero-stats span{
   display:block;margin-top:2px;
-  font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
+  font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--text-2);
 }
 .hero-cta{
   margin-top:18px;height:58px;border-radius:var(--r);
@@ -2528,7 +2489,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .hist-row .grow{flex:1;min-width:0}
 .hist-row .t{display:block;font-size:var(--t-body);font-weight:600}
-.hist-row .s{display:block;font-size:var(--t-micro);color:var(--mut);margin-top:1px}
+.hist-row .s{display:block;font-size:var(--t-micro);color:var(--text-2);margin-top:1px}
 
 /* ============================================================
    Rediseño — pantalla RUTINA
@@ -2536,7 +2497,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* Cada pantalla tiene su matiz de hero en el mockup: Hoy azul, Rutina
    violeta. Es lo que hace que se distingan sin leer el título. */
 .card.hero.hero-plan{
-  background:linear-gradient(158deg,rgba(108,92,255,.24),rgba(255,255,255,.03) 60%),var(--card);
+  background:linear-gradient(158deg,rgba(108,92,255,.24),rgba(255,255,255,.03) 60%),var(--surface);
   border-color:rgba(140,150,255,.22);
 }
 .card.hero.hero-plan::before{
@@ -2557,11 +2518,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);
 }
 .weekbars .wbar.on .b{
-  background:linear-gradient(var(--cyan),var(--deep));border-color:transparent;
+  background:linear-gradient(var(--accent),var(--accent-strong));border-color:transparent;
   animation:rise-y var(--d4) var(--ease) backwards;
 }
 @keyframes rise-y{from{height:8px !important}}
-.weekbars span{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.08em;color:var(--mut2)}
+.weekbars span{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.08em;color:var(--text-3)}
 
 /* Editor de Rutina: proyección de días de la semana (Rutina.jsx:
    WeekProjection) — asume que la secuencia arranca un lunes, sólo para
@@ -2573,26 +2534,26 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    agenda y la tira promete fechas que no puede cumplir. */
 .week-proj-cap{
   font-size:var(--t-nano);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--mut2);margin:14px 0 6px;
+  color:var(--text-3);margin:14px 0 6px;
 }
 .week-proj{display:flex;gap:6px;overflow-x:auto;margin:0 0 14px;padding-bottom:2px}
 /* El turno en el que estás parado: el ancla de toda la tira. Se marca con el
    acento y un borde lleno, no sólo con el texto "Hoy", para que se encuentre
    de un vistazo entre siete casillas iguales. */
 .week-proj-d.now{
-  border-color:var(--blue2);background:rgba(var(--blue-rgb),.12);
+  border-color:var(--accent);background:rgba(var(--accent-strong-rgb),.12);
 }
 .week-proj-d.now .wd{color:var(--accent)}
-.week-proj-d.now .t{color:var(--txt)}
+.week-proj-d.now .t{color:var(--text)}
 .week-proj-d{
   flex:0 0 64px;display:flex;flex-direction:column;align-items:center;gap:4px;
-  padding:9px 4px;border-radius:var(--r-md);background:var(--card2);border:1px solid var(--line);
+  padding:9px 4px;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--line);
 }
-.week-proj-d .wd{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-micro);font-weight:700;letter-spacing:.06em;color:var(--cyan);text-transform:uppercase}
-.week-proj-d .t{font-size:var(--t-nano);color:var(--mut);text-align:center;line-height:1.25;
+.week-proj-d .wd{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-micro);font-weight:700;letter-spacing:.06em;color:var(--accent);text-transform:uppercase}
+.week-proj-d .t{font-size:var(--t-nano);color:var(--text-2);text-align:center;line-height:1.25;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.week-proj-d.off{background:transparent;border-style:dashed;border-color:var(--line2)}
-.week-proj-d.off .wd{color:var(--mut2)}
+.week-proj-d.off{background:transparent;border-style:dashed;border-color:var(--line-2)}
+.week-proj-d.off .wd{color:var(--text-3)}
 .week-proj-d.off .t{opacity:.6}
 .weekbars .wbar.on span{color:var(--accent)}
 
@@ -2617,20 +2578,20 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .nav-card{
   display:flex;align-items:center;gap:12px;width:100%;text-align:left;
   margin-top:var(--s3);padding:13px 14px;
-  border-radius:var(--r);background:var(--card2);
-  border:1px solid var(--line2);color:var(--txt);
+  border-radius:var(--r);background:var(--surface-2);
+  border:1px solid var(--line-2);color:var(--text);
   transition:border-color var(--d1) var(--ease-out),transform var(--d1) var(--ease-out);
 }
-.nav-card:active{transform:scale(.99);border-color:var(--blue2)}
+.nav-card:active{transform:scale(.99);border-color:var(--accent)}
 .nav-card .grow{flex:1;min-width:0}
 .nav-card .t{display:block;font-size:var(--t-body);font-weight:600}
-.nav-card .s{display:block;font-size:var(--t-micro);color:var(--mut);margin-top:2px;line-height:1.35}
+.nav-card .s{display:block;font-size:var(--t-micro);color:var(--text-2);margin-top:2px;line-height:1.35}
 .nav-card-ico{
   flex:none;display:grid;place-items:center;width:38px;height:38px;
   border-radius:var(--r-md);font-size:var(--t-lg);
-  background:rgba(var(--blue-rgb),.12);border:1px solid rgba(var(--blue-rgb),.24);
+  background:rgba(var(--accent-strong-rgb),.12);border:1px solid rgba(var(--accent-strong-rgb),.24);
 }
-.nav-card .chev{flex:none;color:var(--mut2);font-size:var(--t-lg)}
+.nav-card .chev{flex:none;color:var(--text-3);font-size:var(--t-lg)}
 
 .day-cards{display:flex;flex-direction:column;gap:10px;margin-top:var(--s4)}
 .day-card{
@@ -2645,8 +2606,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .day-head .grow{flex:1;min-width:0}
 .day-head .t{display:block;font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700}
-.day-head .s{display:block;font-size:var(--t-micro);color:var(--mut);margin-top:1px}
-.day-head .chev{color:var(--mut2);font-size:var(--t-lg)}
+.day-head .s{display:block;font-size:var(--t-micro);color:var(--text-2);margin-top:1px}
+.day-head .chev{color:var(--text-3);font-size:var(--t-lg)}
 /* Acordeón de la tarjeta de turno: misma técnica que .day-body en el editor
    (grid-template-rows 0fr→1fr, que sí transiciona; display no). El contenido
    queda montado para que el CIERRE también se anime — con un `{open && …}` de
@@ -2661,7 +2622,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   transition:grid-template-rows var(--d3) var(--ease-out),opacity var(--d2) ease,visibility 0s;
 }
 .day-card .day-head .chev{transition:transform var(--d2) var(--ease-out)}
-.day-card.open .day-head .chev{transform:rotate(90deg);color:var(--blue2)}
+.day-card.open .day-head .chev{transform:rotate(90deg);color:var(--accent)}
 
 .day-exs{padding:0 16px 14px}
 /* 9px y no 12 de separación: el pictograma se sumó a la fila y el nombre
@@ -2669,23 +2630,23 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .day-ex{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid rgba(255,255,255,.07);
   width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;color:inherit;font:inherit}
 .day-ex:active{background:rgba(255,255,255,.03)}
-.day-ex .chev{color:var(--mut2);font-size:var(--t-body);flex:none;margin-left:2px}
-.day-ex .i{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);color:var(--mut2);min-width:14px}
+.day-ex .chev{color:var(--text-3);font-size:var(--t-body);flex:none;margin-left:2px}
+.day-ex .i{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);color:var(--text-3);min-width:14px}
 .day-ex .grow{flex:1;min-width:0}
 .day-ex .t{display:block;font-size:var(--t-body);font-weight:600}
-.day-ex .s{display:block;font-size:var(--t-micro);color:var(--mut);margin-top:1px}
+.day-ex .s{display:block;font-size:var(--t-micro);color:var(--text-2);margin-top:1px}
 .day-ex .x{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-body);font-weight:700;color:var(--accent)}
 
 /* Día libre: la insignia se apaga, igual que en el mockup — el color se
    reserva para los días en que se entrena. */
-.day-badge.off{color:var(--mut2);background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07)}
-.day-card:has(.day-badge.off) .day-head .t{color:var(--mut)}
+.day-badge.off{color:var(--text-3);background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07)}
+.day-card:has(.day-badge.off) .day-head .t{color:var(--text-2)}
 
 /* ============================================================
    Rediseño — pantalla COMIDA (Nutrición)
    ============================================================ */
 .card.hero.hero-kcal{
-  background:linear-gradient(158deg,rgba(var(--deep-rgb),.26),rgba(255,255,255,.03) 60%),var(--card);
+  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.26),rgba(255,255,255,.03) 60%),var(--surface);
   border-color:rgba(120,170,255,.2);
 }
 .kcal-top{display:flex;align-items:center;gap:18px}
@@ -2693,7 +2654,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .kcal-ring svg{width:132px;height:132px}
 .kr-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .kr-n{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-display);font-weight:700;line-height:1}
-.kr-of{font-size:var(--t-micro);letter-spacing:.16em;text-transform:uppercase;color:var(--mut);margin-top:2px}
+.kr-of{font-size:var(--t-micro);letter-spacing:.16em;text-transform:uppercase;color:var(--text-2);margin-top:2px}
 .kcal-side{flex:1;min-width:0}
 /* El número grande es lo que QUEDA: es el dato sobre el que se decide si
    comer algo más o no. */
@@ -2701,17 +2662,17 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-display);font-weight:700;line-height:1.05;
   display:flex;align-items:baseline;gap:5px;
 }
-.kcal-big span{font-size:var(--t-body);font-weight:700;color:var(--mut)}
+.kcal-big span{font-size:var(--t-body);font-weight:700;color:var(--text-2)}
 
 /* Macros en tres columnas, no apiladas: se comparan de un vistazo. */
 .hero-kcal .macro3{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:18px}
 .hero-kcal .macro3 .lbl{
   display:flex;justify-content:space-between;gap:6px;
-  font-size:var(--t-micro);font-weight:600;color:var(--mut);margin-bottom:5px;
+  font-size:var(--t-micro);font-weight:600;color:var(--text-2);margin-bottom:5px;
 }
 .hero-kcal .macro3 .pbar{height:7px;border-radius:var(--r-xs);background:rgba(255,255,255,.06)}
 /* Un color por macro: proteína azul, carbos verde, grasa ámbar. */
-.hero-kcal .pbar.prot>i{background:linear-gradient(90deg,var(--deep),var(--cyan))}
+.hero-kcal .pbar.prot>i{background:linear-gradient(90deg,var(--accent-strong),var(--accent))}
 .hero-kcal .pbar.carb>i{background:linear-gradient(90deg,#12A97B,#2EE6A8)}
 .hero-kcal .pbar.fat>i{background:linear-gradient(90deg,#E08A2B,var(--flame))}
 /* El separador y el espaciado del mockup; el punto y el texto los produce
@@ -2725,11 +2686,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* Chips de acceso rápido: píldoras completas, con el + en cian */
 .chip-scroll .chip.blue{
   flex:none;display:inline-flex;align-items:center;gap:8px;border-radius:var(--r-full);white-space:nowrap;
-  padding:11px 15px;font-size:var(--t-sm);font-weight:600;color:var(--txt);
+  padding:11px 15px;font-size:var(--t-sm);font-weight:600;color:var(--text);
   background:linear-gradient(150deg,rgba(79,168,255,.16),rgba(255,255,255,.03));
   border:1px solid rgba(120,170,255,.28);
 }
-.chip-scroll .chip.blue .txt-mut{color:var(--mut2)}
+.chip-scroll .chip.blue .txt-mut{color:var(--text-3)}
 
 /* Lista de comidas + botón de borrar en rojo */
 .meal-del{
@@ -2741,7 +2702,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    Rediseño — pantalla PROGRESO
    ============================================================ */
 .card.hero.hero-prog{
-  background:linear-gradient(158deg,rgba(var(--deep-rgb),.24),rgba(255,255,255,.03) 62%),var(--card);
+  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.24),rgba(255,255,255,.03) 62%),var(--surface);
   border-color:rgba(120,170,255,.2);
 }
 .hero-prog .bignum{font-size:54px}
@@ -2769,11 +2730,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .const-stats .cond{font-size:var(--t-2xl);font-weight:700;line-height:1}
 .const-stats span{
   display:block;margin-top:2px;
-  font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
+  font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--text-2);
 }
 /* Fuerza · 1RM: la cifra en cian claro y su unidad debajo, como el mockup */
 .str-val{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-2xl);font-weight:700;line-height:1;color:var(--accent)}
-.str-unit{font-size:var(--t-nano);letter-spacing:.14em;text-transform:uppercase;color:var(--mut2);margin-top:2px}
+.str-unit{font-size:var(--t-nano);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);margin-top:2px}
 
 /* ---------- Hoy: despliegue de la tarjeta del día ---------- */
 /* 0fr→1fr es el truco que permite animar hacia "alto automático" sin medir
@@ -2807,7 +2768,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .gym-photo{margin-top:8px}
 .gym-photo-thumb{
   width:56px;height:56px;border-radius:var(--r-md);overflow:hidden;padding:0;
-  border:1px solid var(--line2);
+  border:1px solid var(--line-2);
 }
 .gym-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 
@@ -2820,7 +2781,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    costados y sin fondo se verían como agujeros en el panel. */
 .photo-full{
   margin:0 0 var(--s4);border-radius:var(--r-md);overflow:hidden;
-  border:1px solid var(--line2);background:var(--card2);
+  border:1px solid var(--line-2);background:var(--surface-2);
 }
 .photo-full img{
   display:block;width:100%;max-width:100%;max-height:52vh;
@@ -2835,7 +2796,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   border:1px solid rgba(255,196,107,.24);
 }
 .ex-first .t{font-size:var(--t-sm);font-weight:700;color:var(--flame);margin-bottom:4px}
-.ex-first .s{font-size:var(--t-micro);line-height:1.5;color:var(--mut);margin-top:4px}
+.ex-first .s{font-size:var(--t-micro);line-height:1.5;color:var(--text-2);margin-top:4px}
 
 /* Foto de la máquina en el formulario */
 .mach-photo{margin-top:8px}
@@ -2857,7 +2818,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r-md);
   background:rgba(255,255,255,.04);
 }
-.illus-opt span{font-size:var(--t-micro);line-height:1.3;color:var(--mut)}
+.illus-opt span{font-size:var(--t-micro);line-height:1.3;color:var(--text-2)}
 .illus-head{display:flex;align-items:center;justify-content:space-between;margin:var(--s3) 0 var(--s2)}
 
 /* Ilustración + foto de la máquina en el sheet de información. */
@@ -2952,11 +2913,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .sil-caras button{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-nano);font-weight:700;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--text-3);
   background:transparent;border:0;padding:5px 15px;border-radius:var(--r-full);
   cursor:pointer;transition:color var(--d2) var(--ease),background var(--d2) var(--ease);
 }
-.sil-caras button[aria-pressed="true"]{color:var(--txt);background:rgba(255,255,255,.1)}
+.sil-caras button[aria-pressed="true"]{color:var(--text);background:rgba(255,255,255,.1)}
 
 /* La masa: los mismos polígonos engordados con un stroke grueso del mismo
    color. Une el cuerpo por debajo para que los huecos entre músculos lean como
@@ -2965,7 +2926,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    grande (727×1280 contra 100×200), así que un grosor pensado para el chico
    sería invisible acá. */
 .sil-masa{pointer-events:none}
-.sil-masa path{fill:var(--card2);stroke:var(--card2);stroke-width:5;stroke-linejoin:round}
+.sil-masa path{fill:var(--surface-2);stroke:var(--surface-2);stroke-width:5;stroke-linejoin:round}
 
 /* fill y stroke se heredan del <g> a sus polígonos: el estado se pinta una vez
    y el glow se aplica al grupo entero en vez de a cada pieza. */
@@ -3049,7 +3010,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   margin:0 auto;max-width:min(340px,calc(100% - 24px));
   padding:12px 16px 14px;border-radius:18px 18px 0 0;
   background:linear-gradient(158deg,rgba(255,255,255,.1),rgba(255,255,255,.04)),rgba(10,16,29,.97);
-  border:1px solid var(--line2);border-bottom:0;
+  border:1px solid var(--line-2);border-bottom:0;
   box-shadow:0 -20px 44px -16px rgba(0,0,0,.85),0 0 0 1px rgba(0,0,0,.35);
   animation:mpop-in var(--d2) var(--spring) both;
   /* Tope de alto + columna flex: sin esto un grupo con muchas fibras (Pierna)
@@ -3086,11 +3047,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* Ya no es un chip: adentro de una hoja chica, una pastilla de color al lado
    del título leía como una alerta. Como subtítulo el color alcanza. */
 .mpop-when{font-size:var(--t-nano);font-weight:600;letter-spacing:.04em;white-space:nowrap}
-.mpop-when.t0{color:var(--cyan)}
+.mpop-when.t0{color:var(--accent)}
 .mpop-when.t1{color:#8FB6FF}
 .mpop-when.t2{color:#8CA2C8}
 .mpop-when.t3{color:var(--warn)}
-.mpop-when.tn{color:var(--mut2)}
+.mpop-when.tn{color:var(--text-3)}
 /* El punto visual se queda en 20×20 —agrandarlo en un globo de 208px de
    ancho lo abultaría de más— pero el área tocable real pasa a 28×28 con un
    ::after invisible que se extiende más allá del borde. Por debajo de
@@ -3098,7 +3059,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    más cerca que se pise con esos 4px de más. */
 .mpop-x{
   position:relative;flex:none;width:20px;height:20px;border-radius:var(--r-sm);border:0;padding:0;line-height:1;
-  background:rgba(255,255,255,.07);color:var(--mut);font-size:var(--t-body);
+  background:rgba(255,255,255,.07);color:var(--text-2);font-size:var(--t-body);
 }
 .mpop-x::after{content:'';position:absolute;inset:-4px}
 
@@ -3117,12 +3078,12 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   line-height:1.05;font-variant-numeric:tabular-nums;
 }
 .mpop-nums span{display:block;font-size:var(--t-nano);letter-spacing:.06em;text-transform:uppercase;
-  color:var(--mut2);margin-top:2px;white-space:nowrap}
+  color:var(--text-3);margin-top:2px;white-space:nowrap}
 
 .mpop-list{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:1px}
 .mpop-list li{display:flex;align-items:center;gap:8px;font-size:var(--t-micro);padding:3px 0}
 .mpop-list li+li{border-top:1px solid rgba(255,255,255,.05)}
-.mpop-list span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mut)}
+.mpop-list span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2)}
 .mpop-list b{flex:none;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent)}
 
 /* Ejercicios que hiciste, agrupados por fibra — ver groupStats en
@@ -3131,25 +3092,25 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .mpop-fibras{display:flex;flex-direction:column;gap:7px;margin-bottom:2px}
 .mpop-fibra-nombre{
   font-size:var(--t-nano);font-weight:700;letter-spacing:.07em;text-transform:uppercase;
-  color:var(--mut2);margin-bottom:1px;
+  color:var(--text-3);margin-bottom:1px;
 }
 .mpop-fibra .mpop-list{margin-bottom:5px}
 /* La porción que tocaste en la figura. Sólo sube el contraste del rótulo y le
    pone un punto delante: marcarla con fondo o borde la convertiría en otra
    cosa que la lista, y sigue siendo la misma lista. */
-.mpop-fibra.on>.mpop-fibra-nombre{color:var(--txt)}
-.mpop-fibra.on>.mpop-fibra-nombre::before{content:"● "; color:var(--cyan)}
+.mpop-fibra.on>.mpop-fibra-nombre{color:var(--text)}
+.mpop-fibra.on>.mpop-fibra-nombre::before{content:"● "; color:var(--accent)}
 
 /* Pie único: tope, volumen y la ventana en la misma línea, separados por una
    línea de arriba que los despega de la lista con scroll. */
 .mpop-pie{
   display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 9px;
   margin-top:8px;padding-top:7px;border-top:1px solid rgba(255,255,255,.06);
-  font-size:var(--t-nano);color:var(--mut2);
+  font-size:var(--t-nano);color:var(--text-3);
 }
 .mpop-top{color:var(--warn);font-weight:600}
 .mpop-vent{margin-left:auto;letter-spacing:.06em;text-transform:uppercase;opacity:.7}
-.mpop-vacio{margin:0;font-size:var(--t-micro);line-height:1.45;color:var(--mut2)}
+.mpop-vacio{margin:0;font-size:var(--t-micro);line-height:1.45;color:var(--text-3)}
 
 /* Para quien pidió menos movimiento, el cuerpo cambia de cara de golpe. El giro
    es lindo, no es información: sacarlo no le quita nada a lo que la pantalla
@@ -3172,20 +3133,20 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-top{flex:none}
 .ini-eyebrow{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-micro);font-weight:700;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
 }
 .ini-title{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-display);font-weight:800;
   font-style:italic;letter-spacing:-.03em;line-height:1.02;
 }
-.ini-sub{font-size:var(--t-sm);color:var(--mut);margin-bottom:2px}
+.ini-sub{font-size:var(--t-sm);color:var(--text-2);margin-bottom:2px}
 
 .ini-legend{display:flex;justify-content:center;gap:11px;margin-bottom:7px;flex:none}
-.ini-legend span{display:flex;align-items:center;gap:5px;font-size:var(--t-nano);color:var(--mut2);letter-spacing:.04em}
+.ini-legend span{display:flex;align-items:center;gap:5px;font-size:var(--t-nano);color:var(--text-3);letter-spacing:.04em}
 .ini-legend .sw{width:9px;height:9px;border-radius:var(--r-xs);flex:none;display:inline-block}
 /* Los mismos degradados que la silueta, para que la leyenda no mienta. */
-.sil-sw0{background:linear-gradient(140deg,#B9F8FF,var(--cyan));box-shadow:0 0 7px rgba(var(--cyan-rgb),.55)}
-.sil-sw1{background:linear-gradient(140deg,#A9CEFF,var(--blue))}
+.sil-sw0{background:linear-gradient(140deg,#B9F8FF,var(--accent));box-shadow:0 0 7px rgba(var(--accent-rgb),.55)}
+.sil-sw1{background:linear-gradient(140deg,#A9CEFF,var(--accent-strong))}
 .sil-sw2{background:linear-gradient(140deg,#5B7FB5,#2C4C86)}
 .sil-sw3{background:linear-gradient(140deg,#F6C98B,#E39C43)}
 
@@ -3198,13 +3159,13 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-cta{
   display:flex;align-items:center;justify-content:center;gap:9px;flex:none;
   height:56px;border-radius:var(--r);border:0;width:100%;
-  background:var(--grad2);color:var(--on-grad);
+  background:var(--accent-grad);color:var(--on-accent);
   font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:var(--t-lg);letter-spacing:.06em;
-  box-shadow:var(--glow);
+  box-shadow:var(--accent-glow);
 }
 .ini-cta small{font-weight:600;opacity:.65;font-size:var(--t-micro);letter-spacing:0}
-.ini-cta.ok{background:var(--grad-ok);box-shadow:0 16px 40px -14px rgba(var(--ok-rgb),.5)}
-.ini-cta.dim{background:var(--card2);border:1px solid var(--line2);color:var(--mut);box-shadow:none}
+.ini-cta.ok{background:var(--grad-ok);box-shadow:0 16px 40px -14px rgba(var(--ok-rgb),.5);color:var(--on-ok)}
+.ini-cta.dim{background:var(--surface-2);border:1px solid var(--line-2);color:var(--text-2);box-shadow:none}
 .ini-cta.pulse{animation:pulse 2s infinite}
 .ini-wk{margin-top:10px;flex:none}
 @media (prefers-reduced-motion:reduce){.ini-cta.pulse{animation:none}}
@@ -3239,7 +3200,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-cta-go::after{
   content:"";position:absolute;inset:1.5px;z-index:1;
   border-radius:calc(var(--r) - 1.5px);
-  background:var(--grad2);
+  background:var(--accent-grad);
 }
 @keyframes ctaRing{to{rotate:360deg}}
 @media (prefers-reduced-motion:reduce){.ini-cta-go::before{animation:none}}
@@ -3254,11 +3215,11 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 }
 .ini-tile{
   position:relative;overflow:hidden;
-  background:linear-gradient(155deg,rgba(var(--blue-rgb),.16),rgba(12,19,34,.82) 46%,rgba(12,19,34,.92));
+  background:linear-gradient(155deg,rgba(var(--accent-strong-rgb),.16),rgba(12,19,34,.82) 46%,rgba(12,19,34,.92));
   backdrop-filter:var(--glass-blur);
   border:1px solid var(--glass-border);border-radius:var(--r);
-  box-shadow:var(--glass-hi),0 14px 30px -18px rgba(4,7,15,.8);
-  padding:14px 16px;text-align:left;color:var(--txt);font:inherit;
+  box-shadow:var(--edge-metal),0 14px 30px -18px rgba(4,7,15,.8);
+  padding:14px 16px;text-align:left;color:var(--text);font:inherit;
   display:flex;flex-direction:column;
 }
 /* El brillo diagonal que hace que el glass se sienta glass y no sólo un panel
@@ -3274,9 +3235,9 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-tile-lbl{
   display:flex;align-items:center;gap:var(--s2);
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--blue2);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
 }
-.ini-tile-lbl::before{content:"";flex:none;width:3px;height:.95em;border-radius:var(--r-full);background:var(--grad2)}
+.ini-tile-lbl::before{content:"";flex:none;width:3px;height:.95em;border-radius:var(--r-full);background:var(--accent-grad)}
 .ini-tile-lbl .ini-tile-go{margin-left:auto}
 
 /* Tu cuerpo: el vistazo de Silhouette se encoge a una franja quieta —
@@ -3285,30 +3246,30 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    adentro, igual que en el sheet grande. */
 .ini-tile-body{grid-area:body;position:relative;overflow:hidden}
 .ini-tile-body::before{content:"";position:absolute;top:-40px;right:-30px;width:150px;height:150px;
-  background:radial-gradient(circle,rgba(var(--cyan-rgb),.22),transparent 66%);pointer-events:none}
-.ini-tile-go{color:var(--cyan);text-transform:none;letter-spacing:0;font-weight:600;font-size:var(--t-micro)}
+  background:radial-gradient(circle,rgba(var(--accent-rgb),.22),transparent 66%);pointer-events:none}
+.ini-tile-go{color:var(--accent);text-transform:none;letter-spacing:0;font-weight:600;font-size:var(--t-micro)}
 .ini-tile-thumb{display:flex;height:112px;margin:4px 0 2px;position:relative;z-index:1}
-.ini-tile-hint{font-size:var(--t-micro);color:var(--mut);margin-top:2px}
+.ini-tile-hint{font-size:var(--t-micro);color:var(--text-2);margin-top:2px}
 
 .ini-tile-racha{grid-area:racha;align-items:center;justify-content:center;gap:4px}
 .ini-tile-num{
   font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;
-  font-size:var(--t-display);line-height:1;background:var(--grad2);-webkit-background-clip:text;
+  font-size:var(--t-display);line-height:1;background:var(--accent-grad);-webkit-background-clip:text;
   background-clip:text;color:transparent;
 }
-.ini-tile-num small{font-size:var(--t-micro);font-weight:600;font-style:normal;color:var(--mut);margin-left:4px;-webkit-text-fill-color:var(--mut)}
+.ini-tile-num small{font-size:var(--t-micro);font-weight:600;font-style:normal;color:var(--text-2);margin-left:4px;-webkit-text-fill-color:var(--text-2)}
 
 .ini-tile-stale{grid-area:stale;justify-content:center;gap:3px}
 .ini-tile-stale-name{font-size:var(--t-sm);font-weight:700}
 .ini-tile-stale-days{font-size:var(--t-micro);color:var(--warn)}
 .ini-tile-ok{grid-area:stale;align-items:center;justify-content:center;text-align:center;
-  font-size:var(--t-micro);color:var(--mut);}
+  font-size:var(--t-micro);color:var(--text-2);}
 
 .ini-tile-macros{grid-area:macros;gap:5px}
 .ini-tile-weight{grid-area:weight;gap:5px}
 .ini-tile-num.sm{font-size:var(--t-2xl)}
 .ini-tile-bar{height:5px;border-radius:var(--r-xs);background:rgba(255,255,255,.08);overflow:hidden;margin-top:2px}
-.ini-tile-bar i{display:block;height:100%;background:var(--grad2);border-radius:var(--r-xs)}
+.ini-tile-bar i{display:block;height:100%;background:var(--accent-grad);border-radius:var(--r-xs)}
 
 /* La tira de turnos: no es un calendario de fechas —es la secuencia de
    Fierro, de largo variable— así que flexea y no fuerza 7 columnas como
@@ -3326,29 +3287,29 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .wkreal-d{
   display:flex;flex-direction:column;align-items:center;gap:2px;
   padding:7px 0 6px;border-radius:var(--r-md);
-  background:var(--card2);border:1px solid var(--line);
+  background:var(--surface-2);border:1px solid var(--line);
   transition:border-color var(--d1) var(--ease-out);
 }
 /* 2026-09-26 (auditoría): 10 px en el gris más apagado no se leía; un paso
    más grande y el gris de texto secundario. */
-.wkreal-d .wd{font-size:var(--t-micro);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
-.wkreal-d .nu{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;line-height:1;color:var(--mut)}
-.wkreal-d .dot{width:5px;height:5px;border-radius:var(--r-full);background:var(--line2)}
+.wkreal-d .wd{font-size:var(--t-micro);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
+.wkreal-d .nu{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;line-height:1;color:var(--text-2)}
+.wkreal-d .dot{width:5px;height:5px;border-radius:var(--r-full);background:var(--line-2)}
 .wkreal-d.on{border-color:rgba(var(--ok-rgb),.34);background:rgba(var(--ok-rgb),.08)}
-.wkreal-d.on .nu{color:var(--txt)}
+.wkreal-d.on .nu{color:var(--text)}
 .wkreal-d.on .dot{background:var(--ok);box-shadow:0 0 8px var(--ok)}
 .wkreal-d.hoy{border-color:var(--accent)}
 .wkreal-d.hoy .wd{color:var(--accent)}
 /* El futuro no se apaga con opacity sobre todo el casillero: eso también
    apagaría el borde y lo dejaría flotando. Se bajan los contenidos. */
 .wkreal-d.fut{background:transparent;border-style:dashed}
-.wkreal-d.fut .wd,.wkreal-d.fut .nu{color:var(--mut2);opacity:.5}
+.wkreal-d.fut .wd,.wkreal-d.fut .nu{color:var(--text-3);opacity:.5}
 .wkreal-d.fut .dot{opacity:.25}
 .wkreal-ask{
   display:block;width:100%;text-align:center;margin:-4px 0 var(--s3);
   padding:8px;border-radius:var(--r-md);
-  background:rgba(var(--blue-rgb),.08);border:1px solid rgba(var(--blue-rgb),.22);
-  color:var(--blue3);font-size:var(--t-sm);font-weight:600;
+  background:rgba(var(--accent-strong-rgb),.08);border:1px solid rgba(var(--accent-strong-rgb),.22);
+  color:var(--accent);font-size:var(--t-sm);font-weight:600;
 }
 
 
@@ -3373,7 +3334,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    (referencia visual: Liftoff — el mecanismo, no la identidad: acá es el
    gradiente cian/azul de Fierro, no el elefante). */
 .wiz-progress{height:6px;border-radius:var(--r-xs);background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:var(--s3)}
-.wiz-progress i{display:block;height:100%;background:var(--grad2);border-radius:var(--r-xs);transition:width var(--d4) var(--spring)}
+.wiz-progress i{display:block;height:100%;background:var(--accent-grad);border-radius:var(--r-xs);transition:width var(--d4) var(--spring)}
 
 /* El cuerpo interactivo del asistente: se enciende en vivo con los grupos
    que se van tocando (WizardBody, RoutineWizard.jsx) — mismo mecanismo que
@@ -3381,7 +3342,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    no un vistazo chico al costado. */
 .wiz-body{display:flex;height:168px;margin:var(--s2) 0 var(--s3);position:relative}
 .wiz-body::before{content:"";position:absolute;top:-20px;left:50%;translate:-50% 0;width:200px;height:200px;
-  background:radial-gradient(circle,rgba(var(--cyan-rgb),.16),transparent 70%);pointer-events:none}
+  background:radial-gradient(circle,rgba(var(--accent-rgb),.16),transparent 70%);pointer-events:none}
 
 /* Tarjetas de grupo muscular: reemplazan los chips chicos de antes — más
    aire, más fáciles de tocar, con el mismo glass que el resto de Fierro
@@ -3390,13 +3351,13 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .wiz-groupcard{
   position:relative;display:flex;align-items:center;justify-content:center;
   min-height:56px;padding:14px 16px;border-radius:var(--r);
-  background:linear-gradient(155deg,rgba(var(--blue-rgb),.10),rgba(12,19,34,.7) 60%);
-  border:1px solid var(--line2);color:var(--txt);font-size:var(--t-body);font-weight:700;
+  background:linear-gradient(155deg,rgba(var(--accent-strong-rgb),.10),rgba(12,19,34,.7) 60%);
+  border:1px solid var(--line-2);color:var(--text);font-size:var(--t-body);font-weight:700;
   font-family:'Barlow Condensed',sans-serif;letter-spacing:.02em;
 }
 .wiz-groupcard.on{
-  background:var(--grad2);color:var(--on-grad);border-color:transparent;
-  box-shadow:0 10px 24px -12px rgba(var(--cyan-rgb),.5);
+  background:var(--accent-grad);color:var(--on-accent);border-color:transparent;
+  box-shadow:0 10px 24px -12px rgba(var(--accent-rgb),.5);
 }
 .wiz-groupcard .check{position:absolute;top:8px;right:10px;font-size:var(--t-sm);font-weight:800}
 
@@ -3405,7 +3366,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .wiz-coverage{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .wiz-fiber{
   font-size:var(--t-micro);font-weight:600;padding:4px 10px;border-radius:var(--r-full);
-  background:rgba(255,255,255,.05);border:1px solid var(--line2);color:var(--mut);
+  background:rgba(255,255,255,.05);border:1px solid var(--line-2);color:var(--text-2);
 }
 .wiz-fiber.on{background:rgba(var(--ok-rgb),.14);border-color:rgba(var(--ok-rgb),.4);color:var(--ok)}
 
@@ -3418,17 +3379,17 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 /* Hoy dejó de ser pestaña: se entra desde Inicio, así que necesita su salida. */
 .back-btn{
   width:34px;height:34px;flex:none;margin-left:-6px;border-radius:var(--r-md);
-  background:var(--card2);border:1px solid var(--line);
-  color:var(--mut);font-size:var(--t-xl);line-height:1;display:grid;place-items:center;
+  background:var(--surface-2);border:1px solid var(--line);
+  color:var(--text-2);font-size:var(--t-xl);line-height:1;display:grid;place-items:center;
 }
-.back-btn:active{color:var(--blue2);border-color:var(--line2)}
+.back-btn:active{color:var(--accent);border-color:var(--line-2)}
 
 /* ---------- calentamiento ----------
    Aparece al abrir la sesión y se va con la primera serie registrada. Ámbar y
    no azul: es preparación, no entrenamiento, y no debe confundirse con las
    tarjetas de ejercicio que sí registran. */
 .warmup{
-  background:linear-gradient(158deg,rgba(var(--warn-rgb),.09),rgba(var(--warn-rgb),.03)),var(--card2);
+  background:linear-gradient(158deg,rgba(var(--warn-rgb),.09),rgba(var(--warn-rgb),.03)),var(--surface-2);
   border:1px solid rgba(var(--warn-rgb),.26);border-radius:var(--r);
   padding:14px 15px;margin-bottom:var(--s3);
 }
@@ -3436,7 +3397,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .warmup-top .eyebrow{flex:1;min-width:0;color:var(--warn);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .warmup-skip{
-  flex:none;border:0;background:rgba(255,255,255,.07);color:var(--mut);
+  flex:none;border:0;background:rgba(255,255,255,.07);color:var(--text-2);
   font-size:var(--t-micro);font-weight:600;padding:5px 11px;border-radius:var(--r-full);
 }
 /* La movilidad va chica y con guion, no numerada como la rampa: son pasos
@@ -3444,9 +3405,9 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    la misma lista numerada leería como si fueran parte de la misma secuencia. */
 .warmup-mov{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:5px}
 .warmup-mov li{
-  font-size:var(--t-micro);line-height:1.4;color:var(--mut);padding-left:14px;position:relative;
+  font-size:var(--t-micro);line-height:1.4;color:var(--text-2);padding-left:14px;position:relative;
 }
-.warmup-mov li::before{content:'–';position:absolute;left:0;color:var(--mut2)}
+.warmup-mov li::before{content:'–';position:absolute;left:0;color:var(--text-3)}
 .warmup-list{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:1px}
 .warmup-list li{
   display:flex;align-items:baseline;gap:9px;padding:7px 0;
@@ -3454,22 +3415,22 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .warmup-list li+li{border-top:1px solid rgba(255,255,255,.06)}
 .warmup-list .n{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-micro);font-weight:700;
-  color:var(--mut2);min-width:11px;flex:none;
+  color:var(--text-3);min-width:11px;flex:none;
 }
 .warmup-list .w{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:800;
   letter-spacing:-.01em;font-variant-numeric:tabular-nums;
 }
-.warmup-list .w i{font-size:var(--t-micro);font-weight:600;font-style:normal;color:var(--mut);margin-left:2px}
-.warmup-list .x{flex:1;font-size:var(--t-sm);font-weight:600;color:var(--mut)}
-.warmup-list .p{font-size:var(--t-micro);font-weight:600;color:var(--mut2);flex:none;
+.warmup-list .w i{font-size:var(--t-micro);font-weight:600;font-style:normal;color:var(--text-2);margin-left:2px}
+.warmup-list .x{flex:1;font-size:var(--t-sm);font-weight:600;color:var(--text-2)}
+.warmup-list .p{font-size:var(--t-micro);font-weight:600;color:var(--text-3);flex:none;
   font-variant-numeric:tabular-nums}
-.warmup-nota{margin:0 0 11px;font-size:var(--t-micro);line-height:1.45;color:var(--mut)}
+.warmup-nota{margin:0 0 11px;font-size:var(--t-micro);line-height:1.45;color:var(--text-2)}
 .warmup-nota b{color:var(--warn)}
 
 /* De dónde salió este ejercicio cuando cambiaste otro por él. */
 .ex-envez{
-  font-size:var(--t-micro);font-weight:500;color:var(--mut2);margin-top:1px;
+  font-size:var(--t-micro);font-weight:500;color:var(--text-3);margin-top:1px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 
@@ -3477,8 +3438,8 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    Misma lámina que el mapa de Inicio: lo que ves acá y lo que ves allá son el
    mismo dibujo, no dos ilustraciones que puedan contradecirse. */
 .bodymini{
-  background:linear-gradient(158deg,rgba(255,255,255,.05),rgba(255,255,255,.02)),var(--card2);
-  border:1px solid var(--line2);border-radius:var(--r);
+  background:linear-gradient(158deg,rgba(255,255,255,.05),rgba(255,255,255,.02)),var(--surface-2);
+  border:1px solid var(--line-2);border-radius:var(--r);
   padding:12px;margin-bottom:var(--s3);
 }
 .bm-cuerpos{display:flex;justify-content:center;gap:10px}
@@ -3490,16 +3451,16 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .bm-off{fill:#232C42}
 .bm-pelo{fill:#4A3A2A}
 .bm-s{fill:#2C4C86}
-.bm-p{fill:url(#bm-grad);filter:drop-shadow(0 0 6px rgba(var(--cyan-rgb),.5))}
+.bm-p{fill:url(#bm-grad);filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),.5))}
 .bm-leyenda{display:flex;flex-direction:column;gap:3px;align-items:center;margin-top:9px}
 .bm-tag{font-size:var(--t-micro);font-weight:600;text-align:center;line-height:1.35}
-.bm-tag.p{color:var(--cyan)}
-.bm-tag.s{font-size:var(--t-micro);font-weight:500;color:var(--mut)}
+.bm-tag.p{color:var(--accent)}
+.bm-tag.s{font-size:var(--t-micro);font-weight:500;color:var(--text-2)}
 
 /* ---------- pantalla de fin de sesión ---------- */
 #session-complete{
   position:fixed;inset:0;z-index:70;
-  background:radial-gradient(120% 100% at 50% 0%,rgba(var(--cyan-rgb),.16),transparent 60%),#05070c;
+  background:radial-gradient(120% 100% at 50% 0%,rgba(var(--accent-rgb),.16),transparent 60%),#05070c;
   display:flex;align-items:center;justify-content:center;
   overflow:hidden;
 }
@@ -3527,12 +3488,12 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 
 .sc-flame{color:var(--flame)}
 .sc-streak-n{font-family:'Barlow Condensed';font-weight:800;font-size:64px;color:#fff;line-height:1}
-.sc-lbl{color:var(--mut);font-size:var(--t-sm);font-weight:600;text-transform:uppercase;letter-spacing:.1em}
+.sc-lbl{color:var(--text-2);font-size:var(--t-sm);font-weight:600;text-transform:uppercase;letter-spacing:.1em}
 
 .sc-resumen{display:flex;gap:28px}
 .sc-resumen div{display:flex;flex-direction:column;align-items:center;gap:2px}
 .sc-resumen b{font-family:'Barlow Condensed';font-weight:800;font-size:var(--t-display);color:#fff}
-.sc-resumen span{color:var(--mut);font-size:var(--t-micro);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.sc-resumen span{color:var(--text-2);font-size:var(--t-micro);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 
 /* .sil-pair (Silhouette) usa flex:1;min-height:0 — necesita un padre flex
    con alto definido para poder estirarse; sin display:flex acá colapsaría
@@ -3553,11 +3514,11 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 }
 .mfibras-btn:active{transform:scale(.92)}
 .mfibras-off{fill:var(--line)}
-.mfibras-on{fill:var(--blue2)}
+.mfibras-on{fill:var(--accent)}
 .mfibras-panel{
   position:absolute;top:calc(100% + 6px);left:0;z-index:5;white-space:nowrap;
-  background:var(--card2);border:1px solid var(--line2);border-radius:var(--r-sm);
-  padding:4px 8px;font-size:var(--t-sm);color:var(--txt);box-shadow:0 4px 16px rgba(0,0,0,.3);
+  background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--r-sm);
+  padding:4px 8px;font-size:var(--t-sm);color:var(--text);box-shadow:0 4px 16px rgba(0,0,0,.3);
 }
 @media (prefers-reduced-motion:reduce){
   .mfibras-btn:active{transform:none}
@@ -3584,15 +3545,15 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    gratis); sólo cambia la piel. */
 .ex-more>summary.ex-more-summary{
   width:100%;justify-content:center;
-  background:var(--card2);border:1px solid var(--line2);
+  background:var(--surface-2);border:1px solid var(--line-2);
 }
 .ex-more>summary.ex-more-summary::after{margin-left:2px}
 .ex-more[open]>summary.ex-more-summary{
-  border-color:var(--blue2);color:var(--blue2);
+  border-color:var(--accent);color:var(--accent);
   border-bottom-left-radius:0;border-bottom-right-radius:0;
 }
 .ex-more-body{
-  background:var(--card2);border:1px solid var(--line2);border-top:none;
+  background:var(--surface-2);border:1px solid var(--line-2);border-top:none;
   border-radius:0 0 var(--r-md) var(--r-md);
   padding:var(--s3);margin-top:-1px;
 }
@@ -3619,10 +3580,10 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-xl);
   display:block;width:100%;line-height:1.15;
   background:none;border:0;border-bottom:1px dashed transparent;
-  color:var(--txt);padding:0 0 2px;
+  color:var(--text);padding:0 0 2px;
 }
-.day-name-input:focus{outline:none;border-bottom-color:var(--blue2)}
-.day-name-input::placeholder{color:var(--mut2);font-weight:500}
+.day-name-input:focus{outline:none;border-bottom-color:var(--accent)}
+.day-name-input::placeholder{color:var(--text-3);font-weight:500}
 
 /* Encabezado de la rutina en edición (handoff 2026-09-17, punto 1): nombre +
    lápiz, mismo patrón que .day-name-input pero para S.cfg.routineName en vez
@@ -3631,11 +3592,11 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .routine-name-head{display:flex;align-items:center;gap:8px;margin:0 0 var(--s3)}
 .routine-name-txt{
   flex:1;min-width:0;font-family:'Barlow Condensed',sans-serif;font-weight:700;
-  font-size:var(--t-xl);color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:var(--t-xl);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .routine-name-input{
   flex:1;min-width:0;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--t-xl);
-  background:none;border:0;border-bottom:1px dashed var(--blue2);color:var(--txt);padding:0 0 2px;
+  background:none;border:0;border-bottom:1px dashed var(--accent);color:var(--text);padding:0 0 2px;
 }
 .routine-name-input:focus{outline:none}
 
@@ -3662,15 +3623,15 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   background:rgba(255,255,255,.08);
   transition:background var(--d2) var(--ease-out);
 }
-.exwiz-progress i.on{background:var(--grad2)}
+.exwiz-progress i.on{background:var(--accent-grad)}
 
 /* Paso 3 (confirmar): la ficha del ejercicio antes de guardar. */
 .exwiz-confirm{
-  border:1px solid var(--line2);border-radius:var(--radius-r-lg);
-  background:var(--card2);padding:var(--s4);margin:var(--s3) 0 var(--s4);
+  border:1px solid var(--line-2);border-radius:var(--radius-r-lg);
+  background:var(--surface-2);padding:var(--s4);margin:var(--s3) 0 var(--s4);
 }
-.exwiz-confirm .nombre{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700;color:var(--txt)}
-.exwiz-confirm .datos{margin-top:4px;color:var(--mut);font-size:var(--t-sm)}
+.exwiz-confirm .nombre{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700;color:var(--text)}
+.exwiz-confirm .datos{margin-top:4px;color:var(--text-2);font-size:var(--t-sm)}
 .exwiz-confirm .grupo-row{display:flex;align-items:center;gap:8px;margin-top:var(--s3)}
 
 /* Paso 4 (agregado): check grande + lo que llevás en esta tanda. La marca
@@ -3683,11 +3644,11 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   display:grid;place-items:center;font-size:28px;margin-bottom:var(--s3);
   animation:zoom var(--d3) var(--spring) backwards;
 }
-.exwiz-done .nombre{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700;color:var(--txt)}
+.exwiz-done .nombre{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700;color:var(--text)}
 .exwiz-batch{
   margin:var(--s4) 0;padding:var(--s3);border-radius:var(--radius-r);
-  background:var(--card2);border:1px solid var(--line2);
-  color:var(--mut);font-size:var(--t-sm);text-align:center;
+  background:var(--surface-2);border:1px solid var(--line-2);
+  color:var(--text-2);font-size:var(--t-sm);text-align:center;
 }
 
 /* ---------- lista agrupada + héroe ---------- */
@@ -3696,8 +3657,8 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    Es el cambio que separa "lista de divs con borde" (web) de "lista
    agrupada" (app). El borde deja de repetirse por ítem: agrupa. */
 .group{
-  background:var(--color-card2);
-  border:1px solid var(--color-line2);
+  background:var(--surface-2);
+  border:1px solid var(--line-2);
   border-radius:var(--r);
   overflow:hidden;              /* que los hairlines no se salgan del radio */
 }
@@ -3714,18 +3675,18 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   width:100%; min-height:56px;          /* área táctil cómoda */
   padding:var(--s3) var(--s4);
   background:none; border:0;
-  border-top:1px solid var(--color-line);
+  border-top:1px solid var(--line);
   text-align:left; font:inherit; color:inherit; cursor:pointer;
 }
 .grouprow:first-child{border-top:0}
-.grouprow:active{background:rgba(var(--blue2-rgb),.10)}
+.grouprow:active{background:rgba(var(--accent-rgb),.10)}
 .grouprow-grow{flex:1; min-width:0}
-.grouprow-t{display:block; font-size:var(--t-body); font-weight:600; color:var(--color-txt)}
-.grouprow-s{display:block; font-size:var(--t-micro); color:var(--color-mut); margin-top:2px; line-height:1.35}
+.grouprow-t{display:block; font-size:var(--t-body); font-weight:600; color:var(--text)}
+.grouprow-s{display:block; font-size:var(--t-micro); color:var(--text-2); margin-top:2px; line-height:1.35}
 /* Los datos van en cifras tabulares: alinean en columna y se leen como
    dato, no como texto. */
-.grouprow-v{flex:none; font-variant-numeric:tabular-nums; font-weight:700; color:var(--color-blue2)}
-.grouprow-chev{flex:none; color:var(--color-mut2); font-size:var(--t-lg)}
+.grouprow-v{flex:none; font-variant-numeric:tabular-nums; font-weight:700; color:var(--accent)}
+.grouprow-chev{flex:none; color:var(--text-3); font-size:var(--t-lg)}
 
 /* Convierte en botón usable un elemento que YA tiene su apariencia puesta
    por una clase de tarjeta (.card, .card.hero, .ini-tile…), sin tocar

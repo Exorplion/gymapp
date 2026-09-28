@@ -95,7 +95,7 @@ function MisEjercicios() {
   const gym = S.gyms.find(g => g.id === S.cfg.activeGym);
 
   if (!exs.length) {
-    return <div className="text-mut text-sm mt-2">Armá tu rutina primero — acá van a aparecer sus ejercicios.</div>;
+    return <div className="text-text-2 text-sm mt-2">Armá tu rutina primero — acá van a aparecer sus ejercicios.</div>;
   }
 
   return (
@@ -171,7 +171,7 @@ function RutinaView() {
         <div className="card hero hero-plan">
           <div className="hero-eyebrow">Plan activo</div>
           <div className="hero-day">{routineName()}</div>
-          <div className="text-mut text-sm mt-1">
+          <div className="text-text-2 text-sm mt-1">
             {st.workoutCount} turno{st.workoutCount === 1 ? '' : 's'} de entrenamiento · {st.ex} ejercicios · {st.sets} series por ciclo
           </div>
           {/* Barras proporcionales a las series del turno: la secuencia se lee de
@@ -301,8 +301,8 @@ function DeloadCard() {
   if (activo) {
     return (
       <div className="notice ok">
-        <div className="text-sm text-txt font-medium">Descarga en curso desde el {fmtD(activo.desde)}</div>
-        <div className="s text-mut mt-1">
+        <div className="text-sm text-text font-medium">Descarga en curso desde el {fmtD(activo.desde)}</div>
+        <div className="s text-text-2 mt-1">
           {activo.grupos.join(', ')} con las series reducidas. Al terminarla, cada ejercicio
           vuelve exactamente a las series que tenía.
         </div>
@@ -315,8 +315,8 @@ function DeloadCard() {
 
   return (
     <div className="notice warn">
-      <div className="text-sm text-txt font-medium">⚠ Puede ser momento de una descarga</div>
-      <div className="s text-mut mt-1">
+      <div className="text-sm text-text font-medium">⚠ Puede ser momento de una descarga</div>
+      <div className="s text-text-2 mt-1">
         {grupos.join(', ')} llevan 3+ semanas en tu volumen máximo recuperable. Una semana con 40-50% menos series por grupo suele restaurar el progreso.
       </div>
       <button type="button" className="btn sm ghost mt-2.5" onClick={() => applyDeload(grupos)}>
@@ -361,8 +361,8 @@ function CoberturaCard() {
       {/* Título arriba de la explicación en tamaño: antes el texto (.s, sin
           regla dentro de .notice) salía más grande que el título (auditoría
           2026-09-26). */}
-      <div className="text-body text-txt font-semibold">Porciones que tu rutina todavía no toca</div>
-      <div className="text-sm text-mut mt-1 leading-normal">
+      <div className="text-body text-text font-semibold">Porciones que tu rutina todavía no toca</div>
+      <div className="text-sm text-text-2 mt-1 leading-normal">
         Cada músculo tiene porciones que responden a ejercicios distintos. Estas no las
         cubre ninguno de los que elegiste.
       </div>
@@ -394,8 +394,8 @@ function ReforzarCard() {
       {/* Mismo encabezado que DeloadCard y CoberturaCard: era un `.sect` con
           los márgenes anulados a mano, que en esta tarjeta se leía como un
           título huérfano y de otro tamaño que sus vecinas. */}
-      <div className="text-sm text-txt font-medium">Se está enfriando</div>
-      <div className="s text-mut mt-1">
+      <div className="text-sm text-text font-medium">Se está enfriando</div>
+      <div className="s text-text-2 mt-1">
         Grupos que hace más de diez días que no tocás. Sumalos al día de hoy.
       </div>
       {/* Antes era un .btn.sm.ghost por fila (hasta 3): un botón de pill

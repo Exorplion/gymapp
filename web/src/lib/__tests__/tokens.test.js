@@ -152,7 +152,7 @@ describe('tokens de CSS', () => {
     const archivos = [join(SRC, 'styles.css'), ...archivosDe(join(SRC, 'components'), ['.jsx'])];
     const culpables = archivos.filter(ruta => {
       // La definición del token es el único lugar donde el hex es correcto.
-      const texto = sinComentarios(readFileSync(ruta, 'utf8')).replace(/--color-flame:\s*#FFC46B;/i, '');
+      const texto = sinComentarios(readFileSync(ruta, 'utf8')).replace(/--flame:\s*#FFC46B;/i, '');
       return /#FFC46B/i.test(texto);
     });
     expect(culpables.map(r => r.split(/[\\/]/).pop())).toEqual([]);

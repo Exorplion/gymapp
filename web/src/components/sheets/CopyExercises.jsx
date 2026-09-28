@@ -19,8 +19,8 @@ import { Button, Card } from '../ui/primitives.jsx';
 // Nombre a mostrar para un turno de la secuencia actual.
 const slotLabel = i => S.routine[i]?.name || `Turno ${i + 1}`;
 
-const chipBase = 'inline-flex items-center rounded-full border border-line2 px-3.5 py-2 text-sm font-medium transition-colors';
-const chip = on => cn(chipBase, on ? 'border-transparent bg-blue2 font-bold text-[var(--on-grad)]' : 'bg-card2 text-txt hover:border-line');
+const chipBase = 'inline-flex items-center rounded-full border border-line-2 px-3.5 py-2 text-sm font-medium transition-colors';
+const chip = on => cn(chipBase, on ? 'border-transparent bg-accent font-bold text-[var(--on-accent)]' : 'bg-surface-2 text-text hover:border-line');
 
 // Rutina.jsx abre este sheet como openSheet('copy-exs', { mode, wd: index }) —
 // `wd` es la convención que ya usan ex-info/ex-form para "qué turno" (ver
@@ -148,27 +148,27 @@ export default function CopyExercises({ mode = 'push', wd }) {
 
   return (
     <div ref={rootRef}>
-      <h2 className="font-cond text-2xl font-bold text-txt">{esPush ? 'Copiar a otro turno' : 'Traer de otro turno'}</h2>
-      <div className="mt-1 mb-4 text-sm text-mut">
+      <h2 className="font-cond text-2xl font-bold text-text">{esPush ? 'Copiar a otro turno' : 'Traer de otro turno'}</h2>
+      <div className="mt-1 mb-4 text-sm text-text-2">
         {esPush
-          ? <>Desde <b className="text-blue">{nombreOrigen}</b>. El historial de cada ejercicio viaja con él.</>
-          : <>Hacia <b className="text-blue">{slotLabel(propio)}</b>. El historial de cada ejercicio viaja con él.</>}
+          ? <>Desde <b className="text-accent">{nombreOrigen}</b>. El historial de cada ejercicio viaja con él.</>
+          : <>Hacia <b className="text-accent">{slotLabel(propio)}</b>. El historial de cada ejercicio viaja con él.</>}
       </div>
 
       {/* ---- de dónde (sólo pull) ---- */}
       {!esPush && (
         <>
           {S.lib.length > 0 && (
-            <div className="mb-3 inline-flex rounded-[var(--radius-r)] border border-line2 bg-card2 p-1">
-              <button type="button" className={cn('rounded-[calc(var(--radius-r)-4px)] px-3.5 py-1.5 text-sm font-medium', fuente === 'actual' ? 'bg-blue2 text-[var(--on-grad)]' : 'text-mut')} aria-pressed={fuente === 'actual'} onClick={() => { setFuente('actual'); setSel(null); }}>Mi rutina</button>
-              <button type="button" className={cn('rounded-[calc(var(--radius-r)-4px)] px-3.5 py-1.5 text-sm font-medium', fuente === 'lib' ? 'bg-blue2 text-[var(--on-grad)]' : 'text-mut')} aria-pressed={fuente === 'lib'} onClick={() => { setFuente('lib'); setSel(null); }}>Mis rutinas</button>
+            <div className="mb-3 inline-flex rounded-[var(--radius-r)] border border-line-2 bg-surface-2 p-1">
+              <button type="button" className={cn('rounded-[calc(var(--radius-r)-4px)] px-3.5 py-1.5 text-sm font-medium', fuente === 'actual' ? 'bg-accent text-[var(--on-accent)]' : 'text-text-2')} aria-pressed={fuente === 'actual'} onClick={() => { setFuente('actual'); setSel(null); }}>Mi rutina</button>
+              <button type="button" className={cn('rounded-[calc(var(--radius-r)-4px)] px-3.5 py-1.5 text-sm font-medium', fuente === 'lib' ? 'bg-accent text-[var(--on-accent)]' : 'text-text-2')} aria-pressed={fuente === 'lib'} onClick={() => { setFuente('lib'); setSel(null); }}>Mis rutinas</button>
             </div>
           )}
           {fuente === 'actual' ? (
             <div className="mb-3">
-              <label className="mb-1.5 block text-sm font-medium text-mut">¿De qué turno?</label>
+              <label className="mb-1.5 block text-sm font-medium text-text-2">¿De qué turno?</label>
               {!otros.length ? (
-                <div className="text-sm text-mut">No hay otro turno con ejercicios todavía.</div>
+                <div className="text-sm text-text-2">No hay otro turno con ejercicios todavía.</div>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {otros.map(i => (
@@ -182,14 +182,14 @@ export default function CopyExercises({ mode = 'push', wd }) {
           ) : (
             <>
               <div className="mb-3">
-                <label htmlFor="copyex-rutina" className="mb-1.5 block text-sm font-medium text-mut">¿De qué rutina?</label>
-                <select id="copyex-rutina" className="h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt outline-none" value={libId ?? ''} onChange={e => { setLibId(e.target.value); setLibIndex(null); setSel(null); }}>
+                <label htmlFor="copyex-rutina" className="mb-1.5 block text-sm font-medium text-text-2">¿De qué rutina?</label>
+                <select id="copyex-rutina" className="h-11 w-full rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 text-body text-text outline-none" value={libId ?? ''} onChange={e => { setLibId(e.target.value); setLibIndex(null); setSel(null); }}>
                   {S.lib.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               </div>
               {diasLib.length > 0 && (
                 <div className="mb-3">
-                  <label className="mb-1.5 block text-sm font-medium text-mut">¿De qué turno de esa rutina?</label>
+                  <label className="mb-1.5 block text-sm font-medium text-text-2">¿De qué turno de esa rutina?</label>
                   <div className="flex flex-wrap gap-2">
                     {diasLib.map(i => (
                       <button key={i} type="button" className={chip(i === libIndexActivo)} aria-pressed={i === libIndexActivo} onClick={() => { setLibIndex(i); setSel(null); }}>
@@ -216,7 +216,7 @@ export default function CopyExercises({ mode = 'push', wd }) {
            dicen "libre", para que se lean como otra cosa. */}
       {esPush && (
         <div className="mb-3">
-          <label className="mb-1.5 block text-sm font-medium text-mut">¿A qué rutina?</label>
+          <label className="mb-1.5 block text-sm font-medium text-text-2">¿A qué rutina?</label>
           <div className="flex flex-col gap-2">
             {destinos.map(i => {
               const turno = S.routine[i];
@@ -227,13 +227,13 @@ export default function CopyExercises({ mode = 'push', wd }) {
                   type="button"
                   className={cn(
                     'flex flex-col items-start rounded-[var(--radius-r)] border px-3.5 py-2.5 text-left transition-colors',
-                    i === destinoIndex ? 'border-transparent bg-blue2 text-[var(--on-grad)]' : 'border-line2 bg-card2 text-txt hover:border-line',
+                    i === destinoIndex ? 'border-transparent bg-accent text-[var(--on-accent)]' : 'border-line-2 bg-surface-2 text-text hover:border-line',
                   )}
                   aria-pressed={i === destinoIndex}
                   onClick={() => { setDestinoIndex(i); setSel(null); }}
                 >
                   <span className="text-sm font-semibold">{turno?.name || `Turno ${i + 1}`}</span>
-                  <span className={cn('text-micro', i === destinoIndex ? 'opacity-80' : 'text-mut')}>
+                  <span className={cn('text-micro', i === destinoIndex ? 'opacity-80' : 'text-text-2')}>
                     {ocupado ? `${turno.exercises.length} ejercicios` : 'libre'}
                   </span>
                 </button>
@@ -246,29 +246,29 @@ export default function CopyExercises({ mode = 'push', wd }) {
       {/* ---- qué hacer con lo que ya está ---- */}
       {destino != null && destinoOcupado && (
         <Card className="mb-3">
-          <div className="mb-2 text-sm leading-relaxed text-txt">
+          <div className="mb-2 text-sm leading-relaxed text-text">
             {slotLabel(destino)} ya tiene <b>{`${exsDestino.length} ejercicios`}</b>.
           </div>
-          <label className="flex items-center gap-2.5 text-sm text-txt">
+          <label className="flex items-center gap-2.5 text-sm text-text">
             <input type="radio" name="modo-copia" checked={modo === 'merge'} onChange={() => { setModo('merge'); setSel(null); }} />
-            <span>Sumar los que falten <span className="text-mut">— no borra nada</span></span>
+            <span>Sumar los que falten <span className="text-text-2">— no borra nada</span></span>
           </label>
-          <label className="mt-2 flex items-center gap-2.5 text-sm text-txt">
+          <label className="mt-2 flex items-center gap-2.5 text-sm text-text">
             <input type="radio" name="modo-copia" checked={modo === 'replace'} onChange={() => { setModo('replace'); setSel(null); }} />
-            <span>Reemplazar todo <span className="text-mut">— el turno queda igual al origen</span></span>
+            <span>Reemplazar todo <span className="text-text-2">— el turno queda igual al origen</span></span>
           </label>
         </Card>
       )}
 
       {/* ---- cuáles ---- */}
-      <div className="mb-2 flex items-center text-sm font-semibold uppercase tracking-wide text-mut">
+      <div className="mb-2 flex items-center text-sm font-semibold uppercase tracking-wide text-text-2">
         Qué ejercicios
         <Button type="button" variant="ghost" size="sm" className="ml-auto h-[30px] w-auto px-3" onClick={alternarTodos}>
           {todosPuestos ? 'Ninguno' : 'Todos'}
         </Button>
       </div>
       {!disponibles.length ? (
-        <Card><div className="p-4 text-center text-mut">
+        <Card><div className="p-4 text-center text-text-2">
           <p className="m-0">Ese turno no tiene ejercicios.</p>
         </div></Card>
       ) : (
@@ -276,13 +276,13 @@ export default function CopyExercises({ mode = 'push', wd }) {
           {disponibles.map((e, i) => {
             const repetido = modo === 'merge' && destinoOcupado && yaHay.has(exKey(e));
             return (
-              <label key={idDe(e)} className={cn('flex items-center gap-2.5 rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 py-2.5', repetido && 'opacity-50')}>
+              <label key={idDe(e)} className={cn('flex items-center gap-2.5 rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 py-2.5', repetido && 'opacity-50')}>
                 <input type="checkbox" checked={seleccion.has(idDe(e))} onChange={() => toggle(e)} />
-                <span className="w-5 flex-none text-sm text-mut">{i + 1}</span>
+                <span className="w-5 flex-none text-sm text-text-2">{i + 1}</span>
                 <span className="grow">
-                  <span className="block text-sm text-txt">{e.name}</span>
-                  <span className="text-sm text-mut">
-                    {equipLabel(e) && <span className="mr-1.5 inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 text-nano font-semibold uppercase tracking-wide text-mut">{equipLabel(e)}</span>}
+                  <span className="block text-sm text-text">{e.name}</span>
+                  <span className="text-sm text-text-2">
+                    {equipLabel(e) && <span className="mr-1.5 inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 text-nano font-semibold uppercase tracking-wide text-text-2">{equipLabel(e)}</span>}
                     {e.sets}×{e.reps}
                     {repetido && <span className="text-warn"> · ya está</span>}
                   </span>

@@ -121,8 +121,8 @@ export default function RestTimer() {
       <svg width="0" height="0" style={{ position: 'absolute' }}>
         <defs>
           <linearGradient id="restGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="var(--blue2)" />
-            <stop offset="100%" stopColor="var(--cyan)" />
+            <stop offset="0%" stopColor="var(--accent)" />
+            <stop offset="100%" stopColor="var(--accent)" />
           </linearGradient>
         </defs>
       </svg>

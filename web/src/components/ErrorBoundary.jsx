@@ -56,7 +56,7 @@ export default class ErrorBoundary extends Component {
           Tus datos siguen guardados — recargá para seguir.
         </p>
         <pre
-          className="s text-mut"
+          className="s text-text-2"
           style={{
             margin: '0 auto 16px', maxWidth: 340, textAlign: 'left',
             whiteSpace: 'pre-wrap', wordBreak: 'break-word',

@@ -793,14 +793,14 @@ function ExerciseSlide({ m, wd, started }) {
                 <small>Sesión anterior</small><b>{ultima.peso}</b>
               </button>
             ) : (
-              <div><small>Sesión anterior</small><b className="text-mut">—</b></div>
+              <div><small>Sesión anterior</small><b className="text-text-2">—</b></div>
             )}
           </div>
         )}
         {hayComparativa && <AvisoUltimaVez visible={aviso} onCerrar={cerrarAviso} last={last} obj={obj} uni={uni} />}
         {/* D3: la ausencia de dato no es un cero. */}
         {!last && uni && !full && !skipped && (
-          <div className="exlast text-mut">
+          <div className="exlast text-text-2">
             Primera vez unilateral{lastBilateral ? ' · tu historial es bilateral, otra carga' : ''}.
           </div>
         )}

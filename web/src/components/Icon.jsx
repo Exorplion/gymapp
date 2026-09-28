@@ -51,7 +51,7 @@ export function Mic({ size = 19, className, style }) {
 export function RecordDot({ size = 19, className, style }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className} style={style} aria-hidden="true">
-      <circle cx="12" cy="12" r="7" fill="var(--red)" />
+      <circle cx="12" cy="12" r="7" fill="var(--danger)" />
     </svg>
   );
 }

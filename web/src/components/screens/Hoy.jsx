@@ -308,13 +308,13 @@ function RestHero() {
       <div className="card hero">
         <div className="eyebrow">Hoy te toca descansar</div>
         <div className="hero-day">Descanso</div>
-        <div className="text-mut text-sm mt-1.5">
+        <div className="text-text-2 text-sm mt-1.5">
           {o.ultimo && (
-            <>Último entrenamiento: <b className="text-txt">{o.ultimo.nombre}</b>, {hace(o.ultimo.dias)}
+            <>Último entrenamiento: <b className="text-text">{o.ultimo.nombre}</b>, {hace(o.ultimo.dias)}
               {o.diasDescanso > 0 && <> · {o.diasDescanso} día{o.diasDescanso === 1 ? '' : 's'} de descanso</>}.<br /></>
           )}
           {o.recomendado
-            ? <>Lo recomendable es descansar. Si igual querés entrenar, te toca <b className="text-txt">{o.recomendado.nombre}</b>.</>
+            ? <>Lo recomendable es descansar. Si igual querés entrenar, te toca <b className="text-text">{o.recomendado.nombre}</b>.</>
             : 'Mañana seguís con el próximo turno de tu rutina.'}
         </div>
       </div>
@@ -363,7 +363,7 @@ function PreSessionHero({ day, index, exs }) {
           los ejercicios media pantalla hacia abajo. */}
       {cats.length > 0 && <CuerpoDeHoy cats={cats} />}
       <div className="flex items-center gap-2">
-        <span className="w-[7px] h-[7px] rounded-[4px] bg-cyan shadow-[0_0_8px_var(--cyan)]"></span>
+        <span className="w-[7px] h-[7px] rounded-[4px] bg-accent shadow-[0_0_8px_var(--accent)]"></span>
         <div className="eyebrow">Toca hoy</div>
       </div>
       {/* 46px e itálica: en el mockup el nombre del día es el elemento más
@@ -620,7 +620,7 @@ export function SessStartInfo({ index }) {
               type="text" placeholder="Nombre del gym" value={gymName}
               onChange={e => setGymName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') crearGym(); }}
-              className="h-11 grow rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt outline-none transition-colors focus-visible:border-blue2"
+              className="h-11 grow rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 text-body text-text outline-none transition-colors focus-visible:border-accent"
               autoFocus
             />
             <button type="button" className="btn sm" style={{ width: 'auto', padding: '0 var(--s4)' }} onClick={crearGym}>Crear</button>
@@ -640,7 +640,7 @@ export function SessStartInfo({ index }) {
         <div className="chips">{chip('motivation', 'baja', 'Baja')}{chip('motivation', 'normal', 'Normal')}{chip('motivation', 'alta', 'Alta')}</div>
       </div>
       {precheckAdjust() !== 0 && (
-        <div className="text-mut text-micro mt-2">
+        <div className="text-text-2 text-micro mt-2">
           Ajuste sugerido hoy: {precheckAdjust() > 0 ? '+' : ''}{Math.round(precheckAdjust() * 100)}% sobre el peso sugerido
         </div>
       )}

@@ -50,10 +50,10 @@ import {
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
 const CATALOG_CATS = [...new Set(EXCATALOG.map(e => e.c))];
 
-const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt outline-none transition-colors focus-visible:border-blue2';
-const eyebrowCls = 'mt-4 mb-2 block text-micro font-semibold uppercase tracking-wide text-mut';
-const chipBase = 'inline-flex items-center rounded-full border border-line2 px-3.5 py-2 text-sm font-medium transition-colors';
-const chip = (on, tone = 'on') => cn(chipBase, on ? (tone === 'blue' ? 'border-transparent bg-blue2 text-[var(--on-grad)]' : 'border-transparent bg-[image:var(--grad)] font-bold text-[var(--on-grad)]') : 'bg-card2 text-txt hover:border-line');
+const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 text-body text-text outline-none transition-colors focus-visible:border-accent';
+const eyebrowCls = 'mt-4 mb-2 block text-micro font-semibold uppercase tracking-wide text-text-2';
+const chipBase = 'inline-flex items-center rounded-full border border-line-2 px-3.5 py-2 text-sm font-medium transition-colors';
+const chip = (on, tone = 'on') => cn(chipBase, on ? (tone === 'blue' ? 'border-transparent bg-accent text-[var(--on-accent)]' : 'border-transparent bg-[image:var(--accent-grad)] font-bold text-[var(--on-accent)]') : 'bg-surface-2 text-text hover:border-line');
 
 /** Barra de progreso de los 4 pasos: sobria, sin número de paso ni texto —
     sólo cuánto camino queda. Mismo lenguaje de tokens que el resto de la
@@ -100,7 +100,7 @@ function PesoInicialField({ value, onChange }) {
      44px se lee como de otro formulario. */
   return (
     <div className="mt-3">
-      <label htmlFor="exform-peso-inicial" className="mb-1.5 block text-sm font-medium text-mut">
+      <label htmlFor="exform-peso-inicial" className="mb-1.5 block text-sm font-medium text-text-2">
         Peso de partida · opcional
       </label>
       <div className="flex items-center gap-2">
@@ -115,9 +115,9 @@ function PesoInicialField({ value, onChange }) {
           value={value}
           onChange={e => onChange(e.target.value)}
         />
-        <span className="flex-none text-sm font-medium text-mut">{unidad}</span>
+        <span className="flex-none text-sm font-medium text-text-2">{unidad}</span>
       </div>
-      <div className="mt-1.5 text-sm text-mut">
+      <div className="mt-1.5 text-sm text-text-2">
         Lo usa la sesión en vivo mientras no haya series registradas de este
         ejercicio. Después mandan tu historial y la progresión. Vacío = sin
         declarar.
@@ -243,13 +243,13 @@ function CreateWizard({ wd }) {
 
         {wiz.step === 1 && (
           <>
-            <h2 className="font-cond text-2xl font-bold text-txt">¿Qué ejercicio?</h2>
+            <h2 className="font-cond text-2xl font-bold text-text">¿Qué ejercicio?</h2>
 
             {!writingFree && (
               <>
                 {suggestions.length > 0 && (
                   <>
-                    <div className="mt-3 mb-1.5 text-micro uppercase tracking-wide text-mut">
+                    <div className="mt-3 mb-1.5 text-micro uppercase tracking-wide text-text-2">
                       Sugeridos para hoy
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -260,11 +260,11 @@ function CreateWizard({ wd }) {
                   </>
                 )}
                 <details className="mt-2.5" open={!suggestions.length}>
-                  <summary className="cursor-pointer text-sm font-semibold text-blue">📚 Explorar toda la base de ejercicios</summary>
+                  <summary className="cursor-pointer text-sm font-semibold text-accent">📚 Explorar toda la base de ejercicios</summary>
                   <div className="mt-2">
                     {CATALOG_CATS.map(c => (
                       <div key={c}>
-                        <div className="mt-2.5 mb-1.5 text-micro uppercase tracking-wide text-mut">{c}</div>
+                        <div className="mt-2.5 mb-1.5 text-micro uppercase tracking-wide text-text-2">{c}</div>
                         <div className="flex flex-wrap gap-2">
                           {EXCATALOG.filter(e => e.c === c).map(e => (
                             <button key={e.n} type="button" className={chip(false)} onClick={() => pickName(e.n)}>{e.n}</button>
@@ -282,7 +282,7 @@ function CreateWizard({ wd }) {
 
             {writingFree && (
               <div className="mt-3">
-                <label htmlFor="exform-nombre" className="mb-1.5 block text-sm font-medium text-mut">Nombre</label>
+                <label htmlFor="exform-nombre" className="mb-1.5 block text-sm font-medium text-text-2">Nombre</label>
                 <div className="flex items-center gap-2">
                   <input
                     id="exform-nombre"
@@ -297,7 +297,7 @@ function CreateWizard({ wd }) {
                     <button
                       type="button"
                       className={cn(
-                        'grid h-11 w-11 flex-none place-items-center rounded-[13px] border border-white/10 text-mut',
+                        'grid h-11 w-11 flex-none place-items-center rounded-[13px] border border-white/10 text-text-2',
                         recording && 'bg-accent/15 text-accent',
                       )}
                       id="ex-voice-btn"
@@ -309,15 +309,15 @@ function CreateWizard({ wd }) {
                   )}
                 </div>
                 {acMatches.length > 0 && (
-                  <div className="mt-1.5 flex flex-col gap-1 rounded-[var(--radius-r)] border border-line2 bg-card2 p-1.5">
+                  <div className="mt-1.5 flex flex-col gap-1 rounded-[var(--radius-r)] border border-line-2 bg-surface-2 p-1.5">
                     {acMatches.map(e => (
-                      <button key={e.n} type="button" className="rounded-[10px] px-2.5 py-1.5 text-left text-sm text-txt hover:bg-white/5" onClick={() => pickName(e.n)}>
-                        {e.n} <span className="text-micro text-mut">· {e.c}</span>
+                      <button key={e.n} type="button" className="rounded-[10px] px-2.5 py-1.5 text-left text-sm text-text hover:bg-white/5" onClick={() => pickName(e.n)}>
+                        {e.n} <span className="text-micro text-text-2">· {e.c}</span>
                       </button>
                     ))}
                   </div>
                 )}
-                <button type="button" className="mt-1.5 text-sm font-medium text-blue" onClick={() => setWritingFree(false)}>
+                <button type="button" className="mt-1.5 text-sm font-medium text-accent" onClick={() => setWritingFree(false)}>
                   ← Volver a sugerencias
                 </button>
               </div>
@@ -330,22 +330,22 @@ function CreateWizard({ wd }) {
 
         {wiz.step === 2 && (
           <>
-            <h2 className="font-cond text-2xl font-bold text-txt">¿Cómo lo hacés?</h2>
+            <h2 className="font-cond text-2xl font-bold text-text">¿Cómo lo hacés?</h2>
             <div className="mt-3.5 grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="exform-series" className="mb-1.5 block text-sm font-medium text-mut">Series objetivo</label>
-                <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line2 bg-card2">
-                  <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una serie menos" onClick={() => step('sets', -1)}>−</button>
-                  <div className="flex-1 text-center"><input id="exform-series" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-body text-txt outline-none" value={form.sets} onChange={e => setWizField('sets', e.target.value)} /></div>
-                  <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una serie más" onClick={() => step('sets', 1)}>+</button>
+                <label htmlFor="exform-series" className="mb-1.5 block text-sm font-medium text-text-2">Series objetivo</label>
+                <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line-2 bg-surface-2">
+                  <button type="button" className="h-full w-11 flex-none text-lg text-text-2 hover:text-text" aria-label="Una serie menos" onClick={() => step('sets', -1)}>−</button>
+                  <div className="flex-1 text-center"><input id="exform-series" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-body text-text outline-none" value={form.sets} onChange={e => setWizField('sets', e.target.value)} /></div>
+                  <button type="button" className="h-full w-11 flex-none text-lg text-text-2 hover:text-text" aria-label="Una serie más" onClick={() => step('sets', 1)}>+</button>
                 </div>
               </div>
               <div>
-                <label htmlFor="exform-reps" className="mb-1.5 block text-sm font-medium text-mut">Reps objetivo</label>
-                <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line2 bg-card2">
-                  <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una repetición menos" onClick={() => step('reps', -1)}>−</button>
-                  <div className="flex-1 text-center"><input id="exform-reps" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-body text-txt outline-none" value={form.reps} onChange={e => setWizField('reps', e.target.value)} /></div>
-                  <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una repetición más" onClick={() => step('reps', 1)}>+</button>
+                <label htmlFor="exform-reps" className="mb-1.5 block text-sm font-medium text-text-2">Reps objetivo</label>
+                <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line-2 bg-surface-2">
+                  <button type="button" className="h-full w-11 flex-none text-lg text-text-2 hover:text-text" aria-label="Una repetición menos" onClick={() => step('reps', -1)}>−</button>
+                  <div className="flex-1 text-center"><input id="exform-reps" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-body text-text outline-none" value={form.reps} onChange={e => setWizField('reps', e.target.value)} /></div>
+                  <button type="button" className="h-full w-11 flex-none text-lg text-text-2 hover:text-text" aria-label="Una repetición más" onClick={() => step('reps', 1)}>+</button>
                 </div>
               </div>
             </div>
@@ -364,7 +364,7 @@ function CreateWizard({ wd }) {
               </button>
             </div>
             {form.unilateral && (
-              <div className="mt-1.5 text-sm text-mut">
+              <div className="mt-1.5 text-sm text-text-2">
                 El peso y las reps que anotes en la sesión van a leerse como "por lado".
               </div>
             )}
@@ -384,7 +384,7 @@ function CreateWizard({ wd }) {
               ))}
             </div>
             {form.equip && (
-              <div className="mt-2 text-sm text-mut">
+              <div className="mt-2 text-sm text-text-2">
                 {EQUIP_HINT[form.equip]}
               </div>
             )}
@@ -394,7 +394,7 @@ function CreateWizard({ wd }) {
 
             {form.equip && (
               <div className="mt-3">
-                <label className="mb-1.5 block text-sm font-medium text-mut">Foto de la máquina</label>
+                <label className="mb-1.5 block text-sm font-medium text-text-2">Foto de la máquina</label>
                 <input
                   ref={photoRef}
                   type="file"
@@ -404,7 +404,7 @@ function CreateWizard({ wd }) {
                   onChange={onPhoto}
                 />
                 {form.photo ? (
-                  <div className="overflow-hidden rounded-[var(--radius-r-lg)] border border-line2">
+                  <div className="overflow-hidden rounded-[var(--radius-r-lg)] border border-line-2">
                     <img src={form.photo} alt="" className="block w-full" />
                     <div className="flex gap-2 p-2">
                       <Button type="button" variant="ghost" size="sm" onClick={() => photoRef.current?.click()}>Cambiar</Button>
@@ -416,7 +416,7 @@ function CreateWizard({ wd }) {
                     <Button type="button" variant="secondary" className="w-full" onClick={() => photoRef.current?.click()}>
                       📷 Sacar o elegir foto
                     </Button>
-                    <div className="mt-1.5 text-sm text-mut">
+                    <div className="mt-1.5 text-sm text-text-2">
                       Para reconocerla al llegar. Se guarda reducida en tu teléfono, nunca se sube a ningún lado.
                     </div>
                   </>
@@ -425,9 +425,9 @@ function CreateWizard({ wd }) {
             )}
 
             <div className="mt-3">
-              <label className="mb-1.5 block text-sm font-medium text-mut">Ilustración del movimiento</label>
+              <label className="mb-1.5 block text-sm font-medium text-text-2">Ilustración del movimiento</label>
               {form.illus ? (
-                <div className="overflow-hidden rounded-[var(--radius-r-lg)] border border-line2">
+                <div className="overflow-hidden rounded-[var(--radius-r-lg)] border border-line-2">
                   <img src={illusUrl(form.illus)} alt="" className="block w-full" />
                   <div className="flex gap-2 p-2">
                     <Button type="button" variant="ghost" size="sm" onClick={() => setPicking(true)}>Cambiar</Button>
@@ -439,7 +439,7 @@ function CreateWizard({ wd }) {
                   <Button type="button" variant="secondary" className="w-full" onClick={() => setPicking(true)}>
                     🖼 Buscar ilustración
                   </Button>
-                  <div className="mt-1.5 text-sm text-mut">
+                  <div className="mt-1.5 text-sm text-text-2">
                     Para ver cómo se hace el movimiento. Se descarga la primera vez y queda guardada.
                   </div>
                 </>
@@ -456,7 +456,7 @@ function CreateWizard({ wd }) {
 
         {wiz.step === 3 && (
           <>
-            <h2 className="font-cond text-2xl font-bold text-txt">Confirmar</h2>
+            <h2 className="font-cond text-2xl font-bold text-text">Confirmar</h2>
             <div className="exwiz-confirm">
               <div className="nombre">{form.name}</div>
               <div className="datos">
@@ -468,7 +468,7 @@ function CreateWizard({ wd }) {
               <div className="grupo-row">
                 <MuscleFibers cat={grupo} exercises={[{ name: form.name, sets: form.sets }]} />
                 {grupo ? (
-                  <span className="text-sm font-medium text-txt">{grupo}</span>
+                  <span className="text-sm font-medium text-text">{grupo}</span>
                 ) : (
                   <span className="text-sm font-medium text-warn">No lo reconozco — elegí el grupo</span>
                 )}
@@ -493,7 +493,7 @@ function CreateWizard({ wd }) {
               </>
             )}
             {form.cat && (
-              <button type="button" className="mt-2 text-sm font-medium text-blue" onClick={() => setWizField('cat', '')}>
+              <button type="button" className="mt-2 text-sm font-medium text-accent" onClick={() => setWizField('cat', '')}>
                 Volver al automático
               </button>
             )}
@@ -507,7 +507,7 @@ function CreateWizard({ wd }) {
           <>
             <div className="exwiz-done">
               <div className="check">✓</div>
-              <h2 className="font-cond text-2xl font-bold text-txt">Agregado</h2>
+              <h2 className="font-cond text-2xl font-bold text-text">Agregado</h2>
               <div className="nombre">{wiz.batch[wiz.batch.length - 1]}</div>
             </div>
 
@@ -569,10 +569,10 @@ function EditForm({ wd, ex }) {
 
   return (
     <div ref={rootRef}>
-      <h2 className="font-cond text-2xl font-bold text-txt">Editar ejercicio</h2>
+      <h2 className="font-cond text-2xl font-bold text-text">Editar ejercicio</h2>
 
       <div className="mt-3">
-        <label htmlFor="exform-nombre" className="mb-1.5 block text-sm font-medium text-mut">Nombre</label>
+        <label htmlFor="exform-nombre" className="mb-1.5 block text-sm font-medium text-text-2">Nombre</label>
         <input
           id="exform-nombre"
           className={inputCls}
@@ -585,19 +585,19 @@ function EditForm({ wd, ex }) {
 
       <div className="mt-3.5 grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="exform-series" className="mb-1.5 block text-sm font-medium text-mut">Series objetivo</label>
-          <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line2 bg-card2">
-            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una serie menos" onClick={() => step(setSets, -1)}>−</button>
-            <div className="flex-1 text-center"><input id="exform-series" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-body text-txt outline-none" value={sets} onChange={e => setSets(e.target.value)} /></div>
-            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una serie más" onClick={() => step(setSets, 1)}>+</button>
+          <label htmlFor="exform-series" className="mb-1.5 block text-sm font-medium text-text-2">Series objetivo</label>
+          <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line-2 bg-surface-2">
+            <button type="button" className="h-full w-11 flex-none text-lg text-text-2 hover:text-text" aria-label="Una serie menos" onClick={() => step(setSets, -1)}>−</button>
+            <div className="flex-1 text-center"><input id="exform-series" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-body text-text outline-none" value={sets} onChange={e => setSets(e.target.value)} /></div>
+            <button type="button" className="h-full w-11 flex-none text-lg text-text-2 hover:text-text" aria-label="Una serie más" onClick={() => step(setSets, 1)}>+</button>
           </div>
         </div>
         <div>
-          <label htmlFor="exform-reps" className="mb-1.5 block text-sm font-medium text-mut">Reps objetivo</label>
-          <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line2 bg-card2">
-            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una repetición menos" onClick={() => step(setReps, -1)}>−</button>
-            <div className="flex-1 text-center"><input id="exform-reps" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-body text-txt outline-none" value={reps} onChange={e => setReps(e.target.value)} /></div>
-            <button type="button" className="h-full w-11 flex-none text-lg text-mut hover:text-txt" aria-label="Una repetición más" onClick={() => step(setReps, 1)}>+</button>
+          <label htmlFor="exform-reps" className="mb-1.5 block text-sm font-medium text-text-2">Reps objetivo</label>
+          <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line-2 bg-surface-2">
+            <button type="button" className="h-full w-11 flex-none text-lg text-text-2 hover:text-text" aria-label="Una repetición menos" onClick={() => step(setReps, -1)}>−</button>
+            <div className="flex-1 text-center"><input id="exform-reps" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-body text-text outline-none" value={reps} onChange={e => setReps(e.target.value)} /></div>
+            <button type="button" className="h-full w-11 flex-none text-lg text-text-2 hover:text-text" aria-label="Una repetición más" onClick={() => step(setReps, 1)}>+</button>
           </div>
         </div>
       </div>
@@ -616,14 +616,14 @@ function EditForm({ wd, ex }) {
         </button>
       </div>
       {unilateral && (
-        <div className="mt-1.5 text-sm text-mut">
+        <div className="mt-1.5 text-sm text-text-2">
           El peso y las reps que anotes en la sesión van a leerse como "por lado".
         </div>
       )}
 
       <label className={eyebrowCls}>
         Qué grupo entrena
-        {!cat && auto && <span className="text-micro font-medium normal-case tracking-normal text-mut"> · detecté {auto}</span>}
+        {!cat && auto && <span className="text-micro font-medium normal-case tracking-normal text-text-2"> · detecté {auto}</span>}
         {!cat && !auto && name.trim() && <span className="text-micro font-medium normal-case tracking-normal text-warn"> · no lo reconozco, elegilo</span>}
       </label>
       <div className="flex flex-wrap gap-2">
@@ -655,7 +655,7 @@ function EditForm({ wd, ex }) {
         ))}
       </div>
       {equip && (
-        <div className="mt-2 text-sm text-mut">
+        <div className="mt-2 text-sm text-text-2">
           {EQUIP_HINT[equip]}
         </div>
       )}
@@ -665,7 +665,7 @@ function EditForm({ wd, ex }) {
 
       {equip && (
         <div className="mt-3">
-          <label className="mb-1.5 block text-sm font-medium text-mut">Foto de la máquina</label>
+          <label className="mb-1.5 block text-sm font-medium text-text-2">Foto de la máquina</label>
           <input
             ref={photoRef}
             type="file"
@@ -675,7 +675,7 @@ function EditForm({ wd, ex }) {
             onChange={onPhoto}
           />
           {photo ? (
-            <div className="overflow-hidden rounded-[var(--radius-r-lg)] border border-line2">
+            <div className="overflow-hidden rounded-[var(--radius-r-lg)] border border-line-2">
               <img src={photo} alt="" className="block w-full" />
               <div className="flex gap-2 p-2">
                 <Button type="button" variant="ghost" size="sm" onClick={() => photoRef.current?.click()}>Cambiar</Button>
@@ -687,7 +687,7 @@ function EditForm({ wd, ex }) {
               <Button type="button" variant="secondary" className="w-full" onClick={() => photoRef.current?.click()}>
                 📷 Sacar o elegir foto
               </Button>
-              <div className="mt-1.5 text-sm text-mut">
+              <div className="mt-1.5 text-sm text-text-2">
                 Para reconocerla al llegar. Se guarda reducida en tu teléfono, nunca se sube a ningún lado.
               </div>
             </>
@@ -696,9 +696,9 @@ function EditForm({ wd, ex }) {
       )}
 
       <div className="mt-3">
-        <label className="mb-1.5 block text-sm font-medium text-mut">Ilustración del movimiento</label>
+        <label className="mb-1.5 block text-sm font-medium text-text-2">Ilustración del movimiento</label>
         {illus ? (
-          <div className="overflow-hidden rounded-[var(--radius-r-lg)] border border-line2">
+          <div className="overflow-hidden rounded-[var(--radius-r-lg)] border border-line-2">
             <img src={illusUrl(illus)} alt="" className="block w-full" />
             <div className="flex gap-2 p-2">
               <Button type="button" variant="ghost" size="sm" onClick={() => setPicking(true)}>Cambiar</Button>
@@ -710,7 +710,7 @@ function EditForm({ wd, ex }) {
             <Button type="button" variant="secondary" className="w-full" onClick={() => setPicking(true)}>
               🖼 Buscar ilustración
             </Button>
-            <div className="mt-1.5 text-sm text-mut">
+            <div className="mt-1.5 text-sm text-text-2">
               Para ver cómo se hace el movimiento. Se descarga la primera vez y queda guardada.
             </div>
           </>

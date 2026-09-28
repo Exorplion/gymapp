@@ -163,7 +163,7 @@ export default function Profile() {
       </div>
 
       <div className="calcbox">
-        {m ? <MacroPreview m={m} /> : <div className="cr" style={{ justifyContent: 'center', color: 'var(--mut2)' }}>Sin edad, altura y peso no se puede calcular tu gasto diario ni tus macros.</div>}
+        {m ? <MacroPreview m={m} /> : <div className="cr" style={{ justifyContent: 'center', color: 'var(--text-3)' }}>Sin edad, altura y peso no se puede calcular tu gasto diario ni tus macros.</div>}
       </div>
 
       <button type="button" className="btn" style={{ marginTop: 14 }} onClick={save}>Guardar y usar estas metas</button>

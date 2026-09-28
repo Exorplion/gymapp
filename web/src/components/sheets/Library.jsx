@@ -170,7 +170,7 @@ function LibraryList({ onPeek }) {
       ))}
       </div>
 
-      <div className="card" style={{ borderStyle: 'dashed', borderColor: 'var(--line2)' }}>
+      <div className="card" style={{ borderStyle: 'dashed', borderColor: 'var(--line-2)' }}>
         <div className="cond" style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Personalizada</div>
         <div className="txt-mut" style={{ fontSize: 13, marginBottom: 12 }}>
           Empezá de cero y armá tu propio split día por día.

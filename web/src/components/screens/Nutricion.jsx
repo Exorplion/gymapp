@@ -135,18 +135,18 @@ export default function Nutricion() {
           <div className="pavatar">👤</div>
           <div className="grow">
             <div className="pt">{GOAL_LABEL[S.cfg.profile.goal]} · {m.target} kcal</div>
-            <div className="text-mut text-micro">
+            <div className="text-text-2 text-micro">
               {S.cfg.profile.sex === 'f' ? 'Mujer' : 'Hombre'} · {fmtNum(round1(m.weight))} kg · P {m.protMin}-{m.protMax} · G {m.fatMin}-{m.fatMax} · C {m.carbs}g
             </div>
           </div>
           <button type="button" className="icon-btn accent" aria-label="Ver / modificar mis datos" onClick={() => openSheet('profile')}><Pencil /></button>
         </div>
       ) : (
-        <button type="button" className="card profcard border-line2" onClick={() => openSheet('profile')}>
+        <button type="button" className="card profcard border-line-2" onClick={() => openSheet('profile')}>
           <div className="pavatar">🎯</div>
           <div className="grow">
             <div className="pt">Calcular mis macros</div>
-            <div className="text-mut text-micro">Perfil → TDEE → target y rangos automáticos{S.cfg.goalsAuto ? '' : ' (usando metas manuales)'}</div>
+            <div className="text-text-2 text-micro">Perfil → TDEE → target y rangos automáticos{S.cfg.goalsAuto ? '' : ' (usando metas manuales)'}</div>
           </div>
           <span className="chev">›</span>
         </button>
@@ -177,7 +177,7 @@ export default function Nutricion() {
             <b>{ciclo.tipo === 'entreno' ? 'Día de entrenamiento' : 'Día de descanso'}</b>
             {' · '}{ciclo.deltaCarbs > 0 ? '+' : ''}{ciclo.deltaCarbs} g de carbohidratos
           </div>
-          <div className="text-mut text-micro leading-normal mt-1">{cycleExplain(ciclo)}</div>
+          <div className="text-text-2 text-micro leading-normal mt-1">{cycleExplain(ciclo)}</div>
         </div>
       )}
 
@@ -201,7 +201,7 @@ export default function Nutricion() {
             <div className="kcal-big">
               {kc > g.kcal ? kc - g.kcal : Math.max(0, g.kcal - kc)}<span>kcal</span>
             </div>
-            <div className="text-mut text-micro mt-0.5">
+            <div className="text-text-2 text-micro mt-0.5">
               {GOAL_LABEL[S.cfg.profile.goal]}
               {S.cfg.profile.weightKg ? ` · ${fmtNum(round1(S.cfg.profile.weightKg))} kg` : ''}
             </div>
@@ -226,27 +226,27 @@ export default function Nutricion() {
 
       {proteinaPendiente && (
         <div className="notice">
-          <div className="text-sm text-txt font-medium">🥩 Entrenaste hace poco</div>
-          <div className="s text-mut mt-1">Todavía no registraste una comida con proteína. No es una regla dura, pero es el mejor momento para una.</div>
+          <div className="text-sm text-text font-medium">🥩 Entrenaste hace poco</div>
+          <div className="s text-text-2 mt-1">Todavía no registraste una comida con proteína. No es una regla dura, pero es el mejor momento para una.</div>
         </div>
       )}
 
       {bajos.length > 0 && (
         <div className="notice">
-          <div className="text-sm text-txt font-medium">Micronutrientes bajos esta semana</div>
-          <div className="s text-mut mt-1">
+          <div className="text-sm text-text font-medium">Micronutrientes bajos esta semana</div>
+          <div className="s text-text-2 mt-1">
             {bajos.map(b => `${b.label} (${b.dias} de 7 días)`).join(' · ')}
           </div>
-          <div className="s text-mut2 mt-1">Estimado desde la tabla de alimentos — sirve para ver una tendencia, no para diagnosticar nada.</div>
+          <div className="s text-text-3 mt-1">Estimado desde la tabla de alimentos — sirve para ver una tendencia, no para diagnosticar nada.</div>
         </div>
       )}
 
       {band?.adjust !== 0 && band && (
         <div className="notice">
-          <div className="text-sm text-txt font-medium">
+          <div className="text-sm text-text font-medium">
             {band.adjust > 0 ? '↑' : '↓'} Ajuste sugerido: {band.adjust > 0 ? '+' : ''}{band.adjust} kcal
           </div>
-          <div className="s text-mut mt-1">
+          <div className="s text-text-2 mt-1">
             Tu ritmo real es {band.actualWeekly > 0 ? '+' : ''}{band.actualWeekly} kg/sem vs. {band.expected > 0 ? '+' : ''}{band.expected} kg/sem esperado para {GOAL_LABEL[S.cfg.profile.goal]?.toLowerCase()}.
           </div>
         </div>
@@ -258,7 +258,7 @@ export default function Nutricion() {
           <div className="chip-scroll">
             {freq.map((f, i) => (
               <button key={i} type="button" className="chip blue" onClick={() => logMeal(f)}>
-                ＋ {f.name} <span className="text-mut font-medium">{f.kcal}</span>
+                ＋ {f.name} <span className="text-text-2 font-medium">{f.kcal}</span>
               </button>
             ))}
           </div>
@@ -270,7 +270,7 @@ export default function Nutricion() {
         {S.foods.length > 0 && (
           <button
             type="button"
-            className={cn('mini w-8 h-8 text-sm', S.foodEdit && 'text-blue2 border-line2')}
+            className={cn('mini w-8 h-8 text-sm', S.foodEdit && 'text-accent border-line-2')}
             aria-pressed={S.foodEdit}
             aria-label="Editar la lista de frecuentes"
             onClick={() => { S.foodEdit = !S.foodEdit; bump(); }}
@@ -283,12 +283,12 @@ export default function Nutricion() {
             <button key={f.id} type="button" className="chip" aria-label={`Borrar ${f.name} de frecuentes`} onClick={() => deleteFood(f.id)}>{f.name}<span className="x">✕</span></button>
           ) : (
             <button key={f.id} type="button" className="chip blue" onClick={() => addMealFromFood(f.id)}>
-              ＋ {f.name} <span className="text-mut font-medium">{f.kcal}</span>
+              ＋ {f.name} <span className="text-text-2 font-medium">{f.kcal}</span>
             </button>
           ))}
         </div>
       ) : (
-        <div className="text-mut text-sm my-1 mx-0.5">
+        <div className="text-text-2 text-sm my-1 mx-0.5">
           Al agregar una comida, márcala como <b>frecuente</b> y quedará aquí para sumarla con un tap.
         </div>
       )}
@@ -311,7 +311,7 @@ export default function Nutricion() {
         {SR_FOOD && (
           <button type="button" className="pw-btn" onClick={() => openSheet('food-voice')}>
             <span className="pwi">🎙</span><span className="pwt">Registrar por voz</span>
-            <span className="text-mut text-micro font-medium">decí qué comiste</span>
+            <span className="text-text-2 text-micro font-medium">decí qué comiste</span>
             <span className="chev">›</span>
           </button>
         )}
@@ -332,7 +332,7 @@ export default function Nutricion() {
                     <div className="t">{meal.name}</div>
                     <div className="s">{meal.kcal} kcal · P {meal.p} · C {meal.c} · G {meal.f}</div>
                     {meal.items?.length > 1 && (
-                      <div className="s text-mut2">
+                      <div className="s text-text-3">
                         {meal.items.map(i => `${i.name} ${i.grams}g`).join(' · ')}
                       </div>
                     )}

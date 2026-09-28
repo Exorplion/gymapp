@@ -30,26 +30,26 @@ export default function DayPeek({ wd }) {
 
   return (
     <div ref={rootRef}>
-      <h2 className="font-cond text-2xl font-bold text-txt">{d.name || WD[wd]}</h2>
-      <div className="mt-1 mb-4 text-sm text-mut">
+      <h2 className="font-cond text-2xl font-bold text-text">{d.name || WD[wd]}</h2>
+      <div className="mt-1 mb-4 text-sm text-text-2">
         {WD[wd]} · {d.exercises.length} ejercicios · {sets} series · {blocks.map(b => b.cat).join(' / ')}
       </div>
       <div ref={blocksRef}>
         {blocks.map(b => (
           <div key={b.cat} className="mb-2">
-            <div className="mx-0.5 mb-1.5 mt-2.5 text-micro font-semibold uppercase tracking-wide text-mut">{b.cat}</div>
-            <div className="rounded-[var(--radius-r-lg)] border border-line bg-card2 p-3">
+            <div className="mx-0.5 mb-1.5 mt-2.5 text-micro font-semibold uppercase tracking-wide text-text-2">{b.cat}</div>
+            <div className="rounded-[var(--radius-r-lg)] border border-line bg-surface-2 p-3">
               {b.exs.map((ex, i) => (
                 <div className="flex items-center gap-2.5 py-2" key={ex.id}>
-                  <span className="w-5 flex-none text-sm text-mut">{i + 1}</span>
+                  <span className="w-5 flex-none text-sm text-text-2">{i + 1}</span>
                   <div className="grow">
-                    <div className="text-sm text-txt">{ex.name}</div>
-                    <div className="text-sm text-mut">{ex.sets}×{ex.reps} · RIR {rirScheme(ex.sets, ex.name).join('/')}</div>
+                    <div className="text-sm text-text">{ex.name}</div>
+                    <div className="text-sm text-text-2">{ex.sets}×{ex.reps} · RIR {rirScheme(ex.sets, ex.name).join('/')}</div>
                   </div>
                   {exInfo(ex.name) && (
                     <button
                       type="button"
-                      className="grid h-8 w-8 flex-none place-items-center rounded-full text-mut transition-colors hover:text-txt"
+                      className="grid h-8 w-8 flex-none place-items-center rounded-full text-text-2 transition-colors hover:text-text"
                       onClick={() => openSheet('ex-info', { name: ex.name, wd, exId: ex.id })}
                     >
                       <Info />

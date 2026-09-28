@@ -36,14 +36,14 @@ export default function BodyMap() {
 
   return (
     <div>
-      <h2 className="font-cond text-2xl font-bold text-txt">Tu cuerpo</h2>
-      <div className="mt-1 mb-4 text-sm text-mut">Tocá un músculo para ver cuándo lo entrenaste.</div>
+      <h2 className="font-cond text-2xl font-bold text-text">Tu cuerpo</h2>
+      <div className="mt-1 mb-4 text-sm text-text-2">Tocá un músculo para ver cuándo lo entrenaste.</div>
 
       <div className="sil-grande flex h-[min(52vh,420px)] justify-center my-1.5">
         <Silhouette days={dias} porciones={porciones} />
       </div>
 
-      <LeyendaTonos className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-micro text-mut" />
+      <LeyendaTonos className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-micro text-text-2" />
 
       {/* Si la figura enciende porciones, la leyenda tiene que decirlo: si no,
           ver media espalda prendida con la ficha diciendo "Espalda, hace 1 día"
@@ -52,7 +52,7 @@ export default function BodyMap() {
           Sólo aparece cuando hay al menos una porción con registro: sin dato no
           hay nada distinto que explicar. */}
       {Object.keys(porciones).length > 0 && (
-        <div className="mt-1.5 text-micro leading-relaxed text-mut">
+        <div className="mt-1.5 text-micro leading-relaxed text-text-2">
           Los músculos que la lámina divide en piezas —la espalda y, vistos de
           atrás, tríceps, glúteo y gemelos— se encienden por porción. Al tocar una, la
           ficha muestra sólo esa porción.
@@ -63,24 +63,24 @@ export default function BodyMap() {
 
       {mvCats.length > 0 && (
         <>
-          <h3 className="mt-6 mb-2 font-cond text-lg font-semibold text-txt">Músculos esta semana</h3>
+          <h3 className="mt-6 mb-2 font-cond text-lg font-semibold text-text">Músculos esta semana</h3>
           <div ref={listRef}>
             {mvCats.map(([c, n]) => (
               <div key={c} className="mb-2">
                 <div className="mb-1 flex justify-between text-sm">
-                  <span className="text-txt">{c}</span>
-                  <span className="font-cond font-bold text-mut">{n} series</span>
+                  <span className="text-text">{c}</span>
+                  <span className="font-cond font-bold text-text-2">{n} series</span>
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-line/40">
                   <div
-                    className="h-full rounded-full bg-[image:var(--grad)]"
+                    className="h-full rounded-full bg-[image:var(--accent-grad)]"
                     style={{ width: `${Math.round(n / maxv * 100)}%`, animation: 'rise .5s var(--ease) backwards' }}
                   />
                 </div>
               </div>
             ))}
           </div>
-          <div className="mt-3 text-sm leading-relaxed text-mut">
+          <div className="mt-3 text-sm leading-relaxed text-text-2">
             10–20 series semanales por grupo es el rango habitual para ganar masa.
           </div>
           <SinGrupoAviso />
@@ -102,10 +102,10 @@ function SinGrupoAviso() {
       className="mt-3 flex w-full flex-col gap-0.5 rounded-[var(--radius-r)] border border-warn/30 bg-warn/10 px-3.5 py-3 text-left transition-colors hover:bg-warn/15"
       onClick={() => { closeSheet(); changeTab('rutina', () => { S.rutMode = 'edit'; }); }}
     >
-      <span className="text-sm font-medium text-txt">
+      <span className="text-sm font-medium text-text">
         {sin.length} ejercicio{sin.length === 1 ? '' : 's'} sin grupo muscular · no suma{sin.length === 1 ? '' : 'n'} acá
       </span>
-      <span className="text-micro text-mut">{sin.slice(0, 4).map(e => e.name).join(' · ')}{sin.length > 4 ? ` +${sin.length - 4}` : ''}</span>
+      <span className="text-micro text-text-2">{sin.slice(0, 4).map(e => e.name).join(' · ')}{sin.length > 4 ? ` +${sin.length - 4}` : ''}</span>
       <span className="text-micro font-semibold text-warn">Asignar →</span>
     </button>
   );
@@ -119,7 +119,7 @@ function StaleLine({ grupos, dias }) {
   // cuenta; acá sólo se muestra si es un dato completo (100% = "listo").
   const rec = recoveryPct(top[0]);
   return (
-    <div className="mt-3 rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 py-2.5 text-sm text-mut">
+    <div className="mt-3 rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 py-2.5 text-sm text-text-2">
       ⌁ {top.join(' y ')} hace {d} día{d === 1 ? '' : 's'}
       {rec < 100 && <span> · recuperación estimada {rec}%</span>}
     </div>
