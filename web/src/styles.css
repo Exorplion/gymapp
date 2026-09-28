@@ -275,8 +275,8 @@ html{scroll-behavior:smooth}
 body::before{
   content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
   background:
-    radial-gradient(90% 40% at 50% -5%, rgba(38,98,255,.16), transparent 65%),
-    radial-gradient(70% 30% at 100% 100%, rgba(30,70,180,.08), transparent 60%),
+    radial-gradient(90% 40% at 50% -5%, rgba(var(--accent-strong-rgb),.16), transparent 65%),
+    radial-gradient(70% 30% at 100% 100%, rgba(var(--accent-strong-rgb),.08), transparent 60%),
     radial-gradient(60% 34% at 100% 100%, rgba(var(--accent-rgb),.10), transparent 62%);
 }
 body::after{
@@ -347,7 +347,7 @@ header.top{
   position:sticky;top:0;z-index:40;
   display:flex;align-items:center;justify-content:space-between;
   padding:calc(10px + env(safe-area-inset-top)) 18px 10px;
-  background:linear-gradient(rgba(5,7,13,.92),rgba(5,7,13,.75));
+  background:linear-gradient(rgba(var(--bg-rgb),.92),rgba(var(--bg-rgb),.75));
   backdrop-filter:blur(14px);
   border-bottom:1px solid var(--line);
 }
@@ -368,11 +368,11 @@ header.top{
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
   display:flex;align-items:center;gap:8px;
 }
-.brand svg{width:24px;height:24px;stroke:var(--accent);filter:drop-shadow(0 0 8px rgba(62,150,255,.7))}
+.brand svg{width:24px;height:24px;stroke:var(--accent);filter:drop-shadow(0 0 8px rgba(var(--accent-strong-rgb),.7))}
 .icon-btn{
   width:38px;height:38px;border-radius:var(--r-md);display:grid;place-items:center;
-  border:1px solid rgba(255,255,255,.1);color:var(--text-2);
-  background:linear-gradient(150deg,rgba(255,255,255,.09),rgba(255,255,255,.02));
+  border:1px solid rgba(var(--hi-rgb),.1);color:var(--text-2);
+  background:linear-gradient(150deg,rgba(var(--hi-rgb),.09),rgba(var(--hi-rgb),.02));
   transition:var(--d1);
 }
 .icon-btn svg{width:19px;height:19px}
@@ -385,8 +385,8 @@ header.top{
 .streak-btn{
   display:flex;align-items:center;width:auto;height:35px;gap:6px;
   padding:7px 12px 7px 9px;border-radius:var(--r-full);
-  background:linear-gradient(150deg,rgba(255,196,107,.18),rgba(255,255,255,.03));
-  border:1px solid rgba(255,196,107,.32);
+  background:linear-gradient(150deg,rgba(var(--flame-rgb),.18),rgba(var(--hi-rgb),.03));
+  border:1px solid rgba(var(--flame-rgb),.32);
 }
 /* Más específico que .icon-btn svg (línea de arriba): la llama es más chica
    que el resto de los íconos de header y va en ámbar, no en el gris/azul de
@@ -397,7 +397,7 @@ header.top{
 .heatmap .cell{aspect-ratio:1;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--line)}
 .heatmap .cell.done{background:var(--accent-grad);border-color:transparent;animation:zoom var(--d3) var(--ease) backwards}
 .heatmap .cell.rest{opacity:.28}
-.heatmap .cell.miss{background:rgba(255,93,115,.12);border-color:rgba(255,93,115,.3)}
+.heatmap .cell.miss{background:rgba(var(--danger-rgb),.12);border-color:rgba(var(--danger-rgb),.3)}
 
 /* ---------- layout ---------- */
 /* En capa por el mismo motivo que los resets de arriba: sin ella, este
@@ -642,15 +642,15 @@ main.arrastrando{overflow:hidden;user-select:none}
 
 /* ---------- cards ---------- */
 .card{
-  background:var(--grad-metal),linear-gradient(180deg,rgba(10,16,28,.92),rgba(10,16,28,.78));
+  background:var(--grad-metal),var(--glass);
   border:1px solid var(--glass-border);border-radius:var(--r);
   padding:var(--s4);margin-bottom:var(--s3);
   backdrop-filter:var(--glass-blur);
-  box-shadow:var(--edge-metal),0 14px 34px -18px rgba(0,0,0,.6);
+  box-shadow:var(--edge-metal),0 14px 34px -18px rgba(var(--shade-rgb),.6);
 }
 .card.hero{
-  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.3),rgba(255,255,255,.03) 58%),rgba(12,19,34,.85);
-  border-color:rgba(120,170,255,.22);border-radius:var(--r-lg);
+  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.14),rgba(var(--hi-rgb),.03) 58%),var(--glass);
+  border-color:rgba(var(--accent-rgb),.22);border-radius:var(--r-lg);
   padding:20px;position:relative;overflow:hidden;
 }
 /* El halo del mockup es cian y bastante más grande (210px) que el azul de
@@ -672,13 +672,13 @@ main.arrastrando{overflow:hidden;user-select:none}
 }
 .btn:not(.sm):not(.ghost):not(.dim):not(.danger)::after{
   content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;
-  background:linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent);
+  background:linear-gradient(115deg,transparent,rgba(var(--hi-rgb),.35),transparent);
   animation:sweep 3.2s ease-in-out infinite;pointer-events:none;
 }
 .btn.sm{min-height:44px;font-size:var(--t-body);border-radius:var(--r-md)}
 .btn.ghost{background:var(--surface-2);box-shadow:none;border:1px solid var(--line-2);color:var(--accent)}
 .btn.dim{background:var(--surface-2);box-shadow:none;border:1px solid var(--line);color:var(--text-2)}
-.btn.danger{background:rgba(255,93,115,.12);box-shadow:none;border:1px solid rgba(255,93,115,.35);color:var(--danger)}
+.btn.danger{background:rgba(var(--danger-rgb),.12);box-shadow:none;border:1px solid rgba(var(--danger-rgb),.35);color:var(--danger)}
 .btn.ok{background:var(--grad-ok);box-shadow:0 6px 24px -6px rgba(var(--ok-rgb),.4);color:var(--on-ok)}
 .btn:disabled{opacity:.4;box-shadow:none}
 /* botón con una segunda línea que explica la consecuencia. Los .btn son
@@ -757,12 +757,12 @@ main.arrastrando{overflow:hidden;user-select:none}
    dientes, no una pantalla propia. El backdrop translúcido es lo único que
    la cierra (no hace falta un botón "listo": cada asentamiento de scroll ya
    confirma el valor, igual que la rueda gruesa). */
-.reel-fine-backdrop{position:fixed;inset:0;z-index:60;background:rgba(5,7,13,.45);backdrop-filter:blur(2px)}
+.reel-fine-backdrop{position:fixed;inset:0;z-index:60;background:rgba(var(--bg-rgb),.45);backdrop-filter:blur(2px)}
 .reel-fine{
   position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%);
   z-index:61;width:76px;height:168px;border-radius:var(--r);overflow:hidden;
   background:var(--surface-2);border:1px solid var(--line-2);
-  box-shadow:0 22px 50px -20px rgba(0,0,0,.8);
+  box-shadow:0 22px 50px -20px rgba(var(--shade-rgb),.8);
   animation:zoom var(--d1) var(--ease-out) backwards;
 }
 .reel-fine-track{
@@ -851,7 +851,7 @@ main.arrastrando{overflow:hidden;user-select:none}
   transform:scaleY(var(--done));transform-origin:top;
   transition:transform var(--d4) var(--ease);
 }
-.ex-card.full::before{background:linear-gradient(180deg,var(--ok),#0E9F6E)}
+.ex-card.full::before{background:linear-gradient(180deg,var(--ok),var(--ok-strong))}
 .ex-card .exname{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;letter-spacing:.02em}
 .ex-card .extarget{color:var(--text-2);font-size:var(--t-sm);font-weight:500;margin-top:2px}
 .ex-card .exlast{color:var(--accent);font-size:var(--t-sm);font-weight:500;margin-top:2px}
@@ -932,7 +932,7 @@ main.arrastrando{overflow:hidden;user-select:none}
   position:absolute;top:var(--s2);left:0;right:0;
   padding:var(--s3);border-radius:var(--r-md);cursor:pointer;
   background:var(--surface);
-  box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(var(--accent-strong-rgb),.3);
+  box-shadow:0 16px 32px -14px rgba(var(--shade-rgb),.8),0 0 0 1px rgba(var(--accent-strong-rgb),.3);
 }
 .ex-aviso .ex-cmp{margin-top:0}
 .ex-aviso-x{
@@ -1030,7 +1030,7 @@ main.arrastrando{overflow:hidden;user-select:none}
   display:flex;align-items:center;gap:var(--s3);width:100%;min-height:58px;padding:0 var(--s4) 0 6px;
   border-radius:var(--r-full);border:1.5px solid rgba(var(--ok-rgb),.55);
   background:linear-gradient(96deg,rgba(var(--ok-rgb),.12),rgba(var(--ok-rgb),.03)),var(--surface);
-  box-shadow:0 0 26px -10px rgba(var(--ok-rgb),.7),inset 0 1px 0 rgba(255,255,255,.06);
+  box-shadow:0 0 26px -10px rgba(var(--ok-rgb),.7),inset 0 1px 0 rgba(var(--hi-rgb),.06);
   color:var(--ok);cursor:pointer;
 }
 .btn-serie-ok{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:var(--r-full);background:var(--grad-ok);color:var(--on-ok);box-shadow:0 4px 14px -4px rgba(var(--ok-rgb),.8)}
@@ -1072,7 +1072,7 @@ main.arrastrando{overflow:hidden;user-select:none}
   transition:color var(--d3) var(--ease),background var(--d3) var(--ease),border-color var(--d3) var(--ease);
 }
 @keyframes countPop{0%{transform:scale(.55)}55%{transform:scale(1.2)}100%{transform:scale(1)}}
-.ex-done-count.full{color:#062b18;background:var(--ok);border-color:transparent}
+.ex-done-count.full{color:var(--on-ok);background:var(--ok);border-color:transparent}
 /* Peso y reps apilados, no lado a lado. En dos columnas (1.4fr/1fr) la de reps
    medía 105px en un teléfono de 390px y sus dos botones de 48px más el gap ya
    ocupaban 108px: al número le quedaba espacio negativo y se perdía dentro de
@@ -1120,9 +1120,9 @@ main.arrastrando{overflow:hidden;user-select:none}
 .ex-card.wait{opacity:.5}
 .ex-card.wait .exname{font-size:var(--t-lg)}
 .ex-card.cur{
-  background:linear-gradient(158deg,rgba(var(--accent-rgb),.16),rgba(255,255,255,.03) 58%),var(--surface);
+  background:linear-gradient(158deg,rgba(var(--accent-rgb),.12),rgba(var(--hi-rgb),.03) 58%),var(--surface);
   border-color:rgba(var(--accent-rgb),.36);border-radius:var(--r-lg);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 26px 54px -28px rgba(var(--accent-rgb),.5);
+  box-shadow:inset 0 1px 0 rgba(var(--hi-rgb),.18),0 26px 54px -28px rgba(var(--accent-rgb),.5);
 }
 .ex-card.doneex{opacity:.72}
 .ex-state{margin-top:10px;font-size:var(--t-micro);font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-2);display:flex;align-items:center;gap:5px}
@@ -1254,13 +1254,13 @@ main.arrastrando{overflow:hidden;user-select:none}
   transition:transform .26s var(--ease),box-shadow var(--d3) ease,border-color var(--d3) ease,background-color var(--d3) ease}
 .ex-card.dragging{
   border-color:rgba(var(--accent-strong-rgb),.5);
-  box-shadow:0 26px 52px -20px rgba(0,0,0,.85),0 0 0 1px rgba(var(--accent-strong-rgb),.35);
+  box-shadow:0 26px 52px -20px rgba(var(--shade-rgb),.85),0 0 0 1px rgba(var(--accent-strong-rgb),.35);
 }
 /* las filas de Rutina no tienen fondo propio: al levantarlas hay que darles uno
    o se ven transparentes encima de las demás */
 .row.dragging{
   background:var(--surface-2);border-radius:var(--r-md);border-bottom-color:transparent;
-  box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(var(--accent-strong-rgb),.3);
+  box-shadow:0 16px 32px -14px rgba(var(--shade-rgb),.8),0 0 0 1px rgba(var(--accent-strong-rgb),.3);
 }
 /* Fila de turno en edición (handoff 2026-09-17, punto 3, Enzo: "los botones
    de reordenar y el botón de limpiar también están desalineados"): el
@@ -1279,7 +1279,7 @@ main.arrastrando{overflow:hidden;user-select:none}
 .day-headrow .day-handle{cursor:grab;flex:none;width:44px;height:44px}
 .day-headrow .mini.red{width:44px;height:44px}
 .card.day.dragging{
-  box-shadow:0 26px 52px -20px rgba(0,0,0,.85),0 0 0 1px rgba(var(--accent-strong-rgb),.35);
+  box-shadow:0 26px 52px -20px rgba(var(--shade-rgb),.85),0 0 0 1px rgba(var(--accent-strong-rgb),.35);
 }
 body.dragging-on{user-select:none;-webkit-user-select:none;cursor:grabbing}
 body.dragging-on [data-sid]:not(.dragging){filter:saturate(.8) brightness(.92)}
@@ -1320,7 +1320,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   100%{transform:none;box-shadow:none}
 }
 @keyframes dayBumped{
-  0%{transform:translateY(-8px) scale(.99);box-shadow:0 0 0 1px rgba(127,209,255,.45),0 0 30px -6px rgba(var(--accent-rgb),.4)}
+  0%{transform:translateY(-8px) scale(.99);box-shadow:0 0 0 1px rgba(var(--accent-rgb),.45),0 0 30px -6px rgba(var(--accent-rgb),.4)}
   100%{transform:none;box-shadow:none}
 }
 @keyframes dayLeft{
@@ -1400,8 +1400,8 @@ body.dragging-on .card.day.drop-target{filter:none}
   background:var(--rail,var(--line-2));
   transform-origin:top;
 }
-.dcard.entry.v-sube{--rail:linear-gradient(180deg,var(--ok),#0E9F6E)}
-.dcard.entry.v-baja{--rail:linear-gradient(180deg,var(--warn),#E8A21D)}
+.dcard.entry.v-sube{--rail:linear-gradient(180deg,var(--ok),var(--ok-strong))}
+.dcard.entry.v-baja{--rail:linear-gradient(180deg,var(--warn),var(--warn-strong))}
 .dcard.entry.v-igual{--rail:linear-gradient(180deg,var(--accent),var(--accent-strong))}
 .dcard.entry.v-nuevo{--rail:linear-gradient(180deg,var(--line-2),transparent)}
 /* el récord es el único que se permite brillar */
@@ -1438,7 +1438,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .load .reps{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap}
 .load .rep{
   display:flex;flex-direction:column;align-items:center;gap:1px;
-  background:rgba(56,189,248,.10);border:1px solid rgba(56,189,248,.24);
+  background:rgba(var(--accent-rgb),.10);border:1px solid rgba(var(--accent-rgb),.24);
   border-radius:var(--r-sm);padding:3px 9px 4px;
 }
 .load .rep .s{
@@ -1479,7 +1479,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .sess-list{display:flex;flex-direction:column;gap:10px;margin-bottom:var(--s4)}
 .sess-card{
   display:block;width:100%;text-align:left;
-  background:linear-gradient(158deg,rgba(255,255,255,.075),rgba(255,255,255,.02));
+  background:linear-gradient(158deg,rgba(var(--hi-rgb),.075),rgba(var(--hi-rgb),.02));
   border:1px solid var(--glass-border);border-radius:var(--r);padding:12px 14px;
   transition:transform var(--d1) var(--ease),border-color var(--d1) ease;
 }
@@ -1588,8 +1588,8 @@ body.dragging-on .card.day.drop-target{filter:none}
    grilla vacía mide 0. */
 .ex-row{
   position:relative;overflow:hidden;
-  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
-  border:1px solid rgba(255,255,255,.07);
+  background:linear-gradient(180deg,rgba(var(--hi-rgb),.05),rgba(var(--hi-rgb),.02));
+  border:1px solid rgba(var(--hi-rgb),.07);
   border-radius:var(--r-md);
   display:grid;grid-template-columns:26px 1fr;column-gap:11px;
   /* el riel (::before) mide 4px sobre el borde izquierdo; los 16 lo dejan
@@ -1649,15 +1649,15 @@ body.dragging-on .card.day.drop-target{filter:none}
    herramientas y no como tu rutina */
 .ex-row .acts .mini{
   width:32px;height:32px;border-radius:var(--r-sm);font-size:var(--t-sm);
-  background:transparent;border-color:rgba(255,255,255,.07);color:var(--text-3);
+  background:transparent;border-color:rgba(var(--hi-rgb),.07);color:var(--text-3);
 }
 .ex-row .acts .mini:active{background:var(--surface-2);color:var(--accent)}
-.ex-row .acts .mini.red{color:rgba(255,107,107,.75)}
+.ex-row .acts .mini.red{color:rgba(var(--danger-rgb),.75)}
 .ex-row .acts .mini:disabled{opacity:.3}
 /* al levantarla para arrastrar, la tarjeta gana relieve sobre las vecinas */
 .ex-row.dragging{
   background:var(--surface-2);
-  box-shadow:0 16px 32px -14px rgba(0,0,0,.8),0 0 0 1px rgba(var(--accent-strong-rgb),.3);
+  box-shadow:0 16px 32px -14px rgba(var(--shade-rgb),.8),0 0 0 1px rgba(var(--accent-strong-rgb),.3);
 }
 
 /* ---------- filas de lista (rutina / comidas / historial) ---------- */
@@ -1697,12 +1697,12 @@ body.dragging-on .card.day.drop-target{filter:none}
 .wkstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:var(--s4)}
 /* el día de esta semana que ya entrenaste, marcado sin tener que abrirlo */
 .wkstrip .wd{position:relative}
-.wkstrip .wd.done{border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.07)}
+.wkstrip .wd.done{border-color:rgba(var(--ok-rgb),.35);background:rgba(var(--ok-rgb),.07)}
 .wkstrip .wd .tick{position:absolute;top:3px;right:4px;font-size:var(--t-nano);font-weight:700;color:var(--ok);line-height:1}
 /* el hero del día ya entrenado: la misma forma que el de empezar, en verde */
 .done-hero{
-  background:linear-gradient(158deg,rgba(16,185,129,.14),rgba(255,255,255,.03) 58%),var(--surface);
-  border-color:rgba(16,185,129,.3);
+  background:linear-gradient(158deg,rgba(var(--ok-rgb),.14),rgba(var(--hi-rgb),.03) 58%),var(--surface);
+  border-color:rgba(var(--ok-rgb),.3);
 }
 .done-pr{
   margin-top:12px;padding:9px 12px;border-radius:var(--r-md);font-size:var(--t-micro);line-height:1.4;
@@ -1715,19 +1715,19 @@ body.dragging-on .card.day.drop-target{filter:none}
 }
 .done-again:active{color:var(--accent)}
 .wkstrip .wd{border-radius:var(--r-md);padding:9px 2px 8px;text-align:center;
-  background:rgba(255,255,255,.024);border:1px solid rgba(255,255,255,.06);
+  background:rgba(var(--hi-rgb),.024);border:1px solid rgba(var(--hi-rgb),.06);
   transition:background var(--d1) var(--ease),border-color var(--d1) var(--ease)}
 .wkstrip .wd .l{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.1em;color:var(--text-3)}
 .wkstrip .wd .n{font-size:var(--t-nano);line-height:1.2;margin-top:3px;color:var(--text-3);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Día que se entrena: azul translúcido, SIEMPRE — no depende de cuál esté
    elegido. Es lo que deja leer la semana de un vistazo. */
-.wkstrip .wd.has{background:linear-gradient(160deg,rgba(79,168,255,.22),rgba(255,255,255,.03));
-  border-color:rgba(120,170,255,.3)}
+.wkstrip .wd.has{background:linear-gradient(160deg,rgba(var(--accent-strong-rgb),.16),rgba(var(--hi-rgb),.03));
+  border-color:rgba(var(--accent-rgb),.3)}
 .wkstrip .wd.has .l{color:var(--accent)}
 .wkstrip .wd.has .n{color:var(--text)}
 /* Elegido: se suma al estado anterior con un anillo, sin reemplazarlo. */
-.wkstrip .wd.on{border-color:rgba(140,210,255,.75);box-shadow:0 0 0 1px rgba(140,210,255,.35)}
+.wkstrip .wd.on{border-color:rgba(var(--accent-rgb),.75);box-shadow:0 0 0 1px rgba(var(--accent-rgb),.35)}
 .wkstrip .wd.today .l{text-decoration:underline;text-underline-offset:3px}
 .rt-eyebrow{font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);font-weight:600}
 .rt-name{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-display);font-weight:700;font-style:italic;line-height:1.06;margin-top:2px}
@@ -1737,7 +1737,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .dayline .badge{width:42px;flex:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--t-sm);
   letter-spacing:.06em;color:var(--accent);background:rgba(var(--accent-strong-rgb),.12);
   border:1px solid rgba(var(--accent-strong-rgb),.28);border-radius:var(--r-sm);padding:5px 0;text-align:center}
-.dayline.rest .badge{color:var(--text-3);background:rgba(12,19,34,.5);border-color:var(--line)}
+.dayline.rest .badge{color:var(--text-3);background:rgba(var(--glass-rgb),.5);border-color:var(--line)}
 .dayline .grow{flex:1;min-width:0}
 .dayline .t{font-weight:600;font-size:var(--t-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dayline.rest .t{color:var(--text-2);font-weight:500}
@@ -1777,17 +1777,17 @@ body.dragging-on .card.day.drop-target{filter:none}
 }
 
 /* ---------- barras de progreso (nutrición) ---------- */
-.pbar{height:8px;border-radius:var(--r-xs);background:rgba(255,255,255,.05);overflow:hidden}
+.pbar{height:8px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.05);overflow:hidden}
 .pbar>i{display:block;height:100%;border-radius:var(--r-xs);
   background:linear-gradient(90deg,var(--accent-strong),var(--accent) 60%,var(--accent));
   transition:width var(--d4) var(--ease-out)}
-.pbar>i.over{background:linear-gradient(135deg,#E8A21D,#FFB454)}
+.pbar>i.over{background:linear-gradient(135deg,var(--warn-strong),var(--warn))}
 .macro3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
 .macro3 .m .lbl{display:flex;justify-content:space-between;font-size:var(--t-micro);color:var(--text-2);font-weight:600;margin-bottom:5px}
 .macro3 .pbar{height:7px}
-.macro3 .m:nth-child(1) .pbar>i{background:linear-gradient(90deg,var(--accent-strong),#5EA2FF)}
-.macro3 .m:nth-child(2) .pbar>i{background:linear-gradient(90deg,#0E9F6E,#2EE6A8)}
-.macro3 .m:nth-child(3) .pbar>i{background:linear-gradient(90deg,#E8A21D,#FFB454)}
+.macro3 .m:nth-child(1) .pbar>i{background:linear-gradient(90deg,var(--accent-strong),var(--accent))}
+.macro3 .m:nth-child(2) .pbar>i{background:linear-gradient(90deg,var(--ok-strong),var(--ok))}
+.macro3 .m:nth-child(3) .pbar>i{background:linear-gradient(90deg,var(--warn-strong),var(--warn))}
 .kcal-ring{position:relative;width:92px;height:92px;flex:none}
 .kcal-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .kr-track{fill:none;stroke:var(--surface-2);stroke-width:9}
@@ -1804,7 +1804,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 
 /* ---------- gráficos ---------- */
 canvas.chart{width:100%;height:200px;display:block}
-.seg{display:flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:var(--r);padding:4px;gap:5px}
+.seg{display:flex;background:rgba(var(--hi-rgb),.05);border:1px solid rgba(var(--hi-rgb),.09);border-radius:var(--r);padding:4px;gap:5px}
 .seg button{
   flex:1;padding:9px 0;border-radius:var(--r-md);font-family:'Barlow Condensed';
   font-weight:600;font-size:var(--t-body);letter-spacing:.08em;text-transform:uppercase;color:var(--text-2);
@@ -1863,7 +1863,7 @@ canvas.chart{width:100%;height:200px;display:block}
 /* ---------- PR ---------- */
 .pr-card{
   display:flex;align-items:center;gap:14px;
-  background:linear-gradient(135deg,rgba(var(--accent-strong-rgb),.12),rgba(12,19,34,.4));
+  background:linear-gradient(135deg,rgba(var(--accent-strong-rgb),.12),rgba(var(--glass-rgb),.4));
   border:1px solid rgba(var(--accent-strong-rgb),.28);
 }
 .pr-troph{width:44px;height:44px;border-radius:var(--r-md);background:var(--accent-grad);display:grid;place-items:center;
@@ -1907,11 +1907,11 @@ nav.tabbar{
      etiquetas. La capa opaca de abajo le da fondo propio sin perder el efecto
      — el degradado, el borde, el brillo interior y el blur siguen igual. */
   background:
-    linear-gradient(158deg,rgba(255,255,255,.11),rgba(255,255,255,.043)),
-    rgba(8,13,24,.92);
-  backdrop-filter:blur(26px) saturate(1.6);
-  border:1px solid rgba(255,255,255,.14);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 22px 50px -20px rgba(0,0,0,.95);
+    linear-gradient(158deg,rgba(var(--hi-rgb),.11),rgba(var(--hi-rgb),.043)),
+    rgba(var(--glass-rgb),.92);
+  backdrop-filter:blur(26px) saturate(1.2);
+  border:1px solid rgba(var(--hi-rgb),.14);
+  box-shadow:inset 0 1px 0 rgba(var(--hi-rgb),.2),0 22px 50px -20px rgba(var(--shade-rgb),.95);
 }
 /* las etiquetas también estaban al límite: --mut2 sobre un fondo casi
    transparente. Con la barra opaca, un tono más claro las despega del todo. */
@@ -1950,7 +1950,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 #restbar{
   position:fixed;left:12px;right:12px;z-index:45;
   bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 10px);
-  background:linear-gradient(140deg,#0E1B38,#0A1220);
+  background:linear-gradient(140deg,var(--surface-2),var(--surface));
   border:1px solid rgba(var(--accent-strong-rgb),.45);border-radius:var(--r);
   padding:12px 16px;box-shadow:0 10px 40px -8px rgba(var(--accent-strong-rgb),.5);
   transform:translateY(140%);opacity:0;transition:var(--d3) var(--ease-out);
@@ -1966,12 +1966,12 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   border:1px solid rgba(var(--accent-strong-rgb),.4);color:var(--accent);
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-body);letter-spacing:.06em;
 }
-#rest-track{height:5px;border-radius:var(--r-xs);background:rgba(255,255,255,.08);margin-top:10px;overflow:hidden}
+#rest-track{height:5px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.08);margin-top:10px;overflow:hidden}
 #rest-fill{display:block;height:100%;border-radius:var(--r-xs);background:var(--accent-grad);width:100%;transition:width var(--d2) linear}
 
 /* ---------- rest timer: pantalla completa ---------- */
 #rest-fs{position:fixed;inset:0;z-index:65;display:none;place-items:center;
-  background:rgba(3,5,10,.94);backdrop-filter:blur(18px) saturate(1.3);
+  background:rgba(var(--bg-rgb),.94);backdrop-filter:blur(18px) saturate(1.2);
   animation:fdin var(--d2) var(--ease);}
 #rest-fs.show{display:grid}
 /* Salida (RestTimer.jsx, `saliendo`): el fondo se funde y el contenido baja
@@ -2023,7 +2023,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 @keyframes rfs-late{0%,100%{transform:scale(1)}50%{transform:scale(1.055)}}
 .rfs-parar{
   width:100%;height:60px;border:0;border-radius:var(--r);
-  background:linear-gradient(112deg,#FFB454,#E07C1A);color:#2A1603;
+  background:linear-gradient(112deg,var(--warn),var(--warn-strong));color:var(--on-warn);
   font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:var(--t-xl);letter-spacing:.14em;
   box-shadow:0 16px 40px -12px rgba(var(--warn-rgb),.55);
 }
@@ -2035,18 +2035,18 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 /* ---------- bottom sheet ---------- */
 #sheet{position:fixed;inset:0;z-index:60;display:none}
 #sheet.open{display:block}
-#sheet .bk{position:absolute;inset:0;background:rgba(2,4,9,.7);backdrop-filter:blur(4px);animation:fdin var(--d1)}
+#sheet .bk{position:absolute;inset:0;background:rgba(var(--bg-rgb),.7);backdrop-filter:blur(4px);animation:fdin var(--d1)}
 @keyframes fdin{from{opacity:0}}
 #sheet .panel{
   position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;
   max-height:88dvh;overflow-y:auto;
-  background:linear-gradient(180deg,rgba(14,22,38,.92),rgba(10,16,28,.92));
-  backdrop-filter:blur(24px) saturate(1.5);
-  border:1px solid rgba(255,255,255,.14);border-bottom:none;
+  background:var(--glass-strong);
+  backdrop-filter:blur(24px) saturate(1.2);
+  border:1px solid rgba(var(--hi-rgb),.14);border-bottom:none;
   border-radius:26px 26px 0 0;
   padding:10px 20px calc(24px + env(safe-area-inset-bottom));
   animation:shup var(--d2) var(--spring);
-  box-shadow:var(--edge-metal),0 -20px 60px -20px rgba(0,0,0,.7);
+  box-shadow:var(--edge-metal),0 -20px 60px -20px rgba(var(--shade-rgb),.7);
 }
 /* Sin opacity: la hoja entra sólida, sólo sube desde abajo del marco — el
    fundido de .4→1 se leía como el mismo parpadeo que tenían las pestañas.
@@ -2085,11 +2085,11 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 #sheet.dialogo .panel{
   left:var(--s3);right:var(--s3);
   bottom:calc(var(--s3) + env(safe-area-inset-bottom));
-  border-bottom:1px solid rgba(255,255,255,.14);
+  border-bottom:1px solid rgba(var(--hi-rgb),.14);
   border-radius:var(--r-lg);
   padding:var(--s5) var(--s5) var(--s4);
   animation:dlgIn var(--d3) var(--spring);
-  box-shadow:var(--edge-metal),0 24px 60px -12px rgba(0,0,0,.8);
+  box-shadow:var(--edge-metal),0 24px 60px -12px rgba(var(--shade-rgb),.8);
 }
 #sheet.dialogo .handle{display:none}
 #sheet.dialogo h2{margin-bottom:var(--s2)}
@@ -2107,10 +2107,10 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 #toast{
   position:fixed;left:50%;transform:translateX(-50%) translateY(20px);
   bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 90px);
-  background:#12203C;border:1px solid rgba(var(--accent-strong-rgb),.5);color:var(--text);
+  background:var(--surface-2);border:1px solid rgba(var(--accent-strong-rgb),.5);color:var(--text);
   padding:11px 20px;border-radius:var(--r-full);font-size:var(--t-body);font-weight:600;
   opacity:0;pointer-events:none;transition:var(--d2);z-index:70;white-space:nowrap;
-  box-shadow:0 8px 30px -6px rgba(0,0,0,.6);
+  box-shadow:0 8px 30px -6px rgba(var(--shade-rgb),.6);
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
 /* con un sheet abierto el toast baja... arriba: el panel del sheet ocupa hasta
@@ -2196,7 +2196,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 /* Tarjeta de dato: encabezado + cuerpo. Para las vistas de detalle, donde
    .card suelto obligaba a ajustar el padding a mano cada vez. */
 .dcard{
-  background:linear-gradient(180deg,rgba(12,19,34,.9),rgba(12,19,34,.74));
+  background:linear-gradient(180deg,rgba(var(--glass-rgb),.9),rgba(var(--glass-rgb),.74));
   border:1px solid var(--glass-border);border-radius:var(--r);
   padding:var(--s3) 14px;margin-bottom:10px;
   backdrop-filter:var(--glass-blur);
@@ -2215,7 +2215,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 /* Nota informativa. .calcbox ya existía; le faltaban los tonos, que estaban
    escritos a mano con rgba() en cada lugar que los necesitaba. */
 .calcbox.warn{background:rgba(var(--warn-rgb),.09);border-color:rgba(var(--warn-rgb),.28);color:var(--warn)}
-.calcbox.ok{background:rgba(16,185,129,.09);border-color:rgba(16,185,129,.28);color:var(--ok)}
+.calcbox.ok{background:rgba(var(--ok-rgb),.09);border-color:rgba(var(--ok-rgb),.28);color:var(--ok)}
 .calcbox.blue{background:rgba(var(--accent-strong-rgb),.09);border-color:rgba(var(--accent-strong-rgb),.28)}
 
 /* Texto de párrafo dentro de un sheet: la combinación tamaño+interlínea que
@@ -2230,8 +2230,8 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .profcard .pavatar{width:44px;height:44px;flex:none;border-radius:var(--r-md);background:var(--accent-grad);display:grid;place-items:center;font-size:var(--t-xl);box-shadow:var(--accent-glow)}
 .profcard .pt{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);line-height:1.1}
 .macro3 .rng{font-size:var(--t-nano);color:var(--text-3);font-weight:600;letter-spacing:.02em}
-.pbar>i.warn{background:linear-gradient(135deg,#E8A21D,#FFB454)!important}
-.pbar>i.red{background:linear-gradient(135deg,#E8455F,#FF5D73)!important}
+.pbar>i.warn{background:linear-gradient(135deg,var(--warn-strong),var(--warn))!important}
+.pbar>i.red{background:linear-gradient(135deg,var(--danger-strong),var(--danger))!important}
 .feedback{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
 .feedback .fdot{width:9px;height:9px;border-radius:var(--r-xs);margin-top:5px;flex:none;background:var(--text-2)}
 .feedback.blue .fdot{background:var(--accent);box-shadow:0 0 10px var(--accent-strong)}
@@ -2243,8 +2243,8 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .rangerow .rlbl{display:flex;justify-content:space-between;font-size:var(--t-micro);font-weight:600;color:var(--text-2);margin-bottom:8px}
 .rangerow .rlbl b{color:var(--accent);font-family:'Barlow Condensed';font-size:var(--t-body)}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--line-2);outline:none}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);border:3px solid #0A101C;box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 1px var(--accent-strong)}
-input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid #0A101C}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);border:3px solid var(--bg);box-shadow:0 2px 8px rgba(var(--shade-rgb),.5),0 0 0 1px var(--accent-strong)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid var(--bg)}
 .calcbox{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:12px 14px;margin-top:6px}
 .calcbox .cr{display:flex;justify-content:space-between;font-size:var(--t-sm);padding:4px 0;color:var(--text-2)}
 .calcbox .cr b{color:var(--text);font-weight:600}
@@ -2252,11 +2252,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .calcbox .cr.big b{font-family:'Barlow Condensed';font-size:var(--t-xl);color:var(--accent)}
 .gtx{font-size:var(--t-sm);line-height:1.55;color:var(--text)}
 .pw-btn{display:flex;align-items:center;gap:10px;width:100%;padding:13px 16px;border-radius:var(--r);margin-bottom:12px;
-  background:linear-gradient(135deg,rgba(var(--accent-strong-rgb),.14),rgba(12,19,34,.4));border:1px solid rgba(var(--accent-strong-rgb),.3);text-align:left}
+  background:linear-gradient(135deg,rgba(var(--accent-strong-rgb),.14),rgba(var(--glass-rgb),.4));border:1px solid rgba(var(--accent-strong-rgb),.3);text-align:left}
 .pw-btn .pwi{font-size:var(--t-xl)}
 .pw-btn .pwt{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);letter-spacing:.03em}
 .pw-btn .chev{margin-left:auto;color:var(--accent)}
-.pw-btn.accent{background:linear-gradient(135deg,rgba(255,93,115,.18),rgba(12,19,34,.4));border-color:rgba(255,93,115,.45)}
+.pw-btn.accent{background:linear-gradient(135deg,rgba(var(--danger-rgb),.18),rgba(var(--glass-rgb),.4));border-color:rgba(var(--danger-rgb),.45)}
 
 /* El cuerpo chico del héroe de la sesión en curso (ActiveHero). */
 .active-body-mini{display:flex;height:52px;width:34px;flex:none}
@@ -2285,7 +2285,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   display:flex;align-items:center;gap:var(--s3);
   margin:var(--s3) 0 0;padding:var(--s2) var(--s2) var(--s2) var(--s3);min-height:58px;
   border-radius:var(--r-md);border:1px solid var(--line);
-  background:linear-gradient(96deg,rgba(var(--accent-strong-rgb),.16),rgba(255,255,255,.02)),var(--surface);
+  background:linear-gradient(96deg,rgba(var(--accent-strong-rgb),.16),rgba(var(--hi-rgb),.02)),var(--surface);
 }
 .ses-barra{margin-bottom:var(--s3)}
 .ses-barra .session-ring{width:40px;height:40px}
@@ -2341,7 +2341,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .plan-resumen{display:flex;flex-wrap:wrap;gap:var(--s2);font-size:var(--t-sm);color:var(--text-2);margin:0 0 var(--s4)}
 .plan-resumen>span{
   display:inline-flex;align-items:baseline;gap:6px;padding:6px var(--s3);border-radius:var(--r-full);
-  background:rgba(255,255,255,.04);border:1px solid var(--line);
+  background:rgba(var(--hi-rgb),.04);border:1px solid var(--line);
   backdrop-filter:var(--glass-blur);text-wrap:pretty;
 }
 .plan-resumen b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
@@ -2364,10 +2364,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 /* La tarjeta del bloque en vidrio, como .ini-tile. */
 .plan-block .group{
-  background:linear-gradient(155deg,rgba(var(--accent-strong-rgb),.12),rgba(12,19,34,.82) 46%,rgba(12,19,34,.92));
+  background:linear-gradient(155deg,rgba(var(--accent-strong-rgb),.12),rgba(var(--glass-rgb),.82) 46%,rgba(var(--glass-rgb),.92));
   backdrop-filter:var(--glass-blur);
   border-color:var(--glass-border);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 40px -26px rgba(0,0,0,.9);
+  box-shadow:inset 0 1px 0 rgba(var(--hi-rgb),.07),0 18px 40px -26px rgba(var(--shade-rgb),.9);
 }
 /* La fila NO es un botón: adentro van dos (ver la ficha, y el lápiz en modo
    edición), y anidar botones no es HTML válido (a11y-markup.test.js). */
@@ -2484,8 +2484,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   flex:0 0 auto;min-width:42px;padding:5px 8px;border-radius:var(--r-md);text-align:center;
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.08em;
   color:var(--accent);
-  background:linear-gradient(160deg,rgba(79,168,255,.22),rgba(255,255,255,.03));
-  border:1px solid rgba(120,170,255,.3);
+  background:linear-gradient(160deg,rgba(var(--accent-strong-rgb),.16),rgba(var(--hi-rgb),.03));
+  border:1px solid rgba(var(--accent-rgb),.3);
 }
 .hist-row .grow{flex:1;min-width:0}
 .hist-row .t{display:block;font-size:var(--t-body);font-weight:600}
@@ -2494,15 +2494,16 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* ============================================================
    Rediseño — pantalla RUTINA
    ============================================================ */
-/* Cada pantalla tiene su matiz de hero en el mockup: Hoy azul, Rutina
-   violeta. Es lo que hace que se distingan sin leer el título. */
+/* En el mockup cada pantalla tenía su matiz de hero (Hoy azul, Rutina
+   violeta). Con un acento elegido hay un solo color: la hero de Rutina se
+   distingue por el halo más grande, no por otro matiz que nadie eligió. */
 .card.hero.hero-plan{
-  background:linear-gradient(158deg,rgba(108,92,255,.24),rgba(255,255,255,.03) 60%),var(--surface);
-  border-color:rgba(140,150,255,.22);
+  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.14),rgba(var(--hi-rgb),.03) 60%),var(--surface);
+  border-color:rgba(var(--accent-rgb),.22);
 }
 .card.hero.hero-plan::before{
   width:200px;height:200px;top:-46px;right:-46px;
-  background:radial-gradient(circle,rgba(79,168,255,.26),transparent 66%);
+  background:radial-gradient(circle,rgba(var(--accent-strong-rgb),.26),transparent 66%);
 }
 .hero-eyebrow{
   font-size:var(--t-micro);font-weight:700;letter-spacing:.18em;text-transform:uppercase;
@@ -2515,7 +2516,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .weekbars .wbar{display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end}
 .weekbars .b{
   width:100%;border-radius:var(--r-sm);
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);
+  background:rgba(var(--hi-rgb),.05);border:1px solid rgba(var(--hi-rgb),.07);
 }
 .weekbars .wbar.on .b{
   background:linear-gradient(var(--accent),var(--accent-strong));border-color:transparent;
@@ -2565,8 +2566,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   letter-spacing:.11em;text-transform:uppercase;
 }
 .btn.glass{
-  background:linear-gradient(150deg,rgba(255,255,255,.09),rgba(255,255,255,.024));
-  border:1px solid rgba(255,255,255,.13);color:var(--accent);box-shadow:none;
+  background:linear-gradient(150deg,rgba(var(--hi-rgb),.09),rgba(var(--hi-rgb),.024));
+  border:1px solid rgba(var(--hi-rgb),.13);color:var(--accent);box-shadow:none;
 }
 
 /* Tarjetas de día, desplegables en el lugar */
@@ -2595,14 +2596,14 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 .day-cards{display:flex;flex-direction:column;gap:10px;margin-top:var(--s4)}
 .day-card{
-  background:linear-gradient(158deg,rgba(255,255,255,.075),rgba(255,255,255,.02));
-  border:1px solid rgba(255,255,255,.11);border-radius:var(--r);overflow:hidden;
+  background:linear-gradient(158deg,rgba(var(--hi-rgb),.075),rgba(var(--hi-rgb),.02));
+  border:1px solid rgba(var(--hi-rgb),.11);border-radius:var(--r);overflow:hidden;
 }
 .day-head{display:flex;align-items:center;gap:13px;width:100%;padding:15px 16px;text-align:left}
 .day-badge{
   flex:0 0 auto;min-width:40px;padding:6px 0;text-align:center;border-radius:var(--r-md);
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.1em;
-  color:var(--accent);background:rgba(79,168,255,.14);border:1px solid rgba(120,170,255,.28);
+  color:var(--accent);background:rgba(var(--accent-strong-rgb),.14);border:1px solid rgba(var(--accent-rgb),.28);
 }
 .day-head .grow{flex:1;min-width:0}
 .day-head .t{display:block;font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700}
@@ -2627,9 +2628,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .day-exs{padding:0 16px 14px}
 /* 9px y no 12 de separación: el pictograma se sumó a la fila y el nombre
    necesita recuperar ese ancho. */
-.day-ex{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid rgba(255,255,255,.07);
+.day-ex{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid rgba(var(--hi-rgb),.07);
   width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;color:inherit;font:inherit}
-.day-ex:active{background:rgba(255,255,255,.03)}
+.day-ex:active{background:rgba(var(--hi-rgb),.03)}
 .day-ex .chev{color:var(--text-3);font-size:var(--t-body);flex:none;margin-left:2px}
 .day-ex .i{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);color:var(--text-3);min-width:14px}
 .day-ex .grow{flex:1;min-width:0}
@@ -2639,15 +2640,15 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 /* Día libre: la insignia se apaga, igual que en el mockup — el color se
    reserva para los días en que se entrena. */
-.day-badge.off{color:var(--text-3);background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07)}
+.day-badge.off{color:var(--text-3);background:rgba(var(--hi-rgb),.03);border-color:rgba(var(--hi-rgb),.07)}
 .day-card:has(.day-badge.off) .day-head .t{color:var(--text-2)}
 
 /* ============================================================
    Rediseño — pantalla COMIDA (Nutrición)
    ============================================================ */
 .card.hero.hero-kcal{
-  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.26),rgba(255,255,255,.03) 60%),var(--surface);
-  border-color:rgba(120,170,255,.2);
+  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.14),rgba(var(--hi-rgb),.03) 60%),var(--surface);
+  border-color:rgba(var(--accent-rgb),.2);
 }
 .kcal-top{display:flex;align-items:center;gap:18px}
 .kcal-ring{position:relative;flex:0 0 auto;width:132px;height:132px}
@@ -2670,14 +2671,14 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   display:flex;justify-content:space-between;gap:6px;
   font-size:var(--t-micro);font-weight:600;color:var(--text-2);margin-bottom:5px;
 }
-.hero-kcal .macro3 .pbar{height:7px;border-radius:var(--r-xs);background:rgba(255,255,255,.06)}
+.hero-kcal .macro3 .pbar{height:7px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.06)}
 /* Un color por macro: proteína azul, carbos verde, grasa ámbar. */
 .hero-kcal .pbar.prot>i{background:linear-gradient(90deg,var(--accent-strong),var(--accent))}
-.hero-kcal .pbar.carb>i{background:linear-gradient(90deg,#12A97B,#2EE6A8)}
-.hero-kcal .pbar.fat>i{background:linear-gradient(90deg,#E08A2B,var(--flame))}
+.hero-kcal .pbar.carb>i{background:linear-gradient(90deg,var(--ok-strong),var(--ok))}
+.hero-kcal .pbar.fat>i{background:linear-gradient(90deg,var(--warn-strong),var(--flame))}
 /* El separador y el espaciado del mockup; el punto y el texto los produce
    nutriFeedback() (meals.js), que ya trae .fdot con su color según el caso. */
-.nutri-fb{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
+.nutri-fb{margin-top:14px;padding-top:14px;border-top:1px solid rgba(var(--hi-rgb),.08)}
 .nutri-fb .feedback{display:flex;align-items:flex-start;gap:10px;font-size:var(--t-sm);line-height:1.45}
 /* El primer aviso no repite la raya de .nutri-fb: eran dos líneas con una
    franja vacía en el medio (auditoría 2026-09-26). */
@@ -2687,23 +2688,23 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .chip-scroll .chip.blue{
   flex:none;display:inline-flex;align-items:center;gap:8px;border-radius:var(--r-full);white-space:nowrap;
   padding:11px 15px;font-size:var(--t-sm);font-weight:600;color:var(--text);
-  background:linear-gradient(150deg,rgba(79,168,255,.16),rgba(255,255,255,.03));
-  border:1px solid rgba(120,170,255,.28);
+  background:linear-gradient(150deg,rgba(var(--accent-strong-rgb),.16),rgba(var(--hi-rgb),.03));
+  border:1px solid rgba(var(--accent-rgb),.28);
 }
 .chip-scroll .chip.blue .txt-mut{color:var(--text-3)}
 
 /* Lista de comidas + botón de borrar en rojo */
 .meal-del{
   flex:0 0 auto;width:36px;height:36px;border-radius:var(--r-md);display:grid;place-items:center;
-  color:#FF6B84;background:rgba(255,107,132,.1);border:1px solid rgba(255,107,132,.24);
+  color:var(--danger);background:rgba(var(--danger-rgb),.1);border:1px solid rgba(var(--danger-rgb),.24);
 }
 
 /* ============================================================
    Rediseño — pantalla PROGRESO
    ============================================================ */
 .card.hero.hero-prog{
-  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.24),rgba(255,255,255,.03) 62%),var(--surface);
-  border-color:rgba(120,170,255,.2);
+  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.14),rgba(var(--hi-rgb),.03) 62%),var(--surface);
+  border-color:rgba(var(--accent-rgb),.2);
 }
 .hero-prog .bignum{font-size:54px}
 /* "+ Registro": botón de vidrio con texto cian, no un fantasma más */
@@ -2711,7 +2712,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   flex:0 0 auto;padding:12px 16px;border-radius:var(--r-md);
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-body);font-weight:700;
   letter-spacing:.1em;text-transform:uppercase;color:var(--accent);
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  background:rgba(var(--hi-rgb),.06);border:1px solid rgba(var(--hi-rgb),.12);
 }
 /* El control segmentado del mockup tiene el ítem activo en Condensed 700 */
 .seg button{font-size:var(--t-sm);font-weight:700;letter-spacing:.1em}
@@ -2759,7 +2760,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .eq-tag{
   display:inline-block;margin-right:7px;padding:1px 7px;border-radius:var(--r-sm);
   font-size:var(--t-micro);font-weight:600;letter-spacing:.02em;
-  color:var(--accent);background:rgba(79,168,255,.13);border:1px solid rgba(120,170,255,.24);
+  color:var(--accent);background:rgba(var(--accent-strong-rgb),.13);border:1px solid rgba(var(--accent-rgb),.24);
 }
 
 /* Foto de la máquina en el gym activo (ExerciseCarousel.jsx, GymPhoto) —
@@ -2792,8 +2793,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    instrucción de calibración. */
 .ex-first{
   margin-top:10px;padding:11px 13px;border-radius:var(--r-md);
-  background:linear-gradient(150deg,rgba(255,196,107,.12),rgba(255,255,255,.02));
-  border:1px solid rgba(255,196,107,.24);
+  background:linear-gradient(150deg,rgba(var(--flame-rgb),.12),rgba(var(--hi-rgb),.02));
+  border:1px solid rgba(var(--flame-rgb),.24);
 }
 .ex-first .t{font-size:var(--t-sm);font-weight:700;color:var(--flame);margin-bottom:4px}
 .ex-first .s{font-size:var(--t-micro);line-height:1.5;color:var(--text-2);margin-top:4px}
@@ -2802,7 +2803,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .mach-photo{margin-top:8px}
 .mach-photo img{
   display:block;width:100%;max-height:200px;object-fit:cover;
-  border-radius:var(--r-md);border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--r-md);border:1px solid rgba(var(--hi-rgb),.12);
 }
 .mach-photo-acts{display:flex;gap:8px;margin-top:8px}
 .mach-photo-acts .btn{flex:1}
@@ -2811,12 +2812,12 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .illus-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:var(--s3)}
 .illus-opt{
   display:flex;flex-direction:column;gap:6px;padding:8px;text-align:left;
-  background:linear-gradient(158deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
-  border:1px solid rgba(255,255,255,.1);border-radius:var(--r);
+  background:linear-gradient(158deg,rgba(var(--hi-rgb),.07),rgba(var(--hi-rgb),.02));
+  border:1px solid rgba(var(--hi-rgb),.1);border-radius:var(--r);
 }
 .illus-opt img{
   width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r-md);
-  background:rgba(255,255,255,.04);
+  background:rgba(var(--hi-rgb),.04);
 }
 .illus-opt span{font-size:var(--t-micro);line-height:1.3;color:var(--text-2)}
 .illus-head{display:flex;align-items:center;justify-content:space-between;margin:var(--s3) 0 var(--s2)}
@@ -2826,7 +2827,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .ex-media:has(img + img){grid-template-columns:1fr 1fr}
 .ex-media img{
   width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r-md);
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  background:rgba(var(--hi-rgb),.04);border:1px solid rgba(var(--hi-rgb),.1);
 }
 
 /* ---------- las siluetas de Inicio ----------
@@ -2909,7 +2910,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    adónde vas, y las dos lecturas son igual de válidas. */
 .sil-caras{
   display:inline-flex;gap:2px;padding:2px;flex:none;border-radius:var(--r-full);
-  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);
+  background:rgba(var(--hi-rgb),.045);border:1px solid rgba(var(--hi-rgb),.07);
 }
 .sil-caras button{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-nano);font-weight:700;
@@ -2917,7 +2918,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   background:transparent;border:0;padding:5px 15px;border-radius:var(--r-full);
   cursor:pointer;transition:color var(--d2) var(--ease),background var(--d2) var(--ease);
 }
-.sil-caras button[aria-pressed="true"]{color:var(--text);background:rgba(255,255,255,.1)}
+.sil-caras button[aria-pressed="true"]{color:var(--text);background:rgba(var(--hi-rgb),.1)}
 
 /* La masa: los mismos polígonos engordados con un stroke grueso del mismo
    color. Une el cuerpo por debajo para que los huecos entre músculos lean como
@@ -2930,26 +2931,26 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 /* fill y stroke se heredan del <g> a sus polígonos: el estado se pinta una vez
    y el glow se aplica al grupo entero en vez de a cada pieza. */
-.sil-z{stroke:rgba(2,5,12,.5);stroke-width:1.4;stroke-linejoin:round;
+.sil-z{stroke:rgba(var(--shade-rgb),.5);stroke-width:1.4;stroke-linejoin:round;
   transition:fill var(--d4) var(--ease),opacity var(--d2) var(--ease)}
 .sil-d0{fill:url(#sil-g0);filter:url(#sil-glow)}
 .sil-d1{fill:url(#sil-g1)}
 .sil-d2{fill:url(#sil-g2)}
 /* 7+ días: ámbar. Es la única zona que llama la atención. */
-.sil-d3{fill:url(#sil-g3);stroke:rgba(255,190,110,.5);stroke-width:1.8}
+.sil-d3{fill:url(#sil-g3);stroke:rgba(var(--flame-rgb),.5);stroke-width:1.8}
 /* nunca entrenado: neutro y callado, distinto de "hace mucho" */
 .sil-none{fill:url(#sil-gn)}
 /* Muestras de la leyenda (LeyendaTonos): el mismo relleno que la zona, sin el
    glow de .sil-d0, que en un círculo de 10 px lo borronea entero. */
 .sil-ley circle{filter:none}
 /* lo que no rastreamos: cabeza, cuello, antebrazo, rodilla */
-.sil-neutro{fill:url(#sil-gne);stroke:rgba(2,5,12,.5);stroke-width:1.4;pointer-events:none}
+.sil-neutro{fill:url(#sil-gne);stroke:rgba(var(--shade-rgb),.5);stroke-width:1.4;pointer-events:none}
 /* El pelo. Castaño cálido y no un azul más oscuro: sobre un fondo casi negro
    lo oscuro desaparece, y encima el cuerpo entero es frío, así que un tono
    cálido se lee como pelo al instante. Queda fuera de la paleta de estados a
    propósito —el ámbar de "7+ días" es mucho más saturado— para que nadie lo
    confunda con un músculo sin entrenar. */
-.sil-pelo{fill:url(#sil-gpelo);stroke:rgba(20,10,4,.5);stroke-width:1.4;
+.sil-pelo{fill:url(#sil-gpelo);stroke:rgba(var(--shade-rgb),.5);stroke-width:1.4;
   stroke-linejoin:round;pointer-events:none}
 
 
@@ -2964,7 +2965,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    tiene exactamente el mismo tono —entrenaste el grupo y la porción el mismo
    día— y sin contorno el resaltado sería invisible. Claro y fino a propósito:
    el ámbar de "7+ días" y el --accent de la selección ya están tomados. */
-.sil-porcion{stroke:rgba(255,255,255,.55);stroke-width:var(--sil-porcion-w,2);pointer-events:none}
+.sil-porcion{stroke:rgba(var(--hi-rgb),.55);stroke-width:var(--sil-porcion-w,2);pointer-events:none}
 
 /* El grosor se calibra por TAMAÑO DE RENDER, no de una vez.
 
@@ -3009,9 +3010,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   position:absolute;left:0;right:0;bottom:0;z-index:5;
   margin:0 auto;max-width:min(340px,calc(100% - 24px));
   padding:12px 16px 14px;border-radius:18px 18px 0 0;
-  background:linear-gradient(158deg,rgba(255,255,255,.1),rgba(255,255,255,.04)),rgba(10,16,29,.97);
+  background:linear-gradient(158deg,rgba(var(--hi-rgb),.1),rgba(var(--hi-rgb),.04)),rgba(var(--glass-rgb),.97);
   border:1px solid var(--line-2);border-bottom:0;
-  box-shadow:0 -20px 44px -16px rgba(0,0,0,.85),0 0 0 1px rgba(0,0,0,.35);
+  box-shadow:0 -20px 44px -16px rgba(var(--shade-rgb),.85),0 0 0 1px rgba(var(--shade-rgb),.35);
   animation:mpop-in var(--d2) var(--spring) both;
   /* Tope de alto + columna flex: sin esto un grupo con muchas fibras (Pierna)
      crecía hasta pasarse del contenedor y se cortaba contra la pantalla. El
@@ -3028,8 +3029,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   -webkit-overflow-scrolling:touch;
   /* El corte de arriba avisa que hay más contenido sin agregar una sombra más
      a una ficha que ya tiene bastante cromo. */
-  mask-image:linear-gradient(180deg,transparent 0,#000 10px);
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 10px);
+  mask-image:linear-gradient(180deg,transparent 0,rgb(var(--shade-rgb)) 10px);
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,rgb(var(--shade-rgb)) 10px);
   padding-top:6px;
 }
 .mpop-scroll::-webkit-scrollbar{width:0;height:0}
@@ -3048,8 +3049,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    del título leía como una alerta. Como subtítulo el color alcanza. */
 .mpop-when{font-size:var(--t-nano);font-weight:600;letter-spacing:.04em;white-space:nowrap}
 .mpop-when.t0{color:var(--accent)}
-.mpop-when.t1{color:#8FB6FF}
-.mpop-when.t2{color:#8CA2C8}
+.mpop-when.t1{color:var(--accent)}
+.mpop-when.t2{color:var(--text-2)}
 .mpop-when.t3{color:var(--warn)}
 .mpop-when.tn{color:var(--text-3)}
 /* El punto visual se queda en 20×20 —agrandarlo en un globo de 208px de
@@ -3059,7 +3060,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    más cerca que se pise con esos 4px de más. */
 .mpop-x{
   position:relative;flex:none;width:20px;height:20px;border-radius:var(--r-sm);border:0;padding:0;line-height:1;
-  background:rgba(255,255,255,.07);color:var(--text-2);font-size:var(--t-body);
+  background:rgba(var(--hi-rgb),.07);color:var(--text-2);font-size:var(--t-body);
 }
 .mpop-x::after{content:'';position:absolute;inset:-4px}
 
@@ -3068,11 +3069,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    que el dato. Ahora el fondo es uno solo y lo que separa es una línea. */
 .mpop-nums{
   display:flex;margin-bottom:10px;border-radius:var(--r-sm);
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);
+  background:rgba(var(--hi-rgb),.04);border:1px solid rgba(var(--hi-rgb),.05);
   overflow:hidden;
 }
 .mpop-nums div{flex:1;min-width:0;text-align:center;padding:7px 2px}
-.mpop-nums div+div{border-left:1px solid rgba(255,255,255,.05)}
+.mpop-nums div+div{border-left:1px solid rgba(var(--hi-rgb),.05)}
 .mpop-nums b{
   display:block;font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:800;
   line-height:1.05;font-variant-numeric:tabular-nums;
@@ -3082,7 +3083,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 .mpop-list{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:1px}
 .mpop-list li{display:flex;align-items:center;gap:8px;font-size:var(--t-micro);padding:3px 0}
-.mpop-list li+li{border-top:1px solid rgba(255,255,255,.05)}
+.mpop-list li+li{border-top:1px solid rgba(var(--hi-rgb),.05)}
 .mpop-list span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2)}
 .mpop-list b{flex:none;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent)}
 
@@ -3105,7 +3106,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    línea de arriba que los despega de la lista con scroll. */
 .mpop-pie{
   display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 9px;
-  margin-top:8px;padding-top:7px;border-top:1px solid rgba(255,255,255,.06);
+  margin-top:8px;padding-top:7px;border-top:1px solid rgba(var(--hi-rgb),.06);
   font-size:var(--t-nano);color:var(--text-3);
 }
 .mpop-top{color:var(--warn);font-weight:600}
@@ -3144,11 +3145,6 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-legend{display:flex;justify-content:center;gap:11px;margin-bottom:7px;flex:none}
 .ini-legend span{display:flex;align-items:center;gap:5px;font-size:var(--t-nano);color:var(--text-3);letter-spacing:.04em}
 .ini-legend .sw{width:9px;height:9px;border-radius:var(--r-xs);flex:none;display:inline-block}
-/* Los mismos degradados que la silueta, para que la leyenda no mienta. */
-.sil-sw0{background:linear-gradient(140deg,#B9F8FF,var(--accent));box-shadow:0 0 7px rgba(var(--accent-rgb),.55)}
-.sil-sw1{background:linear-gradient(140deg,#A9CEFF,var(--accent-strong))}
-.sil-sw2{background:linear-gradient(140deg,#5B7FB5,#2C4C86)}
-.sil-sw3{background:linear-gradient(140deg,#F6C98B,#E39C43)}
 
 .ini-stale{
   display:flex;align-items:center;gap:7px;padding:8px 11px;border-radius:var(--r-md);flex:none;
@@ -3192,7 +3188,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-cta-go::before{
   content:"";position:absolute;left:50%;top:50%;
   width:170%;aspect-ratio:1;translate:-50% -50%;z-index:0;
-  background:conic-gradient(from 0deg,transparent 0 70%,rgba(255,255,255,.92) 83%,transparent 91%);
+  background:conic-gradient(from 0deg,transparent 0 70%,rgba(var(--hi-rgb),.92) 83%,transparent 91%);
   animation:ctaRing 5s linear infinite;
 }
 /* Tapa el centro y deja el reflejo asomando sólo como un filo: sin esto el
@@ -3215,10 +3211,10 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 }
 .ini-tile{
   position:relative;overflow:hidden;
-  background:linear-gradient(155deg,rgba(var(--accent-strong-rgb),.16),rgba(12,19,34,.82) 46%,rgba(12,19,34,.92));
+  background:linear-gradient(155deg,rgba(var(--accent-strong-rgb),.16),rgba(var(--glass-rgb),.82) 46%,rgba(var(--glass-rgb),.92));
   backdrop-filter:var(--glass-blur);
   border:1px solid var(--glass-border);border-radius:var(--r);
-  box-shadow:var(--edge-metal),0 14px 30px -18px rgba(4,7,15,.8);
+  box-shadow:var(--edge-metal),0 14px 30px -18px rgba(var(--shade-rgb),.8);
   padding:14px 16px;text-align:left;color:var(--text);font:inherit;
   display:flex;flex-direction:column;
 }
@@ -3226,7 +3222,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    oscuro con blur: una línea de luz arriba-izquierda, apenas visible. */
 .ini-tile::after{
   content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
-  background:linear-gradient(135deg,rgba(255,255,255,.10),transparent 40%);
+  background:linear-gradient(135deg,rgba(var(--hi-rgb),.10),transparent 40%);
 }
 /* 2026-09-25: el rótulo de cada tile, con el mismo tratamiento que los títulos
    de sección de la app (.plan-title: condensada, mayúsculas, azul). Antes iba
@@ -3268,7 +3264,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-tile-macros{grid-area:macros;gap:5px}
 .ini-tile-weight{grid-area:weight;gap:5px}
 .ini-tile-num.sm{font-size:var(--t-2xl)}
-.ini-tile-bar{height:5px;border-radius:var(--r-xs);background:rgba(255,255,255,.08);overflow:hidden;margin-top:2px}
+.ini-tile-bar{height:5px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.08);overflow:hidden;margin-top:2px}
 .ini-tile-bar i{display:block;height:100%;background:var(--accent-grad);border-radius:var(--r-xs)}
 
 /* La tira de turnos: no es un calendario de fechas —es la secuencia de
@@ -3333,7 +3329,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 /* RoutineWizard.jsx: barra de progreso arriba del sheet, estilo onboarding
    (referencia visual: Liftoff — el mecanismo, no la identidad: acá es el
    gradiente cian/azul de Fierro, no el elefante). */
-.wiz-progress{height:6px;border-radius:var(--r-xs);background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:var(--s3)}
+.wiz-progress{height:6px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.08);overflow:hidden;margin-bottom:var(--s3)}
 .wiz-progress i{display:block;height:100%;background:var(--accent-grad);border-radius:var(--r-xs);transition:width var(--d4) var(--spring)}
 
 /* El cuerpo interactivo del asistente: se enciende en vivo con los grupos
@@ -3351,7 +3347,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .wiz-groupcard{
   position:relative;display:flex;align-items:center;justify-content:center;
   min-height:56px;padding:14px 16px;border-radius:var(--r);
-  background:linear-gradient(155deg,rgba(var(--accent-strong-rgb),.10),rgba(12,19,34,.7) 60%);
+  background:linear-gradient(155deg,rgba(var(--accent-strong-rgb),.10),rgba(var(--glass-rgb),.7) 60%);
   border:1px solid var(--line-2);color:var(--text);font-size:var(--t-body);font-weight:700;
   font-family:'Barlow Condensed',sans-serif;letter-spacing:.02em;
 }
@@ -3366,7 +3362,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .wiz-coverage{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .wiz-fiber{
   font-size:var(--t-micro);font-weight:600;padding:4px 10px;border-radius:var(--r-full);
-  background:rgba(255,255,255,.05);border:1px solid var(--line-2);color:var(--text-2);
+  background:rgba(var(--hi-rgb),.05);border:1px solid var(--line-2);color:var(--text-2);
 }
 .wiz-fiber.on{background:rgba(var(--ok-rgb),.14);border-color:rgba(var(--ok-rgb),.4);color:var(--ok)}
 
@@ -3397,7 +3393,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .warmup-top .eyebrow{flex:1;min-width:0;color:var(--warn);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .warmup-skip{
-  flex:none;border:0;background:rgba(255,255,255,.07);color:var(--text-2);
+  flex:none;border:0;background:rgba(var(--hi-rgb),.07);color:var(--text-2);
   font-size:var(--t-micro);font-weight:600;padding:5px 11px;border-radius:var(--r-full);
 }
 /* La movilidad va chica y con guion, no numerada como la rampa: son pasos
@@ -3412,7 +3408,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .warmup-list li{
   display:flex;align-items:baseline;gap:9px;padding:7px 0;
 }
-.warmup-list li+li{border-top:1px solid rgba(255,255,255,.06)}
+.warmup-list li+li{border-top:1px solid rgba(var(--hi-rgb),.06)}
 .warmup-list .n{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-micro);font-weight:700;
   color:var(--text-3);min-width:11px;flex:none;
@@ -3438,19 +3434,19 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    Misma lámina que el mapa de Inicio: lo que ves acá y lo que ves allá son el
    mismo dibujo, no dos ilustraciones que puedan contradecirse. */
 .bodymini{
-  background:linear-gradient(158deg,rgba(255,255,255,.05),rgba(255,255,255,.02)),var(--surface-2);
+  background:linear-gradient(158deg,rgba(var(--hi-rgb),.05),rgba(var(--hi-rgb),.02)),var(--surface-2);
   border:1px solid var(--line-2);border-radius:var(--r);
   padding:12px;margin-bottom:var(--s3);
 }
 .bm-cuerpos{display:flex;justify-content:center;gap:10px}
 .bm-svg{width:96px;height:auto;flex:none;display:block}
-.bm-masa path{fill:#0F1829;stroke:#0F1829;stroke-width:5;stroke-linejoin:round}
-.bm-svg g{stroke:rgba(2,5,12,.5);stroke-width:1.4;stroke-linejoin:round}
+.bm-masa path{fill:var(--surface);stroke:var(--surface);stroke-width:5;stroke-linejoin:round}
+.bm-svg g{stroke:rgba(var(--shade-rgb),.5);stroke-width:1.4;stroke-linejoin:round}
 /* lo que no trabaja queda apagado, pero visible: un cuerpo al que le falta una
    parte se lee como error, no como "acá no hay nada" */
-.bm-off{fill:#232C42}
-.bm-pelo{fill:#4A3A2A}
-.bm-s{fill:#2C4C86}
+.bm-off{fill:var(--mapa-n-md)}
+.bm-pelo{fill:var(--pelo-md)}
+.bm-s{fill:var(--mapa-2-md)}
 .bm-p{fill:url(#bm-grad);filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),.5))}
 .bm-leyenda{display:flex;flex-direction:column;gap:3px;align-items:center;margin-top:9px}
 .bm-tag{font-size:var(--t-micro);font-weight:600;text-align:center;line-height:1.35}
@@ -3460,7 +3456,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 /* ---------- pantalla de fin de sesión ---------- */
 #session-complete{
   position:fixed;inset:0;z-index:70;
-  background:radial-gradient(120% 100% at 50% 0%,rgba(var(--accent-rgb),.16),transparent 60%),#05070c;
+  background:radial-gradient(120% 100% at 50% 0%,rgba(var(--accent-rgb),.16),transparent 60%),var(--bg);
   display:flex;align-items:center;justify-content:center;
   overflow:hidden;
 }
@@ -3487,12 +3483,12 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 }
 
 .sc-flame{color:var(--flame)}
-.sc-streak-n{font-family:'Barlow Condensed';font-weight:800;font-size:64px;color:#fff;line-height:1}
+.sc-streak-n{font-family:'Barlow Condensed';font-weight:800;font-size:64px;color:var(--text);line-height:1}
 .sc-lbl{color:var(--text-2);font-size:var(--t-sm);font-weight:600;text-transform:uppercase;letter-spacing:.1em}
 
 .sc-resumen{display:flex;gap:28px}
 .sc-resumen div{display:flex;flex-direction:column;align-items:center;gap:2px}
-.sc-resumen b{font-family:'Barlow Condensed';font-weight:800;font-size:var(--t-display);color:#fff}
+.sc-resumen b{font-family:'Barlow Condensed';font-weight:800;font-size:var(--t-display);color:var(--text)}
 .sc-resumen span{color:var(--text-2);font-size:var(--t-micro);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 
 /* .sil-pair (Silhouette) usa flex:1;min-height:0 — necesita un padre flex
@@ -3518,7 +3514,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .mfibras-panel{
   position:absolute;top:calc(100% + 6px);left:0;z-index:5;white-space:nowrap;
   background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--r-sm);
-  padding:4px 8px;font-size:var(--t-sm);color:var(--text);box-shadow:0 4px 16px rgba(0,0,0,.3);
+  padding:4px 8px;font-size:var(--t-sm);color:var(--text);box-shadow:0 4px 16px rgba(var(--shade-rgb),.3);
 }
 @media (prefers-reduced-motion:reduce){
   .mfibras-btn:active{transform:none}
@@ -3620,7 +3616,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .exwiz-progress{display:flex;gap:6px;margin-bottom:var(--s4)}
 .exwiz-progress i{
   flex:1;height:4px;border-radius:var(--r-xs);
-  background:rgba(255,255,255,.08);
+  background:rgba(var(--hi-rgb),.08);
   transition:background var(--d2) var(--ease-out);
 }
 .exwiz-progress i.on{background:var(--accent-grad)}
