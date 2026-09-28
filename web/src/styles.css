@@ -1698,7 +1698,11 @@ body.dragging-on .card.day.drop-target{filter:none}
   font-size:var(--t-2xl);font-weight:700;line-height:1;flex:none;
   font-variant-numeric:tabular-nums;
 }
-.ex-row .presc i{font-style:normal;font-size:var(--t-sm);color:var(--mut2);margin:0 1px}
+/* La × a la mitad del dígito y en --mut2 se leía como punto decimal: "2×9"
+   parecía "2.9" (auditoría 2026-09-27, E4). Al ~65 % del dígito, más clara,
+   con aire a los lados y subida al centro de la cifra — chica y sobre la
+   línea de base es justo donde va un punto. */
+.ex-row .presc i{font-style:normal;font-size:.65em;color:var(--mut);margin:0 .12em;vertical-align:.12em}
 .ex-row .m{
   flex:1;min-width:0;font-size:var(--t-micro);color:var(--mut);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
