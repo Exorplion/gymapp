@@ -215,4 +215,17 @@ describe('styles.css y theme.js dicen lo mismo', () => {
     expect(valor('--warn')).toBe(ESTADOS.warn.toLowerCase());
     expect(valor('--flame')).toBe(ESTADOS.flame.toLowerCase());
   });
+
+  it('theme-color, manifest y favicon son de la base grafito, no los casi-negros azulados de antes', () => {
+    const web = join(import.meta.dirname, '../../..');
+    const html = readFileSync(join(web, 'index.html'), 'utf8');
+    const vite = readFileSync(join(web, 'vite.config.js'), 'utf8');
+    const favicon = readFileSync(join(web, 'public/favicon.svg'), 'utf8');
+    expect(html).toContain(`<meta name="theme-color" content="${BASE.bg}" />`);
+    expect(vite).toContain(`background_color: '${BASE.bg}'`);
+    expect(vite).toContain(`theme_color: '${BASE.bg}'`);
+    // El rayo violeta de Vite ya no: es la mancuerna de FIERRO.
+    expect(favicon).not.toMatch(/863bff/i);
+    expect(favicon).toMatch(/FIERRO/);
+  });
 });
