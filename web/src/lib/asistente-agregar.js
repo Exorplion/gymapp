@@ -18,8 +18,8 @@ import { norm } from './format.js';
 import { exMatchesQuery } from './exdb.js';
 import { resolvedCat } from './exercise-wizard.js';
 import { VENTANA } from './progression.js';
-import { dayCategories } from './rutina-logic.js';
-import { sessionExs, isSkipped, setsDone, targetSets } from './session.js';
+import { dayCategories, saveExercise } from './rutina-logic.js';
+import { sessionExs, isSkipped, setsDone, targetSets, addSessionExercise } from './session.js';
 
 export const PASOS = 3;
 
@@ -313,4 +313,30 @@ export function listaPaso2(estado, ctx, { radio = 3 } = {}) {
     puedeSubir: k > 0, puedeBajar: k < validas.length - 1,
     recorte: recortar(filas, idxNuevo, radio),
   };
+}
+
+/* ---------- guardar ---------- */
+
+/** La posición del paso 2, traducida a un ancla para addSessionExercise:
+    antes del pendiente que ocupa ese lugar, o después del último pendiente.
+    Un ancla y no un índice porque en el borrador los fijos y los pendientes
+    pueden estar intercalados (hiciste el 3º antes que el 2º). */
+export function destinoSesion(ctx, pos) {
+  const m = ctx.movibles;
+  if (pos < m.length) return { antesDe: m[pos].id };
+  if (m.length) return { despuesDe: m[m.length - 1].id };
+  return {};
+}
+
+/** El CTA del paso 3: guarda donde la persona lo dejó. Rutina: saveExercise
+    en el índice del orden visible (sin cerrar la hoja: la cierra el
+    componente, con su propia salida). Sesión: addSessionExercise, sólo en
+    el borrador. Devuelve el ejercicio, o null si no se pudo. */
+export async function confirmarAgregar(estado, index) {
+  const sesion = estado.tipo === 'sesion';
+  const ctx = sesion ? contextoSesion(index) : contextoRutina(index);
+  const pos = posicionDe(estado, ctx);
+  const datos = datosParaGuardar(estado.form);
+  if (sesion) return addSessionExercise(datos, destinoSesion(ctx, pos));
+  return (await saveExercise(index, null, datos, { mantenerSheet: true, posicion: pos })) || null;
 }

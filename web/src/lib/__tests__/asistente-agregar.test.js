@@ -4,6 +4,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from '../state.js';
 import * as A from '../asistente-agregar.js';
+import { porBloques } from '../muscle.js';
+import { sessionExs } from '../session.js';
+import { saveExercise, pinAddedToRoutine } from '../rutina-logic.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
 vi.mock('../toast.js', () => ({ toast: vi.fn() }));
@@ -273,5 +276,109 @@ describe('paso 2: dónde va (sesión)', () => {
   it('sin pendientes: va después de lo que ya hiciste', () => {
     S.draft.entries = { a: { sets: [{}, {}, {}] }, c: { sets: [{}] }, d: { sets: [{}] }, e: { sets: [{}] } };
     expect(A.posicionSugerida(A.contextoSesion(0), 'Hombro')).toEqual({ pos: 0, texto: 'Va después de lo que ya hiciste.' });
+  });
+});
+
+/* ---------- el criterio de aprobación: queda donde se lo dejó ---------- */
+
+describe('queda donde se lo dejó (rutina)', () => {
+  beforeEach(() => {
+    S.routine = [{ id: 's1', order: 0, type: 'workout', name: 'Torso', exercises: [
+      ex('p1', 'Press banca'), ex('e1', 'Jalón al pecho'), ex('h1', 'Elevaciones laterales'),
+      ex('p2', 'Aperturas en polea'), ex('e2', 'Remo con barra'),
+    ] }];
+    S.draft = null;
+    S.hoyVals = {};
+  });
+
+  it('en el lugar sugerido, y lo guardado es lo que se ve', async () => {
+    const nuevo = await A.confirmarAgregar(A.avanzar(conNombre('rutina', 'Remo en polea')).estado, 0);
+    const ids = porBloques(S.routine[0].exercises).map(e => e.id);
+    expect(ids).toEqual(['p1', 'p2', 'e1', 'e2', nuevo.id, 'h1']);
+    expect(S.routine[0].exercises.map(e => e.id)).toEqual(ids);
+    expect(nuevo).toMatchObject({ name: 'Remo en polea', sets: 3, reps: 10 });
+  });
+
+  it('movido con ▲ entre los de su grupo', async () => {
+    const ctx = A.contextoRutina(0);
+    const e = A.moverNuevo(A.moverNuevo(conNombre('rutina', 'Remo en polea'), ctx, -1), ctx, -1);
+    const nuevo = await A.confirmarAgregar(e, 0);
+    expect(porBloques(S.routine[0].exercises).map(x => x.id)).toEqual(['p1', 'p2', nuevo.id, 'e1', 'e2', 'h1']);
+  });
+
+  it('un grupo nuevo soltado entre dos bloques queda ahí', async () => {
+    const ctx = A.contextoRutina(0);
+    const e = A.soltarEn(conNombre('rutina', 'Curl con barra'), ctx, ['p1', 'p2', NUEVO, 'e1', 'e2', 'h1']);
+    const nuevo = await A.confirmarAgregar(e, 0);
+    expect(porBloques(S.routine[0].exercises).map(x => x.id)).toEqual(['p1', 'p2', nuevo.id, 'e1', 'e2', 'h1']);
+  });
+
+  it('el grupo elegido a mano se guarda como cat y lo agrupa', async () => {
+    const nuevo = await A.confirmarAgregar(conNombre('rutina', 'Movimiento raro', 'Hombro'), 0);
+    expect(nuevo.cat).toBe('Hombro');
+    expect(porBloques(S.routine[0].exercises).map(x => x.id)).toEqual(['p1', 'p2', 'e1', 'e2', 'h1', nuevo.id]);
+  });
+
+  it('saveExercise sin posición sigue empujando al final (compatibilidad)', async () => {
+    const nuevo = await saveExercise(0, null, { name: 'Fondos', sets: 3, reps: 10 });
+    expect(S.routine[0].exercises.at(-1).id).toBe(nuevo.id);
+  });
+});
+
+describe('queda donde se lo dejó (sesión)', () => {
+  beforeEach(() => {
+    S.routine = [{ id: 's1', order: 0, type: 'workout', name: 'Tirón', exercises: [
+      ex('a', 'Jalón al pecho'), ex('b', 'Curl con barra'), ex('c', 'Remo con barra'), ex('d', 'Face pull'),
+    ] }];
+    S.draft = {
+      id: 'd1', date: '2026-09-27', slotId: 's1', dayName: 'Tirón', open: 1, start: 1, cur: 'b',
+      order: ['a', 'b', 'c', 'd'], skipped: [], extraSets: {}, extras: [],
+      entries: { a: { sets: [{}, {}, {}] } },
+    };
+    S.hoyVals = {};
+  });
+
+  it('en el lugar sugerido (después del último pendiente de su grupo), sin tocar la rutina', async () => {
+    const nuevo = await A.confirmarAgregar(conNombre('sesion', 'Remo en polea'), 0);
+    expect(sessionExs(0).map(e => e.id)).toEqual(['a', 'b', 'c', nuevo.id, 'd']);
+    expect(S.draft.order).toEqual(['a', 'b', 'c', nuevo.id, 'd']);
+    expect(S.routine[0].exercises.map(e => e.id)).toEqual(['a', 'b', 'c', 'd']);
+  });
+
+  it('movido al primer lugar de los pendientes: antes del primero pendiente', async () => {
+    const ctx = A.contextoSesion(0);
+    const e = A.moverNuevo(A.moverNuevo(conNombre('sesion', 'Remo en polea'), ctx, -1), ctx, -1);
+    const nuevo = await A.confirmarAgregar(e, 0);
+    expect(sessionExs(0).map(x => x.id)).toEqual(['a', nuevo.id, 'b', 'c', 'd']);
+  });
+
+  it('soltado al final', async () => {
+    const e = A.soltarEn(conNombre('sesion', 'Curl martillo'), A.contextoSesion(0), ['b', 'c', 'd', NUEVO]);
+    const nuevo = await A.confirmarAgregar(e, 0);
+    expect(sessionExs(0).map(x => x.id)).toEqual(['a', 'b', 'c', 'd', nuevo.id]);
+  });
+
+  it('nunca antes de lo ya hecho, aunque el orden guardado esté vacío', async () => {
+    // Con order [] el código viejo dejaba el agregado PRIMERO (sessionExs
+    // pone lo que está en order y después el resto).
+    S.draft.order = [];
+    const ctx = A.contextoSesion(0);
+    const e = A.moverNuevo(A.moverNuevo(A.moverNuevo(conNombre('sesion', 'Remo en polea'), ctx, -1), ctx, -1), ctx, -1);
+    const nuevo = await A.confirmarAgregar(e, 0);
+    expect(sessionExs(0).map(x => x.id)).toEqual(['a', nuevo.id, 'b', 'c', 'd']);
+  });
+
+  it('destinoSesion traduce la posición a un ancla', () => {
+    const ctx = A.contextoSesion(0);
+    expect(A.destinoSesion(ctx, 0)).toEqual({ antesDe: 'b' });
+    expect(A.destinoSesion(ctx, 3)).toEqual({ despuesDe: 'd' });
+    expect(A.destinoSesion({ ...ctx, movibles: [] }, 0)).toEqual({});
+  });
+
+  it('el grupo elegido a mano viaja a la sesión y al fijarlo en la rutina', async () => {
+    const nuevo = await A.confirmarAgregar(conNombre('sesion', 'Movimiento raro', 'Hombro'), 0);
+    expect(nuevo.cat).toBe('Hombro');
+    await pinAddedToRoutine('s1', [{ name: 'Movimiento raro', sets: 3, reps: 10, cat: 'Hombro' }]);
+    expect(S.routine[0].exercises.at(-1).cat).toBe('Hombro');
   });
 });

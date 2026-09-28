@@ -354,6 +354,9 @@ export async function pinAddedToRoutine(slotId, added) {
     .map(a => ({
       id: uid(), name: a.name, sets: a.sets, reps: a.reps,
       equip: a.equip || undefined, machine: a.machine || undefined, unilateral: a.unilateral || undefined,
+      // el grupo elegido a mano en el asistente (un nombre que catOf no
+      // reconoce): sin esto, al fijarlo volvía a quedar sin grupo
+      cat: a.cat || undefined,
     }));
   if (!nuevos.length) { toast('Ya estaban en tu rutina'); return; }
   pushHistory(`${nuevos.length} ejercicio${nuevos.length === 1 ? '' : 's'} agregado${nuevos.length === 1 ? '' : 's'} a ${d.name || 'tu rutina'}`);
@@ -707,16 +710,25 @@ export function toggleSlotOpen(index) { S.rutOpen = S.rutOpen === index ? null :
    es "sin declarar", y se guarda como undefined — nunca como 0, que sería
    afirmar que el ejercicio arranca sin carga. Lo consume pesoInicial() en
    lib/session.js. */
-export async function saveExercise(index, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral, pesoInicialKg }, { mantenerSheet = false } = {}) {
+/* `posicion` (asistente de alta, lib/asistente-agregar.js): dónde lo dejó la
+   persona en el paso "¿Dónde va?", como índice de inserción en el orden que
+   SE VE (porBloques). Sin ella, el alta seguía el push de siempre: siempre
+   al final del array, y el editor lo "acomodaba" en su grupo sólo al
+   pintar. Con ella, se inserta ahí y la lista se guarda en ese orden — lo
+   guardado es lo que se ve (mismo criterio que moveEx y commitSort).
+   Devuelve el ejercicio creado o editado, para que quien llama sepa cuál. */
+export async function saveExercise(index, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral, pesoInicialKg }, { mantenerSheet = false, posicion = null } = {}) {
   const pKg = typeof pesoInicialKg === 'number' && pesoInicialKg > 0 ? pesoInicialKg : undefined;
   name = (name || '').trim();
   const s = Math.max(1, parseInt(sets) || 4);
   const r = Math.max(1, parseInt(reps) || 10);
   if (!name) { toast('Ponle nombre al ejercicio'); return; }
   const d = ensureSlot(index);
+  let hecho = null;
   if (exId) {
     const ex = d.exercises.find(e => e.id === exId);
     if (ex) {
+      hecho = ex;
       ex.name = name; ex.sets = s; ex.reps = r;
       // Sin equipo elegido se borran los campos: un ejercicio sin equipo vuelve
       // a compararse sólo por nombre, que es el comportamiento de siempre.
@@ -732,7 +744,7 @@ export async function saveExercise(index, exId, { name, sets, reps, equip, machi
       ex.pesoInicialKg = pKg;
     }
   } else {
-    d.exercises.push({
+    const nuevo = {
       id: uid(), name, sets: s, reps: r,
       equip: equip || undefined,
       machine: equip && machine ? machine.trim() : undefined,
@@ -741,11 +753,19 @@ export async function saveExercise(index, exId, { name, sets, reps, equip, machi
       cat: cat || undefined,
       unilateral: unilateral || undefined,
       pesoInicialKg: pKg,
-    });
+    };
+    if (posicion == null) d.exercises.push(nuevo);
+    else {
+      const lista = porBloques(d.exercises);
+      lista.splice(Math.max(0, Math.min(posicion, lista.length)), 0, nuevo);
+      d.exercises = lista;
+    }
+    hecho = nuevo;
   }
   await persistSlot(index);
   if (!mantenerSheet) closeSheet();
   bump(); toast('Guardado');
+  return hecho;
 }
 
 export async function deleteExercise(index, exId) {
