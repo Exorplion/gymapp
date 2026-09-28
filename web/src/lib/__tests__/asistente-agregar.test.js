@@ -137,3 +137,141 @@ describe('sugerencias del paso 1', () => {
     expect(A.teFaltaHoy(ctxDe('rutina', 'Día 3', []))).toBeNull();
   });
 });
+
+const ex = (id, name, extra = {}) => ({ id, name, sets: 3, reps: 10, ...extra });
+const NUEVO = '__nuevo';
+
+describe('paso 2: dónde va (rutina)', () => {
+  // Turno guardado DESORDENADO a propósito: lo que se ve es porBloques.
+  beforeEach(() => {
+    S.routine = [{ id: 's1', order: 0, type: 'workout', name: 'Torso', exercises: [
+      ex('p1', 'Press banca'), ex('e1', 'Jalón al pecho'), ex('h1', 'Elevaciones laterales'),
+      ex('p2', 'Aperturas en polea'), ex('e2', 'Remo con barra'),
+    ] }];
+    S.draft = null;
+  });
+
+  it('la rutina se ve y se ordena por bloques (porBloques)', () => {
+    const ctx = A.contextoRutina(0);
+    expect(ctx.movibles.map(x => x.id)).toEqual(['p1', 'p2', 'e1', 'e2', 'h1']);
+    expect(ctx.fijos).toEqual([]);
+  });
+
+  it('sugiere después del último de su grupo, y lo explica', () => {
+    const s = A.posicionSugerida(A.contextoRutina(0), 'Espalda');
+    expect(s.pos).toBe(4);
+    expect(s.texto).toBe('Sugerido: con los otros de espalda, después de Remo con barra.');
+    expect(A.posicionSugerida(A.contextoRutina(0), 'Hombro').texto)
+      .toBe('Sugerido: con el otro de hombro, después de Elevaciones laterales.');
+  });
+
+  it('sin otro de su grupo, al final', () => {
+    expect(A.posicionSugerida(A.contextoRutina(0), 'Bíceps'))
+      .toEqual({ pos: 5, texto: 'Sugerido: al final. Hoy no hay otro de bíceps.' });
+  });
+
+  it('turno vacío: es el primero', () => {
+    S.routine[0].exercises = [];
+    expect(A.posicionSugerida(A.contextoRutina(0), 'Pecho')).toEqual({ pos: 0, texto: 'Es el primero del turno.' });
+  });
+
+  it('con su grupo presente sólo vale dentro de su bloque', () => {
+    expect(A.posicionesValidas(A.contextoRutina(0), 'Espalda')).toEqual([2, 3, 4]);
+  });
+
+  it('un grupo nuevo sólo entra entre bloques', () => {
+    expect(A.posicionesValidas(A.contextoRutina(0), 'Bíceps')).toEqual([0, 2, 4, 5]);
+  });
+
+  it('▲▼ recorren las posiciones válidas y frenan en el borde', () => {
+    const ctx = A.contextoRutina(0);
+    let e = conNombre('rutina', 'Remo en polea');
+    expect(A.posicionDe(e, ctx)).toBe(4);
+    e = A.moverNuevo(e, ctx, -1); expect(A.posicionDe(e, ctx)).toBe(3);
+    e = A.moverNuevo(e, ctx, -1); expect(A.posicionDe(e, ctx)).toBe(2);
+    expect(A.moverNuevo(e, ctx, -1)).toBe(e);
+    e = A.moverNuevo(A.moverNuevo(e, ctx, 1), ctx, 1);
+    expect(A.posicionDe(e, ctx)).toBe(4);
+    expect(A.moverNuevo(e, ctx, 1)).toBe(e);
+  });
+
+  it('soltar fuera de lo válido lo lleva al lugar válido más cercano', () => {
+    const ctx = A.contextoRutina(0);
+    const e = conNombre('rutina', 'Remo en polea');
+    // soltado arriba de todo, entre los de pecho
+    expect(A.posicionDe(A.soltarEn(e, ctx, [NUEVO, 'p1', 'p2', 'e1', 'e2', 'h1']), ctx)).toBe(2);
+    // entre los dos de espalda (caja recortada): vale
+    expect(A.posicionDe(A.soltarEn(e, ctx, ['p2', 'e1', NUEVO, 'e2']), ctx)).toBe(3);
+    // una caja sin la fila nueva no cambia nada
+    expect(A.soltarEn(e, ctx, ['p1', 'p2'])).toBe(e);
+  });
+
+  it('la lista del paso 2 trae al nuevo insertado, numerado e iluminable', () => {
+    const l = A.listaPaso2(conNombre('rutina', 'Remo en polea'), A.contextoRutina(0));
+    expect(A.NUEVO).toBe(NUEVO);
+    expect(l.filas.map(x => x.id)).toEqual(['p1', 'p2', 'e1', 'e2', NUEVO, 'h1']);
+    expect(l.filas[l.idxNuevo]).toMatchObject({ id: NUEVO, name: 'Remo en polea', n: 5, nuevo: true, fijo: false });
+    expect(l.sugerida.pos).toBe(4);
+    expect(l.enSugerida).toBe(true);
+    expect(l.puedeSubir).toBe(true);
+    expect(l.puedeBajar).toBe(false);
+  });
+
+  it('movido del sugerido, la lista lo sabe', () => {
+    const ctx = A.contextoRutina(0);
+    const l = A.listaPaso2(A.moverNuevo(conNombre('rutina', 'Remo en polea'), ctx, -1), ctx);
+    expect(l.enSugerida).toBe(false);
+    expect(l.puedeBajar).toBe(true);
+  });
+
+  it('recorte: nuevo ±3 y "+N" plegado cuando no entra', () => {
+    const filas = Array.from({ length: 14 }, (_, i) => ({ id: String(i) }));
+    expect(A.recortar(filas, 6)).toMatchObject({ desde: 3, hasta: 10, arriba: 3, abajo: 4 });
+    expect(A.recortar(filas, 6).visibles.map(x => x.id)).toEqual(['3', '4', '5', '6', '7', '8', '9']);
+    expect(A.recortar(filas, 0)).toMatchObject({ desde: 0, hasta: 7, arriba: 0, abajo: 7 });
+    expect(A.recortar(filas, 13)).toMatchObject({ desde: 7, hasta: 14, arriba: 7, abajo: 0 });
+    // plegar UNA sola fila no ahorra nada: con 8 se muestran todas
+    expect(A.recortar(filas.slice(0, 8), 7)).toMatchObject({ desde: 0, hasta: 8, arriba: 0, abajo: 0 });
+  });
+});
+
+describe('paso 2: dónde va (sesión)', () => {
+  beforeEach(() => {
+    S.routine = [{ id: 's1', order: 0, type: 'workout', name: 'Tirón', exercises: [
+      ex('a', 'Jalón al pecho'), ex('b', 'Curl con barra'), ex('c', 'Remo con barra'), ex('d', 'Face pull'), ex('e', 'Curl martillo'),
+    ] }];
+    S.draft = {
+      id: 'd1', date: '2026-09-27', slotId: 's1', dayName: 'Tirón', open: 1, start: 1, cur: 'c',
+      order: ['a', 'b', 'c', 'd', 'e'], skipped: ['b'], extraSets: {}, extras: [],
+      entries: { a: { sets: [{}, {}, {}] }, c: { sets: [{}] } },
+    };
+    S.hoyVals = {};
+  });
+
+  it('hechos, empezados y salteados van arriba y fijos; los pendientes se mueven', () => {
+    const ctx = A.contextoSesion(0);
+    expect(ctx.fijos.map(x => [x.id, x.estado])).toEqual([['a', 'hecho'], ['b', 'salteado'], ['c', 'en-curso']]);
+    expect(ctx.movibles.map(x => x.id)).toEqual(['d', 'e']);
+    // la sesión no reagrupa: vale cualquier lugar entre los pendientes
+    expect(A.posicionesValidas(ctx, 'Espalda')).toEqual([0, 1, 2]);
+  });
+
+  it('si su grupo sólo está en lo ya hecho, va primero entre los pendientes', () => {
+    expect(A.posicionSugerida(A.contextoSesion(0), 'Espalda'))
+      .toEqual({ pos: 0, texto: 'Sugerido: el próximo, para seguir con espalda.' });
+  });
+
+  it('la lista arranca con los fijos y numera todo', () => {
+    const l = A.listaPaso2(conNombre('sesion', 'Remo en polea'), A.contextoSesion(0));
+    expect(l.filas.map(x => x.id)).toEqual(['a', 'b', 'c', NUEVO, 'd', 'e']);
+    expect(l.filas.filter(x => x.fijo).map(x => x.id)).toEqual(['a', 'b', 'c']);
+    expect(l.filas.map(x => x.n)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(l.idxNuevo).toBe(3);
+    expect(l.puedeSubir).toBe(false);
+  });
+
+  it('sin pendientes: va después de lo que ya hiciste', () => {
+    S.draft.entries = { a: { sets: [{}, {}, {}] }, c: { sets: [{}] }, d: { sets: [{}] }, e: { sets: [{}] } };
+    expect(A.posicionSugerida(A.contextoSesion(0), 'Hombro')).toEqual({ pos: 0, texto: 'Va después de lo que ya hiciste.' });
+  });
+});

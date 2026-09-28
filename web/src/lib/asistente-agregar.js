@@ -12,12 +12,14 @@
 // Todo es puro y devuelve estados nuevos: se prueba sin montar nada
 // (__tests__/asistente-agregar.test.js). La fuente de bugs real acá no es el
 // markup, es "¿dónde quedó el ejercicio?".
-import { EXCATALOG, MUSCLE_CATS, catOf } from './muscle.js';
+import { S } from './state.js';
+import { EXCATALOG, MUSCLE_CATS, catOf, porBloques } from './muscle.js';
 import { norm } from './format.js';
 import { exMatchesQuery } from './exdb.js';
 import { resolvedCat } from './exercise-wizard.js';
 import { VENTANA } from './progression.js';
 import { dayCategories } from './rutina-logic.js';
+import { sessionExs, isSkipped, setsDone, targetSets } from './session.js';
 
 export const PASOS = 3;
 
@@ -157,4 +159,158 @@ export function teFaltaHoy(ctx, max = 3) {
     if (ejercicios.length) return { cat, ejercicios };
   }
   return null;
+}
+
+/* ---------- paso 2: dónde va ---------- */
+
+/** El id de la fila nueva en la lista del paso 2 (va en `data-sid`, así el
+    arrastre de drag.js la reconoce). No choca con uid(): lleva guiones bajos. */
+export const NUEVO = '__nuevo';
+
+const fila = (e, estado = 'pendiente') => ({ id: e.id, name: e.name, cat: e.cat, sets: e.sets, estado });
+const grupoFila = x => catOf(x) || 'Otros';
+const minus = cat => (cat ? cat.toLowerCase() : null);
+
+/** Rutina: la lista es porBloques(), el orden que SE VE y, desde #124, el
+    real (el editor guarda así y la sesión arranca así). Nada es fijo. */
+export function contextoRutina(index) {
+  const d = S.routine[index];
+  return {
+    tipo: 'rutina', nombreTurno: d?.name || '', fijos: [],
+    movibles: porBloques(d?.exercises || []).map(e => fila(e)),
+  };
+}
+
+/* Un ejercicio con series registradas ya empezó: meter el nuevo delante
+   sería reescribir lo que ya pasó. Lo salteado tampoco se mueve (saltar no
+   toca el orden, ver skipExercise). */
+function estadoEnSesion(e) {
+  if (isSkipped(e.id)) return 'salteado';
+  const hechas = setsDone(e.id).length;
+  if (!hechas) return 'pendiente';
+  return hechas >= targetSets(e) ? 'hecho' : 'en-curso';
+}
+
+/** Sesión: el orden real del borrador (sessionExs, que NO reagrupa: con la
+    sesión abierta el orden es libre). Lo hecho, empezado o salteado va
+    arriba, apagado y fijo; el nuevo sólo se mueve entre los pendientes. Es
+    lo que Despues.jsx ya hacía bien y SessionExercise no (le ofrecía
+    "Después de X" también por los ya hechos). */
+export function contextoSesion(index) {
+  const filas = sessionExs(index).map(e => fila(e, estadoEnSesion(e)));
+  return {
+    tipo: 'sesion',
+    nombreTurno: S.routine[index]?.name || S.draft?.dayName || '',
+    fijos: filas.filter(x => x.estado !== 'pendiente'),
+    movibles: filas.filter(x => x.estado === 'pendiente'),
+  };
+}
+
+/** Dónde se puede soltar el nuevo: índices de inserción en ctx.movibles.
+
+    En la sesión, en cualquier lado. En la rutina NO: el editor pinta por
+    bloques (porBloques), así que un ejercicio de Espalda soltado entre dos
+    de Pecho se reagruparía solo y NO quedaría donde se lo dejó. Vale sólo
+    donde se queda: dentro de su bloque (bordes incluidos) si el grupo ya
+    está, o en un borde entre bloques si es un grupo nuevo. */
+export function posicionesValidas(ctx, cat) {
+  const m = ctx.movibles, n = m.length;
+  const todas = Array.from({ length: n + 1 }, (_, i) => i);
+  if (ctx.tipo !== 'rutina') return todas;
+  const g = cat || 'Otros';
+  const suyos = m.map((x, i) => (grupoFila(x) === g ? i : -1)).filter(i => i >= 0);
+  if (suyos.length) return todas.slice(suyos[0], suyos[suyos.length - 1] + 2);
+  return todas.filter(i => i === 0 || i === n || grupoFila(m[i - 1]) !== grupoFila(m[i]));
+}
+
+/** El lugar sugerido y la línea que lo explica: después del último de su
+    grupo; en la sesión, si su grupo sólo está en lo ya hecho, el próximo
+    (para seguir con ese grupo); si no hay otro de su grupo, al final. */
+export function posicionSugerida(ctx, cat) {
+  const { movibles: m, fijos, tipo } = ctx;
+  const g = minus(cat);
+  const suyos = cat ? m.filter(x => catOf(x) === cat) : [];
+  if (suyos.length) {
+    const ultimo = suyos[suyos.length - 1];
+    const con = suyos.length === 1 ? `el otro de ${g}` : `los otros de ${g}`;
+    return { pos: m.indexOf(ultimo) + 1, texto: `Sugerido: con ${con}, después de ${ultimo.name}.` };
+  }
+  if (cat && tipo === 'sesion' && m.length && fijos.some(x => catOf(x) === cat)) {
+    return { pos: 0, texto: `Sugerido: el próximo, para seguir con ${g}.` };
+  }
+  if (!m.length) {
+    if (tipo !== 'sesion') return { pos: 0, texto: 'Es el primero del turno.' };
+    return { pos: 0, texto: fijos.length ? 'Va después de lo que ya hiciste.' : 'Es el primero de la sesión.' };
+  }
+  return { pos: m.length, texto: g ? `Sugerido: al final. Hoy no hay otro de ${g}.` : 'Sugerido: al final.' };
+}
+
+const masCercana = (validas, pos) =>
+  validas.reduce((mejor, v) => (Math.abs(v - pos) < Math.abs(mejor - pos) ? v : mejor), validas[0]);
+
+/** La posición en uso: la elegida o la sugerida, siempre una válida. */
+export function posicionDe(estado, ctx) {
+  const cat = grupoDe(estado.form);
+  const pos = estado.posicion ?? posicionSugerida(ctx, cat).pos;
+  return masCercana(posicionesValidas(ctx, cat), pos);
+}
+
+/** ▲▼, la alternativa accesible al arrastre: salta a la posición válida
+    vecina. En el borde devuelve el MISMO estado (el botón va deshabilitado). */
+export function moverNuevo(estado, ctx, dir) {
+  const validas = posicionesValidas(ctx, grupoDe(estado.form));
+  const i = validas.indexOf(posicionDe(estado, ctx)) + dir;
+  if (i < 0 || i >= validas.length) return estado;
+  return { ...estado, posicion: validas[i] };
+}
+
+/** El commit del arrastre (drag.js). Recibe el orden de ids que quedó en la
+    caja arrastrable, con NUEVO adentro. Se ancla a los VECINOS y no al
+    índice, así funciona igual con la lista recortada ("+N más"). Si lo
+    soltaron donde no se quedaría (rutina), va al lugar válido más cercano. */
+export function soltarEn(estado, ctx, idsCaja) {
+  const i = idsCaja.indexOf(NUEVO);
+  if (i < 0) return estado;
+  const ids = ctx.movibles.map(x => x.id);
+  const antes = i > 0 ? ids.indexOf(idsCaja[i - 1]) : -1;
+  const despues = i < idsCaja.length - 1 ? ids.indexOf(idsCaja[i + 1]) : -1;
+  const pos = antes >= 0 ? antes + 1 : despues >= 0 ? despues : null;
+  if (pos == null) return estado;
+  return { ...estado, posicion: masCercana(posicionesValidas(ctx, grupoDe(estado.form)), pos) };
+}
+
+/** Para que el paso 2 entre sin scroll: si la lista no entra, se muestran
+    el nuevo ±`radio` (pegado al borde si no alcanzan) y lo demás se pliega
+    en "+N" arriba y abajo. Plegar UNA sola fila no ahorra nada — la fila
+    "+1 más" ocupa lo mismo —, así que con 2·radio+2 filas se ven todas. */
+export function recortar(filas, idx, radio = 3) {
+  const max = 2 * radio + 1;
+  if (filas.length <= max + 1) return { desde: 0, hasta: filas.length, arriba: 0, abajo: 0, visibles: filas };
+  const desde = Math.max(0, Math.min(idx - radio, filas.length - max));
+  const hasta = desde + max;
+  return { desde, hasta, arriba: desde, abajo: filas.length - hasta, visibles: filas.slice(desde, hasta) };
+}
+
+/** Todo lo que pinta el paso 2: las filas (fijos arriba, después los
+    movibles con el nuevo ya insertado), numeradas; dónde está el nuevo; la
+    sugerencia; si ▲▼ pueden moverse; y el recorte. */
+export function listaPaso2(estado, ctx, { radio = 3 } = {}) {
+  const cat = grupoDe(estado.form);
+  const validas = posicionesValidas(ctx, cat);
+  const sugerida = posicionSugerida(ctx, cat);
+  const pos = posicionDe(estado, ctx);
+  const movs = [...ctx.movibles];
+  movs.splice(pos, 0, { id: NUEVO, name: estado.form.name.trim(), cat, estado: 'nuevo', nuevo: true });
+  const filas = [
+    ...ctx.fijos.map(x => ({ ...x, fijo: true })),
+    ...movs.map(x => ({ ...x, fijo: false })),
+  ].map((x, i) => ({ ...x, n: i + 1 }));
+  const idxNuevo = ctx.fijos.length + pos;
+  const k = validas.indexOf(pos);
+  return {
+    filas, idxNuevo, pos, sugerida,
+    enSugerida: pos === masCercana(validas, sugerida.pos),
+    puedeSubir: k > 0, puedeBajar: k < validas.length - 1,
+    recorte: recortar(filas, idxNuevo, radio),
+  };
 }
