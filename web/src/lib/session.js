@@ -237,18 +237,20 @@ export function weekStart(d = new Date()) {
   return dstr(x);
 }
 
-/** La sesión de ese día de la semana dentro de la semana en curso, o null.
+/** La sesión que se cerró HOY (la más reciente si hubo dos), o null.
 
-    La ventana es "esta semana" y no "hoy" a propósito: cubre tanto "ya entrené
-    hoy" como "miro el lunes que ya hice". Un día futuro de esta semana todavía
-    no tiene sesión, así que sigue ofreciendo entrenar — adelantar el jueves a
-    un martes es legítimo y no hay que bloquearlo.
+    Reemplaza a sessionForSlot(), que buscaba cualquier sesión del turno
+    pendiente en la semana en curso: como completeSession() adelanta el
+    puntero, el turno pendiente es el SIGUIENTE, y en cuanto el ciclo volvía a
+    un turno ya hecho esa semana Inicio decía "Completado · hoy" con la sesión
+    del lunes (auditoría 2026-09-27, I1). "Completado hoy" se contesta con la
+    fecha, no con el turno.
 
     S.sessions está ordenado descendente por start, así que find() da la más
     reciente. */
-export function sessionForSlot(slotId) {
-  const ws = weekStart();
-  return S.sessions.find(s => s.slotId === slotId && s.date >= ws) || null;
+export function sesionDeHoy() {
+  const hoy = dstr();
+  return S.sessions.find(s => s.date === hoy) || null;
 }
 
 /** El turno pendiente según el puntero de la secuencia. */

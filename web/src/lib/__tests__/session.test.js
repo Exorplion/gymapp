@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../state.js';
-import { weekStart, sessionForSlot, sessionPRs, groupSessionsByWeek } from '../session.js';
+import { weekStart, sesionDeHoy, sessionPRs, groupSessionsByWeek } from '../session.js';
 
 // dstr() y weekStart() trabajan en hora local, así que las fechas de prueba se
 // construyen con el constructor local (año, mes, día), nunca con strings ISO.
@@ -24,26 +24,37 @@ describe('weekStart', () => {
   });
 });
 
-describe('sessionForSlot', () => {
+describe('sesionDeHoy', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(d(2026, 8, 6));      // jueves
     S.sessions = [];
   });
 
-  it('encuentra la sesión de ese turno en la semana en curso', () => {
+  it('encuentra la sesión de hoy', () => {
     S.sessions = [{ id: 'a', slotId: 'jueves-a', date: '2026-08-06', start: 300 }];
-    expect(sessionForSlot('jueves-a')?.id).toBe('a');
+    expect(sesionDeHoy()?.id).toBe('a');
   });
 
-  it('ignora la del mismo turno pero de la semana pasada', () => {
-    S.sessions = [{ id: 'vieja', slotId: 'jueves-a', date: '2026-07-30', start: 100 }];
-    expect(sessionForSlot('jueves-a')).toBe(null);
+  it('ignora una de otro día de la misma semana (auditoría 2026-09-27, I1)', () => {
+    // Antes bastaba con que fuera de "esta semana": Inicio decía
+    // "Completado · hoy" con la sesión del lunes.
+    S.sessions = [{ id: 'lunes', slotId: 'post-a', date: '2026-08-03', start: 100 }];
+    expect(sesionDeHoy()).toBe(null);
   });
 
-  it('un turno de esta semana sin sesión devuelve null', () => {
-    S.sessions = [{ id: 'a', slotId: 'jueves-a', date: '2026-08-06', start: 300 }];
-    expect(sessionForSlot('viernes-b')).toBe(null);
+  it('el domingo no cuenta la del lunes de esa semana', () => {
+    vi.setSystemTime(d(2026, 8, 9));    // domingo
+    S.sessions = [{ id: 'lunes', slotId: 'ant-a', date: '2026-08-03', start: 100 }];
+    expect(sesionDeHoy()).toBe(null);
+  });
+
+  it('con dos sesiones hoy devuelve la más reciente', () => {
+    S.sessions = [
+      { id: 'tarde', slotId: 'b', date: '2026-08-06', start: 900 },
+      { id: 'maniana', slotId: 'a', date: '2026-08-06', start: 300 },
+    ];
+    expect(sesionDeHoy()?.id).toBe('tarde');
   });
 });
 
