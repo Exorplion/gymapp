@@ -316,8 +316,8 @@ export default function RestTimer() {
             <button type="button" className="rfs-parar" onClick={skip} autoFocus>PARAR</button>
           ) : (
             <div className="rfs-btns">
-              <button type="button" className="btn sm ghost" onClick={subTime}>−30s</button>
-              <button type="button" className="btn sm ghost" onClick={addTime}>+30s</button>
+              <button type="button" className="btn sm ghost rfs-seg" onClick={subTime}>−30s</button>
+              <button type="button" className="btn sm ghost rfs-seg" onClick={addTime}>+30s</button>
               <button type="button" className="btn sm dim" onClick={skip}>Saltar</button>
             </div>
           )}
