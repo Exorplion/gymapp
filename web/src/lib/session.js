@@ -13,6 +13,7 @@ import { exKey, isBodyweight } from './equip.js';
 import { progresion } from './progression.js';
 import { currentStreak, bestStreak } from './streak.js';
 import { bloqueDe, DESCANSO } from './warmup.js';
+import { clampHechos } from './rampa.js';
 
 /** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
     ejercicio completo; un string sigue funcionando y se compara sólo por
@@ -974,6 +975,42 @@ export async function marcarCalentado(ex, conDescanso = true) {
   await saveDraft();
   bump();
   if (conDescanso) startRest(DESCANSO);
+}
+
+/** Pasos de la rampa de aproximación ya hechos en este ejercicio.
+    Vive en el borrador (S.draft.rampa) y no en memoria: antes era un Map de
+    módulo en ExerciseCarousel y recargar la app a mitad de rampa lo perdía. */
+export function pasosRampa(exId) {
+  const n = Math.floor(Number(S.draft?.rampa?.[exId]));
+  return n > 0 ? n : 0;
+}
+
+/** Un toque del botón grande durante la rampa: suma un paso (nunca más de
+    `total`) y vibra. No marca el calentamiento: la tarjeta primero muestra
+    el tercer ✓ y pliega la rampa, y recién después llama a marcarCalentado()
+    (spec 2026-09-27 §2, "Al completar"). */
+export async function avanzarRampa(exId, total) {
+  if (!S.draft || !(total > 0)) return 0;
+  const antes = clampHechos(pasosRampa(exId), total);
+  if (antes >= total) return antes;
+  const n = antes + 1;
+  S.draft.rampa = { ...(S.draft.rampa || {}), [exId]: n };
+  vibrate(15);
+  await saveDraft();
+  bump();
+  return n;
+}
+
+/** Tocar un ✓: vuelve a ese paso. Sólo hacia atrás — hacia adelante no se
+    salta (lo decide tocarPaso() en rampa.js; acá se vuelve a cuidar). */
+export async function deshacerRampa(exId, paso) {
+  if (!S.draft) return 0;
+  const antes = pasosRampa(exId);
+  if (!Number.isInteger(paso) || paso < 0 || paso >= antes) return antes;
+  S.draft.rampa = { ...(S.draft.rampa || {}), [exId]: paso };
+  await saveDraft();
+  bump();
+  return paso;
 }
 
 /** "Hacer después": la máquina está ocupada, así que el ejercicio pasa al
