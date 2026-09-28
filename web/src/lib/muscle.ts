@@ -170,8 +170,9 @@ export function catOf(ex: ExLike | string | null | undefined): string | null {
 
 export interface MuscleBlock { cat: string; exs: ExLike[]; }
 
-/** Agrupa una lista de ejercicios YA ORDENADA en bloques contiguos por grupo
-    muscular — no reordena nada, sólo junta lo que ya está junto. Un
+/** Agrupa una lista de ejercicios en bloques por grupo muscular, en el orden
+    en que aparece cada grupo por primera vez (ver el OJO en blocksOf: junta
+    también lo que está separado). Un
     ejercicio sin grupo cae en 'Otros', al final, para no perderlo (mismo
     espíritu que SinGrupoAviso: se dice, no se oculta).
 
@@ -262,6 +263,12 @@ export function subBlocksOf(exs: ExLike[] | null | undefined): MuscleBlock[] {
   return out;
 }
 
+/* OJO (auditoría 2026-09-27, A.9/A.10): el comentario decía que blocksOf
+   "no reordena nada". Sí reordena: junta en un solo bloque los
+   ejercicios de un grupo aunque estén separados (un "Aperturas" agregado al
+   final, detrás de Abs, se pinta 4º en Pecho). Por eso el orden que se VE es
+   porBloques(), y todo lo que ordena (la sesión, las flechas, el arrastre)
+   tiene que pasar por ahí — si no, la pantalla y la sesión no coinciden. */
 export function blocksOf(exs: ExLike[] | null | undefined): MuscleBlock[] {
   const out: MuscleBlock[] = [];
   const byCat = new Map<string, MuscleBlock>();
@@ -272,6 +279,12 @@ export function blocksOf(exs: ExLike[] | null | undefined): MuscleBlock[] {
     b.exs.push(ex);
   }
   return out;
+}
+
+/** La lista en el orden en que se pinta: los bloques de blocksOf, aplanados.
+    Es el orden de verdad del plan (ver el OJO de arriba). */
+export function porBloques<T extends ExLike>(exs: T[] | null | undefined): T[] {
+  return blocksOf(exs).flatMap(b => b.exs) as T[];
 }
 
 interface SetEntry { w?: number; r?: number; rpe?: number | null; }

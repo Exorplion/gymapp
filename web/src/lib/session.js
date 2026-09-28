@@ -1,7 +1,7 @@
 // Puerto de funciones de sesión desde index.html
 import { S, bump, saveDraft, saveCfg, wBoth, closeSheet } from './state.js';
 import { dstr, uid, round1, fmtD, vibrate } from './format.js';
-import { blocksOf } from './muscle.js';
+import { blocksOf, porBloques } from './muscle.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
 import { T, startRest, stopRest, pedirRir, marcarRirElegido } from './rest.js';
@@ -157,16 +157,36 @@ export function setSide(exId, side) {
 
 /** Orden de ejercicios de la sesión: se puede reacomodar mientras el reloj no
     arrancó (la máquina ocupada es la regla, no la excepción). Una vez que
-    empezás a entrenar el orden queda fijo. */
+    empezás a entrenar el orden queda fijo.
+
+    Antes de la sesión el orden sale POR BLOQUES (porBloques, muscle.ts): es
+    el que numera Plan de hoy. Si no, un ejercicio agregado al final del turno
+    se veía 4º en Pecho y la sesión lo daba 11º, detrás de Abs (auditoría
+    2026-09-27, A.10). Con la sesión abierta no se reagrupa: ahí el orden es
+    libre a propósito (ReorderHoy, "Hacer después"). */
 export function orderedExs(index, exs) {
   const slotId = S.routine[index]?.id;
-  const ord = (S.draft && S.draft.slotId === slotId) ? S.draft.order : S.hoyOrder?.[slotId];
-  if (!ord || !ord.length) return exs;
+  const enSesion = !!(S.draft && S.draft.slotId === slotId);
+  const ord = enSesion ? S.draft.order : S.hoyOrder?.[slotId];
+  if (!ord || !ord.length) return enSesion ? exs : porBloques(exs);
   const by = new Map(exs.map(e => [e.id, e]));
   const out = [];
   ord.forEach(id => { if (by.has(id)) { out.push(by.get(id)); by.delete(id); } });
   by.forEach(e => out.push(e));   // ejercicios nuevos que no estaban en el orden
-  return out;
+  return enSesion ? out : porBloques(out);
+}
+
+/** Reordena bloques enteros según `cats` (el arrastre de encabezados en Plan
+    de hoy, drag.js). Un grupo que no vino en la lista queda al final, en su
+    lugar relativo: nada se pierde si el DOM quedó desfasado. */
+export async function ordenarBloques(index, exs, cats) {
+  const blocks = blocksOf(exs);
+  const pos = new Map(cats.map((c, i) => [c, i]));
+  const next = blocks
+    .map((b, i) => ({ b, k: pos.has(b.cat) ? pos.get(b.cat) : cats.length + i }))
+    .sort((x, y) => x.k - y.k)
+    .map(x => x.b);
+  await setExOrder(index, next.flatMap(b => b.exs.map(e => e.id)));
 }
 
 export async function setExOrder(index, ids) {
