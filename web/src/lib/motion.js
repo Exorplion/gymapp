@@ -291,7 +291,7 @@ export function animateRing(circleEl, progress, { duration = 900 } = {}) {
 // position:relative, e ignora cualquier transform 3D de un padre (el cuerpo
 // gira con rotateY) porque cuelga fuera de ese árbol. Se autodestruye al
 // terminar — mismo patrón imperativo que fireConfetti().
-export function tapRing(x, y, { size = 26, color = 'var(--cyan)' } = {}) {
+export function tapRing(x, y, { size = 26, color = 'var(--accent)' } = {}) {
   if (menosMovimiento()) return; // puro adorno transitorio, no deja estado
   const ring = document.createElement('span');
   ring.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:${size}px;height:${size}px;` +
@@ -331,7 +331,7 @@ export function squashStretch(el) {
 // de impacto en videojuegos — acá sólo la parte de partículas, sin sacudir
 // la pantalla (haría perder de vista dónde estabas parado en un formulario).
 // Para momentos de logro: serie completada, PR nuevo.
-export function impactBurst(x, y, { count = 6, color = 'var(--cyan)', distance = 26 } = {}) {
+export function impactBurst(x, y, { count = 6, color = 'var(--accent)', distance = 26 } = {}) {
   if (menosMovimiento()) return; // partículas transitorias, no dejan estado
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5;

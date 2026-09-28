@@ -31,7 +31,7 @@ import { Button, Card, Badge } from '../ui/primitives.jsx';
 import { Tune, Pencil, X, Check } from '../Icon.jsx';
 import { cn } from '../../lib/utils.js';
 
-const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt outline-none transition-colors focus-visible:border-blue2';
+const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 text-body text-text outline-none transition-colors focus-visible:border-accent';
 
 export default function Gyms() {
   const [nombre, setNombre] = useState('');
@@ -57,15 +57,15 @@ export default function Gyms() {
 
   return (
     <div ref={rootRef}>
-      <h2 className="font-cond text-2xl font-bold text-txt">Gimnasios</h2>
-      <p className="mt-1 mb-4 text-sm text-mut">
+      <h2 className="font-cond text-2xl font-bold text-text">Gimnasios</h2>
+      <p className="mt-1 mb-4 text-sm text-text-2">
         Guardá los gimnasios donde entrenás. Tocá el nombre para activarlo, o las
         perillas para ver cuál de tus ejercicios ya tiene máquina asignada ahí y
         cuál no.
       </p>
 
       {S.gyms.length === 0 && (
-        <Card className="mb-4 text-sm text-mut">Todavía no guardaste ningún gimnasio.</Card>
+        <Card className="mb-4 text-sm text-text-2">Todavía no guardaste ningún gimnasio.</Card>
       )}
 
       {S.gyms.length > 0 && (
@@ -121,14 +121,14 @@ export default function Gyms() {
                   <button
                     type="button"
                     aria-pressed={activo}
-                    className="min-w-0 grow rounded-[var(--radius-r)] px-1 py-0.5 text-left focus-visible:outline-2 focus-visible:outline-blue2 focus-visible:outline-offset-2"
+                    className="min-w-0 grow rounded-[var(--radius-r)] px-1 py-0.5 text-left focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
                     onClick={() => setActiveGym(activo ? null : g.id)}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="truncate text-body font-semibold text-txt">{g.name}</span>
+                      <span className="truncate text-body font-semibold text-text">{g.name}</span>
                       {activo && <Badge tone="accent" className="flex-none">activo</Badge>}
                     </div>
-                    <div className="mt-0.5 text-sm text-mut">
+                    <div className="mt-0.5 text-sm text-text-2">
                       {n} ejercicio{n === 1 ? '' : 's'} con equipo propio acá
                     </div>
                   </button>
@@ -145,7 +145,7 @@ export default function Gyms() {
                     </Button>
                     {/* Rojo con borde rojo, no un ✕ gris igual a los de al
                         lado: es el único de los tres que destruye algo. */}
-                    <Button type="button" variant="icon" size="icon" className="border-red/30 text-red" aria-label={`Borrar ${g.name}`} onClick={() => deleteGym(g.id)}>
+                    <Button type="button" variant="icon" size="icon" className="border-danger/30 text-danger" aria-label={`Borrar ${g.name}`} onClick={() => deleteGym(g.id)}>
                       <X />
                     </Button>
                   </div>
@@ -157,7 +157,7 @@ export default function Gyms() {
       )}
 
       <div className="mb-3">
-        <label htmlFor="gym-nombre" className="mb-1.5 block text-sm font-medium text-mut">Nuevo gimnasio</label>
+        <label htmlFor="gym-nombre" className="mb-1.5 block text-sm font-medium text-text-2">Nuevo gimnasio</label>
         {/* Campo y botón en la misma fila: el botón suelto debajo dejaba un
             escalón raro contra el borde del campo, y separaba la acción de
             lo que la dispara. */}

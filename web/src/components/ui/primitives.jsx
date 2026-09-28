@@ -7,24 +7,24 @@ import { cva } from 'class-variance-authority'
 import { cn } from '../../lib/utils.js'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-r)] text-body font-medium transition-[transform,background,color,border-color] duration-150 active:scale-[.96] disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-blue2 focus-visible:outline-offset-2',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-r)] text-body font-medium transition-[transform,background,color,border-color] duration-150 active:scale-[.96] disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2',
   {
     variants: {
       variant: {
         primary:
-          "relative overflow-hidden bg-[image:var(--grad2)] text-[var(--on-grad)] shadow-[var(--glow)] after:content-[''] after:absolute after:top-0 after:-left-[60%] after:h-full after:w-[40%] after:bg-[linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent)] after:pointer-events-none after:animate-[sweep_3.2s_ease-in-out_infinite]",
+          "relative overflow-hidden bg-[image:var(--accent-grad)] text-[var(--on-accent)] shadow-[var(--accent-glow)] after:content-[''] after:absolute after:top-0 after:-left-[60%] after:h-full after:w-[40%] after:bg-[linear-gradient(115deg,transparent,rgba(var(--hi-rgb),.35),transparent)] after:pointer-events-none after:animate-[sweep_3.2s_ease-in-out_infinite]",
         /* Gemela ámbar de `primary`, con el mismo barrido de brillo, para el
            CTA que vive dentro de la tarjeta de calentamiento — que es cálida
            por diseño (calentar = calor). Con la paleta "acero" el primario es
            frío otra vez, así que un botón primario ahí adentro volvería a ser
            el único elemento frío de un bloque cálido. */
         warn:
-          "relative overflow-hidden bg-[image:var(--grad-warn)] text-[var(--on-grad)] shadow-[var(--glow-warn)] after:content-[''] after:absolute after:top-0 after:-left-[60%] after:h-full after:w-[40%] after:bg-[linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent)] after:pointer-events-none after:animate-[sweep_3.2s_ease-in-out_infinite]",
-        secondary: 'bg-card2 text-txt border border-line2',
-        ghost: 'bg-transparent text-mut hover:text-txt',
-        outline: 'bg-transparent border border-line2 text-txt',
-        icon: 'w-[38px] h-[38px] rounded-[13px] border border-white/10 text-mut bg-[linear-gradient(150deg,rgba(255,255,255,.09),rgba(255,255,255,.02))]',
-        destructive: 'bg-red/15 text-red border border-red/30',
+          "relative overflow-hidden bg-[image:var(--grad-warn)] text-[var(--on-warn)] shadow-[var(--glow-warn)] after:content-[''] after:absolute after:top-0 after:-left-[60%] after:h-full after:w-[40%] after:bg-[linear-gradient(115deg,transparent,rgba(var(--hi-rgb),.35),transparent)] after:pointer-events-none after:animate-[sweep_3.2s_ease-in-out_infinite]",
+        secondary: 'bg-surface-2 text-text border border-line-2',
+        ghost: 'bg-transparent text-text-2 hover:text-text',
+        outline: 'bg-transparent border border-line-2 text-text',
+        icon: 'w-[38px] h-[38px] rounded-[13px] border border-white/10 text-text-2 bg-[linear-gradient(150deg,rgba(var(--hi-rgb),.09),rgba(var(--hi-rgb),.02))]',
+        destructive: 'bg-danger/15 text-danger border border-danger/30',
       },
       size: {
         default: 'h-11 px-5',
@@ -46,7 +46,7 @@ export function Card({ className, ...props }) {
   return (
     <div
       className={cn(
-        'rounded-[var(--radius-r-lg)] border border-line bg-card2 p-4',
+        'rounded-[var(--radius-r-lg)] border border-line bg-surface-2 p-4',
         className,
       )}
       {...props}
@@ -56,11 +56,11 @@ export function Card({ className, ...props }) {
 
 export function Badge({ className, tone = 'default', ...props }) {
   const tones = {
-    default: 'bg-white/8 text-mut',
+    default: 'bg-white/8 text-text-2',
     accent: 'bg-accent/15 text-accent',
     ok: 'bg-ok/15 text-ok',
     warn: 'bg-warn/15 text-warn',
-    red: 'bg-red/15 text-red',
+    red: 'bg-danger/15 text-danger',
   }
   return (
     <span

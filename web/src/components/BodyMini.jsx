@@ -17,6 +17,7 @@ import { cuerpo } from '../lib/bodydata.js';
 import { esGrupo, ZONA_DE } from '../lib/fibras.js';
 import { S } from '../lib/state.js';
 import { bloomOpen } from '../lib/motion.js';
+import { Paradas } from './Silhouette.jsx';
 
 /** Las zonas que hay que encender para una lista de nombres.
 
@@ -86,9 +87,7 @@ export default function BodyMini({ fibras }) {
           Rutina, donde la silueta de Inicio NO está montada. Referenciar sus
           defs dejaría los músculos pintados de negro. */}
       <svg width="0" height="0" aria-hidden="true"><defs>
-        <linearGradient id="bm-grad" x1="12%" y1="0%" x2="88%" y2="100%">
-          <stop offset="0%" stopColor="#B9F8FF" /><stop offset="45%" stopColor="#22D3EE" /><stop offset="100%" stopColor="#0A6F88" />
-        </linearGradient>
+        <linearGradient id="bm-grad" x1="12%" y1="0%" x2="88%" y2="100%"><Paradas t="mapa-0" /></linearGradient>
       </defs></svg>
       <div className="bm-cuerpos">
         <Cara cara={frente} principales={p} secundarias={s} />

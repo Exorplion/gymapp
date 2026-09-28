@@ -40,7 +40,7 @@ import { exportJSON, importJSON, wipeAll } from '../../lib/backup.js';
 import { storageEstimate, daysSinceBackup, necesitaBackup } from '../../lib/persist.js';
 import { exportFoodsMD, importFoodsMD } from '../../lib/foodmd.js';
 import { toast } from '../../lib/toast.js';
-import { aplicarPaleta, paletaDesde, COLOR_DEFECTO } from '../../lib/theme.js';
+import { PRESETS, acentoDe, acentoGuardado, aplicarAcento, alejarDeEstados, distanciaMatiz, hexAOklch, variablesDe } from '../../lib/theme.js';
 import { motion } from 'motion/react';
 import { hojaProps, seccion } from '../../lib/variants.js';
 import AvisosAjustes from '../AvisosAjustes.jsx';
@@ -112,22 +112,36 @@ export default function Settings() {
     bump();
   }
 
-  const colorActual = S.cfg.themeColor || COLOR_DEFECTO;
-  const paleta = paletaDesde(colorActual) || {};
+  /* El acento: un preset o un matiz propio (lib/theme.js). La base grafito
+     no se elige: es la misma para todos. Se aplica en vivo, antes de
+     guardar, porque el selector nativo dispara onChange en cada arrastre
+     del dedo sobre la rueda y tiene que sentirse instantáneo. */
+  const acento = acentoGuardado(S.cfg).sel;
+  const hexAcento = variablesDe(acentoDe(acento))['--accent'];
+  const [corrido, setCorrido] = useState(false);
 
-  /* Un solo color de entrada, y de ahí sale la paleta entera (ver
-     lib/theme.js): saturación, luminosidad y el corrimiento de matiz entre
-     roles quedan fijos, tomados de la paleta original — lo único que se
-     mueve es DE QUÉ FAMILIA de color se trata. Se aplica en vivo (antes de
-     guardar) para que el selector nativo, que dispara onChange en cada
-     arrastre del dedo sobre la rueda de color, se sienta instantáneo. */
-  function setTheme(hex) {
-    S.cfg.themeColor = hex;
-    aplicarPaleta(hex);
+  function elegirAcento(sel) {
+    S.cfg.acento = sel;
+    delete S.cfg.themeColor;
+    aplicarAcento(sel);
     saveCfg();
     bump();
   }
-  function resetTheme() { setTheme(undefined); }
+  function elegirPreset(id) {
+    setCorrido(false);
+    elegirAcento({ id });
+  }
+  /* Del color propio se toma SÓLO el matiz: la luz y la intensidad son las
+     mismas de los presets, así cualquier elección se lee igual de bien. Un
+     gris no tiene matiz, así que es Monocromo. */
+  function elegirPropio(hex) {
+    const o = hexAOklch(hex);
+    if (!o) return;
+    if (o.C < 0.03) { elegirPreset('mono'); return; }
+    const h = Math.round(o.h);
+    setCorrido(distanciaMatiz(alejarDeEstados(h), h) > 2);
+    elegirAcento({ id: 'propio', h: alejarDeEstados(h) });
+  }
 
   function setUnit(u) {
     S.cfg.unit = u; saveCfg();
@@ -287,23 +301,54 @@ export default function Settings() {
 
       <motion.section variants={seccion}>
         <h3>Color</h3>
-        <div className="theme-picker">
-          <label className="theme-swatch-main" style={{ background: colorActual }}>
-            <input type="color" value={colorActual} onChange={e => setTheme(e.target.value)} aria-label="Elegir color" />
+        <div className="acento-muestras" role="group" aria-label="Color de acento">
+          {PRESETS.map(p => (
+            <button
+              type="button"
+              key={p.id}
+              className="acento-muestra"
+              aria-pressed={acento.id === p.id}
+              onClick={() => elegirPreset(p.id)}
+            >
+              <i style={{ background: variablesDe(p)['--accent'] }} />
+              {p.nombre}
+            </button>
+          ))}
+          {/* El <input type=color> nativo no se puede estilar por dentro: va
+              invisible encima de la muestra, que es lo que se ve. */}
+          <label className={`acento-muestra propio${acento.id === 'propio' ? ' on' : ''}`}>
+            <i style={acento.id === 'propio' ? { background: hexAcento } : undefined}>
+              <input type="color" value={hexAcento} onChange={e => elegirPropio(e.target.value)} aria-label="Elegir un color propio" />
+            </i>
+            Propio
           </label>
-          <div className="theme-preview">
-            {['accent', 'blue', 'blue2', 'blue3', 'cyan'].map(k => (
-              <i key={k} style={{ background: paleta[k] }} />
-            ))}
+        </div>
+        {corrido && (
+          <p className="acento-nota" role="status">
+            Lo corrimos un poco: ese tono se confundía con el verde, el rojo o el
+            ámbar de los avisos.
+          </p>
+        )}
+        {/* La vista previa usa las mismas clases que la app, con el acento
+            ya aplicado: es la paleta real, no una muestra aparte. */}
+        <div className="card sub acento-previa" aria-hidden="true">
+          <div className="eyebrow blue">Vista previa</div>
+          <div className="acento-previa-fila">
+            <b className="acento-previa-num">58.4<small> kg</small></b>
+            <span className="chip on">Elegido</span>
           </div>
-          {S.cfg.themeColor && (
-            <button type="button" className="btn ghost sm" onClick={resetTheme}>Restablecer</button>
-          )}
+          <div className="pbar"><i style={{ width: '62%' }} /></div>
+          <div className="acento-previa-estados">
+            <span className="ok">Logrado</span>
+            <span className="danger">Bajaste</span>
+            <span className="warn">Aproximación</span>
+          </div>
+          <div className="btn sm">Empezar</div>
         </div>
         <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s2)', lineHeight: 1.45 }}>
-          Elegís un color y la app arma el resto de la paleta a partir de ese
-          matiz — no lo pega tal cual, lo combina con la misma receta de
-          siempre para que el texto se siga leyendo sobre el fondo oscuro.
+          La base grafito es la misma para todos. El acento pinta botones,
+          anillos, gráficos y el mapa muscular; verde, rojo y ámbar quedan
+          reservados para los avisos.
         </div>
       </motion.section>
 

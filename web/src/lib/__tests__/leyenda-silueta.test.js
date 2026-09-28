@@ -4,6 +4,8 @@
 import { describe, it, expect } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { TONOS, LeyendaTonos, claseDeZona } from '../../components/Silhouette.jsx';
 
 const zona = { cat: 'Hombro' };
@@ -38,4 +40,19 @@ describe('leyenda de la silueta', () => {
     expect(html).toContain('class="sil-none"');
     expect(clase(null)).toBe('sil-none');
   });
+});
+
+// Pieza 4 del rediseño de color: el mapa muscular sigue al acento. Los stops
+// de los degradados tienen que nombrar tokens (--mapa-*), no hex: un
+// stopColor escrito a mano deja el cuerpo azul con cualquier acento, y como
+// la leyenda usa las mismas clases, la leyenda también.
+describe('el mapa muscular sale de los tokens', () => {
+  for (const archivo of ['Silhouette.jsx', 'BodyMini.jsx']) {
+    it(`${archivo}: ningún stopColor literal`, () => {
+      const src = readFileSync(join(import.meta.dirname, '../../components', archivo), 'utf8');
+      const literales = src.match(/stopColor=["{]\s*["']?(#|rgb)/g) || [];
+      expect(literales).toEqual([]);
+      expect(src).toMatch(/mapa-0/);
+    });
+  }
 });

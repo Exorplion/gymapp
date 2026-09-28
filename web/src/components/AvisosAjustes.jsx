@@ -118,7 +118,7 @@ export default function AvisosAjustes() {
             Pegá esto en GitHub → gymapp → Settings → Secrets and variables → Actions → <b>PUSH_SUBSCRIPTION</b>:
           </div>
           <textarea readOnly value={codigo} rows={4} aria-label="Código de suscripción" onFocus={e => e.target.select()}
-            className="w-full rounded-[var(--radius-r)] border border-line2 bg-card2 p-3 text-micro text-mut outline-none"
+            className="w-full rounded-[var(--radius-r)] border border-line-2 bg-surface-2 p-3 text-micro text-text-2 outline-none"
             style={{ marginBottom: 'var(--s3)', wordBreak: 'break-all', fontFamily: 'monospace' }} />
         </>
       )}

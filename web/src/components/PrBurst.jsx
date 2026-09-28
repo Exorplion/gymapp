@@ -21,13 +21,24 @@
 // lottie-react 3.x no tiene export default: el componente es `Lottie` nombrado,
 // y el prop del JSON pasó a llamarse `src` (antes `animationData` en 1.x/2.x,
 // la versión que documentan la mayoría de los tutoriales viejos).
+import { useMemo } from 'react';
 import { Lottie } from 'lottie-react';
 import prBurst from '../assets/lottie/pr-burst.json';
+import { leerToken } from '../lib/theme.js';
+import { recolorearLottie, rgbALottie, AZUL_LOTTIE, DORADO_LOTTIE } from '../lib/lottie-color.js';
 
+/* El JSON trae dos colores fijos: un azul (el de la paleta anterior) y un
+   dorado. Se cambian por el acento y la llama de la racha, leídos de los
+   tokens al montar: el estallido sale del color que cada uno eligió. */
 export default function PrBurst() {
+  const datos = useMemo(() => {
+    const acento = leerToken('--accent-rgb'), llama = leerToken('--flame-rgb');
+    if (!acento || !llama) return prBurst;
+    return recolorearLottie(prBurst, [[AZUL_LOTTIE, rgbALottie(acento)], [DORADO_LOTTIE, rgbALottie(llama)]]);
+  }, []);
   return (
     <Lottie
-      src={prBurst}
+      src={datos}
       autoplay
       loop={false}
       style={{ width: 44, height: 44, flex: 'none' }}

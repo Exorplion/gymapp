@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { idbOpenOnce } from './lib/db.js';
 import { elegirBase } from './lib/modoPrueba.js';
 import { ensurePersisted } from './lib/persist.js';
-import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT, resolveAutoRest, tomarFotoSaliente } from './lib/state.js';
+import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT, resolveAutoRest, tomarFotoSaliente, saveCfg } from './lib/state.js';
 import { dstr } from './lib/format.js';
 import { applyComputedGoals } from './lib/macros.js';
 import { initDragListeners } from './lib/drag.js';
@@ -10,7 +10,7 @@ import { empiezaExcluido, clasificarSwipe, pintaHorizontal } from './lib/swipe.j
 import { currentStreak } from './lib/streak.js';
 import { sessionExs } from './lib/session.js';
 import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
-import { aplicarPaleta } from './lib/theme.js';
+import { acentoGuardado, aplicarAcento } from './lib/theme.js';
 import { accionDeArranque, ejecutarAccion } from './lib/acciones.js';
 import { useAtras } from './lib/useAtras.js';
 import Header from './components/Header.jsx';
@@ -391,7 +391,11 @@ export default function App() {
       // El color se aplica ACÁ, apenas se conoce S.cfg, y no cuando se abre
       // Ajustes: si no, la app arrancaría siempre con el azul de fábrica y
       // recién cambiaría al tuyo si entrabas a Ajustes.
-      aplicarPaleta(S.cfg.themeColor);
+      // Un `themeColor` de la paleta vieja se migra una sola vez al acento
+      // nuevo (el preset más cercano) y se guarda ya migrado.
+      const { sel, migrado } = acentoGuardado(S.cfg);
+      if (migrado) { S.cfg.acento = sel; delete S.cfg.themeColor; saveCfg(); }
+      aplicarAcento(sel);
       bump();
       // Recién con los datos cargados: el formulario de peso usa S.body para
       // el placeholder con tu último registro.
@@ -503,10 +507,10 @@ export default function App() {
         padding: 32, textAlign: 'center',
       }}>
         <div className="vtitle" style={{ margin: 0 }}>No se pudo abrir FIERRO</div>
-        <p className="s text-mut" style={{ maxWidth: 340, lineHeight: 1.5 }}>
+        <p className="s text-text-2" style={{ maxWidth: 340, lineHeight: 1.5 }}>
           {String(store.bootError?.message || store.bootError)}
         </p>
-        <p className="s text-mut2" style={{ maxWidth: 340, lineHeight: 1.5 }}>
+        <p className="s text-text-3" style={{ maxWidth: 340, lineHeight: 1.5 }}>
           Tus datos siguen guardados en el teléfono: esto es un problema para
           abrirlos, no una pérdida.
         </p>

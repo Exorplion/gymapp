@@ -37,9 +37,9 @@ export default function DayDrop({ fromWd, toWd }) {
 
   return (
     <div ref={rootRef}>
-      <h2 className="font-cond text-2xl font-bold text-txt">El {WD[to].toLowerCase()} ya está ocupado</h2>
-      <div className="mb-[18px] text-sm leading-relaxed text-mut">
-        Estás moviendo <b className="text-txt">{moving}</b> al {WD[to].toLowerCase()}, que hoy tiene <b className="text-txt">{sitting}</b>. ¿Qué hago con {sitting}?
+      <h2 className="font-cond text-2xl font-bold text-text">El {WD[to].toLowerCase()} ya está ocupado</h2>
+      <div className="mb-[18px] text-sm leading-relaxed text-text-2">
+        Estás moviendo <b className="text-text">{moving}</b> al {WD[to].toLowerCase()}, que hoy tiene <b className="text-text">{sitting}</b>. ¿Qué hago con {sitting}?
       </div>
 
       <div className="grid gap-2.5">
@@ -51,11 +51,11 @@ export default function DayDrop({ fromWd, toWd }) {
         )}
         <Button type="button" variant="secondary" className="h-auto flex-col items-start gap-0.5 py-3 text-left" onClick={() => choose('swap')}>
           <span>Intercambiarlos</span>
-          <span className="text-micro font-normal text-mut">{sitting} pasa al {WD[from].toLowerCase()}</span>
+          <span className="text-micro font-normal text-text-2">{sitting} pasa al {WD[from].toLowerCase()}</span>
         </Button>
       </div>
 
-      <label className="mt-4 flex items-center gap-2.5 text-sm text-mut">
+      <label className="mt-4 flex items-center gap-2.5 text-sm text-text-2">
         <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
         <span>No volver a preguntar (se cambia en Ajustes)</span>
       </label>

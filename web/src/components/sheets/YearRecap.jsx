@@ -17,9 +17,9 @@ import { useRef } from 'react';
 function Card({ eyebrow, value, sub }) {
   return (
     <motion.div variants={seccion} className="calcbox" style={{ marginTop: 10 }}>
-      <div className="text-mut text-micro font-medium">{eyebrow}</div>
-      <div className="font-cond text-3xl font-bold text-txt mt-1">{value}</div>
-      {sub && <div className="text-mut text-micro mt-1">{sub}</div>}
+      <div className="text-text-2 text-micro font-medium">{eyebrow}</div>
+      <div className="font-cond text-3xl font-bold text-text mt-1">{value}</div>
+      {sub && <div className="text-text-2 text-micro mt-1">{sub}</div>}
     </motion.div>
   );
 }

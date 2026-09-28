@@ -19,8 +19,8 @@ import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
 import { Button } from '../ui/primitives.jsx';
 
-const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line2 bg-card2 px-3.5 text-body text-txt placeholder:text-mut2 outline-none transition-colors focus-visible:border-blue2';
-const labelCls = 'mb-1.5 block text-sm font-medium text-mut';
+const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 text-body text-text placeholder:text-text-3 outline-none transition-colors focus-visible:border-accent';
+const labelCls = 'mb-1.5 block text-sm font-medium text-text-2';
 
 export default function BodyForm() {
   const last = S.body[S.body.length - 1] || {};
@@ -60,7 +60,7 @@ export default function BodyForm() {
 
   return (
     <div ref={rootRef}>
-      <h2 className="mb-4 font-cond text-2xl font-bold text-txt">Registro corporal</h2>
+      <h2 className="mb-4 font-cond text-2xl font-bold text-text">Registro corporal</h2>
       <div className="mb-3">
         <label htmlFor="body-peso" className={labelCls}>Peso (kg)</label>
         <input id="body-peso" ref={weightRef} type="number" inputMode="decimal" step="any" className={inputCls} placeholder={last.weight ?? '70.0'} value={weight} onChange={e => setWeight(e.target.value)} />

@@ -1,258 +1,257 @@
-// Color libre: elegís UN color y la app arma la paleta entera a partir de él,
-// no lo pega tal cual en todos lados.
+// Color: una base grafito FIJA y UN acento que elige cada uno.
 //
-// Por qué no simplemente usar el color que elegiste: la app tiene diez tonos
-// distintos (--accent, --blue, --blue2, --blue3, --cyan, --deep, dos
-// degradados, el texto que va ARRIBA del degradado, líneas, el resplandor de
-// los botones) y eligieron esos valores concretos —no cualquier azul— para
-// que combinen entre sí y para que el texto se lea sobre fondo casi negro.
-// Pegar tu color en los diez lugares por igual daría, en el mejor caso, una
-// pantalla de un solo tono sin jerarquía; en el peor, texto invisible si
-// elegís algo oscuro.
+// La base (fondo, vidrio, textos, líneas) es la identidad de la app y vive
+// en styles.css, igual para todos. Lo único que se elige es el MATIZ del
+// acento, y de ese número sale todo lo demás: el color de énfasis, el
+// arranque oscuro de los degradados, el texto que va encima, los canales
+// para los rgba() y la escala del mapa muscular.
 //
-// Lo que se conserva de tu elección es el MATIZ (hue) — de qué familia de
-// color se trata. Todo lo demás (saturación, luminosidad, y hasta un
-// pequeño corrimiento de matiz entre roles) sale de la receta del diseño
-// original, medida acá abajo (HUE_SHIFT/SAT/LUM). Es la misma relación que
-// ya existía entre --deep/--blue/--blue2/--blue3/--accent/--cyan, sólo que
-// girada hasta tu matiz. Por eso "combinan": son la paleta de siempre, con
-// otro color de base.
-export function hexToHsl(hex) {
-  const h = String(hex || '').replace('#', '').trim();
-  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
-  const r = parseInt(full.slice(0, 2), 16) / 255;
-  const g = parseInt(full.slice(2, 4), 16) / 255;
-  const b = parseInt(full.slice(4, 6), 16) / 255;
-  if ([r, g, b].some(Number.isNaN)) return null;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let hue = 0, sat = 0;
-  const lum = (max + min) / 2;
-  const d = max - min;
-  if (d !== 0) {
-    sat = lum > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: hue = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: hue = (b - r) / d + 2; break;
-      default: hue = (r - g) / d + 4;
+// Por qué OKLCH y no HSL (que es lo que había): en HSL "misma luminosidad"
+// no significa "se ve igual de claro" — un amarillo y un azul al 60 % son
+// dos brillos distintos, y por eso la receta vieja daba un violeta
+// ilegible y un amarillo que se comía el texto. En OKLCH la L es la
+// luminosidad percibida: fijándola (.80 el acento, .62 el fuerte), cualquier
+// matiz queda con el mismo peso y el mismo contraste. El croma también es
+// fijo por preset, y si un color no entra en la pantalla (sRGB) se le baja
+// el croma hasta que entre, sin tocar el matiz ni la luz.
+//
+// Relevamiento y diseño: docs/superpowers/specs/2026-09-27-rediseno-sesion-y-color-design.md §4.
+
+/* ---------- OKLCH ↔ sRGB (matrices de Björn Ottosson) ---------- */
+const aLineal = c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const aGamma = c => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+
+function oklchALineal(L, C, h) {
+  const rad = (h * Math.PI) / 180;
+  const a = C * Math.cos(rad), b = C * Math.sin(rad);
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  return [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ];
+}
+
+const enGamut = v => v.every(x => x >= -1e-4 && x <= 1 + 1e-4);
+
+/** OKLCH → "#rrggbb". Si el color no existe en sRGB se busca el croma más
+    alto que sí entra (búsqueda binaria), con la misma luz y el mismo matiz.
+    Devuelve también el croma que quedó, para poder medirlo. */
+export function oklchAHex(L, C, h) {
+  let c = C;
+  if (!enGamut(oklchALineal(L, C, h))) {
+    let lo = 0, hi = C;
+    for (let i = 0; i < 30; i++) {
+      const mid = (lo + hi) / 2;
+      if (enGamut(oklchALineal(L, mid, h))) lo = mid; else hi = mid;
     }
-    hue *= 60;
+    c = lo;
   }
-  return { h: hue, s: sat * 100, l: lum * 100 };
+  const hex = oklchALineal(L, c, h)
+    .map(x => Math.round(Math.min(1, Math.max(0, aGamma(Math.min(1, Math.max(0, x))))) * 255))
+    .map(x => x.toString(16).padStart(2, '0'))
+    .join('');
+  return { hex: `#${hex}`, c };
 }
 
-function hue2rgb(p, q, t) {
-  if (t < 0) t += 1;
-  if (t > 1) t -= 1;
-  if (t < 1 / 6) return p + (q - p) * 6 * t;
-  if (t < 1 / 2) return q;
-  if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-  return p;
+/** "#rrggbb" (o "#rgb") → { L, C, h }. null si no es un color. */
+export function hexAOklch(hex) {
+  const t = String(hex ?? '').replace('#', '').trim();
+  const full = t.length === 3 ? t.split('').map(c => c + c).join('') : t;
+  if (!/^[0-9a-f]{6}$/i.test(full)) return null;
+  const [R, G, B] = [0, 2, 4].map(i => aLineal(parseInt(full.slice(i, i + 2), 16) / 255));
+  const l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B);
+  const m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B);
+  const s = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B);
+  const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+  const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+  const b = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+  return { L, C: Math.hypot(a, b), h: ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360 };
 }
 
-/** HSL (h en grados 0-360, s/l en 0-100) a "#rrggbb". */
-export function hslToHex(h, s, l) {
-  const hh = ((h % 360) + 360) % 360 / 360;
-  const ss = Math.min(100, Math.max(0, s)) / 100;
-  const ll = Math.min(100, Math.max(0, l)) / 100;
-  let r, g, b;
-  if (ss === 0) { r = g = b = ll; }
-  else {
-    const q = ll < 0.5 ? ll * (1 + ss) : ll + ss - ll * ss;
-    const p = 2 * ll - q;
-    r = hue2rgb(p, q, hh + 1 / 3);
-    g = hue2rgb(p, q, hh);
-    b = hue2rgb(p, q, hh - 1 / 3);
-  }
-  const toHex = v => Math.round(v * 255).toString(16).padStart(2, '0');
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-
-/** Luminancia relativa WCAG — no es "qué tan clara se ve" a ojo, es la mezcla
-    ponderada que usa el estándar de contraste (el verde pesa mucho más que
-    el azul: un azul y un verde con el mismo HSL L% NO tienen el mismo
-    contraste real contra un fondo, y por eso no alcanza con mirar el % de
-    luminosidad HSL para garantizar que se lea). */
-function luminance(hex) {
-  const full = hex.replace('#', '');
-  const chan = v => {
-    const c = parseInt(v, 16) / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  };
-  const r = chan(full.slice(0, 2)), g = chan(full.slice(2, 4)), b = chan(full.slice(4, 6));
+/* ---------- contraste WCAG ---------- */
+function luminancia(hex) {
+  const f = hex.replace('#', '');
+  const [r, g, b] = [0, 2, 4].map(i => aLineal(parseInt(f.slice(i, i + 2), 16) / 255));
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-/** Relación de contraste WCAG entre dos colores, siempre ≥1. */
+/** Relación de contraste WCAG entre dos colores, siempre ≥ 1. */
 export function contrastRatio(hexA, hexB) {
-  const la = luminance(hexA), lb = luminance(hexB);
-  const [hi, lo] = la > lb ? [la, lb] : [lb, la];
-  return (hi + 0.05) / (lo + 0.05);
+  const la = luminancia(hexA), lb = luminancia(hexB);
+  const [alto, bajo] = la > lb ? [la, lb] : [lb, la];
+  return (alto + 0.05) / (bajo + 0.05);
 }
 
-/** Sube (o baja) la luminosidad HSL de a pasos hasta que el contraste contra
-    `fondoHex` llegue al mínimo pedido, o hasta agotar el rango — nunca
-    entra en loop infinito porque L está acotada a [0,100]. Es lo que hace
-    que la garantía de lectura no dependa de qué matiz hayas elegido: un
-    azul profundo necesita subir más que un amarillo para el mismo contraste,
-    y acá se sube lo que haga falta en cada caso. */
-function conContraste(h, s, l, fondoHex, minimo, subir = true) {
-  let actual = l;
-  for (let i = 0; i < 50; i++) {
-    const hex = hslToHex(h, s, actual);
-    if (contrastRatio(hex, fondoHex) >= minimo) return { l: actual, hex };
-    actual = subir ? Math.min(100, actual + 2) : Math.max(0, actual - 2);
-    if (actual === 0 || actual === 100) break;
-  }
-  const hex = hslToHex(h, s, actual);
-  return { l: actual, hex };   // el mejor que se pudo, aunque no llegue al mínimo
-}
+/* ---------- base y estados (copias de styles.css; un test exige que coincidan) ---------- */
 
-/** El fondo contra el que se miden accent/blue3 (usados como texto/ícono).
-    Tiene que seguir a --bg de styles.css: si acá quedara el fondo viejo, las
-    garantías de contraste de conContraste() se calcularían contra un color
-    que la app ya no pinta, y darían por bueno un tono que en pantalla no se
-    lee. Se actualizó junto con la paleta "hierro y encendido". */
-export const BG = '#050609';
-/* Los dos candidatos a texto ARRIBA del degradado. Se exportan para que los
-   tests no los repitan a mano: antes estaban escritos también en theme.test.js
-   y al cambiar la paleta el test falló por duplicación, no por un bug real. */
-/** Sigue a --on-grad de styles.css: azul casi negro, dentro de la familia
-    fría de la paleta "acero". */
-export const ON_GRAD_OSCURO = '#04121C';
-/** El claro, apenas frío para no desentonar con la familia. */
-export const ON_GRAD_CLARO = '#F1F5F9';
-
-/** Contraste mínimo para texto grande / íconos sobre fondo casi negro (AA
-    large-text, que es el estándar que aplica: los números y etiquetas de
-    esta app son grandes y en negrita, no párrafos chicos). */
-const MIN_CONTRASTE = 3;
-
-/* La receta: de qué matiz de diferencia (grados) y con qué saturación/
-   luminosidad HSL sale cada rol, medida directamente de la paleta original
-   (--deep #2540E8, --blue #2E7DFF, --blue2 #5EA2FF, --blue3 #8FC2FF,
-   --accent #7FD1FF, --cyan #22D3EE) tomando --blue como matiz ancla (0). */
-const RECETA = {
-  deep: { dh: 14.3717, s: 80.9129, l: 52.7451 },
-  blue: { dh: 0, s: 100, l: 59.0196 },
-  blue2: { dh: -2.6622, s: 100, l: 68.4314 },
-  blue3: { dh: -4.6420, s: 100, l: 78.0392 },
-  accent: { dh: -15.7581, s: 100, l: 74.9020 },
-  cyan: { dh: -29.3794, s: 85.7143, l: 53.3333 },
+/** La base grafito. Neutra a propósito: sin tinte azul, así el acento que
+    elijas es el único color de la pantalla. */
+export const BASE = {
+  bg: '#101113',
+  glassRgb: [34, 35, 39],
+  glassAlfa: 0.66,
+  surface: '#18191c',
+  surface2: '#202125',
+  text: '#f3f4f6',
+  text2: '#b1b1b9',
+  text3: '#97979f',
 };
 
-/** Arma la paleta completa a partir de un color base (hex). Devuelve null si
-    `hex` no es un color válido — nunca aplica una paleta a medio armar. */
-export function paletaDesde(hex) {
-  const hsl = hexToHsl(hex);
-  if (!hsl) return null;
-  /* Negro, blanco y grises NO TIENEN MATIZ: hexToHsl() devuelve h=0 para
-     todos ellos, y 0° en la rueda de color es el rojo. Elegir negro salía
-     entonces como una app entera en rojo saturado (Enzo, 2026-09-10) — no
-     porque el negro "sea" rojo, sino porque no hay ningún matiz que girar y
-     el 0 de "no aplica" se estaba leyendo como el 0 de "rojo".
+/** Cuánto acento fuerte lleva la esquina de las tarjetas hero (styles.css).
+    Es el fondo más claro detrás de texto chico: los tests de contraste lo
+    usan como peor caso. */
+export const HERO_TINTE = 0.14;
 
-     Lo honesto con un color sin matiz es no inventarle uno: se cae a la
-     paleta de FÁBRICA, que es exactamente lo que se espera al elegir negro
-     (Enzo: "obviamente el negro, pero los bordes de las tarjetas y los
-     efectos de color azul metálico como ya está en la app"). El fondo de la
-     app ya es negro —eso no lo decide este color, lo decide --bg en
-     styles.css— así que "negro" acá significa "sin color propio encima":
-     negro con el azul metálico de siempre. Se conserva la saturación entera
-     de la receta a propósito: apagarla también apagaría los degradados y las
-     líneas, y la app perdería justo el relieve metálico que se quiere. */
-  const acromatico = hsl.s < 8 || hsl.l < 4 || hsl.l > 96;
-  const base = acromatico ? HUE_DEFECTO : hsl.h;
-  const tono = {};
-  for (const [rol, r] of Object.entries(RECETA)) {
-    tono[rol] = hslToHex(base + r.dh, r.s, r.l);
+/** Los colores de estado: reservados, no cambian con el acento. */
+export const ESTADOS = { danger: '#F87171', warn: '#FBBF24', ok: '#34D399', flame: '#FFC46B' };
+
+/* ---------- el acento ---------- */
+
+export const PRESETS = [
+  { id: 'hielo', nombre: 'Hielo', h: 225, c: 0.13 },
+  { id: 'cobalto', nombre: 'Cobalto', h: 262, c: 0.16 },
+  { id: 'violeta', nombre: 'Violeta', h: 295, c: 0.15 },
+  { id: 'fucsia', nombre: 'Fucsia', h: 345, c: 0.17 },
+  { id: 'mono', nombre: 'Monocromo', h: 0, c: 0 },
+];
+export const ACENTO_DEFECTO = { id: 'hielo' };
+
+/** El croma del personalizado: del color elegido se toma SÓLO el matiz. Así
+    elegir un celeste lavado o uno neón da el mismo acento, con el mismo
+    contraste que los presets. */
+export const CROMA_PROPIO = 0.15;
+
+/** Distancia entre dos matices en la rueda, en [0, 180]. */
+export function distanciaMatiz(a, b) {
+  const d = Math.abs((((a - b) % 360) + 360) % 360);
+  return d > 180 ? 360 - d : d;
+}
+
+/** A menos de esto de un estado, el acento se confunde con él. */
+const MARGEN = 20;
+
+/* Las zonas prohibidas: cada estado ± MARGEN. Rojo, llama y ámbar quedan
+   tan cerca que entre sus zonas hay un hueco de ~14°: un matiz ahí (un
+   naranja) estaría "permitido" pero se confundiría con los dos, así que las
+   zonas con un hueco menor que MARGEN se funden en una sola. */
+const ZONAS = (() => {
+  const tramos = Object.values(ESTADOS)
+    .map(hex => hexAOklch(hex).h)
+    .sort((a, b) => a - b)
+    .map(h => [h - MARGEN, h + MARGEN]);
+  const fundidas = [];
+  for (const t of tramos) {
+    const ult = fundidas[fundidas.length - 1];
+    if (ult && t[0] - ult[1] < MARGEN) ult[1] = Math.max(ult[1], t[1]);
+    else fundidas.push([...t]);
   }
-  // accent y blue3 son los dos que esta app usa como TEXTO/ícono suelto
-  // (cifras, etiquetas, día activo) — el resto son degradados o fondos de
-  // botón, donde el contraste lo da --on-grad, no el tono en sí.
-  tono.accent = conContraste(base + RECETA.accent.dh, RECETA.accent.s, RECETA.accent.l, BG, MIN_CONTRASTE, true).hex;
-  tono.blue3 = conContraste(base + RECETA.blue3.dh, RECETA.blue3.s, RECETA.blue3.l, BG, MIN_CONTRASTE, true).hex;
+  return fundidas.map(([a, b]) => ({ centro: (a + b) / 2, radio: (b - a) / 2 }));
+})();
 
-  // El texto que va ARRIBA del degradado (botones grandes, chips "on"): se
-  // prueba negro-azulado (como el original) y blanco, y gana el que dé más
-  // contraste contra el tono del medio del degradado — así funciona tanto si
-  // elegiste un azul oscuro como un amarillo casi blanco.
-  const negro = ON_GRAD_OSCURO, blanco = ON_GRAD_CLARO;
-  const onGrad = contrastRatio(negro, tono.blue2) >= contrastRatio(blanco, tono.blue2) ? negro : blanco;
+/** Si el matiz cae en la zona de un estado, lo lleva al borde más cercano
+    de esa zona (con un grado de aire para el redondeo a 8 bits). */
+export function alejarDeEstados(h) {
+  const n = ((h % 360) + 360) % 360;
+  for (const z of ZONAS) {
+    if (distanciaMatiz(n, z.centro) < z.radio) {
+      const arriba = z.centro + z.radio + 1, abajo = z.centro - z.radio - 1;
+      const destino = distanciaMatiz(n, arriba) <= distanciaMatiz(n, abajo) ? arriba : abajo;
+      return Math.round(((destino % 360) + 360) % 360);
+    }
+  }
+  return n;
+}
 
-  /* Los canales sueltos de cada tono: son lo que consumen los ~50 rgba() de
-     styles.css (halos, anillos, chips, sombras). Sin esto, elegir un color en
-     Ajustes cambiaba los tokens de color pero dejaba TODOS los efectos en el
-     azul de fábrica, porque un literal escrito adentro de un rgba() no es una
-     custom property y `aplicarPaleta()` no puede pisarlo. */
+/** La selección guardada → { h, c }. Nunca devuelve algo roto: un id
+    desconocido o un matiz inválido caen al de fábrica. */
+export function acentoDe(sel) {
+  if (sel?.id === 'propio' && Number.isFinite(sel.h)) return { h: alejarDeEstados(sel.h), c: CROMA_PROPIO };
+  const p = PRESETS.find(x => x.id === sel?.id) || PRESETS.find(x => x.id === ACENTO_DEFECTO.id);
+  return { h: p.h, c: p.c };
+}
+
+const canales = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)).join(',');
+
+/** Todas las custom properties que dependen del acento. Lo demás del CSS
+    se arma con estas (el degradado, el glow, los halos, la arista). */
+export function variablesDe({ h, c }) {
+  const accent = oklchAHex(0.8, c, h).hex;
+  const strong = oklchAHex(0.62, c * 1.1, h).hex;
+  const on = oklchAHex(0.18, Math.min(c, 0.03), h).hex;
+  /* El mapa muscular es una escala de luminosidad del mismo matiz: cuanto
+     más reciente el entrenamiento, más luz. Cada tono son tres paradas
+     (luz, cuerpo, sombra) para el volumen del músculo. El cuarto escalón
+     (7+ días) no sale del acento: es el ámbar de "atención", fijo en CSS. */
+  const esc = [
+    [[0.93, 0.55], [0.8, 1], [0.5, 0.9]],
+    [[0.74, 0.8], [0.6, 1], [0.36, 0.8]],
+    [[0.54, 0.5], [0.43, 0.5], [0.27, 0.4]],
+  ];
+  const mapa = {};
+  esc.forEach((paradas, i) => {
+    ['hi', 'md', 'lo'].forEach((k, j) => {
+      const [L, f] = paradas[j];
+      mapa[`--mapa-${i}-${k}`] = oklchAHex(L, c * f, h).hex;
+    });
+  });
   return {
-    blueRgb: hexToRgbChannels(tono.blue),
-    blue2Rgb: hexToRgbChannels(tono.blue2),
-    blue3Rgb: hexToRgbChannels(tono.blue3),
-    deepRgb: hexToRgbChannels(tono.deep),
-    cyanRgb: hexToRgbChannels(tono.cyan),
-    accent: tono.accent,
-    deep: tono.deep,
-    blue: tono.blue,
-    blue2: tono.blue2,
-    blue3: tono.blue3,
-    cyan: tono.cyan,
-    onGrad,
-    grad: `linear-gradient(135deg,${tono.deep} 0%,${tono.blue2} 100%)`,
-    grad2: `linear-gradient(112deg,${tono.blue2},${tono.cyan} 58%,${tono.accent})`,
-    glow: `0 16px 40px -14px ${hexToRgba(tono.cyan, 0.6)}`,
-    // Mismos alfas que --color-line/--color-line2 en styles.css (subidos el
-    // 2026-09-10 para que el marco metálico se vea de verdad): si acá
-    // quedaran los viejos, elegir un color de tema APAGARÍA los bordes.
-    line: hexToRgba(tono.blue2, 0.18),
-    line2: hexToRgba(tono.blue2, 0.34),
+    '--accent': accent,
+    '--accent-strong': strong,
+    '--on-accent': on,
+    '--accent-rgb': canales(accent),
+    '--accent-strong-rgb': canales(strong),
+    ...mapa,
   };
 }
 
-/** Los tres canales de un hex, como "r,g,b" — el formato que necesita
-    `rgba(var(--blue-rgb), .3)`: rgba() no acepta un color entero adentro de
-    una var(), necesita los canales sueltos. */
-function hexToRgbChannels(hex) {
-  const full = hex.replace('#', '');
-  return `${parseInt(full.slice(0, 2), 16)},${parseInt(full.slice(2, 4), 16)},${parseInt(full.slice(4, 6), 16)}`;
-}
-
-function hexToRgba(hex, alpha) {
-  const full = hex.replace('#', '');
-  const r = parseInt(full.slice(0, 2), 16), g = parseInt(full.slice(2, 4), 16), b = parseInt(full.slice(4, 6), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
-}
-
-/** El color de fábrica, y lo que Ajustes muestra como "actual" mientras no
-    elijas otro. Es el acento de la paleta "acero" (= --color-accent en
-    styles.css): el punto más claro y saturado del recorrido frío. */
-export const COLOR_DEFECTO = '#38BDF8';
-
-/** El matiz de fábrica, al que caen los colores sin matiz propio (negro,
-    blanco, grises). Se calcula del propio COLOR_DEFECTO en vez de escribir el
-    número a mano: si mañana cambia la paleta, esto la sigue solo. */
-const HUE_DEFECTO = hexToHsl(COLOR_DEFECTO).h;
-
-
-const VAR_DE = {
-  accent: '--accent', deep: '--deep', blue: '--blue', blue2: '--blue2', blue3: '--blue3',
-  cyan: '--cyan', onGrad: '--on-grad', grad: '--grad', grad2: '--grad2',
-  glow: '--glow', line: '--line', line2: '--line2',
-  blueRgb: '--blue-rgb', blue2Rgb: '--blue2-rgb', blue3Rgb: '--blue3-rgb',
-  deepRgb: '--deep-rgb', cyanRgb: '--cyan-rgb',
-};
-
-/** Aplica la paleta como custom properties en :root — pisa el valor por
-    default de styles.css porque un estilo inline en el elemento raíz gana
-    por especificidad. Sin `hex` (o inválido) vuelve al color de fábrica
-    quitando los overrides, no fuerza el default a mano: así si algún token
-    nuevo se agrega a styles.css en el futuro, "restablecer" lo hereda solo. */
-export function aplicarPaleta(hex) {
-  const root = document.documentElement.style;
-  if (!hex) {
-    Object.values(VAR_DE).forEach(v => root.removeProperty(v));
-    return;
+/** Qué acento usar según lo guardado, migrando el `themeColor` viejo (un hex
+    libre de la paleta anterior) la primera vez: al preset más cercano si
+    está a ≤ 15° de matiz, si no a un personalizado con ese matiz. Negro,
+    blanco y grises no tienen matiz: vuelven al de fábrica. */
+export function acentoGuardado(cfg) {
+  const guardado = cfg?.acento;
+  if (guardado) {
+    const valido = PRESETS.some(p => p.id === guardado.id) || (guardado.id === 'propio' && Number.isFinite(guardado.h));
+    return { sel: valido ? guardado : ACENTO_DEFECTO, migrado: false };
   }
-  const p = paletaDesde(hex);
-  if (!p) return;
-  Object.entries(VAR_DE).forEach(([k, v]) => root.setProperty(v, p[k]));
+  if (!cfg?.themeColor) return { sel: ACENTO_DEFECTO, migrado: false };
+  const o = hexAOklch(cfg.themeColor);
+  if (!o || o.C < 0.03) return { sel: ACENTO_DEFECTO, migrado: true };
+  const cerca = PRESETS.filter(p => p.c > 0)
+    .map(p => ({ p, d: distanciaMatiz(p.h, o.h) }))
+    .sort((a, b) => a.d - b.d)[0];
+  if (cerca.d <= 15) return { sel: { id: cerca.p.id }, migrado: true };
+  return { sel: { id: 'propio', h: alejarDeEstados(Math.round(o.h)) }, migrado: true };
+}
+
+/** El evento que avisa que cambió el acento: lo escuchan los que dibujan con
+    colores leídos una vez (el canvas del gráfico). */
+export const EVENTO_ACENTO = 'fierro:acento';
+
+/** Lee el valor actual de un token de styles.css (con el acento aplicado). */
+export function leerToken(nombre) {
+  if (typeof document === 'undefined') return '';
+  return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim();
+}
+
+/** Aplica el acento como estilo inline en <html>: le gana a los valores de
+    :root por especificidad, y todo lo que se arma con var() lo sigue solo. */
+export function aplicarAcento(sel) {
+  if (typeof document === 'undefined') return;
+  const vars = variablesDe(acentoDe(sel));
+  const root = document.documentElement.style;
+  for (const [k, v] of Object.entries(vars)) root.setProperty(k, v);
+  // La barra del sistema toma el fondo de la app, leído del token para que
+  // no haya un tercer casi-negro escrito a mano.
+  let meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    document.head.appendChild(meta);
+  }
+  meta.content = leerToken('--bg') || BASE.bg;
+  window.dispatchEvent(new CustomEvent(EVENTO_ACENTO, { detail: vars }));
 }

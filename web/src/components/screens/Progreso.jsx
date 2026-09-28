@@ -92,11 +92,11 @@ export default function Progreso() {
             <div className="hero-eyebrow">{headLabel}</div>
             <div className="bignum">{headNum != null ? <span ref={headNumRef}>{fmtNum(round1(headNum))}</span> : '—'}<small> kg</small></div>
             {lastW && (
-              <div className="text-mut text-sm mt-[3px]">
+              <div className="text-text-2 text-sm mt-[3px]">
                 {wk && wk.curAvg != null ? `último ${fmtNum(round1(lastW.weight))} kg · ` : `${fmtNum(kg2lb(lastW.weight))} lb · `}
                 {fmtDFull(lastW.date)}
                 {wk && wk.delta != null && (
-                  <> · <b className={`${wk.delta <= 0 ? 'text-ok' : 'text-blue2'} whitespace-nowrap`}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></>
+                  <> · <b className={`${wk.delta <= 0 ? 'text-ok' : 'text-accent'} whitespace-nowrap`}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></>
                 )}
               </div>
             )}
@@ -104,7 +104,7 @@ export default function Progreso() {
           <button type="button" className="reg-btn" onClick={() => openSheet('body-form')}>+ Registro</button>
         </div>
         {wk && wk.curAvg != null && (
-          <div className="text-mut text-micro mt-2 leading-snug">El peso fluctúa 1-2 kg por día; el promedio semanal es la métrica que importa.</div>
+          <div className="text-text-2 text-micro mt-2 leading-snug">El peso fluctúa 1-2 kg por día; el promedio semanal es la métrica que importa.</div>
         )}
         <div className="seg mt-3">
           {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['all', 'Todo']].map(([r, label]) => (
@@ -113,7 +113,7 @@ export default function Progreso() {
         </div>
         <div className="mt-3"><Chart id="chartWeight" pts={wpts} opts={{ unit: 'kg' }} /></div>
         {lastBf && (
-          <div className="text-mut text-micro mt-1.5">
+          <div className="text-text-2 text-micro mt-1.5">
             {lastBf.bodyfat}% grasa · masa magra estimada {fmtNum(round1(lastBf.weight * (1 - lastBf.bodyfat / 100)))} kg
           </div>
         )}
@@ -178,7 +178,7 @@ export default function Progreso() {
               </select>
             </div>
             <Chart id="chartEx" pts={exPts} opts={{ unit: 'kg' }} />
-            <div className="text-mut text-xs text-center mt-1.5">Peso de tu mejor serie por sesión · tocá un punto para ver las reps</div>
+            <div className="text-text-2 text-xs text-center mt-1.5">Peso de tu mejor serie por sesión · tocá un punto para ver las reps</div>
           </div>
         )
       )}
@@ -287,23 +287,23 @@ function StrengthTab() {
         <div className="card">
           {readout.slice(0, 10).map(x => {
             const pr = project(x.t, 4);
-            let cls = 'text-mut', tag = '';
+            let cls = 'text-text-2', tag = '';
             if (!x.t) tag = `${x.pts.length} sesion${x.pts.length === 1 ? '' : 'es'} · faltan datos para calcular tendencia`;
             else if (pr) { cls = 'text-ok'; tag = `+${fmtNum(round1(pr.perWeek))} kg/sem · en 4 semanas ≈ ${fmtNum(round1(pr.value))} kg${pr.capped ? ' (ritmo acotado)' : ''}`; }
-            else if (x.t.slope > 0) { cls = 'text-blue2'; tag = 'subiendo pero irregular · sin señal suficiente para proyectar'; }
+            else if (x.t.slope > 0) { cls = 'text-accent'; tag = 'subiendo pero irregular · sin señal suficiente para proyectar'; }
             else if (x.t.slope === 0) { cls = 'text-warn'; tag = `plano en las últimas ${x.t.n} sesiones · probá variar reps, series o ejercicio`; }
             else { cls = 'text-warn'; tag = `bajando en las últimas ${x.t.n} sesiones · revisá descanso y alimentación`; }
             return (
               <div key={x.name} className="row">
                 <div className="grow"><div className="t">{x.name}</div><div className="s"><span className={cls}>{tag}</span></div></div>
                 <div className="text-right flex-none">
-                  <div className="num text-xl text-blue3 leading-none">{fmtNum(round1(x.last))}</div>
-                  <div className="text-mut text-micro tracking-[.08em]">KG 1RM</div>
+                  <div className="num text-xl text-accent leading-none">{fmtNum(round1(x.last))}</div>
+                  <div className="text-text-2 text-micro tracking-[.08em]">KG 1RM</div>
                 </div>
               </div>
             );
           })}
-          <div className="text-mut text-sm leading-normal mt-[var(--s3)]">Calculado con la fórmula de Epley sobre tu mejor serie de cada sesión (se ignoran las de más de 12 reps, donde la fórmula se desvía). La proyección supone que mantenés el ritmo y se limita a 1 %/semana: la fuerza no sube en línea recta.</div>
+          <div className="text-text-2 text-sm leading-normal mt-[var(--s3)]">Calculado con la fórmula de Epley sobre tu mejor serie de cada sesión (se ignoran las de más de 12 reps, donde la fórmula se desvía). La proyección supone que mantenés el ritmo y se limita a 1 %/semana: la fuerza no sube en línea recta.</div>
         </div>
       )}
     </>
@@ -323,7 +323,7 @@ function StrengthTab() {
 
    Sin fallback a propósito: un fallback que nombra un valor distinto al del
    token es peor que ninguno, porque esconde exactamente este error. */
-const BAND_COLOR = { bajo: 'var(--mut)', efectivo: 'var(--ok)', 'cerca-max': 'var(--warn)', excedido: 'var(--red)' };
+const BAND_COLOR = { bajo: 'var(--text-2)', efectivo: 'var(--ok)', 'cerca-max': 'var(--warn)', excedido: 'var(--danger)' };
 const BAND_LABEL = { bajo: 'Bajo mínimo', efectivo: 'Rango efectivo', 'cerca-max': 'Cerca del máximo', excedido: 'Excedido' };
 
 function VolumeTab() {
@@ -335,8 +335,8 @@ function VolumeTab() {
     <>
       {risk?.risk && (
         <div className="notice warn">
-          <div className="text-sm text-txt font-medium">⚠ Volumen alto esta semana</div>
-          <div className="s text-mut mt-1">Tonelaje 7 días ({fmtNum(risk.acute)} kg) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
+          <div className="text-sm text-text font-medium">⚠ Volumen alto esta semana</div>
+          <div className="s text-text-2 mt-1">Tonelaje 7 días ({fmtNum(risk.acute)} kg) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
         </div>
       )}
       {/* El "· 7 días" no se pierde al sacar el título: pasa a la leyenda de
@@ -357,7 +357,7 @@ function VolumeTab() {
             </div>
           );
         })}
-        <div className="text-mut text-sm leading-normal">Series por grupo muscular en los últimos 7 días. Bandas de Renaissance Periodization (Mike Israetel): mínimo efectivo, rango que hace crecer y máximo recuperable — varían por grupo.</div>
+        <div className="text-text-2 text-sm leading-normal">Series por grupo muscular en los últimos 7 días. Bandas de Renaissance Periodization (Mike Israetel): mínimo efectivo, rango que hace crecer y máximo recuperable — varían por grupo.</div>
       </div>
     </>
   );
@@ -392,10 +392,10 @@ function PRsList({ exNames }) {
         <div key={p.n} className="row">
           <div className="grow"><div className="t">{p.n}</div>
             <div className="s">Mejor serie {fmtNum(round1(p.bestSet.w))} × {p.bestSet.r} · {fmtD(p.dV)}</div>
-            {p.tier && <div className="s text-blue2">{p.tier.label} · {p.tier.ratio}× tu peso corporal</div>}</div>
+            {p.tier && <div className="s text-accent">{p.tier.label} · {p.tier.ratio}× tu peso corporal</div>}</div>
           <div className="text-right flex-none">
-            <div className="pr-w">{fmtNum(round1(p.maxW))}<span className="text-sm text-mut"> kg</span></div>
-            <div className="text-mut text-micro">{fmtNum(kg2lb(p.maxW))} lb</div>
+            <div className="pr-w">{fmtNum(round1(p.maxW))}<span className="text-sm text-text-2"> kg</span></div>
+            <div className="text-text-2 text-micro">{fmtNum(kg2lb(p.maxW))} lb</div>
           </div>
         </div>
       ))}

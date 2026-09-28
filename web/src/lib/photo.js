@@ -11,6 +11,8 @@
 // MB, y multiplicado por decenas de ejercicios llenaría IndexedDB. 480px de
 // lado mayor con JPEG al 70% deja un archivo de ~40-60 KB, más que suficiente
 // para reconocer una máquina de un vistazo.
+import { leerToken, BASE } from './theme.js';
+
 const MAX_SIDE = 480;
 const QUALITY = 0.7;
 
@@ -36,7 +38,7 @@ export function shrinkImage(file) {
       const cx = cv.getContext('2d');
       // Fondo negro: si la foto viene con transparencia, el JPEG la pintaría
       // de blanco y desentonaría con el resto de la interfaz.
-      cx.fillStyle = '#04070F';
+      cx.fillStyle = leerToken('--bg') || BASE.bg;
       cx.fillRect(0, 0, w, h);
       cx.drawImage(img, 0, 0, w, h);
       try {
