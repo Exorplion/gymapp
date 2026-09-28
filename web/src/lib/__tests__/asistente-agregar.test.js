@@ -92,3 +92,48 @@ describe('estado del asistente', () => {
     expect(datosParaGuardar(conNombre('rutina', 'Movimiento raro', 'Hombro').form).cat).toBe('Hombro');
   });
 });
+
+const ctxDe = (tipo, nombreTurno, movibles, fijos = []) => ({ tipo, nombreTurno, fijos, movibles });
+const f = (id, name, sets = 3, estado = 'pendiente') => ({ id, name, sets, estado });
+
+describe('sugerencias del paso 1', () => {
+  it('autocompleta del catálogo sin repetir lo ya escrito entero', () => {
+    const r = A.autocompletar('remo');
+    expect(r).toContain('Remo con barra');
+    expect(r.length).toBeLessThanOrEqual(6);
+    expect(A.autocompletar('Remo con barra')).not.toContain('Remo con barra');
+    expect(A.autocompletar('   ')).toEqual([]);
+  });
+
+  it('explorar un grupo da su catálogo sin lo que ya está', () => {
+    const r = A.catalogoDe('Pecho', ['press banca']);
+    expect(r).toContain('Aperturas en polea');
+    expect(r).not.toContain('Press banca');
+  });
+
+  it('te falta hoy: el grupo con menos series planificadas del turno', () => {
+    const ctx = ctxDe('rutina', 'Anterior A', [
+      f('a', 'Press banca', 4), f('b', 'Press inclinado', 4), f('c', 'Elevaciones laterales', 3), f('d', 'Extensión tríceps polea', 2),
+    ]);
+    const r = A.teFaltaHoy(ctx);
+    expect(r.cat).toBe('Tríceps');
+    expect(r.ejercicios.length).toBeGreaterThan(0);
+    expect(r.ejercicios.length).toBeLessThanOrEqual(3);
+    expect(r.ejercicios).not.toContain('Extensión tríceps polea');
+  });
+
+  it('un grupo que el nombre del turno promete y no tiene ejercicios es el que falta', () => {
+    const ctx = ctxDe('rutina', 'Pecho / Tríceps', [f('a', 'Press banca', 4), f('b', 'Aperturas en polea', 3)]);
+    expect(A.teFaltaHoy(ctx).cat).toBe('Tríceps');
+  });
+
+  it('en la sesión no cuenta lo salteado', () => {
+    // Sin el salteado, Bíceps (3) le ganaría a Espalda (4).
+    const ctx = ctxDe('sesion', 'Tirón', [f('a', 'Remo con barra', 4)], [f('b', 'Curl con barra', 3, 'salteado')]);
+    expect(A.teFaltaHoy(ctx).cat).toBe('Espalda');
+  });
+
+  it('turno vacío y sin nombre reconocible: nada que sugerir', () => {
+    expect(A.teFaltaHoy(ctxDe('rutina', 'Día 3', []))).toBeNull();
+  });
+});

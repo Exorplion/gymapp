@@ -12,9 +12,12 @@
 // Todo es puro y devuelve estados nuevos: se prueba sin montar nada
 // (__tests__/asistente-agregar.test.js). La fuente de bugs real acá no es el
 // markup, es "¿dónde quedó el ejercicio?".
-import { catOf } from './muscle.js';
+import { EXCATALOG, MUSCLE_CATS, catOf } from './muscle.js';
+import { norm } from './format.js';
+import { exMatchesQuery } from './exdb.js';
 import { resolvedCat } from './exercise-wizard.js';
 import { VENTANA } from './progression.js';
+import { dayCategories } from './rutina-logic.js';
 
 export const PASOS = 3;
 
@@ -104,4 +107,54 @@ export function datosParaGuardar(form) {
     name, sets: form.sets, reps: form.reps, equip: form.equip || '',
     unilateral: !!form.unilateral, cat: detectado(name) ? '' : (form.cat || ''),
   };
+}
+
+/* ---------- paso 1: sugerencias ----------
+   `ctx` (lo arman contextoRutina / contextoSesion, más abajo) es
+   { tipo, nombreTurno, fijos: Fila[], movibles: Fila[] } con
+   Fila = { id, name, cat?, sets, estado: 'pendiente'|'en-curso'|'hecho'|'salteado' }. */
+
+/** Autocompletado del catálogo mientras se escribe (la misma búsqueda por
+    nombre y palabras clave que ya usaba ExerciseForm). Lo ya escrito entero
+    no se repite como sugerencia. */
+export function autocompletar(q, max = 6) {
+  const nq = norm(q);
+  if (!nq) return [];
+  return EXCATALOG.filter(e => norm(e.n) !== nq && exMatchesQuery(e.n, nq)).slice(0, max).map(e => e.n);
+}
+
+/** "Explorar": el catálogo de un grupo, sin lo que ya está en el turno. */
+export function catalogoDe(cat, yaEstan = []) {
+  const ya = new Set(yaEstan.map(n => norm(n)));
+  return EXCATALOG.filter(e => e.c === cat && !ya.has(norm(e.n))).map(e => e.n);
+}
+
+/** "Te falta hoy · <grupo>": el grupo menos trabajado del turno, con
+    ejercicios del catálogo que todavía no están.
+
+    Menos trabajado = menos series PLANIFICADAS en el turno. Los candidatos
+    son los grupos que el turno ya tiene más los que su nombre promete
+    ("Pecho / Tríceps", dayCategories): un grupo prometido sin ejercicios
+    vale 0, que es justamente lo que falta. Lo salteado no cuenta: no se
+    trabaja. Antes las sugerencias salían SÓLO del nombre del turno, y en
+    "Anterior A" (que no nombra ningún grupo) ofrecían dominadas en un día de
+    empuje (relevamiento, fricción A.3).
+
+    null si no hay ningún candidato: la fila no se muestra, no se inventa. */
+export function teFaltaHoy(ctx, max = 3) {
+  const filas = [...ctx.fijos, ...ctx.movibles].filter(x => x.estado !== 'salteado');
+  const series = new Map();
+  for (const c of dayCategories(ctx.nombreTurno)) series.set(c, 0);
+  for (const x of filas) {
+    const c = catOf(x);
+    if (c) series.set(c, (series.get(c) || 0) + (x.sets || 0));
+  }
+  const nombres = filas.map(x => x.name);
+  const orden = [...series.entries()]
+    .sort((a, b) => a[1] - b[1] || MUSCLE_CATS.indexOf(a[0]) - MUSCLE_CATS.indexOf(b[0]));
+  for (const [cat] of orden) {
+    const ejercicios = catalogoDe(cat, nombres).slice(0, max);
+    if (ejercicios.length) return { cat, ejercicios };
+  }
+  return null;
 }
