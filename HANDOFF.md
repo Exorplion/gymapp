@@ -4,6 +4,39 @@
 
 ---
 
+## SESIÓN 2026-09-27 (tarde) — Tanda 1 de la auditoría total
+
+Rama `fix/auditoria-tanda1` (sobre `audit/total-2026-09`), PR abierto sin
+mergear. **764 tests.** Arreglado, cada uno medido en el build de producción a
+390 y 430 (detalle y números en `docs/auditoria-total-2026-09.md`, sección
+"Tanda 1 — estado"):
+
+- **G1** vidrio de vuelta en Chrome: `backdrop-filter` se escribe SIN el par
+  `-webkit-` (el minificador se quedaba con el prefijado y borraba el bueno).
+  Test nuevo `__tests__/backdrop-build.test.js` que buildea el CSS de verdad.
+- **I1** "Completado · hoy" = hay una sesión con fecha de hoy (`sesionDeHoy`,
+  session.js); `sessionForSlot` se borró.
+- **A.9 / A.10 / A.11** (relevamiento de orden): el orden de verdad del plan es
+  `porBloques()` (muscle.ts). La sesión, las ↑↓ del editor y el arrastre de
+  bloques de Plan de hoy pasan por ahí.
+- **E1** chevron, **B1** leyenda desde `TONOS` (Silhouette.jsx), **A1/A2**
+  perfil, **E4** "2×9", **P1** "1 serie" (y "1 ejercicio" en Inicio).
+
+Trampas encontradas:
+- `blocksOf()` SÍ reordena: junta en un bloque lo que está separado. Todo lo
+  que ordena tiene que pasar por `porBloques()` o pantalla y sesión divergen.
+- `data-sort` en un contenedor lo vuelve arrastrable para drag.js aunque sólo
+  se haya puesto para `flipSort`. Si agregás un `data-sort` nuevo, `commitSort`
+  tiene que conocer ese `kind`.
+- `emulate` del MCP con sólo `cpuThrottlingRate` **resetea el viewport**:
+  pasá siempre `viewport` y `cpuThrottlingRate` juntos.
+- El arreglo propuesto en el informe para I1 ("sesión de ese turno hoy") no
+  alcanzaba: `completeSession` adelanta el puntero, el pendiente es el siguiente.
+
+Pendiente: tandas 2 a 8 del informe, en su orden.
+
+---
+
 ## PENDIENTES AL 2026-09-27 — leer primero
 
 `main` = **#122** mergeado y publicado, **744 tests**. Todo lo de las sesiones

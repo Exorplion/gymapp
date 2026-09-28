@@ -72,6 +72,8 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 
 ### G1 · ALTA · El build de producción elimina `backdrop-filter`
 
+> **Arreglado** en `6aeedad` (tanda 1). Medido en el build: `backdropFilter` = `blur(14px)` en `header.top`, `blur(26px) saturate(1.6)` en `nav.tabbar`, `blur(22px) saturate(1.5)` en `.card`/`.ini-tile`, `blur(24px) saturate(1.5)` en `#sheet .panel`, `blur(18px) saturate(1.3)` en `#rest-fs`, a 390 y 430. Test: `__tests__/backdrop-build.test.js` construye el CSS con Vite + Tailwind y falla si una regla queda sólo con `-webkit-`.
+
 - **Dónde:** `web/src/styles.css:411` (header), `:708`, `:1937` (tab bar),
   `:1999` (`#rest-fs`), `:2069` (`#sheet .panel`), `:2227`, `:2358`, `:2370`,
   `:2393`, `:3241`; `styles-coverflow.css:45-46`.
@@ -297,6 +299,8 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 
 ### I1 · ALTA · "Completado · hoy" con sesiones de otro día
 
+> **Arreglado** en `d719200` (tanda 1), con una corrección al arreglo propuesto: "sesión *de ese turno* con `date === dstr()`" no alcanza, porque `completeSession` adelanta el puntero y el turno pendiente es siempre el SIGUIENTE — con ese criterio "Completado · hoy" no saldría nunca. `sesionDeHoy()` busca la sesión de hoy de cualquier turno y el título es el turno que se hizo. Medido: con el seed (última Anterior A el lun 21, hoy dom 27) Inicio dice "Dom 27 sep · Anterior A · ENTRENAR"; tras completar Anterior A, "Completado · hoy · Anterior A · 1 ejercicio".
+
 - **Dónde:** `web/src/components/screens/Inicio.jsx:57` y `:106`;
   `web/src/lib/session.js:229-232` (`sessionForSlot` = cualquier sesión de ese
   turno **en la semana**).
@@ -405,6 +409,8 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 
 ### E1 · ALTA · El chevron del turno abierto se ve "<" (regresión)
 
+> **Arreglado** en `60d3320` (tanda 1): glifo `›` fijo; lo gira sólo el CSS. Medido `matrix(0,1,-1,0)` sobre "›" → apunta abajo, a 390 y 430.
+
 - **Dónde:** `web/src/components/screens/Rutina.jsx:608` (cambia el glifo a
   `⌄` al abrir) + `web/src/styles.css:2650` (`.day-card.open .day-head .chev`
   rota 90°). Medido `transform: matrix(0,1,-1,0)` sobre "⌄" → apunta a la
@@ -426,6 +432,8 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
   tres sin `aria-label`.
 
 ### E4 · MEDIA · "2×9" se lee "2.9"
+
+> **Arreglado** en `14ae7ae` (tanda 1): `×` a `.65em` (16,9 px contra 26), `--mut`, 2 px de aire por lado y subida al centro de la cifra (centro de la × a 1 px del centro del dígito).
 
 - `styles.css:1692-1697`: dígitos de 26 px y la `×` a 13 px en `--mut2`; a
   simple vista es un punto decimal. **Arreglo:** `×` al 60–70 % del tamaño del
@@ -471,6 +479,8 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 
 ### P1 · BAJA · "1 series"
 
+> **Arreglado** en `9358f98` (tanda 1): "1 serie · 333 kg de volumen" medido en Progreso; de paso Inicio decía "1 ejercicios".
+
 - `SessionCard.jsx:43`: "1 series · 333 kg de volumen". **Arreglo:** plural.
 
 ### P2 · BAJA · Marcas del eje no redondas
@@ -489,6 +499,8 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 ## Tu cuerpo · ficha de músculo
 
 ### B1 · ALTA · La leyenda no dice lo que pinta el cuerpo
+
+> **Arreglado** en `d74f18c` (tanda 1): `TONOS` (Silhouette.jsx) es la única escala; `LeyendaTonos` pinta cada muestra con la misma clase de la zona (`fill: url(#sil-g0…g3)`, `url(#sil-gn)`): "hoy o ayer · 2-3 días · 4-6 días · hace 7+ días · sin registro".
 
 - **Dónde:** `web/src/components/sheets/BodyMap.jsx:47-50` vs
   `web/src/components/Silhouette.jsx:498-510`.
@@ -513,12 +525,16 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 
 ### A1 · MEDIA · El objetivo se corta bajo la flecha del select
 
+> **Arreglado** en `1bf3aa6` (tanda 1): `padding-right: 40px` y la opción dice sólo el nombre; lo que implica va debajo (`.field-hint`). Medido: la opción más larga mide 136 px en 294 útiles (390) y 334 (430).
+
 - `styles.css:1911-1913` (`.field select` con `padding:14px` y la flecha en
   `calc(100% - 14px)`): "Déficit moderado — −300 kcal · ~0.25-0.3 kg/sem" mide
   379 px en 320 útiles: corre por debajo del chevron y se pierde "kg/sem".
   **Arreglo:** `padding-right: 40px` y textos de opción más cortos.
 
 ### A2 · MEDIA · Placeholders que parecen datos cargados
+
+> **Arreglado** en `1bf3aa6` (tanda 1): "Ej. 24" / "Ej. 179" / "Ej. 74", y el recuadro dice "Sin edad, altura y peso no se puede calcular tu gasto diario ni tus macros."
 
 - Perfil: Edad y Altura vacíos con placeholder "24" y "179" en gris; Peso "74"
   es valor real. Parece que están completos. Choca con el criterio de producto
@@ -595,6 +611,37 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 - Las `will-change` de la silueta están justificadas.
 
 ---
+
+## Tanda 1 — estado (2026-09-27, rama `fix/auditoria-tanda1`)
+
+Arreglados: **G1, I1, E1, B1, A1, A2, E4, P1** (ver cada ID) y tres bugs del
+relevamiento de orden que tienen la misma raíz, `76e296e`:
+
+- **A.9** — las ↑↓ del editor swapeaban el índice guardado mientras la lista
+  se pinta agrupada por músculo: "Aperturas" guardada 11ª y pintada 4ª no se
+  movía y el aviso decía "Ejercicios reordenados". Ahora `moveEx` mueve dentro
+  del grupo sobre la lista que se ve, las flechas se apagan en el borde del
+  grupo y el aviso sólo sale si algo cambió. Medido: con "Pec deck" guardado
+  último, el modo mirar lo numera 3 (antes 10), ↑ lo pasa a 2 y lo guardado
+  queda igual a lo visto.
+- **A.10** — `orderedExs` devuelve el orden por bloques antes de la sesión:
+  la sesión arranca con la numeración de Plan de hoy (medido: "Pec deck",
+  guardado último, sale 3º en el carrusel).
+- **A.11** — `data-sort="hoy-blocks"` se había puesto para que `flipSort`
+  animara las ▲▼ y el arrastre lo agarraba de rebote sin guardar. Ahora
+  `commitSort` lo maneja (`ordenarBloques`), el arrastre siempre re-renderiza
+  (numeración 1…10 correcta después de soltar) y los nodos se reinsertan en
+  su lugar ("+ Agregar ejercicio" queda abajo).
+
+Correcciones al informe: el arreglo propuesto para I1 no alcanzaba (ver I1).
+El comentario de `blocksOf` ("no reordena nada") era falso y se corrigió: junta
+también lo que está separado, y esa es la raíz de A.9/A.10.
+
+Re-medición de G3 con el vidrio prendido (descanso a pantalla completa, 6×,
+3 pares de 4 s alternando blur on/off con un estilo inyectado): el hilo
+principal no cambia — 780/601/0 ms de long tasks con blur contra 762/0/0 sin
+blur; el costo del descanso sigue siendo el re-render (G3), no el blur, que va
+en el compositor.
 
 ## Tandas de arreglo propuestas (un PR por tanda, en este orden)
 
