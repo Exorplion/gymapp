@@ -6,7 +6,8 @@
 // limpio y que las firmas exportadas sean correctas (ver task-3-brief.md).
 import { S, bump } from './state.js';
 import { vibrate } from './format.js';
-import { setExOrder, indiceHoy } from './session.js';
+import { setExOrder, indiceHoy, orderedExs, sessionExs, ordenarBloques } from './session.js';
+import { porBloques } from './muscle.js';
 // Task 5 completa lo que Task 3 dejó en TODO (ver comentarios más abajo):
 // rutina-logic.js no importa nada de este archivo, así que este import es
 // unidireccional — no hay ciclo drag.js<->rutina-logic.js.
@@ -155,9 +156,15 @@ export function dragEnd(commit) {
        perdía de lugar), muevo los nodos en el DOM al orden nuevo y borro los
        transforms en la misma tarea: en pantalla no cambia un pixel */
     const by = new Map(cards.map(k => [k.dataset.sid, k]));
-    ids.forEach(id => { const k = by.get(id); if (k) box.appendChild(k); });
+    // En su lugar y no al final de la caja: en Plan de hoy detrás de los
+    // bloques viene "+ Agregar ejercicio", y un appendChild lo dejaba arriba.
+    const tras = cards[cards.length - 1].nextSibling;
+    ids.forEach(id => { const k = by.get(id); if (k) box.insertBefore(k, tras); });
     clean();
-    refreshSortArrows(box);
+    // 'rut' deshabilita las flechas en el borde de cada GRUPO, no de la lista:
+    // eso lo resuelve el render de abajo (y un disabled puesto a mano acá
+    // quedaría pegado si React no ve cambiar la prop).
+    if (kind !== 'rut') refreshSortArrows(box);
     await saved;
     /* 'hoy' y 'seq' necesitan un bump real después del commit: no son sólo
        un reorden de nodos iguales. 'hoy' recalcula cuál es el próximo
@@ -167,9 +174,12 @@ export function dragEnd(commit) {
        resultado del reorden a mano de arriba mientras el estado real ya
        tenía descansos distintos, y recién se sincronizaba con el próximo
        render de OTRA cosa: eso se sentía como un parpadeo y como que "no
-       calculaba bien la secuencia". 'rut' (ejercicios dentro de un día) sí
-       sigue sin bump: ahí un reorden es sólo eso, reorden. */
-    if (kind === 'hoy' || kind === 'seq') keepScroll(() => bump());
+       calculaba bien la secuencia". 'hoy-blocks' y 'rut' también: los
+       números de cada fila y los encabezados de grupo dependen del orden, y
+       el editor además reagrupa por músculo lo que se soltó en medio de otro
+       grupo (commitSort). Sin el bump, Plan de hoy quedaba numerado
+       "5, 6, 7, 8, 1, 2, 3, 4" hasta recargar (auditoría 2026-09-27, A.11). */
+    keepScroll(() => bump());
   }, 300);
 }
 
@@ -192,6 +202,16 @@ export function keepScroll(fn) {
 
 export async function commitSort(kind, wd, ids) {
   if (kind === 'hoy') return setExOrder(indiceHoy(), ids);
+  // Encabezados de grupo en Plan de hoy (Hoy.jsx). data-sort="hoy-blocks" se
+  // puso para que flipSort animara las ▲▼, y el arrastre lo agarraba de
+  // rebote: caía abajo en S.routine[+undefined] y no guardaba nada, con el
+  // DOM ya reordenado a mano y la numeración rota (auditoría 2026-09-27,
+  // A.11). Acá `ids` son los grupos (data-sid={b.cat}).
+  if (kind === 'hoy-blocks') {
+    const i = indiceHoy();
+    const exs = S.draft ? sessionExs(i) : orderedExs(i, S.routine[i]?.exercises || []);
+    return ordenarBloques(i, exs, ids);
+  }
   // El editor de Rutina sólo arrastra turnos de ENTRENAMIENTO (los
   // descansos ya no viven en el DOM arrastrable, ver Rutina.jsx) — así que
   // `ids` acá es siempre la lista de entrenamientos en su orden nuevo, y
@@ -205,7 +225,9 @@ export async function commitSort(kind, wd, ids) {
   const out = [];
   ids.forEach(i => { if (by.has(i)) { out.push(by.get(i)); by.delete(i); } });
   by.forEach(e => out.push(e));   // nada se pierde si la lista quedó desfasada
-  d.exercises = out;
+  // El editor pinta la lista agrupada por músculo: se guarda así, para que
+  // lo guardado sea lo que se ve (ver moveEx, A.9).
+  d.exercises = porBloques(out);
   return persistSlot(+wd);
 }
 

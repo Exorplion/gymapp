@@ -61,8 +61,7 @@ function pesoPartidaTexto(ex) {
     podría no haber pintado todavía cuando flipSort mide, y la animación no
     se vería (aunque el reordenamiento en sí seguiría siendo correcto). */
 async function handleMoveEx(index, exId, dir) {
-  await moveEx(index, exId, dir);
-  flipSort(() => flushSync(() => bump()));
+  if (await moveEx(index, exId, dir)) flipSort(() => flushSync(() => bump()));
 }
 
 export default function Rutina() {
@@ -580,6 +579,7 @@ function SlotCard({ slot, index, n, editing }) {
   // superior) es justo la distinción que Enzo quiere ver JUNTA acá. La
   // precisión fina no se pierde — pasa a mostrarla MuscleFibers, sin texto.
   const bloques = blocksOf(exs);
+  const enOrden = bloques.flatMap(b => b.exs);
 
   /* REGRESIÓN 2026-09-17: esto decía `card day` (la clase del viejo
      editor-pantalla-aparte, pensada para el acordeón .day-body/.day.open de
@@ -605,7 +605,10 @@ function SlotCard({ slot, index, n, editing }) {
             )}
             <span className="s">{exs.length ? `${exs.length} ejercicios · ${sets} series` : 'libre'}</span>
           </span>
-          <span className="chev">{open ? '⌄' : '›'}</span>
+          {/* Glifo FIJO: lo gira styles.css (.day-card.open .day-head .chev,
+              90°). Cambiarlo acá a "⌄" además de la rotación es el "<" que
+              volvió (auditoría 2026-09-27, E1): un solo mecanismo. */}
+          <span className="chev" aria-hidden="true">›</span>
         </button>
         {editing && <button type="button" className="mini red" title="Quitar turno" aria-label={`Quitar el turno ${slot.name || 'sin nombre'}`} onClick={() => removeWorkoutDay(slot.id)}><X /></button>}
       </div>
@@ -623,7 +626,7 @@ function SlotCard({ slot, index, n, editing }) {
                aparte — una fila-encabezado sin data-sid quedaría huérfana
                arriba después de un drag, con el bloque ya movido debajo. */
             <div data-sort="rut" data-wd={index} style={{ '--lift': 1.015 }}>
-              {bloques.flatMap(b => b.exs).map((ex, i, arr) => (
+              {enOrden.map((ex, i, arr) => (
                 <div
                   className="ex-row" data-sid={ex.id} key={ex.id}
                   style={{ '--fill': maxSets ? ex.sets / maxSets : 1, '--i': i }}
@@ -656,8 +659,10 @@ function SlotCard({ slot, index, n, editing }) {
                       {pesoPartidaTexto(ex) && ` · ${pesoPartidaTexto(ex)}`}
                     </span>
                     <span className="acts">
-                      <button type="button" className="mini" data-act="ex-up" disabled={i === 0} onClick={() => handleMoveEx(index, ex.id, -1)}><ArrowUp /></button>
-                      <button type="button" className="mini" data-act="ex-down" disabled={i === arr.length - 1} onClick={() => handleMoveEx(index, ex.id, 1)}><ArrowDown /></button>
+                      {/* ↑↓ mueven dentro del grupo (moveEx): en el borde
+                          del grupo no hay a dónde, así que se apagan. */}
+                      <button type="button" className="mini" data-act="ex-up" disabled={i === 0 || catOf(arr[i - 1]) !== catOf(ex)} onClick={() => handleMoveEx(index, ex.id, -1)}><ArrowUp /></button>
+                      <button type="button" className="mini" data-act="ex-down" disabled={i === arr.length - 1 || catOf(arr[i + 1]) !== catOf(ex)} onClick={() => handleMoveEx(index, ex.id, 1)}><ArrowDown /></button>
                       <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}><Pencil /></button>
                       <button type="button" className="mini red" aria-label={`Borrar ${ex.name}`} onClick={() => deleteExercise(index, ex.id)}><X /></button>
                     </span>
@@ -683,7 +688,10 @@ function SlotCard({ slot, index, n, editing }) {
                     className="day-ex"
                     onClick={() => openSheet('ex-info', { name: e.name, wd: index, exId: e.id })}
                   >
-                    <span className="i">{exs.indexOf(e) + 1}</span>
+                    {/* El número es el lugar en la lista agrupada, el mismo
+                        que en edición y en Plan de hoy — no el índice
+                        guardado (A.9/A.10). */}
+                    <span className="i">{enOrden.indexOf(e) + 1}</span>
                     <ExIcon icono={iconOf(e)} size={24} className="day-ex-icon" />
                     <span className="grow">
                       <span className="t">{e.name}</span>

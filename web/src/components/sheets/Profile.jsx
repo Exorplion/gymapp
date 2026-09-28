@@ -106,11 +106,11 @@ export default function Profile() {
       <div className="f2" style={{ marginTop: 14 }}>
         <div className="field">
           <label htmlFor="perfil-edad">Edad</label>
-          <input id="perfil-edad" ref={ageRef} type="number" inputMode="numeric" defaultValue={draft.age ?? ''} placeholder="24" onChange={e => setNumField('age', e.target.value)} />
+          <input id="perfil-edad" ref={ageRef} type="number" inputMode="numeric" defaultValue={draft.age ?? ''} placeholder="Ej. 24" onChange={e => setNumField('age', e.target.value)} />
         </div>
         <div className="field">
           <label htmlFor="perfil-altura">Altura (cm)</label>
-          <input id="perfil-altura" type="number" inputMode="numeric" defaultValue={draft.height ?? ''} placeholder="179" onChange={e => setNumField('height', e.target.value)} />
+          <input id="perfil-altura" type="number" inputMode="numeric" defaultValue={draft.height ?? ''} placeholder="Ej. 179" onChange={e => setNumField('height', e.target.value)} />
         </div>
       </div>
 
@@ -119,21 +119,23 @@ export default function Profile() {
           Peso (kg)
           {bw != null && <> · <button type="button" className="txt-blue linklike" onClick={useLastWeight}>usar último registrado ({fmtNum(round1(bw))})</button></>}
         </label>
-        <input id="perfil-peso" ref={weightRef} type="number" inputMode="decimal" step="any" defaultValue={draft.weightKg ?? ''} placeholder="74" onChange={e => setNumField('weightKg', e.target.value)} />
+        <input id="perfil-peso" ref={weightRef} type="number" inputMode="decimal" step="any" defaultValue={draft.weightKg ?? ''} placeholder="Ej. 74" onChange={e => setNumField('weightKg', e.target.value)} />
       </div>
 
       <h3 id="perfil-hlbl-actividad">Nivel de actividad</h3>
       <div className="field">
         <select aria-labelledby="perfil-hlbl-actividad" value={draft.activity} onChange={e => setField('activity', e.target.value)}>
-          {Object.keys(ACTF).map(k => <option key={k} value={k}>{ACT_LABEL[k]} — {ACT_HINT[k]}</option>)}
+          {Object.keys(ACTF).map(k => <option key={k} value={k}>{ACT_LABEL[k]}</option>)}
         </select>
+        <div className="field-hint">{ACT_HINT[draft.activity]}</div>
       </div>
 
       <h3 id="perfil-hlbl-objetivo">Objetivo</h3>
       <div className="field">
         <select aria-labelledby="perfil-hlbl-objetivo" value={draft.goal} onChange={e => setField('goal', e.target.value)}>
-          {Object.keys(GOALDELTA).map(k => <option key={k} value={k}>{GOAL_LABEL[k]} — {GOAL_HINT[k]}</option>)}
+          {Object.keys(GOALDELTA).map(k => <option key={k} value={k}>{GOAL_LABEL[k]}</option>)}
         </select>
+        <div className="field-hint">{GOAL_HINT[draft.goal]}</div>
       </div>
 
       <h3>Reparto de proteína y grasa</h3>
@@ -161,7 +163,7 @@ export default function Profile() {
       </div>
 
       <div className="calcbox">
-        {m ? <MacroPreview m={m} /> : <div className="cr" style={{ justifyContent: 'center', color: 'var(--mut2)' }}>Completa edad, altura y peso para ver tus macros.</div>}
+        {m ? <MacroPreview m={m} /> : <div className="cr" style={{ justifyContent: 'center', color: 'var(--mut2)' }}>Sin edad, altura y peso no se puede calcular tu gasto diario ni tus macros.</div>}
       </div>
 
       <button type="button" className="btn" style={{ marginTop: 14 }} onClick={save}>Guardar y usar estas metas</button>

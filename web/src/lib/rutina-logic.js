@@ -9,7 +9,7 @@
 import { S, bump, openSheet, closeSheet, saveCfg } from './state.js';
 import { dstr, uid, norm, vibrate, WDS } from './format.js';
 import { idb } from './db.js';
-import { EXCATALOG, catOf, muscleVolume } from './muscle.js';
+import { EXCATALOG, catOf, muscleVolume, porBloques } from './muscle.js';
 import { VOLUME_BANDS } from './charts.js';
 import { exKey } from './equip.js';
 import { toast } from './toast.js';
@@ -763,15 +763,26 @@ export async function deleteExercise(index, exId) {
     bump() acá adentro — igual que el original no llama renderRutina() hasta
     después de `await persistSlot`: el llamador (Rutina.jsx) envuelve esta
     función en flipSort(), que necesita medir el DOM ANTES de que la mutación
-    se refleje en pantalla. Ver Rutina.jsx: handleMoveEx(). */
+    se refleje en pantalla. Ver Rutina.jsx: handleMoveEx().
+
+    Se mueve sobre el orden que SE VE (porBloques: la lista del editor está
+    agrupada por músculo) y dentro del grupo del ejercicio. Antes swapeaba el
+    índice guardado: con "Aperturas" guardada 11ª y pintada 4ª en Pecho, ↑ la
+    cambiaba con Abs, el editor la seguía pintando igual y el aviso decía
+    "Ejercicios reordenados" (auditoría 2026-09-27, A.9). Cruzar al grupo
+    vecino no se ve nunca —blocksOf lo vuelve a juntar—, así que no se hace.
+    Devuelve false si no había lugar a donde moverlo. */
 export async function moveEx(index, exId, dir) {
   const d = S.routine[index];
-  const i = d.exercises.findIndex(e => e.id === exId);
+  const lista = porBloques(d.exercises);
+  const i = lista.findIndex(e => e.id === exId);
   const j = i + dir;
-  if (i < 0 || j < 0 || j >= d.exercises.length) return;
+  if (i < 0 || j < 0 || j >= lista.length || catOf(lista[i]) !== catOf(lista[j])) return false;
   pushHistory('Ejercicios reordenados');
-  [d.exercises[i], d.exercises[j]] = [d.exercises[j], d.exercises[i]];
+  [lista[i], lista[j]] = [lista[j], lista[i]];
+  d.exercises = lista;
   await persistSlot(index);
+  return true;
 }
 
 export function startBlank() {

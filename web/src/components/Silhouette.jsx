@@ -69,10 +69,39 @@ function anchoDelCuerpo(el, viewBox) {
     que todavía no hizo mal. */
 function tono(d) {
   if (d === null || d === undefined) return 'sil-none';
-  if (d <= 1) return 'sil-d0';
-  if (d <= 3) return 'sil-d1';
-  if (d <= 6) return 'sil-d2';
-  return 'sil-d3';
+  return TONOS.find(t => d <= t.hasta).clase;
+}
+
+/** La escala de la silueta, en UN solo lugar: la usan tono() para pintar y
+    LeyendaTonos para explicarla. Antes la leyenda de "Tu cuerpo" estaba
+    escrita a mano con otros colores —celeste para 4-6 días, gris para 7+— y
+    el cuerpo pintaba azul oscuro y NARANJA: tres grupos a 10 días salían
+    naranjas y nada lo decía, y "hoy" no figuraba (auditoría 2026-09-27, B1). */
+export const TONOS = [
+  { clase: 'sil-d0', hasta: 1, etiqueta: 'hoy o ayer' },
+  { clase: 'sil-d1', hasta: 3, etiqueta: '2-3 días' },
+  { clase: 'sil-d2', hasta: 6, etiqueta: '4-6 días' },
+  { clase: 'sil-d3', hasta: Infinity, etiqueta: 'hace 7+ días' },
+];
+const SIN_REGISTRO = { clase: 'sil-none', etiqueta: 'sin registro' };
+
+/** Leyenda de la silueta: cada muestra es un círculo con la MISMA clase que
+    pinta la zona, así que usa los mismos degradados (sil-g0…g3, sil-gn) y no
+    se puede desincronizar. Tiene que estar en la misma pantalla que una
+    <Silhouette>, que es la que define los degradados. */
+export function LeyendaTonos({ className = '' }) {
+  return (
+    <div className={className}>
+      {[...TONOS, SIN_REGISTRO].map(t => (
+        <span key={t.clase} className="inline-flex items-center gap-1.5">
+          <svg className="sil-ley h-2.5 w-2.5 flex-none" viewBox="0 0 10 10" aria-hidden="true">
+            <circle cx="5" cy="5" r="4.5" className={t.clase} />
+          </svg>
+          {t.etiqueta}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 /** La clase de una zona. El pelo y lo que no rastreamos tienen la suya.

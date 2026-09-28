@@ -23,7 +23,7 @@
 import { useEffect, useRef } from 'react';
 import { S, useStore, openSheet, changeTab, esDiaLibre } from '../../lib/state.js';
 import { WDS, MO, dstr, fmtD, fmtNum, round1 } from '../../lib/format.js';
-import { pendingSlot, sessionForSlot, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
+import { pendingSlot, sesionDeHoy, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
 import { daysSinceAll, stalestGroups, untrainedGroups, MUSCLE_CATS } from '../../lib/muscle.js';
 import { diasPorPorcion } from '../../lib/fibras.js';
 import { semanaDe } from '../../lib/week.js';
@@ -54,7 +54,9 @@ export default function Inicio() {
   }, []);
   const hoy = new Date();
   const slot = pendingSlot();
-  const hecha = slot ? sessionForSlot(slot.id) : null;
+  // La sesión cerrada hoy, del turno que sea: el pendiente ya es el siguiente
+  // (completeSession adelanta el puntero), así que no sirve para contestarlo.
+  const hecha = sesionDeHoy();
   const draft = S.draft;
   const enCurso = !!draft;
   /* Va DESPUÉS de "en curso" y de "completado" en la cadena de estados: los
@@ -104,8 +106,9 @@ export default function Inicio() {
     );
   } else if (hecha) {
     eyebrow = 'Completado · hoy';
-    titulo = slot?.name || 'Listo por hoy';
-    sub = `${hecha.duration} min · ${(hecha.entries || []).length} ejercicios`;
+    titulo = hecha.dayName || 'Listo por hoy';
+    const nEx = (hecha.entries || []).length;
+    sub = `${hecha.duration} min · ${nEx} ${nEx === 1 ? 'ejercicio' : 'ejercicios'}`;
     cta = (
       <button type="button" className="ini-cta ok" onClick={() => openSheet('session-view', { id: hecha.id })}>
         VER LO QUE HICISTE
