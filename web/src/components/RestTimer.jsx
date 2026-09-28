@@ -1,13 +1,17 @@
 // Puerto de <div id="restbar"> + <div id="rest-fs"> (index.html ~líneas
 // 654-688) + tickRest()/startRest()/etc. del bloque "timer descanso"
 // (~líneas 1370-1421). El original escribía directo a nodos DOM
-// ($('#rest-time').textContent=…, $('#rfs-prog').style.strokeDashoffset=…);
-// acá eso se reemplaza por leer T.leftSec/T.pct (rest.js, Task 3) en cada
-// render. T muta fuera de React pero rest.js llama al mismo bump() que usa
-// state.js para S, así que useStore() (mismo canal, un solo contador de
-// versión) alcanza para re-renderizar este componente sin una suscripción
-// aparte — es la razón por la que rest.js no necesita su propio
-// listeners/subscribe.
+// ($('#rest-time').textContent=…, $('#rfs-prog').style.strokeDashoffset=…).
+// Acá, dos canales (G3, auditoría 2026-09):
+//  - los cambios de ESTADO (abrir, minimizar, sonar, la pregunta del RIR)
+//    llegan por bump() → useStore(), igual que S;
+//  - el paso del TIEMPO llega por suscribirReloj (rest.js), una vez por
+//    segundo y sólo a los dos relojes (<Tiempo/>, <BarraDescanso/>). Antes
+//    cada tick de 250 ms era un bump() y re-renderizaba la app entera.
+// El anillo y la barrita no escuchan ningún tick: recorren el descanso
+// completo de una y se reprograman cuando cambia T.seq. La barrita es una
+// animación de transform (compositor); el anillo lo dibuja un worker en un
+// OffscreenCanvas (lib/anillo.worker.js explica por qué no una animación).
 //
 // Ambos bloques (pill minimizada y overlay de pantalla completa) viven en un
 // solo componente, igual que en el original: son mutuamente excluyentes
@@ -21,22 +25,93 @@
 // (15-30 veces por sesión). Metida acá son cero toques de más y la pregunta
 // aparece sin que la busques, que era justamente lo que fallaba cuando vivía
 // escondida en el <details> "Más opciones" de la tarjeta del ejercicio.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC, cerrarPreguntaRir } from '../lib/rest.js';
+import {
+  T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC, cerrarPreguntaRir,
+  suscribirReloj, versionReloj, tramoAnillo,
+} from '../lib/rest.js';
+import { tramosAnillo, CIERRE } from '../lib/anillo.js';
 import { setRirUltimaSerie } from '../lib/session.js';
 import { RIR_OPTS } from '../lib/rir.js';
 import { useStore } from '../lib/state.js';
 import { useAtras } from '../lib/useAtras.js';
 import { fmtMMSS } from '../lib/format.js';
 import { ChevronDown } from './Icon.jsx';
-import { animateRing, impactBurst, squashStretch, D, EASE_OUT } from '../lib/motion.js';
+import { impactBurst, squashStretch, menosMovimiento, D, EASE_OUT } from '../lib/motion.js';
 
 // La curva de salida de la app, en el formato que pide motion.
 const CURVA = EASE_OUT.match(/[\d.]+/g).map(Number);
 
+/** El segundo que se ve. Sólo re-renderiza a quien lo llama, una vez por
+    segundo (rest.js avisa cuando cambia T.leftSec, no en cada tick). */
+function useReloj() {
+  useSyncExternalStore(suscribirReloj, versionReloj);
+  return fmtMMSS(T.leftSec);
+}
+
+function Tiempo() {
+  return useReloj();
+}
+
+/* Progreso (0..1) → cómo lo pinta cada uno. El anillo con el trazo; la
+   barrita con scaleX, que va en el compositor (antes era `width`, o sea
+   layout en cada cambio). */
+const PINTA_ANILLO = p => ({ strokeDashoffset: REST_CIRC * (1 - p) });
+const PINTA_BARRA = p => ({ transform: `scaleX(${p})` });
+
+/* El motor del anillo: un worker que dibuja en un OffscreenCanvas. Uno por
+   lienzo (transferControlToOffscreen se puede llamar una sola vez, y el doble
+   efecto del modo estricto lo intentaría dos veces). `null` = el navegador no
+   puede, y el anillo vuelve a ser el <circle> animado con WAAPI. */
+const motores = new WeakMap();
+function motorAnillo(canvas) {
+  if (!canvas) return null;
+  if (motores.has(canvas)) return motores.get(canvas);
+  let motor = null;
+  try {
+    if (typeof Worker === 'function' && canvas.transferControlToOffscreen) {
+      const worker = new Worker(new URL('../lib/anillo.worker.js', import.meta.url), { type: 'module' });
+      const off = canvas.transferControlToOffscreen();
+      worker.postMessage({ tipo: 'lienzo', lienzo: off, px: Math.round(240 * (devicePixelRatio || 1)) }, [off]);
+      canvas.dataset.activo = '';
+      motor = {
+        tramo: (tramos, ms, colores) => worker.postMessage({ tipo: 'tramo', tramos, ms, colores, inicio: performance.timeOrigin + performance.now() }),
+        quieto: (p, colores) => worker.postMessage({ tipo: 'quieto', p, colores }),
+        pausa: () => worker.postMessage({ tipo: 'pausa' }),
+      };
+    }
+  } catch {
+    motor = null;
+  }
+  motores.set(canvas, motor);
+  return motor;
+}
+
+/* Los colores del anillo salen del mismo lugar que los del SVG (el
+   degradado #restGrad y, sonando, el trazo de .ringing), así una paleta
+   nueva los cambia a los dos. */
+function coloresAnillo(circulo, sonando) {
+  if (sonando) return { solido: getComputedStyle(circulo).stroke };
+  const [a, b] = document.querySelectorAll('#restGrad stop');
+  return { a: getComputedStyle(a).stopColor, b: getComputedStyle(b).stopColor };
+}
+
+function animarTramo(el, pinta, tramos, ms) {
+  if (!el?.animate) return;
+  for (const a of el.getAnimations()) a.cancel();
+  el.animate(
+    tramos.map(k => ({ offset: k.offset, easing: k.easing, ...pinta(k.p) })),
+    { duration: Math.max(1, ms), fill: 'forwards' },
+  );
+}
+
 export default function RestTimer() {
-  useStore(); // se suscribe a bump(); T se lee directo (T.leftSec/T.pct/T.state) igual que S
+  useStore(); // se suscribe a bump() (cambios de estado); T se lee directo igual que S
+  /* Del reloj, RestTimer sólo necesita enterarse cuando cambia el TRAMO del
+     anillo (T.seq: ±30 s, volver a la app), no de cada segundo: el selector
+     devuelve T.seq y React sólo re-renderiza si cambió. */
+  useSyncExternalStore(suscribirReloj, () => T.seq);
   // El descanso a pantalla completa se minimiza con el gesto de volver, en
   // vez de cerrar la app con el cronómetro corriendo.
   useAtras(T.state === 'fullscreen', minimizeRest);
@@ -63,18 +138,73 @@ export default function RestTimer() {
     eraVisible.current = visibleFs;
     if (visibleFs) setSaliendo(false);
   }, [visibleFs]);
-  const timeStr = fmtMMSS(T.leftSec);
-  const pctClamped = Math.max(0, Math.min(1, T.pct));
-  const fillPct = pctClamped * 100;
-  // El anillo del overlay de pantalla completa se anima con animateRing()
-  // (Apple Fitness) en vez de un style inline recalculado en cada render:
-  // así el "cierre" entre un tick y el siguiente es una transición suave de
-  // ~900ms, no un salto de un dashoffset fijo a otro. Sonando, el anillo se
-  // cierra entero: pasa de ser cuenta regresiva a ser el aviso.
+  /* El anillo (y la barrita de la pill): UNA animación lineal que recorre
+     el descanso entero, programada con el tiempo que falta (tramoAnillo).
+     Antes se lanzaba una animación nueva de 900 ms en cada tick de 250 ms.
+     Se reprograma sólo cuando cambia el tramo (T.seq: arrancar, ±30 s,
+     volver a la app). Si el anillo no está donde tiene que estar (arranca un
+     descanso, sumaste 30 s), llega con la misma curva suave de antes y
+     después sigue lineal. Sonando, se cierra entero: pasa de ser cuenta
+     regresiva a ser el aviso. */
+  const fillRef = useRef(null);
+  const lienzoRef = useRef(null);
+  const plan = useRef(null);      // { desde, t0, ms } del tramo en curso
+  const quieto = useRef(0);       // progreso pintado cuando no hay tramo
+  function progresoAhora() {
+    const p = plan.current;
+    if (!p) return quieto.current;
+    return p.desde * Math.max(0, 1 - (performance.now() - p.t0) / p.ms);
+  }
+  const corriendo = T.state === 'fullscreen' || T.state === 'minimized';
   useEffect(() => {
-    animateRing(ringRef.current, sonandoAhora ? 1 : pctClamped);
+    const anillo = ringRef.current, barra = fillRef.current;
+    const motor = motorAnillo(lienzoRef.current);
+    if (sonandoAhora) {
+      const previo = progresoAhora();
+      plan.current = null; quieto.current = 1;
+      const colores = motor && coloresAnillo(anillo, true);
+      if (menosMovimiento()) {
+        if (motor) motor.quieto(1, colores); else Object.assign(anillo.style, PINTA_ANILLO(1));
+        return;
+      }
+      const tramos = [{ offset: 0, p: previo, easing: CIERRE }, { offset: 1, p: 1, easing: 'linear' }];
+      if (motor) motor.tramo(tramos, 900, colores); else animarTramo(anillo, PINTA_ANILLO, tramos, 900);
+      return;
+    }
+    if (!corriendo) {
+      // Se cortó o se saltó: el anillo se queda donde estaba para el próximo.
+      quieto.current = progresoAhora(); plan.current = null;
+      motor?.pausa();
+      return;
+    }
+    const { desde, ms } = tramoAnillo();
+    const previo = progresoAhora();
+    plan.current = { desde, t0: performance.now(), ms: Math.max(1, ms) };
+    if (menosMovimiento()) return;   // lo pinta el efecto de abajo, por segundo
+    const tramos = tramosAnillo({ previo, desde, ms });
+    animarTramo(barra, PINTA_BARRA, tramos, ms);
+    if (!motor) animarTramo(anillo, PINTA_ANILLO, tramos, ms);
+    // Minimizado no se ve: el worker no dibuja hasta que vuelva a expandirse.
+    else if (visibleFs) motor.tramo(tramos, ms, coloresAnillo(anillo, false));
+    else motor.pausa();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [Math.round(pctClamped * 1000), sonandoAhora]);
+  }, [T.seq, sonandoAhora, corriendo, visibleFs]);
+
+  /* Con "reducir movimiento" no hay animación continua: se pinta el valor
+     de cada segundo, como antes. */
+  useEffect(() => {
+    if (!menosMovimiento()) return;
+    const pintar = () => {
+      if (T.state === 'ringing') return;
+      const { desde } = tramoAnillo();
+      const motor = motorAnillo(lienzoRef.current);
+      if (motor && ringRef.current) motor.quieto(desde, coloresAnillo(ringRef.current, false));
+      else if (ringRef.current) Object.assign(ringRef.current.style, PINTA_ANILLO(desde));
+      if (fillRef.current) Object.assign(fillRef.current.style, PINTA_BARRA(desde));
+    };
+    pintar();
+    return suscribirReloj(pintar);
+  }, []);
 
   // Momento de logro sin celebración: terminar el descanso no tenía ningún
   // "hit" — a diferencia del PR (confetti) o la serie (impactBurst en el
@@ -127,29 +257,14 @@ export default function RestTimer() {
         </defs>
       </svg>
 
-      <div
-        id="restbar"
-        className={T.state === 'minimized' ? 'show' : ''}
-        data-act="rest-expand"
-        role="button"
-        tabIndex={0}
-        aria-label={`Descanso, ${timeStr} restantes. Tocar para expandir.`}
-        onClick={expandRest}
+      <BarraDescanso
+        show={T.state === 'minimized'}
+        fillRef={fillRef}
         onKeyDown={onKeyExpand}
-      >
-        <div className="rb-top">
-          <div>
-            <div className="rb-lbl">Descanso</div>
-            <div id="rest-time">{timeStr}</div>
-          </div>
-          <div className="rb-btns">
-            <button type="button" onClick={subTime}>−30s</button>
-            <button type="button" onClick={addTime}>+30s</button>
-            <button type="button" onClick={skip}>Saltar</button>
-          </div>
-        </div>
-        <div id="rest-track"><i id="rest-fill" style={{ width: `${fillPct}%` }}></i></div>
-      </div>
+        subTime={subTime}
+        addTime={addTime}
+        skip={skip}
+      />
 
       <div id="rest-fs" className={visibleFs ? 'show' : saliendo ? 'show out' : ''} aria-hidden={!visibleFs}>
         <div className={`rfs-inner${sonandoAhora ? ' ringing' : ''}`}>
@@ -187,7 +302,13 @@ export default function RestTimer() {
                 data-circumference={REST_CIRC}
               />
             </svg>
-            <div className="rfs-time" id="rfs-time" ref={timeFsRef}>{sonandoAhora ? '¡YA!' : timeStr}</div>
+            {/* Con el worker andando (data-activo) el <circle> de progreso
+                se esconde y queda sólo como fuente de los colores; el que se
+                ve es el lienzo. Va DESPUÉS del <svg>: el svg tiene transform,
+                o sea que se pinta en la misma capa que los posicionados, en
+                orden de aparición — adelante, su pista lo tapaba entero. */}
+            <canvas className="rfs-lienzo" ref={lienzoRef} aria-hidden="true" />
+            <div className="rfs-time" id="rfs-time" ref={timeFsRef}>{sonandoAhora ? '¡YA!' : <Tiempo />}</div>
           </div>
           {sonandoAhora ? (
             /* Un solo botón, ancho y sin vecinos: está sonando y lo único que
@@ -206,6 +327,39 @@ export default function RestTimer() {
         </div>
       </div>
     </>
+  );
+}
+
+/** La pill del descanso minimizado. Componente aparte porque es lo único,
+    junto con <Tiempo/>, que cambia cada segundo: su aria-label lleva el
+    tiempo. La barrita (#rest-fill) no se toca desde acá: la anima RestTimer
+    con un solo tramo continuo. */
+function BarraDescanso({ show, fillRef, onKeyDown, subTime, addTime, skip }) {
+  const tiempo = useReloj();
+  return (
+    <div
+      id="restbar"
+      className={show ? 'show' : ''}
+      data-act="rest-expand"
+      role="button"
+      tabIndex={0}
+      aria-label={`Descanso, ${tiempo} restantes. Tocar para expandir.`}
+      onClick={expandRest}
+      onKeyDown={onKeyDown}
+    >
+      <div className="rb-top">
+        <div>
+          <div className="rb-lbl">Descanso</div>
+          <div id="rest-time">{tiempo}</div>
+        </div>
+        <div className="rb-btns">
+          <button type="button" onClick={subTime}>−30s</button>
+          <button type="button" onClick={addTime}>+30s</button>
+          <button type="button" onClick={skip}>Saltar</button>
+        </div>
+      </div>
+      <div id="rest-track"><i id="rest-fill" ref={fillRef}></i></div>
+    </div>
   );
 }
 

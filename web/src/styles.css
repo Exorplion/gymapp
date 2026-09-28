@@ -631,7 +631,10 @@ main.arrastrando{overflow:hidden;user-select:none}
 @keyframes zoom{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes sweep{0%,20%{left:-60%}80%,100%{left:130%}}
 @keyframes rise{from{width:0}}
-@keyframes glowring{0%,100%{filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),.35))}50%{filter:drop-shadow(0 0 18px rgba(var(--accent-rgb),.7))}}
+/* glowring anima sólo opacidad (G3, auditoría 2026-09): antes animaba
+   `filter: drop-shadow` en loop, que re-rasteriza el anillo en cada frame.
+   El brillo ya pintado vive en .rfs-ring::before y sólo se enciende y apaga. */
+@keyframes glowring{0%,100%{opacity:.45}50%{opacity:1}}
 @keyframes flash{0%,100%{background-color:transparent}50%{background-color:rgba(var(--accent-strong-rgb),.14)}}
 /* @keyframes pulse (opacidad 1 → .4) se borró el 2026-09-28: su último uso
    era SEGUIR, y animar la opacidad de un CTA lo apaga hasta dejarlo ilegible
@@ -2109,7 +2112,9 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-body);letter-spacing:.06em;
 }
 #rest-track{height:5px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.08);margin-top:10px;overflow:hidden}
-#rest-fill{display:block;height:100%;border-radius:var(--r-xs);background:var(--accent-grad);width:100%;transition:width var(--d2) linear}
+/* Se vacía con scaleX, en una sola animación (RestTimer.jsx): antes era
+   `width` cambiada en cada tick, o sea layout. */
+#rest-fill{display:block;height:100%;border-radius:var(--r-xs);background:var(--accent-grad);width:100%;transform-origin:left}
 
 /* ---------- rest timer: pantalla completa ---------- */
 #rest-fs{position:fixed;inset:0;z-index:65;display:none;place-items:center;
@@ -2122,8 +2127,23 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 #rest-fs.out .rfs-inner{animation:dlgOut var(--d2) var(--ease) forwards}
 .rfs-inner{display:flex;flex-direction:column;align-items:center;gap:22px;padding:24px;position:relative;width:100%;max-width:360px}
 .rfs-lbl{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-body);letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
-.rfs-ring{position:relative;width:240px;height:240px;animation:glowring 2.4s ease-in-out infinite}
+.rfs-ring{position:relative;width:240px;height:240px}
+/* El brillo del anillo: un aro con la sombra ya pintada, calzado sobre el
+   trazo (r 88 de 200 → 105,6 px de 240; trazo 12 px → de 99,6 a 111,6), que
+   sólo cambia de opacidad. Borde transparente = el ancho del trazo: la
+   sombra de afuera sale del borde exterior y la de adentro del interior,
+   como el drop-shadow que reemplaza. */
+.rfs-ring::before{
+  content:'';position:absolute;inset:8.4px;border-radius:50%;pointer-events:none;opacity:.45;
+  border:12px solid transparent;
+  box-shadow:0 0 16px rgba(var(--accent-rgb),.7),inset 0 0 16px rgba(var(--accent-rgb),.7);
+  animation:glowring 2.4s ease-in-out infinite;
+}
 .rfs-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+/* El anillo de progreso lo dibuja un worker en este lienzo (RestTimer.jsx,
+   lib/anillo.worker.js); el <circle> queda de respaldo. */
+.rfs-lienzo{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.rfs-ring:has(> .rfs-lienzo[data-activo]) .rfs-prog{visibility:hidden}
 .rfs-track{fill:none;stroke:var(--surface-2);stroke-width:10}
 .rfs-prog{fill:none;stroke:url(#restGrad);stroke-width:10;stroke-linecap:round;
   stroke-dasharray:552.9;stroke-dashoffset:0;transition:stroke-dashoffset var(--d2) linear}
@@ -2162,6 +2182,8 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .rfs-inner.ringing .rfs-time{font-size:46px;color:var(--warn);letter-spacing:.02em}
 .rfs-inner.ringing .rfs-prog{stroke:var(--warn);transition:none}
 .rfs-inner.ringing .rfs-ring{animation:rfs-late .9s ease-in-out infinite}
+/* Sonando no brillaba (rfs-late reemplazaba a glowring en la misma regla). */
+.rfs-inner.ringing .rfs-ring::before{animation:none;opacity:0}
 @keyframes rfs-late{0%,100%{transform:scale(1)}50%{transform:scale(1.055)}}
 .rfs-parar{
   width:100%;height:60px;border:0;border-radius:var(--r);
