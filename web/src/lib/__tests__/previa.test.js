@@ -101,17 +101,26 @@ describe('recordPrevia y haceTexto', () => {
   it('sin historial no hay récord', () => {
     expect(recordPrevia(PRESS)).toBe(null);
   });
-  it('la mejor serie (peso × reps) y hace cuánto, igual que "Mejor serie" en Progreso', () => {
+  it('la serie más pesada con sus reps y hace cuánto, como el número grande de PRs en Progreso', () => {
     S.sessions = [
       sesion('2026-09-20', [serie(47.5, 7), serie(47.5, 7)]),
       sesion('2026-09-06', [serie(50, 8)]),
       sesion('2026-08-30', [serie(52.5, 3)]),
     ];
-    expect(recordPrevia(PRESS, { hoy: '2026-09-27' })).toEqual({ w: 50, r: 8, date: '2026-09-06', dias: 21, hace: 'hace 3 semanas' });
+    expect(recordPrevia(PRESS, { hoy: '2026-09-27' })).toEqual({ w: 52.5, r: 3, date: '2026-08-30', dias: 28, hace: 'hace 4 semanas' });
   });
-  it('en empate cuenta la primera vez que se logró', () => {
+  it('al mismo peso gana la serie con más reps', () => {
+    S.sessions = [sesion('2026-09-20', [serie(50, 6), serie(50, 9)]), sesion('2026-09-06', [serie(50, 8)])];
+    expect(recordPrevia(PRESS, { hoy: '2026-09-27' })).toMatchObject({ w: 50, r: 9, date: '2026-09-20' });
+  });
+  it('en empate exacto cuenta la primera vez que se logró', () => {
     S.sessions = [sesion('2026-09-20', [serie(50, 8)]), sesion('2026-09-06', [serie(50, 8)])];
     expect(recordPrevia(PRESS, { hoy: '2026-09-27' }).date).toBe('2026-09-06');
+  });
+  it('el unilateral tiene su propio récord', () => {
+    S.sessions = [sesion('2026-09-20', [serie(20, 8)], { unilateral: true }), sesion('2026-09-10', [serie(50, 8)])];
+    expect(recordPrevia(PRESS, { uni: true }).w).toBe(20);
+    expect(recordPrevia(PRESS).w).toBe(50);
   });
   it('haceTexto', () => {
     expect([0, 1, 5, 13, 14, 21, 59, 60, 400].map(haceTexto)).toEqual([
@@ -201,7 +210,7 @@ describe('previaEjercicio', () => {
     const p = previaEjercicio(PRESS);
     expect(p.primeraVez).toBe(false);
     expect(p.fuerza.cambioPct).not.toBe(null);
-    expect(p.record).toMatchObject({ w: 50, r: 8 });
+    expect(p.record).toMatchObject({ w: 50, r: 8 }); // la más pesada
     expect(p.recuperacion.cat).toBe('Pecho');
     expect(p.meta.tipo).toBe('sumar');
   });

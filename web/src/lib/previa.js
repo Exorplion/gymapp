@@ -4,7 +4,7 @@
 // objetivoHoy); acá sólo se eligen la ventana y la forma. Criterio de la
 // app: sin dato, null — nunca un cero ni una estimación disfrazada de hecho.
 import { S, wDisplay } from './state.js';
-import { e1rmSeries, trend, exerciseSeries } from './charts.js';
+import { e1rmSeries, trend } from './charts.js';
 import { objetivoHoy } from './objetivoHoy.js';
 import { lastDataFor } from './session.js';
 import { catOf, recoveryPct, daysSinceGroup, diasTexto } from './muscle.js';
@@ -71,16 +71,26 @@ export function haceTexto(dias) {
   return `hace ${Math.round(dias / 30)} meses`;
 }
 
-/** "Récord": la mejor serie (peso × reps de mayor volumen) y hace cuánto.
-    Mismo criterio y misma clave que "Mejor serie" en Progreso → PRs
-    (exerciseSeries), para que los dos números coincidan. En empate cuenta
-    la primera vez que se logró. */
+/** "Récord": la serie MÁS PESADA (peso máximo, con sus reps) y hace
+    cuánto — el mismo número grande que muestra Progreso → PRs. Al mismo
+    peso gana la de más reps; en empate exacto, la primera vez que se logró.
+    Se busca por nombre (y lateralidad), igual que Progreso. */
 export function recordPrevia(ex, { uni = false, hoy = dstr() } = {}) {
+  const key = clave(ex, uni);
   let mejor = null;
-  for (const p of exerciseSeries()[clave(ex, uni)] || []) if (!mejor || p.best > mejor.best) mejor = p;
+  const cronologico = [...(S.sessions || [])].sort((a, b) => a.start - b.start);
+  for (const s of cronologico) {
+    for (const e of s.entries || []) {
+      if (clave(e, !!e.unilateral) !== key) continue;
+      for (const st of e.sets || []) {
+        if (!(st.w > 0)) continue;
+        if (!mejor || st.w > mejor.w || (st.w === mejor.w && st.r > mejor.r)) mejor = { w: st.w, r: st.r, date: s.date };
+      }
+    }
+  }
   if (!mejor) return null;
   const dias = Math.max(0, diasEntre(mejor.date, hoy));
-  return { w: mejor.w, r: mejor.r, date: mejor.date, dias, hace: haceTexto(dias) };
+  return { ...mejor, dias, hace: haceTexto(dias) };
 }
 
 /** "Recuperación" del grupo del ejercicio. `dias` null = el grupo nunca se
