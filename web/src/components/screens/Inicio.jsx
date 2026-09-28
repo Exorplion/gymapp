@@ -107,7 +107,8 @@ export default function Inicio() {
   } else if (hecha) {
     eyebrow = 'Completado · hoy';
     titulo = hecha.dayName || 'Listo por hoy';
-    sub = `${hecha.duration} min · ${(hecha.entries || []).length} ejercicios`;
+    const nEx = (hecha.entries || []).length;
+    sub = `${hecha.duration} min · ${nEx} ${nEx === 1 ? 'ejercicio' : 'ejercicios'}`;
     cta = (
       <button type="button" className="ini-cta ok" onClick={() => openSheet('session-view', { id: hecha.id })}>
         VER LO QUE HICISTE

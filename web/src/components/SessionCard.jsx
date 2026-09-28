@@ -40,7 +40,7 @@ export default function SessionCard({ sess }) {
       <div className="sc-meta strong">
         {sess.retro
           ? 'Anotada a mano · sin series registradas'
-          : `${nsets} series · ${vol.toLocaleString('es')} kg de volumen`}
+          : `${nsets} ${nsets === 1 ? 'serie' : 'series'} · ${vol.toLocaleString('es')} kg de volumen`}
       </div>
       {names && <div className="sc-exs">{names}</div>}
     </button>
