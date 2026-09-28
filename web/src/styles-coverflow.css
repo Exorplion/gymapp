@@ -43,5 +43,4 @@
    costo en el momento más sensible: mientras el usuario está arrastrando. */
 .carousel.coverflow .carousel-slide:not(.cf-center) .card {
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
 }

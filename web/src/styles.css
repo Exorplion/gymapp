@@ -403,12 +403,16 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 ::placeholder{color:var(--mut2)}
 
 /* ---------- header ---------- */
+/* backdrop-filter va SIN su par -webkit-: el build agrega el prefijo solo, y
+   si el par está escrito a mano el minificador se queda con el prefijado y
+   borra el bueno — Chrome se quedaba sin vidrio en toda la app (auditoría
+   2026-09-27, G1; lo vigila __tests__/backdrop-build.test.js). */
 header.top{
   position:sticky;top:0;z-index:40;
   display:flex;align-items:center;justify-content:space-between;
   padding:calc(10px + env(safe-area-inset-top)) 18px 10px;
   background:linear-gradient(rgba(5,7,13,.92),rgba(5,7,13,.75));
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  backdrop-filter:blur(14px);
   border-bottom:1px solid var(--line);
 }
 /* Modo prueba (modoPrueba.js): pastilla ámbar en el lugar de la marca.
@@ -705,7 +709,7 @@ main.arrastrando{overflow:hidden;user-select:none}
   background:var(--grad-metal),linear-gradient(180deg,rgba(10,16,28,.92),rgba(10,16,28,.78));
   border:1px solid var(--glass-border);border-radius:var(--r);
   padding:var(--s4);margin-bottom:var(--s3);
-  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
   box-shadow:var(--glass-hi),0 14px 34px -18px rgba(0,0,0,.6);
 }
 .card.hero{
@@ -1934,7 +1938,7 @@ nav.tabbar{
   background:
     linear-gradient(158deg,rgba(255,255,255,.11),rgba(255,255,255,.043)),
     rgba(8,13,24,.92);
-  backdrop-filter:blur(26px) saturate(1.6);-webkit-backdrop-filter:blur(26px) saturate(1.6);
+  backdrop-filter:blur(26px) saturate(1.6);
   border:1px solid rgba(255,255,255,.14);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 22px 50px -20px rgba(0,0,0,.95);
 }
@@ -1996,7 +2000,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 
 /* ---------- rest timer: pantalla completa ---------- */
 #rest-fs{position:fixed;inset:0;z-index:65;display:none;place-items:center;
-  background:rgba(3,5,10,.94);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);
+  background:rgba(3,5,10,.94);backdrop-filter:blur(18px) saturate(1.3);
   animation:fdin var(--d2) var(--ease);}
 #rest-fs.show{display:grid}
 /* Salida (RestTimer.jsx, `saliendo`): el fondo se funde y el contenido baja
@@ -2066,7 +2070,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;
   max-height:88dvh;overflow-y:auto;
   background:linear-gradient(180deg,rgba(14,22,38,.92),rgba(10,16,28,.92));
-  backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
+  backdrop-filter:blur(24px) saturate(1.5);
   border:1px solid rgba(255,255,255,.14);border-bottom:none;
   border-radius:26px 26px 0 0;
   padding:10px 20px calc(24px + env(safe-area-inset-bottom));
@@ -2224,7 +2228,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
   background:linear-gradient(180deg,rgba(12,19,34,.9),rgba(12,19,34,.74));
   border:1px solid var(--glass-border);border-radius:var(--r);
   padding:var(--s3) 14px;margin-bottom:10px;
-  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
 }
 .dcard-head{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s2)}
 .dcard-title{
@@ -2355,7 +2359,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .plan-edit{
   display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 var(--s3);flex:none;
   border-radius:var(--r-full);border:1px solid var(--glass-border);
-  background:rgba(var(--blue-rgb),.10);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  background:rgba(var(--blue-rgb),.10);backdrop-filter:var(--glass-blur);
   color:var(--blue3);font:inherit;font-size:var(--t-sm);font-weight:600;cursor:pointer;
   transition-property:transform,background-color,color;transition-duration:var(--d1);transition-timing-function:var(--ease);
 }
@@ -2367,7 +2371,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .plan-resumen>span{
   display:inline-flex;align-items:baseline;gap:6px;padding:6px var(--s3);border-radius:var(--r-full);
   background:rgba(255,255,255,.04);border:1px solid var(--line);
-  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);text-wrap:pretty;
+  backdrop-filter:var(--glass-blur);text-wrap:pretty;
 }
 .plan-resumen b{font-family:'Barlow Condensed';font-size:var(--t-xl);font-weight:700;line-height:1;color:var(--txt);font-variant-numeric:tabular-nums}
 .plan-resumen .up{color:var(--ok);font-weight:600;border-color:rgba(var(--ok-rgb),.35);background:rgba(var(--ok-rgb),.07)}
@@ -2390,7 +2394,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* La tarjeta del bloque en vidrio, como .ini-tile. */
 .plan-block .group{
   background:linear-gradient(155deg,rgba(var(--blue-rgb),.12),rgba(12,19,34,.82) 46%,rgba(12,19,34,.92));
-  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
   border-color:var(--glass-border);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 40px -26px rgba(0,0,0,.9);
 }
@@ -3238,7 +3242,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-tile{
   position:relative;overflow:hidden;
   background:linear-gradient(155deg,rgba(var(--blue-rgb),.16),rgba(12,19,34,.82) 46%,rgba(12,19,34,.92));
-  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
   border:1px solid var(--glass-border);border-radius:var(--r);
   box-shadow:var(--glass-hi),0 14px 30px -18px rgba(4,7,15,.8);
   padding:14px 16px;text-align:left;color:var(--txt);font:inherit;
