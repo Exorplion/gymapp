@@ -12,18 +12,18 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "relative overflow-hidden bg-[image:var(--accent-grad)] text-[var(--on-accent)] shadow-[var(--accent-glow)] after:content-[''] after:absolute after:top-0 after:-left-[60%] after:h-full after:w-[40%] after:bg-[linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent)] after:pointer-events-none after:animate-[sweep_3.2s_ease-in-out_infinite]",
+          "relative overflow-hidden bg-[image:var(--accent-grad)] text-[var(--on-accent)] shadow-[var(--accent-glow)] after:content-[''] after:absolute after:top-0 after:-left-[60%] after:h-full after:w-[40%] after:bg-[linear-gradient(115deg,transparent,rgba(var(--hi-rgb),.35),transparent)] after:pointer-events-none after:animate-[sweep_3.2s_ease-in-out_infinite]",
         /* Gemela ámbar de `primary`, con el mismo barrido de brillo, para el
            CTA que vive dentro de la tarjeta de calentamiento — que es cálida
            por diseño (calentar = calor). Con la paleta "acero" el primario es
            frío otra vez, así que un botón primario ahí adentro volvería a ser
            el único elemento frío de un bloque cálido. */
         warn:
-          "relative overflow-hidden bg-[image:var(--grad-warn)] text-[var(--on-warn)] shadow-[var(--glow-warn)] after:content-[''] after:absolute after:top-0 after:-left-[60%] after:h-full after:w-[40%] after:bg-[linear-gradient(115deg,transparent,rgba(255,255,255,.35),transparent)] after:pointer-events-none after:animate-[sweep_3.2s_ease-in-out_infinite]",
+          "relative overflow-hidden bg-[image:var(--grad-warn)] text-[var(--on-warn)] shadow-[var(--glow-warn)] after:content-[''] after:absolute after:top-0 after:-left-[60%] after:h-full after:w-[40%] after:bg-[linear-gradient(115deg,transparent,rgba(var(--hi-rgb),.35),transparent)] after:pointer-events-none after:animate-[sweep_3.2s_ease-in-out_infinite]",
         secondary: 'bg-surface-2 text-text border border-line-2',
         ghost: 'bg-transparent text-text-2 hover:text-text',
         outline: 'bg-transparent border border-line-2 text-text',
-        icon: 'w-[38px] h-[38px] rounded-[13px] border border-white/10 text-text-2 bg-[linear-gradient(150deg,rgba(255,255,255,.09),rgba(255,255,255,.02))]',
+        icon: 'w-[38px] h-[38px] rounded-[13px] border border-white/10 text-text-2 bg-[linear-gradient(150deg,rgba(var(--hi-rgb),.09),rgba(var(--hi-rgb),.02))]',
         destructive: 'bg-danger/15 text-danger border border-danger/30',
       },
       size: {

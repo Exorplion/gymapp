@@ -21,13 +21,43 @@
 // lottie-react 3.x no tiene export default: el componente es `Lottie` nombrado,
 // y el prop del JSON pasó a llamarse `src` (antes `animationData` en 1.x/2.x,
 // la versión que documentan la mayoría de los tutoriales viejos).
+import { useMemo } from 'react';
 import { Lottie } from 'lottie-react';
 import prBurst from '../assets/lottie/pr-burst.json';
+import { leerToken } from '../lib/theme.js';
+
+/* El JSON trae dos colores fijos: un azul (el de la paleta anterior) y un
+   dorado. Lottie no entiende var(), así que se clona el JSON y se cambia el
+   azul por el acento y el dorado por la llama de la racha, leídos de los
+   tokens al montar: el estallido sale del color que cada uno eligió. Un
+   color de Lottie es [r, g, b, a] en 0-1. */
+const AZUL = [0.184, 0.49, 1, 1];
+const DORADO = [1, 0.706, 0.216, 1];
+const igual = (a, b) => Array.isArray(a) && a.length === 4 && a.every((v, i) => Math.abs(v - b[i]) < 0.01);
+const aLottie = rgb => [...rgb.split(',').map(n => Number(n) / 255), 1];
+
+function recolorear(nodo, cambios) {
+  if (Array.isArray(nodo)) return nodo.map(n => recolorear(n, cambios));
+  if (!nodo || typeof nodo !== 'object') return nodo;
+  const out = {};
+  for (const [k, v] of Object.entries(nodo)) {
+    if (k === 'c' && v && Array.isArray(v.k)) {
+      const cambio = cambios.find(([de]) => igual(v.k, de));
+      out[k] = cambio ? { ...v, k: cambio[1] } : v;
+    } else out[k] = recolorear(v, cambios);
+  }
+  return out;
+}
 
 export default function PrBurst() {
+  const datos = useMemo(() => {
+    const acento = leerToken('--accent-rgb'), llama = leerToken('--flame-rgb');
+    if (!acento || !llama) return prBurst;
+    return recolorear(prBurst, [[AZUL, aLottie(acento)], [DORADO, aLottie(llama)]]);
+  }, []);
   return (
     <Lottie
-      src={prBurst}
+      src={datos}
       autoplay
       loop={false}
       style={{ width: 44, height: 44, flex: 'none' }}

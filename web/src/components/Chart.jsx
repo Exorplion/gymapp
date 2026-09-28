@@ -22,6 +22,7 @@ import { useEffect, useRef } from 'react';
 import { drawChart, pickChartPoint } from '../lib/charts.js';
 import { bloomOpen } from '../lib/motion.js';
 import { cn } from '../lib/utils.js';
+import { EVENTO_ACENTO } from '../lib/theme.js';
 
 export default function Chart({ pts, opts, id }) {
   const cvRef = useRef(null);
@@ -53,6 +54,16 @@ export default function Chart({ pts, opts, id }) {
     });
     ro.observe(cv);
     return () => ro.disconnect();
+  }, []);
+
+  // El canvas no sigue a var(): cuando cambia el acento en Ajustes, hay que
+  // volver a dibujar con los colores nuevos.
+  useEffect(() => {
+    const cv = cvRef.current;
+    if (!cv) return;
+    const redibujar = () => drawChart(cv, latest.current.pts, latest.current.opts);
+    window.addEventListener(EVENTO_ACENTO, redibujar);
+    return () => window.removeEventListener(EVENTO_ACENTO, redibujar);
   }, []);
 
   function onClick(e) {

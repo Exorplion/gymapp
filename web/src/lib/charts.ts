@@ -6,6 +6,7 @@
 // state.js: sólo se importa DE state.js/format.js, nunca al revés.
 import { S } from './state.js';
 import { round1, fmtNum, fmtD, norm } from './format.js';
+import { leerToken, variablesDe, acentoDe, ACENTO_DEFECTO, BASE } from './theme.js';
 
 interface BodyEntry { date: string; weight: number | null; }
 interface SetEntry { w: number; r: number; }
@@ -238,14 +239,40 @@ export const CHART_SEL = new WeakMap<HTMLCanvasElement, number>();
 
 type ChartCanvas = HTMLCanvasElement & { _pts?: ChartPoint[] | null; _X?: (d: string) => number };
 
+/* Los colores del canvas salen de los tokens de styles.css, leídos en cada
+   dibujo: un canvas no entiende var(), así que si se escribieran acá quedarían
+   fijos aunque cambie el acento (el gráfico era azul con cualquier tema).
+   Chart.jsx redibuja cuando llega el evento de cambio de acento. Los valores
+   de respaldo salen de theme.js (los de fábrica), para cuando no hay
+   documento (tests). */
+function coloresGrafico() {
+  const fabrica: Record<string, string> = variablesDe(acentoDe(ACENTO_DEFECTO));
+  const t = (nombre: string, respaldo?: string) => leerToken(nombre) || respaldo || fabrica[nombre];
+  const acc = t('--accent-rgb');
+  const hi = t('--hi-rgb', '255,255,255');
+  return {
+    texto: t('--text', BASE.text),
+    texto2: t('--text-2', BASE.text2),
+    texto3: t('--text-3', BASE.text3),
+    grilla: `rgba(${hi},.07)`,
+    linea: t('--accent'),
+    sombra: `rgba(${acc},.45)`,
+    relleno0: `rgba(${acc},.28)`,
+    relleno1: `rgba(${acc},0)`,
+    puntoSel: t('--mapa-0-hi'),
+    anillo: `rgba(${acc},.4)`,
+  };
+}
+
 export function drawChart(cv: ChartCanvas, pts: ChartPoint[], opts: DrawChartOpts = {}): void {
   const dpr = devicePixelRatio || 1;
   const W = cv.clientWidth || 300, H = cv.clientHeight || 200;
   cv.width = W * dpr; cv.height = H * dpr;
   const x = cv.getContext('2d')!; x.scale(dpr, dpr);
   x.clearRect(0, 0, W, H);
+  const c = coloresGrafico();
   if (pts.length < 2) {
-    x.fillStyle = '#5C6885'; x.font = '500 14px Barlow, sans-serif'; x.textAlign = 'center';
+    x.fillStyle = c.texto3; x.font = '500 14px Barlow, sans-serif'; x.textAlign = 'center';
     x.fillText(pts.length ? 'Registra al menos 2 puntos para ver la curva' : 'Sin datos todavía', W / 2, H / 2);
     cv._pts = null;
     return;
@@ -259,39 +286,39 @@ export function drawChart(cv: ChartCanvas, pts: ChartPoint[], opts: DrawChartOpt
   const span = t1 - t0 || 1;
   const X = (d: string) => P.l + (W - P.l - P.r) * ((+new Date(d + 'T00:00:00')) - t0) / span;
   const Y = (v: number) => P.t + (H - P.t - P.b) * (1 - (v - mn) / (mx - mn));
-  if (opts.unit) { x.font = '600 10px Barlow, sans-serif'; x.fillStyle = '#8B97B4'; x.textAlign = 'left'; x.fillText(opts.unit, 2, 12); }
+  if (opts.unit) { x.font = '600 10px Barlow, sans-serif'; x.fillStyle = c.texto2; x.textAlign = 'left'; x.fillText(opts.unit, 2, 12); }
   x.font = '500 11px Barlow, sans-serif';
-  x.strokeStyle = 'rgba(120,150,220,.13)'; x.lineWidth = 1;
+  x.strokeStyle = c.grilla; x.lineWidth = 1;
   for (let i = 0; i <= 3; i++) {
     const v = mn + (mx - mn) * i / 3, y = Y(v);
     x.beginPath(); x.moveTo(P.l, y); x.lineTo(W - P.r, y); x.stroke();
-    x.fillStyle = '#6B7A99'; x.textAlign = 'right'; x.fillText(fmtNum(round1(v)), P.l - 8, y + 4);
+    x.fillStyle = c.texto3; x.textAlign = 'right'; x.fillText(fmtNum(round1(v)), P.l - 8, y + 4);
   }
-  x.textAlign = 'center'; x.fillStyle = '#6B7A99';
+  x.textAlign = 'center'; x.fillStyle = c.texto3;
   x.fillText(fmtD(pts[0].date), Math.max(P.l + 16, X(pts[0].date)), H - 8);
   x.fillText(fmtD(pts[pts.length - 1].date), Math.min(W - P.r - 16, X(pts[pts.length - 1].date)), H - 8);
   const g = x.createLinearGradient(0, P.t, 0, H - P.b);
-  g.addColorStop(0, 'rgba(62,150,255,.32)'); g.addColorStop(1, 'rgba(62,150,255,0)');
+  g.addColorStop(0, c.relleno0); g.addColorStop(1, c.relleno1);
   x.beginPath();
   pts.forEach((p, i) => { const px = X(p.date); if (i) x.lineTo(px, Y(p.y)); else x.moveTo(px, Y(p.y)); });
   x.lineTo(X(pts[pts.length - 1].date), H - P.b); x.lineTo(X(pts[0].date), H - P.b); x.closePath();
   x.fillStyle = g; x.fill();
   x.beginPath();
   pts.forEach((p, i) => { const px = X(p.date); if (i) x.lineTo(px, Y(p.y)); else x.moveTo(px, Y(p.y)); });
-  x.strokeStyle = '#3E96FF'; x.lineWidth = 2.5; x.lineJoin = 'round'; x.lineCap = 'round';
-  x.shadowColor = 'rgba(62,150,255,.5)'; x.shadowBlur = 8;
+  x.strokeStyle = c.linea; x.lineWidth = 2.5; x.lineJoin = 'round'; x.lineCap = 'round';
+  x.shadowColor = c.sombra; x.shadowBlur = 8;
   x.stroke(); x.shadowBlur = 0;
   const selIdx = Math.min(CHART_SEL.get(cv) ?? pts.length - 1, pts.length - 1);
   pts.forEach((p, i) => {
     const sel = i === selIdx, px = X(p.date);
     x.beginPath(); x.arc(px, Y(p.y), sel ? 4.5 : 3, 0, 7);
-    x.fillStyle = sel ? '#8FC2FF' : '#3E96FF'; x.fill();
+    x.fillStyle = sel ? c.puntoSel : c.linea; x.fill();
   });
   const sp = pts[selIdx], spx = X(sp.date);
-  x.strokeStyle = 'rgba(143,194,255,.4)'; x.lineWidth = 5;
+  x.strokeStyle = c.anillo; x.lineWidth = 5;
   x.beginPath(); x.arc(spx, Y(sp.y), 8, 0, 7); x.stroke();
   const valTxt = `${fmtNum(sp.y)}${opts.unit ? ' ' + opts.unit : ''}${sp.r ? ' × ' + sp.r : ''}`;
-  x.fillStyle = '#EAF0FC'; x.font = '700 13px "Barlow Condensed", sans-serif'; x.textAlign = 'center';
+  x.fillStyle = c.texto; x.font = '700 13px "Barlow Condensed", sans-serif'; x.textAlign = 'center';
   // Centrado sobre el punto, pero sin salirse del canvas: en el último punto
   // (el caso de todos los días) la mitad derecha quedaba cortada — "74.:"
   // (auditoría 2026-09-26).
