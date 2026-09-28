@@ -3,7 +3,10 @@
 // empezar. Todo sale de funciones que ya existen (charts, muscle,
 // objetivoHoy); acá sólo se eligen la ventana y la forma. Criterio de la
 // app: sin dato, null — nunca un cero ni una estimación disfrazada de hecho.
+import { S, wDisplay } from './state.js';
 import { e1rmSeries, trend, exerciseSeries } from './charts.js';
+import { objetivoHoy } from './objetivoHoy.js';
+import { lastDataFor } from './session.js';
 import { catOf, recoveryPct, daysSinceGroup, diasTexto } from './muscle.js';
 import { round1, dstr } from './format.js';
 
@@ -88,4 +91,58 @@ export function recuperacionPrevia(ex) {
   const cat = catOf(ex);
   if (!cat) return null;
   return { cat, pct: recoveryPct(cat), dias: daysSinceGroup(cat) };
+}
+
+const repsDe = ex => {
+  const r = Math.round(Number(ex?.reps));
+  return r > 0 ? r : null;
+};
+
+/** "Meta de hoy": peso y reps concretos sobre objetivoHoy() (la doble
+    progresión, o el sugerido por 1RM). En "sumar reps" la meta es una rep
+    más que la mejor de la última vez al peso de trabajo, con techo en el
+    tope del rango. La primera vez sin nada con qué calcular no lleva peso,
+    salvo el peso de partida que la rutina declare (ex.pesoInicialKg). */
+export function metaHoy(ex, { uni = false, ajuste = 0 } = {}) {
+  const obj = objetivoHoy(ex, { uni, ajuste });
+  const { tipo } = obj;
+  if (tipo === 'subir' || tipo === 'sostener') return { tipo, peso: obj.peso, reps: obj.meta, texto: obj.texto };
+  if (tipo === 'sumar') {
+    const last = lastDataFor(ex) || [];
+    const top = Math.max(...last.map(s => s.w));
+    const mejores = Math.max(0, ...last.filter(s => s.w >= top - 0.01).map(s => s.r));
+    return { tipo, peso: obj.peso, reps: last.length ? Math.min(obj.meta, mejores + 1) : obj.meta, texto: '1 rep más que la última' };
+  }
+  if (tipo === 'sugerido') return { tipo, peso: obj.peso, reps: repsDe(ex), texto: obj.texto };
+  const inicial = typeof ex?.pesoInicialKg === 'number' && ex.pesoInicialKg > 0 ? ex.pesoInicialKg : null;
+  return inicial != null
+    ? { tipo, peso: inicial, reps: repsDe(ex), texto: 'tu peso de partida' }
+    : { tipo, peso: null, reps: repsDe(ex), texto: obj.texto };
+}
+
+/** La meta en una línea: "47.5 kg × 8 · 1 rep más que la última". La misma
+    línea va en la previa y, después de Empezar, dentro de la tarjeta. */
+export function metaTexto(meta) {
+  if (!meta) return '';
+  const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
+  const partes = [];
+  if (meta.peso != null) partes.push(`${meta.tipo === 'sugerido' ? '~' : ''}${wDisplay(meta.peso)} ${unidad}${meta.reps ? ` × ${meta.reps}` : ''}`);
+  else if (meta.reps) partes.push(`${meta.reps} reps`);
+  if (meta.texto) partes.push(meta.texto);
+  return partes.join(' · ');
+}
+
+/** Todo lo que muestra la previa de un ejercicio. `primeraVez` es la misma
+    condición que el "Primera vez" de la tarjeta (sin historial con ESTE
+    equipo, lastDataFor): en ese caso no hay gráfico ni récord, y el peso
+    sugerido por 1RM, si existe, llega en `meta` (tipo 'sugerido'). */
+export function previaEjercicio(ex, { uni = false, ajuste = 0, hoy = dstr() } = {}) {
+  const primeraVez = !lastDataFor(ex);
+  return {
+    primeraVez,
+    fuerza: primeraVez ? null : fuerzaPrevia(ex, { uni }),
+    record: primeraVez ? null : recordPrevia(ex, { uni, hoy }),
+    recuperacion: recuperacionPrevia(ex),
+    meta: metaHoy(ex, { uni, ajuste }),
+  };
 }

@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from '../state.js';
 import { dstr } from '../format.js';
-import { fuerzaPrevia, sparkPuntos, recordPrevia, haceTexto, recuperacionPrevia } from '../previa.js';
+import { fuerzaPrevia, sparkPuntos, recordPrevia, haceTexto, recuperacionPrevia, metaHoy, metaTexto, previaEjercicio } from '../previa.js';
 import { e1rmSeries } from '../charts.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
@@ -140,5 +140,90 @@ describe('recuperacionPrevia', () => {
   it('nada devuelve NaN', () => {
     S.sessions = [sesion(hace(3), [serie(50, 8)])];
     expect(sinNaN([fuerzaPrevia(PRESS), recordPrevia(PRESS), recuperacionPrevia(PRESS)])).not.toContain('NaN!');
+  });
+});
+
+describe('metaHoy y metaTexto', () => {
+  it('sumar reps: 1 rep más que la mejor de la última vez al peso de trabajo', () => {
+    S.sessions = [sesion('2026-09-20', [serie(47.5, 7), serie(47.5, 6)])];
+    const m = metaHoy(PRESS);
+    expect(m).toEqual({ tipo: 'sumar', peso: 47.5, reps: 8, texto: '1 rep más que la última' });
+    expect(metaTexto(m)).toBe('47.5 kg × 8 · 1 rep más que la última');
+  });
+  it('sumar nunca pide más que el tope del rango', () => {
+    S.sessions = [sesion('2026-09-20', [serie(47.5, 10), serie(47.5, 9)])];
+    expect(metaHoy(PRESS).reps).toBe(11); // piso 8 + ventana 3
+  });
+  it('subir: peso nuevo y vuelta al piso', () => {
+    S.sessions = [sesion('2026-09-20', [serie(40, 11), serie(40, 11)])];
+    const m = metaHoy(PRESS);
+    expect(m.tipo).toBe('subir');
+    expect(m.peso).toBeGreaterThan(40);
+    expect(m.reps).toBe(8);
+  });
+  it('sostener: al tope en las series que faltan', () => {
+    S.sessions = [sesion('2026-09-20', [serie(40, 11), serie(40, 9)])];
+    const m = metaHoy(PRESS);
+    expect(m).toMatchObject({ tipo: 'sostener', peso: 40, reps: 11 });
+    expect(metaTexto(m)).toBe('40 kg × 11 · 1 serie más a 11 reps');
+  });
+  it('primera vez en este equipo pero con historial del nombre: el sugerido por 1RM', () => {
+    S.sessions = [sesion('2026-09-20', [serie(50, 8)])];
+    const m = metaHoy({ ...PRESS, equip: 'barra' });
+    expect(m.tipo).toBe('sugerido');
+    expect(m.peso).toBeGreaterThan(0);
+    expect(m.reps).toBe(8);
+    expect(metaTexto(m)).toMatch(/^~\d/);
+  });
+  it('primera vez sin nada: sin número inventado', () => {
+    const m = metaHoy(PRESS);
+    expect(m).toEqual({ tipo: 'primera', peso: null, reps: 8, texto: 'arrancá liviano' });
+    expect(metaTexto(m)).toBe('8 reps · arrancá liviano');
+  });
+  it('primera vez con peso de partida declarado en la rutina', () => {
+    const m = metaHoy({ ...PRESS, pesoInicialKg: 30 });
+    expect(m).toMatchObject({ tipo: 'primera', peso: 30, texto: 'tu peso de partida' });
+    expect(metaTexto(m)).toBe('30 kg × 8 · tu peso de partida');
+  });
+  it('en libras muestra libras', () => {
+    S.cfg.unit = 'lb';
+    S.sessions = [sesion('2026-09-20', [serie(47.5, 7)])];
+    expect(metaTexto(metaHoy(PRESS))).toMatch(/^104\.7 lb × 8/);
+  });
+  it('sin meta no hay línea', () => {
+    expect(metaTexto(null)).toBe('');
+  });
+});
+
+describe('previaEjercicio', () => {
+  it('con historial trae los cuatro paneles', () => {
+    S.sessions = [sesion(hace(7), [serie(50, 8)]), sesion(hace(21), [serie(47.5, 8)])];
+    const p = previaEjercicio(PRESS);
+    expect(p.primeraVez).toBe(false);
+    expect(p.fuerza.cambioPct).not.toBe(null);
+    expect(p.record).toMatchObject({ w: 50, r: 8 });
+    expect(p.recuperacion.cat).toBe('Pecho');
+    expect(p.meta.tipo).toBe('sumar');
+  });
+  it('primera vez: sin gráfico ni récord, con el peso sugerido en la meta', () => {
+    S.sessions = [sesion(hace(7), [serie(50, 8)])];
+    const p = previaEjercicio({ ...PRESS, equip: 'barra' });
+    expect(p.primeraVez).toBe(true);
+    expect(p.fuerza).toBe(null);
+    expect(p.record).toBe(null);
+    expect(p.meta.tipo).toBe('sugerido');
+  });
+  it('un ejercicio nuevo de verdad: nada vacío ni NaN', () => {
+    const p = previaEjercicio({ id: 'n', name: 'Remo pendlay', sets: 3, reps: 6 });
+    expect(p).toMatchObject({ primeraVez: true, fuerza: null, record: null });
+    expect(p.meta.texto).toBeTruthy();
+    expect(metaTexto(p.meta)).not.toMatch(/NaN|undefined|null/);
+    expect(sinNaN(p)).not.toContain('NaN!');
+  });
+  it('el ajuste del chequeo inicial llega a la meta sugerida', () => {
+    S.sessions = [sesion(hace(7), [serie(50, 8)])];
+    const sin = previaEjercicio({ ...PRESS, equip: 'barra' }).meta.peso;
+    const con = previaEjercicio({ ...PRESS, equip: 'barra' }, { ajuste: -0.1 }).meta.peso;
+    expect(con).toBeLessThan(sin);
   });
 });
