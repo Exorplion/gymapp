@@ -62,6 +62,20 @@ function anchoDelCuerpo(el, viewBox) {
   return Math.min(el.clientWidth, el.clientHeight * (w / h)) || 220;
 }
 
+/** Las tres paradas (luz, cuerpo, sombra) de un degradado del mapa, desde
+    los tokens `--<t>-hi/-md/-lo`. Van por `style` y no como atributo: el
+    atributo stop-color no resuelve var(), la propiedad CSS sí, y así el
+    cuerpo cambia en vivo cuando se elige otro acento. */
+export function Paradas({ t }) {
+  return (
+    <>
+      <stop offset="0%" style={{ stopColor: `var(--${t}-hi)` }} />
+      <stop offset="45%" style={{ stopColor: `var(--${t}-md)` }} />
+      <stop offset="100%" style={{ stopColor: `var(--${t}-lo)` }} />
+    </>
+  );
+}
+
 /** Días → clase de color.
 
     `null` (nunca entrenado) se pinta neutro y callado: no es lo mismo que
@@ -524,35 +538,24 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
 
       {/* Degradados y filtro, una sola vez para las dos caras. */}
       <svg width="0" height="0" className="sil-defs" aria-hidden="true"><defs>
-        <linearGradient id="sil-g0" x1="12%" y1="0%" x2="88%" y2="100%">
-          <stop offset="0%" stopColor="#B9F8FF" /><stop offset="45%" stopColor="#22D3EE" /><stop offset="100%" stopColor="#0A6F88" />
-        </linearGradient>
-        <linearGradient id="sil-g1" x1="12%" y1="0%" x2="88%" y2="100%">
-          <stop offset="0%" stopColor="#A9CEFF" /><stop offset="45%" stopColor="#2E7DFF" /><stop offset="100%" stopColor="#12315F" />
-        </linearGradient>
-        <linearGradient id="sil-g2" x1="12%" y1="0%" x2="88%" y2="100%">
-          <stop offset="0%" stopColor="#5B7FB5" /><stop offset="45%" stopColor="#2C4C86" /><stop offset="100%" stopColor="#101E38" />
-        </linearGradient>
-        <linearGradient id="sil-g3" x1="12%" y1="0%" x2="88%" y2="100%">
-          <stop offset="0%" stopColor="#F6C98B" /><stop offset="45%" stopColor="#E39C43" /><stop offset="100%" stopColor="#6B3F10" />
-        </linearGradient>
-        <linearGradient id="sil-gn" x1="12%" y1="0%" x2="88%" y2="100%">
-          <stop offset="0%" stopColor="#39445C" /><stop offset="45%" stopColor="#232C42" /><stop offset="100%" stopColor="#131A2B" />
-        </linearGradient>
-        <linearGradient id="sil-gne" x1="12%" y1="0%" x2="88%" y2="100%">
-          <stop offset="0%" stopColor="#3A4763" /><stop offset="45%" stopColor="#26304A" /><stop offset="100%" stopColor="#151D30" />
-        </linearGradient>
-        {/* Castaño: el cuerpo es todo frío, así que el pelo cálido se despega
-            solo. Oscurecerlo en azul lo hacía desaparecer contra el fondo. */}
-        <linearGradient id="sil-gpelo" x1="15%" y1="0%" x2="85%" y2="100%">
-          <stop offset="0%" stopColor="#8A6A4A" /><stop offset="45%" stopColor="#5C4430" /><stop offset="100%" stopColor="#33241A" />
-        </linearGradient>
+        {/* Los colores salen de los tokens --mapa-* (styles.css), que
+            lib/theme.js deriva del acento elegido por luminosidad: cuanto más
+            reciente el entrenamiento, más luz. 7+ días es el ámbar de
+            "atención" y sin registro, grafito neutro. */}
+        <linearGradient id="sil-g0" x1="12%" y1="0%" x2="88%" y2="100%"><Paradas t="mapa-0" /></linearGradient>
+        <linearGradient id="sil-g1" x1="12%" y1="0%" x2="88%" y2="100%"><Paradas t="mapa-1" /></linearGradient>
+        <linearGradient id="sil-g2" x1="12%" y1="0%" x2="88%" y2="100%"><Paradas t="mapa-2" /></linearGradient>
+        <linearGradient id="sil-g3" x1="12%" y1="0%" x2="88%" y2="100%"><Paradas t="mapa-3" /></linearGradient>
+        <linearGradient id="sil-gn" x1="12%" y1="0%" x2="88%" y2="100%"><Paradas t="mapa-n" /></linearGradient>
+        <linearGradient id="sil-gne" x1="12%" y1="0%" x2="88%" y2="100%"><Paradas t="mapa-ne" /></linearGradient>
+        {/* Castaño: el pelo cálido se despega solo del cuerpo. */}
+        <linearGradient id="sil-gpelo" x1="15%" y1="0%" x2="85%" y2="100%"><Paradas t="pelo" /></linearGradient>
         {/* userSpaceOnUse: la luz es del cuerpo entero, no de cada trazo. Las
             coordenadas son las del lienzo grande de la lámina. */}
         <linearGradient id="sil-luz" gradientUnits="userSpaceOnUse" x1="120" y1="120" x2="620" y2="1300">
-          <stop offset="0%" stopColor="rgba(255,255,255,.28)" />
-          <stop offset="38%" stopColor="rgba(255,255,255,.05)" />
-          <stop offset="100%" stopColor="rgba(0,0,0,.28)" />
+          <stop offset="0%" style={{ stopColor: 'rgba(var(--hi-rgb),.28)' }} />
+          <stop offset="38%" style={{ stopColor: 'rgba(var(--hi-rgb),.05)' }} />
+          <stop offset="100%" style={{ stopColor: 'rgba(var(--shade-rgb),.28)' }} />
         </linearGradient>
         <filter id="sil-glow" x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur stdDeviation="7" result="b" />
