@@ -170,6 +170,12 @@ paneles vacíos ni "NaN" con un ejercicio nuevo.
 
 ## 4 · Color: base grafito + un acento elegido
 
+> **Implementada el 2026-09-28** en la rama `feat/color-grafito` (plan
+> `docs/superpowers/plans/2026-09-27-color-grafito-acento.md`). Decisión
+> tomada al implementar: el cuarto escalón del mapa muscular (7+ días) no
+> sale del acento sino del ámbar de estado ("atención"); los tres primeros sí
+> son la escala de luminosidad del acento.
+
 ### Problema
 
 El relevamiento del sistema de color encontró cinco causas:

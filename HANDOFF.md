@@ -1,6 +1,62 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-27
+**Última actualización:** 2026-09-28
+
+---
+
+## SESIÓN 2026-09-28 — Pieza 4 del rediseño: base grafito + un acento elegido
+
+Rama `feat/color-grafito`, PR abierto sin mergear. **806 tests.** Spec:
+`docs/superpowers/specs/2026-09-27-rediseno-sesion-y-color-design.md` §4;
+plan: `docs/superpowers/plans/2026-09-27-color-grafito-acento.md`.
+
+- **Tokens por función**, no por matiz: `--bg --surface --surface-2 --glass
+  --glass-strong --glass-border --text --text-2 --text-3 --line --line-2`
+  (base grafito fija, neutra), `--accent --accent-strong --on-accent
+  --accent-rgb --accent-strong-rgb --accent-grad --accent-glow` (el acento) y
+  `--ok --danger --warn --flame` con sus `-strong`/`-rgb`/`--on-*` (estados).
+  Se fueron `--blue*`, `--cyan`, `--deep`, `--grad2`, `--txt`, `--mut*`,
+  `--card*`, `--red`: no queda ni un alias.
+- **`lib/theme.js`** deriva todo en OKLCH desde `{h, c}` (L .80 el acento,
+  .62 el fuerte, croma recortado al gamut sRGB) y lo escribe en `<html>`.
+  Presets Hielo (defecto) / Cobalto / Violeta / Fucsia / Monocromo; "Propio"
+  toma sólo el matiz y lo aleja ≥ 20° de rojo, ámbar y verde (rojo, llama y
+  ámbar son UNA zona: el hueco naranja entre ellos es menor que el margen).
+  Se guarda en `S.cfg.acento`; un `S.cfg.themeColor` viejo se migra una vez
+  al arrancar (preset más cercano a ≤ 15°, si no propio) y se borra.
+- **Tailwind con `@theme inline`**: `text-accent` compila a `var(--accent)`.
+  Las utilidades se renombraron: `text-text`, `text-text-2`, `text-text-3`,
+  `bg-surface-2`, `border-line-2`, `*-accent`, `*-danger`.
+- **Cero literales** fuera del bloque de tokens (`colores-literales.test.js`):
+  un brillo es `rgba(var(--hi-rgb),α)`, una sombra `rgba(var(--shade-rgb),α)`.
+  `saturate()` del vidrio ≤ 1.2 (el test también lo mira).
+- Gráfico (canvas), confeti, Lottie de récord (`lib/lottie-color.js`), mapa
+  muscular (`--mapa-*`, por `style` en los `<stop>`), `theme-color`, manifest,
+  íconos PNG y `favicon.svg` (la mancuerna, ya no el rayo de Vite).
+
+Verificado en Chrome (build + preview, 390 y 430) con los cinco presets:
+recorriendo `getComputedStyle` de todos los elementos visibles, pseudo-
+elementos, `<stop>` y píxeles del canvas en Inicio, Hoy en vivo, Entreno,
+Progreso, Comida y Ajustes, **0 colores** que no sean neutros, acento o
+estado (los únicos "otros" son las muestras de los demás presets en Ajustes).
+Contraste de todo el texto visible ≥ 4.5 (mínimo 4.72, etiqueta de la pestaña
+activa con Fucsia). `backdrop-filter` activo en header, barra, hoja y tarjetas.
+
+Trampas:
+- **`stop-color` no resuelve `var()` como atributo** (`stopColor="var(--x)"`):
+  va por `style={{ stopColor: 'var(--x)' }}`. Así el cuerpo cambia en vivo.
+- **Un canvas no entiende `var()`**: `charts.ts` lee los tokens en cada
+  dibujo y `Chart.jsx` redibuja con el evento `fierro:acento`
+  (`EVENTO_ACENTO`, lo dispara `aplicarAcento`).
+- Los valores de `:root` son los de Hielo y **tienen que coincidir** con
+  `variablesDe(acentoDe(ACENTO_DEFECTO))`: si cambiás la receta en theme.js,
+  el test de sincronía te da los valores nuevos.
+- `HERO_TINTE` (.14) es el alfa de la esquina tintada de las hero en CSS y el
+  peor fondo de los tests de contraste: si subís el tinte en CSS, subilo ahí.
+- El seed marca hoy como hecho: para la sesión en vivo, `initScript` que
+  adelanta `Date` un día (como en el relevamiento).
+
+Pendiente: piezas 2+3 (rampa y previa) y 1 (asistente), sobre estos tokens.
 
 ---
 
