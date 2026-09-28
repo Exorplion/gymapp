@@ -605,7 +605,10 @@ function SlotCard({ slot, index, n, editing }) {
             )}
             <span className="s">{exs.length ? `${exs.length} ejercicios · ${sets} series` : 'libre'}</span>
           </span>
-          <span className="chev">{open ? '⌄' : '›'}</span>
+          {/* Glifo FIJO: lo gira styles.css (.day-card.open .day-head .chev,
+              90°). Cambiarlo acá a "⌄" además de la rotación es el "<" que
+              volvió (auditoría 2026-09-27, E1): un solo mecanismo. */}
+          <span className="chev" aria-hidden="true">›</span>
         </button>
         {editing && <button type="button" className="mini red" title="Quitar turno" aria-label={`Quitar el turno ${slot.name || 'sin nombre'}`} onClick={() => removeWorkoutDay(slot.id)}><X /></button>}
       </div>
