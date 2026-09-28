@@ -2968,6 +2968,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .sil-d3{fill:url(#sil-g3);stroke:rgba(255,190,110,.5);stroke-width:1.8}
 /* nunca entrenado: neutro y callado, distinto de "hace mucho" */
 .sil-none{fill:url(#sil-gn)}
+/* Muestras de la leyenda (LeyendaTonos): el mismo relleno que la zona, sin el
+   glow de .sil-d0, que en un círculo de 10 px lo borronea entero. */
+.sil-ley circle{filter:none}
 /* lo que no rastreamos: cabeza, cuello, antebrazo, rodilla */
 .sil-neutro{fill:url(#sil-gne);stroke:rgba(2,5,12,.5);stroke-width:1.4;pointer-events:none}
 /* El pelo. Castaño cálido y no un azul más oscuro: sobre un fondo casi negro

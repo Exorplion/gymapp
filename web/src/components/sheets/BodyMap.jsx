@@ -13,7 +13,7 @@ import { daysSinceAll, stalestGroups, muscleVolume, uncategorized, recoveryPct }
 import { diasPorPorcion } from '../../lib/fibras.js';
 import { dstr } from '../../lib/format.js';
 import { sheetReveal } from '../../lib/motion.js';
-import Silhouette from '../Silhouette.jsx';
+import Silhouette, { LeyendaTonos } from '../Silhouette.jsx';
 
 export default function BodyMap() {
   const dias = daysSinceAll();
@@ -43,12 +43,7 @@ export default function BodyMap() {
         <Silhouette days={dias} porciones={porciones} />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-micro text-mut">
-        <LegendSw color="bg-cyan">ayer</LegendSw>
-        <LegendSw color="bg-blue">2-3 d</LegendSw>
-        <LegendSw color="bg-blue3">4-6 d</LegendSw>
-        <LegendSw color="bg-line2">7+ d</LegendSw>
-      </div>
+      <LeyendaTonos className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-micro text-mut" />
 
       {/* Si la figura enciende porciones, la leyenda tiene que decirlo: si no,
           ver media espalda prendida con la ficha diciendo "Espalda, hace 1 día"
@@ -92,14 +87,6 @@ export default function BodyMap() {
         </>
       )}
     </div>
-  );
-}
-
-function LegendSw({ color, children }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <i className={`inline-block h-2.5 w-2.5 rounded-full ${color}`}></i>{children}
-    </span>
   );
 }
 
