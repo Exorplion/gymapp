@@ -47,6 +47,8 @@ const POR_ELEMENTO = new Set([
   '--fill', '--i', '--n', '--lift', '--drift', '--rot',
   '--sil-dy', '--sil-esc', '--sil-org',
   '--tw-leading',
+  // Los tiempos del fin de sesión: los escribe SessionComplete.jsx.
+  '--beat2', '--beat3', '--beat-corto', '--beat-largo',
 ]);
 
 describe('tokens de CSS', () => {

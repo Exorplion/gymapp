@@ -77,3 +77,23 @@ describe('la lámina', () => {
     }
   });
 });
+
+// H5 (auditoría total): el fin de sesión mostraba siempre la cara de frente,
+// y en un día Posterior casi no se encendía nada — una silueta oscura 1,1 s.
+import { caraConMas } from '../bodydata.js';
+
+describe('caraConMas()', () => {
+  it('un día Posterior se muestra de espalda', () => {
+    expect(caraConMas(['Espalda', 'Bíceps', 'Pierna', 'Glúteo', 'Lumbares', 'Gemelos'])).toBe('espalda');
+  });
+  it('un día Anterior se muestra de frente', () => {
+    expect(caraConMas(['Pecho', 'Hombro', 'Tríceps', 'Pierna', 'Abs'])).toBe('frente');
+  });
+  it('empate o nada: de frente, como siempre', () => {
+    expect(caraConMas([])).toBe('frente');
+    expect(caraConMas(['Hombro'])).toBe('frente');
+  });
+  it('cuenta con las zonas del cuerpo elegido', () => {
+    expect(caraConMas(['Espalda', 'Lumbares', 'Glúteo'], 'f')).toBe('espalda');
+  });
+});

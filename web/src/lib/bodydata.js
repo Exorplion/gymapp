@@ -615,3 +615,14 @@ export const CUERPOS = {
 
 /** Las dos caras del cuerpo elegido. */
 export const cuerpo = sexo => CUERPOS[sexo === 'f' ? 'f' : 'm'];
+
+/** Qué cara muestra más de lo trabajado: 'espalda' si tiene MÁS zonas de esas
+    categorías que la de frente; si no (empate, nada), 'frente', que es como
+    siempre arrancó la silueta. La usa el fin de sesión, que no gira: un día
+    Posterior visto de frente encendía casi nada (H5, auditoría total). */
+export function caraConMas(cats, sexo) {
+  const set = new Set(cats);
+  const { frente, espalda } = cuerpo(sexo);
+  const cuenta = cara => cara.zonas.filter(z => set.has(z.cat)).length;
+  return cuenta(espalda) > cuenta(frente) ? 'espalda' : 'frente';
+}
