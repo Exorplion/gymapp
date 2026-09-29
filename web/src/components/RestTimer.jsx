@@ -26,7 +26,6 @@
 // aparece sin que la busques, que era justamente lo que fallaba cuando vivía
 // escondida en el <details> "Más opciones" de la tarjeta del ejercicio.
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import {
   T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC, cerrarPreguntaRir,
   suscribirReloj, versionReloj, tramoAnillo,
@@ -38,10 +37,7 @@ import { useStore } from '../lib/state.js';
 import { useAtras } from '../lib/useAtras.js';
 import { fmtMMSS } from '../lib/format.js';
 import { ChevronDown } from './Icon.jsx';
-import { impactBurst, squashStretch, menosMovimiento, D, EASE_OUT } from '../lib/motion.js';
-
-// La curva de salida de la app, en el formato que pide motion.
-const CURVA = EASE_OUT.match(/[\d.]+/g).map(Number);
+import { impactBurst, squashStretch, menosMovimiento, D } from '../lib/motion.js';
 
 /** El segundo que se ve. Sólo re-renderiza a quien lo llama, una vez por
     segundo (rest.js avisa cuando cambia T.leftSec, no en cada tick). */
@@ -269,26 +265,6 @@ export default function RestTimer() {
       <div id="rest-fs" className={visibleFs ? 'show' : saliendo ? 'show out' : ''} aria-hidden={!visibleFs}>
         <div className={`rfs-inner${sonandoAhora ? ' ringing' : ''}`}>
           <div className="rfs-lbl">{sonandoAhora ? '¡Dale!' : 'Descanso'}</div>
-          {/* Sólo en 'fullscreen': sonando no se pregunta nada (T.rir ya se
-              limpió en rest.js) y minimizado tampoco — la pill es una franja
-              de 2cm donde el tiempo y los ±30s ya van justos; meterle cinco
-              chips la convertiría en otra cosa. Si volvés a expandir antes de
-              que termine el descanso, la pregunta sigue ahí. */}
-          {/* Contestada, sale con altura y fundido (no desaparece de golpe):
-              el reloj sube a ocupar su lugar. */}
-          <AnimatePresence initial={false}>
-            {T.rir && !T.rir.cerrada && T.state === 'fullscreen' && (
-              <motion.div
-                key="rir"
-                className="rfs-rir-caja"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto', transition: { duration: D.panel / 1000, ease: CURVA } }}
-                exit={{ opacity: 0, height: 0, transition: { duration: D.panel / 1000, ease: CURVA } }}
-              >
-                <PreguntaRir />
-              </motion.div>
-            )}
-          </AnimatePresence>
           <div className="rfs-ring" ref={ringBoxRef}>
             <svg viewBox="0 0 200 200">
               <circle className="rfs-track" cx="100" cy="100" r="88" />
@@ -310,6 +286,25 @@ export default function RestTimer() {
             <canvas className="rfs-lienzo" ref={lienzoRef} aria-hidden="true" />
             <div className="rfs-time" id="rfs-time" ref={timeFsRef}>{sonandoAhora ? '¡YA!' : <Tiempo />}</div>
           </div>
+          {/* La pregunta va DEBAJO del reloj, como el paso siguiente (V14):
+              el rótulo y el anillo quedan anclados al centro óptico y la
+              pregunta no los empuja ni al entrar ni al irse.
+
+              Sólo en 'fullscreen': sonando no se pregunta nada (T.rir ya se
+              limpió en rest.js) y minimizado tampoco — la pill es una franja
+              de 2cm donde el tiempo y los ±30s ya van justos. Si volvés a
+              expandir antes de que termine el descanso, la pregunta sigue ahí.
+
+              Contestada, se pliega con grid-template-rows y fundido (CSS,
+              .cerrada) y los botones suben a su lugar. Antes lo hacía motion
+              animando height de 0 a 'auto': para saber cuánto es 'auto' medía
+              la caja en el mismo cuadro en que se abría el descanso, un layout
+              forzado más en cada serie registrada (H7). */}
+          {T.rir && T.state === 'fullscreen' && (
+            <div className={`rfs-rir-caja${T.rir.cerrada ? ' cerrada' : ''}`} inert={T.rir.cerrada || undefined}>
+              <PreguntaRir />
+            </div>
+          )}
           {sonandoAhora ? (
             /* Un solo botón, ancho y sin vecinos: está sonando y lo único que
                querés es callarla. Poner "+30s" al lado sería invitarte a errarle. */
@@ -390,14 +385,12 @@ function PreguntaRir() {
         {RIR_OPTS.map(n => {
           const on = elegido === n;
           return (
-            <motion.button
+            <button
               key={n}
               type="button"
               aria-pressed={on}
               aria-label={n === 0 ? '0, al fallo' : n === 4 ? '4 o más' : String(n)}
               className={on ? 'on' : ''}
-              whileTap={{ scale: 0.92 }}
-              transition={{ duration: 0.12 }}
               onClick={e => {
                 e.stopPropagation();
                 setRirUltimaSerie(n);
@@ -406,7 +399,7 @@ function PreguntaRir() {
             >
               <b>{n === 4 ? '4+' : n}</b>
               {n === 0 && <small>fallo</small>}
-            </motion.button>
+            </button>
           );
         })}
       </div>

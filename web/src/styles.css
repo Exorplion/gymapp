@@ -2346,11 +2346,17 @@ nav.tabbar{container-type:inline-size}
   background:rgba(var(--bg-rgb),.94);backdrop-filter:blur(18px) saturate(1.2);
   animation:fdin var(--d2) var(--ease);}
 #rest-fs.show{display:grid}
+/* V14: el bloque rótulo + reloj queda ANCLADO al centro óptico (el centro
+   del anillo al 44 % del alto, un poco arriba del medio) y lo que viene
+   después —la pregunta, los botones— cuelga debajo. Antes la columna entera
+   se centraba: al plegarse la pregunta de arriba, el reloj se corría 60 px.
+   --rfs-arriba = 44dvh − (rótulo 18 + hueco 22 + medio anillo 120). */
+#rest-fs{align-items:start;justify-items:center;overflow-y:auto}
 /* Salida (RestTimer.jsx, `saliendo`): el fondo se funde y el contenido baja
    un poco, el mismo gesto que dlgOut de las confirmaciones. */
 #rest-fs.out{animation:fdout var(--d2) var(--ease) forwards;pointer-events:none}
 #rest-fs.out .rfs-inner{animation:dlgOut var(--d2) var(--ease) forwards}
-.rfs-inner{display:flex;flex-direction:column;align-items:center;gap:22px;padding:24px;position:relative;width:100%;max-width:360px}
+.rfs-inner{--rfs-arriba:max(var(--s5),calc(44dvh - 160px));display:flex;flex-direction:column;align-items:center;gap:22px;padding:var(--rfs-arriba) 24px 24px;position:relative;width:100%;max-width:360px}
 .rfs-lbl{font:var(--rol-seccion);letter-spacing:var(--tr-seccion);text-transform:uppercase;color:var(--accent)}
 .rfs-ring{position:relative;width:240px;height:240px}
 /* El brillo del anillo: un aro con la sombra ya pintada, calzado sobre el
@@ -2386,13 +2392,27 @@ nav.tabbar{container-type:inline-size}
 .rfs-rir .steplabel{margin-bottom:0;text-align:center}
 .rfs-rir .rir-opts{width:100%;margin-top:0}
 .rfs-rir-meta{font-size:var(--t-micro);color:var(--text-2);margin-top:-2px}
-/* 2026-09-25: título legible y opciones en una barra segmentada. La caja
-   anima su altura al irse (overflow:hidden para que no se vea el contenido
-   saliéndose mientras se achica). */
-.rfs-rir-caja{width:100%;overflow:hidden}
+/* 2026-09-25: título legible y opciones en una barra segmentada.
+   Contestada, la caja se pliega con grid-template-rows (1fr → 0fr) y se
+   funde: sin medir nada (antes motion animaba height hasta 'auto' y medía la
+   caja en el cuadro en que se abría el descanso, H7). El margen de -22 px se
+   come el hueco de la columna, así plegada no deja un escalón; ese aire lo
+   pone el margen del título, que se pliega con ella. overflow:clip con
+   margen para que el anillo de foco de los botones no se recorte. */
+.rfs-rir-caja{width:100%;display:grid;grid-template-rows:1fr;margin-top:-22px;
+  transition:grid-template-rows var(--d3) var(--ease-out),opacity var(--d2) var(--ease-out)}
+.rfs-rir-caja.cerrada{grid-template-rows:0fr;opacity:0}
+.rfs-rir-caja>.rfs-rir{min-height:0;overflow:clip;overflow-clip-margin:var(--s2);
+  animation:entra var(--d3) var(--ease-out) var(--d1) backwards}
+/* El aire va como margen del título y no como relleno de .rfs-rir: un
+   relleno no se pliega (el ítem no baja de su padding) y dejaba 22 px. */
+.rfs-rir-caja .rfs-rir-t{margin-top:22px}
 .rfs-rir-t{font-family:var(--font-cond);font-weight:700;font-size:var(--t-lg);color:var(--text)}
 .rir-seg{display:grid;grid-template-columns:repeat(5,1fr);width:100%;margin-top:var(--s1);border-radius:var(--r-md);border:1px solid var(--line-2);background:var(--surface);overflow:hidden}
-.rir-seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-left:1px solid var(--line);color:var(--text);transition:background var(--d2) var(--ease),color var(--d2) var(--ease)}
+/* Los cinco números a la misma altura: "fallo" cuelga debajo del 0 sin
+   empujarlo (V14: era la única opción en dos renglones). */
+.rir-seg button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-left:1px solid var(--line);color:var(--text);transition:background-color var(--d2) var(--ease),color var(--d2) var(--ease),transform var(--d1) var(--spring)}
+.rir-seg button small{position:absolute;left:0;right:0;bottom:var(--s1);text-align:center;line-height:1}
 .rir-seg button:first-child{border-left:0}
 .rir-seg b{font-family:var(--font-cond);font-size:var(--t-xl);font-weight:700;line-height:1}
 .rir-seg small{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2);}
@@ -2402,7 +2422,7 @@ nav.tabbar{container-type:inline-size}
 .rfs-btns .btn{flex:1}
 /* Al borde derecho de la columna (el padding de .rfs-inner), alineado con
    "Saltar" — antes caía 30 px afuera (H2). */
-.rfs-min{position:absolute;top:-6px;right:24px}
+.rfs-min{position:absolute;top:calc(var(--rfs-arriba) - 10px);right:24px}
 /* La unidad no se grita: "−30s", como en la barra minimizada (G14). */
 .rfs-btns .rfs-seg{text-transform:none}
 
@@ -2432,6 +2452,11 @@ nav.tabbar{container-type:inline-size}
 #sheet.open{display:block}
 #sheet .bk{position:absolute;inset:0;background:rgba(var(--bg-rgb),.7);backdrop-filter:blur(4px);animation:fdin var(--d1)}
 @keyframes fdin{from{opacity:0}}
+/* El vocabulario de entrada y salida de la app (tanda E): entrar es subir
+   un poco mientras aparece; salir, lo mismo al revés y más corto. La
+   distancia se ajusta con --entra-y / --sale-y en quien lo usa. */
+@keyframes entra{from{opacity:0;transform:translateY(var(--entra-y,8px))}}
+@keyframes sale{to{opacity:0;transform:translateY(var(--sale-y,4px))}}
 #sheet .panel{
   position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;
   max-height:88dvh;overflow-y:auto;
