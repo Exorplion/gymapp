@@ -6,7 +6,7 @@
 
 ## SESIÓN 2026-09-28 (c) — Pieza 1: asistente "Agregar ejercicio" en 3 pasos
 
-Rama `feat/asistente-agregar`, PR abierto sin mergear. **854 tests.** Spec §1
+Rama `feat/asistente-agregar`, PR abierto sin mergear. **918 tests** (con main al día). Spec §1
 (marcada implementada); plan `docs/superpowers/plans/2026-09-27-asistente-agregar-ejercicio.md`.
 
 - **Un solo flujo**: `AgregarEjercicio.jsx` (hoja `agregar-ej`, variante
