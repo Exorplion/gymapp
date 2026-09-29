@@ -25,6 +25,14 @@ describe('cambio de pestaña sin layout forzado', () => {
     expect(src).not.toMatch(/style\.minHeight/);
   });
 
+  it('la saliente es la pantalla viva (misma key), no una copia del DOM', () => {
+    const app = sinComentarios(leer('../../App.jsx'));
+    const estado = sinComentarios(leer('../state.js'));
+    expect(app + estado).not.toMatch(/cloneNode|sacarFoto|tomarFotoSaliente/);
+    expect(app).toMatch(/key=\{vistaSaliente\.tab\}/);
+    expect(app).toMatch(/key=\{store\.tab\}/);
+  });
+
   it('el CSS apila las dos vistas en la misma celda y calcula la píldora', () => {
     const css = leer('../../styles.css');
     expect(css).toMatch(/main\s*>\s*\.view\.enter,\s*main\s*>\s*\.view\.leave\{grid-area:1\/1\}/);

@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { idbOpenOnce } from './lib/db.js';
 import { elegirBase } from './lib/modoPrueba.js';
 import { ensurePersisted } from './lib/persist.js';
-import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT, resolveAutoRest, tomarFotoSaliente, saveCfg } from './lib/state.js';
+import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT, resolveAutoRest, saveCfg } from './lib/state.js';
 import { dstr } from './lib/format.js';
 import { applyComputedGoals } from './lib/macros.js';
 import { initDragListeners } from './lib/drag.js';
@@ -220,7 +220,7 @@ export default function App() {
        detrás. Montar acá la animación de la barra la haría entrar una
        segunda vez, desde el borde, después de haber llegado. */
     if (porArrastre.current) { porArrastre.current = false; tabPrevio.current = store.tab; return; }
-    setSaliente({ tab: tabPrevio.current, dir, foto: tomarFotoSaliente() });
+    setSaliente({ tab: tabPrevio.current, dir });
     tabPrevio.current = store.tab;
     clearTimeout(salienteTimer.current);
     /* El desmontaje tiene que llegar DESPUÉS de que termine el deslizamiento,
@@ -366,6 +366,21 @@ export default function App() {
      pantalla nueva (G4, auditoría 2026-09: ~230 ms a 6× yendo a Entreno).
      mainRef queda para el gesto de arrastre (el ancho de la vista). */
   const mainRef = useRef(null);
+
+  /* El último elemento que se pintó de cada pestaña. La saliente reusa el
+     suyo (ver el comentario en el JSX de main): mismo objeto = React no la
+     vuelve a renderizar mientras se va. */
+  const pantallas = useRef({});
+  const entrante = pantallaDe(store.tab);
+  pantallas.current[store.tab] = entrante;
+  /* La saliente tiene que estar YA en el render del cambio de pestaña, no
+     recién en el siguiente (el de setSaliente, en el useLayoutEffect de
+     arriba): si en ese primer commit su key desaparece aunque sea una vez,
+     React desmonta la pantalla vieja y después la monta de cero. Mismas
+     condiciones que el efecto: sin View Transition y sin arrastre. */
+  const vistaSaliente = saliente
+    ?? (store.tab !== tabPrevio.current && !lastTabChangeUsedVT && !porArrastre.current
+      ? { tab: tabPrevio.current, dir } : null);
 
   // Puerto del arranque original (el script inline al final de index.html
   // hacía idbOpen().then(loadAll) antes de la primera render()). loadAll()
@@ -551,25 +566,23 @@ export default function App() {
       >
         {/* La saliente va PRIMERO en el DOM (así la entrante, montada después,
             queda arriba en el stacking normal) y con pointer-events:none —
-            es puramente decorativa mientras se termina de ir. */}
-        {saliente && (
-          <div
-            className={`view leave dir-${saliente.dir}${listoParaAnimar ? '' : ' esperando'}`}
-            /* Se cuelga la FOTO del DOM que estaba en pantalla (ver
-               sacarFoto en state.js), no se vuelve a montar la pantalla con
-               React. La saliente no se toca ni cambia mientras se va: sólo
-               tiene que verse igual que un instante antes. Montarla de nuevo
-               costaba cientos de milisegundos de hilo bloqueado y era la
-               mitad de por qué el deslizamiento no llegaba a dibujarse.
+            es puramente decorativa mientras se termina de ir.
 
-               `pantallaDe` queda como salida de emergencia por si no hubo
-               foto (un cambio de pestaña que no pasó por changeTab). */
-            ref={el => {
-              if (!el || !saliente.foto || el.firstChild) return;
-              el.append(...Array.from(saliente.foto.childNodes));
-            }}
+            Es la MISMA pantalla que estaba en pantalla, no una copia (G4,
+            auditoría 2026-09): lleva la misma key que tenía como entrante,
+            así que React conserva su nodo y sólo le cambia la clase. Antes
+            se colgaba acá una copia del DOM (cloneNode) y reinsertarla
+            obligaba a recalcular estilos y layout de toda la pantalla vieja
+            en el mismo cuadro en que se monta la nueva: 100–240 ms a 6×.
+            Y no se vuelve a renderizar: el elemento es el mismo objeto que
+            React ya tenía (pantallas.current), así que se saltea. Se
+            desmonta a los 480 ms, cuando ya salió del marco. */}
+        {vistaSaliente && (
+          <div
+            key={vistaSaliente.tab}
+            className={`view leave dir-${vistaSaliente.dir}${listoParaAnimar ? '' : ' esperando'}`}
           >
-            {saliente.foto ? null : pantallaDe(saliente.tab)}
+            {pantallas.current[vistaSaliente.tab] ?? pantallaDe(vistaSaliente.tab)}
           </div>
         )}
         {/* La vecina, sólo mientras dura el gesto: esperando fuera del marco,
@@ -595,7 +608,7 @@ export default function App() {
              apagarla, la pantalla no se movería ni un píxel con el dedo. */
           style={arrastre ? { animation: 'none', transform: `translateX(${arrastre.dx}px)` } : undefined}
         >
-          {pantallaDe(store.tab)}
+          {entrante}
         </div>
       </main>
       {/* Con S.tab === 'hoy' ninguna pestaña sería la activa, y
