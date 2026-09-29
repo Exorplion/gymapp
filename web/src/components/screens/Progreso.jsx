@@ -86,13 +86,18 @@ export default function Progreso() {
         <button type="button" className="icon-btn ml-auto" aria-label="Guía" onClick={() => openSheet('guide')}><Info /></button>
       </div>
 
+      {/* Tanda D (auditoría visual 2, V10): grupos a --s6 y adentro --s3. El
+          peso y sus medidas son un grupo (el cuerpo); cada sección que sigue
+          abre el suyo con su título. */}
+      <div className="pila">
+      <div className="grupo">
       <div className="card hero hero-prog">
-        <div className="flex items-end justify-between gap-2.5">
+        <div className="flex items-end justify-between gap-3">
           <div>
             <div className="hero-eyebrow">{headLabel}</div>
             <div className="bignum">{headNum != null ? <span ref={headNumRef}>{fmtNum(round1(headNum))}</span> : '—'}<small> kg</small></div>
             {lastW && (
-              <div className="text-text-2 text-sm mt-[3px]">
+              <div className="text-text-2 text-sm mt-1">
                 {wk && wk.curAvg != null ? `último ${fmtNum(round1(lastW.weight))} kg · ` : `${fmtNum(kg2lb(lastW.weight))} lb · `}
                 {fmtDFull(lastW.date)}
                 {wk && wk.delta != null && (
@@ -113,7 +118,7 @@ export default function Progreso() {
         </div>
         <div className="mt-3"><Chart id="chartWeight" pts={wpts} opts={{ unit: 'kg' }} /></div>
         {lastBf && (
-          <div className="text-text-2 text-micro mt-1.5">
+          <div className="text-text-2 text-micro mt-2">
             {lastBf.bodyfat}% grasa · masa magra estimada {fmtNum(round1(lastBf.weight * (1 - lastBf.bodyfat / 100)))} kg
           </div>
         )}
@@ -146,6 +151,7 @@ export default function Progreso() {
           </div>
         </>
       )}
+      </div>
 
       <SesionesSection />
 
@@ -160,8 +166,9 @@ export default function Progreso() {
 
           Ahora el título lo pone el bloque, una vez, y las pestañas son lo
           que son: tres maneras de mirar el mismo entrenamiento. */}
+      <div className="grupo">
       <div className="sect">Tu entrenamiento</div>
-      <div className="seg mb-[var(--s3)]">
+      <div className="seg">
         {[['carga', 'Carga'], ['1rm', '1RM'], ['volumen', 'Volumen']].map(([k, label]) => (
           <button key={k} type="button" className={tab === k ? 'on' : ''} aria-pressed={tab === k} onClick={() => { S.progTab = k; bump(); }}>{label}</button>
         ))}
@@ -169,16 +176,16 @@ export default function Progreso() {
 
       {tab === 'carga' && (
         !exNames.length ? (
-          <div className="card"><div className="empty p-[18px]"><p className="m-0">Completa sesiones para ver la progresión<br />de tu mejor serie (peso × reps).</p></div></div>
+          <div className="card"><div className="empty p-4"><p className="m-0">Completa sesiones para ver la progresión<br />de tu mejor serie (peso × reps).</p></div></div>
         ) : (
           <div className="card">
-            <div className="field mb-2.5">
+            <div className="field mb-3">
               <select aria-label="Elegir ejercicio" value={S.progEx || ''} onChange={e => { S.progEx = e.target.value; bump(); }}>
                 {exNames.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
             <Chart id="chartEx" pts={exPts} opts={{ unit: 'kg' }} />
-            <div className="text-text-2 text-xs text-center mt-1.5">Peso de tu mejor serie por sesión · tocá un punto para ver las reps</div>
+            <div className="text-text-2 text-micro text-center mt-2">Peso de tu mejor serie por sesión · tocá un punto para ver las reps</div>
           </div>
         )
       )}
@@ -186,9 +193,10 @@ export default function Progreso() {
       {tab === '1rm' && <StrengthTab />}
 
       {tab === 'volumen' && <VolumeTab />}
+      </div>
 
       {trainDays.length > 0 && (
-        <>
+        <div className="grupo">
           <div className="sect">Frecuencia</div>
           <div className="card">
             <div className="stats" style={{ '--n': 2 }}>
@@ -207,11 +215,12 @@ export default function Progreso() {
               );
             })}
           </div>
-        </>
+        </div>
       )}
 
       {/* Constancia: en el mockup el mapa de calor vive acá, no escondido
           detrás de la racha del header. */}
+      <div className="grupo">
       <div className="sect">Constancia · 8 semanas</div>
       <div className="card">
         <div className="heatmap const">
@@ -223,13 +232,17 @@ export default function Progreso() {
           <div><div className="cond">{heat.pct}%</div><span>Cumplimiento</span></div>
         </div>
       </div>
+      </div>
 
+      <div className="grupo">
       <div className="sect">PRs · Récords personales</div>
       {!exNames.length ? (
-        <div className="card"><div className="empty p-[18px]"><p className="m-0">Aquí brillarán tus mejores marcas. 🏆</p></div></div>
+        <div className="card"><div className="empty p-4"><p className="m-0">Aquí brillarán tus mejores marcas. 🏆</p></div></div>
       ) : (
         <PRsList exNames={exNames} />
       )}
+      </div>
+      </div>
     </>
   );
 }
@@ -242,7 +255,7 @@ export default function Progreso() {
 function SesionesSection() {
   const recientes = S.sessions.slice(0, 8);
   return (
-    <div id="sesiones" className="scroll-mt-[70px]">
+    <div id="sesiones" className="grupo scroll-mt-[70px]">
       <div className="sect">
         Tus sesiones
         {S.sessions.length > 8 && (
@@ -255,14 +268,18 @@ function SesionesSection() {
         )}
       </div>
       {!recientes.length ? (
-        <div className="card"><div className="empty p-[18px]">
+        <div className="card"><div className="empty p-4">
           <p className="m-0">Cuando cierres tu primera sesión va a aparecer acá.</p>
         </div></div>
       ) : (
+        /* Una lista agrupada por semana, con filas de dos renglones
+           (SessionCard): antes cada sesión era una tarjeta de 115 px con la
+           lista de ejercicios, y ocho ocupaban 1.136 px — más de una
+           pantalla y media para "qué hice". */
         groupSessionsByWeek(recientes).map(g => (
-          <div key={g.key}>
+          <div key={g.key} className="sess-semana">
             <div className="sess-week">{g.label} · {g.sessions.length} {g.sessions.length === 1 ? 'sesión' : 'sesiones'}</div>
-            <div className="sess-list">
+            <div className="group">
               {g.sessions.map(s => <SessionCard key={s.id} sess={s} />)}
             </div>
           </div>
@@ -282,7 +299,7 @@ function StrengthTab() {
           estructura según lo que tocaras. Qué es el 1RM lo dice la pestaña
           que elegiste y lo explica la tabla de abajo. */}
       {!readout.length ? (
-        <div className="card"><div className="empty p-[18px]"><p className="m-0">Registrá un ejercicio en dos sesiones para empezar a ver su tendencia.</p></div></div>
+        <div className="card"><div className="empty p-4"><p className="m-0">Registrá un ejercicio en dos sesiones para empezar a ver su tendencia.</p></div></div>
       ) : (
         <div className="card">
           {readout.slice(0, 10).map(x => {

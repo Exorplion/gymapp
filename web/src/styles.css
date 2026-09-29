@@ -872,9 +872,11 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 /* punto = ese día ya tiene entrenamiento. Sin esto, elegir destino en el
    selector de día es a ciegas: no sabés cuál vas a desplazar. */
 .chip-dot{width:5px;height:5px;border-radius:var(--r-full);background:currentColor;opacity:.55}
-.chip-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}
+/* El padding deja lugar al anillo de foco (overflow recorta); el margen
+   negativo lo devuelve, así el primer chip arranca en x = 18 como todo. */
+.chip-scroll{display:flex;gap:var(--s2);overflow-x:auto;padding:var(--s1) var(--s1) var(--s2);margin:0 calc(-1 * var(--s1));scrollbar-width:none}
 .chip-scroll::-webkit-scrollbar{display:none}
-.chip-scroll .chip{flex:none;padding:10px 14px;font-size:var(--t-body)}
+.chip-scroll .chip{flex:none;padding:var(--s3) var(--s4);font-size:var(--t-body)}
 .ac-list{margin-top:6px;display:flex;flex-direction:column;gap:6px}
 .ac-item{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:var(--r-md);font-size:var(--t-sm);font-weight:600;background:var(--surface-2);border:1px solid var(--line-2);color:var(--text)}
 .ac-item:active{border-color:var(--accent);background:rgba(var(--accent-strong-rgb),.14)}
@@ -1514,7 +1516,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .slot-block{margin-bottom:var(--s3)}
 .slot-head{
   display:flex;justify-content:space-between;align-items:baseline;
-  margin:0 2px 6px;font-size:var(--t-micro);font-weight:700;
+  margin:0 2px var(--s2);font-size:var(--t-micro);font-weight:700;
   letter-spacing:.12em;text-transform:uppercase;color:var(--text-2);
 }
 
@@ -1636,7 +1638,13 @@ body.dragging-on .card.day.drop-target{filter:none}
 }
 .sess-card:active{transform:scale(.99);border-color:var(--line-2)}
 .sc-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.sc-name{font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;letter-spacing:.02em;flex:1;min-width:0}
+.sc-name{font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;letter-spacing:.02em;line-height:1.2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Fila de sesión (SessionCard, tanda D): arriba el turno —con el trofeo si
+   hubo récord— y la fecha a la derecha; abajo series y volumen en plomo. */
+.sess-row{min-height:64px}
+.sess-row-top{display:flex;align-items:center;gap:var(--s2);min-width:0}
+.sess-row-fecha{margin-left:auto;flex:none;font-size:var(--t-sm);color:var(--text-2);font-variant-numeric:tabular-nums}
+.sess-semana + .sess-semana{margin-top:var(--s3)}
 .sc-pr{font-size:var(--t-sm);font-weight:700;color:var(--warn);flex:none}
 .sc-meta{font-size:var(--t-micro);color:var(--text-2)}
 /* La línea "21 series · 7285 kg de volumen" es metadato: tiza, no acento (V2). */
@@ -1645,7 +1653,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .sess-week{
   font-family:'Barlow Condensed';font-size:var(--t-micro);font-weight:700;
   letter-spacing:.14em;text-transform:uppercase;color:var(--text-2);
-  margin:var(--s4) 2px var(--s2);
+  margin:0 2px var(--s2);
 }
 
 /* Aviso de ejercicios sin grupo muscular. Existe para que el fallo deje de ser
@@ -1957,7 +1965,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 .bignum small{font-size:var(--t-xl);color:var(--text-2);font-weight:600;letter-spacing:.04em}
 
 /* ---------- nav fechas ---------- */
-.datenav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.datenav{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s4)}
 .datenav .d{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-xl);letter-spacing:.04em;text-transform:uppercase}
 .datenav .d small{display:block;font-size:var(--t-micro);color:var(--text-2);letter-spacing:.12em;font-weight:600}
 
@@ -2335,14 +2343,14 @@ nav.tabbar{container-type:inline-size}
 
 /* ---------- misc ---------- */
 .empty{
-  text-align:center;padding:36px 20px;color:var(--text-2);
+  text-align:center;padding:var(--s6) var(--s5);color:var(--text-2);
 }
-.empty .big{display:block;margin:0 auto 14px;color:var(--text-3)}
-.empty p{font-size:var(--t-body);line-height:1.5;margin-bottom:18px}
+.empty .big{display:block;margin:0 auto var(--s4);color:var(--text-3)}
+.empty p{font-size:var(--t-body);line-height:1.5;margin-bottom:var(--s4)}
 .sect{
   font-family:'Barlow Condensed';font-size:var(--t-body);font-weight:700;letter-spacing:.18em;
   text-transform:uppercase;color:var(--text);margin:22px 2px 10px;
-  display:flex;align-items:center;gap:10px;
+  display:flex;align-items:center;gap:var(--s3);
 }
 .sect::after{content:"";flex:1;height:1px;background:var(--line)}
 /* Acción secundaria de un título ("Ver todas"): texto azul, después de la
@@ -2404,8 +2412,11 @@ nav.tabbar{container-type:inline-size}
 }
 .stats .l{
   display:block;font-size:var(--t-micro);letter-spacing:.08em;
-  text-transform:uppercase;color:var(--text-2);margin-top:2px;
+  text-transform:uppercase;color:var(--text-2);margin-top:var(--s1);
 }
+/* Unas cifras solas en una tarjeta (Medidas, Frecuencia): sin el margen de
+   arriba, que era para cuando vienen debajo de otra cosa. */
+.card > .stats:first-child{margin-top:0}
 
 /* Tarjeta de dato: encabezado + cuerpo. Para las vistas de detalle, donde
    .card suelto obligaba a ajustar el padding a mano cada vez. */
@@ -2459,13 +2470,13 @@ nav.tabbar{container-type:inline-size}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--line-2);outline:none}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);border:3px solid var(--bg);box-shadow:0 2px 8px rgba(var(--shade-rgb),.5),0 0 0 1px var(--accent-strong)}
 input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid var(--bg)}
-.calcbox{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:12px 14px;margin-top:6px}
+.calcbox{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s3) var(--s4);margin-top:var(--s2)}
 .calcbox .cr{display:flex;justify-content:space-between;font-size:var(--t-sm);padding:4px 0;color:var(--text-2)}
 .calcbox .cr b{color:var(--text);font-weight:600}
 .calcbox .cr.big{font-size:var(--t-body);padding-top:9px;margin-top:5px;border-top:1px solid var(--line)}
 .calcbox .cr.big b{font-family:'Barlow Condensed';font-size:var(--t-xl);color:var(--accent)}
 .gtx{font-size:var(--t-sm);line-height:1.55;color:var(--text)}
-.pw-btn{display:flex;align-items:center;gap:10px;width:100%;padding:13px 16px;border-radius:var(--r);margin-bottom:12px;
+.pw-btn{display:flex;align-items:center;gap:var(--s3);width:100%;padding:var(--s3) var(--s4);border-radius:var(--r);margin-bottom:var(--s3);
   background:linear-gradient(135deg,rgba(var(--accent-strong-rgb),.14),rgba(var(--glass-rgb),.4));border:1px solid rgba(var(--accent-strong-rgb),.3);text-align:left}
 .pw-btn .pwi{font-size:var(--t-xl)}
 .pw-btn .pwt{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);letter-spacing:.03em}
@@ -2695,7 +2706,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .hist-row:last-child{border-bottom:none}
 .hist-badge{
-  flex:0 0 auto;min-width:42px;padding:5px 8px;border-radius:var(--r-md);text-align:center;
+  flex:0 0 auto;min-width:44px;padding:var(--s1) var(--s2);border-radius:var(--r-md);text-align:center;
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.08em;
   /* El día de la semana es metadato: grafito de control, sin el tinte del
      acento (auditoría visual 2, V2). */
@@ -2877,26 +2888,26 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.14),rgba(var(--hi-rgb),.03) 60%),var(--surface);
   border-color:rgba(var(--accent-rgb),.2);
 }
-.kcal-top{display:flex;align-items:center;gap:18px}
+.kcal-top{display:flex;align-items:center;gap:var(--s4)}
 .kcal-ring{position:relative;flex:0 0 auto;width:132px;height:132px}
 .kcal-ring svg{width:132px;height:132px}
 .kr-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .kr-n{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-display);font-weight:700;line-height:1}
-.kr-of{font-size:var(--t-micro);letter-spacing:.16em;text-transform:uppercase;color:var(--text-2);margin-top:2px}
+.kr-of{font-size:var(--t-micro);letter-spacing:.16em;text-transform:uppercase;color:var(--text-2);margin-top:var(--s1)}
 .kcal-side{flex:1;min-width:0}
 /* El número grande es lo que QUEDA: es el dato sobre el que se decide si
    comer algo más o no. */
 .kcal-big{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-display);font-weight:700;line-height:1.05;
-  display:flex;align-items:baseline;gap:5px;
+  display:flex;align-items:baseline;gap:var(--s1);
 }
 .kcal-big span{font-size:var(--t-body);font-weight:700;color:var(--text-2)}
 
 /* Macros en tres columnas, no apiladas: se comparan de un vistazo. */
-.hero-kcal .macro3{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:18px}
+.hero-kcal .macro3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s3);margin-top:var(--s5)}
 .hero-kcal .macro3 .lbl{
-  display:flex;justify-content:space-between;gap:6px;
-  font-size:var(--t-micro);font-weight:600;color:var(--text-2);margin-bottom:5px;
+  display:flex;justify-content:space-between;gap:var(--s2);
+  font-size:var(--t-micro);font-weight:600;color:var(--text-2);margin-bottom:var(--s1);
 }
 .hero-kcal .macro3 .pbar{height:7px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.06)}
 /* El color de cada macro vive en .macro3 .pbar.* (tokens --macro-*): tres
@@ -2904,16 +2915,16 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    en ámbar que le ganaba por orden (V6). */
 /* El separador y el espaciado del mockup; el punto y el texto los produce
    nutriFeedback() (meals.js), que ya trae .fdot con su color según el caso. */
-.nutri-fb{margin-top:14px;padding-top:14px;border-top:1px solid rgba(var(--hi-rgb),.08)}
-.nutri-fb .feedback{display:flex;align-items:flex-start;gap:10px;font-size:var(--t-sm);line-height:1.45}
+.nutri-fb{margin-top:var(--s4);padding-top:var(--s4);border-top:1px solid rgba(var(--hi-rgb),.08)}
+.nutri-fb .feedback{display:flex;align-items:flex-start;gap:var(--s2);font-size:var(--t-sm);line-height:1.45}
 /* El primer aviso no repite la raya de .nutri-fb: eran dos líneas con una
    franja vacía en el medio (auditoría 2026-09-26). */
 .nutri-fb .feedback:first-child{margin-top:0;padding-top:0;border-top:0}
 
 /* Chips de acceso rápido: píldoras completas, con el + en cian */
 .chip-scroll .chip.blue{
-  flex:none;display:inline-flex;align-items:center;gap:8px;border-radius:var(--r-full);white-space:nowrap;
-  padding:11px 15px;font-size:var(--t-sm);font-weight:600;color:var(--text);
+  flex:none;display:inline-flex;align-items:center;gap:var(--s2);border-radius:var(--r-full);white-space:nowrap;
+  padding:var(--s3) var(--s4);font-size:var(--t-sm);font-weight:600;color:var(--text);
   background:linear-gradient(150deg,rgba(var(--accent-strong-rgb),.16),rgba(var(--hi-rgb),.03));
   border:1px solid rgba(var(--accent-rgb),.28);
 }
@@ -2950,13 +2961,13 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    usando .heatmap a secas. */
 .heatmap.const{
   grid-template-columns:none;grid-template-rows:repeat(7,1fr);
-  grid-auto-flow:column;grid-auto-columns:1fr;gap:5px;
+  grid-auto-flow:column;grid-auto-columns:1fr;gap:var(--s1);
 }
 .heatmap.const .cell{border-radius:var(--r-sm);aspect-ratio:1}
-.const-stats{display:flex;gap:18px;margin-top:16px}
+.const-stats{display:flex;gap:var(--s5);margin-top:var(--s4)}
 .const-stats .cond{font-size:var(--t-2xl);font-weight:700;line-height:1}
 .const-stats span{
-  display:block;margin-top:2px;
+  display:block;margin-top:var(--s1);
   font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--text-2);
 }
 /* Fuerza · 1RM: la cifra en cian claro y su unidad debajo, como el mockup */
@@ -4145,6 +4156,10 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .notice{margin:var(--s4) 0;border-left:2px solid transparent;padding-left:var(--s3)}
 .notice.ok{border-left-color:var(--ok)}
 .notice.warn{border-left-color:var(--warn)}
+/* El texto de un aviso (.s) no tenía regla y caía a los 16 px del navegador:
+   más grande que su título de 13 (V8). Acá, en el componente; el tamaño del
+   body es de la tanda B. */
+.notice .s{font-size:var(--t-sm);line-height:1.5}
 
 /* ---------- ritmo de las pantallas tablero (auditoría visual 2, V10) ----------
    Inicio, Entreno, Comida y Progreso tenían todo a 10–12 px de todo: sin un

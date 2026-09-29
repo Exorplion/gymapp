@@ -62,7 +62,8 @@ export default function History() {
           {grupos.map(g => (
             <div key={g.key}>
               <div className="mx-0.5 mb-2 mt-4 text-micro font-semibold uppercase tracking-wide text-text-2">{g.label} · {g.sessions.length} {g.sessions.length === 1 ? 'sesión' : 'sesiones'}</div>
-              <div className="mb-4 flex flex-col gap-2.5">
+              {/* Lista agrupada, como en Progreso: SessionCard es una fila. */}
+              <div className="group mb-4">
                 {g.sessions.map(s => <SessionCard key={s.id} sess={s} />)}
               </div>
             </div>
