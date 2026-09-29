@@ -45,7 +45,10 @@ export function mealsBySlot(date) {
 /** Clase de color de barra según rango (verde/ámbar/rojo) */
 export function macroCls(v, kind, m) {
   if (!m) return '';
-  if (kind === 'prot') { if (v >= m.protMin) return 'ok'; if (v >= m.protMin * 0.75) return 'warn'; return ''; }
+  /* Estados, no categorías (auditoría visual 2, V6): la proteína sólo se
+     marca al cumplirla. El "casi" (≥ 75 %) iba en ámbar de alerta y salía
+     casi todos los días: el ámbar tiene que querer decir "te pasaste". */
+  if (kind === 'prot') return v >= m.protMin ? 'ok' : '';
   if (kind === 'fat') { if (v > m.fatMax * 1.1) return 'red'; if (v > m.fatMax) return 'warn'; if (v >= m.fatMin) return 'ok'; return ''; }
   return '';
 }

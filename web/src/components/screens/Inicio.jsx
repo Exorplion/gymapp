@@ -100,7 +100,7 @@ export default function Inicio() {
     titulo = turnoDraft?.name || 'Entrenando';
     sub = `${hechos} de ${total} ejercicios registrados`;
     cta = (
-      <button type="button" className="ini-cta pulse" onClick={irAHoy}>
+      <button type="button" className="ini-cta ini-cta-seguir" onClick={irAHoy}>
         SEGUIR<small>{hechos} de {total}</small>
       </button>
     );
@@ -264,7 +264,7 @@ function MemoriaLine({ slot }) {
         <div>
           {fmtNum(tonelaje)} kg movidos en total
           {' · '}
-          <button type="button" className="text-accent font-medium" onClick={() => openSheet('year-recap')}>Tu Año Fierro →</button>
+          <button type="button" className="text-text font-semibold" onClick={() => openSheet('year-recap')}>Tu Año Fierro →</button>
         </div>
       )}
     </div>
@@ -350,7 +350,7 @@ function StaleTile({ grupos, dias }) {
     <div className="ini-tile ini-tile-stale">
       <div className="ini-tile-lbl">Más flojo</div>
       <div className="ini-tile-stale-name">{top.join(' y ')}</div>
-      <div className="ini-tile-stale-days">hace {d} día{d === 1 ? '' : 's'}</div>
+      <div className="ini-tile-stale-days warn">hace {d} día{d === 1 ? '' : 's'}</div>
     </div>
   );
 }

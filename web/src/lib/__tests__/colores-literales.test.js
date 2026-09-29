@@ -58,6 +58,33 @@ describe('colores literales en styles.css', () => {
     ).toEqual([]);
   });
 
+  /* Auditoría visual 2, V11: la flecha del select llevaba el gris azulado
+     de la base navy vieja escrito como `stroke='%238B97B4'` dentro de un
+     `data:` SVG. El test de arriba no lo veía: ahí el "#" va escapado como
+     %23. Un SVG en un data: URI es otro documento y no puede leer var(),
+     así que ningún color puede ir ahí adentro: si hace falta pintarlo, se
+     dibuja con CSS (gradientes o mask-image + background-color). */
+  it('ningún data: URI trae un color escrito adentro', () => {
+    const lineaInicio = sinComentarios.slice(0, finTokens).split('\n').length;
+    const culpables = [];
+    sinComentarios.slice(finTokens).split('\n').forEach((linea, i) => {
+      // El SVG va con comillas simples adentro de url("…"): se corta en la
+      // comilla que abrió el url(), no en la primera que aparezca.
+      const uris = [...linea.matchAll(/url\(\s*(?:"(data:[^"]*)"|'(data:[^']*)'|(data:[^)'"]*))\s*\)/g)]
+        .map(m => m[1] || m[2] || m[3]);
+      for (const uri of uris) {
+        let svg = uri;
+        try { svg = decodeURIComponent(uri); } catch { /* se revisa tal cual */ }
+        // Sólo valores de atributo o de propiedad: fill='…', stroke="…", stop-color:…
+        const valores = [...svg.matchAll(/(?:fill|stroke|stop-color|flood-color|lighting-color|color)\s*[=:]\s*['"]?([^'";\s>]+)/gi)].map(m => m[1]);
+        const malos = valores.filter(v => /^#[0-9a-f]{3,8}$/i.test(v) || /^(?:rgba?|hsla?|oklch|lab|lch)\(/i.test(v)
+          || /^(?:white|black|red|blue|green|navy|cyan|gray|grey|orange|yellow|purple|pink)$/i.test(v));
+        if (malos.length) culpables.push(`styles.css:${lineaInicio + i}  ${malos.join(' ')}  ←  ${linea.trim().slice(0, 90)}`);
+      }
+    });
+    expect(culpables, 'Color escrito dentro de un data: URI: no sigue a los tokens ni al acento.').toEqual([]);
+  });
+
   it('el vidrio no satura más de 1.2 (a más, amplifica el tinte de lo que tiene detrás)', () => {
     const saturates = [...sinComentarios.matchAll(/saturate\(\s*([\d.]+)\s*\)/g)].map(m => Number(m[1]));
     expect(saturates.length).toBeGreaterThan(0);

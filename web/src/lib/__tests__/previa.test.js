@@ -6,6 +6,7 @@ import { S } from '../state.js';
 import { dstr } from '../format.js';
 import { fuerzaPrevia, sparkPuntos, recordPrevia, haceTexto, recuperacionPrevia, metaHoy, metaTexto, previaEjercicio, cambioTexto, metaPartes } from '../previa.js';
 import { e1rmSeries } from '../charts.js';
+import { ensureVals } from '../session.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
 vi.mock('../rest.js', () => ({ startRest: vi.fn(), stopRest: vi.fn(), T: { rir: null }, pedirRir: vi.fn(), marcarRirElegido: vi.fn() }));
@@ -201,6 +202,52 @@ describe('metaHoy y metaTexto', () => {
   });
   it('sin meta no hay línea', () => {
     expect(metaTexto(null)).toBe('');
+  });
+});
+
+/* Pendiente de la rampa (HANDOFF 2026-09-28 b): la tarjeta decía "Meta de
+   hoy 47.5 kg × 8" y la rueda de reps arrancaba en 6, las de la última
+   serie. Cuando la meta sale de la doble progresión, la rueda arranca en
+   la meta: una sola respuesta a "¿cuánto hago hoy?". */
+describe('ensureVals arranca la rueda en la meta de hoy', () => {
+  beforeEach(() => { S.hoyVals = {}; S.draft = null; });
+
+  it('sumar reps: la rueda en la meta (una más que la mejor), no en la última serie', () => {
+    S.sessions = [sesion('2026-09-20', [serie(47.5, 7), serie(47.5, 6)])];
+    const v = ensureVals(PRESS);
+    expect({ w: v.w, r: v.r }).toEqual({ w: 47.5, r: 8 });
+    expect(v.r).toBe(metaHoy(PRESS).reps);
+  });
+
+  it('sumar con una serie de descarga al final: el peso de trabajo, no el de la descarga', () => {
+    S.sessions = [sesion('2026-09-20', [serie(50, 8), serie(45, 10)])];
+    const m = metaHoy(PRESS);
+    const v = ensureVals(PRESS);
+    expect({ w: v.w, r: v.r }).toEqual({ w: m.peso, r: m.reps });
+  });
+
+  it('sostener: al tope del rango, como dice la meta', () => {
+    S.sessions = [sesion('2026-09-20', [serie(40, 11), serie(40, 9)])];
+    const v = ensureVals(PRESS);
+    expect({ w: v.w, r: v.r }).toEqual({ w: 40, r: 11 });
+  });
+
+  it('subir: peso nuevo y vuelta al piso (igual que antes)', () => {
+    S.sessions = [sesion('2026-09-20', [serie(40, 11), serie(40, 11)])];
+    const m = metaHoy(PRESS);
+    const v = ensureVals(PRESS);
+    expect({ w: v.w, r: v.r }).toEqual({ w: m.peso, r: 8 });
+  });
+
+  it('primera vez sin nada: el default de siempre (no hay meta de la que salir)', () => {
+    const v = ensureVals(PRESS);
+    expect({ w: v.w, r: v.r }).toEqual({ w: 20, r: 8 });
+  });
+
+  it('lo que ya se movió en la rueda hoy no se pisa', () => {
+    S.sessions = [sesion('2026-09-20', [serie(47.5, 7), serie(47.5, 6)])];
+    S.hoyVals[PRESS.id] = { w: 50, r: 5, rpe: null };
+    expect(ensureVals(PRESS)).toMatchObject({ w: 50, r: 5 });
   });
 });
 

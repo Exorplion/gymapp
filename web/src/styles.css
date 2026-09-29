@@ -131,6 +131,17 @@
   --mapa-n-hi:#44454b; --mapa-n-md:#2c2d32; --mapa-n-lo:#18191c;
   --mapa-ne-hi:#3c3d42; --mapa-ne-md:#28292d; --mapa-ne-lo:#161719;
   --pelo-hi:#8A6A4A; --pelo-md:#5C4430; --pelo-lo:#33241A;
+  /* Macros (Comida): tres luces del acento, como el mapa muscular — son
+     CATEGORÍAS, no estados. Hasta el 2026-09-28 carbos iba en el verde de
+     logro y grasa en el ámbar de alerta (auditoría visual 2, V6): con
+     cualquier acento, tres colores sin significado. El verde y el ámbar
+     vuelven a entrar sólo como estado (meta cumplida / te pasaste).
+     Cada una: arranque y final del degradado de la barra, de más luz a
+     menos. No se baja al tercer escalón del mapa (L .43–.54, croma a la
+     mitad): sobre el vidrio se leía como un malva apagado, "deshabilitado". */
+  --macro-prot-a:var(--accent-strong); --macro-prot-b:var(--accent);
+  --macro-carb-a:var(--mapa-0-lo);     --macro-carb-b:var(--mapa-1-hi);
+  --macro-fat-a:var(--mapa-1-lo);      --macro-fat-b:var(--mapa-1-md);
 
   /* ---- ESTADOS (fijos) -----------------------------------------------------
      Verde: logrado, subiste, PR. Rojo: bajaste, peligro. Ámbar: alerta,
@@ -398,6 +409,10 @@ header.top{
 .heatmap .cell.done{background:var(--accent-grad);border-color:transparent;animation:zoom var(--d3) var(--ease) backwards}
 .heatmap .cell.rest{opacity:.28}
 .heatmap .cell.miss{background:rgba(var(--danger-rgb),.12);border-color:rgba(var(--danger-rgb),.3)}
+/* Antes de la primera sesión (streakHeatmap, V7): ni descanso ni falta, la
+   app todavía no existía para vos. Casillero vacío, sin relleno: se lee como
+   "no hay nada que contar", no como un día. */
+.heatmap .cell.antes{background:transparent;border-color:var(--line);opacity:.5}
 
 /* ---------- layout ---------- */
 /* En capa por el mismo motivo que los resets de arriba: sin ella, este
@@ -618,13 +633,10 @@ main.arrastrando{overflow:hidden;user-select:none}
 @keyframes rise{from{width:0}}
 @keyframes glowring{0%,100%{filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),.35))}50%{filter:drop-shadow(0 0 18px rgba(var(--accent-rgb),.7))}}
 @keyframes flash{0%,100%{background-color:transparent}50%{background-color:rgba(var(--accent-strong-rgb),.14)}}
-/* punto pulsante del estado de sesión activa en el hero de Hoy — en el
-   original vivía como un <style> inyectado inline dentro de renderHoy()
-   (índice ~1002), no en el <style> global, así que el puerto estático de
-   Task 1 no lo capturó. Se agrega acá (Task 6) en vez de repetir el patrón
-   inline-<style> en Hoy.jsx: es una keyframe simple y reutilizable, igual
-   que el resto de arriba. */
-@keyframes pulse{50%{opacity:.4}}
+/* @keyframes pulse (opacidad 1 → .4) se borró el 2026-09-28: su último uso
+   era SEGUIR, y animar la opacidad de un CTA lo apaga hasta dejarlo ilegible
+   (auditoría visual 2, V1). Para "esto está activo" está ctaAnillo /
+   rampaAnillo: late algo por fuera, el botón queda a opacidad 1. */
 
 .vtitle{
   display:flex;align-items:baseline;gap:var(--s3);margin:var(--s1) 2px var(--s4);
@@ -1601,7 +1613,8 @@ body.dragging-on .card.day.drop-target{filter:none}
 .sc-name{font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;letter-spacing:.02em;flex:1;min-width:0}
 .sc-pr{font-size:var(--t-sm);font-weight:700;color:var(--warn);flex:none}
 .sc-meta{font-size:var(--t-micro);color:var(--text-2)}
-.sc-meta.strong{color:var(--accent);font-weight:500}
+/* La línea "21 series · 7285 kg de volumen" es metadato: tiza, no acento (V2). */
+.sc-meta.strong{color:var(--text);font-weight:500}
 .sc-exs{font-size:var(--t-micro);color:var(--text-2);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sess-week{
   font-family:'Barlow Condensed';font-size:var(--t-micro);font-weight:700;
@@ -1856,8 +1869,10 @@ body.dragging-on .card.day.drop-target{filter:none}
 .dayline.rest .t{color:var(--text-2);font-weight:500}
 .dayline .s{color:var(--text-2);font-size:var(--t-micro);margin-top:1px}
 .dayline:active{background:rgba(var(--accent-strong-rgb),.06)}
+/* "en uso" es un rótulo, no un logro: tiza con borde, sin el verde de estado
+   (auditoría visual 2, V6). */
 .lib-tag{font-size:var(--t-micro);letter-spacing:.06em;text-transform:uppercase;font-weight:700;
-  color:var(--ok);background:rgba(var(--ok-rgb),.12);border-radius:var(--r-sm);padding:2px 6px;margin-left:6px}
+  color:var(--text);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:1px 6px;margin-left:6px}
 
 /* ---------- rutina: día ---------- */
 .day-head{
@@ -1898,9 +1913,12 @@ body.dragging-on .card.day.drop-target{filter:none}
 .macro3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
 .macro3 .m .lbl{display:flex;justify-content:space-between;font-size:var(--t-micro);color:var(--text-2);font-weight:600;margin-bottom:5px}
 .macro3 .pbar{height:7px}
-.macro3 .m:nth-child(1) .pbar>i{background:linear-gradient(90deg,var(--accent-strong),var(--accent))}
-.macro3 .m:nth-child(2) .pbar>i{background:linear-gradient(90deg,var(--ok-strong),var(--ok))}
-.macro3 .m:nth-child(3) .pbar>i{background:linear-gradient(90deg,var(--warn-strong),var(--warn))}
+.macro3 .pbar.prot>i{background:linear-gradient(90deg,var(--macro-prot-a),var(--macro-prot-b))}
+.macro3 .pbar.carb>i{background:linear-gradient(90deg,var(--macro-carb-a),var(--macro-carb-b))}
+.macro3 .pbar.fat>i{background:linear-gradient(90deg,var(--macro-fat-a),var(--macro-fat-b))}
+/* Estado, no categoría: la proteína cumplida se pone verde (logro). Pasarse
+   de grasa usa .warn/.red, más abajo. */
+.macro3 .pbar.prot>i.ok{background:var(--grad-ok)}
 .kcal-ring{position:relative;width:92px;height:92px;flex:none}
 .kcal-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .kr-track{fill:none;stroke:var(--surface-2);stroke-width:9}
@@ -1981,7 +1999,7 @@ canvas.chart{width:100%;height:200px;display:block}
 }
 .pr-troph{width:44px;height:44px;border-radius:var(--r-md);background:var(--accent-grad);display:grid;place-items:center;
   box-shadow:var(--accent-glow);font-size:var(--t-xl);flex:none}
-.pr-w{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-2xl);line-height:1;color:var(--accent)}
+.pr-w{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-2xl);line-height:1;color:var(--text)}
 .confetti-host{position:fixed;inset:0;z-index:80;pointer-events:none;overflow:hidden}
 .confetti-host i{position:absolute;top:-12px;width:8px;height:14px;border-radius:var(--r-xs);
   opacity:.95;animation:confettiFall linear forwards;transform:rotate(var(--rot))}
@@ -1997,8 +2015,19 @@ canvas.chart{width:100%;height:200px;display:block}
 .field input:focus,.field select:focus{border-color:var(--accent-strong)}
 /* padding-right: la flecha ocupa de 14 a 28 px desde el borde; sin esto el
    texto de la opción corría por debajo y se perdía el final (auditoría
-   2026-09-27, A1). */
-.field select{padding-right:calc(var(--s6) + var(--s2));appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%238B97B4' stroke-width='2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+   2026-09-27, A1).
+   La flecha se dibuja con dos gradientes (un "\" y un "/" de 2 px que se
+   tocan abajo) y no con un SVG en data: — un data: es otro documento y no
+   puede leer var(), así que ahí quedaba escrito a mano el gris azulado de la
+   base navy vieja (auditoría visual 2, V11). Así sigue a --text-3. */
+.field select{
+  padding-right:calc(var(--s6) + var(--s2));appearance:none;
+  background-image:
+    linear-gradient(45deg,transparent calc(50% - 1px),var(--text-3) calc(50% - 1px),var(--text-3) calc(50% + 1px),transparent calc(50% + 1px)),
+    linear-gradient(135deg,transparent calc(50% - 1px),var(--text-3) calc(50% - 1px),var(--text-3) calc(50% + 1px),transparent calc(50% + 1px));
+  background-size:7px 7px,7px 7px;background-repeat:no-repeat;
+  background-position:right 20px center,right 14px center;
+}
 /* Una línea de ayuda debajo de un campo (p.ej. lo que implica la opción
    elegida en un select, que así no tiene que entrar en la opción). */
 .field-hint{font-size:var(--t-sm);line-height:1.4;color:var(--text-2);margin-top:var(--s2)}
@@ -2214,7 +2243,9 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
    ("Historial"), no en versales: es el mismo gesto del título de pantalla,
    un escalón más abajo. */
 #sheet h2{font-size:var(--t-2xl);font-weight:700;font-style:italic;letter-spacing:.01em;margin-bottom:16px}
-#sheet h3{font-size:var(--t-body);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:22px 0 10px}
+/* Rótulos de sección en tiza, no en el acento (auditoría visual 2, V2): la
+   jerarquía la dan el peso, las versales y el tracking. */
+#sheet h3{font-size:var(--t-body);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text);margin:22px 0 10px}
 
 /* ---------- toast ---------- */
 #toast{
@@ -2241,7 +2272,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .empty p{font-size:var(--t-body);line-height:1.5;margin-bottom:18px}
 .sect{
   font-family:'Barlow Condensed';font-size:var(--t-body);font-weight:700;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--accent);margin:22px 2px 10px;
+  text-transform:uppercase;color:var(--text);margin:22px 2px 10px;
   display:flex;align-items:center;gap:10px;
 }
 .sect::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -2596,9 +2627,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .hist-badge{
   flex:0 0 auto;min-width:42px;padding:5px 8px;border-radius:var(--r-md);text-align:center;
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.08em;
-  color:var(--accent);
-  background:linear-gradient(160deg,rgba(var(--accent-strong-rgb),.16),rgba(var(--hi-rgb),.03));
-  border:1px solid rgba(var(--accent-rgb),.3);
+  /* El día de la semana es metadato: grafito de control, sin el tinte del
+     acento (auditoría visual 2, V2). */
+  color:var(--text-2);background:var(--surface-2);border:1px solid var(--line-2);
 }
 .hist-row .grow{flex:1;min-width:0}
 .hist-row .t{display:block;font-size:var(--t-body);font-weight:600}
@@ -2620,7 +2651,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .hero-eyebrow{
   font-size:var(--t-micro);font-weight:700;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--accent);
+  color:var(--text-2);
 }
 .hero-plan .hero-day{font-size:var(--t-display)}
 
@@ -2785,10 +2816,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   font-size:var(--t-micro);font-weight:600;color:var(--text-2);margin-bottom:5px;
 }
 .hero-kcal .macro3 .pbar{height:7px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.06)}
-/* Un color por macro: proteína azul, carbos verde, grasa ámbar. */
-.hero-kcal .pbar.prot>i{background:linear-gradient(90deg,var(--accent-strong),var(--accent))}
-.hero-kcal .pbar.carb>i{background:linear-gradient(90deg,var(--ok-strong),var(--ok))}
-.hero-kcal .pbar.fat>i{background:linear-gradient(90deg,var(--warn-strong),var(--flame))}
+/* El color de cada macro vive en .macro3 .pbar.* (tokens --macro-*): tres
+   luces del acento. Acá había una segunda copia con carbos en verde y grasa
+   en ámbar que le ganaba por orden (V6). */
 /* El separador y el espaciado del mockup; el punto y el texto los produce
    nutriFeedback() (meals.js), que ya trae .fdot con su color según el caso. */
 .nutri-fb{margin-top:14px;padding-top:14px;border-top:1px solid rgba(var(--hi-rgb),.08)}
@@ -3247,7 +3277,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-top{flex:none}
 .ini-eyebrow{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-micro);font-weight:700;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--text-2);
 }
 .ini-title{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-display);font-weight:800;
@@ -3272,12 +3302,34 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:var(--t-lg);letter-spacing:.06em;
   box-shadow:var(--accent-glow);
 }
-.ini-cta small{font-weight:600;opacity:.65;font-size:var(--t-micro);letter-spacing:0}
+/* "0 de 9" va a opacidad plena: a .65 quedaba a 3,1:1 sobre el arranque del
+   degradado (auditoría visual 2, V1). La jerarquía la dan el tamaño y el
+   peso, no el fundido. */
+.ini-cta small{font-weight:600;font-size:var(--t-micro);letter-spacing:0}
 .ini-cta.ok{background:var(--grad-ok);box-shadow:0 16px 40px -14px rgba(var(--ok-rgb),.5);color:var(--on-ok)}
 .ini-cta.dim{background:var(--surface-2);border:1px solid var(--line-2);color:var(--text-2);box-shadow:none}
-.ini-cta.pulse{animation:pulse 2s infinite}
+/* SEGUIR: la sesión está abierta y esto tiene que decir "en curso".
+   Hasta el 2026-09-28 latía la opacidad del botón entero (1 → .4): la mitad
+   del ciclo el texto caía a 1,7:1 y con Fucsia el rosa mezclado con el
+   grafito se veía malva, como deshabilitado (V1). Ahora el botón no se toca:
+   late un ANILLO por fuera, el mismo gesto que el paso activo de la rampa
+   (rampaAnillo, mismo ciclo), así "esto está activo" se dice de una sola
+   manera en toda la app. El anillo crece unos 7 px por lado: la escala es
+   distinta en X y en Y porque el botón es 6 veces más ancho que alto. */
+.ini-cta-seguir{position:relative;--late-ciclo:calc(var(--d4) * 3.5)}
+.ini-cta-seguir::before,.ini-cta-seguir::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  border:2px solid var(--accent);opacity:0;
+  animation:ctaAnillo var(--late-ciclo) var(--ease-out) infinite;
+}
+.ini-cta-seguir::after{animation-delay:calc(var(--late-ciclo) / 2)}
+@keyframes ctaAnillo{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.04,1.25);opacity:0}}
 .ini-wk{margin-top:10px;flex:none}
-@media (prefers-reduced-motion:reduce){.ini-cta.pulse{animation:none}}
+/* Movimiento reducido: sin latido, un anillo quieto que igual marca "en curso". */
+@media (prefers-reduced-motion:reduce){
+  .ini-cta-seguir::before{animation:none;opacity:.45;transform:scale(1.02,1.14)}
+  .ini-cta-seguir::after{display:none}
+}
 
 /* ENTRENAR: el único de los cuatro CTA que invita a HACER algo — los otros
    tres informan un estado (seguir lo empezado, ver lo hecho, no toca hoy).
@@ -3338,15 +3390,18 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   background:linear-gradient(135deg,rgba(var(--hi-rgb),.10),transparent 40%);
 }
 /* 2026-09-25: el rótulo de cada tile, con el mismo tratamiento que los títulos
-   de sección de la app (.plan-title: condensada, mayúsculas, azul). Antes iba
-   en el tamaño más chico y el gris más apagado, y no se leía (Enzo: "no
-   resaltan"). Una rayita de acento a la izquierda lo ata al número. */
+   de sección de la app (condensada, mayúsculas). Antes iba en el tamaño más
+   chico y el gris más apagado, y no se leía (Enzo: "no resaltan").
+   2026-09-28 (auditoría visual 2, V2): sigue en ese tamaño y peso, pero en
+   plomo y no en el acento — con cinco rótulos del color del CTA, el ojo no
+   tenía un primero. Lo que resalta lo pone el tamaño; el acento queda para
+   actuar. La rayita, en ceniza. */
 .ini-tile-lbl{
   display:flex;align-items:center;gap:var(--s2);
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--text-2);
 }
-.ini-tile-lbl::before{content:"";flex:none;width:3px;height:.95em;border-radius:var(--r-full);background:var(--accent-grad)}
+.ini-tile-lbl::before{content:"";flex:none;width:3px;height:.95em;border-radius:var(--r-full);background:var(--text-3)}
 .ini-tile-lbl .ini-tile-go{margin-left:auto}
 
 /* Tu cuerpo: el vistazo de Silhouette se encoge a una franja quieta —
@@ -3356,21 +3411,26 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-tile-body{grid-area:body;position:relative;overflow:hidden}
 .ini-tile-body::before{content:"";position:absolute;top:-40px;right:-30px;width:150px;height:150px;
   background:radial-gradient(circle,rgba(var(--accent-rgb),.22),transparent 66%);pointer-events:none}
-.ini-tile-go{color:var(--accent);text-transform:none;letter-spacing:0;font-weight:600;font-size:var(--t-micro)}
+.ini-tile-go{color:var(--text-2);text-transform:none;letter-spacing:0;font-weight:600;font-size:var(--t-micro)}
 .ini-tile-thumb{display:flex;height:112px;margin:4px 0 2px;position:relative;z-index:1}
 .ini-tile-hint{font-size:var(--t-micro);color:var(--text-2);margin-top:2px}
 
 .ini-tile-racha{grid-area:racha;align-items:center;justify-content:center;gap:4px}
+/* Las cifras en tiza con la unidad en plomo, como "74.1 kg" en Progreso. Iban
+   con el degradado del acento recortado al texto: tres cifras más del color
+   del CTA en la misma pantalla (V2, y de paso V13 en estas tarjetas). */
 .ini-tile-num{
   font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;
-  font-size:var(--t-display);line-height:1;background:var(--accent-grad);-webkit-background-clip:text;
-  background-clip:text;color:transparent;
+  font-size:var(--t-display);line-height:1;color:var(--text);
 }
-.ini-tile-num small{font-size:var(--t-micro);font-weight:600;font-style:normal;color:var(--text-2);margin-left:4px;-webkit-text-fill-color:var(--text-2)}
+.ini-tile-num small{font-size:var(--t-micro);font-weight:600;font-style:normal;color:var(--text-2);margin-left:4px}
 
 .ini-tile-stale{grid-area:stale;justify-content:center;gap:3px}
 .ini-tile-stale-name{font-size:var(--t-sm);font-weight:700}
-.ini-tile-stale-days{font-size:var(--t-micro);color:var(--warn)}
+/* Plomo por defecto: "nada flojo esta semana" y "registrá una sesión" no son
+   alertas. Sólo "hace N días" de un grupo que se enfría va en ámbar (V6). */
+.ini-tile-stale-days{font-size:var(--t-micro);color:var(--text-2)}
+.ini-tile-stale-days.warn{color:var(--warn)}
 .ini-tile-ok{grid-area:stale;align-items:center;justify-content:center;text-align:center;
   font-size:var(--t-micro);color:var(--text-2);}
 

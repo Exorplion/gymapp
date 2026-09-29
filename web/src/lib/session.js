@@ -14,6 +14,7 @@ import { progresion } from './progression.js';
 import { currentStreak, bestStreak } from './streak.js';
 import { bloqueDe, DESCANSO } from './warmup.js';
 import { clampHechos } from './rampa.js';
+import { metaHoy } from './previa.js';
 
 /** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
     ejercicio completo; un string sigue funcionando y se compara sólo por
@@ -123,8 +124,17 @@ export function ensureVals(ex) {
        En los otros dos casos (sumar reps / sostener) el punto de partida
        correcto ES la última serie, así que se deja el comportamiento de
        siempre. */
+    /* 2026-09-28: y en "sumar reps" / "sostener" también arranca en la META
+       DE HOY (metaHoy, lib/previa.js), que es lo que la tarjeta muestra. Antes
+       arrancaba en la última serie de la vez pasada: la tarjeta decía
+       "Meta de hoy × 8" y la rueda, 6. Sólo cuando la meta sale de la doble
+       progresión (subir/sostener/sumar); el sugerido por 1RM y la primera
+       vez siguen como estaban. */
     const prog = progresion(ex);
+    const meta = prog ? metaHoy(ex, { uni: isUnilateral(ex) }) : null;
+    const deProgresion = meta && ['subir', 'sostener', 'sumar'].includes(meta.tipo) && meta.peso != null && meta.reps;
     if (prog?.accion === 'subir_peso') S.hoyVals[ex.id] = { w: prog.peso, r: prog.piso, rpe: null };
+    else if (deProgresion) S.hoyVals[ex.id] = { w: meta.peso, r: meta.reps, rpe: null };
     else if (last) { const ls = last[last.length - 1]; S.hoyVals[ex.id] = { w: ls.w, r: ls.r, rpe: null }; }
     else S.hoyVals[ex.id] = { w: pesoInicial(ex), r: ex.reps || 10, rpe: null };
   }
