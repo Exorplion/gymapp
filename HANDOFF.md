@@ -4,6 +4,51 @@
 
 ---
 
+## SESIÓN 2026-09-29 (e) — Auditoría visual 2, tanda B: "Tipografía dorsal" (+ tanda 6)
+
+Rama `feat/visual-tipografia` (rebasada sobre main con #133), PR abierto sin mergear.
+Detalle y números en
+`docs/auditoria-visual-2-2026-09.md` → "Tanda B — estado" y en
+`docs/auditoria-total-2026-09.md` → "Tanda 6 — estado"; `DESIGN.md`
+reescrito en Typography.
+
+- **Fuentes propias** (`web/src/assets/fonts/`, OFL): Barlow 400/600/700 y
+  Condensed 700/800/800 itálica, subconjunto latino, precargadas por
+  workbox (`globPatterns` con `woff2`). Fuera Google Fonts. El 800 que el
+  CSS pedía ahora existe.
+- **Escala cerrada** en `@theme` (`--text-*`, `--font-weight-*`,
+  `--tracking-*` con `initial`): 11 tamaños (11→64, con `titulo`, `hero`,
+  `cifra`, `record` nuevos), 4 pesos, sin `nano`. `body` con `font-size`.
+- **Cuatro roles** con un tracking cada uno: `--tr-titulo/-seccion/
+  -etiqueta/-control` (+ `--tr-marca`), atajos `--rol-seccion` y
+  `--rol-etiqueta`, clase `.t-etiqueta` (en `@layer components`).
+- **Eyebrows fuera** (Inicio, Entreno, Hoy); etiqueta debajo de la cifra
+  (Comida, Progreso); un "·" por línea; degradado de texto sólo en la marca.
+- **fmtKg/fmtMiles/NBSP** en `lib/format.ts`: un solo formato de kilos.
+- **Guardia**: `tipografia.test.js`.
+
+Medido (antes → después): tamaños renderizados 12 → 10, pesos 6 → 4, caras
+11 → 6 (todas cargadas), trackings 17 → 6, firmas de rótulo versal 19 → 7;
+fuentes 133 KiB de Google sin precache → 133 KiB propias precargadas.
+Inicio y Hoy en vivo siguen sin scroll a 390×844 y 430×932.
+
+Trampas:
+- El atajo `font:` (que usan los roles) resetea `font-variant-numeric`: por
+  eso las `tabular-nums` de G9 van al FINAL de `styles.css`.
+- `letter-spacing` se hereda como longitud absoluta: la unidad chica al lado
+  de una cifra con tracking negativo lo arrastra. Las `small` de las cifras
+  llevan `letter-spacing:0`.
+- `font-family: var(--font-cond)` no vale dentro de un `@font-face`: ahí el
+  nombre va literal (el test lo cuida).
+- En Python sobre Windows, escribir con `newline=''` para no cambiar los
+  finales de línea; y en bash `sed` se come el `\u` de un escape JS.
+
+**Pendientes:** tanda C (superficies, orbes, emoji → SVG, la rayita de los
+rótulos de tarjeta) y E del informe; de esta tanda, los cuatro de "Tanda B —
+estado".
+
+---
+
 ## SESIÓN 2026-09-29 (d) — Tandas 2 y 7: hojas, toques y pendientes chicos
 
 Rama `fix/hojas-y-toques` (sobre main con #132), PR abierto sin mergear.

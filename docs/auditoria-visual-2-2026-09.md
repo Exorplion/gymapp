@@ -294,6 +294,75 @@ mismos (V12) son de la tanda B.
 
 Se verá: títulos más negros y más apretados, sin la escalera de siete tamaños; debajo, texto calmo en Barlow.
 
+#### Tanda B — estado (2026-09-29, rama `feat/visual-tipografia`)
+
+Hecha, junto con la tanda 6 de `auditoria-total-2026-09.md`. Medido en el
+build de producción (`vite build` + `vite preview` :4192), service worker
+bloqueado y caches borradas, `seedRegistro()`, reloj adelantado 1-3 días para
+la sesión en vivo. Hielo a 390×844 y Fucsia a 430×932.
+
+**Medidor:** para cada nodo de texto visible, `getComputedStyle` de familia,
+tamaño, peso, estilo, tracking (en em) y caja. "Antes" = `origin/main` #132
+recorriendo las cuatro pestañas, Ajustes, Mis rutinas y Perfil. "Después" =
+lo mismo **más** Hoy (previa, Antes de empezar, calentamiento, en vivo, serie
+con rampa, descanso, terminar, fin de sesión), historial, Tu cuerpo y ficha
+de músculo, en los dos anchos: el recorrido de después es más grande y aun así
+da menos.
+
+| Medida | Antes | Después |
+|---|---|---|
+| Tamaños distintos renderizados | 12 (10, 11, **12**, 13, 15, **16**, 18, 22, 26, 34, 40, 54) | **10** (11, 13, 15, 18, 22, 26, 34, 40, 46, 54; el 64 es la racha del fin de sesión) |
+| Pesos distintos renderizados | 6 (400, 500, 600, 700, 800, 900) | **4** (400, 600, 700, 800) |
+| Caras renderizadas (familia + peso + estilo) | 11 (tres pedidas y no cargadas: Cond 800, 800 itálica, 900) | **6**, las seis cargadas |
+| Trackings distintos renderizados | 17 | **6** (−.01, 0, .08, .12, .14, .2 la marca) |
+| Firmas de rótulo versal ≤ 15 px | 19 | **7** (1 etiqueta, 1 sección, 4 de control por tamaño/peso, 1 número en una burbuja) |
+| Combinaciones familia/tamaño/peso/estilo | 38 | **24** |
+| `font-size` distintos en `styles.css` | 17 (con 40/46/52/54/56/64/12.5/11 px sueltos, .65em, nano) | **11**, todos tokens |
+| `letter-spacing` distintos en `styles.css` | 22 | **6**, todos tokens `--tr-*` (o 0) |
+| `font-weight` en `styles.css` | 500, 600, 700, 800 | 400, 600, 700, 800 |
+| Fuentes | Google Fonts: 1 CSS (1 KB) + 6 woff2 al abrir Inicio (133 KiB), Cond 500 y Barlow 500 a demanda; **no precargadas** (sin red, fuente del sistema) | 6 woff2 propias, **136.444 B (133 KiB)**, precargadas por workbox (precache 16 → 22 entradas) |
+
+`document.fonts` después: Barlow 400/600/700 y Barlow Condensed 700/800/800
+itálica, las seis `loaded`; ninguna petición a `googleapis`/`gstatic`.
+
+| ID | Estado | Commit | Qué |
+|---|---|---|---|
+| **V8** | ✅ | `4103f89`, `fb3a5fe` | 800 y 800 itálica cargados de verdad (subconjunto latino, `font-display:swap`, precargados). `body{font-size:var(--t-body)}`. Escala cerrada en `@theme` (`--text-*: initial`: fuera `text-xs`, `text-base`, `text-3xl`, el nano de 10). Títulos, cifras protagonistas y CTA en 800. |
+| **V3** | ✅ | `fb3a5fe`, `cbc9bb3` | Cuatro roles con un tracking cada uno (`--tr-titulo/-seccion/-etiqueta/-control`, atajos `--rol-seccion`/`--rol-etiqueta`, clase `.t-etiqueta`). 40+ reglas y 30+ usos de Tailwind migrados. En Perfil, Sexo / Actividad / Objetivo / TDEE son etiquetas de campo como Edad y Peso. |
+| **V12** | ✅ | `cbc9bb3`, `121254a` | Fuera los eyebrows de Inicio ("COMPLETADO · HOY"…), Entreno ("PLAN ACTIVO"), Hoy ("TOCA HOY" con su punto, "HOY TE TOCA DESCANSAR"); en Comida y Progreso la etiqueta va debajo de la cifra. "PRs · Récords personales" → "Récords", "Medidas · último registro" → "Medidas", "Constancia · 8 semanas" → "Constancia", "Sesiones · 7 días" → "Últimos 7 días". Resumen de Mis rutinas en una frase; plantillas con coma. |
+| **V13** | ✅ | `cbc9bb3` | `.plan-title` y la cifra del anillo de sesión en tiza; el degradado de texto queda sólo en la marca. |
+| **V9** (parte tipográfica) | ◐ | `fb3a5fe` | Los nombres de fila ya comparten rol (Condensed 700 sin tracking); unificar la fila tocable es de la tanda C. |
+
+Guardia nueva: `web/src/lib/__tests__/tipografia.test.js` (8 tests) falla si
+se agrega una cara no cargada, un `font-size` en px, un peso fuera de
+400/600/700/800, una itálica que no sea 800, un `letter-spacing` literal, o en
+el JSX `font-medium`/`tracking-wide`/`text-xs`/tamaños en línea. Lo primero
+que atrapó fue un bug propio (el reemplazo de familias por token había tocado
+los `@font-face`).
+
+Verificado: `scrollWidth` = ancho en todas las pantallas y hojas del
+recorrido a 390 y 430; **Inicio 844/844 y 932/932** (completado, ENTRENAR y
+SEGUIR); **Hoy en vivo, serie con rampa, descanso y terminar 844/844 y
+932/932**; ningún texto recortado (los dos `clip:` del medidor son el brillo
+de `.btn`, que es un `::after` animado, no texto).
+
+**No se tocó a propósito:** Sheet.jsx y el movimiento de las hojas, hit
+areas, AgregarEjercicio (sólo su CSS de rótulo `.asist-eyebrow`/`.asist-lbl`
+pasa a etiqueta), el `::before` rayita de `.ini-tile-lbl` y `.plan-block-t`
+(superficie: tanda C).
+
+**Pendientes que deja:**
+1. `.ex-group-tag` (el nombre del grupo en la banda del editor) quedó en
+   plomo sobre la banda tintada del acento: si se lee apagado, la banda es de
+   la tanda C.
+2. La burbuja con el número de ejercicios del bloque (`.plan-block-n`) hereda
+   `uppercase` sin tracking: inocuo (son dígitos), pero es la séptima firma.
+3. "SESIÓN ANTERIOR" en el tablero en vivo es la etiqueta más larga de la
+   app; a 11 px entra en 390 con 30 px de sobra. Si se agrega una cuarta
+   columna, no entra.
+4. El emoji del título "💪 Sesión guardada" y los de las filas (📚 🏋 🎯 🎙)
+   siguen: son G7/H9, tanda C / tanda 8.
+
 ### Tanda C · Superficies y luz [choca con la previa (usa paneles `.card`): después]
 
 1. **V4**: tres superficies con nombre (vidrio / control / plana); `nav-card`, `day-card`, `pw-btn`, `profcard` y `calcbox` a una de ellas.
