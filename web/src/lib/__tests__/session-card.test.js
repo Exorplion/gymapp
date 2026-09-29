@@ -21,3 +21,14 @@ describe('SessionCard', () => {
     expect(texto(sesion(3))).toContain('3 series ·');
   });
 });
+
+describe('SessionCard de una sesión anotada a mano', () => {
+  it('sin series lo dice, no inventa un "0 series"', () => {
+    expect(texto({ ...sesion(0), entries: [], retro: true, duration: null })).toContain('Anotada a mano · sin series registradas');
+  });
+  it('con series cargadas después, las muestra como cualquier sesión', () => {
+    const html = texto({ ...sesion(2), retro: true, duration: null });
+    expect(html).toContain('2 series · 666 kg de volumen');
+    expect(html).not.toContain('sin series registradas');
+  });
+});

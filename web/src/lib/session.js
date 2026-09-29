@@ -1176,6 +1176,66 @@ export async function registrarDiaEntrenado(dateStr, slotId) {
   return sess;
 }
 
+/** Las series con que arranca la carga de un día pasado (2026-09-29): una
+    entrada por ejercicio del turno, lista para corregir.
+
+    Antes registrarDiaEntrenado() guardaba sólo el turno —"los pesos de un día
+    que ya pasó no se recuerdan"— y Enzo, que perdió el domingo 27 y el lunes
+    28, no tenía cómo volver a cargar lo que levantó. Él sí lo sabe (lo tiene
+    anotado o lo recuerda), así que ahora se puede, y para que sea rápido se
+    arranca de lo más probable:
+    - lo que hizo la ÚLTIMA VEZ ANTES de ese día con ese ejercicio y ese equipo
+      (no la última vez a secas: si el martes ya hizo más, el domingo no),
+    - o, si nunca lo hizo, las series del plan con su meta (metaHoy) o el peso
+      de partida.
+    Son valores de arranque que se ven y se corrigen en la hoja, no datos que
+    se guarden solos: la sesión se llena recién cuando se toca "Cargar". */
+export function seriesPrellenadas(slotId, fecha) {
+  const slot = S.routine.find(s => s.id === slotId);
+  if (!slot) return [];
+  const t0 = new Date(fecha + 'T12:00:00').getTime();
+  return (slot.exercises || []).map(ex => {
+    const key = exKey(ex);
+    let previas = null;
+    for (const s of S.sessions) {
+      if (!(s.date < fecha)) continue;
+      const e = (s.entries || []).find(en => exKey(en) === key);
+      if (e?.sets?.length) { previas = e.sets; break; }
+    }
+    let sets;
+    if (previas) {
+      sets = previas.map(st => ({ w: st.w, r: st.r, rpe: null, side: st.side ?? null }));
+    } else {
+      const uni = !!ex.unilateral;
+      const meta = metaHoy(ex, { uni });
+      const w = meta?.peso ?? pesoInicial(ex);
+      const r = meta?.reps || ex.reps || 10;
+      const n = Math.max(1, ex.sets || 3) * (uni ? 2 : 1);
+      sets = Array.from({ length: n }, (_, i) => ({ w, r, rpe: null, side: uni ? (i % 2 ? 'right' : 'left') : null }));
+    }
+    return {
+      exId: ex.id, name: ex.name, equip: ex.equip, machine: ex.machine, cat: ex.cat, unilateral: ex.unilateral,
+      sets: sets.map((st, i) => ({ ...st, t: t0 + i * 60000 })),
+    };
+  });
+}
+
+/** Llena una sesión anotada a mano (sin series) con seriesPrellenadas() y la
+    guarda. Desde ahí es una sesión como cualquier otra: entra al historial,
+    a la progresión (lastDataFor) y a los récords (sessionPRs) con SU fecha.
+    No pisa una sesión que ya tiene series. */
+export async function cargarSeriesRetro(sessId) {
+  const i = S.sessions.findIndex(s => s.id === sessId);
+  if (i < 0 || S.sessions[i].entries?.length) return null;
+  const entries = seriesPrellenadas(S.sessions[i].slotId, S.sessions[i].date);
+  if (!entries.length) return null;
+  const sess = { ...S.sessions[i], entries };
+  await idb.put('sessions', sess);
+  S.sessions[i] = sess;
+  bump();
+  return sess;
+}
+
 export async function deleteHistorySession(id) {
   await idb.del('sessions', id);
   S.sessions = S.sessions.filter(s => s.id !== id);

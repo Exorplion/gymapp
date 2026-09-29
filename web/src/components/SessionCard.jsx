@@ -36,9 +36,11 @@ export default function SessionCard({ sess }) {
       <div className="sc-meta">{fmtD(sess.date)}{sess.duration ? ` · ${sess.duration} min` : ''}</div>
       {/* Una sesión anotada a mano (registrarDiaEntrenado) no tiene series: se
           sabe QUÉ entrenaste ese día, no con qué pesos. "0 series · 0 kg"
-          sería falso — no es que no levantaste nada, es que no está medido. */}
+          sería falso — no es que no levantaste nada, es que no está medido.
+          Si después se cargaron las series (cargarSeriesRetro), se muestran
+          como en cualquier sesión. */}
       <div className="sc-meta strong">
-        {sess.retro
+        {sess.retro && !sess.entries?.length
           ? 'Anotada a mano · sin series registradas'
           : `${nsets} ${nsets === 1 ? 'serie' : 'series'} · ${vol.toLocaleString('es')} kg de volumen`}
       </div>
