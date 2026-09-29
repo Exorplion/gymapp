@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { S, useStore } from '../lib/state.js';
-import { subscribeToast } from '../lib/toast.js';
+import { subscribeToast, partirToast } from '../lib/toast.js';
+import { Alerta, Check, Diana, Later, Mancuerna, Plus } from './Icon.jsx';
+
+const ICONO = { alerta: Alerta, check: Check, mas: Plus, reloj: Later, diana: Diana, mancuerna: Mancuerna };
 import { bloomOpen } from '../lib/motion.js';
 
 // Único suscriptor del pub-sub de lib/toast.js. La función toast() vive allá
@@ -36,7 +39,7 @@ export default function Toast() {
     <div id="toast" ref={elRef} role="status" aria-live="polite" className={`${show ? 'show' : ''}${S.sheet ? ' over-sheet' : ''}`}>
       {state && (
         <>
-          <span>{state.msg}</span>
+          <ToastTexto msg={state.msg} />
           {state.actionLabel && (
             <button
               type="button"
@@ -49,5 +52,16 @@ export default function Toast() {
         </>
       )}
     </div>
+  );
+}
+
+/** El texto del aviso, con el glifo de tono ("⚠", "✓"…) dibujado como SVG. */
+function ToastTexto({ msg }) {
+  const { icono, texto } = partirToast(msg);
+  const Ico = icono && ICONO[icono];
+  return (
+    <span className={Ico ? `toast-t toast-${icono}` : undefined}>
+      {Ico && <Ico size={16} />}{texto}
+    </span>
   );
 }

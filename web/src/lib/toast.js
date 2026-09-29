@@ -38,3 +38,20 @@ export function subscribeToast(fn) {
   listener = fn;
   return () => { if (listener === fn) listener = null; };
 }
+
+/* Los avisos se escriben con un glifo delante ("⚠ Archivo inválido",
+   "✓ Press banca completo", "＋ Pollo", "⏱ Rutina en marcha") o un ✓ al
+   final ("Datos restaurados ✓"). Un glifo no es del material del resto de los
+   íconos (auditoría total, G7), pero es la forma más corta de escribir el
+   tono en cada llamada: acá se separa, y <Toast/> dibuja el SVG que toca.
+   Pura, para poder probarla sin DOM. */
+const GLIFOS = { '⚠': 'alerta', '✓': 'check', '＋': 'mas', '⏱': 'reloj', '🎯': 'diana', '💪': 'mancuerna' };
+
+export function partirToast(msg) {
+  if (typeof msg !== 'string') return { icono: null, texto: msg };
+  const t = msg.trim();
+  const primero = [...t][0];
+  if (GLIFOS[primero]) return { icono: GLIFOS[primero], texto: t.slice(primero.length).replace(/^\uFE0F/, '').trim() };
+  if (t.endsWith(' ✓')) return { icono: 'check', texto: t.slice(0, -2).trim() };
+  return { icono: null, texto: msg };
+}
