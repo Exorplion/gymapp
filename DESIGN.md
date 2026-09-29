@@ -146,7 +146,7 @@ components:
   card-hero:
     backgroundColor: '{colors.glass}'
     rounded: '{rounded.lg}'
-    padding: 20px
+    padding: 24px
   nav-card:
     backgroundColor: '{colors.surface-2}'
     rounded: '{rounded.DEFAULT}'
@@ -178,7 +178,9 @@ Documento extraído del código real (`web/src/styles.css`, `lib/theme.js`,
 `lib/motion.js`, componentes) y del build de producción medido en Chrome a
 390 y 430 px. Primera versión el 2026-09-28 sobre `main` = #125 (base grafito
 + acento elegido); actualizado el mismo día con la **tanda A** de la
-auditoría visual 2 ("Un acento que signifique", V1 V2 V6 V7 V11). Describe lo
+auditoría visual 2 ("Un acento que signifique", V1 V2 V6 V7 V11) y el
+2026-09-29 con la **tanda D** ("Ritmo y composición", V10 e I2 en Inicio,
+Entreno, Comida y Progreso). Describe lo
 que HAY; las propuestas pendientes viven en
 `docs/auditoria-visual-2-2026-09.md`.
 
@@ -198,8 +200,8 @@ tipografía (Barlow Condensed itálica en títulos y cifras) y la luz del acento
 (degradados, halos, la arista del vidrio); la base no tiene tinte.
 
 La densidad es de app de uso diario: una columna de 354 px (390) a 394 px
-(430) con 18 px de margen, tarjetas apiladas con 10 a 12 px entre sí, y una
-barra de pestañas flotante de vidrio. El fondo lleva una atmósfera fija: dos
+(430) con 18 px de margen, **12 px dentro de un grupo y 32 entre grupos**, y
+una barra de pestañas flotante de vidrio. El fondo lleva una atmósfera fija: dos
 resplandores radiales del acento (arriba al centro y abajo a la derecha) y un
 grano `feTurbulence` al 4,5 %. Todo se piensa para usarse con el teléfono en
 la mano entre series: botones de 52 a 58 px, cifras tabulares, textos cortos.
@@ -289,11 +291,13 @@ pantalla, 46 nombre del día, 52/54 cifras grandes, 56/64 cronómetros).
 ## Layout
 
 - Una columna, `max-width: 520px` centrada, margen lateral `gutter` 18 px. Todo arranca en x = 18: marca, título, tarjetas, barra.
-- Inicio usa un grid asimétrico de 2 columnas: el cuerpo ocupa las dos, debajo Racha / Más flojo y Calorías / Peso.
+- Inicio usa un grid asimétrico de 2 columnas: el cuerpo ocupa las dos, debajo Racha / Más flojo y Calorías / Peso. Las cuatro chicas miden lo mismo (`grid-template-rows:auto 1fr 1fr`) y tienen el mismo esqueleto: rótulo arriba a la izquierda, cifra debajo, línea de apoyo abajo del todo. Inicio entra sin scroll a 390×844 y 430×932.
 - La sesión en vivo entra en una pantalla sin scroll (844 px a 390).
 - Las hojas suben desde abajo hasta 88 dvh, radio 26 arriba.
-- Escala de espacio de seis pasos (`s1`–`s6`: 4, 8, 12, 16, 24, 32). En uso real, 10, 14, 7, 5, 6 y 18 px aparecen más que la mitad de la escala (2.142 declaraciones fuera de escala contra 1.374 dentro; pendiente V10). Entre tarjetas 10 a 12 px; dentro, 14 a 20 px.
-- Texto a la izquierda, salvo dos tarjetas de Inicio (Racha, Más flojo) y los diálogos centrados.
+- Escala de espacio de seis pasos (`s1`–`s6`: 4, 8, 12, 16, 24, 32). **Ritmo de las pantallas tablero** (Inicio, Entreno, Comida, Progreso; tanda D): `.pila` separa grupos a `--s6` (32) y `.grupo` junta lo de adentro a `--s3` (12); los márgenes verticales de los hijos se anulan (el aire lo pone el contenedor). Un `.sect` dentro de una pantalla abre grupo: 32 arriba, 12 abajo. Inicio usa `--s5` entre grupos porque entra entera sin scroll. Medido: 94 % de los espacios de esas cuatro pantallas en la escala (antes 46 %); lo que queda afuera es el sangrado óptico de 2 px de los rótulos versales (`.vtitle`, `.sect`, `.slot-head`, `.sess-week`) y controles de formulario (`.field`, padding 14).
+- Dentro de las tarjetas: 16 de padding (`.card`), 24 en las hero de las pantallas tablero (`.hero-plan`, `.hero-kcal`, `.hero-prog`; la de Hoy sigue en 20), 12/16 en las tarjetas chicas de Inicio.
+- **Un protagonista por pantalla, primero**: Inicio el estado del día con su botón; Entreno la hero del plan con "Editar rutina" adentro; Comida la hero de calorías (el perfil va al final); Progreso la hero del peso.
+- Texto a la izquierda, salvo los diálogos centrados.
 - Probado a 390×844 y 430×932; ninguna pantalla desborda a lo ancho (`scrollWidth` = ancho de la ventana en Inicio, Hoy, Progreso y Comida con Hielo y Fucsia).
 - Área táctil mínima buscada: 44 px (con `::after` invisible donde el dibujo es más chico). Foco visible: anillo del acento de 2 px + halo del fondo de 4 px.
 
@@ -333,10 +337,11 @@ chips y puntos. Nada con esquina viva.
 - **Tarjeta** (`.card`): vidrio ahumado + brillo metálico arriba, radio 18, padding 16, arista del acento, sombra `0 14px 34px -18px`.
 - **Hero** (`.card.hero`): radio 26, padding 20, tinte del acento en la esquina (158°) y un halo radial de 210 px arriba a la derecha.
 - **Tarjeta de Inicio** (`.ini-tile`): vidrio + tinte del acento 155° + reflejo diagonal (`::after`) + rótulo en plomo con rayita ceniza; cifra en tiza.
-- **Tarjeta de navegación** (`.nav-card`): grafito de control opaco, radio 18, ícono de 38 px en cajita tintada, título + subtítulo + chevron.
+- **Tarjeta de navegación** (`.nav-card`): grafito de control opaco, radio 18, ícono de 38 px en cajita tintada (`.nav-card-ico`, también dentro de un `.grouprow`; `.warn`/`.ok` para una fila de estado), título + subtítulo + chevron. En Entreno los accesos ya no son nav-card sueltas: son un `.group`.
 - **Turno** (`.day-card`): degradado blanco 7,5 %→2 %, sin blur ni sombra, insignia numerada a la izquierda.
-- **Lista agrupada** (`.group` + `.grouprow`): grafito de control, filas de 56 px con hilo entre ellas. `.grouprow-v` (el valor a la derecha) va en acento porque ahí vive también el estado de los interruptores ("Sí"/"No").
-- **Tarjeta de sesión** (`SessionCard`): insignia del día en grafito de control con borde hilo fuerte, nombre en condensada, "21 series · 7285 kg de volumen" en tiza 500, ejercicios en plomo; el trofeo en ámbar sólo si hubo PR.
+- **Lista agrupada** (`.group` + `.grouprow`): grafito de control, filas de 56 px con hilo entre ellas. `.grouprow-v` (el valor a la derecha) va en acento porque ahí vive también el estado de los interruptores ("Sí"/"No"). **Fila de estado** (`.grouprow-estado`): no se toca entera, la acción es un `.chip` a la derecha (la descarga en Entreno).
+- **Fila de sesión** (`SessionCard`, `.grouprow.sess-row` en un `.group` por semana): insignia del día en grafito de control, arriba el turno en condensada 18 y la fecha a la derecha en plomo, abajo "21 series · 7285 kg de volumen" en plomo; el trofeo en ámbar sólo si hubo PR. 64 px de alto (antes una tarjeta de 115 con la lista de ejercicios).
+- **Hero del plan** (Entreno): nombre de la rutina 34 itálica, tres cifras (`.hero-stats`: turnos / ejercicios / series por ciclo), barras de series por turno y "Editar rutina" adentro.
 - **Aviso** (`.notice`): sin caja, sólo una raya de 2 px a la izquierda (ok o warn).
 - **Etiqueta "en uso"** (`.lib-tag`): tiza con borde hilo fuerte, sin relleno.
 

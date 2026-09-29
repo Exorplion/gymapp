@@ -4,6 +4,55 @@
 
 ---
 
+## SESIÓN 2026-09-29 (c) — Auditoría visual 2, tanda D: "Ritmo y composición"
+
+Rama `feat/visual-composicion` (sobre main con #131), PR abierto sin
+mergear. **1026 tests.** Detalle, commits y números en
+`docs/auditoria-visual-2-2026-09.md` → "Tanda D — estado"; `DESIGN.md`
+actualizado (Layout, Components).
+
+- **V10 ritmo**: `.pila` (grupos a `--s6` = 32) y `.grupo` (adentro `--s3` =
+  12), al FINAL de `styles.css` (ganan por orden a `.card`/`.nav-card`/
+  `.notice`, misma especificidad). `.view .sect` = 32 arriba / 12 abajo.
+  Espaciado fuera de la escala en las 4 pantallas: **479 → 48** (40 son el
+  sangrado óptico de 2 px de los rótulos); en la escala 46 % → 94 %.
+- **Entreno**: hero del plan con tres cifras y "Editar rutina" adentro;
+  "Mis rutinas" + "Mis gimnasios" como `.group`; descarga en curso = fila de
+  estado (`.grouprow-estado`) en esa lista, descarga sugerida debajo de los
+  turnos con "Se está enfriando" y "Porciones". Turnos a 706 px (antes 1.021).
+- **Inicio**: tres grupos (`.ini-semana`, `.ini-estado`, grid) a `--s5`; las
+  cuatro tarjetas chicas iguales (96 px, rótulo arriba a la izquierda, cifra
+  a la misma altura por fila: cierra I2); el aviso del grupo frío va al
+  costado de la silueta. Sin scroll: 844/844 y 932/932.
+- **Comida**: la hero de calorías primero; la tarjeta del perfil al final.
+- **Progreso**: `SessionCard` es una fila de dos renglones en un `.group`
+  (115 → 64 px por sesión; también en la hoja de todas las sesiones, se
+  sacó su `bloomOpen`).
+
+Puntaje (0–24): Inicio 16 → 18, Entreno 13 → 17, Comida 13 → 15, Progreso
+14 → 17 ("antes" = main #131 con la tanda A; el relevamiento daba 15/13/12/12).
+
+Trampas:
+- `.pila > *` anula los márgenes verticales de sus hijos. Si algo "no se
+  separa" dentro de una pantalla tablero, es eso: el aire lo pone el gap.
+- Filas `1fr` en un grid de alto indefinido se igualan a la más alta: así se
+  igualaron las tarjetas de Inicio sin fijar alturas.
+- Para verificar sin que el service worker sirva el build viejo:
+  `initScript` con `navigator.serviceWorker.register = () => new Promise(()=>{})`
+  en cada navegación del MCP (si no, en el segundo reload ya carga del caché).
+- Un `vite preview` en background puede sobrevivir a TaskStop: mirar el
+  dueño del puerto (Get-NetTCPConnection) antes de levantar otro.
+
+**Pendientes:** tandas B (V3, V8 global, V12, V13), C (V4, V5, V9 + emoji →
+SVG) y E del informe. De esta tanda: (1) un gesto para "sesión nueva" en la
+lista agrupada, si se quiere (se sacó el bloom por fila); (2) Inicio a
+390×844 queda a 10 px de la barra en el peor caso medido: un tercer renglón
+en el estado del día (recuerdo de hace un año + tonelaje) pediría scroll, no
+se pudo forzar con el seed; (3) Comida sigue con tres voces de fila tocable
+(`.btn`, `.pw-btn`, `.profcard`) — es V9, tanda C.
+
+---
+
 ## SESIÓN 2026-09-29 (b) — Días pasados y modo prueba seguro
 
 Rama `fix/dias-pasados-y-prueba` (sobre main con #130), PR abierto sin

@@ -41,7 +41,7 @@ import { fmtD } from '../../lib/format.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
 import MuscleFibers from '../MuscleFibers.jsx';
-import { ArrowDown, ArrowUp, Info, Pencil, X } from '../Icon.jsx';
+import { ArrowDown, ArrowUp, Check, Info, Pencil, X } from '../Icon.jsx';
 import { RutinaVacia } from '../Illustration.jsx';
 
 /* El peso de partida declarado (ExerciseForm), sólo si está declarado: sin
@@ -70,7 +70,7 @@ export default function Rutina() {
   return (
     <>
       <div className="vtitle"><h1>Entreno</h1><span className="sub">{S.rutTab === 'ejercicios' ? 'tus ejercicios' : 'tu plan'}</span></div>
-      <div className="seg" style={{ margin: 'var(--s2) 0 var(--s3)' }}>
+      <div className="seg" style={{ margin: '0 0 var(--s4)' }}>
         <button type="button" className={S.rutTab !== 'ejercicios' ? 'on' : ''} onClick={() => { S.rutTab = 'semana'; bump(); }}>Mi plan</button>
         <button type="button" className={S.rutTab === 'ejercicios' ? 'on' : ''} onClick={() => { S.rutTab = 'ejercicios'; bump(); }}>Mis ejercicios</button>
       </div>
@@ -163,124 +163,149 @@ function RutinaView() {
     if (editing) exitEditMode(); else enterEditMode();
   }
 
-  return (
-    <>
-      {/* Tarjeta del plan — se esconde en edición para dejarle el lugar a la
-          tira de proyección semanal, que es la referencia que importa
-          mientras estás reordenando turnos. */}
-      {!editing && st.workoutCount > 0 && (
-        <div className="card hero hero-plan">
-          <div className="hero-eyebrow">Plan activo</div>
-          <div className="hero-day">{routineName()}</div>
-          <div className="text-text-2 text-sm mt-1">
-            {st.workoutCount} turno{st.workoutCount === 1 ? '' : 's'} de entrenamiento · {st.ex} ejercicios · {st.sets} series por ciclo
-          </div>
-          {/* Barras proporcionales a las series del turno: la secuencia se lee de
-              un vistazo, y los turnos de descanso quedan como un guion bajo. */}
-          <div className="weekbars">
-            {S.routine.map((slot, i) => {
-              const sets = slot.type === 'workout' ? (slot.exercises || []).reduce((a, e) => a + e.sets, 0) : 0;
-              const h = sets ? Math.round(30 + (sets / maxSets) * 40) : 10;
-              return (
-                <div key={slot.id} className={`wbar ${sets ? 'on' : ''}`}>
-                  <div className="b" style={{ height: h }}></div>
-                  <span>{i + 1}</span>
-                </div>
-              );
-            })}
-          </div>
+  /* Editando: la misma pila de siempre, con la tira de proyección arriba. */
+  if (editing) {
+    return (
+      <>
+        {/* Enzo: "en la pantalla editar rutina debería aparecer el nombre de la
+            rutina y al lado un lápiz por si el usuario quiere editar el
+            nombre, sólo allí funcionaría eso" — a diferencia de "Guardar
+            como…" (que se sacó de acá, ver abajo), esto NO crea una copia en
+            S.lib: renameRoutine() sólo pisa S.cfg.routineName. */}
+        <RoutineNameHeader />
+        <WeekProjection dow={dow} />
+        <div className="btn-row">
+          <button type="button" className="btn" onClick={toggleEdit}>‹ Listo</button>
         </div>
-      )}
+        {workouts.length > 1 && (
+          <div className="drag-hint tight mt-[var(--s4)]"><span>↕</span><span>Mantené presionado un entrenamiento y soltalo para reordenarlo — el descanso se acomoda solo.</span></div>
+        )}
+        <div className="day-cards" ref={cardsRef} data-sort="seq">
+          {workouts.map(({ slot, i }, pos) => <SlotCard key={slot.id} slot={slot} index={i} n={pos + 1} editing />)}
+        </div>
+        <button type="button" className="btn sm ghost mt-[var(--s3)]" onClick={addWorkoutDay}>+ Entrenamiento</button>
+      </>
+    );
+  }
 
-      {/* Enzo: "en la pantalla editar rutina debería aparecer el nombre de la
-          rutina y al lado un lápiz por si el usuario quiere editar el
-          nombre, sólo allí funcionaría eso" — a diferencia de "Guardar
-          como…" (que se sacó de acá, ver abajo), esto NO crea una copia en
-          S.lib: renameRoutine() sólo pisa S.cfg.routineName. */}
-      {editing && <RoutineNameHeader />}
-
-      {editing && <WeekProjection dow={dow} />}
-
-      <div className="btn-row">
-        <button type="button" className="btn" onClick={toggleEdit}>{editing ? '‹ Listo' : '✎ Editar rutina'}</button>
+  /* Mirando (tanda D de la auditoría visual 2, V10). Antes era una pila de
+     siete bloques de peso parecido a 10–16 px entre sí —hero, botón, dos
+     nav-card, el aviso de descarga, las porciones y recién ahí los turnos—
+     y la lista de turnos, que es lo que se viene a ver, arrancaba a 1.021 px
+     (390×844). Ahora son cuatro grupos a --s6: el plan con su acción, los
+     accesos (y el estado de la descarga) como UNA lista agrupada, los
+     turnos, y abajo lo que es consejo y no plan. */
+  return (
+    <div className="pila">
+      <div className="grupo">
+        {st.workoutCount > 0 && (
+          <div className="card hero hero-plan">
+            <div className="hero-eyebrow">Plan activo</div>
+            <div className="hero-day">{routineName()}</div>
+            {/* Tres cifras y no una oración: "4 turnos de entrenamiento · 40
+                ejercicios · 88 series por ciclo" ocupaba dos renglones y se
+                leía como un párrafo. Es la composición de la hero de Hoy. */}
+            <div className="hero-stats">
+              <div><div className="cond">{st.workoutCount}</div><span>{st.workoutCount === 1 ? 'turno' : 'turnos'}</span></div>
+              <div><div className="cond">{st.ex}</div><span>ejercicios</span></div>
+              <div><div className="cond">{st.sets}</div><span>series por ciclo</span></div>
+            </div>
+            {/* Barras proporcionales a las series del turno: la secuencia se lee de
+                un vistazo, y los turnos de descanso quedan como un guion bajo. */}
+            <div className="weekbars">
+              {S.routine.map((slot, i) => {
+                const sets = slot.type === 'workout' ? (slot.exercises || []).reduce((a, e) => a + e.sets, 0) : 0;
+                const h = sets ? Math.round(14 + (sets / maxSets) * 22) : 6;
+                return (
+                  <div key={slot.id} className={`wbar ${sets ? 'on' : ''}`}>
+                    <div className="b" style={{ height: h }}></div>
+                    <span>{i + 1}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {/* La acción adentro de la hero, como EMPEZAR en la de Hoy: la
+                tarjeta y su botón son un solo objeto. */}
+            <div className="btn-row">
+              <button type="button" className="btn" onClick={toggleEdit}>✎ Editar rutina</button>
+            </div>
+          </div>
+        )}
+        {!st.workoutCount && (
+          <div className="btn-row">
+            <button type="button" className="btn" onClick={toggleEdit}>✎ Editar rutina</button>
+          </div>
+        )}
       </div>
 
       {/* Antes había CUATRO puertas hacia una rutina ("Ver rutinas y
           plantillas", "Armar con asistente", "✎ Armar mi rutina" y "Guardar
           como…" dentro del editor), y las tres primeras sólo aparecían con la
           rutina vacía. Ahora hay UNA sola puerta, siempre visible —no sólo
-          cuando no hay rutina— y en el mismo lugar de siempre: justo arriba
-          de "Mis gimnasios", mismo estilo de nav-card. "Guardar como…" (una
-          COPIA en "Mis rutinas") sigue existiendo, pero sólo desde ahí
-          (Library.jsx) — editar la rutina activa ya persiste sola turno por
-          turno, así que dentro del editor no hay nada que "guardar": ese
-          botón sólo generaba una entrada confusa y reemplazable en la
-          biblioteca (Enzo: "no tiene mucho sentido, si es una rutina que ya
-          está definida sólo debería ser guardar y ya está"). */}
-      {!editing && (
-        <button type="button" className="nav-card" onClick={() => openSheet('library')}>
+          cuando no hay rutina—. "Guardar como…" (una COPIA en "Mis rutinas")
+          sigue existiendo, pero sólo desde ahí (Library.jsx) — editar la
+          rutina activa ya persiste sola turno por turno (Enzo: "no tiene
+          mucho sentido, si es una rutina que ya está definida sólo debería
+          ser guardar y ya está").
+
+          Los gimnasios eran alcanzables sólo desde un botón dentro de "Mis
+          ejercicios", que es la pestaña de al lado: quedaban escondidos
+          detrás de otra cosa. Acá son una opción propia.
+
+          2026-09-29 (tanda D): eran dos nav-card sueltas, cada una con su
+          borde y 12 px de margen, que se leían como botones de otro sistema
+          pegados entre la hero y los turnos. Ahora son una lista agrupada
+          (.group), y el aviso de descarga entra en la misma lista como una
+          fila de estado: es sobre el plan, igual que las otras dos. */}
+      <div className="group">
+        <button type="button" className="grouprow" onClick={() => openSheet('library')}>
           <span className="nav-card-ico" aria-hidden="true">📚</span>
-          <div className="grow">
-            <div className="t">Mis rutinas</div>
-            <div className="s">
-              {st.workoutCount
-                ? `${routineName()} · ${st.workoutCount} entrenamiento${st.workoutCount === 1 ? '' : 's'} · guardadas, plantillas y la que estás usando`
-                : 'Elegí una plantilla o armá la tuya — guardadas, plantillas y asistente'}
-            </div>
-          </div>
-          <span className="chev" aria-hidden="true">›</span>
+          <span className="grouprow-grow">
+            <span className="grouprow-t">Mis rutinas</span>
+            <span className="grouprow-s">
+              {st.workoutCount ? 'Guardadas, plantillas y la que usás' : 'Elegí una plantilla o armá la tuya'}
+            </span>
+          </span>
+          <span className="grouprow-chev" aria-hidden="true">›</span>
         </button>
-      )}
-
-      {/* Los gimnasios eran alcanzables sólo desde un botón dentro de "Mis
-          ejercicios", que es la pestaña de al lado: quedaban escondidos detrás
-          de otra cosa. Acá son una opción propia, y el subtítulo dice qué vas a
-          encontrar adentro en vez de repetir el nombre del botón. */}
-      {!editing && (
-        <button type="button" className="nav-card" onClick={() => openSheet('gyms')}>
+        <button type="button" className="grouprow" onClick={() => openSheet('gyms')}>
           <span className="nav-card-ico" aria-hidden="true">🏋</span>
-          <div className="grow">
-            <div className="t">Ver mis gimnasios</div>
-            <div className="s">
+          <span className="grouprow-grow">
+            <span className="grouprow-t">Mis gimnasios</span>
+            <span className="grouprow-s">
               {S.gyms.length
-                ? `${S.gyms.length} guardado${S.gyms.length === 1 ? '' : 's'}${gymActivo ? ` · entrenando en ${gymActivo.name}` : ''} · qué máquina usás para cada ejercicio en cada uno`
-                : 'Guardá dónde entrenás y emparejá cada ejercicio con la máquina de ese gimnasio'}
-            </div>
-          </div>
-          <span className="chev" aria-hidden="true">›</span>
+                ? (gymActivo ? `Entrenás en ${gymActivo.name}` : `${S.gyms.length} guardado${S.gyms.length === 1 ? '' : 's'}`)
+                : 'Qué máquina usás en cada uno'}
+            </span>
+          </span>
+          <span className="grouprow-chev" aria-hidden="true">›</span>
         </button>
-      )}
+        <DeloadRow cual="activa" />
+      </div>
 
-      {!editing && (
-        <>
-          <DeloadCard />
-          <ReforzarCard />
-          <CoberturaCard />
-        </>
-      )}
-
-      {!editing && !st.workoutCount && (
+      {!st.workoutCount && (
         <div className="card"><div className="empty">
           <RutinaVacia className="big" />
           <p>Todavía no tenés rutina.<br />Tocá "Mis rutinas" arriba para elegir una plantilla, o "✎ Editar rutina" para armar la tuya turno por turno.</p>
         </div></div>
       )}
 
-      {editing && workouts.length > 1 && (
-        <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un entrenamiento y soltalo para reordenarlo — el descanso se acomoda solo.</span></div>
-      )}
-
       {/* Cada turno es una tarjeta que se despliega en el lugar, con sus
-          ejercicios numerados. En edición sólo se listan los de entrenamiento
-          (data-sort="seq", ver drag.js); mirando se listan TODOS, descansos
-          incluidos, en su posición real. */}
-      <div className="day-cards" ref={cardsRef} {...(editing ? { 'data-sort': 'seq' } : {})}>
-        {editing
-          ? workouts.map(({ slot, i }, pos) => <SlotCard key={slot.id} slot={slot} index={i} n={pos + 1} editing />)
-          : S.routine.map((slot, i) => <SlotCard key={slot.id} slot={slot} index={i} n={i + 1} editing={false} />)}
+          ejercicios numerados. Mirando se listan TODOS, descansos incluidos,
+          en su posición real. */}
+      <div className="day-cards" ref={cardsRef}>
+        {S.routine.map((slot, i) => <SlotCard key={slot.id} slot={slot} index={i} n={i + 1} editing={false} />)}
       </div>
-      {editing && <button type="button" className="btn sm ghost mt-[var(--s3)]" onClick={addWorkoutDay}>+ Entrenamiento</button>}
-    </>
+
+      {/* Consejo, no plan: van después de los turnos. La descarga SUGERIDA
+          es consejo; la descarga EN CURSO es el estado del plan y vive arriba,
+          en la lista de accesos. */}
+      {deloadSuggestion().length > 0 && !deloadActivo() && (
+        <div className="group"><DeloadRow cual="sugerida" /></div>
+      )}
+      <ReforzarCard />
+      <CoberturaCard />
+    </div>
   );
 }
 
@@ -294,34 +319,47 @@ function RutinaView() {
     peor que ninguna: bajás el volumen y te quedás bajo sin querer. Ahora es
     un estado con principio y fin, y terminarla devuelve cada ejercicio a las
     series exactas que tenía. */
-function DeloadCard() {
+function DeloadRow({ cual }) {
   const activo = deloadActivo();
   const grupos = deloadSuggestion();
-  if (!activo && !grupos.length) return null;
+  if (cual === 'activa' && !activo) return null;
+  if (cual === 'sugerida' && (activo || !grupos.length)) return null;
 
+  /* Una fila de estado dentro de la lista de accesos (tanda D): el título
+     dice el estado, el subtítulo el alcance, y la acción es un chip chico
+     —como "+ Hoy" en "Se está enfriando"— en vez de un botón de ancho
+     completo debajo de un párrafo. No es un <button> entero: tocar la fila
+     no puede aplicar una descarga por accidente. */
   if (activo) {
     return (
-      <div className="notice ok">
-        <div className="text-sm text-text font-medium">Descarga en curso desde el {fmtD(activo.desde)}</div>
-        <div className="s text-text-2 mt-1">
-          {activo.grupos.join(', ')} con las series reducidas. Al terminarla, cada ejercicio
-          vuelve exactamente a las series que tenía.
-        </div>
-        <button type="button" className="btn sm ghost mt-2.5" onClick={endDeload}>
-          Terminar la descarga
-        </button>
+      <div className="grouprow grouprow-estado">
+        <span className="nav-card-ico ok" aria-hidden="true"><Check /></span>
+        <span className="grouprow-grow">
+          <span className="grouprow-t">Descarga en curso</span>
+          <span className="grouprow-s">
+            Desde el {fmtD(activo.desde)}: {activo.grupos.join(', ')}. Al terminar, cada ejercicio vuelve a sus series.
+          </span>
+        </span>
+        <button type="button" className="chip" onClick={endDeload}>Terminar</button>
       </div>
     );
   }
 
   return (
-    <div className="notice warn">
-      <div className="text-sm text-text font-medium">⚠ Puede ser momento de una descarga</div>
-      <div className="s text-text-2 mt-1">
-        {grupos.join(', ')} llevan 3+ semanas en tu volumen máximo recuperable. Una semana con 40-50% menos series por grupo suele restaurar el progreso.
-      </div>
-      <button type="button" className="btn sm ghost mt-2.5" onClick={() => applyDeload(grupos)}>
-        Aplicar la descarga a {grupos.length === 1 ? grupos[0] : `estos ${grupos.length} grupos`}
+    <div className="grouprow grouprow-estado">
+      <span className="nav-card-ico warn" aria-hidden="true"><Info /></span>
+      <span className="grouprow-grow">
+        <span className="grouprow-t">Descarga sugerida</span>
+        <span className="grouprow-s">
+          {grupos.join(', ')}: 3+ semanas en tu volumen máximo. Una semana con 40-50% menos series suele restaurar el progreso.
+        </span>
+      </span>
+      <button
+        type="button" className="chip warn"
+        aria-label={`Aplicar la descarga a ${grupos.length === 1 ? grupos[0] : `estos ${grupos.length} grupos`}`}
+        onClick={() => applyDeload(grupos)}
+      >
+        Aplicar
       </button>
     </div>
   );
@@ -368,7 +406,7 @@ function CoberturaCard() {
         cubre ninguno de los que elegiste.
       </div>
       {huecos.map(({ cat, cob }) => (
-        <div key={cat} className="mt-2.5">
+        <div key={cat} className="mt-3">
           <div className="eyebrow">{cat}</div>
           <div className="wiz-coverage">
             {cob.fibras.map(f => (
@@ -392,7 +430,7 @@ function ReforzarCard() {
   const dias = daysSinceAll();
   return (
     <div className="notice">
-      {/* Mismo encabezado que DeloadCard y CoberturaCard: era un `.sect` con
+      {/* Mismo encabezado que CoberturaCard (y que la vieja DeloadCard): era un `.sect` con
           los márgenes anulados a mano, que en esta tarjeta se leía como un
           título huérfano y de otro tamaño que sus vecinas. */}
       <div className="text-sm text-text font-medium">Se está enfriando</div>

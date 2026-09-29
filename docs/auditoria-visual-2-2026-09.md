@@ -309,6 +309,66 @@ Se verá: Inicio con la tarjeta del cuerpo como único vidrio iluminado y las cu
 3. **Progreso**: historial en filas compactas de dos líneas (turno + fecha / series y volumen en plomo), con el trofeo sólo si hay PR.
 4. **Inicio**: las cuatro tarjetas chicas con la misma altura y el rótulo arriba a la izquierda (cierra I2 de paso).
 
+#### Tanda D — estado (2026-09-29, rama `feat/visual-composicion`)
+
+Hecha. Medido en el build de producción (`vite build` + `vite preview`
+:4190), service worker bloqueado y caches borradas, `seedRegistro()`, con
+Hielo a 390×844 y Fucsia a 430×932. El "antes" es `origin/main` = #131 (con
+la tanda A ya adentro), medido con el mismo script y los mismos datos sobre
+un build aparte.
+
+**Medidor de espaciado:** `getComputedStyle` de margin (4 lados), padding
+(4 lados) y gap (sólo en flex/grid) de cada nodo visible de la pantalla
+(scroll completo, sin los márgenes `auto`); "en la escala" = 4, 8, 12, 16,
+24 o 32. No es el mismo conteo que el del relevamiento (2.142 declaraciones
+fuera sumando las cuatro pestañas por otro método): acá se comparan antes y
+después con el mismo instrumento.
+
+| Pantalla | Fuera de escala antes → después | En la escala antes → después | De lo que queda |
+|---|---|---|---|
+| Inicio | **57 → 4** | 37 → 90 | 2 px ópticos del título; 2 valores internos del SVG de la silueta |
+| Entreno | **100 → 2** | 60 → 159 | los 2 px ópticos de `.vtitle` |
+| Comida | **105 → 17** | 75 → 156 | 16 son los 2 px ópticos de `.sect`/`.slot-head`/`.vtitle`; 1 el punto del aviso (5 px, centrado óptico) |
+| Progreso | **217 → 25** | 235 → 384 | 20 son 2 px ópticos; el `select` del gráfico (14/40, control de formulario) |
+| **Total** | **479 → 48** (40 de ellos, el sangrado óptico de 2 px de los rótulos) | 407 → 789 | en la escala: **46 % → 94 %** |
+
+| ID / pedido | Estado | Commit | Antes → después |
+|---|---|---|---|
+| **V10** ritmo | ✅ | `c8de3b5`, `911f381`, `2ff36c7` | Dos intervalos: `--s3` (12) dentro de un grupo, `--s6` (32) entre grupos (`.pila` / `.grupo`, al final de `styles.css` para ganarle por orden a `.card`, `.nav-card`, `.notice`). `.sect` dentro de una pantalla abre grupo: 32 arriba, 12 abajo (en las hojas, igual que antes). Inicio usa `--s5` entre grupos: a 32 no entra sin scroll. |
+| **Entreno** reordenado | ✅ | `911f381` | Hero del plan con **tres cifras** (turnos / ejercicios / series) en vez de una oración de dos renglones, barras más bajas y "Editar rutina" **adentro** (como EMPEZAR en Hoy); "Mis rutinas" + "Mis gimnasios" como **un `.group`** con subtítulos de un renglón; la descarga en curso es una **fila de estado** en esa lista y la sugerida una fila con chip "Aplicar" **debajo de los turnos** (es consejo, no plan), junto a "Se está enfriando" y "Porciones". **Turnos: 1.021 → 706 px** (390×844: el primero asoma sobre la barra; a 430×932 entran dos). Los turnos de descanso medían 14 px más que los de entrenamiento: iguales (75). |
+| **Progreso** historial | ✅ | `2ff36c7` | `SessionCard` pasa de tarjeta a **fila de dos renglones** en una lista agrupada: turno + fecha arriba, "21 series · 7122 kg de volumen" en plomo abajo, trofeo sólo si hubo PR. **115 → 64 px por sesión; "Tus sesiones" 1.136 → 698 px.** El sheet de todas las sesiones usa la misma lista. Progreso entero: 5.070 → 4.620 px. |
+| **Inicio** tarjetas chicas (I2) | ✅ | `c8de3b5`, `c492038` | Alto **91/104 → 96/96** (filas `1fr` de un grid de altura indefinida); rótulos que arrancaban en x = 35, 79, 247, 217 → **35 y 218** (columna izquierda y derecha), cifras a la misma altura en cada fila (580/580, 687/687). Tres grupos: semana (con "¿Entrenaste…?" sin márgenes negativos), estado del día, tablero. El aviso "Hace tiempo no entrenás …" va al costado de la silueta: con él y la línea de la semana, Inicio sigue **844/844 a 390×844** (reloj +9 días para forzarlo) y 932/932 a 430×932. |
+| **Comida** | ✅ | `2ff36c7` | La hero de calorías abre la pantalla (día arriba, ciclo de carbos debajo). La tarjeta del perfil —avatar con el degradado y el halo del acento, el objeto más encendido de la pantalla para un ajuste de una vez— pasa al final. Grupos: avisos / registrar / Un toque / Frecuentes / comidas del día / tus macros. Los chips de "Un toque" arrancan en x = 18 (antes 20). |
+| Extras chicos | ✅ | `911f381`, `2ff36c7`, `74213fc` | `.chip`, `.seg`, `.row`, `.grouprow-s`, `.empty`, `.calcbox`, constancia en la escala; el encabezado de grupo del turno abierto en tiza (el último rótulo de Entreno en acento, V2); el texto de un `.notice` a 13 px (caía a 16, más grande que su título: V8 local); la leyenda del gráfico de carga en `micro` (era `text-xs`, 12 px); las cifras de constancia repartidas sin partir "RACHA ACTUAL". |
+
+**Puntaje (rúbrica de este informe, 0–4 por eje):**
+
+| Pantalla | Relevamiento (#125) | Antes (#131, con tanda A) | Después | Lo que falta para 4 |
+|---|---|---|---|---|
+| Inicio | 15 | 16 (J3 T3 R2 C2 Co3 E3) | **18** (J3 T3 R3 C3 Co3 E3) | V3/V12 (eyebrow del estado), V5 (orbe y reflejo de cada tarjeta) |
+| Entreno | 13 | 13 (J2 T2 R2 C2 Co3 E2) | **17** (J3 T3 R3 C3 Co3 E2) | emoji en las filas (V9/G7), eyebrow "Plan activo" (V12) |
+| Comida | 12 | 13 (J2 T2 R2 C2 Co3 E2) | **15** (J3 T2 R3 C2 Co3 E2) | tres voces de fila tocable: `.btn`, `.pw-btn`, `.profcard` (V9, tanda C) |
+| Progreso | 12 | 14 (J2 T3 R2 C2 Co3 E2) | **17** (J3 T3 R3 C3 Co3 E2) | "PRs · Récords personales" y "Medidas · último registro" (V12); tarjetas de cifras con dos recetas |
+
+**No se tocó a propósito** (otros agentes o tandas B/C): Sheet.jsx y sus
+animaciones, AgregarEjercicio, ExerciseCarousel/Rampa/Previa, RestTimer, Hoy;
+`@theme`, carga de fuentes y `body{font-size}` (V8, tanda B); eyebrows
+(V12, B); superficies, orbes y emoji (V4, V5, V9, C). El `.field` (padding
+14 de los campos) queda como está: es el sistema de formularios, no ritmo de
+pantalla. El sangrado óptico de 2 px de `.vtitle`, `.sect`, `.slot-head` y
+`.sess-week` se conserva: alinea las versales con el texto de las tarjetas.
+
+**Pendientes que deja:**
+1. `bloomOpen` en cada `SessionCard` se sacó: en una lista agrupada una fila
+   que escala sola se despega del grupo. Si se quiere un gesto para "sesión
+   nueva", que sea de la lista (tanda E).
+2. En la hoja "Todas tus sesiones" las filas ya son las nuevas; el resto de la
+   hoja (título, rótulo de semana en Tailwind) no se tocó.
+3. Inicio a 390×844 queda con 10 px entre el grid y la barra en el peor caso
+   medido (grupo frío + día sin anotar + tonelaje). Si se suma un tercer
+   renglón en "estado" (recuerdo de hace un año + tonelaje), pediría scroll:
+   no se pudo forzar con el seed.
+
 ### Tanda E · Movimiento percibido [choca con la rampa (sus pulsos) y con la optimización del descanso (`glowring`): al final]
 
 1. Un momento con autor por pantalla: el filo de ENTRENAR se queda (es el gesto de Inicio); el brillo que barre `.btn` sólo en el CTA principal (G5), sin loops detrás de hojas.

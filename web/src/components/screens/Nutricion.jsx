@@ -130,28 +130,15 @@ export default function Nutricion() {
     <>
       <div className="vtitle"><h1>Comida</h1><span className="sub">{fmtDFull(S.nutriDate)}</span></div>
 
-      {m ? (
-        <div className="card profcard">
-          <div className="pavatar">👤</div>
-          <div className="grow">
-            <div className="pt">{GOAL_LABEL[S.cfg.profile.goal]} · {m.target} kcal</div>
-            <div className="text-text-2 text-micro">
-              {S.cfg.profile.sex === 'f' ? 'Mujer' : 'Hombre'} · {fmtNum(round1(m.weight))} kg · P {m.protMin}-{m.protMax} · G {m.fatMin}-{m.fatMax} · C {m.carbs}g
-            </div>
-          </div>
-          <button type="button" className="icon-btn accent" aria-label="Ver / modificar mis datos" onClick={() => openSheet('profile')}><Pencil /></button>
-        </div>
-      ) : (
-        <button type="button" className="card profcard border-line-2" onClick={() => openSheet('profile')}>
-          <div className="pavatar">🎯</div>
-          <div className="grow">
-            <div className="pt">Calcular mis macros</div>
-            <div className="text-text-2 text-micro">Perfil → TDEE → target y rangos automáticos{S.cfg.goalsAuto ? '' : ' (usando metas manuales)'}</div>
-          </div>
-          <span className="chev">›</span>
-        </button>
-      )}
-
+      {/* Tanda D (auditoría visual 2): la protagonista es la hero de las
+          calorías, así que va primero, con el día que se está mirando arriba
+          y la explicación del ciclo abajo. Antes la abría la tarjeta del
+          perfil (un avatar con el degradado y el halo del acento: el objeto
+          más encendido de la pantalla, para un ajuste que se toca una vez).
+          Después, en grupos a --s6: avisos, registrar, lo frecuente, lo que
+          comiste, y al final tus macros. */}
+      <div className="pila">
+      <div className="grupo">
       <div className="datenav">
         <button type="button" className="mini w-11 h-11" aria-label="Día anterior" onClick={() => shiftNutriDate(-1)}>‹</button>
         <div
@@ -166,20 +153,6 @@ export default function Nutricion() {
         </div>
         <button type="button" className="mini w-11 h-11" aria-label="Día siguiente" disabled={isToday} onClick={() => shiftNutriDate(1)}>›</button>
       </div>
-
-      {/* El puente entre las dos mitades de la app. Va ARRIBA del anillo, no
-          abajo, porque explica el número que el anillo está mostrando: sin
-          esto el objetivo cambiaría solo de un día para el otro y parecería
-          un bug. */}
-      {ciclo && (
-        <div className={`calcbox ${ciclo.tipo === 'entreno' ? 'blue' : ''} mb-[var(--s3)]`}>
-          <div className="text-sm leading-normal">
-            <b>{ciclo.tipo === 'entreno' ? 'Día de entrenamiento' : 'Día de descanso'}</b>
-            {' · '}{ciclo.deltaCarbs > 0 ? '+' : ''}{ciclo.deltaCarbs} g de carbohidratos
-          </div>
-          <div className="text-text-2 text-micro leading-normal mt-1">{cycleExplain(ciclo)}</div>
-        </div>
-      )}
 
       <div className="card hero hero-kcal">
         <div className="kcal-top">
@@ -201,7 +174,7 @@ export default function Nutricion() {
             <div className="kcal-big">
               {kc > g.kcal ? kc - g.kcal : Math.max(0, g.kcal - kc)}<span>kcal</span>
             </div>
-            <div className="text-text-2 text-micro mt-0.5">
+            <div className="text-text-2 text-micro mt-1">
               {GOAL_LABEL[S.cfg.profile.goal]}
               {S.cfg.profile.weightKg ? ` · ${fmtNum(round1(S.cfg.profile.weightKg))} kg` : ''}
             </div>
@@ -223,6 +196,25 @@ export default function Nutricion() {
         </div>
         <div className="nutri-fb" dangerouslySetInnerHTML={{ __html: nutriFeedback(kc, tp, tf, g, m) }} />
       </div>
+      {/* El puente entre las dos mitades de la app. Va pegado al anillo
+          (arriba hasta la tanda D; ahora justo debajo, en el mismo grupo,
+          para que la hero sea lo primero) porque explica el número que el
+          anillo está mostrando: sin esto el objetivo cambiaría solo de un día
+          para el otro y parecería un bug. */}
+      {ciclo && (
+        <div className={`calcbox ${ciclo.tipo === 'entreno' ? 'blue' : ''}`}>
+          <div className="text-sm leading-normal">
+            <b>{ciclo.tipo === 'entreno' ? 'Día de entrenamiento' : 'Día de descanso'}</b>
+            {' · '}{ciclo.deltaCarbs > 0 ? '+' : ''}{ciclo.deltaCarbs} g de carbohidratos
+          </div>
+          <div className="text-text-2 text-micro leading-normal mt-1">{cycleExplain(ciclo)}</div>
+        </div>
+      )}
+
+      </div>
+
+      {(proteinaPendiente || bajos.length > 0 || (band && band.adjust !== 0)) && (
+      <div className="grupo">
 
       {proteinaPendiente && (
         <div className="notice">
@@ -252,8 +244,35 @@ export default function Nutricion() {
         </div>
       )}
 
+      </div>
+      )}
+
+      {/* Las dos formas de registrar comida, como un grupo.
+
+          Antes eran dos botones sueltos separados por un `<div class="spacer">`
+          vacío de 8px arriba y un `mt-[var(--s3)]` de 12px en el de abajo:
+          tres decisiones de espaciado distintas para dos elementos que son lo
+          mismo. Con el grupo el espacio lo pone el contenedor una sola vez
+          (gap), y si mañana aparece una tercera forma de registrar entra sin
+          que haya que acordarse de ponerle margen. */}
+      <div className="grupo">
+        <button
+          type="button" className="btn"
+          onClick={() => openSheet('meal-form', { slot: slotForTime(new Date().toTimeString().slice(0, 5)) })}
+        >
+          + Agregar comida
+        </button>
+        {SR_FOOD && (
+          <button type="button" className="pw-btn" onClick={() => openSheet('food-voice')}>
+            <span className="pwi">🎙</span><span className="pwt">Registrar por voz</span>
+            <span className="text-text-2 text-micro font-medium">decí qué comiste</span>
+            <span className="chev">›</span>
+          </button>
+        )}
+      </div>
+
       {freq.length > 0 && (
-        <>
+        <div className="grupo">
           <div className="sect">Un toque</div>
           <div className="chip-scroll">
             {freq.map((f, i) => (
@@ -262,9 +281,10 @@ export default function Nutricion() {
               </button>
             ))}
           </div>
-        </>
+        </div>
       )}
 
+      <div className="grupo">
       <div className="sect">
         Frecuentes
         {S.foods.length > 0 && (
@@ -288,35 +308,13 @@ export default function Nutricion() {
           ))}
         </div>
       ) : (
-        <div className="text-text-2 text-sm my-1 mx-0.5">
+        <div className="text-text-2 text-sm mx-0.5">
           Al agregar una comida, márcala como <b>frecuente</b> y quedará aquí para sumarla con un tap.
         </div>
       )}
-
-      {/* Las dos formas de registrar comida, como un grupo.
-
-          Antes eran dos botones sueltos separados por un `<div class="spacer">`
-          vacío de 8px arriba y un `mt-[var(--s3)]` de 12px en el de abajo:
-          tres decisiones de espaciado distintas para dos elementos que son lo
-          mismo. Con el grupo el espacio lo pone el contenedor una sola vez
-          (gap), y si mañana aparece una tercera forma de registrar entra sin
-          que haya que acordarse de ponerle margen. */}
-      <div className="act-stack">
-        <button
-          type="button" className="btn"
-          onClick={() => openSheet('meal-form', { slot: slotForTime(new Date().toTimeString().slice(0, 5)) })}
-        >
-          + Agregar comida
-        </button>
-        {SR_FOOD && (
-          <button type="button" className="pw-btn" onClick={() => openSheet('food-voice')}>
-            <span className="pwi">🎙</span><span className="pwt">Registrar por voz</span>
-            <span className="text-text-2 text-micro font-medium">decí qué comiste</span>
-            <span className="chev">›</span>
-          </button>
-        )}
       </div>
 
+      <div className="grupo">
       <div className="sect">Comidas de {isToday ? 'hoy' : 'este día'}</div>
       {!meals.length ? (
         <div className="card"><div className="empty p-4"><p className="m-0">Nada registrado {isToday ? 'hoy' : 'este día'}.</p></div></div>
@@ -345,6 +343,33 @@ export default function Nutricion() {
         ))}
         </div>
       )}
+      </div>
+
+      {/* Tus macros: el perfil que las calcula. Es un ajuste que se toca una
+          vez, así que cierra la pantalla en vez de abrirla. */}
+      {m ? (
+        <div className="card profcard">
+          <div className="pavatar">👤</div>
+          <div className="grow">
+            <div className="pt">{GOAL_LABEL[S.cfg.profile.goal]} · {m.target} kcal</div>
+            <div className="text-text-2 text-micro">
+              {S.cfg.profile.sex === 'f' ? 'Mujer' : 'Hombre'} · {fmtNum(round1(m.weight))} kg · P {m.protMin}-{m.protMax} · G {m.fatMin}-{m.fatMax} · C {m.carbs}g
+            </div>
+          </div>
+          <button type="button" className="icon-btn accent" aria-label="Ver / modificar mis datos" onClick={() => openSheet('profile')}><Pencil /></button>
+        </div>
+      ) : (
+        <button type="button" className="card profcard border-line-2" onClick={() => openSheet('profile')}>
+          <div className="pavatar">🎯</div>
+          <div className="grow">
+            <div className="pt">Calcular mis macros</div>
+            <div className="text-text-2 text-micro">Perfil → TDEE → target y rangos automáticos{S.cfg.goalsAuto ? '' : ' (usando metas manuales)'}</div>
+          </div>
+          <span className="chev">›</span>
+        </button>
+      )}
+
+      </div>
     </>
   );
 }
