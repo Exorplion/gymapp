@@ -849,7 +849,10 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    diagonal cada una. Ahora hay UNA luz por pantalla y es ésta: el tinte del
    acento que baja desde la esquina (158°, el único ángulo) y el halo arriba
    a la derecha, del mismo lado que el resplandor del fondo. Va en ::before
-   para que el material de la hero sea exactamente el de cualquier .card. */
+   para que el material de la hero sea exactamente el de cualquier .card.
+   El halo va al 18 %: al 24 % el "Ver mapa ›" de Inicio, que cae justo en
+   su centro, bajaba a 4,3:1 (medido con los cinco acentos; al 18 % el peor
+   es 4,78, Monocromo). */
 .card.hero,.luz{position:relative;overflow:hidden;isolation:isolate}
 .card.hero{border-radius:var(--r-lg);padding:20px}
 /* z-index:-1 dentro de su propio contexto (isolation): la luz se pinta sobre
@@ -857,7 +860,7 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 .card.hero::before,.luz::before{
   content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;
   background:
-    radial-gradient(circle 148px at calc(100% - 53px) 53px,rgba(var(--accent-rgb),.24),transparent 66%),
+    radial-gradient(circle 148px at calc(100% - 53px) 53px,rgba(var(--accent-rgb),.18),transparent 66%),
     linear-gradient(158deg,rgba(var(--accent-strong-rgb),.14),transparent 58%);
 }
 /* .sub es una tarjeta más apretada, no otro material (tanda C): el tinte
