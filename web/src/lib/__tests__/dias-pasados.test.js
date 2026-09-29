@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from '../state.js';
 import { idb } from '../db.js';
-import { registrarDiaEntrenado, seriesPrellenadas, cargarSeriesRetro, sessionPRs, lastDataFor } from '../session.js';
+import { registrarDiaEntrenado, seriesPrellenadas, seriesDeEjercicio, cargarSeriesRetro, sessionPRs, lastDataFor } from '../session.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
 vi.mock('../toast.js', () => ({ toast: vi.fn() }));
@@ -52,6 +52,31 @@ describe('seriesPrellenadas', () => {
 
   it('un turno que no existe no inventa nada', () => {
     expect(seriesPrellenadas('no-existe', DOM)).toEqual([]);
+  });
+});
+
+/* "＋ ejercicio" en "Corregir lo que anoté" arrancaba en 20 kg fijos. Ahora
+   usa lo mismo que la carga de un día pasado: la última vez de ESE
+   ejercicio antes de la fecha de la sesión, o la meta si nunca se hizo. */
+describe('seriesDeEjercicio (＋ ejercicio al corregir)', () => {
+  it('trae las series de la última vez antes de la fecha de la sesión', () => {
+    S.sessions = [
+      { id: 'mismo-dia', date: DOM, start: Date.parse(DOM + 'T12:00:00'), entries: [{ name: 'Press banca', equip: 'barra', sets: [{ w: 99, r: 1 }] }] },
+      { id: 'antes', date: '2026-09-24', start: Date.parse('2026-09-24T12:00:00'), entries: [{ name: 'Press banca', equip: 'barra', sets: [{ w: 80, r: 8 }, { w: 80, r: 7 }] }] },
+    ];
+    expect(seriesDeEjercicio(press, DOM).map(s => [s.w, s.r])).toEqual([[80, 8], [80, 7]]);
+  });
+
+  it('sin historial usa la meta del plan (acá, el peso de partida), no 20 kg fijos', () => {
+    const sets = seriesDeEjercicio({ ...remo, pesoInicialKg: 35 }, DOM);
+    expect(sets).toHaveLength(2);
+    expect(sets.every(s => s.w === 35 && s.r === 10)).toBe(true);
+  });
+
+  it('seriesPrellenadas sigue dando lo mismo (usa la misma función)', () => {
+    S.sessions = [{ id: 'antes', date: '2026-09-24', start: 1, entries: [{ name: 'Press banca', equip: 'barra', sets: [{ w: 80, r: 8 }] }] }];
+    const [e] = seriesPrellenadas('s1', DOM);
+    expect(e.sets.map(s => [s.w, s.r])).toEqual(seriesDeEjercicio(press, DOM).map(s => [s.w, s.r]));
   });
 });
 

@@ -237,7 +237,9 @@ describe('MusclePop — el sub tocado viaja desde la silueta', () => {
   });
 
   it('la ficha recibe la porción con SU frescura, y null cuando no hay registro', () => {
-    expect(sil).toMatch(/porcion=\{sel\.sub \? \{ nombre: sel\.sub, dias: porciones\?\.\[sel\.sub\] \?\? null \} : null\}/);
+    // `f` es la ficha que se muestra: la abierta (sel) o la que está saliendo.
+    expect(sil).toMatch(/porcion=\{f\.sub \? \{ nombre: f\.sub, dias: porciones\?\.\[f\.sub\] \?\? null \} : null\}/);
+    expect(sil).toMatch(/const f = sel \|\| saliendo;/);
   });
 
   it('el realce del desglose usa una clase que existe de verdad en styles.css', () => {

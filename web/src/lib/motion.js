@@ -123,8 +123,9 @@ export function popIn(el, { scale = 0.9, rotate = 0, duration = D.panel, easing 
 const revealed = new Set();
 /** El stagger de una lista que vive DENTRO de una hoja.
 
-    Es staggerReveal con una sola diferencia: espera a que el panel termine
-    de subir (`shup`, --d2 = D.objeto en styles.css) antes de empezar. Sin esa
+    Es staggerReveal con una sola diferencia: espera a que el panel casi
+    termine de subir (`shup` va en --d3 con --ease-push: a los D.objeto ya
+    hizo ~90 % del recorrido y está frenando) antes de empezar. Sin esa
     espera, las tarjetas se deslizaban hacia arriba mientras la hoja entera
     también se deslizaba hacia arriba — dos movimientos en el mismo eje, a
     velocidades distintas, uno adentro del otro. Se lee como que la lista

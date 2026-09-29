@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from '../state.js';
 import { dstr } from '../format.js';
-import { fuerzaPrevia, sparkPuntos, recordPrevia, haceTexto, recuperacionPrevia, metaHoy, metaTexto, previaEjercicio, cambioTexto, metaPartes } from '../previa.js';
+import { fuerzaPrevia, sparkPuntos, recordPrevia, haceTexto, recuperacionPrevia, metaHoy, metaTexto, previaEjercicio, cambioTexto, metaPartes, columnaHoy } from '../previa.js';
 import { e1rmSeries } from '../charts.js';
 import { ensureVals } from '../session.js';
 
@@ -307,5 +307,28 @@ describe('metaPartes', () => {
   });
   it('sin meta, todo vacío', () => {
     expect(metaPartes(null)).toEqual({ numeros: '', porque: '' });
+  });
+});
+
+/* El aviso de "Sesión anterior" tiene una columna Hoy. Decía "sumá reps ·
+   meta 12" (el tope del rango, de objetivoHoy) al lado de la tarjeta que
+   dice "Meta de hoy 45 kg × 8": dos metas distintas para lo mismo. Ahora
+   la columna dice la misma meta que la tarjeta. */
+describe('columnaHoy (aviso de "Sesión anterior")', () => {
+  it('dice la misma meta que la tarjeta: los números y el porqué de metaHoy', () => {
+    S.sessions = [sesion('2026-09-20', [serie(47.5, 7), serie(47.5, 6)])];
+    const m = metaHoy(PRESS);
+    expect(columnaHoy(m)).toEqual({ numeros: '47.5 kg × 8', porque: '1 rep más que la última' });
+    expect(columnaHoy(m).porque).not.toMatch(/meta \d/);
+  });
+  it('subir de peso lleva la flecha', () => {
+    S.sessions = [sesion('2026-09-20', [serie(47.5, 11), serie(47.5, 11)])];
+    const m = metaHoy(PRESS);
+    expect(m.tipo).toBe('subir');
+    expect(columnaHoy(m).numeros).toMatch(/ ↑$/);
+    expect(metaPartes(m).numeros).toBe(columnaHoy(m).numeros.replace(' ↑', ''));
+  });
+  it('sin meta, una raya y nada inventado', () => {
+    expect(columnaHoy(null)).toEqual({ numeros: '—', porque: '' });
   });
 });

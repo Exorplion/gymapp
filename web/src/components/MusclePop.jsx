@@ -25,9 +25,7 @@
 // tope (`max-height` en `.mpop`) y lo único de alto variable —la lista de
 // ejercicios— vive en un contenedor con scroll propio: cabecera, números y pie
 // quedan siempre visibles.
-import { useEffect, useRef } from 'react';
 import { diasTexto } from '../lib/muscle.js';
-import { bloomOpen } from '../lib/motion.js';
 import { X } from './Icon.jsx';
 
 /** Volumen en kg, corto: 12.4k en vez de 12380. */
@@ -59,19 +57,20 @@ export function cabeceraDe(cat, dias, porcion = null) {
   return { nombre: `${cat} · ${porcion.nombre.toLowerCase()}`, dias: porcion.dias ?? null };
 }
 
-export default function MusclePop({ stats, porcion = null, onClose }) {
+export default function MusclePop({ stats, porcion = null, onClose, saliendo = false, onSalio }) {
   const { cat, dias, sets, sesiones, porSemana, volumen, mejor, top, fibras, ventana } = stats;
   const nunca = dias === null;
   const { nombre: nombreHead, dias: diasHead } = cabeceraDe(cat, dias, porcion);
-  const popRef = useRef(null);
-
-  // Bloom-open al aparecer como hoja desde abajo: sale del borde, no salta de golpe.
-  useEffect(() => { bloomOpen(popRef.current); }, []);
-
+  /* La entrada y la salida son sólo CSS (mpop-in / mpop-out, styles.css).
+     Acá había además un bloomOpen() de la Web Animations API sobre el mismo
+     elemento: una animación WAAPI le gana a la CSS sobre la misma propiedad,
+     así que mpop-in no se veía nunca (auditoría total, B3). `saliendo`: la
+     ficha ya se cerró y Silhouette la deja montada lo que dura mpop-out. */
   return (
     <div
-      ref={popRef}
-      className="mpop"
+      className={saliendo ? 'mpop out' : 'mpop'}
+      aria-hidden={saliendo || undefined}
+      onAnimationEnd={e => { if (saliendo && e.target === e.currentTarget && e.animationName === 'mpop-out') onSalio?.(); }}
       role="dialog"
       aria-label={porcion ? `Estadísticas de ${cat}, ${porcion.nombre.toLowerCase()}` : `Estadísticas de ${cat}`}
     >

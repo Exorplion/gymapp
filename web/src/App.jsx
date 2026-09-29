@@ -13,6 +13,7 @@ import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
 import { acentoGuardado, aplicarAcento } from './lib/theme.js';
 import { accionDeArranque, ejecutarAccion } from './lib/acciones.js';
 import { useAtras } from './lib/useAtras.js';
+import { QUEDARSE, volverEnHoja } from './lib/atras.js';
 import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
@@ -73,9 +74,9 @@ function ConfirmSheet({ title, body, confirmLabel, onConfirm, onCancel }) {
     <>
       <h2>{title}</h2>
       <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 18 }}>{body}</div>
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={cancel}>Cancelar</button>
-        <button type="button" className="btn sm danger" style={{ flex: 1 }} onClick={confirm}>{confirmLabel}</button>
+      <div className="dlg-fila">
+        <button type="button" className="btn sm ghost" onClick={cancel}>Cancelar</button>
+        <button type="button" className="btn sm danger" onClick={confirm}>{confirmLabel}</button>
       </div>
     </>
   );
@@ -524,7 +525,9 @@ export default function App() {
      entera. Orden de lo que se cierra: la hoja abierta primero, después la
      pestaña vuelve a Inicio (Hoy cuenta como fuera de Inicio), y recién ahí
      volver sale de la app. */
-  useAtras(!!store.sheet, closeSheet);
+  // Volver con una hoja abierta la cierra, salvo que lo de adentro se ocupe
+  // (el asistente de agregar ejercicio retrocede un paso: lib/atras.js).
+  useAtras(!!store.sheet, () => (volverEnHoja() ? QUEDARSE : closeSheet()));
   useAtras(store.tab !== 'inicio', () => changeTab('inicio'));
 
   /* El arranque falló: se dice, con la causa y una salida. Antes esto era

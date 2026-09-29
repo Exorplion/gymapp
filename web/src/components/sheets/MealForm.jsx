@@ -10,14 +10,14 @@
 // escalados: recalcular los gramos vuelve a llamar a macrosFor() sobre la
 // fuente, en vez de re-escalar un número ya escalado (que pierde precisión y
 // se rompe si los gramos pasan por cero).
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { S, bump, closeSheet } from '../../lib/state.js';
 import { uid, vibrate, round1 } from '../../lib/format.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
 import { searchFoods, macrosFor, defaultGrams } from '../../lib/foodsearch.js';
 import { SLOTS, slotForTime } from '../../lib/meals.js';
-import { sheetReveal } from '../../lib/motion.js';
+import { sheetReveal, menosMovimiento, D, EASE_OUT } from '../../lib/motion.js';
 import { X } from '../Icon.jsx';
 
 const ahora = () => new Date().toTimeString().slice(0, 5);
@@ -58,6 +58,22 @@ export default function MealForm({ slot: slotInicial }) {
   useEffect(() => {
     if (hitsRef.current) sheetReveal(hitsRef.current.children, { delayStep: 30 });
   }, [hits]);
+
+  /* La hoja crece con los resultados (auditoría total, C2): al tipear el
+     panel pasaba de 312 a 543 px de un cuadro al otro mientras la lista sí
+     entraba con su stagger. Se anima el alto del panel desde el que tenía
+     hasta el nuevo (D.objeto, curva de entrada). Es layout, pero de una sola
+     hoja y sólo cuando cambia la cantidad de filas. */
+  const altoRef = useRef(null);
+  useLayoutEffect(() => {
+    const panel = hitsRef.current?.closest('.panel');
+    if (!panel) return;
+    const nuevo = panel.offsetHeight;
+    const antes = altoRef.current;
+    altoRef.current = nuevo;
+    if (antes == null || Math.abs(antes - nuevo) < 2 || menosMovimiento() || !panel.animate) return;
+    panel.animate([{ height: `${antes}px` }, { height: `${nuevo}px` }], { duration: D.objeto, easing: EASE_OUT });
+  }, [hits, carrito.length, q]);
 
   const total = carrito.reduce((a, i) => ({
     kcal: a.kcal + i.kcal, p: round1(a.p + i.p), c: round1(a.c + i.c), f: round1(a.f + i.f),
@@ -110,7 +126,7 @@ export default function MealForm({ slot: slotInicial }) {
       <div className="field">
         <input
           ref={buscarRef} value={q} onChange={e => setQ(e.target.value)}
-          placeholder="🔍 Buscá un alimento" aria-label="Buscar un alimento" autoComplete="off"
+          placeholder="Buscá un alimento" aria-label="Buscar un alimento" autoComplete="off"
         />
       </div>
 
@@ -153,7 +169,9 @@ export default function MealForm({ slot: slotInicial }) {
         </>
       )}
 
-      <button type="button" className="btn" onClick={guardar}>Agregar</button>
+      {/* Sin nada en la comida no hay qué agregar (C2): antes el botón
+          estaba vivo con la búsqueda vacía y sólo avisaba con un toast. */}
+      <button type="button" className="btn" disabled={!carrito.length} onClick={guardar}>Agregar</button>
     </>
   );
 }

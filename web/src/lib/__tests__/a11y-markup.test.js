@@ -183,6 +183,8 @@ describe('asistente "Agregar ejercicio"', () => {
     const h = html('rutina', 3);
     expect(h).toContain('role="radiogroup"');
     expect(h.match(/role="radio"/g)).toHaveLength(8);
+    // Ninguno elegido de entrada: "Otro" preseleccionado confundía.
+    expect(h).not.toMatch(/role="radio"[^>]*aria-checked="true"|aria-checked="true"[^>]*role="radio"/);
     expect(h).toMatch(/role="switch"[^>]*aria-checked="false"/);
     expect(h).toContain('Agregar a la rutina');
   });

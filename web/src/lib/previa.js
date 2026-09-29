@@ -161,6 +161,16 @@ export function metaPartes(meta) {
   return { numeros, porque: resto.join(' · ') };
 }
 
+/** La columna "Hoy" del aviso de "Sesión anterior" (ExerciseCarousel): la
+    MISMA meta que la línea "Meta de hoy" de la tarjeta. Antes salía de
+    objetivoHoy ("sumá reps · meta 12", el tope del rango) y la tarjeta decía
+    "45 kg × 8": dos metas para lo mismo. Subir de peso lleva la flecha. */
+export function columnaHoy(meta) {
+  if (!meta) return { numeros: '—', porque: '' };
+  const { numeros, porque } = metaPartes(meta);
+  return { numeros: numeros ? `${numeros}${meta.tipo === 'subir' ? ' ↑' : ''}` : '—', porque };
+}
+
 /** Todo lo que muestra la previa de un ejercicio. `primeraVez` es la misma
     condición que el "Primera vez" de la tarjeta (sin historial con ESTE
     equipo, lastDataFor): en ese caso no hay gráfico ni récord, y el peso

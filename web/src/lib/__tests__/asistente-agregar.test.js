@@ -27,7 +27,14 @@ describe('estado del asistente', () => {
     const e = estadoInicial('sesion');
     expect(PASOS).toBe(3);
     expect(e).toMatchObject({ tipo: 'sesion', paso: 1, posicion: null });
-    expect(e.form).toMatchObject({ name: '', cat: '', sets: 3, reps: 10, equip: '', unilateral: false });
+    expect(e.form).toMatchObject({ name: '', cat: '', sets: 3, reps: 10, equip: null, unilateral: false });
+  });
+
+  it('ningún equipo viene elegido; sin elegir, se guarda como "Otro" (vacío)', () => {
+    const e = conNombre('rutina', 'Press banca');
+    expect(e.form.equip).toBeNull();
+    expect(datosParaGuardar(e.form).equip).toBe('');
+    expect(datosParaGuardar(A.setCampo(e, 'equip', 'barra').form).equip).toBe('barra');
   });
 
   it('sin nombre no avanza y dice qué falta', () => {

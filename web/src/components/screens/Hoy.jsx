@@ -243,9 +243,9 @@ export function TerminarSesion() {
           : 'Todavía no registraste ninguna serie.'}
       </div>
       <button type="button" className="btn ok" disabled={!nsets} onClick={() => { closeSheet(); completeSession(); }}>✓ Completar y guardar</button>
-      <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-        <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={closeSheet}>Seguir entrenando</button>
-        <button type="button" className="btn sm danger" style={{ flex: 1 }} onClick={confirmSessDiscard}>Descartar</button>
+      <div className="dlg-fila">
+        <button type="button" className="btn sm ghost" onClick={closeSheet}>Seguir entrenando</button>
+        <button type="button" className="btn sm danger" onClick={confirmSessDiscard}>Descartar</button>
       </div>
     </>
   );
@@ -653,7 +653,9 @@ export function SessStartInfo({ index }) {
       <div className="calcbox" style={{ marginTop: 10 }}>
         <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 8 }}>Pre-workout <span className="txt-mut">(opcional)</span></div>
         <div className="chips">{chip('pre', 'nada', 'Nada')}{chip('pre', 'liviano', 'Algo liviano')}{chip('pre', 'comida', 'Comida')}</div>
-        <button type="button" className="linkcard txt-blue" style={{ fontSize: 13, marginTop: 8 }} onClick={() => openSheet('preworkout')}>Ver cuánto tomar ›</button>
+        {/* 12 y no 8 arriba: la franja de toque de 40 (link-toque) no pisa los
+            chips de arriba, que también agrandan la suya 2 px. */}
+        <button type="button" className="linkcard link-toque txt-blue" style={{ fontSize: 13, marginTop: 'var(--s3)' }} onClick={() => openSheet('preworkout')}>Ver cuánto tomar ›</button>
       </div>
       <button type="button" className="btn" style={{ marginTop: 16 }} onClick={abrir}>Abrir sesión</button>
       <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={cancelar}>Cancelar</button>

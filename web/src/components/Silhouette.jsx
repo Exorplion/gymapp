@@ -47,7 +47,7 @@ import { cuerpo } from '../lib/bodydata.js';
 import { groupStats, diasTexto } from '../lib/muscle.js';
 import { useAtras } from '../lib/useAtras.js';
 import { vibrate } from '../lib/format.js';
-import { tapRing, menosMovimiento, popIn } from '../lib/motion.js';
+import { tapRing, menosMovimiento, popIn, D } from '../lib/motion.js';
 import { S } from '../lib/state.js';
 import MusclePop from './MusclePop.jsx';
 
@@ -274,6 +274,12 @@ function Cara({ cara, days, etiqueta, sel, selSub, onPick, activa, revelar, porc
   );
 }
 
+/* Lo que tarda la ficha en irse (auditoría total, B3): mpop-out en
+   styles.css va en --d1, más corta que la entrada (mpop-in, --d2). Antes la
+   ficha se desmontaba en el acto (setSel(null)) mientras el cuerpo sí salía
+   del zoom con su transición: la mitad de la pantalla cambiaba de golpe. */
+export const SALIDA_FICHA = D.toque;
+
 export default function Silhouette({ days = {}, interactivo = true, revelar = null, porciones = null }) {
   const [sel, setSel] = useState(null);   // { cat, ox, oy } — ox/oy en % del stage
   const [enc, setEnc] = useState(null);   // { esc, dy } — encuadre medido, ver el useLayoutEffect
@@ -294,7 +300,25 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
   // estado aparte para que no puedan discrepar — el ángulo es la única verdad.
   const atras = Math.abs(Math.round(ang / 180) % 2) === 1;
 
-  const cerrar = useCallback(() => { setSel(null); setEnc(null); }, []);
+  /* La ficha que se está yendo: se sigue pintando (con .out) SALIDA_FICHA
+     ms después de cerrar, con los datos del músculo que se cerró. */
+  const [saliendo, setSaliendo] = useState(null);
+  const selRef = useRef(null);
+  selRef.current = sel;
+  const salidaTimer = useRef(null);
+  useEffect(() => () => clearTimeout(salidaTimer.current), []);
+
+  const cerrar = useCallback(() => {
+    const ida = selRef.current;
+    if (ida && !menosMovimiento()) {
+      setSaliendo(ida);
+      clearTimeout(salidaTimer.current);
+      // Red: la ficha se va con el animationend de mpop-out (onSalio).
+      salidaTimer.current = setTimeout(() => setSaliendo(null), SALIDA_FICHA + D.panel);
+    }
+    setSel(null);
+    setEnc(null);
+  }, []);
   // Con la ficha abierta, el gesto de volver la cierra (lib/atras.js).
   useAtras(!!sel, cerrar);
 
@@ -310,7 +334,7 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
     const n = Math.round(ang / 180);
     const destino = (Math.abs(n % 2) === 1) === quiero ? n : n + 1;
     if (destino * 180 === ang) return;
-    setSel(null);
+    cerrar();
     setQuieto(false);
     vibrate(8);
     setAng(destino * 180);
@@ -420,6 +444,8 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
     // fijo no dejara el músculo contra el borde, y ahora el encuadre se mide.
     // Clampearlo movería el origen fuera del músculo y el centrado fallaría.
     setEnc(null);
+    clearTimeout(salidaTimer.current);
+    setSaliendo(null);
     setSel({
       cat,
       sub: sub || null,
@@ -520,19 +546,28 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
       )}
 
       {interactivo && sel && (
+        <button type="button" className="sil-tapa" onClick={cerrar} aria-label="Cerrar estadísticas" />
+      )}
+      {interactivo && (sel || saliendo) && (
         <>
-          <button type="button" className="sil-tapa" onClick={cerrar} aria-label="Cerrar estadísticas" />
           {/* La ficha habla de lo que tocaste: si fue una porción, las
               cifras, la lista y la cabecera son de ESA porción (groupStats
               acotado), con SU frescura — `?? null` a propósito: una porción
               sin registro es "nunca", no "hoy" ni un cero. Sin porción
               (bíceps, o el músculo base de un grupo con parches) es el grupo
               entero, como siempre. */}
-          <MusclePop
-            stats={groupStats(sel.cat, 28, sel.sub || null)}
-            porcion={sel.sub ? { nombre: sel.sub, dias: porciones?.[sel.sub] ?? null } : null}
-            onClose={cerrar}
-          />
+          {(() => {
+            const f = sel || saliendo;
+            return (
+              <MusclePop
+                stats={groupStats(f.cat, 28, f.sub || null)}
+                porcion={f.sub ? { nombre: f.sub, dias: porciones?.[f.sub] ?? null } : null}
+                onClose={cerrar}
+                saliendo={!sel}
+                onSalio={() => { clearTimeout(salidaTimer.current); setSaliendo(null); }}
+              />
+            );
+          })()}
         </>
       )}
 

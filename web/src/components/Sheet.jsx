@@ -10,10 +10,23 @@
 // oculta con display:none — ver styles.css — así que "escaparse" la dejaría
 // en un foco muerto, ni visible ni anunciado), y al cerrar el foco vuelve a
 // lo que lo abrió en vez de perderse en <body>.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { D } from '../lib/motion.js';
 
 const FOCUSABLES = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-const CIERRE_MS = 220; // mismo tiempo que .panel usa para abrir (shup .22s)
+/* Cuánto queda montada la hoja después de cerrar: la salida más larga de
+   las tres variantes (shdown, dlgOut y asistBaja van en --d2). Sale de D y
+   no de un número suelto: si el ritmo de la app cambia, cambia acá solo.
+   Exportada para que el test de hojas-salidas la compare con el CSS. */
+export const CIERRE_MS = D.objeto;
+/* La hoja se desmonta cuando TERMINA su animación de salida (animationend),
+   no cuando pasa CIERRE_MS desde el toque: medido en Chrome, con el hilo
+   ocupado la animación arranca ~150 ms tarde y un timer puro la cortaba a
+   mitad de camino (panel al 19 % de opacidad, 140 px todavía en pantalla).
+   El timer queda de red —con movimiento reducido #sheet.closing es
+   display:none y no hay animación que termine— con margen de un --d3. */
+const RED_CIERRE_MS = CIERRE_MS + D.panel;
+const SALIDAS = new Set(['shdown', 'dlgOut', 'asistBaja']);
 
 /* `variante="dialogo"`: una confirmación no es una hoja con contenido que se
    lee, es una pregunta de dos botones. Flota despegada de los bordes y entra
@@ -48,8 +61,15 @@ export default function Sheet({ open, onClose, children, variante }) {
   /* mostrando = todavía hay algo que pintar (abierto de verdad, o cerrando
      con la animación en curso). closing sólo se prende en la transición
      true->false, nunca de entrada (si open ya arranca en false no hay nada
-     que animar). */
-  useEffect(() => {
+     que animar).
+
+     useLayoutEffect y no useEffect: en el render donde open pasa a false,
+     closing todavía es false, así que #sheet pierde .open. Con useEffect
+     ese render se PINTABA (medido en Chrome: un cuadro con la hoja en
+     display:none) y recién al siguiente volvía con .closing a hacer shdown:
+     la hoja parpadeaba al empezar a cerrarse. El layout effect pone
+     closing antes de que el navegador pinte. */
+  useLayoutEffect(() => {
     if (open) {
       clearTimeout(closeTimer.current);
       setClosing(false);
@@ -78,7 +98,7 @@ export default function Sheet({ open, onClose, children, variante }) {
     if (!abiertoAntes.current) return;
     abiertoAntes.current = false;
     setClosing(true);
-    closeTimer.current = setTimeout(() => setClosing(false), CIERRE_MS);
+    closeTimer.current = setTimeout(() => setClosing(false), RED_CIERRE_MS);
     return () => clearTimeout(closeTimer.current);
   }, [open]);
 
@@ -154,6 +174,12 @@ export default function Sheet({ open, onClose, children, variante }) {
         role="dialog"
         aria-modal={open || undefined}
         aria-labelledby={etiqueta ? 'sheet-title' : undefined}
+        onAnimationEnd={e => {
+          if (e.target === e.currentTarget && SALIDAS.has(e.animationName)) {
+            clearTimeout(closeTimer.current);
+            setClosing(false);
+          }
+        }}
       >
         <div className="handle"></div>
         <div id="sheet-c">{mostrando ? childrenRef.current : null}</div>

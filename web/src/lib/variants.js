@@ -2,8 +2,10 @@
 // declarativa de sheetReveal() (motion.js).
 //
 // Misma coreografía, mismos tiempos, dicha de otra forma: el panel sube (CSS
-// `shup`, --d2) y RECIÉN cuando llegó entran las secciones, una tras otra.
-// Por eso `delayChildren` = D.objeto: si las secciones arrancaran junto con
+// `shup`, --d3 con --ease-push) y cuando ya hizo ~90 % del recorrido entran
+// las secciones, una tras otra, sobre el frenado del panel (esperar el --d3
+// entero se lee como demora). Por eso `delayChildren` = D.objeto: si las
+// secciones arrancaran junto con
 // el panel serían dos movimientos en el mismo eje, uno adentro del otro — lo
 // que Enzo describió como "un stagger terrible" en Mis rutinas.
 //

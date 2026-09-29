@@ -17,7 +17,7 @@ import { fireConfetti } from '../lib/confetti.js';
 import { Flame } from './Icon.jsx';
 import Silhouette from './Silhouette.jsx';
 import { cn } from '../lib/utils.js';
-import { countTo, popIn } from '../lib/motion.js';
+import { countTo, popIn, D } from '../lib/motion.js';
 
 // Los tres tiempos NO duran lo mismo (a propósito: racha y resumen son un
 // vistazo, el cuerpo necesita más para que el revelado por zona se note).
@@ -32,6 +32,18 @@ const BEAT2_DELAY = 650;
 const BEAT3_DELAY = 1300;
 const STAGGER_ZONA = 120;
 const DUR_TOTAL = 2400; // 1300 (arranca beat 3) + 1100 (dura beat 3)
+/* La salida (auditoría total, H4). Antes cerrar() la desmontaba en un
+   cuadro mientras la hoja de la sesión recién arrancaba (.bk desde opacidad
+   0, el panel desde abajo): durante esos cuadros se veía la pantalla Hoy
+   entera, un destello entre la celebración y el resumen. Ahora queda
+   encima, opaca, lo que tarda el fondo de la hoja en llegar (--d1), y
+   recién ahí se funde (--d3) sobre la hoja que ya está subiendo. Mismos
+   números que #session-complete.saliendo en styles.css (lo compara
+   hojas-salidas.test.js). */
+export const SALIDA_MS = D.toque + D.panel;
+// Se desmonta con el animationend de fdout; el timer es la red (con el hilo
+// ocupado la animación arranca tarde y un timer puro la cortaría).
+const RED_SALIDA_MS = SALIDA_MS + D.panel;
 
 function milestoneTexto(m) {
   if (!m) return null;
@@ -56,6 +68,10 @@ export default function SessionComplete() {
   const timerRef = useRef(null);
   const beatTimersRef = useRef([]);
   const [beatActual, setBeatActual] = useState(1);
+  // La sesión que se está yendo: ya no está en S.sessionComplete (la hoja
+  // del resumen se abrió), pero se sigue pintando hasta que termina el fundido.
+  const [saliendo, setSaliendo] = useState(null);
+  const salidaTimer = useRef(null);
   const streakRef = useRef(null);
   const flameRef = useRef(null);
   const ejRef = useRef(null);
@@ -81,8 +97,14 @@ export default function SessionComplete() {
     clearTimeout(timerRef.current);
     beatTimersRef.current.forEach(clearTimeout);
     const actual = S.sessionComplete;
+    if (!actual) return;
     S.sessionComplete = null;
-    if (!actual?.id) return;
+    if (!reducido) {
+      setSaliendo(actual);
+      clearTimeout(salidaTimer.current);
+      salidaTimer.current = setTimeout(() => setSaliendo(null), RED_SALIDA_MS);
+    }
+    if (!actual.id) return;
     openSheet('session-view', { id: actual.id, justFinished: true });
     // El confetti se dispara ACÁ (cuando se abre el sheet que muestra el PR),
     // no al terminar la sesión: ver el comentario en completeSession()
@@ -146,11 +168,16 @@ export default function SessionComplete() {
   // Volver desde la celebración hace lo mismo que tocarla: salta al resumen.
   useAtras(!!sess, cerrar);
 
-  if (!sess) return null;
+  useEffect(() => () => clearTimeout(salidaTimer.current), []);
 
-  const { ejercicios, series, kg } = resumenDe(sess);
+  /* Mientras sale se pinta la sesión que se fue: los mismos nodos, así las
+     animaciones de los beats y los números ya contados no arrancan de nuevo. */
+  const visible = sess || saliendo;
+  if (!visible) return null;
+
+  const { ejercicios, series, kg } = resumenDe(visible);
   const streak = currentStreak();
-  const cats = catsDeSesion(sess);
+  const cats = catsDeSesion(visible);
   // Glúteo sólo tiene geometría en la cara de espalda (ver bodydata.js), y
   // esta pantalla no interactiva arranca de frente y nunca gira (Task 5 le
   // sacó el gesto de rotar). Un Glúteo entrenado nunca se ve acá, pero si
@@ -168,12 +195,25 @@ export default function SessionComplete() {
   const estiloDe = n => (reducido ? { opacity: beatActual === n ? 1 : 0 } : undefined);
 
   return (
-    <div id="session-complete" role="status" aria-label="Entrenamiento completo" onClick={cerrar}>
+    <div
+      id="session-complete"
+      className={sess ? undefined : 'saliendo'}
+      role="status"
+      aria-label="Entrenamiento completo"
+      aria-hidden={sess ? undefined : true}
+      onClick={sess ? cerrar : undefined}
+      onAnimationEnd={e => {
+        if (!sess && e.target === e.currentTarget && e.animationName === 'fdout') {
+          clearTimeout(salidaTimer.current);
+          setSaliendo(null);
+        }
+      }}
+    >
       <div className="sc-beat b1" style={estiloDe(1)}>
         <span ref={flameRef} style={{ display: 'inline-block' }}><Flame size={56} className="sc-flame" /></span>
         <div className="sc-streak-n" ref={streakRef}>{reducido ? streak : 0}</div>
         <div className="sc-lbl">{streak === 1 ? 'día de racha' : 'días de racha'}</div>
-        {sess.milestone && <div className="sc-lbl" style={{ marginTop: 6 }}>{milestoneTexto(sess.milestone)}</div>}
+        {visible.milestone && <div className="sc-lbl" style={{ marginTop: 6 }}>{milestoneTexto(visible.milestone)}</div>}
       </div>
       <div className="sc-beat b2" style={estiloDe(2)}>
         <div className="sc-resumen">

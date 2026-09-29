@@ -4,6 +4,65 @@
 
 ---
 
+## SESIÓN 2026-09-29 (d) — Tandas 2 y 7: hojas, toques y pendientes chicos
+
+Rama `fix/hojas-y-toques` (sobre main con #132), PR abierto sin mergear.
+**1057 tests.** Detalle y números por ID en `docs/auditoria-total-2026-09.md`
+(G2, H4, B3, C2, G11, G17, E3, M1).
+
+- **G2 hojas**: `shup` desde el 100 % (`--d3`, `--ease-push`) con fundido
+  en `--d1`; `shdown` al 100 % y opacidad 0 en `--d2`. `CIERRE_MS = D.objeto`.
+  La hoja se desmonta con el `animationend` de su salida (el timer queda de
+  red) y el cierre pasa por `useLayoutEffect`: con `useEffect` se pintaba
+  un cuadro con la hoja en `display:none` antes de `shdown`.
+- **H4** fin de sesión con `fdin` y salida `.saliendo` (opaca `--d1`, se
+  funde en `--d3` sobre la hoja): Hoy ya no destella.
+- **B3** ficha de músculo con `mpop-out`; fuera el `bloomOpen` que anulaba
+  `mpop-in`; × de 44; textos a 11 px; Frente/Espalda se apaga con la ficha.
+- **C2** "Agregar" apagado sin alimentos, placeholder sin emoji, el panel
+  anima el alto al tipear.
+- **G11** `::after` en ~20 controles (lista y números en la auditoría):
+  0 controles < 40 en Inicio, Entreno, editor, Comida, Progreso y la sesión
+  a 390 y 430. Cambios de dibujo mínimos: ↑↓✎✕ del editor a 8 px entre sí,
+  filas de la tabla de series de 38 a 40, "Ver cuánto tomar" 4 px más abajo.
+- **G17/E3** nombres en ↑↓ⓘ del editor; los range ya tenían (tanda 1).
+- **M1** `.dlg-fila`: salida segura a la izquierda, la que borra a la derecha.
+- **Asistente**: el volver de Android retrocede un paso (pasos 2 y 3); en el
+  1 cierra. `QUEDARSE` + `interceptarHoja`/`volverEnHoja` en `lib/atras.js`.
+  Paso 3 sin equipo elegido (`equip: null`; sin elegir se guarda "Otro").
+- **Corregir lo que anoté → ＋ ejercicio** arranca con la última vez antes de
+  la fecha de la sesión o la meta (`seriesDeEjercicio`, session.js; la usa
+  también `seriesPrellenadas`). Cierra el pendiente (5) de la sesión (b).
+- **Aviso "Sesión anterior"**: la columna Hoy dice la misma meta que la
+  tarjeta (`columnaHoy`, previa.js). Cierra el pendiente (2) de la rampa.
+
+Verificado en Chrome (build + preview :4191, SW desregistrado, `seedRegistro`,
+reloj +1/+2 días con un initScript): cuadro a cuadro Ajustes, Racha, Agregar
+comida, el diálogo Terminar, el fin de sesión y la ficha de Pecho; hit areas
+con `getBoundingClientRect` + `elementFromPoint`; `history.back()` en el
+asistente 3 → 2 → 1 → cerrada.
+
+Trampas:
+- Medir hit areas: `getComputedStyle(el,'::after')` no ve el `margin-top`
+  de un `::after` centrado con `top:50%` (`.link-toque`): usá
+  `elementFromPoint` sobre la franja.
+- Un `setTimeout` que desmonta "cuando termina la animación" miente con el
+  hilo ocupado: la animación CSS arranca cuando se calcula el estilo, no en
+  el toque. Usar `animationend` con el timer de red.
+- El CSS de G11 quedó en el commit `266a1e0` (el del volver del asistente)
+  por un `git add -A`; el mensaje de `dd9241b` lo describe.
+
+**Pendientes:**
+1. Probar en el teléfono el volver del asistente (Android real, no
+   `history.back()`) y el tacto de los ↑↓✎✕ a 8 px.
+2. La auditoría G12 (textos de 10 px) sigue fuera de la ficha de músculo:
+   el toggle Frente/Espalda sigue en `--t-nano`.
+3. `sheetReveal`/`variants.js` siguen arrancando a los D.objeto: con la
+   entrada nueva el panel está al ~93 % del recorrido. Si se siente que el
+   contenido "pisa" la subida, pasarlos a D.panel (medir antes).
+
+---
+
 ## SESIÓN 2026-09-29 (c) — Auditoría visual 2, tanda D: "Ritmo y composición"
 
 Rama `feat/visual-composicion` (sobre main con #131), PR abierto sin
