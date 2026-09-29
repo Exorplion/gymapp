@@ -211,3 +211,34 @@ export function Sides({ size = 16, className, style }) {
     </svg>
   );
 }
+
+/* Los del asistente "Agregar ejercicio" (2026-09-28): volver un paso, la
+   manija de arrastre de la fila nueva y la chispa de la sugerencia. */
+export function ChevronLeft({ size = 18, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M15 5.5L8.5 12l6.5 6.5" />
+    </svg>
+  );
+}
+
+/** Manija de arrastre: seis puntos, el mismo gesto que usan las listas del
+    teléfono. Es una pista visual; el arrastre sale de toda la fila. */
+export function Grip({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} style={style} aria-hidden="true">
+      <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
+      <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
+      <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
+    </svg>
+  );
+}
+
+/** La sugerencia de la app (el ✦ de la maqueta): una chispa de cuatro puntas. */
+export function Spark({ size = 14, className, style }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} style={style} aria-hidden="true">
+      <path d="M12 2.5c.6 4.6 2.9 6.9 7.5 7.5v.1c-4.6.6-6.9 2.9-7.5 7.5h-.1c-.6-4.6-2.9-6.9-7.5-7.5V10c4.6-.6 6.9-2.9 7.5-7.5z" transform="translate(0 2)" />
+    </svg>
+  );
+}

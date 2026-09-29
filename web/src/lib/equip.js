@@ -27,6 +27,15 @@ export const EQUIP = [
   { id: 'corporal',   label: 'Peso corporal', hint: 'Sin carga externa, o con lastre.' },
 ];
 
+/** Los del asistente de agregar ejercicio (paso 3, EquipIcon.jsx): los 7
+    reales más "Otro" = sin equipo declarado. "Peso corporal" va corto porque
+    la celda de la grilla mide ~80 px; el nombre largo queda en `nombre`
+    (el aria-label). */
+export const EQUIP_ASIST = [
+  ...EQUIP.map(e => ({ id: e.id, label: e.id === 'corporal' ? 'Corporal' : e.label, nombre: e.label })),
+  { id: '', label: 'Otro', nombre: 'Otro o sin equipo' },
+];
+
 export const EQUIP_LABEL = Object.fromEntries(EQUIP.map(e => [e.id, e.label]));
 export const EQUIP_HINT = Object.fromEntries(EQUIP.map(e => [e.id, e.hint]));
 

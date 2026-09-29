@@ -19,7 +19,12 @@ const CIERRE_MS = 220; // mismo tiempo que .panel usa para abrir (shup .22s)
    lee, es una pregunta de dos botones. Flota despegada de los bordes y entra
    con un resorte corto en vez de subir desde abajo (styles.css,
    #sheet.dialogo). REEMPLAZA a `shup`, no se le suma: la misma lección del
-   bloomOpen de más abajo. */
+   bloomOpen de más abajo.
+
+   `variante="pantalla"`: ocupa la pantalla entera, sin manija ni esquinas
+   (el asistente de agregar ejercicio). Entra desde abajo como hoja, en
+   --d3 porque recorre el alto completo, y sale en --d2, más corta que la
+   entrada: CIERRE_MS de abajo ya es ese --d2. Todo en styles.css. */
 export default function Sheet({ open, onClose, children, variante }) {
   const panelRef = useRef(null);
   const previoRef = useRef(null);

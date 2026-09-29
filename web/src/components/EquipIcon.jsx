@@ -8,17 +8,10 @@
 // cambiar `color`, igual que cualquier otro ícono de la app.
 //
 // Los ids son los de EQUIP (equip.js) — son parte de la clave del historial
-// (exKey), no se inventa ninguno — más '' = "Otro" (sin equipo declarado).
-import { EQUIP } from '../lib/equip.js';
+// (exKey), no se inventa ninguno — más '' = "Otro"; la lista con sus
+// etiquetas es EQUIP_ASIST, en equip.js.
 
 const base = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' };
-
-/** Los 7 equipos reales + "Otro". "Peso corporal" va corto porque la celda
-    de la grilla mide ~80 px: el nombre largo sigue en el aria-label. */
-export const EQUIP_ASIST = [
-  ...EQUIP.map(e => ({ id: e.id, label: e.id === 'corporal' ? 'Corporal' : e.label, nombre: e.label })),
-  { id: '', label: 'Otro', nombre: 'Otro o sin equipo' },
-];
 
 function trazo(id) {
   switch (id) {

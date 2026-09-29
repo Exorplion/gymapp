@@ -12,7 +12,7 @@
 // Todo es puro y devuelve estados nuevos: se prueba sin montar nada
 // (__tests__/asistente-agregar.test.js). La fuente de bugs real acá no es el
 // markup, es "¿dónde quedó el ejercicio?".
-import { S } from './state.js';
+import { S, openSheet } from './state.js';
 import { EXCATALOG, MUSCLE_CATS, catOf, porBloques } from './muscle.js';
 import { norm } from './format.js';
 import { exMatchesQuery } from './exdb.js';
@@ -22,6 +22,18 @@ import { dayCategories, saveExercise } from './rutina-logic.js';
 import { sessionExs, isSkipped, setsDone, targetSets, addSessionExercise } from './session.js';
 
 export const PASOS = 3;
+
+/* Cada apertura lleva un número propio: App.jsx lo usa de `key`, así
+   "Agregar otro" (el toast) monta un asistente NUEVO en el paso 1 aunque la
+   hoja anterior todavía esté terminando de cerrarse — con la misma key React
+   reusaría el componente viejo, parado en el paso 3. */
+let vez = 0;
+
+/** La única puerta de entrada: rutina (Entreno → turno, Plan de hoy) y
+    sesión (··· → Agregar ejercicio). `wd` es el índice del turno. */
+export function abrirAsistente(wd, tipo = 'rutina') {
+  openSheet('agregar-ej', { wd: +wd, tipo, vez: ++vez });
+}
 
 /* Topes de los steppers. 10 series y 50 reps no son un límite fisiológico:
    son el borde donde un toque de más deja de ser un dato creíble. */
