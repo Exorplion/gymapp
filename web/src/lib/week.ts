@@ -43,17 +43,21 @@ export function lunesDe(fecha = dstr()): Date {
   return d;
 }
 
-/** Los siete días de la semana de `hoy`, de lunes a domingo, cada uno con las
-    sesiones que de verdad se registraron ese día. */
-export function semanaDe(hoy = dstr()): DiaSemana[] {
-  const lunes = lunesDe(hoy);
+function sesionesPorFecha(): Map<string, Sesion[]> {
   const porFecha = new Map<string, Sesion[]>();
   for (const s of S.sessions as Sesion[]) {
     if (!porFecha.has(s.date)) porFecha.set(s.date, []);
     porFecha.get(s.date)!.push(s);
   }
+  return porFecha;
+}
+
+/** Siete días consecutivos desde `desde` (incluido). */
+function sieteDiasDesde(desde: Date, hoy: string): DiaSemana[] {
+  const porFecha = sesionesPorFecha();
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(+lunes + i * 86400000);
+    const d = new Date(desde);
+    d.setDate(desde.getDate() + i);
     const fecha = dstr(d);
     return {
       fecha,
@@ -66,11 +70,34 @@ export function semanaDe(hoy = dstr()): DiaSemana[] {
   });
 }
 
-/** Los días PASADOS de esta semana sin ninguna sesión registrada, del más
-    reciente al más viejo. Es la lista de "¿entrenaste ese día y no lo
-    anotaste?" — nada más que eso: un día vacío no significa que hayas
-    entrenado, significa que la app no sabe. Por eso se pregunta en vez de
-    asumir en cualquiera de las dos direcciones. */
+/** Los siete días de la semana calendario de `hoy`, de lunes a domingo, cada
+    uno con las sesiones que de verdad se registraron ese día. La tira de
+    Inicio YA NO usa esto (ver ultimosSieteDias): queda para lo que necesite
+    la semana calendario. */
+export function semanaDe(hoy = dstr()): DiaSemana[] {
+  return sieteDiasDesde(lunesDe(hoy), hoy);
+}
+
+/** Los siete días que terminan HOY (hoy a la derecha, ningún día futuro). Es
+    lo que pinta la tira de Inicio desde el 2026-09-29.
+
+    Antes la tira era semanaDe() —lunes a domingo de la semana de hoy— y eso
+    dejaba afuera justo los días que más hace falta anotar: un lunes o un
+    martes, el domingo que acaba de pasar es de la semana ANTERIOR, y el "Dom"
+    que se veía era el que viene, futuro y deshabilitado. Enzo no pudo anotar
+    el domingo 27 por eso. Una ventana móvil siempre tiene los seis días
+    anteriores a mano, y no pinta ningún futuro que no se puede tocar. */
+export function ultimosSieteDias(hoy = dstr()): DiaSemana[] {
+  const desde = new Date(hoy + 'T12:00:00');
+  desde.setDate(desde.getDate() - 6);
+  return sieteDiasDesde(desde, hoy);
+}
+
+/** Los días PASADOS de la tira (los últimos siete) sin ninguna sesión
+    registrada, del más reciente al más viejo. Es la lista de "¿entrenaste ese
+    día y no lo anotaste?" — nada más que eso: un día vacío no significa que
+    hayas entrenado, significa que la app no sabe. Por eso se pregunta en vez
+    de asumir en cualquiera de las dos direcciones. */
 export function diasSinRegistro(hoy = dstr()): DiaSemana[] {
-  return semanaDe(hoy).filter(d => !d.esFuturo && !d.esHoy && !d.sesiones.length).reverse();
+  return ultimosSieteDias(hoy).filter(d => !d.esFuturo && !d.esHoy && !d.sesiones.length).reverse();
 }
