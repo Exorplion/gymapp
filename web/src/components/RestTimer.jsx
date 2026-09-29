@@ -87,19 +87,38 @@ function motorAnillo(canvas) {
 /* Los colores del anillo salen del mismo lugar que los del SVG (el
    degradado #restGrad y, sonando, el trazo de .ringing), así una paleta
    nueva los cambia a los dos. */
+/* Se leen UNA vez por acento y se guardan: getComputedStyle pone al día el
+   estilo de toda la página para contestar, y esta lectura cae en el commit
+   que abre el descanso — con el DOM de la serie recién escrito, ~100-250 ms
+   de recálculo forzado a 6× (H7). La clave es el --accent INLINE de <html>
+   (lo escribe aplicarAcento): leer un estilo inline no recalcula nada, y
+   cambia justo cuando cambian estos colores. */
+let coloresGuardados = { clave: null, valor: null };
 function coloresAnillo(circulo, sonando) {
-  if (sonando) return { solido: getComputedStyle(circulo).stroke };
-  const [a, b] = document.querySelectorAll('#restGrad stop');
-  return { a: getComputedStyle(a).stopColor, b: getComputedStyle(b).stopColor };
+  const clave = `${document.documentElement.style.getPropertyValue('--accent')}|${sonando}`;
+  if (coloresGuardados.clave === clave) return coloresGuardados.valor;
+  let valor;
+  if (sonando) valor = { solido: getComputedStyle(circulo).stroke };
+  else {
+    const [a, b] = document.querySelectorAll('#restGrad stop');
+    valor = { a: getComputedStyle(a).stopColor, b: getComputedStyle(b).stopColor };
+  }
+  coloresGuardados = { clave, valor };
+  return valor;
 }
 
+/* El tramo anterior se cancela desde su propio objeto, guardado acá, y no
+   con el.getAnimations(): getAnimations() tiene que poner al día estilo y
+   layout para contestar, y se llamaba en el mismo commit que abre el
+   descanso — ~85 ms a 6× por serie registrada (H7). */
+const tramosEnCurso = new WeakMap();
 function animarTramo(el, pinta, tramos, ms) {
   if (!el?.animate) return;
-  for (const a of el.getAnimations()) a.cancel();
-  el.animate(
+  tramosEnCurso.get(el)?.cancel();
+  tramosEnCurso.set(el, el.animate(
     tramos.map(k => ({ offset: k.offset, easing: k.easing, ...pinta(k.p) })),
     { duration: Math.max(1, ms), fill: 'forwards' },
-  );
+  ));
 }
 
 export default function RestTimer() {
@@ -116,6 +135,17 @@ export default function RestTimer() {
   const ringBoxRef = useRef(null);
   const timeFsRef = useRef(null);
   const sonabaAntes = useRef(false);
+  // Los colores del anillo se leen en un momento ocioso, no en el toque que
+  // abre el descanso (ver coloresAnillo).
+  useEffect(() => {
+    const leer = () => { if (ringRef.current) coloresAnillo(ringRef.current, false); };
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(leer);
+      return () => cancelIdleCallback(id);
+    }
+    const t = setTimeout(leer, D.momento);
+    return () => clearTimeout(t);
+  }, []);
   const sonandoAhora = T.state === 'ringing';
   /* La pantalla completa también SALE animada (2026-09-26, auditoría de
      salidas): antes entraba con un fundido y se iba de golpe (display:none)

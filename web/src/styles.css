@@ -344,6 +344,9 @@
   /* Distancias del vocabulario de entrada/salida (@keyframes entra / sale):
      se entra subiendo 8 px y se sale bajando 4, más corto que la entrada. */
   --entra-y:8px; --sale-y:4px;
+  /* Un tercio de --d1: el paso entre piezas de un escalonado y lo que tarda
+     un botón en hundirse al tocarlo (vuelve en --d1). */
+  --d-paso:calc(var(--d1) / 3);
   font-synthesis:none;
 }
 /* EL RESET VA EN @layer base, Y NO SUELTO. Es la diferencia entre que las
@@ -1175,16 +1178,27 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 /* La etiqueta que vuelve a traer el aviso: la única tocable de la fila, en
    el azul de los enlaces para que no se lea como un dato más. */
 .ex-tag.ult{font-family:inherit;color:var(--accent);border-color:rgba(var(--accent-strong-rgb),.35);cursor:pointer}
-.ex-pre{margin-top:var(--s4)}
+.ex-pre{display:grid;grid-template-rows:1fr}
+.ex-pre-in{min-height:0;display:flow-root;overflow:clip;overflow-clip-margin:20px}
+.ex-pre-in>.btn:first-child{margin-top:var(--s4)}
 .ex-pre-links{display:flex;justify-content:center;gap:var(--s5);margin-top:var(--s1)}
 .ex-pre-links .linkcard,.ex-later,.ex-aprox-acts .linkcard{
   display:inline-flex;align-items:center;gap:5px;min-height:40px;padding:0 var(--s1);
   font-size:var(--t-sm);font-weight:600;color:var(--text-2);
 }
 .ex-later{color:var(--accent)}
-/* El despliegue anima la altura (motion, ExerciseCarousel.jsx): sin esto las
-   piezas se ven fuera de la caja mientras crece. */
-.ex-live{overflow:hidden}
+/* El despliegue (ExerciseCarousel.jsx): la caja se abre por
+   grid-template-rows 0fr → 1fr en --d3 y RECIÉN después las piezas entran
+   (`entra`, 10 px) de a una, a --d-paso entre sí. Es el "when:
+   beforeChildren + stagger" que antes hacía motion animando height, sin
+   medir nada. Sin el recorte de abajo, las piezas se verían fuera de la
+   caja mientras crece. */
+.ex-live{overflow:hidden;display:grid;grid-template-rows:1fr}
+.ex-live-in{min-height:0}
+.ex-live.despliega{animation:desplegar var(--d3) var(--ease-out)}
+@keyframes desplegar{from{grid-template-rows:0fr}}
+.ex-live.despliega .pieza{--entra-y:10px;animation:entra var(--d2) var(--ease-out) backwards;
+  animation-delay:calc(var(--d3) + var(--i, 0) * var(--d-paso))}
 /* Pero con margen: el brillo del botón de registrar (.btn-serie) quedaba
    recortado en un rectángulo oscuro de bordes rectos. overflow:clip deja
    que el brillo asome sin soltar el recorte del despliegue. */
