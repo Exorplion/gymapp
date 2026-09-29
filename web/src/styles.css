@@ -337,11 +337,11 @@ h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif}
    390 y 430 (ver HANDOFF.md). Donde el vecino está pegado, el inset es
    sólo vertical. */
 .icon-btn,.pastilla-prueba,.chip,.seg button,.meal-del,.back-btn,.plan-edit,
-.ex-despues,.ex-tabla td.x button,.mfibras-btn,.ex-row .info.inline,
+.ex-despues,.ex-tabla td.x button,.mfibras-btn,.ex-row .info.inline,.ex-card .exname .info.inline,
 .ex-row .acts .mini,.link-toque,.wkreal-ask{position:relative}
 .icon-btn::after,.pastilla-prueba::after,.chip::after,.seg button::after,.meal-del::after,
 .back-btn::after,.plan-edit::after,.ex-despues::after,.ex-aviso-x::after,
-.ex-tabla td.x button::after,.mfibras-btn::after,.ex-row .info.inline::after,
+.ex-tabla td.x button::after,.mfibras-btn::after,.ex-row .info.inline::after,.ex-card .exname .info.inline::after,
 .ex-row .acts .mini::after,.link-toque::after,.wkreal-ask::after{
   content:'';position:absolute;inset:0;
 }
@@ -358,6 +358,7 @@ h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif}
 .ex-tabla td.x button::after{inset:-4px}                   /* 32 → 40; filas de 41 */
 .mfibras-btn::after{inset:-4px}                            /* 32×36 → 40×44 */
 .ex-row .info.inline::after{inset:-8px}                    /* 24 → 40 */
+.ex-card .exname .info.inline::after{inset:-7px}           /* 26 → 40 (tarjeta de la sesión) */
 .ex-row .acts .mini::after{inset:-4px}                     /* 32 → 40, con 8 entre sí */
 /* Un enlace de texto en medio de una línea ("Tu Año Fierro →", "Ver cuánto
    tomar ›"): el toque es una franja de 40 centrada en el texto, mida lo que
