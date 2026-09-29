@@ -4,6 +4,38 @@
 
 ---
 
+## SESIÓN 2026-09-28 (b) — Piezas 2 y 3: rampa de un solo botón y previa del ejercicio
+
+Rama `feat/rampa-previa`, PR abierto sin mergear. **870 tests.** Spec §2 y §3;
+plan `docs/superpowers/plans/2026-09-27-rampa-y-previa.md` (tareas 1–9).
+
+- **Rampa:** el botón grande (`.btn-serie.aprox`, ámbar) avanza la
+  aproximación ("Aprox. 50 % lista · 25 kg × 5"), vibra y se guarda en
+  `S.draft.rampa[exId]` (sobrevive a recargar). Tocar un ✓ deshace; tocar un
+  futuro sacude el activo. El activo late (`rampaLate` + dos `rampaAnillo`,
+  ciclo `calc(var(--d4) * 3.5)`, sólo transform/opacity). Completa: ✓ +
+  "Aproximación completa" → a los `D.momento` se pliega por
+  `grid-template-rows` (`D.panel`) → `marcarCalentado()` y descanso.
+  Lógica en `lib/rampa.js`; estado en `session.js` (`pasosRampa`/`avanzarRampa`/`deshacerRampa`).
+- **Previa:** `components/PreviaEjercicio.jsx` (datos de `lib/previa.js`,
+  memo por historial en `ExerciseSlide`): 1RM + cambio 8 sem + sparkline,
+  récord (serie más pesada), grupo y meta de hoy. Al Empezar sale con
+  fundido; la meta pasa a una línea `.ex-meta-hoy` en la tarjeta y 1RM +
+  récord al aviso de "Sesión anterior ›" (`FuerzaYRecord`).
+- Medido (build + preview, 390×844 y 430×932): sin scroll en todos los
+  estados (scrollHeight == innerHeight); previa 261 px con 83 px libres sobre
+  la barra a 390; datos iguales a Progreso (Leg press 228.2 / 185 kg, Leg
+  extension 95.6, Abs polea 75.5 / 61.3, Press plano 47.5 kg).
+
+**Pendientes:** (1) la rueda de reps arranca en las reps de la última vez
+(6) mientras la meta dice × 8 — `ensureVals()` en `session.js`, no se tocó;
+(2) en el aviso, "Hoy · sumá reps · meta 12" (tope del rango, `objetivoHoy`)
+convive con "Meta de hoy × 8" (una rep más): no se contradicen pero se leen
+distinto; decidir con Enzo si unificar el texto; (3) falta la prueba táctil
+real en el teléfono (vibración de cada paso).
+
+---
+
 ## SESIÓN 2026-09-28 — Pieza 4 del rediseño: base grafito + un acento elegido
 
 Rama `feat/color-grafito`, PR abierto sin mergear. **806 tests.** Spec:
