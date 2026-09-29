@@ -1001,41 +1001,154 @@ main.arrastrando{overflow:hidden;user-select:none}
   font-size:var(--t-micro);font-weight:600;color:var(--accent);
 }
 .ex-lado{font:inherit;font-weight:600;color:var(--accent);cursor:pointer}
-/* Rampa: tres pasos unidos por una línea que se llena. --avance (0..1) lo
-   pone Rampa según los pasos hechos. */
-.ex-rampa{margin-top:var(--s3)}
-.ex-rampa-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s1)}
+/* Rampa de aproximación (rediseño 2026-09-27, pieza 2, maqueta 02 opción B).
+   Tres círculos unidos por una línea que se llena hasta el siguiente
+   (--avance 0 → .5 → 1, lo pone Rampa). Los círculos MUESTRAN el avance; el
+   que avanza es el botón grande (.btn-serie.aprox). El activo late con dos
+   anillos desfasados que se expanden y se apagan: sólo transform y opacity,
+   nada de filter en loop. El ciclo es un múltiplo de --d4, no un ms suelto. */
+.ex-rampa{--rampa-ciclo:calc(var(--d4) * 3.5)}
+/* El pliegue al completar: la altura se va con grid-template-rows (no con
+   height:auto, que no se anima) y el margen con ella, así cuando la rampa
+   desmonta no queda ningún salto de 12px. */
+.ex-rampa-pliegue{
+  display:grid;grid-template-rows:1fr;margin-top:var(--s3);
+  transition:grid-template-rows var(--d3) var(--ease),margin-top var(--d3) var(--ease),opacity var(--d3) var(--ease);
+}
+.ex-rampa-pliegue>.ex-rampa{min-height:0}
+.ex-rampa-pliegue.plegando{grid-template-rows:0fr;margin-top:0;opacity:0}
+.ex-rampa-pliegue.plegando>.ex-rampa{overflow:hidden}
+.ex-rampa-hd{display:flex;align-items:center;justify-content:space-between;min-height:32px;margin-bottom:var(--s1)}
 .ex-rampa-hd span{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-sm);letter-spacing:.14em;text-transform:uppercase;color:var(--warn)}
-.ex-rampa-hd .linkcard{font-size:var(--t-micro);color:var(--text-2);min-height:32px;padding:0 var(--s1)}
+/* "Saltar": 40px de área tocable sin sumarle alto a la fila (el margen
+   negativo devuelve lo que agrega el mínimo). */
+.ex-rampa-hd .linkcard{
+  font-size:var(--t-micro);font-weight:500;color:var(--text-2);
+  min-height:40px;min-width:40px;padding:0 var(--s2);margin:calc(-1 * var(--s1)) calc(-1 * var(--s2)) calc(-1 * var(--s1)) 0;
+}
 .ex-rampa-pasos{position:relative;display:flex;justify-content:space-between;--avance:0}
+/* La línea pasa por el centro de los círculos (40px → 20px), de centro a
+   centro: cada paso ocupa un tercio, así que arranca en 1/6 y termina en 5/6. */
 .ex-rampa-pasos::before,.ex-rampa-pasos::after{
-  content:"";position:absolute;top:15px;left:calc(100% / 6);right:calc(100% / 6);height:2px;border-radius:var(--r-full);
+  content:"";position:absolute;top:19px;left:calc(100% / 6);right:calc(100% / 6);height:2px;border-radius:var(--r-full);
 }
-.ex-rampa-pasos::before{background:rgba(var(--warn-rgb),.3)}
-.ex-rampa-pasos::after{background:var(--ok);transform-origin:left;transform:scaleX(var(--avance));transition:transform var(--d3) var(--ease)}
-.ex-paso{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;font:inherit;color:inherit;cursor:pointer}
+.ex-rampa-pasos::before{background:var(--line-2)}
+.ex-rampa-pasos::after{background:var(--warn);transform-origin:left;transform:scaleX(var(--avance));transition:transform var(--d4) var(--ease)}
+.ex-paso{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .ex-paso i{
-  display:grid;place-items:center;width:32px;height:32px;border-radius:var(--r-full);font-style:normal;
-  border:2px solid rgba(var(--warn-rgb),.55);background:var(--surface);
-  font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-nano);color:var(--warn);
-  transition:background var(--d2) var(--ease),border-color var(--d2) var(--ease),transform var(--d2) var(--spring);
+  position:relative;display:grid;place-items:center;width:40px;height:40px;border-radius:var(--r-full);font-style:normal;
+  border:2px solid var(--line-2);background:var(--surface);
+  font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-sm);color:var(--text-3);font-variant-numeric:tabular-nums;
+  transition:background var(--d2) var(--ease),border-color var(--d2) var(--ease),color var(--d2) var(--ease);
 }
-.ex-paso.cur i{box-shadow:0 0 0 4px rgba(var(--warn-rgb),.16)}
-.ex-paso.hecho i{background:var(--ok);border-color:var(--ok);color:var(--on-ok);transform:scale(1.06)}
-.ex-paso b{margin-top:4px;font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
-.ex-paso span{font-size:var(--t-micro);color:var(--text-2)}
+.ex-paso.cur i{background:var(--warn);border-color:var(--warn);color:var(--on-warn);animation:rampaLate var(--rampa-ciclo) ease-in-out infinite}
+.ex-paso.cur i::before,.ex-paso.cur i::after{
+  content:"";position:absolute;inset:-2px;border-radius:inherit;border:2px solid var(--warn);opacity:0;pointer-events:none;
+  animation:rampaAnillo var(--rampa-ciclo) var(--ease-out) infinite;
+}
+.ex-paso.cur i::after{animation-delay:calc(var(--rampa-ciclo) / 2)}
+/* El tinte ámbar va SOBRE la superficie opaca: translúcido solo, la línea
+   de progreso se veía pasar por dentro del círculo. */
+.ex-paso.hecho i{background:linear-gradient(rgba(var(--warn-rgb),.14),rgba(var(--warn-rgb),.14)),var(--surface);border-color:var(--warn);color:var(--warn)}
+.ex-paso.hecho i svg{animation:rampaPop var(--d2) var(--spring) both}
+.ex-paso b{
+  margin-top:6px;font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--text-2);transition:color var(--d2) var(--ease);
+}
+.ex-paso b small{font-family:'Barlow';font-size:var(--t-nano);font-weight:600;color:var(--text-3)}
+.ex-paso.cur b,.ex-paso.hecho b{color:var(--text)}
+.ex-paso span{margin-top:2px;font-size:var(--t-micro);color:var(--text-2);font-variant-numeric:tabular-nums}
+/* "Aproximación completa": entra por altura (no salta) antes del pliegue. */
+.ex-rampa-ok{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows var(--d2) var(--ease),opacity var(--d2) var(--ease)}
+.ex-rampa-ok>div{min-height:0;overflow:hidden}
+.ex-rampa-ok p{padding-top:var(--s2);text-align:center;font-size:var(--t-sm);font-weight:500;color:var(--ok)}
+.ex-rampa-ok.on{grid-template-rows:1fr;opacity:1}
+@keyframes rampaLate{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes rampaAnillo{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.7);opacity:0}}
+@keyframes rampaPop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+/* Movimiento reducido: el activo no late; queda un anillo fijo que lo marca. */
+@media (prefers-reduced-motion:reduce){
+  .ex-paso.cur i,.ex-paso.cur i::before{animation:none}
+  .ex-paso.cur i::before{opacity:.45;transform:scale(1.25)}
+  .ex-paso.cur i::after{display:none}
+}
 /* Botón de registrar: píldora oscura con borde verde que brilla, el check en
-   un círculo y a la derecha lo que queda anotado. */
+   un círculo y a la derecha lo que queda anotado. Durante la rampa (.aprox)
+   es el mismo botón en ámbar. Los degradados no se interpolan, así que el
+   tinte de cada color vive en su propia capa (::before verde, ::after
+   ámbar) y lo que cruza es la opacidad: el cambio de ámbar a verde se ve
+   como un fundido, no como un corte. */
 .btn-serie{
+  position:relative;isolation:isolate;
   display:flex;align-items:center;gap:var(--s3);width:100%;min-height:58px;padding:0 var(--s4) 0 6px;
   border-radius:var(--r-full);border:1.5px solid rgba(var(--ok-rgb),.55);
-  background:linear-gradient(96deg,rgba(var(--ok-rgb),.12),rgba(var(--ok-rgb),.03)),var(--surface);
+  background:var(--surface);
   box-shadow:0 0 26px -10px rgba(var(--ok-rgb),.7),inset 0 1px 0 rgba(var(--hi-rgb),.06);
   color:var(--ok);cursor:pointer;
+  transition:border-color var(--d3) var(--ease),box-shadow var(--d3) var(--ease),color var(--d3) var(--ease);
 }
-.btn-serie-ok{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:var(--r-full);background:var(--grad-ok);color:var(--on-ok);box-shadow:0 4px 14px -4px rgba(var(--ok-rgb),.8)}
-.btn-serie-t{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);letter-spacing:.1em;text-transform:uppercase}
-.btn-serie small{margin-left:auto;font-size:var(--t-sm);color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.btn-serie::before,.btn-serie::after{
+  content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;
+  transition:opacity var(--d3) var(--ease);
+}
+.btn-serie::before{background:linear-gradient(96deg,rgba(var(--ok-rgb),.12),rgba(var(--ok-rgb),.03))}
+.btn-serie::after{background:linear-gradient(96deg,rgba(var(--warn-rgb),.12),rgba(var(--warn-rgb),.03));opacity:0}
+.btn-serie.aprox{border-color:rgba(var(--warn-rgb),.55);box-shadow:0 0 26px -10px rgba(var(--warn-rgb),.6),inset 0 1px 0 rgba(var(--hi-rgb),.06);color:var(--warn)}
+.btn-serie.aprox::before{opacity:0}
+.btn-serie.aprox::after{opacity:1}
+.btn-serie-ok{
+  position:relative;isolation:isolate;flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:var(--r-full);
+  background:var(--grad-ok);color:var(--on-ok);box-shadow:0 4px 14px -4px rgba(var(--ok-rgb),.8);
+  transition:color var(--d3) var(--ease),box-shadow var(--d3) var(--ease);
+}
+.btn-serie-ok::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--grad-warn);opacity:0;transition:opacity var(--d3) var(--ease)}
+.btn-serie.aprox .btn-serie-ok{color:var(--on-warn);box-shadow:0 4px 14px -4px rgba(var(--warn-rgb),.8)}
+.btn-serie.aprox .btn-serie-ok::before{opacity:1}
+/* El rótulo y el valor cambian con cada paso: entran con un fundido corto
+   (los remonta el key de React), no de golpe. */
+.btn-serie-t{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);letter-spacing:.1em;text-transform:uppercase;animation:btnRotulo var(--d2) var(--ease-out) both}
+.btn-serie small{margin-left:auto;font-size:var(--t-sm);color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap;animation:btnRotulo var(--d2) var(--ease-out) both}
+@keyframes btnRotulo{from{opacity:0;transform:translateY(4px)}}
+/* La meta de hoy dentro de la tarjeta abierta (antes de empezar vivía en la
+   previa): una línea, el número en la condensada y en el acento. */
+.ex-meta-hoy{
+  margin-top:var(--s3);font-size:var(--t-sm);line-height:1.3;color:var(--text-2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ex-meta-hoy span{margin-right:var(--s1);font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.ex-meta-hoy b{font-family:'Barlow Condensed';font-size:var(--t-body);font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+/* Fuerza y récord en el aviso de "Sesión anterior ›": las mismas columnas
+   que la comparativa, con la línea de 8 semanas al lado del 1RM. */
+.ex-aviso .ex-aviso-fuerza{margin-top:var(--s2)}
+.ex-aviso-1rm{display:flex;align-items:center;justify-content:space-between;gap:var(--s2)}
+.ex-aviso-1rm b{white-space:nowrap}
+.ex-aviso-1rm b small{font-family:'Barlow';font-size:var(--t-micro);font-weight:600;color:var(--text-2)}
+/* Previa del ejercicio (rediseño 2026-09-27, pieza 3, maqueta 03 opción B):
+   debajo de la tarjeta sin empezar. Paneles del vidrio de la app (.card) con
+   el padding de la tarjeta sutil, las etiquetas del tablero (.ex-meta small)
+   y los números en la condensada del héroe. */
+.previa{display:grid;gap:var(--s2)}
+.card.previa-panel{margin-bottom:0;padding:var(--s3);min-width:0}
+.previa-dos{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:var(--s2)}
+.previa-k{font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.previa-big{
+  margin-top:2px;font-family:'Barlow Condensed';font-size:var(--t-2xl);font-weight:700;line-height:1.05;
+  color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.previa-big small{font-family:'Barlow';font-size:var(--t-micro);font-weight:600;letter-spacing:0;color:var(--text-2)}
+.previa-big.previa-nada{color:var(--text-3)}
+.previa-s{margin-top:2px;font-size:var(--t-micro);color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.previa-up,.ex-cmp-col .previa-up{color:var(--ok)}
+.previa-down,.ex-cmp-col .previa-down{color:var(--danger)}
+.previa-fuerza{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s3)}
+.previa-fuerza>div{min-width:0}
+.previa-spark{flex:none;display:block;overflow:visible}
+.previa-spark polyline{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.previa-spark circle{fill:var(--accent)}
+.previa-spark.chica polyline{stroke-width:1.5}
+.previa-spark.chica circle{r:2}
+.previa-meta p{margin-top:2px;font-size:var(--t-sm);line-height:1.35;color:var(--text-2)}
+.previa-meta b{font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
 /* Series hechas: una fila por serie. */
 .ex-tabla{width:100%;margin-top:var(--s3);border-collapse:collapse;font-variant-numeric:tabular-nums}
 .ex-tabla th{padding:0 0 4px;text-align:left;font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}

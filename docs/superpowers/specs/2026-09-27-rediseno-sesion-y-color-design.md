@@ -91,6 +91,14 @@ los nombres accesibles están en cada control.
 
 ## 2 · Rampa de aproximación: un solo botón que avanza
 
+> **Implementada el 2026-09-28** en la rama `feat/rampa-previa` (plan
+> `docs/superpowers/plans/2026-09-27-rampa-y-previa.md`), junto con la §3.
+> Decisiones tomadas al implementar: los pasos hechos llevan el ✓ ámbar
+> (no verde: el verde queda para la serie de verdad); "Saltar" desaparece al
+> completar; si la app se recarga con la rampa completa y sin marcar, se
+> marca sin animación y sin descanso (ese descanso ya pasó); si la serie se
+> registra mientras la rampa se pliega, el bloque igual queda calentado.
+
 ### Problema
 
 El paso activo de `Rampa` (`ExerciseCarousel.jsx`) se distingue sólo por un
@@ -131,6 +139,16 @@ cubren la lógica de avance y deshacer.
 ---
 
 ## 3 · Previa del ejercicio (el espacio vacío)
+
+> **Implementada el 2026-09-28** en `feat/rampa-previa`. Decisiones al
+> implementar: el récord es la serie **más pesada** (el número grande de
+> Progreso → PRs), no la de más volumen; la recuperación sin historial dice
+> "sin registro"; la previa va debajo de TODA tarjeta sin empezar (también la
+> que está en espera si deslizás hasta ella con otro ejercicio en curso). La
+> primera vez muestra "Meta de hoy" al lado del grupo (la tarjeta ya dice
+> "Primera vez"). Al tocar Empezar, además de la previa, el bloque de
+> Empezar se cierra por altura mientras la tarjeta se despliega: si no, la
+> previa saltaba ~100 px para arriba antes de irse.
 
 ### Problema
 
