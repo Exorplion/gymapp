@@ -144,9 +144,26 @@ const CATALOGO_NORM: { ne: string; c: string }[] = EXCATALOG
    de un solo usuario y sus nombres distintos se cuentan por decenas. */
 const CACHE_CAT = new Map<string, string | null>();
 
+/* Y antes que esa, una por el nombre TAL CUAL llega (G4, auditoría total
+   2026-09). La de arriba se miraba después de normalizar, y normalizar era
+   justamente lo caro: al cambiar de pestaña, daysSinceAll() llamaba a norm()
+   miles de veces por los mismos diez nombres (~100 ms de tiempo propio a 6×).
+   Un nombre ya visto se responde sin tocarlo. */
+const CACHE_CRUDO = new Map<string, string | null>();
+
 export function catOf(ex: ExLike | string | null | undefined): string | null {
   if (ex && typeof ex === 'object' && ex.cat) return ex.cat;
-  const n = norm(typeof ex === 'string' ? ex : ex?.name);
+  const crudo = typeof ex === 'string' ? ex : ex?.name;
+  if (typeof crudo === 'string') {
+    const visto = CACHE_CRUDO.get(crudo);
+    if (visto !== undefined) return visto;
+  }
+  const resultado = catDeNombre(norm(crudo));
+  if (typeof crudo === 'string') CACHE_CRUDO.set(crudo, resultado);
+  return resultado;
+}
+
+function catDeNombre(n: string): string | null {
   if (!n) return null;
   const recordado = CACHE_CAT.get(n);
   if (recordado !== undefined) return recordado;
@@ -333,10 +350,24 @@ export function daysSinceGroup(cat: string): number | null {
   return ultima === null ? null : Math.max(0, diasEntre(ultima, dstr()));
 }
 
-/** El mapa completo de los nueve grupos, para pasárselo a la silueta. */
+/** El mapa completo de los nueve grupos, para pasárselo a la silueta.
+
+    Una sola pasada por las sesiones (G4, auditoría 2026-09): antes era
+    daysSinceGroup() por cada grupo, o sea nueve pasadas completas — y corre
+    al montar Inicio, Entreno y Progreso. El resultado es el mismo grupo por
+    grupo (lo cuida catof-cache.test.js). */
 export function daysSinceAll(): Record<string, number | null> {
+  const ultima: Record<string, string> = {};
+  for (const s of sessions() || []) {
+    for (const e of s.entries || []) {
+      if (!e.sets?.length) continue;
+      const c = catOf(e);
+      if (c && (!ultima[c] || s.date > ultima[c])) ultima[c] = s.date;
+    }
+  }
+  const hoy = dstr();
   const out: Record<string, number | null> = {};
-  MUSCLE_CATS.forEach(c => { out[c] = daysSinceGroup(c); });
+  MUSCLE_CATS.forEach(c => { out[c] = ultima[c] ? Math.max(0, diasEntre(ultima[c], hoy)) : null; });
   return out;
 }
 
