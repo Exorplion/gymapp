@@ -823,8 +823,8 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 /* ---------- chips ---------- */
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:8px 12px;border-radius:var(--r-full);font-size:var(--t-sm);font-weight:600;
+  display:inline-flex;align-items:center;gap:var(--s2);
+  padding:var(--s2) var(--s3);border-radius:var(--r-full);font-size:var(--t-sm);font-weight:600;
   background:var(--surface-2);border:1px solid var(--line-2);color:var(--text);
 }
 /* Elegir la rutina de destino: una por renglón, porque lo que se lee es el
@@ -1426,7 +1426,7 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    táctil), separándolos visualmente de la información (badge+nombre+resumen)
    como controles de edición aparte. */
 .day-headrow{display:flex;align-items:center;gap:8px;padding:0 12px}
-.day-headrow .day-head{flex:1;padding:14px 0}
+.day-headrow .day-head{flex:1;padding:var(--s4) 0}
 .day-headrow .day-handle{cursor:grab;flex:none;width:44px;height:44px}
 .day-headrow .mini.red{width:44px;height:44px}
 .card.day.dragging{
@@ -1694,13 +1694,15 @@ body.dragging-on .card.day.drop-target{filter:none}
 /* Encabezado de subgrupo dentro del turno desplegado (Rutina, vista normal).
    Se lee como una división de la lista, no como una fila más: por eso el
    nombre a la izquierda y el recuento a la derecha, en la misma línea. */
-.day-exs-block + .day-exs-block{margin-top:10px}
+.day-exs-block + .day-exs-block{margin-top:var(--s3)}
+/* El nombre del grupo en tiza y el hilo neutro (tanda D): era el último
+   rótulo de Entreno pintado con el acento (V2). */
 .day-exs-head{
-  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
-  padding:0 2px 5px;margin-bottom:5px;
-  border-bottom:1px solid rgba(var(--accent-strong-rgb),.18);
+  display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);
+  padding:0 2px var(--s1);margin-bottom:var(--s1);
+  border-bottom:1px solid var(--line);
   font-size:var(--t-nano);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--accent);
+  color:var(--text);
 }
 .day-exs-head span{letter-spacing:.02em;text-transform:none;font-weight:600;color:var(--text-2)}
 
@@ -1814,8 +1816,8 @@ body.dragging-on .card.day.drop-target{filter:none}
 
 /* ---------- filas de lista (rutina / comidas / historial) ---------- */
 .row{
-  display:flex;align-items:center;gap:10px;
-  padding:12px 4px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:var(--s3);
+  padding:var(--s3) var(--s1);border-bottom:1px solid var(--line);
 }
 .row:last-child{border-bottom:none}
 .row .grow{flex:1;min-width:0}
@@ -1825,7 +1827,7 @@ body.dragging-on .card.day.drop-target{filter:none}
    por default. */
 .linkcard{background:none;border:0;padding:0;text-align:left;cursor:pointer;font:inherit;color:inherit}
 .row .t{font-weight:600;font-size:var(--t-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.row .s{color:var(--text-2);font-size:var(--t-sm);margin-top:1px}
+.row .s{color:var(--text-2);font-size:var(--t-sm)}
 .mini{
   width:40px;height:40px;flex:none;border-radius:var(--r-md);display:grid;place-items:center;
   background:var(--surface-2);border:1px solid var(--line);color:var(--text-2);font-size:var(--t-body);
@@ -1961,9 +1963,9 @@ body.dragging-on .card.day.drop-target{filter:none}
 
 /* ---------- gráficos ---------- */
 canvas.chart{width:100%;height:200px;display:block}
-.seg{display:flex;background:rgba(var(--hi-rgb),.05);border:1px solid rgba(var(--hi-rgb),.09);border-radius:var(--r);padding:4px;gap:5px}
+.seg{display:flex;background:rgba(var(--hi-rgb),.05);border:1px solid rgba(var(--hi-rgb),.09);border-radius:var(--r);padding:var(--s1);gap:var(--s1)}
 .seg button{
-  flex:1;padding:9px 0;border-radius:var(--r-md);font-family:'Barlow Condensed';
+  flex:1;padding:var(--s2) 0;border-radius:var(--r-md);font-family:'Barlow Condensed';
   font-weight:600;font-size:var(--t-body);letter-spacing:.08em;text-transform:uppercase;color:var(--text-2);
 }
 .seg button.on{background:var(--accent-grad);color:var(--on-accent);font-weight:700;box-shadow:var(--accent-glow)}
@@ -2709,6 +2711,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* En el mockup cada pantalla tenía su matiz de hero (Hoy azul, Rutina
    violeta). Con un acento elegido hay un solo color: la hero de Rutina se
    distingue por el halo más grande, no por otro matiz que nadie eligió. */
+.card.hero.hero-plan,.card.hero.hero-kcal,.card.hero.hero-prog{padding:var(--s5)}
 .card.hero.hero-plan{
   background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.14),rgba(var(--hi-rgb),.03) 60%),var(--surface);
   border-color:rgba(var(--accent-rgb),.22);
@@ -2721,11 +2724,17 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   font-size:var(--t-micro);font-weight:700;letter-spacing:.18em;text-transform:uppercase;
   color:var(--text-2);
 }
-.hero-plan .hero-day{font-size:var(--t-display)}
+.hero-plan .hero-day{font-size:var(--t-display);margin-top:var(--s1)}
+/* Las tres cifras del plan (tanda D): la receta de .hero-stats de Hoy, con
+   los intervalos en la escala. */
+.hero-plan .hero-stats{gap:var(--s5);margin-top:var(--s3)}
+.hero-plan .hero-stats span{margin-top:var(--s1)}
+.hero-plan .weekbars{margin-top:var(--s4)}
+.hero-plan .btn-row{margin-top:var(--s5)}
 
 /* Barras de la semana: alto proporcional a las series del día. */
-.weekbars{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px;align-items:end}
-.weekbars .wbar{display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end}
+.weekbars{display:grid;grid-template-columns:repeat(7,1fr);gap:var(--s2);margin-top:var(--s4);align-items:end}
+.weekbars .wbar{display:flex;flex-direction:column;align-items:center;gap:var(--s1);justify-content:flex-end}
 .weekbars .b{
   width:100%;border-radius:var(--r-sm);
   background:rgba(var(--hi-rgb),.05);border:1px solid rgba(var(--hi-rgb),.07);
@@ -2771,7 +2780,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .weekbars .wbar.on span{color:var(--accent)}
 
 /* Par de botones del mockup: uno lleno y uno de vidrio, no dos fantasma. */
-.btn-row{display:flex;gap:10px;margin-top:var(--s4)}
+.btn-row{display:flex;gap:var(--s3);margin-top:var(--s4)}
 .btn-row .btn{
   flex:1;height:50px;border-radius:var(--r);
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;
@@ -2805,21 +2814,27 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   background:rgba(var(--accent-strong-rgb),.12);border:1px solid rgba(var(--accent-strong-rgb),.24);
 }
 .nav-card .chev{flex:none;color:var(--text-3);font-size:var(--t-lg)}
+/* La cajita con el tono de un estado (fila de descarga): ámbar sugerida,
+   verde en curso. Son estados, no categorías. */
+.nav-card-ico.warn{color:var(--warn);background:rgba(var(--warn-rgb),.12);border-color:rgba(var(--warn-rgb),.3)}
+.nav-card-ico.ok{color:var(--ok);background:rgba(var(--ok-rgb),.12);border-color:rgba(var(--ok-rgb),.3)}
 
-.day-cards{display:flex;flex-direction:column;gap:10px;margin-top:var(--s4)}
+.day-cards{display:flex;flex-direction:column;gap:var(--s3);margin-top:var(--s4)}
 .day-card{
   background:linear-gradient(158deg,rgba(var(--hi-rgb),.075),rgba(var(--hi-rgb),.02));
   border:1px solid rgba(var(--hi-rgb),.11);border-radius:var(--r);overflow:hidden;
 }
-.day-head{display:flex;align-items:center;gap:13px;width:100%;padding:15px 16px;text-align:left}
+.day-head{display:flex;align-items:center;gap:var(--s3);width:100%;padding:var(--s4);text-align:left}
 .day-badge{
-  flex:0 0 auto;min-width:40px;padding:6px 0;text-align:center;border-radius:var(--r-md);
-  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.1em;
+  flex:0 0 auto;min-width:40px;padding:var(--s2) 0;text-align:center;border-radius:var(--r-md);
+  font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.1em;line-height:1.2;
   color:var(--accent);background:rgba(var(--accent-strong-rgb),.14);border:1px solid rgba(var(--accent-rgb),.28);
 }
 .day-head .grow{flex:1;min-width:0}
-.day-head .t{display:block;font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700}
-.day-head .s{display:block;font-size:var(--t-micro);color:var(--text-2);margin-top:1px}
+/* Misma caja de línea que .day-name (1.15): los turnos de descanso usan .t y
+   con la interlínea por defecto medían 14 px más que los de entrenamiento. */
+.day-head .t{display:block;font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700;line-height:1.15}
+.day-head .s{display:block;font-size:var(--t-micro);color:var(--text-2)}
 .day-head .chev{color:var(--text-3);font-size:var(--t-lg)}
 /* Acordeón de la tarjeta de turno: misma técnica que .day-body en el editor
    (grid-template-rows 0fr→1fr, que sí transiciona; display no). El contenido
@@ -2837,17 +2852,17 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .day-card .day-head .chev{transition:transform var(--d2) var(--ease-out)}
 .day-card.open .day-head .chev{transform:rotate(90deg);color:var(--accent)}
 
-.day-exs{padding:0 16px 14px}
+.day-exs{padding:0 var(--s4) var(--s4)}
 /* 9px y no 12 de separación: el pictograma se sumó a la fila y el nombre
    necesita recuperar ese ancho. */
-.day-ex{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid rgba(var(--hi-rgb),.07);
+.day-ex{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) 0;border-top:1px solid rgba(var(--hi-rgb),.07);
   width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;color:inherit;font:inherit}
 .day-ex:active{background:rgba(var(--hi-rgb),.03)}
-.day-ex .chev{color:var(--text-3);font-size:var(--t-body);flex:none;margin-left:2px}
+.day-ex .chev{color:var(--text-3);font-size:var(--t-body);flex:none}
 .day-ex .i{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);color:var(--text-3);min-width:14px}
 .day-ex .grow{flex:1;min-width:0}
 .day-ex .t{display:block;font-size:var(--t-body);font-weight:600}
-.day-ex .s{display:block;font-size:var(--t-micro);color:var(--text-2);margin-top:1px}
+.day-ex .s{display:block;font-size:var(--t-micro);color:var(--text-2)}
 .day-ex .x{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-body);font-weight:700;color:var(--accent)}
 
 /* Día libre: la insignia se apaga, igual que en el mockup — el color se
@@ -3621,9 +3636,9 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 
 /* Checklist de cobertura de fibra (coverage.js): cubierto/falta, nunca un
    porcentaje — ver el comentario de coverage.js sobre por qué. */
-.wiz-coverage{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.wiz-coverage{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s2)}
 .wiz-fiber{
-  font-size:var(--t-micro);font-weight:600;padding:4px 10px;border-radius:var(--r-full);
+  font-size:var(--t-micro);font-weight:600;padding:var(--s1) var(--s3);border-radius:var(--r-full);
   background:rgba(var(--hi-rgb),.05);border:1px solid var(--line-2);color:var(--text-2);
 }
 .wiz-fiber.on{background:rgba(var(--ok-rgb),.14);border-color:rgba(var(--ok-rgb),.4);color:var(--ok)}
@@ -4074,11 +4089,17 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .grouprow:active{background:rgba(var(--accent-rgb),.10)}
 .grouprow-grow{flex:1; min-width:0}
 .grouprow-t{display:block; font-size:var(--t-body); font-weight:600; color:var(--text)}
-.grouprow-s{display:block; font-size:var(--t-micro); color:var(--text-2); margin-top:2px; line-height:1.35}
+.grouprow-s{display:block; font-size:var(--t-micro); color:var(--text-2); margin-top:var(--s1); line-height:1.35}
 /* Los datos van en cifras tabulares: alinean en columna y se leen como
    dato, no como texto. */
 .grouprow-v{flex:none; font-variant-numeric:tabular-nums; font-weight:700; color:var(--accent)}
 .grouprow-chev{flex:none; color:var(--text-3); font-size:var(--t-lg)}
+/* Fila de ESTADO dentro de una lista agrupada (la descarga en Entreno): no
+   se toca entera —la acción es el chip de la derecha—, así que no lleva el
+   gesto de fila tocable. */
+.grouprow-estado{cursor:default}
+.grouprow-estado:active{background:none}
+.grouprow-estado .chip{flex:none}
 
 /* Convierte en botón usable un elemento que YA tiene su apariencia puesta
    por una clase de tarjeta (.card, .card.hero, .ini-tile…), sin tocar
