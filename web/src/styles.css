@@ -3524,6 +3524,14 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    debajo, y la línea de apoyo (fecha, barra, "hace N días") abajo del todo.
    Así en cada fila los rótulos y las cifras quedan a la misma altura. */
 .ini-tile-hint{font-size:var(--t-micro);color:var(--text-2);margin-top:auto}
+/* En la tarjeta del cuerpo el aviso ("Hace tiempo no entrenás…") va en la
+   esquina de abajo a la izquierda, al costado de la silueta, que es angosta
+   y va centrada: así no le suma un renglón a la tarjeta y Inicio sigue
+   entrando sin scroll a 390×844 también cuando hay un grupo frío. */
+.ini-tile-body .ini-tile-hint{
+  position:absolute;left:var(--s4);bottom:var(--s3);z-index:1;
+  max-width:calc(50% - var(--s6));margin:0;text-wrap:balance;
+}
 
 .ini-tile-racha{grid-area:racha}
 /* Las cifras en tiza con la unidad en plomo, como "74.1 kg" en Progreso. Iban
