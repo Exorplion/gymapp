@@ -931,31 +931,43 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    overflow:hidden en .reel quedaba recortada por completo (invisible), y lo
    único que se veía era el backdrop translúcido detrás ("mantengo
    presionado y la pantalla sólo hace un blur", bug reportado por Enzo). */
-.reel{position:relative;height:64px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--line-2)}
+.reel{--reel-diente:44px;position:relative;height:64px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--line-2)}
 .reel-track{
   display:flex;align-items:center;height:100%;overflow-x:auto;border-radius:var(--r);
   scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;
-  padding:0 calc(50% - 26px);
+  padding:0 calc(50% - var(--reel-diente) / 2);
 }
 .reel-track::-webkit-scrollbar{display:none}
 .reel-tooth{
-  flex:none;width:52px;scroll-snap-align:center;text-align:center;
-  font-family:var(--font-cond);font-weight:700;font-size:var(--t-lg);color:var(--text-2);
-  font-variant-numeric:tabular-nums;transition:color var(--d1),font-size var(--d1),font-weight var(--d1);
+  flex:none;width:var(--reel-diente);scroll-snap-align:center;text-align:center;
+  font-family:var(--font-cond);font-weight:700;font-size:var(--t-xl);color:var(--text-2);
+  font-variant-numeric:tabular-nums;
+  /* Todos los dientes miden lo mismo (22 px) y los vecinos se achican por
+     transform a 18: antes el diente que quedaba centrado animaba font-size,
+     que es layout — recalculaba la línea de la rueda en cada cambio. Ahora
+     el cambio de tamaño lo hace el compositor. */
+  transform:scale(calc(18 / 22));
+  transition:color var(--d1) var(--ease-out),transform var(--d1) var(--ease-out);
 }
-.reel-tooth.on{color:var(--text);font-size:var(--t-2xl);font-weight:800}
+.reel-tooth.on{color:var(--text);font-weight:800;transform:none;scroll-initial-target:nearest}
+/* scroll-initial-target: al montarse la rueda, el navegador la abre ya
+   centrada en el diente del valor (con su scroll-snap-align:center), en el
+   mismo layout que la dibuja. Sin esto había que escribir scrollLeft desde
+   un efecto, y esa escritura obliga a hacer el layout de la página entera
+   ahí mismo, en medio del commit de React (H7). Donde no existe, ReelPicker
+   centra con reelCenter como antes. */
 /* El diente centrado es tocable (tap corto → edición manual; mantener
    presionado → rueda fina, ver ReelPicker.jsx). cursor:pointer es la única
    pista visual que hace falta —es el mismo número grande de siempre, no un
    botón nuevo. */
 .reel-tooth.on[role="button"]{cursor:pointer}
-.reel-tooth.on.editing{width:auto;min-width:52px;padding:0 4px}
+.reel-tooth.on.editing{width:auto;min-width:var(--reel-diente);padding:0 4px}
 .reel-tooth.on.editing input{
-  width:100%;min-width:52px;text-align:center;background:none;border:none;color:inherit;
+  width:100%;min-width:var(--reel-diente);text-align:center;background:none;border:none;color:inherit;
   font:inherit;font-variant-numeric:tabular-nums;
 }
 .reel-indicator{
-  position:absolute;left:50%;top:6px;bottom:6px;width:52px;transform:translateX(-50%);
+  position:absolute;left:50%;top:6px;bottom:6px;width:var(--reel-diente);transform:translateX(-50%);
   border-radius:var(--r-md);background:var(--accent-grad);opacity:.14;pointer-events:none;
 }
 
@@ -1408,14 +1420,9 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    entero (medido: 2134px). */
 .setrows.dos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s3)}
 .setrows.dos>div{min-width:0}
-/* A media tarjeta, dientes de 44px en vez de 52: entran el número elegido y
-   uno a cada lado enteros. La matemática de la rueda (lib/reel.ts) mide el
-   DOM, así que no depende de este número. */
-.setrows.dos .reel-tooth{width:44px}
-.setrows.dos .reel-tooth.on{font-size:var(--t-xl)}
-.setrows.dos .reel-tooth.on.editing,.setrows.dos .reel-tooth.on.editing input{min-width:44px}
-.setrows.dos .reel-track{padding:0 calc(50% - 22px)}
-.setrows.dos .reel-indicator{width:44px}
+/* A media tarjeta (la única rueda que hay), dientes de 44 px: entran el
+   número elegido y uno a cada lado enteros. Es --reel-diente, y lib/reel.ts
+   centra con ese mismo número (REEL_DIENTE) sin medir el DOM. */
 /* Conversión kg↔lb del peso: ya no vive pegada a un input de respaldo (se
    sacó, ver ReelPicker.jsx) — es la única cosa que sigue afuera de la rueda,
    así que se la trata como un dato propio, alineada a la derecha bajo la

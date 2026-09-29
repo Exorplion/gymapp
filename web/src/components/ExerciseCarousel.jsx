@@ -1041,8 +1041,9 @@ function ExerciseSlide({ m, wd, started }) {
             <motion.div variants={pieza} className="setrows dos">
               <div>
                 <div className="steplabel">Peso <span>{unidad}{uni ? ' / lado' : ''}</span></div>
+                {/* Sin key por serie: la rueda sigue a `value` sola (ReelPicker)
+                    y no se remonta en cada serie registrada (H7). */}
                 <ReelPicker
-                  key={`w-${done.length}`}
                   value={v.w}
                   step={wStep()}
                   min={0.5}
@@ -1059,7 +1060,6 @@ function ExerciseSlide({ m, wd, started }) {
               <div>
                 <div className="steplabel">Reps</div>
                 <ReelPicker
-                  key={`r-${done.length}`}
                   value={v.r}
                   step={1}
                   min={1}
