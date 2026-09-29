@@ -133,6 +133,8 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
   ±30 s). El brillo: `opacity` de un pseudo-elemento con la sombra ya pintada,
   no `filter` animado.
 
+> **Arreglado** en `7c989a3` + `7e97f7a` (tanda 3). El reloj tiene su propio canal (`suscribirReloj`, rest.js) y avisa una vez por segundo sólo al número y a la pill; `bump()` queda para los cambios de estado. El anillo es UNA animación por tramo (se reprograma sólo al arrancar, en ±30 s y al volver a la app) y la dibuja un worker en un OffscreenCanvas; el brillo es la opacidad de un `::before` con la sombra ya pintada. **Por qué worker y no una animación CSS/WAAPI:** medido a 6× con el mismo build, forzando el camino de respaldo (una sola animación WAAPI lineal de `stroke-dashoffset`): 60 % de hilo inactivo (74 → 47 % a lo largo de 30 s, Layerize 80 → 235 ms/s), contra 95 % con el worker — cualquier animación que no va en el compositor hace recorrer estilo + pintado + capas de la página entera en cada cuadro. Re-medido sobre main #127 (descanso a pantalla completa, 6×, mediana de 5 ventanas de 5 s): **hilo inactivo 48 % → 87 %**, script 93 → 24 ms/s, estilo 46 → 4, layout 35 → 8, paint 53 → 9, Layerize 154 → 30 ms/s, long tasks 0,2/s → 0, cuadros del hilo principal 52/s → 3/s; el compositor sigue a 57 fps. Visual: mismo anillo, degradado y geometría (capturas a 390 px, DPR 3); el aro del brillo quedó 1 px más angosto que el trazo por lado porque con los bordes justo encima aparecía una línea oscura.
+
 ### G4 · ALTA · Cambio de pestaña: 0,3–0,7 s de hilo bloqueado a 6×
 
 - **Dónde:** `web/src/components/TabBar.jsx:47-53` (`useLayoutEffect` →
@@ -278,6 +280,8 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 - El `.btn` del descanso a pantalla completa pasa la unidad a mayúscula; la
   barra minimizada dice "−30s". **Arreglo:** `text-transform:none` en esos dos.
 
+> **Arreglado** en `adf6f83` (tanda 3): `.rfs-seg{text-transform:none}` → "−30s / +30s", igual que la barra.
+
 ### G16 · BAJA · `will-change` en cada slide del coverflow
 
 - `styles-coverflow.css:24` promueve **todos** los slides (10 en Anterior A)
@@ -349,10 +353,14 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 - **Arreglo:** con G1 resuelto, revisar si el .94 alcanza; alinear el botón al
   borde de la columna.
 
+> **Arreglado** en `adf6f83` (tanda 3): `.rfs-min` a `right:24px` (el padding de la columna): termina donde termina "Saltar" (350 px a 390). El fondo que se traslucía ya no se lee con el blur de vuelta (G1): `#rest-fs` = `rgba(…,.94)` + `blur(18px) saturate(1.2)`.
+
 ### H3 · BAJA · Barra de descanso más ancha que la columna
 
 - `#restbar` usa `left/right:12px` (`styles.css:1975-1981`); la barra de
   pestañas y el contenido, 18 px. Además tapa los puntos del carrusel.
+
+> **Arreglado** en `adf6f83` (tanda 3): `#restbar` con `left/right: var(--pad-x)` y tope `520px − 2·pad-x`; medido 18–372 px a 390, igual que `nav.tabbar`. Lo de tapar los puntos del carrusel sigue (la barra flota sobre el contenido por diseño).
 
 ### H4 · MEDIA · Fin de sesión sin entrada ni salida, con destello al cerrar
 
