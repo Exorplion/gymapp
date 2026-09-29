@@ -2352,6 +2352,7 @@ nav.tabbar{container-type:inline-size}
    contenedor, no cada botón con su propio margen. Es la diferencia entre
    "estos dos botones son un grupo" y "estos dos botones quedaron cerca". */
 .act-stack{display:flex;flex-direction:column;gap:var(--s3);margin-top:var(--s4)}
+
 .txt-blue{color:var(--accent)} .txt-ok{color:var(--ok)} .txt-red{color:var(--danger)} .txt-mut{color:var(--text-2)} .txt-warn{color:var(--warn)}
 /* Un <button> real metido en medio de una oración ("· usar último
    registrado") — alcanzable por teclado, a diferencia del <span onClick> que
@@ -3340,7 +3341,12 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    acá sólo queda un vistazo quieto, así el resto del grid tiene lugar para
    respirar en vez de competir por el espacio que antes se llevaba entero. */
 main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
-.inicio{display:flex;flex-direction:column;gap:var(--s3)}
+/* Tres grupos (semana / estado del día / tablero): --s5 entre grupos y --s2
+   o --s3 adentro. No llega a los 32 del resto de las pantallas tablero
+   porque Inicio entra entera, sin scroll, a 390×844 (tanda D). */
+.inicio{display:flex;flex-direction:column;gap:var(--s5)}
+.ini-semana{display:flex;flex-direction:column;gap:var(--s2);flex:none}
+.ini-estado{display:flex;flex-direction:column;gap:var(--s3);flex:none}
 .ini-top{flex:none}
 .ini-eyebrow{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-micro);font-weight:700;
@@ -3350,7 +3356,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-display);font-weight:800;
   font-style:italic;letter-spacing:-.03em;line-height:1.02;
 }
-.ini-sub{font-size:var(--t-sm);color:var(--text-2);margin-bottom:2px}
+.ini-sub{font-size:var(--t-sm);color:var(--text-2)}
 
 .ini-legend{display:flex;justify-content:center;gap:11px;margin-bottom:7px;flex:none}
 .ini-legend span{display:flex;align-items:center;gap:5px;font-size:var(--t-nano);color:var(--text-3);letter-spacing:.04em}
@@ -3363,7 +3369,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 }
 
 .ini-cta{
-  display:flex;align-items:center;justify-content:center;gap:9px;flex:none;
+  display:flex;align-items:center;justify-content:center;gap:var(--s2);flex:none;
   height:56px;border-radius:var(--r);border:0;width:100%;
   background:var(--accent-grad);color:var(--on-accent);
   font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:var(--t-lg);letter-spacing:.06em;
@@ -3436,10 +3442,16 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 /* El panel de abajo: la tarjeta del cuerpo ocupa las dos columnas y las dos
    chicas (racha / grupo flojo) se reparten la fila siguiente — un grid
    asimétrico, no la grilla uniforme de cualquier dashboard genérico. */
+/* Las cuatro chicas miden lo mismo (tanda D, cierra I2): con la altura del
+   grid indefinida, dos filas 1fr se igualan a la más alta. Antes Racha y Más
+   flojo medían 91 y Calorías y Peso 104, y los rótulos arrancaban en cuatro
+   x distintas (35, 79, 247, 217): dos tarjetas centradas y dos a la
+   izquierda. */
 .ini-grid{
   display:grid;grid-template-columns:1fr 1fr;
   grid-template-areas:"body body" "racha stale" "macros weight";
-  gap:10px;flex:none;
+  grid-template-rows:auto 1fr 1fr;
+  gap:var(--s3);flex:none;
 }
 .ini-tile{
   position:relative;overflow:hidden;
@@ -3447,8 +3459,8 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   backdrop-filter:var(--glass-blur);
   border:1px solid var(--glass-border);border-radius:var(--r);
   box-shadow:var(--edge-metal),0 14px 30px -18px rgba(var(--shade-rgb),.8);
-  padding:14px 16px;text-align:left;color:var(--text);font:inherit;
-  display:flex;flex-direction:column;
+  padding:var(--s3) var(--s4);text-align:left;color:var(--text);font:inherit;
+  display:flex;flex-direction:column;gap:var(--s1);
 }
 /* El brillo diagonal que hace que el glass se sienta glass y no sólo un panel
    oscuro con blur: una línea de luz arriba-izquierda, apenas visible. */
@@ -3479,32 +3491,36 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-tile-body::before{content:"";position:absolute;top:-40px;right:-30px;width:150px;height:150px;
   background:radial-gradient(circle,rgba(var(--accent-rgb),.22),transparent 66%);pointer-events:none}
 .ini-tile-go{color:var(--text-2);text-transform:none;letter-spacing:0;font-weight:600;font-size:var(--t-micro)}
-.ini-tile-thumb{display:flex;height:112px;margin:4px 0 2px;position:relative;z-index:1}
-.ini-tile-hint{font-size:var(--t-micro);color:var(--text-2);margin-top:2px}
+/* 100 y no 112 (tanda D): los 12 px son los que pagan el aire entre grupos
+   sin que Inicio pida scroll a 390×844. */
+.ini-tile-thumb{display:flex;height:100px;position:relative;z-index:1}
+/* Todas con el mismo esqueleto: rótulo arriba a la izquierda, la cifra justo
+   debajo, y la línea de apoyo (fecha, barra, "hace N días") abajo del todo.
+   Así en cada fila los rótulos y las cifras quedan a la misma altura. */
+.ini-tile-hint{font-size:var(--t-micro);color:var(--text-2);margin-top:auto}
 
-.ini-tile-racha{grid-area:racha;align-items:center;justify-content:center;gap:4px}
+.ini-tile-racha{grid-area:racha}
 /* Las cifras en tiza con la unidad en plomo, como "74.1 kg" en Progreso. Iban
    con el degradado del acento recortado al texto: tres cifras más del color
    del CTA en la misma pantalla (V2, y de paso V13 en estas tarjetas). */
 .ini-tile-num{
   font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;
-  font-size:var(--t-display);line-height:1;color:var(--text);
+  font-size:var(--t-2xl);line-height:1;color:var(--text);
 }
 .ini-tile-num small{font-size:var(--t-micro);font-weight:600;font-style:normal;color:var(--text-2);margin-left:4px}
 
-.ini-tile-stale{grid-area:stale;justify-content:center;gap:3px}
-.ini-tile-stale-name{font-size:var(--t-sm);font-weight:700}
+.ini-tile-stale{grid-area:stale}
+/* El "dato" de esta tarjeta es un nombre, no un número: condensada como las
+   cifras de al lado y con la misma caja de línea (26 px), para que en la
+   fila Racha / Más flojo el valor arranque a la misma altura. */
+.ini-tile-stale-name{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;line-height:1.45;text-wrap:balance}
 /* Plomo por defecto: "nada flojo esta semana" y "registrá una sesión" no son
    alertas. Sólo "hace N días" de un grupo que se enfría va en ámbar (V6). */
-.ini-tile-stale-days{font-size:var(--t-micro);color:var(--text-2)}
+.ini-tile-stale-days{font-size:var(--t-micro);color:var(--text-2);margin-top:auto}
 .ini-tile-stale-days.warn{color:var(--warn)}
-.ini-tile-ok{grid-area:stale;align-items:center;justify-content:center;text-align:center;
-  font-size:var(--t-micro);color:var(--text-2);}
-
-.ini-tile-macros{grid-area:macros;gap:5px}
-.ini-tile-weight{grid-area:weight;gap:5px}
-.ini-tile-num.sm{font-size:var(--t-2xl)}
-.ini-tile-bar{height:5px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.08);overflow:hidden;margin-top:2px}
+.ini-tile-macros{grid-area:macros}
+.ini-tile-weight{grid-area:weight}
+.ini-tile-bar{height:5px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.08);overflow:hidden;margin-top:auto;margin-bottom:var(--s1)}
 .ini-tile-bar i{display:block;height:100%;background:var(--accent-grad);border-radius:var(--r-xs)}
 
 /* La tira de turnos: no es un calendario de fechas —es la secuencia de
@@ -3519,16 +3535,16 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    vistazo, porque significan cosas distintas: entrenado (punto encendido),
    vacío del pasado (tocable, para anotarlo) y futuro (apagado y sin tocar —
    "todavía no llegó" no es "no entrenaste"). */
-.wkreal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:var(--s3)}
+.wkreal{display:grid;grid-template-columns:repeat(7,1fr);gap:var(--s1)}
 .wkreal-d{
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-  padding:7px 0 6px;border-radius:var(--r-md);
+  display:flex;flex-direction:column;align-items:center;gap:var(--s1);
+  padding:var(--s2) 0;border-radius:var(--r-md);
   background:var(--surface-2);border:1px solid var(--line);
   transition:border-color var(--d1) var(--ease-out);
 }
 /* 2026-09-26 (auditoría): 10 px en el gris más apagado no se leía; un paso
    más grande y el gris de texto secundario. */
-.wkreal-d .wd{font-size:var(--t-micro);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
+.wkreal-d .wd{font-size:var(--t-micro);font-weight:700;line-height:1;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
 .wkreal-d .nu{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:700;line-height:1;color:var(--text-2)}
 .wkreal-d .dot{width:5px;height:5px;border-radius:var(--r-full);background:var(--line-2)}
 .wkreal-d.on{border-color:rgba(var(--ok-rgb),.34);background:rgba(var(--ok-rgb),.08)}
@@ -3545,9 +3561,11 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    los últimos 7 días casi siempre hay un día vacío que preguntar, y a 8px de
    padding la línea empujaba el grid de Inicio 31 px debajo de la barra
    (390×844, medido). Así cuesta ~20 px y entra sin scroll. */
+/* 2026-09-29 (tanda D): sin los márgenes negativos. Vive en el grupo de la
+   semana (.ini-semana, gap --s2): el aire lo pone el grupo. */
 .wkreal-ask{
-  display:block;width:100%;text-align:center;margin:-14px 0 -4px;
-  padding:4px 8px;border-radius:var(--r-md);
+  display:block;width:100%;text-align:center;
+  padding:var(--s1) var(--s2);border-radius:var(--r-md);
   background:rgba(var(--accent-strong-rgb),.08);border:1px solid rgba(var(--accent-strong-rgb),.22);
   color:var(--accent);font-size:var(--t-micro);font-weight:600;
 }
@@ -4106,3 +4124,20 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .notice{margin:var(--s4) 0;border-left:2px solid transparent;padding-left:var(--s3)}
 .notice.ok{border-left-color:var(--ok)}
 .notice.warn{border-left-color:var(--warn)}
+
+/* ---------- ritmo de las pantallas tablero (auditoría visual 2, V10) ----------
+   Inicio, Entreno, Comida y Progreso tenían todo a 10–12 px de todo: sin un
+   salto mayor entre grupos, el ojo no sabía dónde terminaba una cosa y
+   empezaba la otra. Dos intervalos y nada más: --s3 (12) DENTRO de un grupo,
+   --s6 (32) ENTRE grupos. El espacio lo pone el contenedor (gap), no cada
+   hijo con su margen: por eso los márgenes verticales de los hijos se anulan,
+   y una .card o un .notice metidos en un grupo no suman el suyo.
+   Va al FINAL del archivo a propósito: con la misma especificidad que
+   .card, .nav-card o .notice, gana por orden. */
+.pila{display:flex;flex-direction:column;gap:var(--s6)}
+.grupo{display:flex;flex-direction:column;gap:var(--s3)}
+.pila > *,.grupo > *{margin-top:0;margin-bottom:0}
+/* En las pantallas, un título de sección abre un grupo: 32 arriba, 12 abajo.
+   (En las hojas sigue con su margen de siempre.) */
+.view .sect{margin:var(--s6) 2px var(--s3)}
+.view .grupo > .sect{margin:0 2px}
