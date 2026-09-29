@@ -29,7 +29,7 @@ import {
   pasosRampa, avanzarRampa, deshacerRampa,
 } from '../lib/session.js';
 import { estadoRampa, tocarPaso, estadoBoton } from '../lib/rampa.js';
-import { previaEjercicio, metaPartes, cambioTexto } from '../lib/previa.js';
+import { previaEjercicio, metaPartes, cambioTexto, columnaHoy } from '../lib/previa.js';
 import PreviaEjercicio, { Sparkline } from './PreviaEjercicio.jsx';
 import { sideImbalance } from '../lib/symmetry.js';
 import { toast } from '../lib/toast.js';
@@ -466,12 +466,11 @@ function ultimaVez(last) {
   return ultima;
 }
 
-function Comparativa({ last, obj, uni }) {
-  const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
+function Comparativa({ last, obj, meta, uni }) {
   const ultima = ultimaVez(last);
-  const hoyPeso = obj.peso != null
-    ? `${obj.tipo === 'sugerido' ? '~' : ''}${wDisplay(obj.peso)} ${unidad}${obj.tipo === 'subir' ? ' ↑' : ''}`
-    : '—';
+  /* La columna Hoy dice la misma meta que "Meta de hoy" en la tarjeta
+     (columnaHoy, previa.js). `obj` sigue mandando el color de "subir". */
+  const hoy = columnaHoy(meta);
   return (
     <div className="ex-cmp">
       <div className="ex-cmp-col">
@@ -480,8 +479,8 @@ function Comparativa({ last, obj, uni }) {
       </div>
       <div className={`ex-cmp-col hoy${obj.tipo === 'subir' ? ' up' : ''}`}>
         <span className="ex-cmp-lbl">Hoy</span>
-        <b>{hoyPeso}</b>
-        <small>{obj.texto}</small>
+        <b>{hoy.numeros}</b>
+        {hoy.porque && <small>{hoy.porque}</small>}
       </div>
     </div>
   );
@@ -649,7 +648,7 @@ function FuerzaYRecord({ fuerza, record }) {
   );
 }
 
-function AvisoUltimaVez({ visible, onCerrar, last, obj, uni, fuerza, record }) {
+function AvisoUltimaVez({ visible, onCerrar, last, obj, meta, uni, fuerza, record }) {
   useEffect(() => {
     if (!visible) return;
     const t = setTimeout(onCerrar, AVISO_MS);
@@ -668,7 +667,7 @@ function AvisoUltimaVez({ visible, onCerrar, last, obj, uni, fuerza, record }) {
             exit={{ opacity: 0, y: -6, scale: 0.98, transition: { duration: D.toque / 1000 } }}
           >
             <button type="button" className="ex-aviso-x" aria-label="Cerrar" onClick={e => { e.stopPropagation(); onCerrar(); }}>✕</button>
-            <Comparativa last={last} obj={obj} uni={uni} />
+            <Comparativa last={last} obj={obj} meta={meta} uni={uni} />
             <FuerzaYRecord fuerza={fuerza} record={record} />
             <i className="ex-aviso-reloj" aria-hidden="true" style={{ animationDuration: `${AVISO_MS}ms` }} />
           </motion.div>
@@ -900,7 +899,7 @@ function ExerciseSlide({ m, wd, started }) {
         )}
         {hayComparativa && (
           <AvisoUltimaVez
-            visible={aviso} onCerrar={cerrarAviso} last={last} obj={obj} uni={uni}
+            visible={aviso} onCerrar={cerrarAviso} last={last} obj={obj} meta={datosPrevia?.meta} uni={uni}
             fuerza={datosPrevia?.fuerza} record={datosPrevia?.record}
           />
         )}
