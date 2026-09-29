@@ -7,7 +7,7 @@
 ## SESIÓN 2026-09-29 (f) — Tanda C "Superficies y luz" + tanda 8 "Íconos y coherencia"
 
 Rama `feat/visual-superficies` (rebasada sobre main con #134, la tanda B), PR abierto sin
-mergear. **1064 tests.** Detalle, commits y números en
+mergear. **1074 tests** (con `tipografia.test.js` de la tanda B). Detalle, commits y números en
 `docs/auditoria-visual-2-2026-09.md` → "Tanda C — estado" y
 `docs/auditoria-total-2026-09.md` → "Tanda 8 — estado"; `DESIGN.md`
 actualizado (Overview, Colors, Elevation & Depth con la tabla de las tres
