@@ -237,7 +237,7 @@ export default function Progreso() {
       <div className="grupo">
       <div className="sect">Récords</div>
       {!exNames.length ? (
-        <div className="card"><div className="empty p-4"><p className="m-0">Aquí brillarán tus mejores marcas. 🏆</p></div></div>
+        <div className="card"><div className="empty p-4"><p className="m-0">Aquí van a aparecer tus mejores marcas.</p></div></div>
       ) : (
         <PRsList exNames={exNames} />
       )}
@@ -352,7 +352,7 @@ function VolumeTab() {
     <>
       {risk?.risk && (
         <div className="notice warn">
-          <div className="text-sm text-text font-semibold">⚠ Volumen alto esta semana</div>
+          <div className="text-sm text-text font-semibold">Volumen alto esta semana</div>
           <div className="s text-text-2 mt-1">Tonelaje 7 días ({fmtKg(risk.acute)}) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
         </div>
       )}

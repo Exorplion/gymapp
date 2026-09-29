@@ -13,7 +13,7 @@ import { parseFoodSpeech, sumItems } from '../../lib/foodvoice.js';
 import { toast } from '../../lib/toast.js';
 import { sheetReveal } from '../../lib/motion.js';
 import { Button, Card } from '../ui/primitives.jsx';
-import { X } from '../Icon.jsx';
+import { Mic, X } from '../Icon.jsx';
 
 const SR_CLASS = typeof window !== 'undefined'
   ? (window.SpeechRecognition || window.webkitSpeechRecognition || null)
@@ -88,7 +88,7 @@ export default function FoodVoice() {
       </div>
 
       <Button type="button" variant={recording ? 'ghost' : 'primary'} className="w-full" onClick={listen} disabled={recording}>
-        {recording ? '🎙 Escuchando…' : '🎙 Dictar'}
+        <Mic size={18} /> {recording ? 'Escuchando…' : 'Dictar'}
       </Button>
 
       <div className="mt-3">

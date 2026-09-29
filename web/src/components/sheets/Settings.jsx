@@ -44,6 +44,7 @@ import { PRESETS, acentoDe, acentoGuardado, aplicarAcento, alejarDeEstados, dist
 import { motion } from 'motion/react';
 import { hojaProps, seccion } from '../../lib/variants.js';
 import AvisosAjustes from '../AvisosAjustes.jsx';
+import { Alerta, Check, Descargar, Pencil, Probeta, Recargar, Subir } from '../Icon.jsx';
 import { enModoPrueba, entrarModoPrueba } from '../../lib/modoPrueba.js';
 
 /** Entrar y salir del modo prueba (modoPrueba.js). Entrar sólo copia. Salir
@@ -413,7 +414,7 @@ export default function Settings() {
             <div className="calcbox" style={{ marginTop: 12 }}>
               {m ? <MacroPreview m={m} /> : <div className="txt-mut" style={{ fontSize: 'var(--t-sm)' }}>Completa tu perfil para calcular las metas.</div>}
             </div>
-            <button type="button" className="btn ghost sm" style={{ marginTop: 10 }} onClick={() => openSheet('profile')}>✎ Editar perfil</button>
+            <button type="button" className="btn ghost sm" style={{ marginTop: 10 }} onClick={() => openSheet('profile')}><Pencil size={16} /> Editar perfil</button>
           </>
         ) : (
           <div className="f4" style={{ marginTop: 12 }}>
@@ -435,7 +436,7 @@ export default function Settings() {
         <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 10 }}>
           Carga tu rutina Anterior/Posterior, ~1 mes de nutrición y ~5 semanas de sesiones reconstruidas desde tus pesos anotados. Sirve para ver la app llena; se borra aparte sin tocar lo demás.
         </div>
-        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={startSeedLoad}>🧪 Cargar mi registro</button>
+        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={startSeedLoad}><Probeta /> Cargar mi registro</button>
         {nSeed > 0 && (
           <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={startSeedWipe}>Borrar lo cargado ({nSeed} registros)</button>
         )}
@@ -447,8 +448,8 @@ export default function Settings() {
           Bajá la tabla en Markdown, editala donde quieras y volvé a subirla. Se
           actualizan los que ya tenías y se agregan los nuevos — nada se borra.
         </div>
-        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => exportFoodsMD()}>⬇ Exportar alimentos a MD</button>
-        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => mdRef.current?.click()}>⬆ Importar alimentos MD</button>
+        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => exportFoodsMD()}><Descargar /> Exportar alimentos a MD</button>
+        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => mdRef.current?.click()}><Subir /> Importar alimentos MD</button>
         <input ref={mdRef} type="file" accept=".md,text/markdown,text/plain" hidden onChange={onMdFile} />
       </motion.section>
 
@@ -461,11 +462,11 @@ export default function Settings() {
             sabe y nada más — `null` es "no se pudo saber", no "está todo
             bien". Ver el encabezado de lib/persist.js. */}
         <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 10 }}>
-          {S.persisted === true && <>✓ Tu teléfono tiene <b>reservado</b> este espacio. El sistema no lo borra solo.</>}
+          {S.persisted === true && <><Check size={14} className="ico-linea" /> Tu teléfono tiene <b>reservado</b> este espacio. El sistema no lo borra solo.</>}
           {/* Sin el glifo ⋮ a propósito: en la tipografía de la app se lee
               como dos puntos ("menú : del navegador") y confunde. */}
           {S.persisted === false && (
-            <><b className="txt-warn">⚠ El navegador no reservó este espacio.</b> Si el teléfono
+            <><b className="txt-warn"><Alerta className="ico-linea" /> El navegador no reservó este espacio.</b> Si el teléfono
             se queda sin memoria puede borrar <b>todo</b> de golpe y sin avisar. Para que lo
             reserve, instalá la app: menú del navegador (los tres puntitos de arriba a la
             derecha) → "Agregar a pantalla de inicio". Y hasta entonces, exportá seguido.</>
@@ -482,7 +483,7 @@ export default function Settings() {
             usuario o del sistema: vive en Descargas, fuera del almacenamiento
             que el navegador puede desalojar. Cuando hace falta de verdad, el
             botón deja de ser un "ghost" más de la lista. */}
-        <button type="button" className={avisarBackup ? 'btn' : 'btn ghost'} style={{ marginBottom: 10 }} onClick={() => exportJSON()}>⬇ Exportar todo a JSON</button>
+        <button type="button" className={avisarBackup ? 'btn' : 'btn ghost'} style={{ marginBottom: 10 }} onClick={() => exportJSON()}><Descargar /> Exportar todo a JSON</button>
 
         {/* Prendido de fábrica. El default lo eligió la pérdida del
             2026-09-17, no una preferencia: acordarse de respaldar es
@@ -496,7 +497,7 @@ export default function Settings() {
             ? 'Al cerrar un entrenamiento, si pasó una semana desde tu última copia, la app guarda un JSON en Descargas sola. Ahí no lo alcanza ningún borrado del navegador.'
             : 'Nadie va a respaldar por vos. Si el teléfono borra los datos, se pierde lo que no hayas exportado a mano.'}
         </div>
-        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => importRef.current?.click()}>⬆ Importar JSON</button>
+        <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={() => importRef.current?.click()}><Subir /> Importar JSON</button>
         <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={onImportFile} />
         <button type="button" className="btn danger" onClick={startWipeAll}>Borrar todos los datos</button>
       </motion.section>
@@ -509,7 +510,7 @@ export default function Settings() {
           tiene la versión anterior guardada. Este botón la va a buscar.
         </div>
         <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={buscarUpdate} disabled={buscando}>
-          {buscando ? 'Buscando…' : '⟳ Buscar actualización'}
+          {buscando ? 'Buscando…' : <><Recargar /> Buscar actualización</>}
         </button>
       </motion.section>
 

@@ -17,6 +17,7 @@ import { openSheet } from '../lib/state.js';
 import { WDS, fmtD, fmtKg } from '../lib/format.js';
 import { sessionPRs } from '../lib/session.js';
 import { Badge } from './ui/primitives.jsx';
+import { Trofeo } from './Icon.jsx';
 
 export default function SessionCard({ sess }) {
   const nsets = (sess.entries || []).reduce((a, e) => a + e.sets.length, 0);
@@ -33,7 +34,7 @@ export default function SessionCard({ sess }) {
       <span className="grouprow-grow">
         <span className="sess-row-top">
           <span className="sc-name">{sess.dayName || 'Entrenamiento'}</span>
-          {nprs > 0 && <Badge tone="warn" className="px-2 py-0 leading-5" aria-label={`${nprs} ${nprs === 1 ? 'récord' : 'récords'}`}>🏆{nprs}</Badge>}
+          {nprs > 0 && <Badge tone="warn" className="gap-0.5 px-2 py-0 leading-5" aria-label={`${nprs} ${nprs === 1 ? 'récord' : 'récords'}`}><Trofeo size={13} />{nprs}</Badge>}
           <span className="sess-row-fecha">{fmtD(sess.date)}</span>
         </span>
         {/* Una sesión anotada a mano (registrarDiaEntrenado) no tiene series:

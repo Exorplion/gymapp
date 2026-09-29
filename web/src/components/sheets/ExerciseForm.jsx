@@ -17,6 +17,7 @@ import { toast } from '../../lib/toast.js';
 import { S, wToUnit, wFromUnit } from '../../lib/state.js';
 import { cn } from '../../lib/utils.js';
 import { Button } from '../ui/primitives.jsx';
+import { Camera, Imagen } from '../Icon.jsx';
 
 
 const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 text-body text-text outline-none transition-colors focus-visible:border-accent';
@@ -250,7 +251,7 @@ function EditForm({ wd, ex }) {
           ) : (
             <>
               <Button type="button" variant="secondary" className="w-full" onClick={() => photoRef.current?.click()}>
-                📷 Sacar o elegir foto
+                <Camera /> Sacar o elegir foto
               </Button>
               <div className="mt-1.5 text-sm text-text-2">
                 Para reconocerla al llegar. Se guarda reducida en tu teléfono, nunca se sube a ningún lado.
@@ -273,7 +274,7 @@ function EditForm({ wd, ex }) {
         ) : (
           <>
             <Button type="button" variant="secondary" className="w-full" onClick={() => setPicking(true)}>
-              🖼 Buscar ilustración
+              <Imagen /> Buscar ilustración
             </Button>
             <div className="mt-1.5 text-sm text-text-2">
               Para ver cómo se hace el movimiento. Se descarga la primera vez y queda guardada.

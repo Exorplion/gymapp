@@ -16,6 +16,7 @@ import { S, openSheet, closeSheet } from '../../lib/state.js';
 import { gymEquipFor } from '../../lib/gyms.js';
 import { subBlocksOf } from '../../lib/muscle.js';
 import { equipLabel } from '../../lib/equip.js';
+import { Check, Plus } from '../Icon.jsx';
 import { sheetReveal } from '../../lib/motion.js';
 
 /** Cada ejercicio distinto de la rutina, una sola vez. Sale de S.routine, así
@@ -88,7 +89,7 @@ export default function GymMatch({ gymId }) {
                             : `Sin asignar${equipLabel(ex) ? ` · usa ${equipLabel(ex)}` : ''}`}
                         </div>
                       </div>
-                      <span className={`gym-eq-btn${ov ? ' on' : ''}`}>{ov ? '✓' : '+'}</span>
+                      <span className={`gym-eq-btn${ov ? ' on' : ''}`}>{ov ? <Check size={15} /> : <Plus size={15} />}</span>
                     </button>
                   );
                 })}

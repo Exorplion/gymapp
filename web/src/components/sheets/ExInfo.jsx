@@ -13,6 +13,7 @@ import { exInfo, rirScheme, isLowerBackLift } from '../../lib/exdb.js';
 import { fibrasDe } from '../../lib/fibras.js';
 import { cn } from '../../lib/utils.js';
 import BodyMini from '../BodyMini.jsx';
+import { Alerta } from '../Icon.jsx';
 
 export default function ExInfo({ name, exId }) {
   const rootRef = useRef(null);
@@ -58,7 +59,7 @@ export default function ExInfo({ name, exId }) {
             <h3 className="mt-4 mb-1.5 font-cond text-lg font-semibold text-text">Por qué elegirlo</h3>
             <div className="text-sm leading-relaxed text-text">
               {info.w.split('⚠').map((part, i, arr) => (
-                <span key={i}>{part}{i < arr.length - 1 && <span className="text-warn">⚠</span>}</span>
+                <span key={i}>{part}{i < arr.length - 1 && <span className="text-warn" role="img" aria-label="Atención"><Alerta className="ico-linea" /></span>}</span>
               ))}
             </div>
           </motion.div>

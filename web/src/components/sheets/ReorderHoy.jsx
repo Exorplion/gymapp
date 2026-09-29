@@ -7,7 +7,7 @@ import { useEffect, useRef } from 'react';
 import { S, closeSheet, bump } from '../../lib/state.js';
 import { orderedExs, sessionExs, setExOrder, indiceHoy } from '../../lib/session.js';
 import { sheetReveal } from '../../lib/motion.js';
-import { ArrowDown, ArrowUp } from '../Icon.jsx';
+import { ArrowDown, ArrowUp, Grip, Mover } from '../Icon.jsx';
 
 export default function ReorderHoy() {
   const index = indiceHoy();
@@ -43,7 +43,7 @@ export default function ReorderHoy() {
   return (
     <>
       <h2>Reordenar</h2>
-      <div className="drag-hint tight"><span>↕</span><span>Arrastrá manteniendo presionado, o usá las flechas.</span></div>
+      <div className="drag-hint tight"><Mover /><span>Arrastrá manteniendo presionado, o usá las flechas.</span></div>
       <div data-sort="hoy" ref={listRef}>
         {exs.map((ex, i) => (
           <div className="row" data-sid={ex.id} key={ex.id}>
@@ -65,7 +65,7 @@ export default function ReorderHoy() {
               disabled={i === exs.length - 1}
               onClick={() => mover(i, 1)}
             ><ArrowDown /></button>
-            <span className="chev" style={{ cursor: 'grab' }} aria-hidden="true">☰</span>
+            <span className="chev" style={{ cursor: 'grab' }} aria-hidden="true"><Grip /></span>
           </div>
         ))}
       </div>

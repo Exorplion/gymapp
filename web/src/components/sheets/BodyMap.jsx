@@ -12,6 +12,7 @@ import { S, closeSheet, changeTab } from '../../lib/state.js';
 import { daysSinceAll, stalestGroups, muscleVolume, uncategorized, recoveryPct } from '../../lib/muscle.js';
 import { diasPorPorcion } from '../../lib/fibras.js';
 import { dstr } from '../../lib/format.js';
+import { Arena } from '../Icon.jsx';
 import { sheetReveal } from '../../lib/motion.js';
 import Silhouette, { LeyendaTonos } from '../Silhouette.jsx';
 
@@ -120,7 +121,7 @@ function StaleLine({ grupos, dias }) {
   const rec = recoveryPct(top[0]);
   return (
     <div className="mt-3 rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 py-2.5 text-sm text-text-2">
-      ⌁ {top.join(' y ')} hace {d} día{d === 1 ? '' : 's'}
+      <Arena className="ico-linea" /> {top.join(' y ')} hace {d} día{d === 1 ? '' : 's'}
       {rec < 100 && <span> · recuperación estimada {rec}%</span>}
     </div>
   );

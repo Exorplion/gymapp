@@ -14,7 +14,7 @@ import { currentStreak } from '../lib/streak.js';
 import { catsDeSesion } from '../lib/muscle.js';
 import { fmtKg, fmtMiles, round1 } from '../lib/format.js';
 import { fireConfetti } from '../lib/confetti.js';
-import { Flame } from './Icon.jsx';
+import { Flame, Mancuerna, Trofeo } from './Icon.jsx';
 import Silhouette from './Silhouette.jsx';
 import { cn } from '../lib/utils.js';
 import { countTo, popIn, D } from '../lib/motion.js';
@@ -47,9 +47,9 @@ const RED_SALIDA_MS = SALIDA_MS + D.panel;
 
 function milestoneTexto(m) {
   if (!m) return null;
-  if (m.type === 'racha') return `🔥 ${m.value} días de racha`;
-  if (m.type === 'sesiones') return `🏋 Sesión #${m.value}`;
-  if (m.type === 'tonelaje') return `💪 ${fmtKg(m.value)} movidos en total`;
+  if (m.type === 'racha') return <><Flame size={14} className="ico-linea txt-flame" /> {m.value} días de racha</>;
+  if (m.type === 'sesiones') return <><Trofeo size={14} className="ico-linea" /> Sesión #{m.value}</>;
+  if (m.type === 'tonelaje') return <><Mancuerna size={14} className="ico-linea" /> {fmtKg(m.value)} movidos en total</>;
   return null;
 }
 

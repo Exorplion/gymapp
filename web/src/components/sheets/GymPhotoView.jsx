@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { openSheet } from '../../lib/state.js';
 import { getPhoto } from '../../lib/gyms.js';
+import { Pencil } from '../Icon.jsx';
 
 export default function GymPhotoView({ gymId, gymName, exName, onReemplazar, onBorrar }) {
   const [url, setUrl] = useState(null);
@@ -74,7 +75,7 @@ export default function GymPhotoView({ gymId, gymName, exName, onReemplazar, onB
       )}
       <div style={{ display: 'flex', gap: 10 }}>
         <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={pedirReemplazo}>
-          ✎ Reemplazar
+          <Pencil /> Reemplazar
         </button>
         {!falta && (
           <button type="button" className="btn sm danger" style={{ flex: 1 }} onClick={pedirBorrado}>

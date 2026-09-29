@@ -11,6 +11,7 @@
 // (subBlocksOf con un turno de descanso) hubo que diagnosticarlo leyendo
 // código a ciegas porque el mensaje no llegaba a ningún lado.
 import { Component } from 'react';
+import { Check } from './Icon.jsx';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -70,7 +71,7 @@ export default class ErrorBoundary extends Component {
             Recargar
           </button>
           <button type="button" className="btn ghost" onClick={this.copiar}>
-            {this.state.copiado ? '✓ Copiado' : 'Copiar detalle'}
+            {this.state.copiado ? <><Check /> Copiado</> : 'Copiar detalle'}
           </button>
         </div>
       </div>

@@ -13,6 +13,7 @@ import {
 } from '../lib/push.js';
 import { toast } from '../lib/toast.js';
 import { enModoPrueba } from '../lib/modoPrueba.js';
+import { Alerta, Check } from './Icon.jsx';
 
 const TIPOS = [
   { k: 'descanso', t: 'Fin del descanso', s: 'En la barra del teléfono. El sonido y la vibración siguen igual.', tag: TAG_DESCANSO },
@@ -106,8 +107,8 @@ export default function AvisosAjustes() {
 
       <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, margin: 'var(--s3) 0 var(--s3)' }}>
         {estado === 'apagado' && <>Lo manda una tarea diaria de GitHub. Al activarlo se copia un código que hay que pegar una sola vez en el repo como secreto <b>PUSH_SUBSCRIPTION</b> (o pasárselo a Claude).</>}
-        {estado === 'activo' && !codigo && <>✓ Activo en este teléfono. Si cambiaste de teléfono o reinstalaste la app, volvé a copiar el código y actualizá el secreto.</>}
-        {estado === 'desconectado' && <b className="txt-warn">⚠ El navegador perdió la suscripción: el recordatorio ya no llega. Activalo de nuevo y actualizá el secreto PUSH_SUBSCRIPTION con el código nuevo.</b>}
+        {estado === 'activo' && !codigo && <><Check size={14} className="ico-linea" /> Activo en este teléfono. Si cambiaste de teléfono o reinstalaste la app, volvé a copiar el código y actualizá el secreto.</>}
+        {estado === 'desconectado' && <b className="txt-warn"><Alerta className="ico-linea" /> El navegador perdió la suscripción: el recordatorio ya no llega. Activalo de nuevo y actualizá el secreto PUSH_SUBSCRIPTION con el código nuevo.</b>}
         {estado === 'bloqueado' && <>Las notificaciones de FIERRO están bloqueadas. Se habilitan en la configuración del sitio del navegador (Notificaciones → Permitir).</>}
         {estado === 'sin-soporte' && <>Este navegador no recibe notificaciones push. En iPhone sólo funcionan con la app instalada desde Safari.</>}
       </div>
