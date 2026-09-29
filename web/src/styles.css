@@ -3777,20 +3777,20 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 /* #sheet h2 (tamaño de hoja, margen de 16) le gana a una clase sola: por
    eso el #sheet delante. La cara es la del héroe (.plan-title). */
 #sheet .asist-h{font-size:var(--t-display);margin:var(--s1) 0 var(--s4);padding:2px 4px 2px 0}
-#sheet .asist-h:focus{outline:none}
+/* El foco llega acá por código (al cambiar de paso, para el lector de
+   pantalla); el anillo global con su halo pintaba una caja sobre el título. */
+#sheet .asist-h:focus,#sheet .asist-h:focus-visible{outline:none;box-shadow:none}
 
 .asist-cuerpo{flex:1;min-height:0;display:flex;flex-direction:column}
 .asist-sec{margin-top:var(--s4)}
 /* Rótulo de sección: el de .eyebrow. El #sheet es por #sheet h3. */
 #sheet .asist-lbl,.asist-lbl{
-  margin:0 0 var(--s2);font-size:var(--t-micro);font-weight:700;letter-spacing:.14em;
+  margin:0 0 var(--s2);font-family:'Barlow',system-ui,sans-serif;font-size:var(--t-micro);font-weight:700;letter-spacing:.14em;
   text-transform:uppercase;color:var(--text-2);
 }
 .asist .chip{min-height:40px}
 .asist-chips{margin-top:var(--s2)}
 .asist-sec .asist-chips{margin-top:0}
-/* Explorar: una sola fila que se desliza y llega al borde de la pantalla. */
-.asist-scroll{margin:0 calc(-1 * var(--s4));padding:2px var(--s4) var(--s1)}
 .asist-aparece{animation:asistAparece var(--d2) var(--ease-out)}
 @keyframes asistAparece{from{transform:translateY(6px);opacity:0}}
 

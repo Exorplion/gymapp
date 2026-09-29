@@ -394,7 +394,8 @@ describe('arrastre del paso 2 (drag.js)', () => {
     const spy = vi.fn();
     setAsistDrop(spy);
     await commitSort('asist', '0', ['x', A.NUEVO]);
-    expect(spy).toHaveBeenCalledWith(['x', A.NUEVO]);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][0]).toEqual(['x', A.NUEVO]);
     expect(JSON.stringify(S.routine)).toBe(antes);
     setAsistDrop(null);
   });

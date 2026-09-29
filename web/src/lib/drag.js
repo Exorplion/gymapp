@@ -161,7 +161,7 @@ export function dragEnd(commit) {
   /* guardo ya, en paralelo con la animación de aterrizaje. Menos el
      asistente: ahí "guardar" es un setState de React, que movería los nodos
      mientras todavía llevan el transform del arrastre (se verían corridos dos
-     veces). Se avisa recién cuando los nodos ya están en su lugar. */
+     veces). Se le avisa al aterrizar, más abajo. */
   const saved = kind === 'asist' ? null : commitSort(kind, wd, ids);
   setTimeout(async () => {
     /* en vez de re-dibujar la vista entera (eso es lo que hacía parpadear y te
@@ -171,9 +171,15 @@ export function dragEnd(commit) {
     // En su lugar y no al final de la caja: en Plan de hoy detrás de los
     // bloques viene "+ Agregar ejercicio", y un appendChild lo dejaba arriba.
     const tras = cards[cards.length - 1].nextSibling;
+    /* El asistente NO mueve nodos a mano: su lista la pinta React desde el
+       estado, y si el DOM se reordena por fuera, React ya no sabe dónde está
+       cada fila (medido: la numeración quedaba 7, 9, 8). Además la posición
+       puede no ser la soltada — en la rutina se ajusta al borde válido del
+       bloque. Se le pasa `clean` para que la hoja lo llame dentro de su FLIP:
+       mide con los transforms del arrastre puestos y anima al lugar final. */
+    if (kind === 'asist') { commitSort(kind, wd, ids, clean); return; }
     ids.forEach(id => { const k = by.get(id); if (k) box.insertBefore(k, tras); });
     clean();
-    if (kind === 'asist') { commitSort(kind, wd, ids); return; }
     // 'rut' deshabilita las flechas en el borde de cada GRUPO, no de la lista:
     // eso lo resuelve el render de abajo (y un disabled puesto a mano acá
     // quedaría pegado si React no ve cambiar la prop).
@@ -220,8 +226,8 @@ export function keepScroll(fn) {
 let ASIST_DROP = null;
 export function setAsistDrop(fn) { ASIST_DROP = fn || null; }
 
-export async function commitSort(kind, wd, ids) {
-  if (kind === 'asist') { ASIST_DROP?.(ids); return; }
+export async function commitSort(kind, wd, ids, limpiar) {
+  if (kind === 'asist') { ASIST_DROP?.(ids, limpiar); return; }
   if (kind === 'hoy') return setExOrder(indiceHoy(), ids);
   // Encabezados de grupo en Plan de hoy (Hoy.jsx). data-sort="hoy-blocks" se
   // puso para que flipSort animara las ▲▼, y el arrastre lo agarraba de

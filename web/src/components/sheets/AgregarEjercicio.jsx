@@ -58,8 +58,8 @@ export default function AgregarEjercicio({ wd, tipo = 'rutina', inicial }) {
      caja y soltarEn lo traduce a una posición válida. Si la ajustó (rutina:
      la soltaste fuera de su bloque), el FLIP la lleva al borde válido. */
   useEffect(() => {
-    setAsistDrop(ids => {
-      const aplicar = () => flushSync(() => setE(prev => soltarEn(prev, ctxDe(tipo, wd), ids)));
+    setAsistDrop((ids, limpiar) => {
+      const aplicar = () => { limpiar?.(); flushSync(() => setE(prev => soltarEn(prev, ctxDe(tipo, wd), ids))); };
       if (menosMovimiento()) aplicar();
       else flipSort(aplicar, raizRef.current || document);
     });
@@ -76,7 +76,9 @@ export default function AgregarEjercicio({ wd, tipo = 'rutina', inicial }) {
     tituloRef.current?.focus({ preventScroll: true });
   }, [e.paso]);
 
-  function cambiar(estado) { setE(estado); setError(null); }
+  /* Siempre sobre el estado más reciente (setE con función): dos toques
+     seguidos en el mismo cuadro no se pisan entre sí. */
+  function cambiar(f) { setE(prev => (typeof f === 'function' ? f(prev) : f)); setError(null); }
 
   function siguiente() {
     const r = avanzar(e);
@@ -85,7 +87,7 @@ export default function AgregarEjercicio({ wd, tipo = 'rutina', inicial }) {
     setDir('r'); cambiar(r.estado);
   }
 
-  function atras() { setDir('l'); cambiar(volver(e)); }
+  function atras() { setDir('l'); cambiar(volver); }
 
   async function agregar() {
     if (guardando) return;
@@ -165,7 +167,7 @@ function Paso1({ e, ctx, cambiar, explorar, setExplorar, inputRef, siguiente }) 
   const chip = n => (
     <button
       key={n} type="button" className={`chip${elegido(n) ? ' blue' : ''}`} aria-pressed={elegido(n)}
-      onClick={() => cambiar(setNombre(e, n))}
+      onClick={() => cambiar(x => setNombre(x, n))}
     >
       {n}
     </button>
@@ -181,11 +183,11 @@ function Paso1({ e, ctx, cambiar, explorar, setExplorar, inputRef, siguiente }) 
           placeholder="Buscá o escribí uno"
           autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="next"
           value={name}
-          onChange={ev => cambiar(setNombre(e, ev.target.value))}
+          onChange={ev => { const v = ev.target.value; cambiar(x => setNombre(x, v)); }}
           onKeyDown={ev => { if (ev.key === 'Enter') siguiente(); }}
         />
         {name && (
-          <button type="button" className="asist-limpiar" aria-label="Borrar el nombre" onClick={() => { cambiar(setNombre(e, '')); inputRef.current?.focus(); }}>
+          <button type="button" className="asist-limpiar" aria-label="Borrar el nombre" onClick={() => { cambiar(x => setNombre(x, '')); inputRef.current?.focus(); }}>
             <X size={16} />
           </button>
         )}
@@ -202,7 +204,7 @@ function Paso1({ e, ctx, cambiar, explorar, setExplorar, inputRef, siguiente }) 
             {MUSCLE_CATS.map(c => (
               <button
                 key={c} type="button" className={`chip${e.form.cat === c ? ' on' : ''}`} aria-pressed={e.form.cat === c}
-                onClick={() => cambiar(setGrupo(e, e.form.cat === c ? '' : c))}
+                onClick={() => cambiar(x => setGrupo(x, x.form.cat === c ? '' : c))}
               >
                 {c}
               </button>
@@ -221,7 +223,7 @@ function Paso1({ e, ctx, cambiar, explorar, setExplorar, inputRef, siguiente }) 
       {!pideGrupo && (
         <section className="asist-sec" aria-labelledby="asist-exp">
           <h3 className="asist-lbl" id="asist-exp">Explorar</h3>
-          <div className="chip-scroll asist-scroll">
+          <div className="chips asist-chips">
             {MUSCLE_CATS.map(c => (
               <button
                 key={c} type="button" className={`chip${explorar === c ? ' on' : ''}`} aria-pressed={explorar === c}
@@ -256,7 +258,7 @@ function Paso2({ e, ctx, tipo, cambiar, moverFlecha }) {
       <div className="asist-pista">
         <span>Mantenelo apretado para arrastrarlo, o usá las flechas.</span>
         {!L.enSugerida && (
-          <button type="button" className="asist-link" onClick={() => cambiar({ ...e, posicion: null })}>Volver al sugerido</button>
+          <button type="button" className="asist-link" onClick={() => cambiar(x => ({ ...x, posicion: null }))}>Volver al sugerido</button>
         )}
       </div>
 
@@ -303,14 +305,14 @@ function Paso3({ e, tipo, cambiar }) {
     <div className="asist-cuerpo">
       <div className="asist-steppers">
         <Stepper
-          etiqueta="Series" valor={sets} texto={String(sets)} unidad={sets === 1 ? 'serie' : 'series'}
+          etiqueta="Series" valor={sets} texto={String(sets)} unidad="de trabajo"
           menos="Menos series" mas="Más series" min={sets <= 1} max={sets >= 10}
-          onMenos={() => cambiar(ajustar(e, 'sets', -1))} onMas={() => cambiar(ajustar(e, 'sets', 1))}
+          onMenos={() => cambiar(x => ajustar(x, 'sets', -1))} onMas={() => cambiar(x => ajustar(x, 'sets', 1))}
         />
         <Stepper
           etiqueta="Reps" valor={reps} texto={rango.texto} unidad="doble progresión"
           menos="Menos repeticiones" mas="Más repeticiones" min={reps <= 1} max={reps >= 50}
-          onMenos={() => cambiar(ajustar(e, 'reps', -1))} onMas={() => cambiar(ajustar(e, 'reps', 1))}
+          onMenos={() => cambiar(x => ajustar(x, 'reps', -1))} onMas={() => cambiar(x => ajustar(x, 'reps', 1))}
         />
       </div>
 
@@ -320,7 +322,7 @@ function Paso3({ e, tipo, cambiar }) {
           {EQUIP_ASIST.map(q => (
             <button
               key={q.id || 'otro'} type="button" role="radio" aria-checked={equip === q.id} aria-label={q.nombre}
-              onClick={() => { vibrate(6); cambiar(setCampo(e, 'equip', q.id)); }}
+              onClick={() => { vibrate(6); cambiar(x => setCampo(x, 'equip', q.id)); }}
             >
               <EquipIcon id={q.id} size={24} />
               <span>{q.label}</span>
@@ -330,7 +332,7 @@ function Paso3({ e, tipo, cambiar }) {
       </section>
 
       <div className="group asist-uni">
-        <button type="button" className="grouprow" role="switch" aria-checked={unilateral} onClick={() => cambiar(setCampo(e, 'unilateral', !unilateral))}>
+        <button type="button" className="grouprow" role="switch" aria-checked={unilateral} onClick={() => cambiar(x => setCampo(x, 'unilateral', !x.form.unilateral))}>
           <Sides className="opc-ico" />
           <span className="grouprow-grow">
             <span className="grouprow-t">Unilateral</span>

@@ -49,14 +49,13 @@ function trazo(id) {
           <circle cx="20.5" cy="12" r="1" />
         </>
       );
-    case 'polea': // roldana, cable y manija
+    case 'polea': // roldana, cable y el agarre en triángulo
       return (
         <>
-          <circle cx="10" cy="6.5" r="3.5" />
-          <circle cx="10" cy="6.5" r=".6" fill="currentColor" stroke="none" />
-          <path d="M13.5 6.5V16M6.5 6.5v8" />
-          <path d="M10.5 19h6M13.5 16v3" />
-          <rect x="4.5" y="14.5" width="4" height="5" rx="1" />
+          <circle cx="12" cy="5.5" r="3.2" />
+          <circle cx="12" cy="5.5" r=".7" fill="currentColor" stroke="none" />
+          <path d="M12 8.7v5.8" />
+          <path d="M12 14.5l-4.5 6h9z" />
         </>
       );
     case 'smith': // barra entre dos guías
