@@ -169,16 +169,25 @@ components:
     backgroundColor: '{colors.glass}'
     rounded: '{rounded.lg}'
     padding: 24px
-  nav-card:
+  grouprow:
     backgroundColor: '{colors.surface-2}'
     rounded: '{rounded.DEFAULT}'
-    padding: 14px
+    padding: 12px
+    height: 56px
   section-title:
     textColor: '{colors.on-surface}'
     typography: '{typography.section}'
   tile-label:
     textColor: '{colors.on-surface-2}'
     typography: '{typography.label-sm}'
+  surface-float:
+    backgroundColor: '{colors.glass-strong}'
+  surface-card:
+    backgroundColor: '{colors.glass}'
+    rounded: '{rounded.DEFAULT}'
+  surface-control:
+    backgroundColor: '{colors.surface-2}'
+    rounded: '{rounded.DEFAULT}'
   tabbar:
     backgroundColor: '{colors.glass-strong}'
     rounded: '{rounded.lg}'
@@ -203,7 +212,9 @@ Documento extraído del código real (`web/src/styles.css`, `lib/theme.js`,
 auditoría visual 2 ("Un acento que signifique", V1 V2 V6 V7 V11) y el
 2026-09-29 con la **tanda D** ("Ritmo y composición", V10 e I2 en Inicio,
 Entreno, Comida y Progreso) y la **tanda B** ("Tipografía dorsal", V3 V8 V12
-V13 más la tanda 6 de la auditoría total: G8 G9 G12 G13 H8 I4). Describe lo
+V13 más la tanda 6 de la auditoría total: G8 G9 G12 G13 H8 I4) y la
+**tanda C** ("Superficies y luz", V4 V5 V9, más la tanda 8 de la auditoría
+total: íconos). Describe lo
 que HAY; las propuestas pendientes viven en
 `docs/auditoria-visual-2-2026-09.md`.
 
@@ -234,7 +245,9 @@ la mano entre series: botones de 52 a 58 px, cifras tabulares, textos cortos.
 - **El acento significa "acá se actúa"**: acción primaria, estado activo (pestaña, segmentado, chip, día de hoy), foco y la cifra protagonista. Rótulos, títulos de sección y metadatos van en tiza o plomo. Medido tras la tanda A: 1 de 37 textos en acento en Inicio (2,7 %), 3 de 204 en Progreso (1,5 %), 1 de 62 en Comida (1,6 %); antes 32 %, 24 % y 8 %.
 - Estados reservados: verde logrado, rojo peligro, ámbar alerta y aproximación, llama (ámbar cálido) para la racha. Nunca como color de categoría.
 - Barlow Condensed **800 itálica** para títulos de pantalla, héroes y cifras protagonistas (cargada de verdad desde la tanda B); Barlow para texto corrido. Cuatro roles de texto con un tracking cada uno.
-- Vidrio: grafito translúcido al 66 % (90 % en header, barra y hojas) con `blur(22px) saturate(1.2)`, borde blanco al 10 % y arista con luz del acento arriba.
+- **Tres superficies y nada más** (tanda C): *flotante* (vidrio denso: header, barra, hojas, barras de sesión y descanso), *tarjeta* (vidrio de contenido: `.card`, las hero, las de Inicio, los turnos) y *control* (grafito sólido: listas, filas, campos, chips). Medido: 20 recetas distintas → 6 (las 3, la barra del header, el `select` con su flecha y una tarjeta punteada de placeholder).
+- **Una luz por pantalla**, de arriba: el resplandor del fondo arriba al centro y, en la hero de la pantalla (o la tarjeta del cuerpo en Inicio), un tinte a 158° con un halo arriba a la derecha. Ninguna otra tarjeta lleva orbe ni reflejo.
+- Íconos: todos SVG de trazo 1.8 en `currentColor` (`Icon.jsx`, `EquipIcon.jsx`, la barra). Ningún emoji ni glifo de texto hace de ícono.
 - CTA primario: píldora redondeada de 18 px con degradado 112° de `primary-strong` a `primary` y un halo del acento debajo.
 - Movimiento en cuatro duraciones con nombre (`--d1..--d4`) y resorte para entradas. "Esto está activo" se dice con **un anillo que late por fuera**, nunca bajando la opacidad de lo activo.
 
@@ -249,8 +262,8 @@ y una sombra `rgba(var(--shade-rgb),α)`.
 - **Grafito de fondo** (`neutral`, `#101113`): el piso de toda la app, `body`.
 - **Grafito de tarjeta** (`surface`, `#18191c`): superficie opaca, base de las hero.
 - **Grafito de control** (`surface-2`, `#202125`): chips, campos, `nav-card`, `.group`, botones fantasma, la insignia del día en el historial.
-- **Vidrio ahumado** (`glass`): `.card` y `.ini-tile`, siempre con `backdrop-filter`.
-- **Vidrio denso** (`glass-strong`): header, barra de pestañas, hojas; van sobre contenido que se mueve.
+- **Vidrio ahumado** (`glass`): la superficie *tarjeta*, siempre con `backdrop-filter`.
+- **Vidrio denso** (`glass-strong`): la superficie *flotante*; va sobre contenido que se mueve.
 - **Hilo** (`line`) e **hilo fuerte** (`line-2`): divisores y bordes.
 
 ### Accent & Interactive (`primary`)
@@ -363,11 +376,32 @@ las dosis del calentamiento ("2 × 12", "1 s").
 
 ## Elevation & Depth
 
-Híbrido: capas tonales (grafito → control → vidrio) más sombras difusas
-hacia abajo (`0 14px 30-34px -18px`) y una arista interior (luz del acento
-arriba al 22 %, sombra abajo al 50 %). El brillo lo ponen los halos del acento
-debajo de los CTA y los resplandores radiales dentro de las hero (pendiente
-V5: una sola luz por pantalla).
+Tres superficies con nombre, tokens en `:root` de `styles.css` (tanda C). La
+receta entera —fondo, borde, sombra, desenfoque— vive en el token; ningún
+componente escribe la suya:
+
+| Superficie | Tokens | Receta | Dónde |
+|---|---|---|---|
+| **Flotante** | `--sup-flota-bg/-blur/-borde/-sombra` | grafito al 90 % · `blur(24px) saturate(1.2)` · hilo blanco al 14 % · arista + `0 22px 50px -20px` | header (como barra: sin radio, borde sólo abajo, sin sombra), barra de pestañas, hojas y diálogos, `#restbar`, barra de la sesión en vivo, aviso (`#toast`), ficha de músculo |
+| **Tarjeta** | `--sup-tarjeta-bg/-blur/-borde/-sombra` | vidrio al 66 % + brillo metálico arriba · `blur(22px) saturate(1.2)` · borde blanco al 10 % · arista + `0 14px 34px -18px` | `.card` (y `.hero`, `.sub`, `.previa-panel`), `.ini-tile`, `.day-card`, `.dcard`, bloques de Plan de hoy |
+| **Control** | `--sup-control-bg/-borde` | `surface-2` sólido · hilo fuerte (`line-2`) · sin sombra ni blur | `.group`/`.grouprow`, `.nav-card`, `.seg`, `.calcbox`, campos, chips, `.icon-btn`, `.reg-btn`, `.btn.ghost/.dim`, `<Card>` de primitives |
+
+La **arista** es la misma en los dos vidrios: luz del acento arriba al 22 %,
+sombra abajo al 50 %. Una sola dirección de luz para toda la app.
+
+**Una luz por pantalla** (V5). La luz no es otra superficie: es
+`.card.hero::before` (o `.luz::before`), pintada **debajo del texto**
+(`isolation:isolate` + `z-index:-1`): un tinte `accent-strong` al 14 % a
+158° que muere en el 58 %, y un halo `accent` al 18 % de 148 px de radio
+centrado a 53 px de la esquina de arriba a la derecha. Inicio → la tarjeta
+del cuerpo; Hoy, Entreno, Comida, Progreso → su hero; Mis rutinas → "la que
+estás usando". El fondo (`body::before`) tiene un solo resplandor, arriba al
+centro. El halo es 18 % y no más porque sobre él el "Ver mapa ›" de Inicio
+tiene que dar ≥ 4,5:1 con los cinco acentos (medido: 4,78 a 4,97).
+
+Estados sobre superficies (no son otra receta): `.calcbox.warn/.ok`,
+`.chip.warn/.on`, `.meal-del`, el riel de progreso de `.ex-card`. Los slides
+vecinos del coverflow apagan su blur a propósito (blur + 3D por cuadro).
 
 ### Motion
 - Duraciones: `--d1` 150 ms toque, `--d2` 220 ms objeto, `--d3` 320 ms panel, `--d4` 460 ms momento (espejo en `D` de `lib/motion.js`).
@@ -391,14 +425,14 @@ chips y puntos. Nada con esquina viva.
 - **Fantasma** (`.btn.ghost`, `button-ghost`): grafito de control, borde hilo fuerte, texto acento.
 - **Apagado** (`.btn.dim`): grafito, texto plomo. **Peligro** (`.btn.danger`): rojo al 12 % con borde rojo. **Logrado** (`.btn.ok`): degradado verde.
 - **Chico** (`.btn.sm`, `button-sm`): 44 px, radio 12, texto 15.
-- **Ícono** (`.icon-btn`): 38×38, radio 12, degradado blanco 9 %→2 %, borde blanco 10 %.
+- **Ícono** (`.icon-btn`): 38×38, radio 12, superficie *control*.
 
 ### Cards & Containers
-- **Tarjeta** (`.card`): vidrio ahumado + brillo metálico arriba, radio 18, padding 16, arista del acento, sombra `0 14px 34px -18px`.
-- **Hero** (`.card.hero`): radio 26, padding 20, tinte del acento en la esquina (158°) y un halo radial de 210 px arriba a la derecha.
-- **Tarjeta de Inicio** (`.ini-tile`): vidrio + tinte del acento 155° + reflejo diagonal (`::after`) + rótulo en plomo con rayita ceniza; cifra en tiza.
-- **Tarjeta de navegación** (`.nav-card`): grafito de control opaco, radio 18, ícono de 38 px en cajita tintada (`.nav-card-ico`, también dentro de un `.grouprow`; `.warn`/`.ok` para una fila de estado), título + subtítulo + chevron. En Entreno los accesos ya no son nav-card sueltas: son un `.group`.
-- **Turno** (`.day-card`): degradado blanco 7,5 %→2 %, sin blur ni sombra, insignia numerada a la izquierda.
+- **Tarjeta** (`.card`): superficie *tarjeta*, radio 18, padding 16.
+- **Hero** (`.card.hero`): la misma tarjeta con radio 26, padding 20 (24 en Entreno, Comida y Progreso) y **la luz de la pantalla** encima (ver Elevation).
+- **Tarjeta de Inicio** (`.ini-tile`): superficie *tarjeta*, sin tinte ni reflejo; rótulo en plomo con rayita ceniza, cifra en tiza. La del cuerpo lleva `.luz`.
+- **Fila tocable** (V9, una sola en toda la app): `.group` + `.grouprow` — ícono SVG de 18 px en su cajita de 38 (`.nav-card-ico`, trazo en el acento; `.warn`/`.ok` para una fila de estado), título Barlow 15/600 + subtítulo 13 plomo debajo, chevron. "Mis rutinas", "Mis gimnasios", "Registrar por voz", "Calcular mis macros" / el perfil. `.nav-card` sigue en el CSS pero ya no se usa.
+- **Turno** (`.day-card`): superficie *tarjeta*, insignia numerada a la izquierda; el de descanso con el mismo `.day-headrow`.
 - **Lista agrupada** (`.group` + `.grouprow`): grafito de control, filas de 56 px con hilo entre ellas. `.grouprow-v` (el valor a la derecha) va en acento porque ahí vive también el estado de los interruptores ("Sí"/"No"). **Fila de estado** (`.grouprow-estado`): no se toca entera, la acción es un `.chip` a la derecha (la descarga en Entreno).
 - **Fila de sesión** (`SessionCard`, `.grouprow.sess-row` en un `.group` por semana): insignia del día en grafito de control, arriba el turno en condensada 18 y la fecha a la derecha en plomo, abajo "21 series · 7285 kg de volumen" en plomo; el trofeo en ámbar sólo si hubo PR. 64 px de alto (antes una tarjeta de 115 con la lista de ejercicios).
 - **Hero del plan** (Entreno): nombre de la rutina 34 itálica, tres cifras (`.hero-stats`: turnos / ejercicios / series por ciclo), barras de series por turno y "Editar rutina" adentro.
@@ -406,8 +440,8 @@ chips y puntos. Nada con esquina viva.
 - **Etiqueta "en uso"** (`.lib-tag`): tiza con borde hilo fuerte, sin relleno.
 
 ### Navigation
-- **Header** (`header.top`): sticky, degradado grafito .92→.75 + `blur(14px)`, marca "FIERRO" en condensada itálica 22 px con degradado de tiza al acento y la mancuerna; a la derecha, píldora de racha (llama) y dos botones de ícono.
-- **Barra de pestañas** (`nav.tabbar`, `tabbar`): flotante a 18 px de los bordes y 16 px del pie, radio 26, padding 7, vidrio denso. Cuatro pestañas con ícono de trazo y rótulo condensado versal 11 px. La activa es una píldora con el degradado del acento que se desliza (`.tab-ind`, `--d3`).
+- **Header** (`header.top`): sticky, superficie *flotante* como barra (sin radio, hilo sólo abajo), marca "FIERRO" en condensada itálica 22 px con degradado de tiza al acento y la mancuerna; a la derecha, píldora de racha (llama) y dos botones de ícono.
+- **Barra de pestañas** (`nav.tabbar`, `tabbar`): flotante a 18 px de los bordes y 16 px del pie, radio 26, padding 7, superficie *flotante*. Cuatro pestañas con ícono de trazo y rótulo condensado versal 11 px. La activa es una píldora con el degradado del acento que se desliza (`.tab-ind`, `--d3`), radio 19 (26 − 7: concéntrica).
 - **Segmentado** (`.seg`): riel blanco al 5 %, radio 18, botones condensados versales; el activo con el degradado y halo.
 
 ### Inputs & Forms
@@ -433,9 +467,12 @@ chips y puntos. Nada con esquina viva.
 - Don't usar verde, rojo o ámbar como color de categoría ni para un mensaje neutro o positivo; para categorías, luces del acento.
 - Don't escribir un color literal fuera del bloque de tokens, ni dentro de un `data:` URI (`%23…`, `fill='white'`).
 - Don't afirmar lo que no se midió: nada de "faltas" antes de la primera sesión ni ceros de relleno.
-- Do reusar el patrón que existe (`.card`, `.nav-card`, `.chip`, `.group`/`.grouprow`, `.btn`) y verificar en el build de producción a 390 y 430 px con dos acentos.
+- Do reusar el patrón que existe (`.card`, `.chip`, `.group`/`.grouprow`, `.btn`) y verificar en el build de producción a 390 y 430 px con dos acentos.
 - Do usar uno de los cuatro roles para todo texto en versal; don't escribir un `letter-spacing`, un `font-size` en px ni un `font-weight` fuera de 400/600/700/800 (lo rompe `tipografia.test.js`).
 - Don't poner un eyebrow (rótulo versal chico) encima de un título, ni degradado recortado al texto fuera de la marca.
+- Don't escribir una receta de superficie nueva (fondo + borde + sombra + blur): usar los tokens `--sup-flota-*`, `--sup-tarjeta-*` o `--sup-control-*`. Un tinte del acento sólo es estado (`.on`) o la luz de la pantalla.
+- Don't poner un segundo orbe, halo o reflejo en una pantalla: la luz es una, en su hero.
+- Don't usar un emoji o un glifo de texto (✎ ✓ ✕ ⬇ ↕ ▲▼ 🏆…) como ícono: SVG de `Icon.jsx`. Un aviso (`toast()`) puede llevar el glifo de tono delante; `<Toast/>` lo dibuja. Las flechas dentro de una frase ("Anotalo →") y los `›` de las filas son tipografía.
 
 ## Notas para generación (Stitch)
 

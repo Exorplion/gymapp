@@ -697,6 +697,35 @@ principal no cambia — 780/601/0 ms de long tasks con blur contra 762/0/0 sin
 blur; el costo del descanso sigue siendo el re-render (G3), no el blur, que va
 en el compositor.
 
+## Tanda 8 — estado (2026-09-29, rama `feat/visual-superficies`)
+
+Hecha junto con la tanda C de la auditoría visual 2 (superficies y luz, ver
+`docs/auditoria-visual-2-2026-09.md` → "Tanda C — estado"). Build de
+producción, `seedRegistro()`, Hielo 390×844 y Fucsia 430×932.
+
+| ID | Estado | Commit | Qué |
+|---|---|---|---|
+| **G7** | ✅ | `e8331c2`, `e645843`, `3a559f5`, `641d818` | 23 íconos nuevos en `Icon.jsx` (mismo material: 24×24, trazo 1.8, `currentColor`): Rutinas, Mancuerna, Diana, Persona, Trofeo, Guardar, Descargar, Subir, Traer, Copiar, Recargar, Restablecer, Probeta, Alerta, Imagen, Play, Gota, Taza, Mover, Arena, Sube, Baja. **Glifos-ícono visibles en el recorrido (4 pestañas + 7 hojas): 26 → 0.** En el código: 117 glifos en 35 archivos → 54 en 16, y ninguno se dibuja como carácter: 16 están en comentarios, 22 son el tono de un `toast()` (`⚠ ✓ ＋ ⏱ 🎯 💪` delante; `partirToast()` en `lib/toast.js`, con test, lo separa y `<Toast/>` dibuja el SVG: ámbar la alerta, verde lo logrado) y 2 son el marcador `⚠` de los textos de `exdb.js`, que `ExInfo` reemplaza por `<Alerta/>`. |
+| **E2** | ✅ | `b7c46ff` | El turno de descanso usa el mismo `.day-headrow` que los de entrenamiento. |
+| **I2** | ✅ | (tanda D) | Ya cerrado en #132. |
+| **I3** | ✅ | `850edeb` | Indicador y botones de la barra con radio 19 (26 − 7): concéntricos. |
+| **E5** | ✅ | `b7c46ff` | "Mis rutinas" dice una sola vez turnos y descansos (`slotsFrequencyText`). |
+| **E6** | ✅ | `850edeb` | Sin gimnasios no se nombran "las perillas"; "Nuevo gimnasio" es un `h3`; el vacío es `<Card>`, ahora en la superficie control con radio 18 (no la píldora `r-lg` de hilo al 9 %). |
+| **E7** | ✅ parcial | `e8331c2`, `e645843` | "‹ Listo" → "✓ Listo"; `✥` → `<Grip/>`, `↕` → `<Mover/>`. **Queda:** el nombre del turno editable de 28 px de alto (`styles.css`, `.day-name-input`) — es control de formulario y toca tipografía (tanda B). |
+| **C1** | ✅ | `e8331c2`, `850edeb` | "Meta: déficit moderado · 74 kg" debajo de EXCEDENTE ("Objetivo:" no entraba en un renglón a 390). |
+| **H9** | ✅ | `e645843` | "Sesión guardada" sin 🎉/💪 y el botón "Listo" (ya estaba guardada). |
+| **A3** | ✅ parcial | `b7c46ff` | Metas nutricionales con "g"; ExInfo en voseo ("podés") y "serie" en vez de "set"; el esquema de RIR como etiquetas sin píldora. **Queda:** los puntos de la vista previa del acento en Ajustes siguen pareciendo tocables (van con `aria-hidden` y dentro de un bloque rotulado "Vista previa"; cambiarlos es decisión de diseño de esa vista). |
+| **P2** | ✅ | `b7c46ff` | `marcasLindas()` (charts.ts, 4 tests): pasos de 1, 2, 2,5 o 5 × 10^k. Carga: 54.3 / 56.4 / 58.6 / 60.7 → **52.5 / 55 / 57.5 / 60 / 62.5**. |
+| **P3** | ✅ | `b7c46ff` | Récords: los 8 más pesados y "Ver los N" (22 con el seed). |
+
+Lo que queda como glifo a propósito (tipografía, no ícono): las flechas
+dentro de una frase ("Anotalo →", "Tu Año Fierro →", "Perfil → TDEE →
+target", "Asignar →", el `1 → fallo` del RIR, los `→` de los toasts de
+cambio de ejercicio), los chevrones `›` de las filas (sistema aparte, ver la
+cabecera de `Icon.jsx`), `×` de "2 × 9", los marcadores de tendencia dentro
+de un dato (`▲ 8 % en 5 semanas` de la previa, `↑ 3 para subir peso` y el `↑`
+de la meta en Plan de hoy) y el `½` de las series a medias.
+
 ## Tandas de arreglo propuestas (un PR por tanda, en este orden)
 
 1. **Tanda 1 — Lo que miente o está roto** (bajo riesgo, alto impacto):
