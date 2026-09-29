@@ -57,7 +57,7 @@ export function cabeceraDe(cat, dias, porcion = null) {
   return { nombre: `${cat} · ${porcion.nombre.toLowerCase()}`, dias: porcion.dias ?? null };
 }
 
-export default function MusclePop({ stats, porcion = null, onClose, saliendo = false }) {
+export default function MusclePop({ stats, porcion = null, onClose, saliendo = false, onSalio }) {
   const { cat, dias, sets, sesiones, porSemana, volumen, mejor, top, fibras, ventana } = stats;
   const nunca = dias === null;
   const { nombre: nombreHead, dias: diasHead } = cabeceraDe(cat, dias, porcion);
@@ -70,6 +70,7 @@ export default function MusclePop({ stats, porcion = null, onClose, saliendo = f
     <div
       className={saliendo ? 'mpop out' : 'mpop'}
       aria-hidden={saliendo || undefined}
+      onAnimationEnd={e => { if (saliendo && e.target === e.currentTarget && e.animationName === 'mpop-out') onSalio?.(); }}
       role="dialog"
       aria-label={porcion ? `Estadísticas de ${cat}, ${porcion.nombre.toLowerCase()}` : `Estadísticas de ${cat}`}
     >

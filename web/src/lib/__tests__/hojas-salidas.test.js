@@ -61,6 +61,23 @@ describe('G2 · hojas: entran y salen completas', () => {
   });
 });
 
+describe('la hoja se desmonta cuando termina su salida, no por reloj', () => {
+  const src = readFileSync(join(SRC, 'components', 'Sheet.jsx'), 'utf8');
+  it('escucha animationend de las tres salidas, y son las que usa el CSS', () => {
+    const nombres = src.match(/const SALIDAS = new Set\(\[([^\]]*)\]\)/)[1].match(/'([^']+)'/g).map(x => x.slice(1, -1));
+    expect(nombres.sort()).toEqual(['asistBaja', 'dlgOut', 'shdown']);
+    for (const sel of ['#sheet.closing .panel', '#sheet.dialogo.closing .panel', '#sheet.pantalla.closing .panel']) {
+      const anim = regla(sel).match(/animation:\s*([\w-]+)/)[1];
+      expect(nombres, sel).toContain(anim);
+    }
+    expect(src).toMatch(/onAnimationEnd=/);
+  });
+  it('el timer es sólo la red: más largo que la salida', () => {
+    expect(src).toMatch(/RED_CIERRE_MS = CIERRE_MS \+ D\.panel/);
+    expect(src).toMatch(/setTimeout\(\(\) => setClosing\(false\), RED_CIERRE_MS\)/);
+  });
+});
+
 describe('H4 · fin de sesión con entrada y salida', () => {
   it('#session-complete entra con fundido', () => {
     expect(regla('#session-complete')).toMatch(/animation:[^;]*fdin/);

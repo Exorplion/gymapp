@@ -41,6 +41,9 @@ const DUR_TOTAL = 2400; // 1300 (arranca beat 3) + 1100 (dura beat 3)
    números que #session-complete.saliendo en styles.css (lo compara
    hojas-salidas.test.js). */
 export const SALIDA_MS = D.toque + D.panel;
+// Se desmonta con el animationend de fdout; el timer es la red (con el hilo
+// ocupado la animación arranca tarde y un timer puro la cortaría).
+const RED_SALIDA_MS = SALIDA_MS + D.panel;
 
 function milestoneTexto(m) {
   if (!m) return null;
@@ -99,7 +102,7 @@ export default function SessionComplete() {
     if (!reducido) {
       setSaliendo(actual);
       clearTimeout(salidaTimer.current);
-      salidaTimer.current = setTimeout(() => setSaliendo(null), SALIDA_MS);
+      salidaTimer.current = setTimeout(() => setSaliendo(null), RED_SALIDA_MS);
     }
     if (!actual.id) return;
     openSheet('session-view', { id: actual.id, justFinished: true });
@@ -199,6 +202,12 @@ export default function SessionComplete() {
       aria-label="Entrenamiento completo"
       aria-hidden={sess ? undefined : true}
       onClick={sess ? cerrar : undefined}
+      onAnimationEnd={e => {
+        if (!sess && e.target === e.currentTarget && e.animationName === 'fdout') {
+          clearTimeout(salidaTimer.current);
+          setSaliendo(null);
+        }
+      }}
     >
       <div className="sc-beat b1" style={estiloDe(1)}>
         <span ref={flameRef} style={{ display: 'inline-block' }}><Flame size={56} className="sc-flame" /></span>

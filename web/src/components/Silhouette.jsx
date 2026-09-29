@@ -313,7 +313,8 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
     if (ida && !menosMovimiento()) {
       setSaliendo(ida);
       clearTimeout(salidaTimer.current);
-      salidaTimer.current = setTimeout(() => setSaliendo(null), SALIDA_FICHA);
+      // Red: la ficha se va con el animationend de mpop-out (onSalio).
+      salidaTimer.current = setTimeout(() => setSaliendo(null), SALIDA_FICHA + D.panel);
     }
     setSel(null);
     setEnc(null);
@@ -563,6 +564,7 @@ export default function Silhouette({ days = {}, interactivo = true, revelar = nu
                 porcion={f.sub ? { nombre: f.sub, dias: porciones?.[f.sub] ?? null } : null}
                 onClose={cerrar}
                 saliendo={!sel}
+                onSalio={() => { clearTimeout(salidaTimer.current); setSaliendo(null); }}
               />
             );
           })()}

@@ -19,6 +19,14 @@ const FOCUSABLES = 'button:not([disabled]), [href], input:not([disabled]), selec
    no de un número suelto: si el ritmo de la app cambia, cambia acá solo.
    Exportada para que el test de hojas-salidas la compare con el CSS. */
 export const CIERRE_MS = D.objeto;
+/* La hoja se desmonta cuando TERMINA su animación de salida (animationend),
+   no cuando pasa CIERRE_MS desde el toque: medido en Chrome, con el hilo
+   ocupado la animación arranca ~150 ms tarde y un timer puro la cortaba a
+   mitad de camino (panel al 19 % de opacidad, 140 px todavía en pantalla).
+   El timer queda de red —con movimiento reducido #sheet.closing es
+   display:none y no hay animación que termine— con margen de un --d3. */
+const RED_CIERRE_MS = CIERRE_MS + D.panel;
+const SALIDAS = new Set(['shdown', 'dlgOut', 'asistBaja']);
 
 /* `variante="dialogo"`: una confirmación no es una hoja con contenido que se
    lee, es una pregunta de dos botones. Flota despegada de los bordes y entra
@@ -83,7 +91,7 @@ export default function Sheet({ open, onClose, children, variante }) {
     if (!abiertoAntes.current) return;
     abiertoAntes.current = false;
     setClosing(true);
-    closeTimer.current = setTimeout(() => setClosing(false), CIERRE_MS);
+    closeTimer.current = setTimeout(() => setClosing(false), RED_CIERRE_MS);
     return () => clearTimeout(closeTimer.current);
   }, [open]);
 
@@ -159,6 +167,12 @@ export default function Sheet({ open, onClose, children, variante }) {
         role="dialog"
         aria-modal={open || undefined}
         aria-labelledby={etiqueta ? 'sheet-title' : undefined}
+        onAnimationEnd={e => {
+          if (e.target === e.currentTarget && SALIDAS.has(e.animationName)) {
+            clearTimeout(closeTimer.current);
+            setClosing(false);
+          }
+        }}
       >
         <div className="handle"></div>
         <div id="sheet-c">{mostrando ? childrenRef.current : null}</div>
