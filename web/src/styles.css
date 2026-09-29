@@ -166,6 +166,34 @@
      no como un contorno pintado. */
   --edge-metal:inset 0 1px 0 rgba(var(--accent-rgb),.22), inset 0 -1px 0 rgba(var(--shade-rgb),.5);
   --grad-metal:linear-gradient(180deg,rgba(var(--hi-rgb),.045),rgba(var(--hi-rgb),0) 46%);
+
+  /* ---- SUPERFICIES: tres y nada más (auditoría visual 2, tanda C, V4) ----
+     Había 13 recetas medidas para "una tarjeta": vidrio en unas sí y en
+     otras no, tintes a 112°, 135°, 150°, 155° y 158°, bordes del acento, del
+     blanco al 10, 11, 13 y 14 %. Ahora cada contenedor es UNA de tres, y la
+     receta entera (fondo + borde + sombra + desenfoque) vive acá:
+
+     · FLOTANTE — vidrio denso sobre contenido que se mueve: header, barra de
+       pestañas, hojas, diálogos, barra de descanso, aviso, ficha de músculo.
+     · TARJETA — vidrio de contenido: .card, las tarjetas de Inicio, los
+       turnos, los bloques de Plan de hoy. La hero es una tarjeta con la luz
+       de la pantalla encima (.card.hero::before), no otra receta.
+     · CONTROL — grafito sólido, sin vidrio ni sombra: listas (.group), filas
+       tocables sueltas (.nav-card), campos, el riel del segmentado, las notas
+       de cálculo (.calcbox), chips y botones de ícono.
+
+     La arista es la misma en los dos vidrios: luz del acento arriba, sombra
+     abajo. Una sola dirección de luz para toda la app (de arriba). */
+  --sup-flota-bg:rgba(var(--glass-rgb),.9);
+  --sup-flota-blur:blur(24px) saturate(1.2);
+  --sup-flota-borde:rgba(var(--hi-rgb),.14);
+  --sup-flota-sombra:var(--edge-metal),0 22px 50px -20px rgba(var(--shade-rgb),.9);
+  --sup-tarjeta-bg:var(--grad-metal),var(--glass);
+  --sup-tarjeta-blur:var(--glass-blur);
+  --sup-tarjeta-borde:var(--glass-border);
+  --sup-tarjeta-sombra:var(--edge-metal),0 14px 34px -18px rgba(var(--shade-rgb),.6);
+  --sup-control-bg:var(--surface-2);
+  --sup-control-borde:var(--line-2);
   /* Mapa muscular: tres escalones de luz del mismo matiz (hi/md/lo son las
      paradas de cada degradado). Cuanto más reciente, más luz. */
   --mapa-0-hi:#c9efff; --mapa-0-md:#49cffc; --mapa-0-lo:#006e8c;
@@ -357,13 +385,12 @@ html{scroll-behavior:smooth}
     user-select:none;
   }
 }
-/* atmósfera: glow superior + grano */
+/* atmósfera: glow superior + grano. Una sola luz, de arriba (tanda C, V5):
+   había además dos resplandores abajo a la derecha, una segunda fuente que
+   teñía la barra de pestañas y contradecía la arista iluminada arriba. */
 body::before{
   content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
-  background:
-    radial-gradient(90% 40% at 50% -5%, rgba(var(--accent-strong-rgb),.16), transparent 65%),
-    radial-gradient(70% 30% at 100% 100%, rgba(var(--accent-strong-rgb),.08), transparent 60%),
-    radial-gradient(60% 34% at 100% 100%, rgba(var(--accent-rgb),.10), transparent 62%);
+  background:radial-gradient(90% 40% at 50% -5%, rgba(var(--accent-strong-rgb),.16), transparent 65%);
 }
 body::after{
   content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.045;
@@ -483,9 +510,12 @@ header.top{
   position:sticky;top:0;z-index:40;
   display:flex;align-items:center;justify-content:space-between;
   padding:calc(10px + env(safe-area-inset-top)) 18px 10px;
-  background:linear-gradient(rgba(var(--bg-rgb),.92),rgba(var(--bg-rgb),.75));
-  backdrop-filter:blur(14px);
-  border-bottom:1px solid var(--line);
+  /* Superficie FLOTANTE, con forma de barra: sin radio y con el borde sólo
+     abajo y sin sombra (tanda C). Antes era un degradado propio del fondo al 92→75 % con
+     blur(14px): la única pieza de vidrio de la app que no era grafito. */
+  background:var(--sup-flota-bg);
+  backdrop-filter:var(--sup-flota-blur);
+  border-bottom:1px solid var(--sup-flota-borde);
 }
 /* Modo prueba (modoPrueba.js): pastilla ámbar en el lugar de la marca.
    Ámbar, el mismo aviso cálido que .chip.warn: no es un error, pero tiene
@@ -524,8 +554,8 @@ header.top.en-prueba{border-bottom-color:rgba(var(--warn-rgb),.5);background:lin
 .brand svg{width:24px;height:24px;stroke:var(--accent);filter:drop-shadow(0 0 8px rgba(var(--accent-strong-rgb),.7))}
 .icon-btn{
   width:38px;height:38px;border-radius:var(--r-md);display:grid;place-items:center;
-  border:1px solid rgba(var(--hi-rgb),.1);color:var(--text-2);
-  background:linear-gradient(150deg,rgba(var(--hi-rgb),.09),rgba(var(--hi-rgb),.02));
+  border:1px solid var(--sup-control-borde);color:var(--text-2);
+  background:var(--sup-control-bg);
   transition:var(--d1);
 }
 .icon-btn svg{width:19px;height:19px}
@@ -806,24 +836,34 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 
 /* ---------- cards ---------- */
 .card{
-  background:var(--grad-metal),var(--glass);
-  border:1px solid var(--glass-border);border-radius:var(--r);
+  background:var(--sup-tarjeta-bg);
+  border:1px solid var(--sup-tarjeta-borde);border-radius:var(--r);
   padding:var(--s4);margin-bottom:var(--s3);
-  backdrop-filter:var(--glass-blur);
-  box-shadow:var(--edge-metal),0 14px 34px -18px rgba(var(--shade-rgb),.6);
+  backdrop-filter:var(--sup-tarjeta-blur);
+  box-shadow:var(--sup-tarjeta-sombra);
 }
-.card.hero{
-  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.14),rgba(var(--hi-rgb),.03) 58%),var(--glass);
-  border-color:rgba(var(--accent-rgb),.22);border-radius:var(--r-lg);
-  padding:20px;position:relative;overflow:hidden;
+/* La hero es una TARJETA con la luz de la pantalla encima, no otra receta
+   (tanda C, V4/V5). Antes cada hero traía su fondo (vidrio en Hoy, grafito
+   opaco en Entreno, Comida y Progreso), su borde del acento y un orbe de
+   210 px arriba a la derecha; las tarjetas de Inicio, otro orbe y un reflejo
+   diagonal cada una. Ahora hay UNA luz por pantalla y es ésta: el tinte del
+   acento que baja desde la esquina (158°, el único ángulo) y el halo arriba
+   a la derecha, del mismo lado que el resplandor del fondo. Va en ::before
+   para que el material de la hero sea exactamente el de cualquier .card. */
+.card.hero,.luz{position:relative;overflow:hidden;isolation:isolate}
+.card.hero{border-radius:var(--r-lg);padding:20px}
+/* z-index:-1 dentro de su propio contexto (isolation): la luz se pinta sobre
+   el fondo de la tarjeta y DEBAJO del texto, como el tinte de antes. */
+.card.hero::before,.luz::before{
+  content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;
+  background:
+    radial-gradient(circle 148px at calc(100% - 53px) 53px,rgba(var(--accent-rgb),.24),transparent 66%),
+    linear-gradient(158deg,rgba(var(--accent-strong-rgb),.14),transparent 58%);
 }
-/* El halo del mockup es cian y bastante más grande (210px) que el azul de
-   160px que había: es lo que le da profundidad a la tarjeta. */
-.card.hero::before{content:"";position:absolute;top:-52px;right:-52px;width:210px;height:210px;
-  background:radial-gradient(circle,rgba(var(--accent-rgb),.28),transparent 66%);pointer-events:none}
-/* tres niveles en vez de uno: destacada (hero) > normal > sutil (sub).
-   Cuando todo tiene el mismo peso, nada destaca y todo se lee como ruido. */
-.card.sub{background:rgba(var(--accent-rgb),.035);border-color:rgba(var(--accent-rgb),.09);padding:var(--s3)}
+/* .sub es una tarjeta más apretada, no otro material (tanda C): el tinte
+   del acento al 3,5 % que traía era una receta más de las trece. Lo que
+   destaca a la hero es la luz, no un escalón de fondo. */
+.card.sub{padding:var(--s3)}
 
 /* ---------- buttons ---------- */
 .btn{
@@ -840,8 +880,8 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
   animation:sweep 3.2s ease-in-out infinite;pointer-events:none;
 }
 .btn.sm{min-height:44px;font-size:var(--t-body);border-radius:var(--r-md)}
-.btn.ghost{background:var(--surface-2);box-shadow:none;border:1px solid var(--line-2);color:var(--accent)}
-.btn.dim{background:var(--surface-2);box-shadow:none;border:1px solid var(--line);color:var(--text-2)}
+.btn.ghost{background:var(--sup-control-bg);box-shadow:none;border:1px solid var(--sup-control-borde);color:var(--accent)}
+.btn.dim{background:var(--sup-control-bg);box-shadow:none;border:1px solid var(--sup-control-borde);color:var(--text-2)}
 .btn.danger{background:rgba(var(--danger-rgb),.12);box-shadow:none;border:1px solid rgba(var(--danger-rgb),.35);color:var(--danger)}
 .btn.ok{background:var(--grad-ok);box-shadow:0 6px 24px -6px rgba(var(--ok-rgb),.4);color:var(--on-ok)}
 .btn:disabled{opacity:.4;box-shadow:none}
@@ -1758,8 +1798,8 @@ body.dragging-on .card.day.drop-target{filter:none}
 .sess-list{display:flex;flex-direction:column;gap:10px;margin-bottom:var(--s4)}
 .sess-card{
   display:block;width:100%;text-align:left;
-  background:linear-gradient(158deg,rgba(var(--hi-rgb),.075),rgba(var(--hi-rgb),.02));
-  border:1px solid var(--glass-border);border-radius:var(--r);padding:12px 14px;
+  background:var(--sup-tarjeta-bg);backdrop-filter:var(--sup-tarjeta-blur);box-shadow:var(--sup-tarjeta-sombra);
+  border:1px solid var(--sup-tarjeta-borde);border-radius:var(--r);padding:12px 14px;
   transition:transform var(--d1) var(--ease),border-color var(--d1) ease;
 }
 .sess-card:active{transform:scale(.99);border-color:var(--line-2)}
@@ -2097,7 +2137,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 
 /* ---------- gráficos ---------- */
 canvas.chart{width:100%;height:200px;display:block}
-.seg{display:flex;background:rgba(var(--hi-rgb),.05);border:1px solid rgba(var(--hi-rgb),.09);border-radius:var(--r);padding:var(--s1);gap:var(--s1)}
+.seg{display:flex;background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);border-radius:var(--r);padding:var(--s1);gap:var(--s1)}
 .seg button{
   flex:1;padding:var(--s2) 0;border-radius:var(--r-md);font-family:var(--font-cond);
   font-weight:700;font-size:var(--t-body);letter-spacing:var(--tr-control);text-transform:uppercase;color:var(--text-2);
@@ -2154,11 +2194,7 @@ canvas.chart{width:100%;height:200px;display:block}
 .acento-previa-estados .warn{color:var(--warn)}
 
 /* ---------- PR ---------- */
-.pr-card{
-  display:flex;align-items:center;gap:14px;
-  background:linear-gradient(135deg,rgba(var(--accent-strong-rgb),.12),rgba(var(--glass-rgb),.4));
-  border:1px solid rgba(var(--accent-strong-rgb),.28);
-}
+.pr-card{display:flex;align-items:center;gap:14px}
 .pr-troph{width:44px;height:44px;border-radius:var(--r-md);background:var(--accent-grad);display:grid;place-items:center;
   box-shadow:var(--accent-glow);font-size:var(--t-xl);flex:none}
 .pr-w{font-family:var(--font-cond);font-weight:700;font-size:var(--t-2xl);line-height:1;color:var(--text)}
@@ -2172,7 +2208,7 @@ canvas.chart{width:100%;height:200px;display:block}
 .field label{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2);display:block;margin-bottom:6px}
 .field input,.field select{
   width:100%;padding:14px;border-radius:var(--r-md);font-size:var(--t-lg);font-weight:600;
-  background:var(--surface-2);border:1px solid var(--line-2);outline:none;
+  background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);outline:none;
 }
 .field input:focus,.field select:focus{border-color:var(--accent-strong)}
 /* padding-right: la flecha ocupa de 14 a 28 px desde el borde; sin esto el
@@ -2205,17 +2241,15 @@ nav.tabbar{
   position:fixed;left:18px;right:18px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:50;
   display:flex;justify-content:space-around;
   padding:7px;border-radius:var(--r-lg);
-  /* El vidrio necesita cuerpo. Con sólo el degradado blanco al 11%/4% encima
-     del desenfoque, la barra era casi transparente: el contenido que pasaba
-     por detrás al scrollear se leía a través de ella y se mezclaba con las
-     etiquetas. La capa opaca de abajo le da fondo propio sin perder el efecto
-     — el degradado, el borde, el brillo interior y el blur siguen igual. */
-  background:
-    linear-gradient(158deg,rgba(var(--hi-rgb),.11),rgba(var(--hi-rgb),.043)),
-    rgba(var(--glass-rgb),.92);
-  backdrop-filter:blur(26px) saturate(1.2);
-  border:1px solid rgba(var(--hi-rgb),.14);
-  box-shadow:inset 0 1px 0 rgba(var(--hi-rgb),.2),0 22px 50px -20px rgba(var(--shade-rgb),.95);
+  /* Superficie FLOTANTE (tanda C): la misma receta que el header, las hojas
+     y la barra de descanso. El vidrio necesita cuerpo —con sólo un degradado
+     blanco encima del desenfoque el contenido se leía a través de la barra—:
+     por eso el grafito al 90 %. Antes tenía su propio brillo a 158°, su
+     blur(26px) y su arista blanca, distintos de los de las hojas. */
+  background:var(--sup-flota-bg);
+  backdrop-filter:var(--sup-flota-blur);
+  border:1px solid var(--sup-flota-borde);
+  box-shadow:var(--sup-flota-sombra);
 }
 /* las etiquetas también estaban al límite: --mut2 sobre un fondo casi
    transparente. Con la barra opaca, un tono más claro las despega del todo. */
@@ -2270,9 +2304,12 @@ nav.tabbar{container-type:inline-size}
   /* Mismo margen que la barra de pestañas y el contenido (H3). */
   position:fixed;left:var(--pad-x);right:var(--pad-x);z-index:45;
   bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 10px);
-  background:linear-gradient(140deg,var(--surface-2),var(--surface));
-  border:1px solid rgba(var(--accent-strong-rgb),.45);border-radius:var(--r);
-  padding:12px 16px;box-shadow:0 10px 40px -8px rgba(var(--accent-strong-rgb),.5);
+  /* Superficie FLOTANTE (tanda C). Iba en grafito opaco con borde y halo del
+     acento: un tercer material para lo que flota. Lo que dice "descanso" es
+     el cronómetro y la barra que se vacía, no el marco. */
+  background:var(--sup-flota-bg);backdrop-filter:var(--sup-flota-blur);
+  border:1px solid var(--sup-flota-borde);border-radius:var(--r);
+  padding:12px 16px;box-shadow:var(--sup-flota-sombra);
   transform:translateY(140%);opacity:0;transition:var(--d3) var(--ease-out);
   max-width:calc(520px - 2 * var(--pad-x));margin:0 auto;
 }
@@ -2385,13 +2422,14 @@ nav.tabbar{container-type:inline-size}
 #sheet .panel{
   position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;
   max-height:88dvh;overflow-y:auto;
-  background:var(--glass-strong);
-  backdrop-filter:blur(24px) saturate(1.2);
-  border:1px solid rgba(var(--hi-rgb),.14);border-bottom:none;
+  /* Superficie FLOTANTE (tanda C). */
+  background:var(--sup-flota-bg);
+  backdrop-filter:var(--sup-flota-blur);
+  border:1px solid var(--sup-flota-borde);border-bottom:none;
   border-radius:26px 26px 0 0;
   padding:10px 20px calc(24px + env(safe-area-inset-bottom));
   animation:shup var(--d3) var(--ease-push),fdin var(--d1) var(--ease-out);
-  box-shadow:var(--edge-metal),0 -20px 60px -20px rgba(var(--shade-rgb),.7);
+  box-shadow:var(--sup-flota-sombra);
 }
 /* La hoja sube desde FUERA del marco (auditoría total, G2). Antes arrancaba
    en translateY(60%) sin fundido: el primer cuadro ya pintaba 155 px de
@@ -2436,11 +2474,10 @@ nav.tabbar{container-type:inline-size}
 #sheet.dialogo .panel{
   left:var(--s3);right:var(--s3);
   bottom:calc(var(--s3) + env(safe-area-inset-bottom));
-  border-bottom:1px solid rgba(var(--hi-rgb),.14);
+  border-bottom:1px solid var(--sup-flota-borde);
   border-radius:var(--r-lg);
   padding:var(--s5) var(--s5) var(--s4);
   animation:dlgIn var(--d3) var(--spring);
-  box-shadow:var(--edge-metal),0 24px 60px -12px rgba(var(--shade-rgb),.8);
 }
 #sheet.dialogo .handle{display:none}
 #sheet.dialogo h2{margin-bottom:var(--s2)}
@@ -2469,10 +2506,12 @@ nav.tabbar{container-type:inline-size}
 #toast{
   position:fixed;left:50%;transform:translateX(-50%) translateY(20px);
   bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 90px);
-  background:var(--surface-2);border:1px solid rgba(var(--accent-strong-rgb),.5);color:var(--text);
+  /* Superficie FLOTANTE (tanda C): antes grafito opaco con borde del acento. */
+  background:var(--sup-flota-bg);backdrop-filter:var(--sup-flota-blur);
+  border:1px solid var(--sup-flota-borde);color:var(--text);
   padding:11px 20px;border-radius:var(--r-full);font-size:var(--t-body);font-weight:600;
   opacity:0;pointer-events:none;transition:var(--d2);z-index:70;white-space:nowrap;
-  box-shadow:0 8px 30px -6px rgba(var(--shade-rgb),.6);
+  box-shadow:var(--sup-flota-sombra);
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
 /* con un sheet abierto el toast baja... arriba: el panel del sheet ocupa hasta
@@ -2562,10 +2601,10 @@ nav.tabbar{container-type:inline-size}
 /* Tarjeta de dato: encabezado + cuerpo. Para las vistas de detalle, donde
    .card suelto obligaba a ajustar el padding a mano cada vez. */
 .dcard{
-  background:linear-gradient(180deg,rgba(var(--glass-rgb),.9),rgba(var(--glass-rgb),.74));
-  border:1px solid var(--glass-border);border-radius:var(--r);
+  background:var(--sup-tarjeta-bg);
+  border:1px solid var(--sup-tarjeta-borde);border-radius:var(--r);
   padding:var(--s3) 14px;margin-bottom:10px;
-  backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--sup-tarjeta-blur);box-shadow:var(--sup-tarjeta-sombra);
 }
 .dcard-head{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s2)}
 .dcard-title{
@@ -2582,7 +2621,10 @@ nav.tabbar{container-type:inline-size}
    escritos a mano con rgba() en cada lugar que los necesitaba. */
 .calcbox.warn{background:rgba(var(--warn-rgb),.09);border-color:rgba(var(--warn-rgb),.28);color:var(--warn)}
 .calcbox.ok{background:rgba(var(--ok-rgb),.09);border-color:rgba(var(--ok-rgb),.28);color:var(--ok)}
-.calcbox.blue{background:rgba(var(--accent-strong-rgb),.09);border-color:rgba(var(--accent-strong-rgb),.28)}
+/* .blue no es un estado: es "nota", y va en la superficie CONTROL como
+   cualquier .calcbox (tanda C). .warn y .ok sí son estados y conservan el
+   tinte reservado. */
+.calcbox.blue{background:var(--sup-control-bg);border-color:var(--sup-control-borde)}
 
 /* Texto de párrafo dentro de un sheet: la combinación tamaño+interlínea que
    estaba suelta 34 veces (lineHeight 1.5 y 1.55). */
@@ -2611,7 +2653,7 @@ nav.tabbar{container-type:inline-size}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--line-2);outline:none}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);border:3px solid var(--bg);box-shadow:0 2px 8px rgba(var(--shade-rgb),.5),0 0 0 1px var(--accent-strong)}
 input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid var(--bg)}
-.calcbox{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s3) var(--s4);margin-top:var(--s2)}
+.calcbox{background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);border-radius:var(--r-md);padding:var(--s3) var(--s4);margin-top:var(--s2)}
 .calcbox .cr{display:flex;justify-content:space-between;font-size:var(--t-sm);padding:4px 0;color:var(--text-2)}
 .calcbox .cr b{color:var(--text);font-weight:600}
 .calcbox .cr.big{font-size:var(--t-body);padding-top:9px;margin-top:5px;border-top:1px solid var(--line)}
@@ -2649,8 +2691,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .ses-barra{
   display:flex;align-items:center;gap:var(--s3);
   margin:var(--s3) 0 0;padding:var(--s2) var(--s2) var(--s2) var(--s3);min-height:58px;
-  border-radius:var(--r-md);border:1px solid var(--line);
-  background:linear-gradient(96deg,rgba(var(--accent-strong-rgb),.16),rgba(var(--hi-rgb),.02)),var(--surface);
+  /* Superficie FLOTANTE (tanda C): es la barra de la sesión, como la de
+     descanso. Iba en grafito opaco con un tinte del acento a 96°. */
+  border-radius:var(--r-md);border:1px solid var(--sup-flota-borde);
+  background:var(--sup-flota-bg);backdrop-filter:var(--sup-flota-blur);
+  box-shadow:var(--sup-flota-sombra);
 }
 .ses-barra{margin-bottom:var(--s3)}
 .ses-barra .session-ring{width:40px;height:40px}
@@ -2694,8 +2739,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .plan-edit{
   display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 var(--s3);flex:none;
-  border-radius:var(--r-full);border:1px solid var(--glass-border);
-  background:rgba(var(--accent-strong-rgb),.10);backdrop-filter:var(--glass-blur);
+  border-radius:var(--r-full);border:1px solid var(--sup-control-borde);
+  background:var(--sup-control-bg);
   color:var(--accent);font:inherit;font-size:var(--t-sm);font-weight:600;cursor:pointer;
   transition-property:transform,background-color,color;transition-duration:var(--d1);transition-timing-function:var(--ease);
 }
@@ -2706,8 +2751,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .plan-resumen{display:flex;flex-wrap:wrap;gap:var(--s2);font-size:var(--t-sm);color:var(--text-2);margin:0 0 var(--s4)}
 .plan-resumen>span{
   display:inline-flex;align-items:baseline;gap:6px;padding:6px var(--s3);border-radius:var(--r-full);
-  background:rgba(var(--hi-rgb),.04);border:1px solid var(--line);
-  backdrop-filter:var(--glass-blur);text-wrap:pretty;
+  background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);
+  text-wrap:pretty;
 }
 .plan-resumen b{font-family:var(--font-cond);font-size:var(--t-xl);font-weight:700;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
 .plan-resumen .up{color:var(--ok);font-weight:600;border-color:rgba(var(--ok-rgb),.35);background:rgba(var(--ok-rgb),.07)}
@@ -2727,12 +2772,13 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:var(--r-full);
   background:rgba(var(--accent-strong-rgb),.16);color:var(--accent);font-size:var(--t-micro);letter-spacing:0;font-variant-numeric:tabular-nums;
 }
-/* La tarjeta del bloque en vidrio, como .ini-tile. */
+/* El bloque de Plan de hoy es contenido, no una lista de ajustes: superficie
+   TARJETA (tanda C), sin el tinte a 155° que traía. */
 .plan-block .group{
-  background:linear-gradient(155deg,rgba(var(--accent-strong-rgb),.12),rgba(var(--glass-rgb),.82) 46%,rgba(var(--glass-rgb),.92));
-  backdrop-filter:var(--glass-blur);
-  border-color:var(--glass-border);
-  box-shadow:inset 0 1px 0 rgba(var(--hi-rgb),.07),0 18px 40px -26px rgba(var(--shade-rgb),.9);
+  background:var(--sup-tarjeta-bg);
+  backdrop-filter:var(--sup-tarjeta-blur);
+  border-color:var(--sup-tarjeta-borde);
+  box-shadow:var(--sup-tarjeta-sombra);
 }
 /* La fila NO es un botón: adentro van dos (ver la ficha, y el lápiz en modo
    edición), y anidar botones no es HTML válido (a11y-markup.test.js). */
@@ -2859,18 +2905,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* ============================================================
    Rediseño — pantalla RUTINA
    ============================================================ */
-/* En el mockup cada pantalla tenía su matiz de hero (Hoy azul, Rutina
-   violeta). Con un acento elegido hay un solo color: la hero de Rutina se
-   distingue por el halo más grande, no por otro matiz que nadie eligió. */
+/* Las hero de Entreno, Comida y Progreso son la de Hoy con más aire: el
+   fondo, el borde y la luz son los de .card.hero (tanda C). Antes cada una
+   pisaba el vidrio con grafito opaco y tenía su borde y su halo propios. */
 .card.hero.hero-plan,.card.hero.hero-kcal,.card.hero.hero-prog{padding:var(--s5)}
-.card.hero.hero-plan{
-  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.14),rgba(var(--hi-rgb),.03) 60%),var(--surface);
-  border-color:rgba(var(--accent-rgb),.22);
-}
-.card.hero.hero-plan::before{
-  width:200px;height:200px;top:-46px;right:-46px;
-  background:radial-gradient(circle,rgba(var(--accent-strong-rgb),.26),transparent 66%);
-}
 .hero-eyebrow{
   font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2);}
 .hero-plan .hero-day{font-size:var(--t-display);margin-top:var(--s1)}
@@ -2936,8 +2974,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   letter-spacing:var(--tr-control);text-transform:uppercase;
 }
 .btn.glass{
-  background:linear-gradient(150deg,rgba(var(--hi-rgb),.09),rgba(var(--hi-rgb),.024));
-  border:1px solid rgba(var(--hi-rgb),.13);color:var(--accent);box-shadow:none;
+  background:var(--sup-control-bg);
+  border:1px solid var(--sup-control-borde);color:var(--accent);box-shadow:none;
 }
 
 /* Tarjetas de día, desplegables en el lugar */
@@ -2949,8 +2987,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .nav-card{
   display:flex;align-items:center;gap:12px;width:100%;text-align:left;
   margin-top:var(--s3);padding:13px 14px;
-  border-radius:var(--r);background:var(--surface-2);
-  border:1px solid var(--line-2);color:var(--text);
+  border-radius:var(--r);background:var(--sup-control-bg);
+  border:1px solid var(--sup-control-borde);color:var(--text);
   transition:border-color var(--d1) var(--ease-out),transform var(--d1) var(--ease-out);
 }
 .nav-card:active{transform:scale(.99);border-color:var(--accent)}
@@ -2970,8 +3008,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 .day-cards{display:flex;flex-direction:column;gap:var(--s3);margin-top:var(--s4)}
 .day-card{
-  background:linear-gradient(158deg,rgba(var(--hi-rgb),.075),rgba(var(--hi-rgb),.02));
-  border:1px solid rgba(var(--hi-rgb),.11);border-radius:var(--r);overflow:hidden;
+  /* Superficie TARJETA (tanda C): antes un degradado blanco propio, sin
+     vidrio ni sombra — el turno se veía de otro sistema que la hero. */
+  background:var(--sup-tarjeta-bg);backdrop-filter:var(--sup-tarjeta-blur);
+  border:1px solid var(--sup-tarjeta-borde);border-radius:var(--r);overflow:hidden;
+  box-shadow:var(--sup-tarjeta-sombra);
 }
 .day-head{display:flex;align-items:center;gap:var(--s3);width:100%;padding:var(--s4);text-align:left}
 .day-badge{
@@ -3022,10 +3063,6 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* ============================================================
    Rediseño — pantalla COMIDA (Nutrición)
    ============================================================ */
-.card.hero.hero-kcal{
-  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.14),rgba(var(--hi-rgb),.03) 60%),var(--surface);
-  border-color:rgba(var(--accent-rgb),.2);
-}
 .kcal-top{display:flex;align-items:center;gap:var(--s4)}
 .kcal-ring{position:relative;flex:0 0 auto;width:132px;height:132px}
 .kcal-ring svg{width:132px;height:132px}
@@ -3058,13 +3095,16 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    franja vacía en el medio (auditoría 2026-09-26). */
 .nutri-fb .feedback:first-child{margin-top:0;padding-top:0;border-top:0}
 
-/* Chips de acceso rápido: píldoras completas, con el + en cian */
+/* Chips de acceso rápido: píldoras completas en superficie CONTROL (tanda
+   C; antes un tinte del acento a 150°, otra receta más), con el + dibujado
+   en el acento: lo que se enciende es la acción, no la píldora. */
 .chip-scroll .chip.blue{
   flex:none;display:inline-flex;align-items:center;gap:var(--s2);border-radius:var(--r-full);white-space:nowrap;
   padding:var(--s3) var(--s4);font-size:var(--t-sm);font-weight:600;color:var(--text);
-  background:linear-gradient(150deg,rgba(var(--accent-strong-rgb),.16),rgba(var(--hi-rgb),.03));
-  border:1px solid rgba(var(--accent-rgb),.28);
+  background:var(--sup-control-bg);
+  border:1px solid var(--sup-control-borde);
 }
+.chip-scroll .chip.blue svg{flex:none;color:var(--accent);margin-right:calc(var(--s1) * -1)}
 .chip-scroll .chip.blue .txt-mut{color:var(--text-3)}
 
 /* Lista de comidas + botón de borrar en rojo */
@@ -3076,17 +3116,13 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* ============================================================
    Rediseño — pantalla PROGRESO
    ============================================================ */
-.card.hero.hero-prog{
-  background:linear-gradient(158deg,rgba(var(--accent-strong-rgb),.14),rgba(var(--hi-rgb),.03) 62%),var(--surface);
-  border-color:rgba(var(--accent-rgb),.2);
-}
 .hero-prog .bignum{}
 /* "+ Registro": botón de vidrio con texto cian, no un fantasma más */
 .reg-btn{
   flex:0 0 auto;padding:12px 16px;border-radius:var(--r-md);
   font-family:var(--font-cond);font-size:var(--t-body);font-weight:700;
   letter-spacing:var(--tr-control);text-transform:uppercase;color:var(--accent);
-  background:rgba(var(--hi-rgb),.06);border:1px solid rgba(var(--hi-rgb),.12);
+  background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);
 }
 /* El control segmentado del mockup tiene el ítem activo en Condensed 700 */
 .seg button{font-size:var(--t-sm);font-weight:700;letter-spacing:var(--tr-control)}
@@ -3189,8 +3225,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .illus-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:var(--s3)}
 .illus-opt{
   display:flex;flex-direction:column;gap:6px;padding:8px;text-align:left;
-  background:linear-gradient(158deg,rgba(var(--hi-rgb),.07),rgba(var(--hi-rgb),.02));
-  border:1px solid rgba(var(--hi-rgb),.1);border-radius:var(--r);
+  background:var(--sup-control-bg);
+  border:1px solid var(--sup-control-borde);border-radius:var(--r);
 }
 .illus-opt img{
   width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r-md);
@@ -3387,9 +3423,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   position:absolute;left:0;right:0;bottom:0;z-index:5;
   margin:0 auto;max-width:min(340px,calc(100% - 24px));
   padding:12px 16px 14px;border-radius:18px 18px 0 0;
-  background:linear-gradient(158deg,rgba(var(--hi-rgb),.1),rgba(var(--hi-rgb),.04)),rgba(var(--glass-rgb),.97);
-  border:1px solid var(--line-2);border-bottom:0;
-  box-shadow:0 -20px 44px -16px rgba(var(--shade-rgb),.85),0 0 0 1px rgba(var(--shade-rgb),.35);
+  /* Superficie FLOTANTE (tanda C), sin borde abajo: apoya en el borde del
+     mapa. */
+  background:var(--sup-flota-bg);backdrop-filter:var(--sup-flota-blur);
+  border:1px solid var(--sup-flota-borde);border-bottom:0;
+  box-shadow:var(--sup-flota-sombra);
   animation:mpop-in var(--d2) var(--spring) both;
   /* Tope de alto + columna flex: sin esto un grupo con muchas fibras (Pierna)
      crecía hasta pasarse del contenedor y se cortaba contra la pantalla. El
@@ -3630,18 +3668,16 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 }
 .ini-tile{
   position:relative;overflow:hidden;
-  background:linear-gradient(155deg,rgba(var(--accent-strong-rgb),.16),rgba(var(--glass-rgb),.82) 46%,rgba(var(--glass-rgb),.92));
-  backdrop-filter:var(--glass-blur);
-  border:1px solid var(--glass-border);border-radius:var(--r);
-  box-shadow:var(--edge-metal),0 14px 30px -18px rgba(var(--shade-rgb),.8);
+  /* Superficie TARJETA, la misma de .card (tanda C). Cada una traía su tinte
+     del acento a 155°, un vidrio al 82→92 % y un reflejo diagonal en ::after:
+     cinco luces en una pantalla. La luz de Inicio es una sola, la tarjeta del
+     cuerpo (.luz en Inicio.jsx). */
+  background:var(--sup-tarjeta-bg);
+  backdrop-filter:var(--sup-tarjeta-blur);
+  border:1px solid var(--sup-tarjeta-borde);border-radius:var(--r);
+  box-shadow:var(--sup-tarjeta-sombra);
   padding:var(--s3) var(--s4);text-align:left;color:var(--text);font:inherit;
   display:flex;flex-direction:column;gap:var(--s1);
-}
-/* El brillo diagonal que hace que el glass se sienta glass y no sólo un panel
-   oscuro con blur: una línea de luz arriba-izquierda, apenas visible. */
-.ini-tile::after{
-  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
-  background:linear-gradient(135deg,rgba(var(--hi-rgb),.10),transparent 40%);
 }
 /* 2026-09-25: el rótulo de cada tile, con el mismo tratamiento que los títulos
    de sección de la app (condensada, mayúsculas). Antes iba en el tamaño más
@@ -3661,9 +3697,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    interactivo=false ya apaga el arrastre y el tocar músculos, así que sólo
    hace falta darle una caja fija (flex+height) para que el SVG se encaje
    adentro, igual que en el sheet grande. */
-.ini-tile-body{grid-area:body;position:relative;overflow:hidden}
-.ini-tile-body::before{content:"";position:absolute;top:-40px;right:-30px;width:150px;height:150px;
-  background:radial-gradient(circle,rgba(var(--accent-rgb),.22),transparent 66%);pointer-events:none}
+.ini-tile-body{grid-area:body}
 .ini-tile-go{color:var(--text-2);text-transform:none;letter-spacing:0;font-weight:600;font-size:var(--t-micro)}
 /* 100 y no 112 (tanda D): los 12 px son los que pagan el aire entre grupos
    sin que Inicio pida scroll a 390×844. */
@@ -3791,8 +3825,8 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .wiz-groupcard{
   position:relative;display:flex;align-items:center;justify-content:center;
   min-height:56px;padding:14px 16px;border-radius:var(--r);
-  background:linear-gradient(155deg,rgba(var(--accent-strong-rgb),.10),rgba(var(--glass-rgb),.7) 60%);
-  border:1px solid var(--line-2);color:var(--text);font-size:var(--t-body);font-weight:700;
+  background:var(--sup-control-bg);
+  border:1px solid var(--sup-control-borde);color:var(--text);font-size:var(--t-body);font-weight:700;
   font-family:var(--font-cond);
 }
 .wiz-groupcard.on{
@@ -3878,8 +3912,8 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    Misma lámina que el mapa de Inicio: lo que ves acá y lo que ves allá son el
    mismo dibujo, no dos ilustraciones que puedan contradecirse. */
 .bodymini{
-  background:linear-gradient(158deg,rgba(var(--hi-rgb),.05),rgba(var(--hi-rgb),.02)),var(--surface-2);
-  border:1px solid var(--line-2);border-radius:var(--r);
+  background:var(--sup-control-bg);
+  border:1px solid var(--sup-control-borde);border-radius:var(--r);
   padding:12px;margin-bottom:var(--s3);
 }
 .bm-cuerpos{display:flex;justify-content:center;gap:10px}
@@ -4164,7 +4198,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .asist-lista,.asist-caja{display:flex;flex-direction:column;gap:var(--s2)}
 .asist-fila{
   display:flex;align-items:center;gap:var(--s3);min-height:46px;padding:0 var(--s3);
-  border-radius:var(--r-md);background:var(--grad-metal),var(--glass);border:1px solid var(--glass-border);
+  border-radius:var(--r-md);background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);
   font-size:var(--t-body);color:var(--text);
 }
 .asist-fila .n{
@@ -4243,8 +4277,8 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    Es el cambio que separa "lista de divs con borde" (web) de "lista
    agrupada" (app). El borde deja de repetirse por ítem: agrupa. */
 .group{
-  background:var(--surface-2);
-  border:1px solid var(--line-2);
+  background:var(--sup-control-bg);
+  border:1px solid var(--sup-control-borde);
   border-radius:var(--r);
   overflow:hidden;              /* que los hairlines no se salgan del radio */
 }
