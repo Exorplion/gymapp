@@ -97,8 +97,8 @@ export default function Profile() {
       <h2>Perfil y macros</h2>
       <div className="sheet-sub">Todo se recalcula desde estos datos. Nada queda fijo.</div>
 
-      <h3>Sexo</h3>
-      <div className="seg">
+      <div className="t-etiqueta lbl-block" id="perfil-hlbl-sexo">Sexo</div>
+      <div className="seg" role="group" aria-labelledby="perfil-hlbl-sexo">
         <button type="button" className={draft.sex === 'm' ? 'on' : ''} aria-pressed={draft.sex === 'm'} onClick={() => setField('sex', 'm')}>Hombre</button>
         <button type="button" className={draft.sex === 'f' ? 'on' : ''} aria-pressed={draft.sex === 'f'} onClick={() => setField('sex', 'f')}>Mujer</button>
       </div>
@@ -122,7 +122,7 @@ export default function Profile() {
         <input id="perfil-peso" ref={weightRef} type="number" inputMode="decimal" step="any" defaultValue={draft.weightKg ?? ''} placeholder="Ej. 74" onChange={e => setNumField('weightKg', e.target.value)} />
       </div>
 
-      <h3 id="perfil-hlbl-actividad">Nivel de actividad</h3>
+      <div className="t-etiqueta lbl-block" id="perfil-hlbl-actividad">Nivel de actividad</div>
       <div className="field">
         <select aria-labelledby="perfil-hlbl-actividad" value={draft.activity} onChange={e => setField('activity', e.target.value)}>
           {Object.keys(ACTF).map(k => <option key={k} value={k}>{ACT_LABEL[k]}</option>)}
@@ -130,7 +130,7 @@ export default function Profile() {
         <div className="field-hint">{ACT_HINT[draft.activity]}</div>
       </div>
 
-      <h3 id="perfil-hlbl-objetivo">Objetivo</h3>
+      <div className="t-etiqueta lbl-block" id="perfil-hlbl-objetivo">Objetivo</div>
       <div className="field">
         <select aria-labelledby="perfil-hlbl-objetivo" value={draft.goal} onChange={e => setField('goal', e.target.value)}>
           {Object.keys(GOALDELTA).map(k => <option key={k} value={k}>{GOAL_LABEL[k]}</option>)}
@@ -148,7 +148,7 @@ export default function Profile() {
         <input type="range" aria-labelledby="perfil-lbl-grasa" min="0" max="100" value={Math.round((draft.fatPref ?? 0.5) * 100)} onChange={e => setField('fatPref', (+e.target.value) / 100)} />
       </div>
 
-      <h3 id="perfil-hlbl-tdee">TDEE empírico <span className="txt-mut" style={{ fontWeight: 500, letterSpacing: 0, textTransform: 'none', fontSize: 12 }}>(opcional)</span></h3>
+      <div className="t-etiqueta lbl-block" id="perfil-hlbl-tdee">TDEE empírico <span className="normal-case tracking-normal">(opcional)</span></div>
       <div className="field">
         <input
           aria-labelledby="perfil-hlbl-tdee"
@@ -157,7 +157,7 @@ export default function Profile() {
           placeholder={m ? `calculado: ${m.tdeeCalc}` : 'kcal de mantenimiento real'}
           onChange={e => setNumField('tdeeEmpirical', e.target.value)}
         />
-        <div className="txt-mut" style={{ fontSize: 12, marginTop: 7, lineHeight: 1.4 }}>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 7, lineHeight: 1.4 }}>
           Si tras 2-3 semanas tu peso no se mueve como predice el cálculo, pon aquí las kcal a las que realmente te mantienes. Este valor manda sobre el calculado.
         </div>
       </div>

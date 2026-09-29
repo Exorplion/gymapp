@@ -37,7 +37,7 @@ export default function DayPeek({ wd }) {
       <div ref={blocksRef}>
         {blocks.map(b => (
           <div key={b.cat} className="mb-2">
-            <div className="mx-0.5 mb-1.5 mt-2.5 text-micro font-semibold uppercase tracking-wide text-text-2">{b.cat}</div>
+            <div className="mx-0.5 mb-1.5 mt-2.5 t-etiqueta">{b.cat}</div>
             <div className="rounded-[var(--radius-r-lg)] border border-line bg-surface-2 p-3">
               {b.exs.map((ex, i) => (
                 <div className="flex items-center gap-2.5 py-2" key={ex.id}>

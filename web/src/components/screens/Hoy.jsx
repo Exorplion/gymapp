@@ -237,7 +237,7 @@ export function TerminarSesion() {
     <>
       <h2>Terminar la sesión</h2>
       <AvisoPrueba>Estás en la <b>copia de prueba</b>: esta sesión no llega a tus datos reales hasta que salgas del modo prueba y elijas pasarla.</AvisoPrueba>
-      <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 18 }}>
+      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 18 }}>
         {nsets
           ? `Llevás ${nsets} serie${nsets === 1 ? '' : 's'} registrada${nsets === 1 ? '' : 's'}.`
           : 'Todavía no registraste ninguna serie.'}
@@ -309,7 +309,6 @@ function RestHero() {
   return (
     <>
       <div className="card hero">
-        <div className="eyebrow">Hoy te toca descansar</div>
         <div className="hero-day">Descanso</div>
         <div className="text-text-2 text-sm mt-1.5">
           {o.ultimo && (
@@ -353,8 +352,8 @@ function RestHero() {
 
 /** El turno pendiente según la secuencia. Al completar un entrenamiento el
     puntero ya avanzó (session.js), así que acá siempre es el próximo por
-    hacer — nunca uno ya cerrado —, y el eyebrow puede quedar fijo en "Toca
-    hoy" sin comparar contra ningún día de la semana. */
+    hacer — nunca uno ya cerrado —, así que el título no necesita un "Toca
+    hoy" encima (se sacó en la tanda B con su punto decorativo, V12). */
 function PreSessionHero({ day, index, exs }) {
   const totalSets = exs.reduce((a, e) => a + e.sets, 0);
   const estMin = Math.round(totalSets * ((S.cfg.rest || 90) + 40) / 60);
@@ -365,10 +364,6 @@ function PreSessionHero({ day, index, exs }) {
           antes era un bloque propio entre los botones y la lista, y empujaba
           los ejercicios media pantalla hacia abajo. */}
       {cats.length > 0 && <CuerpoDeHoy cats={cats} />}
-      <div className="flex items-center gap-2">
-        <span className="w-[7px] h-[7px] rounded-[4px] bg-accent shadow-[0_0_8px_var(--accent)]"></span>
-        <div className="eyebrow">Toca hoy</div>
-      </div>
       {/* 46px e itálica: en el mockup el nombre del día es el elemento más
           grande de la pantalla, por encima del propio título "HOY". */}
       <div className="hero-day">{day?.name || 'Entrenamiento'}</div>
@@ -609,7 +604,7 @@ export function SessStartInfo({ index }) {
       </div>
 
       <div className="calcbox">
-        <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 8 }}>¿Dónde entrenás hoy?</div>
+        <div style={{ fontSize: 'var(--t-body)', lineHeight: 1.55, marginBottom: 8 }}>¿Dónde entrenás hoy?</div>
         <div className="chips">
           <button type="button" className={`chip ${selGym === '' ? 'on' : ''}`} aria-pressed={selGym === ''} onClick={() => setSelGym('')}>Sin gym</button>
           {S.gyms.map(g => (
@@ -631,15 +626,15 @@ export function SessStartInfo({ index }) {
         )}
       </div>
       <div className="calcbox" style={{ marginTop: 10 }}>
-        <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 8 }}>¿Cómo dormiste?</div>
+        <div style={{ fontSize: 'var(--t-body)', lineHeight: 1.55, marginBottom: 8 }}>¿Cómo dormiste?</div>
         <div className="chips">{chip('sleep', 'bien', 'Bien')}{chip('sleep', 'regular', 'Regular')}{chip('sleep', 'mal', 'Mal')}</div>
       </div>
       <div className="calcbox" style={{ marginTop: 10 }}>
-        <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 8 }}>¿Estás dolorido de algo?</div>
+        <div style={{ fontSize: 'var(--t-body)', lineHeight: 1.55, marginBottom: 8 }}>¿Estás dolorido de algo?</div>
         <div className="chips">{chip('sore', true, 'Sí')}{chip('sore', false, 'No')}</div>
       </div>
       <div className="calcbox" style={{ marginTop: 10 }}>
-        <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 8 }}>¿Motivación de hoy?</div>
+        <div style={{ fontSize: 'var(--t-body)', lineHeight: 1.55, marginBottom: 8 }}>¿Motivación de hoy?</div>
         <div className="chips">{chip('motivation', 'baja', 'Baja')}{chip('motivation', 'normal', 'Normal')}{chip('motivation', 'alta', 'Alta')}</div>
       </div>
       {precheckAdjust() !== 0 && (
@@ -651,11 +646,11 @@ export function SessStartInfo({ index }) {
       {/* Qué comiste antes (2026-09-24): opcional, se guarda con la sesión.
           El cálculo de cuánto tomar sigue a un toque, sin salir de acá. */}
       <div className="calcbox" style={{ marginTop: 10 }}>
-        <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 8 }}>Pre-workout <span className="txt-mut">(opcional)</span></div>
+        <div style={{ fontSize: 'var(--t-sm)', lineHeight: 1.55, marginBottom: 8 }}>Pre-workout <span className="txt-mut">(opcional)</span></div>
         <div className="chips">{chip('pre', 'nada', 'Nada')}{chip('pre', 'liviano', 'Algo liviano')}{chip('pre', 'comida', 'Comida')}</div>
         {/* 12 y no 8 arriba: la franja de toque de 40 (link-toque) no pisa los
             chips de arriba, que también agrandan la suya 2 px. */}
-        <button type="button" className="linkcard link-toque txt-blue" style={{ fontSize: 13, marginTop: 'var(--s3)' }} onClick={() => openSheet('preworkout')}>Ver cuánto tomar ›</button>
+        <button type="button" className="linkcard link-toque txt-blue" style={{ fontSize: 'var(--t-sm)', marginTop: 'var(--s3)' }} onClick={() => openSheet('preworkout')}>Ver cuánto tomar ›</button>
       </div>
       <button type="button" className="btn" style={{ marginTop: 16 }} onClick={abrir}>Abrir sesión</button>
       <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={cancelar}>Cancelar</button>

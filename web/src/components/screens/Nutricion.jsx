@@ -169,11 +169,13 @@ export default function Nutricion() {
           <div className="kcal-side">
             {/* El mockup pone el dato accionable — cuánto QUEDA — grande y
                 aparte del anillo, que muestra lo ya consumido. */}
-            {/* "Pasado" no se entendía. "Excedente" dice lo mismo y se lee solo. */}
-            <div className="hero-eyebrow">{kc > g.kcal ? 'Excedente' : 'Restantes'}</div>
+            {/* "Pasado" no se entendía. "Excedente" dice lo mismo y se lee solo.
+                Va DEBAJO de la cifra, como toda etiqueta de cifra (tanda B,
+                V12): encima era un eyebrow. */}
             <div className="kcal-big">
               {kc > g.kcal ? kc - g.kcal : Math.max(0, g.kcal - kc)}<span>kcal</span>
             </div>
+            <div className="t-etiqueta">{kc > g.kcal ? 'Excedente' : 'Restantes'}</div>
             <div className="text-text-2 text-micro mt-1">
               {GOAL_LABEL[S.cfg.profile.goal]}
               {S.cfg.profile.weightKg ? ` · ${fmtNum(round1(S.cfg.profile.weightKg))} kg` : ''}
@@ -218,14 +220,14 @@ export default function Nutricion() {
 
       {proteinaPendiente && (
         <div className="notice">
-          <div className="text-sm text-text font-medium">🥩 Entrenaste hace poco</div>
+          <div className="text-sm text-text font-semibold">🥩 Entrenaste hace poco</div>
           <div className="s text-text-2 mt-1">Todavía no registraste una comida con proteína. No es una regla dura, pero es el mejor momento para una.</div>
         </div>
       )}
 
       {bajos.length > 0 && (
         <div className="notice">
-          <div className="text-sm text-text font-medium">Micronutrientes bajos esta semana</div>
+          <div className="text-sm text-text font-semibold">Micronutrientes bajos esta semana</div>
           <div className="s text-text-2 mt-1">
             {bajos.map(b => `${b.label} (${b.dias} de 7 días)`).join(' · ')}
           </div>
@@ -235,7 +237,7 @@ export default function Nutricion() {
 
       {band?.adjust !== 0 && band && (
         <div className="notice">
-          <div className="text-sm text-text font-medium">
+          <div className="text-sm text-text font-semibold">
             {band.adjust > 0 ? '↑' : '↓'} Ajuste sugerido: {band.adjust > 0 ? '+' : ''}{band.adjust} kcal
           </div>
           <div className="s text-text-2 mt-1">
@@ -265,7 +267,7 @@ export default function Nutricion() {
         {SR_FOOD && (
           <button type="button" className="pw-btn" onClick={() => openSheet('food-voice')}>
             <span className="pwi">🎙</span><span className="pwt">Registrar por voz</span>
-            <span className="text-text-2 text-micro font-medium">decí qué comiste</span>
+            <span className="text-text-2 text-micro">decí qué comiste</span>
             <span className="chev">›</span>
           </button>
         )}
@@ -277,7 +279,7 @@ export default function Nutricion() {
           <div className="chip-scroll">
             {freq.map((f, i) => (
               <button key={i} type="button" className="chip blue" onClick={() => logMeal(f)}>
-                ＋ {f.name} <span className="text-text-2 font-medium">{f.kcal}</span>
+                ＋ {f.name} <span className="text-text-2">{f.kcal}</span>
               </button>
             ))}
           </div>
@@ -303,7 +305,7 @@ export default function Nutricion() {
             <button key={f.id} type="button" className="chip" aria-label={`Borrar ${f.name} de frecuentes`} onClick={() => deleteFood(f.id)}>{f.name}<span className="x">✕</span></button>
           ) : (
             <button key={f.id} type="button" className="chip blue" onClick={() => addMealFromFood(f.id)}>
-              ＋ {f.name} <span className="text-text-2 font-medium">{f.kcal}</span>
+              ＋ {f.name} <span className="text-text-2">{f.kcal}</span>
             </button>
           ))}
         </div>

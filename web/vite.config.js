@@ -63,7 +63,11 @@ export default defineConfig({
            de más en imágenes que ninguna pantalla usa.
            Siguen en dist/ (viven en public/) y el manifest los sigue
            declarando: lo único que cambia es que no se bajan por adelantado. */
-        globPatterns: ['**/*.{js,css,html,svg,ico}'],
+        /* woff2: las seis caras de Barlow viven en la app desde la tanda B
+           (styles.css, "FUENTES"). Precargadas, la tipografía no depende de
+           la red: antes venían de Google Fonts y sin conexión la app caía a
+           la fuente del sistema. Son ~133 KB, una sola vez por versión. */
+        globPatterns: ['**/*.{js,css,html,svg,ico,woff2}'],
         // El navegador ya tiene registrado el service worker de la app
         // vainilla (caché 'fierro-vNN', cache-first). Estas tres opciones son
         // las que hacen que el nuevo lo reemplace sin que el usuario tenga que

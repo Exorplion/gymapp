@@ -12,7 +12,7 @@
 // líneas.
 import { S, useStore, bump, openSheet } from '../../lib/state.js';
 import { streakHeatmap, currentStreak, bestStreak } from '../../lib/streak.js';
-import { fmtD, fmtDFull, fmtNum, kg2lb, round1 } from '../../lib/format.js';
+import { NBSP, fmtD, fmtDFull, fmtKg, fmtNum, kg2lb, round1 } from '../../lib/format.js';
 import { muscleVolume } from '../../lib/muscle.js';
 import { sessionsSince, routineStability } from '../../lib/rutina-logic.js';
 import { groupSessionsByWeek } from '../../lib/session.js';
@@ -48,7 +48,7 @@ export default function Progreso() {
   });
 
   const headNum = wk && wk.curAvg != null ? wk.curAvg : (lastW ? lastW.weight : null);
-  const headLabel = wk && wk.curAvg != null ? `Peso · promedio ${wk.n} día${wk.n === 1 ? '' : 's'}` : 'Peso corporal';
+  const headLabel = wk && wk.curAvg != null ? `Promedio de ${wk.n} día${wk.n === 1 ? '' : 's'}` : 'Peso corporal';
   const wpts = filterByRange(weights.map(b => ({ date: b.date, y: round1(b.weight) })), S.progRange);
   // Composición corporal (Plan Fierro · Fase 3): masa magra = peso ×
   // (1-%grasa), a partir del último registro con %grasa — separa "bajar de
@@ -94,14 +94,14 @@ export default function Progreso() {
       <div className="card hero hero-prog">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <div className="hero-eyebrow">{headLabel}</div>
             <div className="bignum">{headNum != null ? <span ref={headNumRef}>{fmtNum(round1(headNum))}</span> : '—'}<small> kg</small></div>
+            <div className="t-etiqueta">{headLabel}</div>
             {lastW && (
               <div className="text-text-2 text-sm mt-1">
-                {wk && wk.curAvg != null ? `último ${fmtNum(round1(lastW.weight))} kg · ` : `${fmtNum(kg2lb(lastW.weight))} lb · `}
+                {wk && wk.curAvg != null ? `último ${fmtKg(round1(lastW.weight))}, ` : `${fmtNum(kg2lb(lastW.weight))}${NBSP}lb, `}
                 {fmtDFull(lastW.date)}
                 {wk && wk.delta != null && (
-                  <> · <b className={`${wk.delta <= 0 ? 'text-ok' : 'text-accent'} whitespace-nowrap`}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></>
+                  <> <span className="whitespace-nowrap">·{NBSP}<b className={wk.delta <= 0 ? 'text-ok' : 'text-accent'}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></span></>
                 )}
               </div>
             )}
@@ -138,13 +138,13 @@ export default function Progreso() {
           viene— y las medidas contestan la suya con su propio título. */}
       {Object.keys(lastVals).length > 0 && (
         <>
-          <div className="sect">Medidas · último registro</div>
+          <div className="sect">Medidas</div>
           <div className="card">
             <div className="stats" style={{ '--n': 4 }}>
               {Object.entries(lastVals).map(([k, v]) => (
                 <div key={k}>
-                  <div className="n">{fmtNum(v)}</div>
-                  <span className="l">{BODY_LABELS[k]} cm</span>
+                  <div className="n">{fmtNum(v)}<small>{NBSP}cm</small></div>
+                  <span className="l">{BODY_LABELS[k]}</span>
                 </div>
               ))}
             </div>
@@ -200,8 +200,8 @@ export default function Progreso() {
           <div className="sect">Frecuencia</div>
           <div className="card">
             <div className="stats" style={{ '--n': 2 }}>
-              <div><div className="n">{sessionsSince(7)}</div><span className="l">Sesiones · 7 días</span></div>
-              <div><div className="n">{sessionsSince(30)}</div><span className="l">Sesiones · 30 días</span></div>
+              <div><div className="n">{sessionsSince(7)}</div><span className="l">Últimos 7 días</span></div>
+              <div><div className="n">{sessionsSince(30)}</div><span className="l">Últimos 30 días</span></div>
             </div>
           </div>
           <div className="card">
@@ -221,7 +221,7 @@ export default function Progreso() {
       {/* Constancia: en el mockup el mapa de calor vive acá, no escondido
           detrás de la racha del header. */}
       <div className="grupo">
-      <div className="sect">Constancia · 8 semanas</div>
+      <div className="sect">Constancia</div>
       <div className="card">
         <div className="heatmap const">
           {heat.days.map(d => <div key={d.date} className={cn('cell', d.status)} title={d.date}></div>)}
@@ -235,7 +235,7 @@ export default function Progreso() {
       </div>
 
       <div className="grupo">
-      <div className="sect">PRs · Récords personales</div>
+      <div className="sect">Récords</div>
       {!exNames.length ? (
         <div className="card"><div className="empty p-4"><p className="m-0">Aquí brillarán tus mejores marcas. 🏆</p></div></div>
       ) : (
@@ -315,7 +315,7 @@ function StrengthTab() {
                 <div className="grow"><div className="t">{x.name}</div><div className="s"><span className={cls}>{tag}</span></div></div>
                 <div className="text-right flex-none">
                   <div className="num text-xl text-text leading-none">{fmtNum(round1(x.last))}</div>
-                  <div className="text-text-2 text-micro tracking-[.08em]">KG 1RM</div>
+                  <div className="t-etiqueta">kg 1RM</div>
                 </div>
               </div>
             );
@@ -352,8 +352,8 @@ function VolumeTab() {
     <>
       {risk?.risk && (
         <div className="notice warn">
-          <div className="text-sm text-text font-medium">⚠ Volumen alto esta semana</div>
-          <div className="s text-text-2 mt-1">Tonelaje 7 días ({fmtNum(risk.acute)} kg) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
+          <div className="text-sm text-text font-semibold">⚠ Volumen alto esta semana</div>
+          <div className="s text-text-2 mt-1">Tonelaje 7 días ({fmtKg(risk.acute)}) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
         </div>
       )}
       {/* El "· 7 días" no se pierde al sacar el título: pasa a la leyenda de

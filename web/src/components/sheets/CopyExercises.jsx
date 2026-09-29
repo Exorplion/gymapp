@@ -19,7 +19,7 @@ import { Button, Card } from '../ui/primitives.jsx';
 // Nombre a mostrar para un turno de la secuencia actual.
 const slotLabel = i => S.routine[i]?.name || `Turno ${i + 1}`;
 
-const chipBase = 'inline-flex items-center rounded-full border border-line-2 px-3.5 py-2 text-sm font-medium transition-colors';
+const chipBase = 'inline-flex items-center rounded-full border border-line-2 px-3.5 py-2 text-sm font-semibold transition-colors';
 const chip = on => cn(chipBase, on ? 'border-transparent bg-accent font-bold text-[var(--on-accent)]' : 'bg-surface-2 text-text hover:border-line');
 
 // Rutina.jsx abre este sheet como openSheet('copy-exs', { mode, wd: index }) —
@@ -160,13 +160,13 @@ export default function CopyExercises({ mode = 'push', wd }) {
         <>
           {S.lib.length > 0 && (
             <div className="mb-3 inline-flex rounded-[var(--radius-r)] border border-line-2 bg-surface-2 p-1">
-              <button type="button" className={cn('rounded-[calc(var(--radius-r)-4px)] px-3.5 py-1.5 text-sm font-medium', fuente === 'actual' ? 'bg-accent text-[var(--on-accent)]' : 'text-text-2')} aria-pressed={fuente === 'actual'} onClick={() => { setFuente('actual'); setSel(null); }}>Mi rutina</button>
-              <button type="button" className={cn('rounded-[calc(var(--radius-r)-4px)] px-3.5 py-1.5 text-sm font-medium', fuente === 'lib' ? 'bg-accent text-[var(--on-accent)]' : 'text-text-2')} aria-pressed={fuente === 'lib'} onClick={() => { setFuente('lib'); setSel(null); }}>Mis rutinas</button>
+              <button type="button" className={cn('rounded-[calc(var(--radius-r)-4px)] px-3.5 py-1.5 text-sm font-semibold', fuente === 'actual' ? 'bg-accent text-[var(--on-accent)]' : 'text-text-2')} aria-pressed={fuente === 'actual'} onClick={() => { setFuente('actual'); setSel(null); }}>Mi rutina</button>
+              <button type="button" className={cn('rounded-[calc(var(--radius-r)-4px)] px-3.5 py-1.5 text-sm font-semibold', fuente === 'lib' ? 'bg-accent text-[var(--on-accent)]' : 'text-text-2')} aria-pressed={fuente === 'lib'} onClick={() => { setFuente('lib'); setSel(null); }}>Mis rutinas</button>
             </div>
           )}
           {fuente === 'actual' ? (
             <div className="mb-3">
-              <label className="mb-1.5 block text-sm font-medium text-text-2">¿De qué turno?</label>
+              <label className="t-etiqueta mb-1.5 block">¿De qué turno?</label>
               {!otros.length ? (
                 <div className="text-sm text-text-2">No hay otro turno con ejercicios todavía.</div>
               ) : (
@@ -182,14 +182,14 @@ export default function CopyExercises({ mode = 'push', wd }) {
           ) : (
             <>
               <div className="mb-3">
-                <label htmlFor="copyex-rutina" className="mb-1.5 block text-sm font-medium text-text-2">¿De qué rutina?</label>
+                <label htmlFor="copyex-rutina" className="t-etiqueta mb-1.5 block">¿De qué rutina?</label>
                 <select id="copyex-rutina" className="h-11 w-full rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 text-body text-text outline-none" value={libId ?? ''} onChange={e => { setLibId(e.target.value); setLibIndex(null); setSel(null); }}>
                   {S.lib.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               </div>
               {diasLib.length > 0 && (
                 <div className="mb-3">
-                  <label className="mb-1.5 block text-sm font-medium text-text-2">¿De qué turno de esa rutina?</label>
+                  <label className="t-etiqueta mb-1.5 block">¿De qué turno de esa rutina?</label>
                   <div className="flex flex-wrap gap-2">
                     {diasLib.map(i => (
                       <button key={i} type="button" className={chip(i === libIndexActivo)} aria-pressed={i === libIndexActivo} onClick={() => { setLibIndex(i); setSel(null); }}>
@@ -216,7 +216,7 @@ export default function CopyExercises({ mode = 'push', wd }) {
            dicen "libre", para que se lean como otra cosa. */}
       {esPush && (
         <div className="mb-3">
-          <label className="mb-1.5 block text-sm font-medium text-text-2">¿A qué rutina?</label>
+          <label className="t-etiqueta mb-1.5 block">¿A qué rutina?</label>
           <div className="flex flex-col gap-2">
             {destinos.map(i => {
               const turno = S.routine[i];
@@ -261,7 +261,7 @@ export default function CopyExercises({ mode = 'push', wd }) {
       )}
 
       {/* ---- cuáles ---- */}
-      <div className="mb-2 flex items-center text-sm font-semibold uppercase tracking-wide text-text-2">
+      <div className="mb-2 flex items-center t-etiqueta">
         Qué ejercicios
         <Button type="button" variant="ghost" size="sm" className="ml-auto h-[30px] w-auto px-3" onClick={alternarTodos}>
           {todosPuestos ? 'Ninguno' : 'Todos'}
@@ -282,7 +282,7 @@ export default function CopyExercises({ mode = 'push', wd }) {
                 <span className="grow">
                   <span className="block text-sm text-text">{e.name}</span>
                   <span className="text-sm text-text-2">
-                    {equipLabel(e) && <span className="mr-1.5 inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 text-nano font-semibold uppercase tracking-wide text-text-2">{equipLabel(e)}</span>}
+                    {equipLabel(e) && <span className="mr-1.5 inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 t-etiqueta">{equipLabel(e)}</span>}
                     {e.sets}×{e.reps}
                     {repetido && <span className="text-warn"> · ya está</span>}
                   </span>

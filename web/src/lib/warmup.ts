@@ -99,14 +99,14 @@ export const CALENTAMIENTO_GENERAL: Record<'superior' | 'inferior', { foco: stri
   superior: {
     foco: 'Manguito rotador',
     ejercicios: [
-      { nombre: 'Rotación externa e interna con banda', dosis: '2 × 12 c/u por brazo', como: 'Codo pegado al cuerpo a 90°. Girá lento: 2 s de ida y 2 s de vuelta.' },
-      { nombre: 'Face pull liviano', dosis: '2 × 15', como: 'Tirá hacia la frente con los codos altos. Pausa de 1 s atrás.' },
+      { nombre: 'Rotación externa e interna con banda', dosis: '2\u00a0×\u00a012 c/u por brazo', como: 'Codo pegado al cuerpo a 90°. Girá lento: 2\u00a0s de ida y 2\u00a0s de vuelta.' },
+      { nombre: 'Face pull liviano', dosis: '2\u00a0×\u00a015', como: 'Tirá hacia la frente con los codos altos. Pausa de 1\u00a0s atrás.' },
     ],
   },
   inferior: {
     foco: 'Cadera y tobillo',
     ejercicios: [
-      { nombre: 'Puente de glúteo', dosis: '2 × 12', como: 'Apretá los glúteos 1 s arriba, sin arquear la zona lumbar.' },
+      { nombre: 'Puente de glúteo', dosis: '2\u00a0×\u00a012', como: 'Apretá los glúteos 1\u00a0s arriba, sin arquear la zona lumbar.' },
       { nombre: 'Movilidad de tobillo y cadera', dosis: '10 por lado', como: 'Rodilla hacia adelante sobre la punta del pie con el talón apoyado; después balanceo de pierna.' },
     ],
   },

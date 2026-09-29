@@ -22,7 +22,7 @@
 // los hechos sí tienen fecha. El plan se ve y se edita en Rutina.
 import { useEffect, useRef } from 'react';
 import { S, useStore, openSheet, changeTab, esDiaLibre } from '../../lib/state.js';
-import { WDS, MO, dstr, fmtD, fmtNum, round1 } from '../../lib/format.js';
+import { dstr, fmtD, fmtKg, fmtNum, round1 } from '../../lib/format.js';
 import { pendingSlot, sesionDeHoy, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
 import { daysSinceAll, stalestGroups, untrainedGroups, MUSCLE_CATS } from '../../lib/muscle.js';
 import { diasPorPorcion } from '../../lib/fibras.js';
@@ -52,7 +52,6 @@ export default function Inicio() {
        exactamente por lo que el deslizamiento se había sacado. */
     screenReveal(tiles, { delayStep: 60, distance: 16, scale: 0.96 });
   }, []);
-  const hoy = new Date();
   const slot = pendingSlot();
   // La sesión cerrada hoy, del turno que sea: el pendiente ya es el siguiente
   // (completeSession adelanta el puntero), así que no sirve para contestarlo.
@@ -81,34 +80,30 @@ export default function Inicio() {
   const porciones = diasPorPorcion(S.sessions, dstr());
   const viejos = stalestGroups();
   const racha = currentStreak();
-  // La fecha es puramente informativa acá — ubica al usuario en el
-  // calendario, pero no decide qué turno toca (eso lo resuelve la
-  // secuencia, no el día de la semana).
-  const fecha = `${WDS[hoy.getDay()]} ${hoy.getDate()} ${MO[hoy.getMonth()]}`;
-
   const irAHoy = () => changeTab('hoy');
 
   // Los cuatro estados de la misma pantalla. El título usa el nombre real
   // del turno pendiente —"Anterior A", no "Toca entrenar"— así la tarjeta
   // contesta directo la primera pregunta al abrir la app: ¿cuál me toca?
-  let eyebrow, titulo, sub, cta;
+  // Sin eyebrow arriba del título (tanda B, V12: "COMPLETADO · HOY" era
+  // un rótulo versal encima de cada título): lo que decía de útil pasa a la
+  // línea de abajo, y el título habla solo.
+  let titulo, sub, cta;
   if (enCurso) {
     const hechos = Object.values(draft.entries).filter(e => e.sets.length).length;
     const turnoDraft = S.routine.find(s => s.id === draft.slotId);
     const total = (turnoDraft?.exercises || []).length;
-    eyebrow = 'Sesión en curso';
     titulo = turnoDraft?.name || 'Entrenando';
-    sub = `${hechos} de ${total} ejercicios registrados`;
+    sub = `En curso · ${hechos} de ${total} ejercicios`;
     cta = (
       <button type="button" className="ini-cta ini-cta-seguir" onClick={irAHoy}>
         SEGUIR<small>{hechos} de {total}</small>
       </button>
     );
   } else if (hecha) {
-    eyebrow = 'Completado · hoy';
     titulo = hecha.dayName || 'Listo por hoy';
     const nEx = (hecha.entries || []).length;
-    sub = `${hecha.duration} min · ${nEx} ${nEx === 1 ? 'ejercicio' : 'ejercicios'}`;
+    sub = `Hecho hoy en ${hecha.duration} min · ${nEx} ${nEx === 1 ? 'ejercicio' : 'ejercicios'}`;
     cta = (
       <button type="button" className="ini-cta ok" onClick={() => openSheet('session-view', { id: hecha.id })}>
         VER LO QUE HICISTE
@@ -119,14 +114,12 @@ export default function Inicio() {
        puerta. El CTA queda en `dim` como el del descanso del plan —"podés,
        nadie te lo impide"— y el turno pendiente sigue ahí, esperándote
        mañana, porque tomarte el día no te hace perder el turno. */
-    eyebrow = 'Día libre · hoy';
     titulo = 'Descanso tomado';
     sub = slot?.type === 'workout' && slot.exercises?.length
       ? `${slot.name || 'Tu turno'} te espera para la próxima`
       : 'Vos lo decidiste, así queda';
     cta = <button type="button" className="ini-cta dim" onClick={irAHoy}>ENTRENAR IGUAL</button>;
   } else if (slot?.type === 'workout' && slot.exercises?.length) {
-    eyebrow = fecha;
     titulo = slot.name || 'Entrenamiento';
     sub = `${slot.exercises.length} ejercicio${slot.exercises.length === 1 ? '' : 's'} · vas por tu racha`;
     /* "ENTRENAR", no "IR A HOY". El botón principal nombra la acción, no el
@@ -140,7 +133,6 @@ export default function Inicio() {
       </button>
     );
   } else {
-    eyebrow = fecha;
     titulo = hayRutina ? 'Descanso' : 'Sin rutina';
     sub = hayRutina ? 'Hoy no toca entrenar' : 'Armá tu split para empezar';
     cta = hayRutina
@@ -160,7 +152,6 @@ export default function Inicio() {
 
       <div className="ini-estado">
         <div className="ini-top">
-          <div className="ini-eyebrow">{eyebrow}</div>
           <AnimatedText as="div" className="ini-title" text={titulo} />
           <div className="ini-sub">{sub}</div>
         </div>
@@ -274,7 +265,7 @@ function MemoriaLine({ slot }) {
       )}
       {tonelaje > 0 && (
         <div>
-          {fmtNum(tonelaje)} kg movidos en total
+          {fmtKg(tonelaje)} movidos en total
           {' · '}
           <button type="button" className="link-toque text-text font-semibold" onClick={() => openSheet('year-recap')}>Tu Año Fierro →</button>
         </div>

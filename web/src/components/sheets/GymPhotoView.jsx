@@ -58,13 +58,13 @@ export default function GymPhotoView({ gymId, gymName, exName, onReemplazar, onB
   return (
     <>
       <h2>{exName}</h2>
-      <div className="txt-mut" style={{ fontSize: 14, marginBottom: 'var(--s4)' }}>
+      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginBottom: 'var(--s4)' }}>
         La máquina que usás en {gymName || 'tu gym activo'}.
       </div>
       {/* La ausencia de foto se dice, no se disfraza de recuadro vacío: puede
           pasar si la borraste desde otra pestaña mientras esto estaba abierto. */}
       {falta ? (
-        <div className="txt-mut" style={{ fontSize: 14, marginBottom: 'var(--s4)' }}>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginBottom: 'var(--s4)' }}>
           Esta foto ya no está guardada.
         </div>
       ) : (

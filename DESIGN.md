@@ -35,36 +35,57 @@ colors:
   macro-carb: '#58b9dc'
   macro-fat: '#008db3'
 typography:
+  # Cuatro roles (tanda B): título, sección, etiqueta, control. Cada uno con
+  # UN tracking. La itálica de títulos y cifras no es propiedad de la spec:
+  # va en la prosa (siempre Barlow Condensed 800 itálica).
   screen-title:
     fontFamily: Barlow Condensed
     fontSize: 40px
-    fontWeight: 700
+    fontWeight: 800
     lineHeight: 0.9
-    letterSpacing: 0.02em
+    letterSpacing: -0.01em
   hero-name:
     fontFamily: Barlow Condensed
     fontSize: 46px
-    fontWeight: 700
+    fontWeight: 800
     lineHeight: 1
-    letterSpacing: 0.01em
+    letterSpacing: -0.01em
   headline-display:
     fontFamily: Barlow Condensed
     fontSize: 34px
-    fontWeight: 700
+    fontWeight: 800
     lineHeight: 1.02
-    letterSpacing: -0.03em
+    letterSpacing: -0.01em
   headline-sheet:
     fontFamily: Barlow Condensed
     fontSize: 26px
-    fontWeight: 700
+    fontWeight: 800
     lineHeight: 1.15
-    letterSpacing: 0.01em
+    letterSpacing: -0.01em
   section:
     fontFamily: Barlow Condensed
     fontSize: 15px
     fontWeight: 700
-    lineHeight: 1.5
-    letterSpacing: 0.18em
+    lineHeight: 1.2
+    letterSpacing: 0.14em
+  label-sm:
+    fontFamily: Barlow
+    fontSize: 11px
+    fontWeight: 600
+    lineHeight: 1.35
+    letterSpacing: 0.12em
+  label-cta:
+    fontFamily: Barlow Condensed
+    fontSize: 18px
+    fontWeight: 800
+    lineHeight: 1.3
+    letterSpacing: 0.08em
+  label-control:
+    fontFamily: Barlow Condensed
+    fontSize: 13px
+    fontWeight: 700
+    lineHeight: 1.3
+    letterSpacing: 0.08em
   row-title:
     fontFamily: Barlow Condensed
     fontSize: 22px
@@ -80,23 +101,19 @@ typography:
     fontSize: 13px
     fontWeight: 400
     lineHeight: 1.4
-  label-sm:
-    fontFamily: Barlow
-    fontSize: 11px
-    fontWeight: 700
-    lineHeight: 1.35
-    letterSpacing: 0.14em
-  label-cta:
-    fontFamily: Barlow Condensed
-    fontSize: 18px
-    fontWeight: 700
-    lineHeight: 1.3
-    letterSpacing: 0.09em
   number-lg:
     fontFamily: Barlow Condensed
     fontSize: 54px
-    fontWeight: 700
+    fontWeight: 800
     lineHeight: 1
+    letterSpacing: -0.01em
+    fontFeature: '"tnum" 1'
+  number-record:
+    fontFamily: Barlow Condensed
+    fontSize: 64px
+    fontWeight: 800
+    lineHeight: 1
+    letterSpacing: -0.01em
     fontFeature: '"tnum" 1'
 rounded:
   xs: 4px
@@ -135,6 +152,11 @@ components:
     textColor: '{colors.on-surface}'
     rounded: '{rounded.full}'
     padding: 12px
+  segmented:
+    backgroundColor: '{colors.surface-2}'
+    textColor: '{colors.on-surface-2}'
+    typography: '{typography.label-control}'
+    rounded: '{rounded.DEFAULT}'
   chip-on:
     backgroundColor: '{colors.primary}'
     textColor: '{colors.on-primary}'
@@ -180,7 +202,8 @@ Documento extraído del código real (`web/src/styles.css`, `lib/theme.js`,
 + acento elegido); actualizado el mismo día con la **tanda A** de la
 auditoría visual 2 ("Un acento que signifique", V1 V2 V6 V7 V11) y el
 2026-09-29 con la **tanda D** ("Ritmo y composición", V10 e I2 en Inicio,
-Entreno, Comida y Progreso). Describe lo
+Entreno, Comida y Progreso) y la **tanda B** ("Tipografía dorsal", V3 V8 V12
+V13 más la tanda 6 de la auditoría total: G8 G9 G12 G13 H8 I4). Describe lo
 que HAY; las propuestas pendientes viven en
 `docs/auditoria-visual-2-2026-09.md`.
 
@@ -210,7 +233,7 @@ la mano entre series: botones de 52 a 58 px, cifras tabulares, textos cortos.
 - Base grafito neutra (`#101113`) + un acento derivado en OKLCH de un matiz (Hielo, Cobalto, Violeta, Fucsia, Monocromo o propio).
 - **El acento significa "acá se actúa"**: acción primaria, estado activo (pestaña, segmentado, chip, día de hoy), foco y la cifra protagonista. Rótulos, títulos de sección y metadatos van en tiza o plomo. Medido tras la tanda A: 1 de 37 textos en acento en Inicio (2,7 %), 3 de 204 en Progreso (1,5 %), 1 de 62 en Comida (1,6 %); antes 32 %, 24 % y 8 %.
 - Estados reservados: verde logrado, rojo peligro, ámbar alerta y aproximación, llama (ámbar cálido) para la racha. Nunca como color de categoría.
-- Barlow Condensed itálica 700 para títulos de pantalla, héroes y cifras; Barlow para texto corrido.
+- Barlow Condensed **800 itálica** para títulos de pantalla, héroes y cifras protagonistas (cargada de verdad desde la tanda B); Barlow para texto corrido. Cuatro roles de texto con un tracking cada uno.
 - Vidrio: grafito translúcido al 66 % (90 % en header, barra y hojas) con `blur(22px) saturate(1.2)`, borde blanco al 10 % y arista con luz del acento arriba.
 - CTA primario: píldora redondeada de 18 px con degradado 112° de `primary-strong` a `primary` y un halo del acento debajo.
 - Movimiento en cuatro duraciones con nombre (`--d1..--d4`) y resorte para entradas. "Esto está activo" se dice con **un anillo que late por fuera**, nunca bajando la opacidad de lo activo.
@@ -239,7 +262,7 @@ y una sombra `rgba(var(--shade-rgb),α)`.
 
 ### Typography & Text Hierarchy
 - **Tiza** (`on-surface`, `#f3f4f6`): texto principal, títulos de sección (`.sect`, `#sheet h3`), cifras de tarjetas y listas (racha, calorías, peso, récords, 1RM), metadatos fuertes ("21 series · 7285 kg de volumen").
-- **Plomo** (`on-surface-2`, `#b1b1b9`): secundario, subtítulos, rótulos de tarjeta (`.ini-tile-lbl`), eyebrows (`.ini-eyebrow`, `.hero-eyebrow`), pestañas inactivas.
+- **Plomo** (`on-surface-2`, `#b1b1b9`): secundario, subtítulos, rótulos de tarjeta (`.ini-tile-lbl`) y toda etiqueta (rol etiqueta), pestañas inactivas.
 - **Ceniza** (`on-surface-3`, `#97979f`): terciario, placeholders, lo apagado, la flecha del select. Contraste ≥ 4.5 medido sobre la peor hero.
 
 ### Functional States
@@ -259,34 +282,71 @@ acento nunca se acerca a menos de 20° de ellos.
 
 ## Typography
 
-**Display Font:** Barlow Condensed (Google Fonts), cargada en 500, 600, 700 y
-700 itálica. **Body Font:** Barlow, cargada en 400, 500, 600 y 700.
-`font-synthesis: none` en `:root`: un peso no cargado cae al más cercano, no
-se finge (`.ini-title`, `.ini-cta` e `.ini-tile-num` piden 800 y se dibujan
-en 700; pendiente V8).
+**Display Font:** Barlow Condensed, **servida por la app** (subconjunto
+latino, `web/src/assets/fonts/`, precargada por el service worker) en 700,
+800 y 800 itálica. **Body Font:** Barlow en 400, 600 y 700. Seis caras,
+~133 KB, ninguna de Google Fonts. `font-synthesis: none` en `:root`: un peso
+no cargado cae al más cercano, no se finge; por eso no se pide ninguno fuera
+de esos (lo vigila `tipografia.test.js`). No hay 500 ni 700 itálica.
 
-**Character:** la condensada itálica es la voz deportiva (dorsal, marcador,
-cronómetro); Barlow es la misma familia en ancho normal, así que el cruce es
-invisible. La jerarquía la dan el tamaño, el peso y las versales, **no el
-color**.
+**Character:** la condensada itálica pesada es la voz deportiva (dorsal,
+marcador, cronómetro); Barlow es la misma familia en ancho normal, así que el
+cruce es invisible. La jerarquía la dan el tamaño, el peso y las versales,
+**no el color**.
 
-Escala en `@theme` (Tailwind genera `text-*` con los mismos valores): nano 10,
-micro 11, sm 13, body 15, lg 18, xl 22, 2xl 26, display 34, hero 44, más
-cinco tamaños protagonistas fuera de escala a propósito (40 título de
-pantalla, 46 nombre del día, 52/54 cifras grandes, 56/64 cronómetros).
+**Escala cerrada** (`@theme`, con `--text-*: initial`: las utilidades de
+Tailwind que no están acá no existen, ni `text-xs` ni `text-base` ni
+`text-3xl`). Once pasos: micro 11, sm 13, body 15, lg 18, xl 22, 2xl 26,
+display 34, **titulo 40**, **hero 46**, **cifra 54**, **record 64**. El
+`body` tiene `font-size: var(--t-body)`. Ningún texto por debajo de 11 px.
+Pesos: 400, 600, 700, 800 (`--font-weight-*` cerrado igual).
 
-- **Título de pantalla** (`screen-title`: Cond 700 **itálica**, 40 px, **versales**, `.vtitle h1`): "ENTRENO", "COMIDA", "PROGRESO", con la fecha en Barlow 13 versales al lado, alineada a la línea base.
-- **Nombre del día** (`hero-name`, itálica) en la hero de Hoy; 34 px en la hero de Entreno.
-- **Título de Inicio** (`headline-display`, itálica, `.ini-title`, tracking −.03em).
-- **Título de hoja** (`headline-sheet`, itálica, caja normal, `#sheet h2`).
-- **Título de sección** (`section`, versales, tiza, raya a la derecha, `.sect`; `#sheet h3` a 15 px y .12em, también en tiza).
-- **Rótulo de tarjeta** (Cond 700, 13 px, versales, .14em, **plomo**, rayita ceniza, `.ini-tile-lbl`).
-- **Eyebrow** (Barlow 700, 11 px, versales, .18em, **plomo**, `.hero-eyebrow`; `.ini-eyebrow` en condensada 11). Pendiente V12: sacarlos.
-- **Nombre de fila** (`row-title`: turnos, ejercicios de Plan de hoy) o Barlow 600, 15 px (`nav-card`, listas de hoja).
-- **Cuerpo** (`body-md`) y **secundario** (`body-sm`, plomo).
-- **Etiqueta de cifra** (`label-sm`, versales, plomo): "EJERCICIOS", "SERIES", "RACHA ACTUAL".
-- **CTA** (`label-cta`, versales; 22 px y .12–.14em en los CTA de héroe).
-- **Cifras**: `tabular-nums` (`.cond`, `.num`, `.bignum`, cronómetro). Las de las tarjetas de Inicio en tiza con la unidad en plomo, sin degradado recortado al texto (el degradado de texto queda en la marca y en `.plan-title`, pendiente V13).
+**Cuatro roles, un tracking cada uno** (tokens `--tr-*` en `:root`; ningún
+`letter-spacing` literal fuera de ellos):
+
+- **Título** (Condensed 800 itálica, `--tr-titulo` −.01em): pantalla
+  (`screen-title`, 40, versal, `.vtitle h1`), nombre del día (`hero-name`,
+  46; 34 en la hero de Entreno), Inicio (`headline-display`, 34), hoja
+  (`headline-sheet`, 26, `#sheet h2`), `.plan-title`, `.mpop-name`. **Sin
+  eyebrow encima**: lo que decía de útil va en la línea de abajo ("Hecho hoy
+  en 69 min · 9 ejercicios").
+- **Sección** (`section`, `--rol-seccion`: Condensed 700 15 versal tiza,
+  `--tr-seccion` .14em): `.sect` (con raya a la derecha), `#sheet h3`,
+  `.rfs-lbl`. Abre un grupo. Nombres cortos: "Récords", "Medidas",
+  "Constancia", sin la traducción al lado.
+- **Etiqueta** (`label-sm`, `--rol-etiqueta`: Barlow 600 11 versal plomo,
+  `--tr-etiqueta` .12em; clase `.t-etiqueta` para el JSX): nombra un dato o
+  un campo. Va **debajo** de la cifra ("74.1 kg" / "PROMEDIO DE 4 DÍAS",
+  "463 kcal" / "RESTANTES") y **encima** del campo ("PESO (KG)"). En un
+  formulario todos los rótulos de campo son etiqueta, también los de un
+  segmentado o un select (Perfil: Sexo, Nivel de actividad, Objetivo).
+  Encabezados de grupo de lista (`.sess-week`, `.slot-head`,
+  `.day-exs-head`), rótulos de tarjeta (`.ini-tile-lbl`), cabeceras de
+  tabla, la del tablero en vivo (SERIES / RIR / SESIÓN ANTERIOR). El color
+  sólo cambia si es estado (ámbar en la rampa, acento en el descanso).
+- **Control** (Condensed en versal, `--tr-control` .08em): CTA
+  (`label-cta`, 800, 18; 22 en ENTRENAR), segmentados y pestañas
+  (`label-control`, 700, 13/11), chips de día. Llevan una sangría igual al
+  tracking (`text-indent`) para quedar centrados de verdad (G13).
+- Fuera de los roles: la marca "FIERRO" (800 itálica, `--tr-marca` .2em,
+  degradado de tiza al acento: **el único texto con degradado**). Todo lo
+  que no es versal va sin tracking: nombres de fila (`row-title` o Barlow
+  600 15), cuerpo (`body-md`), secundario (`body-sm`, plomo).
+
+**Cifras**: `tabular-nums` en toda cifra que cambia (racha, calorías, macros,
+anillos, cronómetro, historial). Las protagonistas en `number-lg` (Condensed
+800 itálica tabular): peso de Progreso, calorías de Comida, tarjetas de
+Inicio, cifras de la hero, reloj del descanso; la unidad chica al lado en
+plomo, sin tracking. Kilos siempre con `fmtKg()` (`lib/format.ts`): miles con
+coma y punto decimal (es-PE, "151,059 kg", "74.2 kg") y un espacio duro
+antes de la unidad.
+
+**Corte de línea**: títulos, `.sect` y nombres de fila con
+`text-wrap: balance`; párrafos y subtítulos con `pretty` (regla base en
+`styles.css`). Cifra y unidad unidas por espacio duro (`NBSP`), también en
+las dosis del calentamiento ("2 × 12", "1 s").
+
+**Separadores**: un "·" por línea como máximo en metadatos.
 
 ## Layout
 
@@ -367,21 +427,23 @@ chips y puntos. Nada con esquina viva.
 ## Do's and Don'ts
 
 - Do usar el acento sólo para la acción primaria, el estado activo, el foco y la cifra protagonista: objetivo ≤ 8 % de los textos de una pantalla (medido con `getComputedStyle` sobre los nodos de texto visibles de `main`).
-- Don't pintar rótulos, títulos de sección, eyebrows ni metadatos con el acento: tiza o plomo, y la jerarquía por tamaño y peso.
+- Don't pintar rótulos, títulos de sección ni metadatos con el acento: tiza o plomo, y la jerarquía por tamaño y peso.
 - Don't animar la opacidad de un botón o de un texto activo: a .4 el texto cae a 1,7:1 y el acento mezclado con el grafito cambia de color (Fucsia → malva). Para "esto está activo", el anillo que late por fuera.
 - Do mantener ≥ 4.5:1 para texto en todo el ciclo de una animación, no sólo en el cuadro quieto.
 - Don't usar verde, rojo o ámbar como color de categoría ni para un mensaje neutro o positivo; para categorías, luces del acento.
 - Don't escribir un color literal fuera del bloque de tokens, ni dentro de un `data:` URI (`%23…`, `fill='white'`).
 - Don't afirmar lo que no se midió: nada de "faltas" antes de la primera sesión ni ceros de relleno.
 - Do reusar el patrón que existe (`.card`, `.nav-card`, `.chip`, `.group`/`.grouprow`, `.btn`) y verificar en el build de producción a 390 y 430 px con dos acentos.
+- Do usar uno de los cuatro roles para todo texto en versal; don't escribir un `letter-spacing`, un `font-size` en px ni un `font-weight` fuera de 400/600/700/800 (lo rompe `tipografia.test.js`).
+- Don't poner un eyebrow (rótulo versal chico) encima de un título, ni degradado recortado al texto fuera de la marca.
 
 ## Notas para generación (Stitch)
 
 "Consola deportiva oscura de grafito, vidrio ahumado con arista iluminada,
-títulos en condensada itálica pesada en versales, cifras grandes tabulares en
+títulos en condensada itálica 800 en versales, sin eyebrows, cifras grandes tabulares en
 tiza, un solo acento luminoso en degradado reservado a la acción y al estado
 activo, estados en verde, rojo y ámbar."
 
-- "Tarjeta hero de vidrio ahumado con radio 26, el nombre del día en Barlow Condensed itálica 46 px, tres cifras tabulares en tiza con etiqueta versal chica en plomo debajo, y un CTA píldora con degradado del acento a todo el ancho."
+- "Tarjeta hero de vidrio ahumado con radio 26, el nombre del día en Barlow Condensed 800 itálica 46 px, tres cifras tabulares en tiza con etiqueta versal chica en plomo debajo, y un CTA píldora con degradado del acento a todo el ancho."
 - "Lista de turnos: filas de radio 18 con insignia numerada, nombre en condensada 22 px, subtítulo 13 px plomo y chevron."
 - "Barra de pestañas flotante de vidrio denso, radio 26, cuatro íconos de trazo con rótulo condensado versal, la activa como píldora con el degradado del acento."

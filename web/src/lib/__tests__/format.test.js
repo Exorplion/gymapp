@@ -25,3 +25,18 @@ describe('format', () => {
     expect(norm('Ají de Gallina')).toBe('aji de gallina');
   });
 });
+
+// I4 (auditoría total): un solo formato de kilos, con miles y espacio duro.
+import { fmtKg, fmtMiles, NBSP } from '../format.js';
+describe('fmtKg', () => {
+  it('agrupa los miles con coma y deja el punto decimal', () => {
+    expect(fmtMiles(151059)).toBe('151,059');
+    expect(fmtMiles(7122)).toBe('7,122');
+    expect(fmtMiles(74.25)).toBe('74.3');
+    expect(fmtMiles(62)).toBe('62');
+  });
+  it('pega la unidad con un espacio que no se parte', () => {
+    expect(fmtKg(7122)).toBe(`7,122${NBSP}kg`);
+    expect(NBSP).toBe('\u00a0');
+  });
+});

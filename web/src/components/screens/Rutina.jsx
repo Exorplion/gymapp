@@ -200,7 +200,6 @@ function RutinaView() {
       <div className="grupo">
         {st.workoutCount > 0 && (
           <div className="card hero hero-plan">
-            <div className="hero-eyebrow">Plan activo</div>
             <div className="hero-day">{routineName()}</div>
             {/* Tres cifras y no una oración: "4 turnos de entrenamiento · 40
                 ejercicios · 88 series por ciclo" ocupaba dos renglones y se
@@ -433,7 +432,7 @@ function ReforzarCard() {
       {/* Mismo encabezado que CoberturaCard (y que la vieja DeloadCard): era un `.sect` con
           los márgenes anulados a mano, que en esta tarjeta se leía como un
           título huérfano y de otro tamaño que sus vecinas. */}
-      <div className="text-sm text-text font-medium">Se está enfriando</div>
+      <div className="text-sm text-text font-semibold">Se está enfriando</div>
       <div className="s text-text-2 mt-1">
         Grupos que hace más de diez días que no tocás. Sumalos al día de hoy.
       </div>

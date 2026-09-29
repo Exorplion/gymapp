@@ -27,13 +27,9 @@
 // quedan siempre visibles.
 import { diasTexto } from '../lib/muscle.js';
 import { X } from './Icon.jsx';
+// Un solo formato de kilos en toda la app (I4): antes acá era "6.85k kg".
+import { fmtKg } from '../lib/format.js';
 
-/** Volumen en kg, corto: 12.4k en vez de 12380. */
-function kilos(v) {
-  if (v >= 10000) return `${(v / 1000).toFixed(1)}k`;
-  if (v >= 1000) return `${(v / 1000).toFixed(2)}k`;
-  return String(v);
-}
 
 /* `porcion` es opcional: `{ nombre, dias }` de la PORCIÓN que se tocó en la
    figura (ver Silhouette.jsx). Existe porque el mapa grande enciende porciones
@@ -156,7 +152,7 @@ export default function MusclePop({ stats, porcion = null, onClose, saliendo = f
           no un título aparte: va al final de la misma línea. */}
       <div className="mpop-pie">
         {sets > 0 && mejor && mejor.w > 0 && <span className="mpop-top">Tope {mejor.w} kg × {mejor.r}</span>}
-        {sets > 0 && volumen > 0 && <span>{kilos(volumen)} kg movidos</span>}
+        {sets > 0 && volumen > 0 && <span>{fmtKg(Math.round(volumen))} movidos</span>}
         <span className="mpop-vent">últimos {ventana} días</span>
       </div>
     </div>

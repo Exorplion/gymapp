@@ -728,3 +728,17 @@ en el compositor.
 Las tandas 1 y 2 no dependen de ninguna otra. La 3 conviene después de la 1
 (el blur cambia el costo del descanso). La 4 es independiente pero es la que
 más se nota en la mano.
+
+## Tanda 6 — estado (2026-09-29, rama `feat/visual-tipografia`)
+
+Hecha junto con la tanda B de `auditoria-visual-2-2026-09.md` (mismo PR,
+números y método ahí).
+
+| ID | Estado | Qué |
+|---|---|---|
+| **G8** | ✅ | Regla base: `h1,h2,h3,.sect,.vtitle,.ini-title,.hero-day,.plan-title,.mpop-name,.rt-name,.grouprow-t,.nav-card .t{text-wrap:balance}` y `p,.s,.sub,.grouprow-s,…{text-wrap:pretty}`. "88 series por / ciclo" ya no existe (la hero es de tres cifras desde la tanda D). |
+| **G9** | ✅ | `tabular-nums` en `.streak-n`, `.ini-tile-num`, `.kr-n`, `.kcal-big`, macros, `.slot-head`, `.session-ring-num`, `.calent-dosis`, historial, constancia, `.rir-seg b`, badges de día. Va al final de `styles.css`: los roles usan el atajo `font:`, que lo resetea. |
+| **I4** | ✅ | `fmtKg()` / `fmtMiles()` en `lib/format.ts` (es-PE: "151,059 kg", "7,122 kg", punto decimal como el resto de la app, espacio duro). En Inicio, historial, ficha de músculo (era "6.85k kg"), resumen de sesión, fin de sesión, Año Fierro, riesgo de volumen. Tests en `format.test.js`. |
+| **G13** | ✅ | `text-indent: var(--tr-control)` en `.btn`, CTA, segmentados, pestañas: el texto queda centrado (medido: "+ AGREGAR COMIDA" con 0,7 px de diferencia entre el centro del botón y el del texto, antes ~1,3 px corrido). |
+| **H8** | ✅ | Espacios duros en las dosis y tiempos del calentamiento (`warmup.ts`: "2 × 12", "2 s", "1 s"). |
+| **G12** | ✅ | El paso de 10 px (`--t-nano`, `text-nano`) no existe más: todo a 11 como mínimo, incluidos el toggle Frente/Espalda, la ficha de músculo, la tabla de series y las etiquetas de la previa. |

@@ -23,7 +23,7 @@ import { toast } from '../../lib/toast.js';
 import { Button } from '../ui/primitives.jsx';
 
 const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 text-body text-text placeholder:text-text-3 outline-none transition-colors focus-visible:border-accent';
-const labelCls = 'mb-1.5 block text-sm font-medium text-text-2';
+const labelCls = 't-etiqueta mb-1.5 block';
 
 export default function BodyForm() {
   const last = S.body[S.body.length - 1] || {};

@@ -92,7 +92,7 @@ export default function FoodVoice() {
       </Button>
 
       <div className="mt-3">
-        <label htmlFor="foodvoice-texto" className="mb-1.5 block text-sm font-medium text-text-2">O escribilo</label>
+        <label htmlFor="foodvoice-texto" className="t-etiqueta mb-1.5 block">O escribilo</label>
         <input
           id="foodvoice-texto"
           type="text"
@@ -105,7 +105,7 @@ export default function FoodVoice() {
 
       {known.length > 0 && (
         <>
-          <div className="mx-0.5 mb-2 mt-4 text-micro font-semibold uppercase tracking-wide text-text-2">Reconocido</div>
+          <div className="mx-0.5 mb-2 mt-4 t-etiqueta">Reconocido</div>
           <Card className="p-0 divide-y divide-white/5">
             <div ref={knownRef}>
               {known.map((i, n) => (
@@ -114,7 +114,7 @@ export default function FoodVoice() {
                     <div className="truncate text-body font-semibold text-text">{i.name}</div>
                     <div className="text-sm text-text-2">
                       {i.grams ? `${i.grams} g · ` : ''}{i.kcal} kcal · P {fmtNum(round1(i.p))} · C {fmtNum(round1(i.c))} · G {fmtNum(round1(i.f))}
-                      {i.source === 'mine' && <span className="ml-1.5 inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 text-nano font-semibold uppercase tracking-wide text-text-2">tuyo</span>}
+                      {i.source === 'mine' && <span className="ml-1.5 inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 t-etiqueta">tuyo</span>}
                     </div>
                   </div>
                   {/* Era un ✕ suelto en un círculo sin fondo ni borde: se leía
@@ -136,7 +136,7 @@ export default function FoodVoice() {
 
       {unknown.length > 0 && (
         <>
-          <div className="mx-0.5 mb-2 mt-4 text-micro font-semibold uppercase tracking-wide text-text-2">No lo reconozco</div>
+          <div className="mx-0.5 mb-2 mt-4 t-etiqueta">No lo reconozco</div>
           <Card>
             <div className="mb-2.5 text-micro leading-relaxed text-text-2">
               No le invento macros a lo que no conozco. Agregalo una vez con
