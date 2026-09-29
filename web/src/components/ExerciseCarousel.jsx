@@ -630,8 +630,8 @@ function FuerzaYRecord({ fuerza, record }) {
         <div className="ex-cmp-col">
           <span className="ex-cmp-lbl">1RM estimado</span>
           <div className="ex-aviso-1rm">
-            <b>{wDisplay(fuerza.actual)} {unidad}</b>
-            <Sparkline puntos={fuerza.puntos} ancho={56} alto={22} className="previa-spark chica" />
+            <b>{wDisplay(fuerza.actual)}<small> {unidad}</small></b>
+            <Sparkline puntos={fuerza.puntos} ancho={44} alto={20} className="previa-spark chica" />
           </div>
           <small className={cambio ? { sube: 'previa-up', baja: 'previa-down', igual: '' }[cambio.tono] : ''}>
             {cambio ? cambio.texto : `última sesión ${fuerza.hace}`}

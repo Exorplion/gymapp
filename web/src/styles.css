@@ -1047,7 +1047,9 @@ main.arrastrando{overflow:hidden;user-select:none}
   animation:rampaAnillo var(--rampa-ciclo) var(--ease-out) infinite;
 }
 .ex-paso.cur i::after{animation-delay:calc(var(--rampa-ciclo) / 2)}
-.ex-paso.hecho i{background:rgba(var(--warn-rgb),.14);border-color:var(--warn);color:var(--warn)}
+/* El tinte ámbar va SOBRE la superficie opaca: translúcido solo, la línea
+   de progreso se veía pasar por dentro del círculo. */
+.ex-paso.hecho i{background:linear-gradient(rgba(var(--warn-rgb),.14),rgba(var(--warn-rgb),.14)),var(--surface);border-color:var(--warn);color:var(--warn)}
 .ex-paso.hecho i svg{animation:rampaPop var(--d2) var(--spring) both}
 .ex-paso b{
   margin-top:6px;font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;line-height:1;
@@ -1119,6 +1121,8 @@ main.arrastrando{overflow:hidden;user-select:none}
    que la comparativa, con la línea de 8 semanas al lado del 1RM. */
 .ex-aviso .ex-aviso-fuerza{margin-top:var(--s2)}
 .ex-aviso-1rm{display:flex;align-items:center;justify-content:space-between;gap:var(--s2)}
+.ex-aviso-1rm b{white-space:nowrap}
+.ex-aviso-1rm b small{font-family:'Barlow';font-size:var(--t-micro);font-weight:600;color:var(--text-2)}
 /* Previa del ejercicio (rediseño 2026-09-27, pieza 3, maqueta 03 opción B):
    debajo de la tarjeta sin empezar. Paneles del vidrio de la app (.card) con
    el padding de la tarjeta sutil, las etiquetas del tablero (.ex-meta small)
