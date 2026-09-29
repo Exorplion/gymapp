@@ -21,13 +21,16 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
 /* FLIP: mido dónde está cada fila, dejo que el render la mueva, y la
    devuelvo a su sitio viejo con un transform para animarla hasta el nuevo.
-   Sin esto el reordenado por flechas sería un salto seco. */
-export function flipSort(mutate) {
+   Sin esto el reordenado por flechas sería un salto seco.
+   `root` acota la medición a un contenedor: el asistente de agregar
+   (AgregarEjercicio.jsx) pinta los MISMOS ids que el editor de rutina que
+   queda detrás de la hoja, y un Map por id mezclaría las dos listas. */
+export function flipSort(mutate, root = document) {
   const first = new Map();
-  $$('[data-sort] > [data-sid]').forEach(k => first.set(k.dataset.sid, k.getBoundingClientRect().top));
+  $$('[data-sort] > [data-sid]', root).forEach(k => first.set(k.dataset.sid, k.getBoundingClientRect().top));
   keepScroll(mutate);
   if (!first.size) return;
-  $$('[data-sort] > [data-sid]').forEach(k => {
+  $$('[data-sort] > [data-sid]', root).forEach(k => {
     const f = first.get(k.dataset.sid);
     if (f == null) return;
     const d = f - k.getBoundingClientRect().top;
@@ -51,6 +54,9 @@ export function dragPick(e) {
   if (t.closest('button,input,select,textarea,.chip,#restbar')) return null;
   const card = t.closest('[data-sid]');
   if (!card) return null;
+  // Una fila marcada fija no se agarra, pero sigue en la caja: así el FLIP
+  // le abre el hueco a la que sí se mueve (el ejercicio nuevo del asistente).
+  if (card.dataset.fijo != null) return null;
   const box = card.parentElement;
   if (!box || !box.hasAttribute('data-sort')) return null;
   if ([...box.children].filter(k => k.dataset.sid).length < 2) return null;
@@ -93,6 +99,9 @@ export function dragTick() {
   if (!DRAG.on) return;
   const h = innerHeight;
   let v = 0;
+  // El asistente es una hoja fija que entra sin scroll: desplazar la ventana
+  // movería la página de ATRÁS y la fila arrastrada se correría del dedo.
+  if (DRAG.kind === 'asist') { DRAG.raf = requestAnimationFrame(dragTick); return; }
   if (DRAG.cy < DRAG_EDGE) v = -DRAG_SPEED * (1 - DRAG.cy / DRAG_EDGE);
   else if (DRAG.cy > h - DRAG_EDGE) v = DRAG_SPEED * (1 - (h - DRAG.cy) / DRAG_EDGE);
   if (v) {
@@ -149,8 +158,11 @@ export function dragEnd(commit) {
   const ids = cards.map(k => k.dataset.sid);
   const [m] = ids.splice(from, 1); ids.splice(to, 0, m);
   vibrate(22);
-  /* guardo ya, en paralelo con la animación de aterrizaje */
-  const saved = commitSort(kind, wd, ids);
+  /* guardo ya, en paralelo con la animación de aterrizaje. Menos el
+     asistente: ahí "guardar" es un setState de React, que movería los nodos
+     mientras todavía llevan el transform del arrastre (se verían corridos dos
+     veces). Se avisa recién cuando los nodos ya están en su lugar. */
+  const saved = kind === 'asist' ? null : commitSort(kind, wd, ids);
   setTimeout(async () => {
     /* en vez de re-dibujar la vista entera (eso es lo que hacía parpadear y te
        perdía de lugar), muevo los nodos en el DOM al orden nuevo y borro los
@@ -161,6 +173,7 @@ export function dragEnd(commit) {
     const tras = cards[cards.length - 1].nextSibling;
     ids.forEach(id => { const k = by.get(id); if (k) box.insertBefore(k, tras); });
     clean();
+    if (kind === 'asist') { commitSort(kind, wd, ids); return; }
     // 'rut' deshabilita las flechas en el borde de cada GRUPO, no de la lista:
     // eso lo resuelve el render de abajo (y un disabled puesto a mano acá
     // quedaría pegado si React no ve cambiar la prop).
@@ -200,7 +213,15 @@ export function keepScroll(fn) {
   if (Math.abs(scrollY - y) > 1) scrollTo({ top: y, behavior: 'instant' });
 }
 
+/* El asistente de agregar ejercicio registra acá su callback mientras está
+   abierto. No hay nada que persistir al soltar: el orden de la caja se
+   traduce a una posición (soltarEn, asistente-agregar.js) y se guarda recién
+   con el CTA del paso 3. */
+let ASIST_DROP = null;
+export function setAsistDrop(fn) { ASIST_DROP = fn || null; }
+
 export async function commitSort(kind, wd, ids) {
+  if (kind === 'asist') { ASIST_DROP?.(ids); return; }
   if (kind === 'hoy') return setExOrder(indiceHoy(), ids);
   // Encabezados de grupo en Plan de hoy (Hoy.jsx). data-sort="hoy-blocks" se
   // puso para que flipSort animara las ▲▼, y el arrastre lo agarraba de

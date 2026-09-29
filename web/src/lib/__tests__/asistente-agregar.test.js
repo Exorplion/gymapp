@@ -7,6 +7,7 @@ import * as A from '../asistente-agregar.js';
 import { porBloques } from '../muscle.js';
 import { sessionExs } from '../session.js';
 import { saveExercise, pinAddedToRoutine } from '../rutina-logic.js';
+import { commitSort, setAsistDrop } from '../drag.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
 vi.mock('../toast.js', () => ({ toast: vi.fn() }));
@@ -380,5 +381,26 @@ describe('queda donde se lo dejó (sesión)', () => {
     expect(nuevo.cat).toBe('Hombro');
     await pinAddedToRoutine('s1', [{ name: 'Movimiento raro', sets: 3, reps: 10, cat: 'Hombro' }]);
     expect(S.routine[0].exercises.at(-1).cat).toBe('Hombro');
+  });
+});
+
+/* El arrastre del paso 2 (drag.js, kind "asist"): soltar no persiste nada,
+   sólo le pasa el orden de la caja a la hoja abierta, que lo traduce con
+   soltarEn y guarda recién con el CTA del paso 3. */
+describe('arrastre del paso 2 (drag.js)', () => {
+  it('commitSort("asist") llama al callback registrado y no toca la rutina', async () => {
+    S.routine = [{ id: 'd', type: 'workout', name: 'Pecho', exercises: [{ id: 'x', name: 'Press banca', sets: 3, reps: 10 }] }];
+    const antes = JSON.stringify(S.routine);
+    const spy = vi.fn();
+    setAsistDrop(spy);
+    await commitSort('asist', '0', ['x', A.NUEVO]);
+    expect(spy).toHaveBeenCalledWith(['x', A.NUEVO]);
+    expect(JSON.stringify(S.routine)).toBe(antes);
+    setAsistDrop(null);
+  });
+
+  it('sin hoja abierta no hace nada (ni rompe)', async () => {
+    setAsistDrop(null);
+    await expect(commitSort('asist', '0', ['x'])).resolves.toBeUndefined();
   });
 });
