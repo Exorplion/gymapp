@@ -109,3 +109,15 @@ describe('G17 · E3 · nombres accesibles del editor de rutina', () => {
     expect(src).not.toMatch(/opacity:\s*\.4\s*\}/);
   });
 });
+
+describe('C2 · agregar comida', () => {
+  it('sin nada en la comida, "Agregar" está apagado y la búsqueda no lleva emoji', async () => {
+    const { createElement } = await import('react');
+    const { renderToStaticMarkup } = await import('react-dom/server');
+    const { default: MealForm } = await import('../../components/sheets/MealForm.jsx');
+    const h = renderToStaticMarkup(createElement(MealForm, {}));
+    expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Agregar<\/button>/);
+    expect(h).toContain('placeholder="Buscá un alimento"');
+    expect(h).not.toMatch(/placeholder="[^"]*\p{Extended_Pictographic}/u);
+  });
+});
