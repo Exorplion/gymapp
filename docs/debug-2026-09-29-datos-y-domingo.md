@@ -1,5 +1,14 @@
 # Debug 2026-09-29: "volví a perder mis datos" y "no me deja registrar un domingo"
 
+> **Arreglado** (2026-09-29, rama `fix/dias-pasados-y-prueba`). Bug 2: opciones
+> A + D + E (tira de los últimos 7 días, series de un día pasado desde
+> MarcarDia → SessionView, peso con fecha). Bug 1: opciones a + b + c + d + e
+> (resumen al salir con "Pasarlas a mis datos reales", confirmación en
+> Ajustes, avisos de copia de prueba, pregunta al abrir otro día, respaldo
+> `fierro-prueba-…json`) y un marco ámbar alrededor de la app. Los tests de
+> `debug-domingo.test.js` pasan (apuntan a `ultimosSieteDias`, la función de
+> la tira; `semanaDe` quedó como semana calendario). Detalle en HANDOFF.md.
+
 Rama `debug/datos-y-domingo` (sobre `origin/main` = 3bb25d9, #127). Es sólo
 diagnóstico, sin arreglos. Lo único de código es un test que falla a propósito
 (`web/src/lib/__tests__/debug-domingo.test.js`).
