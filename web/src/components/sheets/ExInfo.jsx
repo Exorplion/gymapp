@@ -45,7 +45,7 @@ export default function ExInfo({ name, exId }) {
       )}
       {equipLabel(ex) && (
         <motion.div variants={seccion} className="mt-2 text-micro text-text-2">
-          <span className="inline-flex items-center rounded-full bg-white/8 px-2.5 py-1 text-micro font-semibold uppercase tracking-wide text-text-2">{equipLabel(ex)}</span>
+          <span className="inline-flex items-center rounded-full bg-white/8 px-2.5 py-1 t-etiqueta">{equipLabel(ex)}</span>
         </motion.div>
       )}
       {info ? (
@@ -74,7 +74,7 @@ export default function ExInfo({ name, exId }) {
           <div className="mb-2 flex flex-wrap gap-2">
             {scheme.map((r, i) => (
               <span key={i} className={cn(
-                'inline-flex items-center rounded-full border border-line-2 bg-surface-2 px-3.5 py-2 text-sm font-medium text-text',
+                'inline-flex items-center rounded-full border border-line-2 bg-surface-2 px-3.5 py-2 text-sm font-semibold text-text',
                 r === 0 && 'border-transparent bg-accent text-[var(--on-accent)]',
               )}>
                 Serie {i + 1}: {r === 0 ? 'al fallo' : `RIR ${r}`}

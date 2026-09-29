@@ -12,7 +12,7 @@ import { S, useStore, openSheet } from '../lib/state.js';
 import { useAtras } from '../lib/useAtras.js';
 import { currentStreak } from '../lib/streak.js';
 import { catsDeSesion } from '../lib/muscle.js';
-import { fmtNum, round1 } from '../lib/format.js';
+import { fmtKg, fmtMiles, round1 } from '../lib/format.js';
 import { fireConfetti } from '../lib/confetti.js';
 import { Flame } from './Icon.jsx';
 import Silhouette from './Silhouette.jsx';
@@ -49,7 +49,7 @@ function milestoneTexto(m) {
   if (!m) return null;
   if (m.type === 'racha') return `🔥 ${m.value} días de racha`;
   if (m.type === 'sesiones') return `🏋 Sesión #${m.value}`;
-  if (m.type === 'tonelaje') return `💪 ${m.value.toLocaleString('es')} kg movidos en total`;
+  if (m.type === 'tonelaje') return `💪 ${fmtKg(m.value)} movidos en total`;
   return null;
 }
 
@@ -158,7 +158,7 @@ export default function SessionComplete() {
       countTo(ejRef.current, ejercicios, { duration: 800, delay: BEAT2_DELAY }),
       countTo(serRef.current, series, { duration: 800, delay: BEAT2_DELAY }),
       countTo(kgRef.current, round1(kg), {
-        duration: 800, delay: BEAT2_DELAY, format: n => fmtNum(round1(n)),
+        duration: 800, delay: BEAT2_DELAY, format: n => fmtMiles(round1(n)),
       }),
     ];
     return () => cancels.forEach(c => c());
@@ -219,7 +219,7 @@ export default function SessionComplete() {
         <div className="sc-resumen">
           <div className={cn('rounded-[var(--radius-r)] bg-white/5 px-4 py-3')}><b ref={ejRef}>{reducido ? ejercicios : 0}</b><span>ejercicios</span></div>
           <div className={cn('rounded-[var(--radius-r)] bg-white/5 px-4 py-3')}><b ref={serRef}>{reducido ? series : 0}</b><span>series</span></div>
-          <div className={cn('rounded-[var(--radius-r)] bg-white/5 px-4 py-3')}><b ref={kgRef}>{reducido ? fmtNum(round1(kg)) : 0}</b><span>kg movidos</span></div>
+          <div className={cn('rounded-[var(--radius-r)] bg-white/5 px-4 py-3')}><b ref={kgRef}>{reducido ? fmtMiles(round1(kg)) : 0}</b><span>kg movidos</span></div>
         </div>
       </div>
       <div className="sc-beat b3" style={estiloDe(3)}>

@@ -10,7 +10,7 @@
 // volumen y cuánto cambió respecto de la última vez.
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { S, useStore, openSheet, closeSheet } from '../../lib/state.js';
-import { fmtDFull, fmtNum, round1, uid } from '../../lib/format.js';
+import { fmtDFull, fmtKg, fmtMiles, fmtNum, round1, uid } from '../../lib/format.js';
 import { sessionPRs, deleteHistorySession, updateHistorySession, entryDelta, groupSets, cargarSeriesRetro, seriesDeEjercicio } from '../../lib/session.js';
 import { pinAddedToRoutine } from '../../lib/rutina-logic.js';
 import { catOf } from '../../lib/muscle.js';
@@ -107,7 +107,7 @@ export default function SessionView({ id, justFinished = false }) {
         <div><div className="n">{s.duration ?? '—'}</div><span className="l">Min</span></div>
         <div><div className="n">{nsets}</div><span className="l">Series</span></div>
         <div><div className="n">{entries.length}</div><span className="l">Ejercicios</span></div>
-        <div><div className="n">{Math.round(vol)}</div><span className="l">Kg vol.</span></div>
+        <div><div className="n">{fmtMiles(Math.round(vol))}</div><span className="l">Kg vol.</span></div>
       </div>
 
       {hasPR && (
@@ -306,7 +306,7 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
       )}
 
       <div className="dcard-foot">
-        <span>{entry.sets.length} serie{entry.sets.length === 1 ? '' : 's'} · {Math.round(vol).toLocaleString('es')} kg</span>
+        <span>{entry.sets.length} serie{entry.sets.length === 1 ? '' : 's'} · {fmtKg(Math.round(vol))}</span>
         {d && d.delta !== 0 && (
           <span className={d.delta > 0 ? 'txt-ok' : 'txt-warn'}>
             {d.delta > 0 ? '↗ +' : '↘ '}{fmtNum(d.delta)} kg

@@ -157,7 +157,7 @@ export default function Gyms() {
       )}
 
       <div className="mb-3">
-        <label htmlFor="gym-nombre" className="mb-1.5 block text-sm font-medium text-text-2">Nuevo gimnasio</label>
+        <label htmlFor="gym-nombre" className="t-etiqueta mb-1.5 block">Nuevo gimnasio</label>
         {/* Campo y botón en la misma fila: el botón suelto debajo dejaba un
             escalón raro contra el borde del campo, y separaba la acción de
             lo que la dispara. */}

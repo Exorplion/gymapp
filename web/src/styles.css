@@ -2628,8 +2628,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 
 /* Rueda de progreso de la sesión (Hoy.jsx, SessionRing): series reales
    hechas/objetivo del turno de hoy. Mismo lenguaje que .rfs-ring (anillo del
-   descanso) a escala de hero — cifra condensada con background-clip:text en
-   vez de color plano, como .ini-tile en Inicio. */
+   descanso) a escala de hero. La cifra en tiza: el degradado recortado al
+   texto queda sólo en la marca (tanda B, V13); el acento ya lo pone el aro. */
 .session-ring{position:relative;width:52px;height:52px;flex:none;display:grid;place-items:center}
 .session-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .session-ring-track{fill:none;stroke:var(--surface-2);stroke-width:3}
@@ -2639,8 +2639,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .session-ring-num{
   position:absolute;font-family:var(--font-cond);font-weight:700;font-size:var(--t-sm);
-  background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;
-  color:transparent;
+  color:var(--text);
 }
 /* ---------- Hoy: la barra de la sesión en curso (Hoy.jsx, SesionBarra) ----------
    Reemplaza al título "HOY" + la tarjeta grande de la sesión mientras
@@ -2688,9 +2687,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .plan-title{
   margin:0;font-family:var(--font-cond);font-size:var(--t-2xl);font-weight:800;font-style:italic;
   letter-spacing:var(--tr-titulo);text-transform:none;line-height:1;text-wrap:balance;
-  background:linear-gradient(96deg,var(--text) 10%,var(--accent) 64%,var(--accent));
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 0 14px rgba(var(--accent-rgb),.28));
+  /* En tiza, sin degradado ni resplandor (V13): el degradado de texto es la
+     firma de la marca y en ningún otro lado. El peso 800 hace el trabajo. */
+  color:var(--text);
 }
 .plan-edit{
   display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 var(--s3);flex:none;

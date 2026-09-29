@@ -14,7 +14,7 @@
 // plomo, y el trofeo sólo si hubo récord. La duración y los ejercicios siguen
 // en el detalle, a un toque.
 import { openSheet } from '../lib/state.js';
-import { WDS, fmtD } from '../lib/format.js';
+import { WDS, fmtD, fmtKg } from '../lib/format.js';
 import { sessionPRs } from '../lib/session.js';
 import { Badge } from './ui/primitives.jsx';
 
@@ -44,7 +44,7 @@ export default function SessionCard({ sess }) {
         <span className="grouprow-s">
           {sess.retro && !sess.entries?.length
             ? 'Anotada a mano · sin series registradas'
-            : `${nsets} ${nsets === 1 ? 'serie' : 'series'} · ${vol.toLocaleString('es')} kg de volumen`}
+            : `${nsets} ${nsets === 1 ? 'serie' : 'series'} · ${fmtKg(vol)} de volumen`}
         </span>
       </span>
     </button>

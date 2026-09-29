@@ -61,7 +61,7 @@ export default function SessionExercise({ wd, exId }) {
       </div>
 
       <div className="calcbox" style={{ marginBottom: 'var(--s3)' }}>
-        <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5 }}>
           Vale sólo para hoy — tu rutina no cambia. Al cerrar la sesión te
           pregunto si querés dejarlo fijo.
         </div>

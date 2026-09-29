@@ -94,8 +94,8 @@ export default function Progreso() {
       <div className="card hero hero-prog">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <div className="t-etiqueta">{headLabel}</div>
             <div className="bignum">{headNum != null ? <span ref={headNumRef}>{fmtNum(round1(headNum))}</span> : '—'}<small> kg</small></div>
+            <div className="t-etiqueta">{headLabel}</div>
             {lastW && (
               <div className="text-text-2 text-sm mt-1">
                 {wk && wk.curAvg != null ? `último ${fmtKg(round1(lastW.weight))}, ` : `${fmtNum(kg2lb(lastW.weight))}${NBSP}lb, `}
@@ -352,8 +352,8 @@ function VolumeTab() {
     <>
       {risk?.risk && (
         <div className="notice warn">
-          <div className="text-sm text-text font-medium">⚠ Volumen alto esta semana</div>
-          <div className="s text-text-2 mt-1">Tonelaje 7 días ({fmtNum(risk.acute)} kg) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
+          <div className="text-sm text-text font-semibold">⚠ Volumen alto esta semana</div>
+          <div className="s text-text-2 mt-1">Tonelaje 7 días ({fmtKg(risk.acute)}) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
         </div>
       )}
       {/* El "· 7 días" no se pierde al sacar el título: pasa a la leyenda de

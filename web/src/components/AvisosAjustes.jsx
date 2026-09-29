@@ -104,7 +104,7 @@ export default function AvisosAjustes() {
         </div>
       </div>
 
-      <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, margin: 'var(--s3) 0 var(--s3)' }}>
+      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, margin: 'var(--s3) 0 var(--s3)' }}>
         {estado === 'apagado' && <>Lo manda una tarea diaria de GitHub. Al activarlo se copia un código que hay que pegar una sola vez en el repo como secreto <b>PUSH_SUBSCRIPTION</b> (o pasárselo a Claude).</>}
         {estado === 'activo' && !codigo && <>✓ Activo en este teléfono. Si cambiaste de teléfono o reinstalaste la app, volvé a copiar el código y actualizá el secreto.</>}
         {estado === 'desconectado' && <b className="txt-warn">⚠ El navegador perdió la suscripción: el recordatorio ya no llega. Activalo de nuevo y actualizá el secreto PUSH_SUBSCRIPTION con el código nuevo.</b>}
@@ -114,7 +114,7 @@ export default function AvisosAjustes() {
 
       {codigo && (
         <>
-          <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 'var(--s2)' }}>
+          <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 'var(--s2)' }}>
             Pegá esto en GitHub → gymapp → Settings → Secrets and variables → Actions → <b>PUSH_SUBSCRIPTION</b>:
           </div>
           <textarea readOnly value={codigo} rows={4} aria-label="Código de suscripción" onFocus={e => e.target.select()}
@@ -127,7 +127,7 @@ export default function AvisosAjustes() {
           renovarla desde la copia de prueba le cortaría el recordatorio a
           la app real. */}
       {enModoPrueba() && (
-        <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 10 }}>
           En modo prueba el recordatorio no se puede cambiar: se maneja desde tu app real.
         </div>
       )}

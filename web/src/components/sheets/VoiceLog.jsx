@@ -149,7 +149,7 @@ export default function VoiceLog({ items: initialItems, duration: initialDuratio
                       ref={el => { fieldRefs.current[`${it._id}-${f}`] = el; }}
                       type="number" inputMode="decimal" defaultValue={it[f]}
                       onChange={e => changeField(it._id, f, e.target.value)}
-                      style={{ fontSize: 24 }}
+                      style={{ fontSize: 'var(--t-2xl)' }}
                     />
                   </div>
                   <button type="button" onClick={() => stepField(it._id, f, 1)}>+</button>

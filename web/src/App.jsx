@@ -73,7 +73,7 @@ function ConfirmSheet({ title, body, confirmLabel, onConfirm, onCancel }) {
   return (
     <>
       <h2>{title}</h2>
-      <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 18 }}>{body}</div>
+      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 18 }}>{body}</div>
       <div className="dlg-fila">
         <button type="button" className="btn sm ghost" onClick={cancel}>Cancelar</button>
         <button type="button" className="btn sm danger" onClick={confirm}>{confirmLabel}</button>

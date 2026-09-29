@@ -21,8 +21,8 @@ import { Button } from '../ui/primitives.jsx';
 import MachineField from '../MachineField.jsx';
 
 const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 text-body text-text outline-none transition-colors focus-visible:border-accent';
-const eyebrowCls = 'mt-4 mb-2 block text-micro font-semibold uppercase tracking-wide text-text-2';
-const chipBase = 'inline-flex items-center rounded-full border border-line-2 px-3.5 py-2 text-sm font-medium transition-colors';
+const eyebrowCls = 'mt-4 mb-2 block t-etiqueta';
+const chipBase = 'inline-flex items-center rounded-full border border-line-2 px-3.5 py-2 text-sm font-semibold transition-colors';
 const chip = (on, tone = 'on') => cn(chipBase, on ? (tone === 'blue' ? 'border-transparent bg-accent text-[var(--on-accent)]' : 'border-transparent bg-[image:var(--accent-grad)] font-bold text-[var(--on-accent)]') : 'bg-surface-2 text-text hover:border-line');
 
 export default function EntryEdit({ sessId, idx }) {
@@ -89,13 +89,13 @@ export default function EntryEdit({ sessId, idx }) {
       </div>
 
       <div className="mb-3">
-        <label htmlFor="entryedit-nombre" className="mb-1.5 block text-sm font-medium text-text-2">Qué ejercicio fue</label>
+        <label htmlFor="entryedit-nombre" className="t-etiqueta mb-1.5 block">Qué ejercicio fue</label>
         <input id="entryedit-nombre" ref={nameRef} className={inputCls} value={name} onChange={e => setName(e.target.value)} autoComplete="off" />
       </div>
 
       {sugeridos.length > 0 && (
         <div className="mb-3">
-          <label className="mb-1.5 block text-sm font-medium text-text-2">De la base</label>
+          <label className="t-etiqueta mb-1.5 block">De la base</label>
           <div className="flex flex-wrap gap-2">
             {sugeridos.map(e => (
               <button key={e.n} type="button" className={chip(false)} onClick={() => { setName(e.n); setCat(''); }}>
@@ -108,7 +108,7 @@ export default function EntryEdit({ sessId, idx }) {
 
       <label className={eyebrowCls}>
         Qué grupo entrena
-        {!cat && auto && <span className="text-micro font-medium normal-case tracking-normal text-text-2"> · detecté {auto}</span>}
+        {!cat && auto && <span className="text-micro normal-case tracking-normal text-text-2"> · detecté {auto}</span>}
       </label>
       <div className="flex flex-wrap gap-2">
         {MUSCLE_CATS.map(c => (

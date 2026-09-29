@@ -111,7 +111,7 @@ function LibraryList({ onPeek }) {
         style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: 16 }}
         onClick={() => onPeek({ kind: 'current' })}
       >
-        <div className="cond" style={{ fontSize: 18, fontWeight: 700 }}>{routineName()}</div>
+        <div className="cond" style={{ fontSize: 'var(--t-lg)', fontWeight: 700 }}>{routineName()}</div>
         <SlotSummaryLine slots={S.routine} />
       </button>
       {st.workoutCount > 0 && (
@@ -149,7 +149,7 @@ function LibraryList({ onPeek }) {
 
       {/* 3. Plantillas — mismo patrón de lista agrupada. */}
       <div className="eyebrow" style={{ marginBottom: 6 }}>Plantillas</div>
-      <div className="txt-mut" style={{ fontSize: 13, margin: '-2px 0 8px' }}>
+      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', margin: '-2px 0 8px' }}>
         Reemplazan tu split actual. Después las editás a gusto.
       </div>
       <div className="group" ref={tmplRef} style={{ marginBottom: 16 }}>
@@ -171,8 +171,8 @@ function LibraryList({ onPeek }) {
       </div>
 
       <div className="card" style={{ borderStyle: 'dashed', borderColor: 'var(--line-2)' }}>
-        <div className="cond" style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Personalizada</div>
-        <div className="txt-mut" style={{ fontSize: 13, marginBottom: 12 }}>
+        <div className="cond" style={{ fontSize: 'var(--t-lg)', fontWeight: 700, marginBottom: 4 }}>Personalizada</div>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginBottom: 12 }}>
           Empezá de cero y armá tu propio split día por día.
         </div>
         <button type="button" className="btn sm ghost" onClick={() => openSheet('routine-wizard')}>Armar con asistente</button>

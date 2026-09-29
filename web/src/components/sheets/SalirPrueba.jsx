@@ -44,7 +44,7 @@ export function ResumenSalida({ dif, motivo, ocupado = false, onPasar, onDescart
     return (
       <>
         <h2>{titulo}</h2>
-        <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5 }}>Revisando lo que registraste en la prueba…</div>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5 }}>Revisando lo que registraste en la prueba…</div>
       </>
     );
   }
@@ -53,13 +53,13 @@ export function ResumenSalida({ dif, motivo, ocupado = false, onPasar, onDescart
     <>
       <h2>{titulo}</h2>
       {motivo === 'otro-dia' && (
-        <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 10 }}>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 10 }}>
           La app sigue en la <b>copia de prueba</b> desde otro día. Lo que anotes acá no llega a tus datos reales.
         </div>
       )}
-      <div style={{ fontSize: 14, lineHeight: 1.5, marginBottom: hayAlgo ? 8 : 18 }}>{textoResumen(dif)}</div>
+      <div style={{ fontSize: 'var(--t-body)', lineHeight: 1.5, marginBottom: hayAlgo ? 8 : 18 }}>{textoResumen(dif)}</div>
       {hayAlgo && (
-        <ul className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, margin: '0 0 14px', paddingLeft: 18 }}>
+        <ul className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, margin: '0 0 14px', paddingLeft: 18 }}>
           {dif.sesiones.map(s => <li key={s.id}>{s.dayName || 'Entrenamiento'} · {fmtDFull(s.date)}</li>)}
           {dif.pesos.map(b => <li key={b.id}>Peso{b.weight != null ? ` ${fmtNum(b.weight)} kg` : ''} · {fmtDFull(b.date)}</li>)}
           {dif.comidas.length > 0 && <li>{dif.comidas.length} {dif.comidas.length === 1 ? 'comida' : 'comidas'}</li>}

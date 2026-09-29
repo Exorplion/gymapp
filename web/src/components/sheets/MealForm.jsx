@@ -162,7 +162,7 @@ export default function MealForm({ slot: slotInicial }) {
               </div>
             ))}
             <div className="cart-total"><span>Total</span><b>{Math.round(total.kcal)} kcal</b></div>
-            <div className="txt-mut" style={{ fontSize: 12.5, textAlign: 'right' }}>
+            <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', textAlign: 'right' }}>
               P {total.p} · C {total.c} · G {total.f}
             </div>
           </div>

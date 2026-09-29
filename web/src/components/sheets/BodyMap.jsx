@@ -102,7 +102,7 @@ function SinGrupoAviso() {
       className="mt-3 flex w-full flex-col gap-0.5 rounded-[var(--radius-r)] border border-warn/30 bg-warn/10 px-3.5 py-3 text-left transition-colors hover:bg-warn/15"
       onClick={() => { closeSheet(); changeTab('rutina', () => { S.rutMode = 'edit'; }); }}
     >
-      <span className="text-sm font-medium text-text">
+      <span className="text-sm font-semibold text-text">
         {sin.length} ejercicio{sin.length === 1 ? '' : 's'} sin grupo muscular · no suma{sin.length === 1 ? '' : 'n'} acá
       </span>
       <span className="text-micro text-text-2">{sin.slice(0, 4).map(e => e.name).join(' · ')}{sin.length > 4 ? ` +${sin.length - 4}` : ''}</span>

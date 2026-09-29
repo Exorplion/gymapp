@@ -22,7 +22,7 @@ export default function Despues({ exId }) {
   return (
     <motion.div {...hojaProps}>
       <h2>¿Cuándo hacés {ex.name}?</h2>
-      <motion.div variants={seccion} className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 'var(--s3)' }}>
+      <motion.div variants={seccion} className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 'var(--s3)' }}>
         {pendientes.length
           ? 'Sigue pendiente: elegí después de cuál lo hacés. Si te equivocás, lo deshacés desde el aviso.'
           : 'Es el único que te queda: no hay dónde moverlo.'}

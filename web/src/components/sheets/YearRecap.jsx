@@ -6,7 +6,7 @@
 import { motion } from 'motion/react';
 import { hojaProps, seccion } from '../../lib/variants.js';
 import { yearRecap } from '../../lib/session.js';
-import { fmtNum, fmtD, round1 } from '../../lib/format.js';
+import { fmtKg, fmtD, round1 } from '../../lib/format.js';
 import { useRef } from 'react';
 
 /* Las tarjetas entran una tras otra DESPUÉS de que el panel subió (hoja /
@@ -17,8 +17,8 @@ import { useRef } from 'react';
 function Card({ eyebrow, value, sub }) {
   return (
     <motion.div variants={seccion} className="calcbox" style={{ marginTop: 10 }}>
-      <div className="text-text-2 text-micro font-medium">{eyebrow}</div>
-      <div className="font-cond text-3xl font-bold text-text mt-1">{value}</div>
+      <div className="t-etiqueta">{eyebrow}</div>
+      <div className="font-cond text-display font-extrabold italic text-text mt-1">{value}</div>
       {sub && <div className="text-text-2 text-micro mt-1">{sub}</div>}
     </motion.div>
   );
@@ -42,11 +42,11 @@ export default function YearRecap() {
       <h2>Tu Año Fierro</h2>
       <div className="sheet-sub">Los últimos 365 días, en números.</div>
       <motion.div {...hojaProps}>
-        <Card eyebrow="Kilos movidos" value={`${fmtNum(r.kg)} kg`} sub={`en ${r.series} series`} />
+        <Card eyebrow="Kilos movidos" value={fmtKg(r.kg)} sub={`en ${r.series} series`} />
         <Card eyebrow="Sesiones" value={r.sesiones} sub={`racha más larga: ${r.rachaMasLarga} día${r.rachaMasLarga === 1 ? '' : 's'}`} />
-        {r.ejercicioTop && <Card eyebrow="Ejercicio más entrenado" value={r.ejercicioTop.name} sub={`${fmtNum(r.ejercicioTop.kg)} kg movidos en total`} />}
-        {r.diaMasFuerte && <Card eyebrow="Tu día más fuerte" value={fmtD(r.diaMasFuerte.date)} sub={`${fmtNum(r.diaMasFuerte.kg)} kg en esa sesión`} />}
-        {r.prMasGrande && <Card eyebrow="Tu PR más grande" value={`${fmtNum(round1(r.prMasGrande.w))} kg`} sub={`${r.prMasGrande.name} · ${fmtD(r.prMasGrande.date)}`} />}
+        {r.ejercicioTop && <Card eyebrow="Ejercicio más entrenado" value={r.ejercicioTop.name} sub={`${fmtKg(r.ejercicioTop.kg)} movidos en total`} />}
+        {r.diaMasFuerte && <Card eyebrow="Tu día más fuerte" value={fmtD(r.diaMasFuerte.date)} sub={`${fmtKg(r.diaMasFuerte.kg)} en esa sesión`} />}
+        {r.prMasGrande && <Card eyebrow="Tu PR más grande" value={fmtKg(round1(r.prMasGrande.w))} sub={`${r.prMasGrande.name} · ${fmtD(r.prMasGrande.date)}`} />}
       </motion.div>
     </div>
   );

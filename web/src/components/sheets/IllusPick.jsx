@@ -37,7 +37,7 @@ export default function IllusPick({ exName = '', onPick, onClose }) {
         <h2 className="steplabel" style={{ margin: 0 }}>Elegí la ilustración</h2>
         <button type="button" className={cn('mini', 'transition-transform active:scale-90')} aria-label="Cerrar" onClick={() => onClose?.()}><X /></button>
       </div>
-      <div className="txt-mut" style={{ fontSize: 13, marginTop: 2, marginBottom: 14 }}>
+      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', marginTop: 2, marginBottom: 14 }}>
         Buscá el movimiento y tocá el que corresponda. Las imágenes son de
         free-exercise-db, de dominio público.
       </div>

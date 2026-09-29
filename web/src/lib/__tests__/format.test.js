@@ -37,6 +37,6 @@ describe('fmtKg', () => {
   });
   it('pega la unidad con un espacio que no se parte', () => {
     expect(fmtKg(7122)).toBe(`7,122${NBSP}kg`);
-    expect(NBSP).toBe(' ');
+    expect(NBSP).toBe('\u00a0');
   });
 });

@@ -15,7 +15,7 @@ beforeEach(() => { S.sessions = []; });
 
 describe('SessionCard', () => {
   it('una serie va en singular', () => {
-    expect(texto(sesion(1))).toContain('1 serie · 333 kg de volumen');
+    expect(texto(sesion(1))).toContain('1 serie · 333\u00a0kg de volumen');
   });
   it('varias, en plural', () => {
     expect(texto(sesion(3))).toContain('3 series ·');
@@ -28,7 +28,7 @@ describe('SessionCard de una sesión anotada a mano', () => {
   });
   it('con series cargadas después, las muestra como cualquier sesión', () => {
     const html = texto({ ...sesion(2), retro: true, duration: null });
-    expect(html).toContain('2 series · 666 kg de volumen');
+    expect(html).toContain('2 series · 666\u00a0kg de volumen');
     expect(html).not.toContain('sin series registradas');
   });
 });

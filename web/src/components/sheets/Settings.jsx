@@ -64,7 +64,7 @@ function ModoPrueba() {
   }
   return (
     <>
-      <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+      <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 10 }}>
         {en
           ? <>Estás en una <b>copia</b> de tus datos. Lo que registres acá no llega a tus datos reales: al salir te muestro qué registraste y elegís si pasarlo o descartarlo.</>
           : 'Una copia de tus datos para simular un entrenamiento y probar cosas nuevas. Nada de lo que hagas ahí llega a tu progreso real.'}
@@ -411,7 +411,7 @@ export default function Settings() {
         {S.cfg.goalsAuto ? (
           <>
             <div className="calcbox" style={{ marginTop: 12 }}>
-              {m ? <MacroPreview m={m} /> : <div className="txt-mut" style={{ fontSize: 13 }}>Completa tu perfil para calcular las metas.</div>}
+              {m ? <MacroPreview m={m} /> : <div className="txt-mut" style={{ fontSize: 'var(--t-sm)' }}>Completa tu perfil para calcular las metas.</div>}
             </div>
             <button type="button" className="btn ghost sm" style={{ marginTop: 10 }} onClick={() => openSheet('profile')}>✎ Editar perfil</button>
           </>
@@ -432,7 +432,7 @@ export default function Settings() {
 
       <motion.section variants={seccion}>
         <h3>Datos de prueba</h3>
-        <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 10 }}>
           Carga tu rutina Anterior/Posterior, ~1 mes de nutrición y ~5 semanas de sesiones reconstruidas desde tus pesos anotados. Sirve para ver la app llena; se borra aparte sin tocar lo demás.
         </div>
         <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={startSeedLoad}>🧪 Cargar mi registro</button>
@@ -443,7 +443,7 @@ export default function Settings() {
 
       <motion.section variants={seccion}>
         <h3>Mi base de alimentos</h3>
-        <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 10 }}>
           Bajá la tabla en Markdown, editala donde quieras y volvé a subirla. Se
           actualizan los que ya tenías y se agregan los nuevos — nada se borra.
         </div>
@@ -460,7 +460,7 @@ export default function Settings() {
             en una repisa que el sistema podía tirar. Cada estado dice lo que
             sabe y nada más — `null` es "no se pudo saber", no "está todo
             bien". Ver el encabezado de lib/persist.js. */}
-        <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 10 }}>
           {S.persisted === true && <>✓ Tu teléfono tiene <b>reservado</b> este espacio. El sistema no lo borra solo.</>}
           {/* Sin el glifo ⋮ a propósito: en la tipografía de la app se lee
               como dos puntos ("menú : del navegador") y confunde. */}
@@ -491,7 +491,7 @@ export default function Settings() {
           <button type="button" className={autoOn ? 'on' : ''} aria-pressed={autoOn} onClick={() => setAutoBackup(true)}>Respaldo automático</button>
           <button type="button" className={autoOn ? '' : 'on'} aria-pressed={!autoOn} onClick={() => setAutoBackup(false)}>Sólo manual</button>
         </div>
-        <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 10 }}>
           {autoOn
             ? 'Al cerrar un entrenamiento, si pasó una semana desde tu última copia, la app guarda un JSON en Descargas sola. Ahí no lo alcanza ningún borrado del navegador.'
             : 'Nadie va a respaldar por vos. Si el teléfono borra los datos, se pierde lo que no hayas exportado a mano.'}
@@ -503,7 +503,7 @@ export default function Settings() {
 
       <motion.section variants={seccion}>
         <h3>Versión</h3>
-        <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 10 }}>
           Instalada: <b className="txt-blue">{__BUILD__}</b><br />
           Si acabás de pedir un cambio y no lo ves, es que tu teléfono todavía
           tiene la versión anterior guardada. Este botón la va a buscar.
@@ -514,7 +514,7 @@ export default function Settings() {
       </motion.section>
 
       <motion.section variants={seccion}>
-        <div className="txt-mut" style={{ fontSize: 12, textAlign: 'center', marginTop: 16 }}>FIERRO v1 · datos 100% en tu dispositivo</div>
+        <div className="txt-mut" style={{ fontSize: 'var(--t-micro)', textAlign: 'center', marginTop: 16 }}>FIERRO v1 · datos 100% en tu dispositivo</div>
       </motion.section>
     </motion.div>
   );

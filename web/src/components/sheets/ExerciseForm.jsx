@@ -20,8 +20,8 @@ import { Button } from '../ui/primitives.jsx';
 
 
 const inputCls = 'h-11 w-full rounded-[var(--radius-r)] border border-line-2 bg-surface-2 px-3.5 text-body text-text outline-none transition-colors focus-visible:border-accent';
-const eyebrowCls = 'mt-4 mb-2 block text-micro font-semibold uppercase tracking-wide text-text-2';
-const chipBase = 'inline-flex items-center rounded-full border border-line-2 px-3.5 py-2 text-sm font-medium transition-colors';
+const eyebrowCls = 'mt-4 mb-2 block t-etiqueta';
+const chipBase = 'inline-flex items-center rounded-full border border-line-2 px-3.5 py-2 text-sm font-semibold transition-colors';
 const chip = (on, tone = 'on') => cn(chipBase, on ? (tone === 'blue' ? 'border-transparent bg-accent text-[var(--on-accent)]' : 'border-transparent bg-[image:var(--accent-grad)] font-bold text-[var(--on-accent)]') : 'bg-surface-2 text-text hover:border-line');
 
 /* El campo se escribe en la unidad que ve el usuario y se guarda en kg —
@@ -56,7 +56,7 @@ function PesoInicialField({ value, onChange }) {
      44px se lee como de otro formulario. */
   return (
     <div className="mt-3">
-      <label htmlFor="exform-peso-inicial" className="mb-1.5 block text-sm font-medium text-text-2">
+      <label htmlFor="exform-peso-inicial" className="t-etiqueta mb-1.5 block">
         Peso de partida · opcional
       </label>
       <div className="flex items-center gap-2">
@@ -71,7 +71,7 @@ function PesoInicialField({ value, onChange }) {
           value={value}
           onChange={e => onChange(e.target.value)}
         />
-        <span className="flex-none text-sm font-medium text-text-2">{unidad}</span>
+        <span className="flex-none text-sm text-text-2">{unidad}</span>
       </div>
       <div className="mt-1.5 text-sm text-text-2">
         Lo usa la sesión en vivo mientras no haya series registradas de este
@@ -137,7 +137,7 @@ function EditForm({ wd, ex }) {
       <h2 className="font-cond text-2xl font-bold text-text">Editar ejercicio</h2>
 
       <div className="mt-3">
-        <label htmlFor="exform-nombre" className="mb-1.5 block text-sm font-medium text-text-2">Nombre</label>
+        <label htmlFor="exform-nombre" className="t-etiqueta mb-1.5 block">Nombre</label>
         <input
           id="exform-nombre"
           className={inputCls}
@@ -150,7 +150,7 @@ function EditForm({ wd, ex }) {
 
       <div className="mt-3.5 grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="exform-series" className="mb-1.5 block text-sm font-medium text-text-2">Series objetivo</label>
+          <label htmlFor="exform-series" className="t-etiqueta mb-1.5 block">Series objetivo</label>
           <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line-2 bg-surface-2">
             <button type="button" className="h-full w-11 flex-none text-lg text-text-2 hover:text-text" aria-label="Una serie menos" onClick={() => step(setSets, -1)}>−</button>
             <div className="flex-1 text-center"><input id="exform-series" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-body text-text outline-none" value={sets} onChange={e => setSets(e.target.value)} /></div>
@@ -158,7 +158,7 @@ function EditForm({ wd, ex }) {
           </div>
         </div>
         <div>
-          <label htmlFor="exform-reps" className="mb-1.5 block text-sm font-medium text-text-2">Reps objetivo</label>
+          <label htmlFor="exform-reps" className="t-etiqueta mb-1.5 block">Reps objetivo</label>
           <div className="flex h-11 items-center overflow-hidden rounded-[var(--radius-r)] border border-line-2 bg-surface-2">
             <button type="button" className="h-full w-11 flex-none text-lg text-text-2 hover:text-text" aria-label="Una repetición menos" onClick={() => step(setReps, -1)}>−</button>
             <div className="flex-1 text-center"><input id="exform-reps" type="number" inputMode="numeric" className="w-full bg-transparent text-center text-body text-text outline-none" value={reps} onChange={e => setReps(e.target.value)} /></div>
@@ -188,8 +188,8 @@ function EditForm({ wd, ex }) {
 
       <label className={eyebrowCls}>
         Qué grupo entrena
-        {!cat && auto && <span className="text-micro font-medium normal-case tracking-normal text-text-2"> · detecté {auto}</span>}
-        {!cat && !auto && name.trim() && <span className="text-micro font-medium normal-case tracking-normal text-warn"> · no lo reconozco, elegilo</span>}
+        {!cat && auto && <span className="text-micro normal-case tracking-normal text-text-2"> · detecté {auto}</span>}
+        {!cat && !auto && name.trim() && <span className="text-micro normal-case tracking-normal text-warn"> · no lo reconozco, elegilo</span>}
       </label>
       <div className="flex flex-wrap gap-2">
         {MUSCLE_CATS.map(c => (
@@ -230,7 +230,7 @@ function EditForm({ wd, ex }) {
 
       {equip && (
         <div className="mt-3">
-          <label className="mb-1.5 block text-sm font-medium text-text-2">Foto de la máquina</label>
+          <label className="t-etiqueta mb-1.5 block">Foto de la máquina</label>
           <input
             ref={photoRef}
             type="file"
@@ -261,7 +261,7 @@ function EditForm({ wd, ex }) {
       )}
 
       <div className="mt-3">
-        <label className="mb-1.5 block text-sm font-medium text-text-2">Ilustración del movimiento</label>
+        <label className="t-etiqueta mb-1.5 block">Ilustración del movimiento</label>
         {illus ? (
           <div className="overflow-hidden rounded-[var(--radius-r-lg)] border border-line-2">
             <img src={illusUrl(illus)} alt="" className="block w-full" />
