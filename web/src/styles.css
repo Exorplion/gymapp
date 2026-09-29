@@ -341,6 +341,9 @@
      Ésta reparte el recorrido de forma pareja: arranca, viaja y frena. Es lo
      que hace que se VEA que la pantalla entra desde un lado. */
   --ease-push:cubic-bezier(.4,0,.2,1);
+  /* Distancias del vocabulario de entrada/salida (@keyframes entra / sale):
+     se entra subiendo 8 px y se sale bajando 4, más corto que la entrada. */
+  --entra-y:8px; --sale-y:4px;
   font-synthesis:none;
 }
 /* EL RESET VA EN @layer base, Y NO SUELTO. Es la diferencia entre que las
@@ -2455,8 +2458,8 @@ nav.tabbar{container-type:inline-size}
 /* El vocabulario de entrada y salida de la app (tanda E): entrar es subir
    un poco mientras aparece; salir, lo mismo al revés y más corto. La
    distancia se ajusta con --entra-y / --sale-y en quien lo usa. */
-@keyframes entra{from{opacity:0;transform:translateY(var(--entra-y,8px))}}
-@keyframes sale{to{opacity:0;transform:translateY(var(--sale-y,4px))}}
+@keyframes entra{from{opacity:0;transform:translateY(var(--entra-y))}}
+@keyframes sale{to{opacity:0;transform:translateY(var(--sale-y))}}
 #sheet .panel{
   position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;
   max-height:88dvh;overflow-y:auto;
