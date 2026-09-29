@@ -49,8 +49,8 @@ Trampas:
 - Un `setTimeout` que desmonta "cuando termina la animación" miente con el
   hilo ocupado: la animación CSS arranca cuando se calcula el estilo, no en
   el toque. Usar `animationend` con el timer de red.
-- El CSS de G11 quedó en el commit `8316aff` (el del volver del asistente)
-  por un `git add -A`; el mensaje de `2b8bbf9` lo describe.
+- El CSS de G11 quedó en el commit `266a1e0` (el del volver del asistente)
+  por un `git add -A`; el mensaje de `dd9241b` lo describe.
 
 **Pendientes:**
 1. Probar en el teléfono el volver del asistente (Android real, no
