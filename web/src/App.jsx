@@ -356,26 +356,16 @@ export default function App() {
     return () => { cancelAnimationFrame(id1); cancelAnimationFrame(id2); };
   }, [saliente]);
 
-  /* `main` sólo mide del alto de .view.enter (.view.leave es position:absolute,
-     no participa del layout — ver el comentario de styles.css). Si la pantalla
-     que se va es más alta que la que entra (p. ej. Rutina con un turno
-     abierto vs. Nutrición), main la recorta en seco con su overflow:hidden
-     ANTES de que termine de deslizarse afuera: se ve como si la parte de
-     abajo de la pantalla saliente se cortara/rompiera a mitad de la
-     animación en vez de deslizar completa fuera del marco. Mientras dura la
-     transición, se fuerza a mano un min-height igual al más alto de los dos
-     (medido después de pintar ambas, con useLayoutEffect para no parpadear)
-     y se libera al terminar. */
+  /* Las dos pantallas del cambio de pestaña comparten la misma celda de la
+     grilla de `main` (styles.css, "main es una grilla de una celda"), así
+     que main mide lo que mida la más alta sin que nadie la mida: la saliente
+     no se recorta a mitad del deslizamiento aunque sea más alta que la que
+     entra. Antes la saliente era position:absolute y este lugar forzaba un
+     min-height leyendo el scrollHeight de las dos en un useLayoutEffect —
+     un layout forzado de toda la página justo después de montar la
+     pantalla nueva (G4, auditoría 2026-09: ~230 ms a 6× yendo a Entreno).
+     mainRef queda para el gesto de arrastre (el ancho de la vista). */
   const mainRef = useRef(null);
-  useLayoutEffect(() => {
-    const main = mainRef.current;
-    if (!main) return;
-    if (!saliente) { main.style.minHeight = ''; return; }
-    const entrante = main.querySelector(':scope > .view.enter');
-    const saliendo = main.querySelector(':scope > .view.leave');
-    const h = Math.max(entrante?.scrollHeight || 0, saliendo?.scrollHeight || 0);
-    if (h) main.style.minHeight = `${h}px`;
-  }, [saliente]);
 
   // Puerto del arranque original (el script inline al final de index.html
   // hacía idbOpen().then(loadAll) antes de la primera render()). loadAll()

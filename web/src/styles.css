@@ -429,6 +429,9 @@ header.top{
   main{
     position:relative;overflow:hidden;
     max-width:520px;margin:0 auto;
+    /* Una celda: las dos pantallas del cambio de pestaña se apilan ahí
+       (ver "main es una grilla de una celda" más abajo). */
+    display:grid;grid-template-columns:minmax(0,1fr);align-items:start;
     /* Sin padding lateral: lo ponen las pantallas. Si lo pusiera main, su
        recorte quedaría 18px más ancho que el recorrido de las pantallas y al
        terminar el deslizamiento sobraría una franja de la pantalla anterior
@@ -585,17 +588,21 @@ main.arrastrando{overflow:hidden;user-select:none}
    por orden de pintado de CSS, tapando la pantalla nueva con la vieja
    congelada durante la transición. */
 .view.enter{position:relative;z-index:1}
-/* La saliente ocupa el mismo lugar que la entrante (absolute, ancla a main
-   gracias al position:relative de arriba) para que el fundido cruzado se
-   vea limpio y no una pantalla debajo de la otra. No participa del alto de
-   main: si sumara su propio alto al de la entrante, la página saltaría de
-   scroll cada vez que cambiás de pestaña. z-index:0 (menor que el de
-   .enter) para que quede siempre debajo. */
-/* top/left/right calzan con el padding real de main (16px 18px ...) y no con
-   0: el containing block de un absolute es el padding box del ancestro
-   posicionado, así que top/left/right:0 la ponía por fuera del padding de
-   main — ~36px más ancha y corrida ~18px/16px respecto de .view.enter,
-   un salto de layout visible en el primer frame de cada cambio de pestaña. */
+/* main es una grilla de una celda y las dos pantallas del cambio de
+   pestaña van en esa misma celda (G4, auditoría 2026-09): una encima de la
+   otra, alineadas sin calcular nada, y main mide lo que mida la más alta.
+   Antes la saliente era position:absolute (no sumaba alto) y App.jsx le
+   forzaba a main un min-height leyendo el scrollHeight de las dos para que
+   no la recortara a mitad del deslizamiento: un layout forzado de toda la
+   página en cada cambio de pestaña. En la grilla la saliente tampoco suma
+   su alto al de la entrante —las dos ocupan la misma fila—, así que el
+   scroll no salta. z-index:0 (menor que el de .enter) para que quede
+   siempre debajo. minmax(0,1fr): que una fila con scroll horizontal (los
+   chips) no ensanche la columna. .view.vecino sigue absoluta: es del gesto
+   y no tiene que empujar el alto de main. La grilla en sí vive en la regla
+   de main de @layer base (arriba), no acá: un selector de elemento suelto
+   pisaría las utilidades de Tailwind (tokens.test.js). */
+main > .view.enter,main > .view.leave{grid-area:1/1}
 /* TERCERA VUELTA (Enzo: "aún se notan partes de la anterior pestaña
    mientras cambias a la nueva" — el stagger real nunca fue la velocidad, es
    que la vieja y la nueva se veían SUPERPUESTAS y semitransparentes a la
@@ -613,7 +620,7 @@ main.arrastrando{overflow:hidden;user-select:none}
 /* `opacity:0` se queda como estado final y como red de seguridad: si la
    animación no corre (reduced-motion la reduce a ~0ms), la saliente sigue
    invisible igual que antes y nunca se superpone con la entrante. */
-.view.leave{position:absolute;top:16px;left:0;right:0;z-index:0;pointer-events:none;opacity:0}
+.view.leave{position:relative;z-index:0;pointer-events:none;opacity:0}
 .view.leave.dir-r{animation:pushOutR var(--d3) var(--ease-push) both}
 .view.leave.dir-l{animation:pushOutL var(--d3) var(--ease-push) both}
 @media (prefers-reduced-motion:reduce){
@@ -2084,11 +2091,26 @@ nav.tabbar button.on{color:var(--on-accent)}
 nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opacity:.22}
 /* una sola píldora que se desliza y cubre el botón activo entero, en vez de
    reaparecer en cada botón: el movimiento es lo que comunica "te moviste de
-   aquí para allá" */
+   aquí para allá"
+
+   Dónde cae se calcula acá, sin medir nada desde JS (G4, auditoría
+   2026-09: el getBoundingClientRect de TabBar forzaba un layout de toda la
+   página en cada cambio de pestaña). Los botones son flex:1 con tope de
+   110 px y la barra los reparte con space-around, así que con W = el ancho
+   de contenido de la barra (100cqw, por eso es contenedor) y n botones:
+     ancho de un botón   b = min(W/n, 110px)
+     hueco sobrante      h = W − n·b  (0 en un teléfono)
+     borde izq. del i    h/(2n) + i·(b + h/n)
+   left:7px es el padding de la barra. Sólo se anima transform: el ancho es
+   el mismo para las cuatro. --n lo pone TabBar.jsx con TABS.length. */
+nav.tabbar{container-type:inline-size}
 .tab-ind{
-  position:absolute;top:7px;left:0;height:calc(100% - 14px);width:80px;border-radius:var(--r);
+  --tab-w:min(100cqw / var(--n, 4), 110px);
+  --tab-h:calc(100cqw - var(--n, 4) * var(--tab-w));
+  position:absolute;top:7px;left:7px;height:calc(100% - 14px);width:var(--tab-w);border-radius:var(--r);
   background:var(--accent-grad);box-shadow:0 6px 20px -4px rgba(var(--accent-rgb),.55);pointer-events:none;
-  transition:transform var(--d3) var(--ease),width var(--d3) var(--ease);
+  transform:translateX(calc(var(--tab-h) / (2 * var(--n, 4)) + var(--i, 0) * (var(--tab-w) + var(--tab-h) / var(--n, 4))));
+  transition:transform var(--d3) var(--ease);
 }
 
 /* ---------- rest timer ---------- */

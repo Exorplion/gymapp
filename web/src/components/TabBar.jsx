@@ -1,13 +1,14 @@
-import { useLayoutEffect, useRef } from 'react';
-
 // Puerto de <nav class="tabbar"> (index.html ~línea 690) + moveTabIndicator()
-// (~línea 862). El original mide el botón .on con getBoundingClientRect()
-// cada vez que cambia S.tab (llamado a mano dentro de switchTab()), en
-// resize, y una vez cuando document.fonts.ready resuelve (los botones son
-// flex, así que su ancho depende de la fuente ya cargada). Acá el mismo
-// cálculo corre en un useLayoutEffect con `active` como dependencia — se
-// dispara antes del paint, igual que la llamada síncrona original evitaba
-// un flash del chip en la posición vieja.
+// (~línea 862). El original medía el botón .on con getBoundingClientRect()
+// en cada cambio de pestaña, en resize y cuando cargaban las fuentes.
+//
+// Ya no se mide nada (G4, auditoría 2026-09): esa lectura, en un
+// useLayoutEffect, forzaba un layout de la página entera justo cuando la
+// pantalla nueva se acababa de montar — medido a 6×, ~340 ms del cambio de
+// pestaña a Entreno. Los cuatro botones son de ancho igual (flex:1 con
+// tope), así que dónde cae la píldora es aritmética: el CSS la calcula con
+// el índice (--i) y el ancho de la barra en unidades de contenedor (cqw).
+// Ver .tab-ind en styles.css.
 const TABS = [
   {
     // Inicio toma el lugar de Hoy: la barra no crece. "Hoy" pasa a ser adonde
@@ -40,29 +41,17 @@ const TABS = [
   },
 ];
 
+/** Dónde va la píldora: el índice de la pestaña activa. Si `active` no es
+    una pestaña de la barra, se queda en la primera (antes se quedaba donde
+    estaba; hoy App nunca pasa otra cosa: 'hoy' llega como 'inicio'). */
+function indiceDePestana(active) {
+  return Math.max(0, TABS.findIndex(t => t.id === active));
+}
+
 export default function TabBar({ active, onChange }) {
-  const navRef = useRef(null);
-  const indRef = useRef(null);
-
-  useLayoutEffect(() => {
-    const nav = navRef.current, ind = indRef.current;
-    if (!nav || !ind) return;
-    function moveTabIndicator() {
-      const btn = nav.querySelector('button.on');
-      if (!btn) return;
-      const b = btn.getBoundingClientRect(), n = nav.getBoundingClientRect();
-      ind.style.width = Math.round(b.width) + 'px';
-      ind.style.transform = `translateX(${Math.round(b.left - n.left)}px)`;
-    }
-    moveTabIndicator();
-    addEventListener('resize', moveTabIndicator);
-    document.fonts?.ready?.then(moveTabIndicator);
-    return () => removeEventListener('resize', moveTabIndicator);
-  }, [active]);
-
   return (
-    <nav className="tabbar" ref={navRef}>
-      <i className="tab-ind" aria-hidden="true" ref={indRef}></i>
+    <nav className="tabbar" style={{ '--n': TABS.length }}>
+      <i className="tab-ind" aria-hidden="true" style={{ '--i': indiceDePestana(active) }}></i>
       {TABS.map(t => (
         <button
           key={t.id}
