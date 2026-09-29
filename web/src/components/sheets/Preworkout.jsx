@@ -20,7 +20,7 @@ import { fmtNum, round1, dstr, uid, vibrate } from '../../lib/format.js';
 import { profileWeight } from '../../lib/macros.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
-import { Bolt, Gota, Taza } from '../Icon.jsx';
+import { Bolt, Gota, Plus, Taza } from '../Icon.jsx';
 
 const PW = { meal: false, sensitive: false };
 
@@ -96,7 +96,7 @@ export default function Preworkout() {
       {!PW.meal && (
         <>
           <button type="button" className="btn ghost" style={{ marginTop: 14 }} onClick={addMacros}>
-            ＋ Sumar a Nutrición · {carbs} g carbos ({Math.round(carbs * 4)} kcal)
+            <Plus /> Sumar a Nutrición · {carbs} g carbos ({Math.round(carbs * 4)} kcal)
           </button>
           <div className="ptext sm" style={{ marginTop: 8 }}>
             Solo si de verdad los tomás. Fluidos y cafeína no aportan calorías, así que no se cuentan.
