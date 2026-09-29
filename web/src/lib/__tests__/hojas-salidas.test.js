@@ -121,3 +121,22 @@ describe('C2 · agregar comida', () => {
     expect(h).not.toMatch(/placeholder="[^"]*\p{Extended_Pictographic}/u);
   });
 });
+
+describe('M1 · un solo orden de botones en los diálogos', () => {
+  const archivos = ['App.jsx', 'components/screens/Hoy.jsx', 'components/sheets/SalirPrueba.jsx'];
+  for (const a of archivos) {
+    it(`${a}: fila .dlg-fila con la salida segura (ghost) a la izquierda`, () => {
+      const src = readFileSync(join(SRC, a), 'utf8');
+      const filas = [...src.matchAll(/className="dlg-fila">([\s\S]*?)<\/div>/g)].map(m => m[1]);
+      expect(filas.length, a).toBeGreaterThan(0);
+      for (const f of filas) {
+        const clases = [...f.matchAll(/<button[^>]*className="([^"]*)"/g)].map(m => m[1]);
+        expect(clases.length).toBe(2);
+        expect(clases[0]).toMatch(/\bghost\b/);
+        expect(clases[1]).not.toMatch(/\bghost\b/);
+      }
+      // Ninguna fila de diálogo armada a mano con estilo en línea.
+      expect(src).not.toMatch(/display: 'flex', gap: 10(, marginTop: 10)? \}\}>\s*<button[^>]*btn sm ghost/);
+    });
+  }
+});

@@ -243,9 +243,9 @@ export function TerminarSesion() {
           : 'Todavía no registraste ninguna serie.'}
       </div>
       <button type="button" className="btn ok" disabled={!nsets} onClick={() => { closeSheet(); completeSession(); }}>✓ Completar y guardar</button>
-      <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-        <button type="button" className="btn sm ghost" style={{ flex: 1 }} onClick={closeSheet}>Seguir entrenando</button>
-        <button type="button" className="btn sm danger" style={{ flex: 1 }} onClick={confirmSessDiscard}>Descartar</button>
+      <div className="dlg-fila">
+        <button type="button" className="btn sm ghost" onClick={closeSheet}>Seguir entrenando</button>
+        <button type="button" className="btn sm danger" onClick={confirmSessDiscard}>Descartar</button>
       </div>
     </>
   );

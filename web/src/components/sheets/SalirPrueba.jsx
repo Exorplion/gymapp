@@ -73,19 +73,19 @@ export function ResumenSalida({ dif, motivo, ocupado = false, onPasar, onDescart
       {hayAlgo ? (
         <>
           <button type="button" className="btn ok" disabled={ocupado} onClick={onPasar}>Pasarlas a mis datos reales</button>
-          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-            <button type="button" className="btn sm ghost" style={{ flex: 1 }} disabled={ocupado} onClick={onSeguir}>
+          <div className="dlg-fila">
+            <button type="button" className="btn sm ghost" disabled={ocupado} onClick={onSeguir}>
               {motivo === 'otro-dia' ? 'Sí, sigo probando' : 'Seguir en prueba'}
             </button>
-            <button type="button" className="btn sm danger" style={{ flex: 1 }} disabled={ocupado} onClick={onDescartar}>Descartarlas</button>
+            <button type="button" className="btn sm danger" disabled={ocupado} onClick={onDescartar}>Descartarlas</button>
           </div>
         </>
       ) : (
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button type="button" className="btn sm ghost" style={{ flex: 1 }} disabled={ocupado} onClick={onSeguir}>
+        <div className="dlg-fila">
+          <button type="button" className="btn sm ghost" disabled={ocupado} onClick={onSeguir}>
             {motivo === 'otro-dia' ? 'Sí, sigo probando' : 'Seguir en prueba'}
           </button>
-          <button type="button" className="btn sm" style={{ flex: 1 }} disabled={ocupado} onClick={onDescartar}>Salir</button>
+          <button type="button" className="btn sm" disabled={ocupado} onClick={onDescartar}>Salir</button>
         </div>
       )}
     </>
