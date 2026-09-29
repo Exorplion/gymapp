@@ -26,7 +26,9 @@ import {
   ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
   targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, reemplazaA,
   isUnilateral, setSide, seriesCompletas, marcarCalentado,
+  pasosRampa, avanzarRampa, deshacerRampa,
 } from '../lib/session.js';
+import { estadoRampa, tocarPaso, estadoBoton } from '../lib/rampa.js';
 import { sideImbalance } from '../lib/symmetry.js';
 import { toast } from '../lib/toast.js';
 import { T } from '../lib/rest.js';
@@ -483,44 +485,60 @@ function Comparativa({ last, obj, uni }) {
   );
 }
 
-/* La rampa de aproximación como pasos (2026-09-25). Antes era un renglón
-   "Aproximación · 22.5×5 · 35×3 · 40×1" con un solo "Hecho". Ahora cada
-   escalón se toca al hacerlo y se pone verde; el último marca el
-   calentamiento como hecho (y arranca el descanso, como antes). El avance
-   vive en memoria por sesión: volver a Hoy desde otra pestaña no lo pierde. */
-const pasosRampa = new Map();
+/* La rampa de aproximación (rediseño 2026-09-27, pieza 2). Los círculos
+   MUESTRAN el avance; el que avanza es el botón grande de la tarjeta
+   (estadoBoton en lib/rampa.js), así el pulgar va siempre al mismo lugar.
+   Sin estado propio: los pasos hechos viven en el borrador de la sesión
+   (pasosRampa/avanzarRampa/deshacerRampa en session.js) y sobreviven a
+   recargar la app — antes eran un Map en memoria y se perdían.
+   Tocar un ✓ lo deshace; tocar un paso futuro sacude el activo ("primero
+   éste"). Completa, se ve el último ✓ y la línea de "completa", y la
+   ExerciseSlide la pliega antes de arrancar el descanso. */
+const SACUDIR = [
+  { transform: 'translateX(0)' },
+  { transform: 'translateX(-4px)' },
+  { transform: 'translateX(4px)' },
+  { transform: 'translateX(0)' },
+];
 
-function Rampa({ ex, rampa }) {
-  const clave = `${S.draft?.id}|${ex.id}`;
-  const [hechos, setHechos] = useState(() => pasosRampa.get(clave) || 0);
+function Rampa({ ex, estado, unidad, plegando }) {
+  const pasosRef = useRef(null);
   function tocar(i) {
-    const n = i + 1;
-    if (n <= hechos) return;
-    pasosRampa.set(clave, n);
-    setHechos(n);
-    if (n >= rampa.length) marcarCalentado(ex, true);
+    const r = tocarPaso(estado.hechos, i, estado.n);
+    if (r.accion === 'deshacer') deshacerRampa(ex.id, r.hechos);
+    else if (r.accion === 'sacudir' && !menosMovimiento()) {
+      pasosRef.current?.querySelector('.ex-paso.cur i')?.animate(SACUDIR, { duration: D.objeto, easing: EASE_OUT });
+    }
   }
-  const avance = rampa.length > 1 ? Math.min(1, Math.max(0, hechos - 1) / (rampa.length - 1)) : 0;
+  const pctDe = s => `${Math.round(s.pct * 100)}%`;
   return (
-    <div className="ex-rampa">
-      <div className="ex-rampa-hd">
-        <span>Aproximación</span>
-        <button type="button" className="linkcard" onClick={() => marcarCalentado(ex, false)}>Saltar</button>
-      </div>
-      <div className="ex-rampa-pasos" style={{ '--avance': avance }}>
-        {rampa.map((s, i) => (
-          <button
-            key={i}
-            type="button"
-            className={`ex-paso${i < hechos ? ' hecho' : i === hechos ? ' cur' : ''}`}
-            aria-label={`${Math.round(s.pct * 100)}%: ${wDisplay(s.w)} por ${s.reps}${i < hechos ? ', hecho' : ''}`}
-            onClick={() => tocar(i)}
-          >
-            <i>{i < hechos ? <Check size={15} /> : `${Math.round(s.pct * 100)}%`}</i>
-            <b>{wDisplay(s.w)}</b>
-            <span>× {s.reps}</span>
-          </button>
-        ))}
+    <div className={`ex-rampa-pliegue${plegando ? ' plegando' : ''}`}>
+      <div className="ex-rampa">
+        <div className="ex-rampa-hd">
+          <span>Aproximación</span>
+          {!estado.completa && (
+            <button type="button" className="linkcard" onClick={() => marcarCalentado(ex, false)}>Saltar</button>
+          )}
+        </div>
+        <div className="ex-rampa-pasos" ref={pasosRef} style={{ '--avance': estado.avance }}>
+          {estado.pasos.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`ex-paso${s.estado === 'hecho' ? ' hecho' : s.estado === 'activo' ? ' cur' : ''}`}
+              aria-current={s.estado === 'activo' ? 'step' : undefined}
+              aria-label={`Aproximación ${pctDe(s)}: ${wDisplay(s.w)} ${unidad} por ${s.reps}${s.estado === 'hecho' ? ', hecha. Tocá para deshacer' : ''}`}
+              onClick={() => tocar(i)}
+            >
+              <i>{s.estado === 'hecho' ? <Check size={18} /> : pctDe(s)}</i>
+              <b>{wDisplay(s.w)}<small> {unidad}</small></b>
+              <span>× {s.reps}</span>
+            </button>
+          ))}
+        </div>
+        <div className={`ex-rampa-ok${estado.completa ? ' on' : ''}`} role="status">
+          <div><p>{estado.completa ? 'Aproximación completa · ahora la serie efectiva' : ''}</p></div>
+        </div>
       </div>
     </div>
   );
@@ -691,6 +709,35 @@ function ExerciseSlide({ m, wd, started }) {
   const rampa = calentar ? warmupSets(obj?.peso ?? last?.at(-1)?.w, wStep()) : [];
 
   const unidad = S.cfg.unit === 'kg' ? 'kg' : 'lb';
+
+  /* La rampa la hace el botón grande: mientras quedan aproximaciones dice
+     cuál toca, en ámbar; después vuelve a ser "Serie 1 lista". */
+  const rampaEstado = estadoRampa(rampa, calentar ? pasosRampa(ex.id) : 0);
+  const boton = estadoBoton({
+    rampa,
+    hechos: rampaEstado.hechos,
+    serie: { etiqueta: uni ? (v.side === 'left' ? 'Izquierda' : 'Derecha') : `Serie ${serieHechas + 1}`, w: v.w, r: v.r },
+    unidad,
+    fmtPeso: wDisplay,
+  });
+  const rampaCompleta = calentar && rampaEstado.completa;
+  /* Completa: primero se ve el último ✓ y la línea de "completa" (D.momento),
+     después la rampa se pliega por altura (D.panel), y recién entonces
+     marcarCalentado() marca el bloque y arranca el descanso. Si la tarjeta
+     monta con la rampa ya completa (se recargó la app en esa ventana) se
+     marca de una, sin repetir la animación ni un descanso que ya pasó. */
+  const [plegando, setPlegando] = useState(false);
+  const exRef = useRef(ex);
+  useEffect(() => { exRef.current = ex; });
+  const completaAlMontar = useRef(rampaCompleta);
+  useEffect(() => {
+    if (!rampaCompleta) return;
+    if (completaAlMontar.current) { marcarCalentado(exRef.current, false); return; }
+    if (menosMovimiento()) { marcarCalentado(exRef.current, true); return; }
+    const plegar = setTimeout(() => setPlegando(true), D.momento);
+    const marcar = setTimeout(() => marcarCalentado(exRef.current, true), D.momento + D.panel);
+    return () => { clearTimeout(plegar); clearTimeout(marcar); };
+  }, [rampaCompleta]);
   const altRef = useRef(null), pwRef = useRef(null), valRef = useRef(null);
   // altRef/pwRef sin controlar (refs, no state): son texto derivado que cambia
   // con cada peso y no vale un bump() de toda la app — peso/reps viven enteros
@@ -886,7 +933,7 @@ function ExerciseSlide({ m, wd, started }) {
 
             {calentar && (
               <motion.div variants={pieza}>
-                {rampa.length ? <Rampa ex={ex} rampa={rampa} /> : (
+                {rampa.length ? <Rampa ex={ex} estado={rampaEstado} unidad={unidad} plegando={plegando} /> : (
                   <div className="ex-aprox">
                     <div className="ex-aprox-t">
                       <span className="txt-warn">Aproximación</span>{' · '}3 series subiendo hasta tu peso de trabajo: 5, 3 y 1 reps
@@ -948,22 +995,34 @@ function ExerciseSlide({ m, wd, started }) {
             <motion.div variants={pieza}>
               <button
                 type="button"
-                className="btn-serie"
+                className={`btn-serie${boton.variante === 'aprox' ? ' aprox' : ''}`}
                 onClick={e => {
                   // "Juice" de videojuego: squash & stretch en el botón + una
                   // ráfaga de partículas en el punto de toque, sobre la acción
                   // más repetida de toda la app. saveSet() va después: la
                   // animación es visual y no depende del resultado.
                   squashStretch(e.currentTarget);
+                  // Durante la rampa el mismo botón avanza una aproximación
+                  // (vibra y se guarda en el borrador); las partículas quedan
+                  // para la serie de verdad.
+                  if (boton.variante === 'aprox') { avanzarRampa(ex.id, rampa.length); return; }
                   impactBurst(e.clientX, e.clientY, { color: 'var(--ok)' });
+                  // La serie llegó antes de que la rampa terminara de
+                  // plegarse: el bloque igual queda calentado (el descanso lo
+                  // arranca saveSet, no hace falta otro).
+                  if (rampaCompleta) marcarCalentado(ex, false);
                   saveSet(ex.id);
                 }}
               >
                 <span className="btn-serie-ok" aria-hidden="true"><Check size={22} /></span>
-                <span className="btn-serie-t">{uni ? (v.side === 'left' ? 'Izquierda' : 'Derecha') : `Serie ${serieHechas + 1}`} lista</span>
+                {/* key: el rótulo nuevo entra con un fundido corto en vez de
+                    cambiar de golpe ("Aprox. 50 %" → "75 %" → "Serie 1"). */}
+                <span className="btn-serie-t" key={boton.texto}>{boton.texto}</span>
                 {/* Lo que va a quedar anotado: se confirma de un vistazo antes
-                    de tocar. Se actualiza con las ruedas (syncDependents). */}
-                <small ref={valRef}>{wDisplay(v.w)} {unidad} × {v.r}</small>
+                    de tocar. En modo serie lo actualizan las ruedas
+                    (syncDependents, por valRef); en modo aproximación es el
+                    peso del paso y las ruedas no lo tocan. */}
+                <small key={boton.variante === 'aprox' ? boton.valor : 'serie'} ref={boton.variante === 'serie' ? valRef : undefined}>{boton.valor}</small>
               </button>
             </motion.div>
           </motion.div>
