@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { createContext, useContext, useSyncExternalStore } from 'react';
 import { idb } from './db.js';
 import { dstr, fmtNum, round1, kg2lb, lb2kg, KG2LB, vibrate } from './format.js';
 
@@ -94,11 +94,33 @@ export function bump() {
   listeners.forEach(l => l());
 }
 function subscribe(cb) { listeners.add(cb); return () => listeners.delete(cb); }
-function getSnapshot() { return version; }
+
+/* ─── La pantalla que se va, congelada (G4, auditoría 2026-09) ───────────
+
+   Al cambiar de pestaña, la pantalla vieja sigue montada ~480 ms mientras
+   se desliza afuera: es la misma pantalla viva, no una copia (App.jsx). Sus
+   componentes se suscriben con useStore(), así que el bump() del propio
+   cambio la hacía renderizar otra vez —Progreso entero, con sus cálculos y
+   su gráfico— en el mismo cuadro en que se monta la nueva.
+
+   App envuelve cada pantalla en PantallaCtx con el id de su pestaña. Al
+   salir, changeTab() anota la versión que esa pantalla ya pintó, y mientras
+   esté anotada useStore() le devuelve ésa: el store "no cambió" y React no
+   la vuelve a renderizar. Se borra al volver a ser la de adelante. Fuera de
+   una pantalla (App, la barra, las hojas) el contexto es null y todo sigue
+   igual. */
+export const PantallaCtx = createContext(null);
+const congeladas = new Map();   // tab → versión en la que quedó
+
+/** La versión del store que ve una pantalla (null = fuera de pantalla). */
+export function versionDePantalla(tab) {
+  return tab != null && congeladas.has(tab) ? congeladas.get(tab) : version;
+}
 
 /** Suscribe el componente a S y devuelve el objeto vivo (léelo directo, ej. S.sessions). */
 export function useStore() {
-  useSyncExternalStore(subscribe, getSnapshot);
+  const tab = useContext(PantallaCtx);
+  useSyncExternalStore(subscribe, () => versionDePantalla(tab));
   return S;
 }
 
@@ -324,6 +346,8 @@ export const lastTabChangeUsedVT = false;
    que conserva su nodo porque lleva la misma key (ver App.jsx). */
 export function changeTab(t, extra) {
   if (S.tab === t) return;
+  congeladas.set(S.tab, version);   // la que se va (ver PantallaCtx)
+  congeladas.delete(t);             // la que llega, aunque se estuviera yendo
   S.tab = t;
   extra?.();
   bump();

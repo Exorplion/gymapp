@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { idbOpenOnce } from './lib/db.js';
 import { elegirBase } from './lib/modoPrueba.js';
 import { ensurePersisted } from './lib/persist.js';
-import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT, resolveAutoRest, saveCfg } from './lib/state.js';
+import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT, resolveAutoRest, saveCfg, PantallaCtx } from './lib/state.js';
 import { dstr } from './lib/format.js';
 import { applyComputedGoals } from './lib/macros.js';
 import { initDragListeners } from './lib/drag.js';
@@ -153,6 +153,13 @@ const ORDEN = TAB_ORDEN;
 /* Qué componente va para cada pestaña — la usan tanto la pantalla activa
    como la saliente (Task de transición), así que vive aparte del JSX del
    render para no duplicar el bloque de cinco casos. */
+/** La pantalla de una pestaña, dentro de su PantallaCtx: así, cuando se va,
+    changeTab() la congela y el bump del cambio no la vuelve a renderizar
+    mientras se desliza afuera (state.js, "La pantalla que se va"). */
+function pantallaCon(tab) {
+  return <PantallaCtx.Provider value={tab}>{pantallaDe(tab)}</PantallaCtx.Provider>;
+}
+
 function pantallaDe(tab) {
   switch (tab) {
     case 'inicio': return <Inicio />;
@@ -371,16 +378,21 @@ export default function App() {
      suyo (ver el comentario en el JSX de main): mismo objeto = React no la
      vuelve a renderizar mientras se va. */
   const pantallas = useRef({});
-  const entrante = pantallaDe(store.tab);
+  const entrante = pantallaCon(store.tab);
   pantallas.current[store.tab] = entrante;
   /* La saliente tiene que estar YA en el render del cambio de pestaña, no
      recién en el siguiente (el de setSaliente, en el useLayoutEffect de
      arriba): si en ese primer commit su key desaparece aunque sea una vez,
      React desmonta la pantalla vieja y después la monta de cero. Mismas
      condiciones que el efecto: sin View Transition y sin arrastre. */
-  const vistaSaliente = saliente
-    ?? (store.tab !== tabPrevio.current && !lastTabChangeUsedVT && !porArrastre.current
-      ? { tab: tabPrevio.current, dir } : null);
+  const cambioPendiente = store.tab !== tabPrevio.current;
+  /* Con un cambio pendiente manda el recién hecho, aunque todavía quede el
+     `saliente` de un cambio anterior (tocaste dos pestañas seguidas): ese ya
+     no es la que se va, y si es la que vuelve, las dos vistas tendrían la
+     misma key. */
+  const vistaSaliente = cambioPendiente
+    ? (!lastTabChangeUsedVT && !porArrastre.current ? { tab: tabPrevio.current, dir } : null)
+    : (saliente && saliente.tab !== store.tab ? saliente : null);
 
   // Puerto del arranque original (el script inline al final de index.html
   // hacía idbOpen().then(loadAll) antes de la primera render()). loadAll()
@@ -575,14 +587,15 @@ export default function App() {
             obligaba a recalcular estilos y layout de toda la pantalla vieja
             en el mismo cuadro en que se monta la nueva: 100–240 ms a 6×.
             Y no se vuelve a renderizar: el elemento es el mismo objeto que
-            React ya tenía (pantallas.current), así que se saltea. Se
+            React ya tenía (pantallas.current), así que se saltea, y sus
+            useStore() quedan congelados (PantallaCtx, state.js). Se
             desmonta a los 480 ms, cuando ya salió del marco. */}
         {vistaSaliente && (
           <div
             key={vistaSaliente.tab}
             className={`view leave dir-${vistaSaliente.dir}${listoParaAnimar ? '' : ' esperando'}`}
           >
-            {pantallas.current[vistaSaliente.tab] ?? pantallaDe(vistaSaliente.tab)}
+            {pantallas.current[vistaSaliente.tab] ?? pantallaCon(vistaSaliente.tab)}
           </div>
         )}
         {/* La vecina, sólo mientras dura el gesto: esperando fuera del marco,
