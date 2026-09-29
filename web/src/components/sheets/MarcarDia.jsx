@@ -22,6 +22,7 @@ import { toast } from '../../lib/toast.js';
 import { registrarDiaEntrenado } from '../../lib/session.js';
 import { fmtDFull } from '../../lib/format.js';
 import { catOf } from '../../lib/muscle.js';
+import { AvisoPrueba } from './SalirPrueba.jsx';
 
 export default function MarcarDia({ fecha }) {
   const ya = S.sessions.filter(s => s.date === fecha);
@@ -57,6 +58,7 @@ export default function MarcarDia({ fecha }) {
   return (
     <>
       <h2>{fmtDFull(fecha)}</h2>
+      <AvisoPrueba />
 
       {ya.length > 0 && (
         <>

@@ -946,9 +946,11 @@ export async function completeSession() {
   try {
     const { tocaAutoBackup } = await import('./persist.js');
     const { enModoPrueba } = await import('./modoPrueba.js');
-    // Un respaldo de la copia de prueba en Descargas se confundiría con uno
-    // de verdad: en modo prueba no se baja nada.
-    if (!enModoPrueba() && tocaAutoBackup(S.cfg, S.sessions.length)) {
+    // En modo prueba se respalda SIEMPRE, con otro nombre de archivo
+    // (fierro-prueba-…json, backup.js). Antes no se bajaba nada "para no
+    // confundir", y las sesiones que Enzo entrenó de verdad en la copia (27 y
+    // 28 de septiembre) no quedaron en ningún lado cuando la copia se borró.
+    if (enModoPrueba() || tocaAutoBackup(S.cfg, S.sessions.length)) {
       const { exportJSON } = await import('./backup.js');
       await exportJSON({ auto: true });
     }
@@ -1172,7 +1174,10 @@ export async function registrarDiaEntrenado(dateStr, slotId) {
   }
   vibrate(15);
   bump();
-  toast(`Anotado: ${sess.dayName} el ${fmtD(dateStr)}`);
+  const { enModoPrueba } = await import('./modoPrueba.js');
+  toast(enModoPrueba()
+    ? `Anotado en la copia de prueba: ${sess.dayName} el ${fmtD(dateStr)}`
+    : `Anotado: ${sess.dayName} el ${fmtD(dateStr)}`);
   return sess;
 }
 

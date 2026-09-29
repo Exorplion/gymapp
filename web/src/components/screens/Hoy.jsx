@@ -35,6 +35,7 @@ import { objetivoHoy, resumenPlan } from '../../lib/objetivoHoy.js';
 import { toast } from '../../lib/toast.js';
 import { Bolt, Mic, Pencil, RecordDot, Dots, Plus, Check } from '../Icon.jsx';
 import { HoySinPlan } from '../Illustration.jsx';
+import { AvisoPrueba } from '../sheets/SalirPrueba.jsx';
 import Silhouette from '../Silhouette.jsx';
 
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
@@ -235,6 +236,7 @@ export function TerminarSesion() {
   return (
     <>
       <h2>Terminar la sesión</h2>
+      <AvisoPrueba>Estás en la <b>copia de prueba</b>: esta sesión no llega a tus datos reales hasta que salgas del modo prueba y elijas pasarla.</AvisoPrueba>
       <div className="txt-mut" style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 18 }}>
         {nsets
           ? `Llevás ${nsets} serie${nsets === 1 ? '' : 's'} registrada${nsets === 1 ? '' : 's'}.`

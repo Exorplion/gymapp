@@ -371,6 +371,22 @@ header.top{
   font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-sm);letter-spacing:.14em;text-transform:uppercase;color:var(--warn);
 }
 .pastilla-prueba-dot{width:8px;height:8px;border-radius:var(--r-full);background:var(--warn);box-shadow:0 0 10px var(--warn)}
+/* Modo prueba inconfundible (2026-09-29). La pastilla sola no alcanzó: Enzo
+   entrenó dos días de verdad en la copia sin darse cuenta. Un marco ámbar
+   alrededor de TODA la app, con una lengüeta "PRUEBA" arriba al centro. Es
+   fixed y no toma toques: no mueve el layout ni rompe el "sin scroll". */
+.marco-prueba{
+  position:fixed;inset:0;z-index:90;pointer-events:none;
+  border:3px solid var(--warn);
+  box-shadow:inset 0 0 28px -6px rgba(var(--warn-rgb),.45);
+}
+.marco-prueba-rot{
+  position:absolute;top:env(safe-area-inset-top);left:50%;transform:translateX(-50%);
+  padding:1px 10px 2px;border-radius:0 0 var(--r-sm) var(--r-sm);
+  background:var(--warn);color:var(--on-warn);
+  font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-micro);letter-spacing:.22em;line-height:1.3;
+}
+header.top.en-prueba{border-bottom-color:rgba(var(--warn-rgb),.5);background:linear-gradient(rgba(var(--warn-rgb),.12),rgba(var(--bg-rgb),.8))}
 .brand{
   font-family:'Barlow Condensed';font-weight:700;font-style:italic;
   font-size:var(--t-xl);letter-spacing:.2em;

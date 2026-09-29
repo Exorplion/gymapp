@@ -44,11 +44,13 @@ import { PRESETS, acentoDe, acentoGuardado, aplicarAcento, alejarDeEstados, dist
 import { motion } from 'motion/react';
 import { hojaProps, seccion } from '../../lib/variants.js';
 import AvisosAjustes from '../AvisosAjustes.jsx';
-import { enModoPrueba, entrarModoPrueba, salirModoPrueba } from '../../lib/modoPrueba.js';
+import { enModoPrueba, entrarModoPrueba } from '../../lib/modoPrueba.js';
 
-/** Entrar y salir del modo prueba (modoPrueba.js). No pide confirmación:
-    entrar sólo copia, y salir sólo tira la copia — ninguno de los dos toca
-    la base real. */
+/** Entrar y salir del modo prueba (modoPrueba.js). Entrar sólo copia. Salir
+    pasa por la hoja 'salir-prueba' (2026-09-29): antes tiraba la copia sin
+    preguntar, con el argumento de que "no toca la base real" — cierto, pero
+    lo que se tiraba podía ser entrenamiento real (así se perdieron el 27 y el
+    28 de Enzo). Ahora dice qué hay en la copia y ofrece pasarlo. */
 function ModoPrueba() {
   const [ocupado, setOcupado] = useState(false);
   const en = enModoPrueba();
@@ -64,11 +66,11 @@ function ModoPrueba() {
     <>
       <div className="txt-mut" style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
         {en
-          ? <>Estás en una <b>copia</b> de tus datos. Entrená, registrá y descartá lo que quieras: al salir la copia se borra entera y tu app vuelve tal como estaba.</>
+          ? <>Estás en una <b>copia</b> de tus datos. Lo que registres acá no llega a tus datos reales: al salir te muestro qué registraste y elegís si pasarlo o descartarlo.</>
           : 'Una copia de tus datos para simular un entrenamiento y probar cosas nuevas. Nada de lo que hagas ahí llega a tu progreso real.'}
       </div>
       {en
-        ? <button type="button" className="btn" style={{ marginBottom: 10 }} onClick={() => salirModoPrueba()}>Salir y descartar la copia</button>
+        ? <button type="button" className="btn" style={{ marginBottom: 10 }} onClick={() => openSheet('salir-prueba')}>Salir del modo prueba</button>
         : <button type="button" className="btn ghost" style={{ marginBottom: 10 }} onClick={entrar} disabled={ocupado}>{ocupado ? 'Copiando tus datos…' : 'Entrar al modo prueba'}</button>}
     </>
   );

@@ -8,17 +8,13 @@
 import { useEffect, useRef } from 'react';
 import { Flame } from './Icon.jsx';
 import { pulseLike, countTo } from '../lib/motion.js';
-import { enModoPrueba, salirModoPrueba } from '../lib/modoPrueba.js';
+import { enModoPrueba } from '../lib/modoPrueba.js';
 import { openSheet } from '../lib/state.js';
 
-function confirmarSalir() {
-  openSheet('confirm', {
-    title: 'Salir del modo prueba',
-    body: 'Se borra la copia con todo lo que hiciste acá y volvés a tu app real, tal como estaba.',
-    confirmLabel: 'Salir',
-    onConfirm: () => salirModoPrueba(),
-  })
-}
+/* Salir pasa por la hoja que dice qué hay en la copia y ofrece pasarlo a tus
+   datos reales (SalirPrueba.jsx). Antes era una confirmación genérica y así
+   se perdieron dos días de entrenamiento real. */
+const confirmarSalir = () => openSheet('salir-prueba');
 
 export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenStreak = () => {}, onOpenSessions = () => {} }) {
   const flameRef = useRef(null);
@@ -39,7 +35,7 @@ export default function Header({ streak = 0, onOpenSettings = () => {}, onOpenSt
   }, [streak]);
 
   return (
-    <header className="top">
+    <header className={`top${enModoPrueba() ? ' en-prueba' : ''}`}>
       {/* Modo prueba: la pastilla ámbar ocupa el lugar de la marca. Antes era
           una franja de todo el ancho debajo del header (2026-09-25): comía
           ~45 px en cada pantalla y la sesión en vivo, que tiene que entrar

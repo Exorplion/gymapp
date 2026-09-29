@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { idbOpenOnce } from './lib/db.js';
-import { elegirBase } from './lib/modoPrueba.js';
+import { elegirBase, pruebaDeOtroDia } from './lib/modoPrueba.js';
 import { ensurePersisted } from './lib/persist.js';
 import { S, useStore, bump, loadAll, closeSheet, openSheet, TAB_ORDEN, changeTab, lastTabChangeUsedVT, resolveAutoRest, saveCfg, PantallaCtx } from './lib/state.js';
 import { dstr } from './lib/format.js';
@@ -54,6 +54,7 @@ import GymEquip from './components/sheets/GymEquip.jsx';
 import GymPhotoView from './components/sheets/GymPhotoView.jsx';
 import RoutineWizard from './components/sheets/RoutineWizard.jsx';
 import YearRecap from './components/sheets/YearRecap.jsx';
+import SalirPrueba, { MarcoPrueba } from './components/sheets/SalirPrueba.jsx';
 import Calentamiento from './components/sheets/Calentamiento.jsx';
 import ExOpciones from './components/sheets/ExOpciones.jsx';
 
@@ -86,7 +87,7 @@ function ConfirmSheet({ title, body, confirmLabel, onConfirm, onCancel }) {
 // Progreso, Ajustes) van a sumar sus propios casos acá mismo.
 /* Las hojas que son una pregunta corta, no contenido: salen como tarjeta
    flotante (Sheet variante="dialogo"). */
-const DIALOGOS = new Set(['confirm', 'terminar-sesion']);
+const DIALOGOS = new Set(['confirm', 'terminar-sesion', 'salir-prueba']);
 /* Y los que van a pantalla completa (variante "pantalla"): el asistente de
    agregar ejercicio. Son pasos que se contestan, no una hoja que se lee, y
    cada uno tiene que entrar entero sin scroll (spec 2026-09-27 §1). */
@@ -133,6 +134,7 @@ function SheetContent({ sheet }) {
     case 'gym-equip': return <GymEquip {...sheet.props} />;
     case 'gym-photo': return <GymPhotoView {...sheet.props} />;
     case 'year-recap': return <YearRecap {...sheet.props} />;
+    case 'salir-prueba': return <SalirPrueba {...sheet.props} />;
     default: return null;
   }
 }
@@ -422,6 +424,10 @@ export default function App() {
       if (migrado) { S.cfg.acento = sel; delete S.cfg.themeColor; saveCfg(); }
       aplicarAcento(sel);
       bump();
+      // Seguís en el modo prueba desde otro día: antes que cualquier otra
+      // cosa se pregunta si seguís (2026-09-29). Quedarse días en la copia
+      // sin darse cuenta fue como se perdieron el 27 y el 28 de Enzo.
+      if (pruebaDeOtroDia()) { openSheet('salir-prueba', { motivo: 'otro-dia' }); return; }
       // Recién con los datos cargados: el formulario de peso usa S.body para
       // el placeholder con tu último registro.
       accionDeArranque();
@@ -555,6 +561,7 @@ export default function App() {
 
   return (
     <>
+      <MarcoPrueba />
       <Header
         streak={currentStreak()}
         onOpenStreak={() => openSheet('streak-detail')}

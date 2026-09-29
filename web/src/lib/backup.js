@@ -48,6 +48,14 @@ const blobADataURL = blob => new Promise((res, rej) => {
   fr.readAsDataURL(blob);
 });
 
+/** El nombre del archivo. La copia del modo prueba se baja con otro nombre
+    (2026-09-29): antes en prueba no se bajaba nada "para no confundir", y por
+    eso lo que Enzo entrenó en la copia no quedó en ningún archivo. Con otro
+    nombre deja rastro sin mezclarse con los respaldos de verdad. */
+export function nombreRespaldo(prueba, fecha = dstr()) {
+  return `fierro-${prueba ? 'prueba' : 'backup'}-${fecha}.json`;
+}
+
 /** `auto` = lo disparó la app al cerrar una sesión, no un toque en Ajustes.
     Sólo cambia lo que se dice: un archivo que aparece en Descargas sin que
     lo hayas pedido tiene que explicarse solo, o parece un error. */
@@ -75,7 +83,9 @@ export async function exportJSON({ auto = false } = {}) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `fierro-backup-${dstr()}.json`;
+    const { enModoPrueba } = await import('./modoPrueba.js');
+    const prueba = enModoPrueba();
+    a.download = nombreRespaldo(prueba);
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
 
@@ -85,7 +95,7 @@ export async function exportJSON({ auto = false } = {}) {
 
     const nF = photos.length;
     toast(auto
-      ? 'Respaldo automático guardado en Descargas'
+      ? (prueba ? 'Respaldo de la copia de prueba guardado en Descargas' : 'Respaldo automático guardado en Descargas')
       : `Backup descargado${nF ? ` · incluye ${nF} foto${nF > 1 ? 's' : ''}` : ''}`);
   } catch {
     // Nunca en silencio: si el respaldo no salió, el usuario TIENE que
