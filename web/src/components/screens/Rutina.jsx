@@ -602,9 +602,14 @@ function SlotCard({ slot, index, n, editing }) {
   if (!on) {
     return (
       <div className="day-card">
-        <div className="day-head" style={{ cursor: 'default' }}>
-          <span className="day-badge off">{n}</span>
-          <span className="grow"><span className="t">Descanso</span><span className="s">libre</span></span>
+        {/* El mismo .day-headrow que los turnos de entrenamiento: con el
+            .day-head suelto la insignia y el nombre quedaban 4 px más a la
+            derecha (auditoría total, E2). */}
+        <div className="day-headrow">
+          <div className="day-head" style={{ cursor: 'default' }}>
+            <span className="day-badge off">{n}</span>
+            <span className="grow"><span className="t">Descanso</span><span className="s">libre</span></span>
+          </div>
         </div>
       </div>
     );

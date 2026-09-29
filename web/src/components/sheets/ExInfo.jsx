@@ -66,7 +66,7 @@ export default function ExInfo({ name, exId }) {
         </>
       ) : (
         <motion.div variants={seccion} className="my-2 text-sm leading-relaxed text-text-2">
-          No tengo ficha educativa de este ejercicio todavía. Igual puedes registrarlo y seguir su progresión con normalidad.
+          No tengo ficha educativa de este ejercicio todavía. Igual podés registrarlo y seguir su progresión con normalidad.
         </motion.div>
       )}
       {scheme && (
@@ -74,16 +74,18 @@ export default function ExInfo({ name, exId }) {
           <h3 className="mt-4 mb-1.5 font-cond text-lg font-semibold text-text">Esfuerzo por serie (RIR)</h3>
           <div className="mb-2 flex flex-wrap gap-2">
             {scheme.map((r, i) => (
+              // Etiquetas, no botones (auditoría total, A3): sin la píldora con
+              // borde de un chip tocable. La serie al fallo, en tiza y negrita.
               <span key={i} className={cn(
-                'inline-flex items-center rounded-full border border-line-2 bg-surface-2 px-3.5 py-2 text-sm font-semibold text-text',
-                r === 0 && 'border-transparent bg-accent text-[var(--on-accent)]',
+                'inline-flex items-center py-1 pr-2 text-sm font-semibold text-text-2',
+                r === 0 && 'font-bold text-text',
               )}>
                 Serie {i + 1}: {r === 0 ? 'al fallo' : `RIR ${r}`}
               </span>
             ))}
           </div>
           <div className="text-sm leading-relaxed text-text-2">
-            Solo el <b className="text-text">último set</b> va al fallo (RIR 0). Los primeros dejan reps en reserva para no arruinar el volumen con fatiga.
+            Sólo la <b className="text-text">última serie</b> va al fallo (RIR 0). Los primeros dejan reps en reserva para no arruinar el volumen con fatiga.
             {isLowerBackLift(name) && <> <span className="text-warn">En este ejercicio nunca vayas al fallo (zona lumbar): máximo RIR 1.</span></>}
           </div>
         </motion.div>

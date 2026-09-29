@@ -419,9 +419,9 @@ export default function Settings() {
         ) : (
           <div className="f4" style={{ marginTop: 12 }}>
             <div className="field"><label htmlFor="meta-kcal">Kcal</label><input id="meta-kcal" type="number" inputMode="numeric" defaultValue={g.kcal} onBlur={e => setGoal('kcal', e.target.value)} /></div>
-            <div className="field"><label htmlFor="meta-prot">Prot</label><input id="meta-prot" type="number" inputMode="numeric" defaultValue={g.p} onBlur={e => setGoal('p', e.target.value)} /></div>
-            <div className="field"><label htmlFor="meta-carb">Carb</label><input id="meta-carb" type="number" inputMode="numeric" defaultValue={g.c} onBlur={e => setGoal('c', e.target.value)} /></div>
-            <div className="field"><label htmlFor="meta-grasa">Grasa</label><input id="meta-grasa" type="number" inputMode="numeric" defaultValue={g.f} onBlur={e => setGoal('f', e.target.value)} /></div>
+            <div className="field"><label htmlFor="meta-prot">Prot <span className="normal-case tracking-normal">g</span></label><input id="meta-prot" type="number" inputMode="numeric" defaultValue={g.p} onBlur={e => setGoal('p', e.target.value)} /></div>
+            <div className="field"><label htmlFor="meta-carb">Carb <span className="normal-case tracking-normal">g</span></label><input id="meta-carb" type="number" inputMode="numeric" defaultValue={g.c} onBlur={e => setGoal('c', e.target.value)} /></div>
+            <div className="field"><label htmlFor="meta-grasa">Grasa <span className="normal-case tracking-normal">g</span></label><input id="meta-grasa" type="number" inputMode="numeric" defaultValue={g.f} onBlur={e => setGoal('f', e.target.value)} /></div>
           </div>
         )}
       </motion.section>
