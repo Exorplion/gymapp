@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from '../state.js';
-import { semanaDe, diasSinRegistro, lunesDe } from '../week.js';
+import { semanaDe, diasSinRegistro, lunesDe, ultimosSieteDias } from '../week.js';
 import { registrarDiaEntrenado } from '../session.js';
 import { dstr } from '../format.js';
 
@@ -56,10 +56,52 @@ describe('semanaDe', () => {
   });
 });
 
+// La tira de Inicio (2026-09-29). Antes pintaba semanaDe() —lunes a domingo
+// de la semana de HOY— y un lunes o un martes el domingo que acababa de pasar
+// quedaba afuera: el "Dom" visible era el que viene, futuro y deshabilitado.
+// Enzo perdió así la chance de anotar el domingo 27. La tira ahora es una
+// ventana móvil: los siete días que terminan hoy.
+describe('ultimosSieteDias', () => {
+  it('son 7 días que terminan HOY, con hoy a la derecha', () => {
+    const dias = ultimosSieteDias('2026-09-29');
+    expect(dias.map(d => d.fecha)).toEqual([
+      '2026-09-23', '2026-09-24', '2026-09-25', '2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29',
+    ]);
+    expect(dias[6].esHoy).toBe(true);
+    expect(dias.filter(d => d.esHoy)).toHaveLength(1);
+  });
+
+  it('nunca muestra un día futuro', () => {
+    for (const hoy of [LUN, MAR, JUE, '2026-09-13', '2026-09-28']) {
+      expect(ultimosSieteDias(hoy).some(d => d.esFuturo)).toBe(false);
+    }
+  });
+
+  it('un lunes incluye el fin de semana que acaba de pasar', () => {
+    const fechas = ultimosSieteDias('2026-09-28').map(d => d.fecha);
+    expect(fechas).toContain('2026-09-27');
+    expect(fechas).toContain('2026-09-26');
+  });
+
+  it('trae las sesiones reales de cada día y la etiqueta de su día de la semana', () => {
+    S.sessions = [{ id: 'd', date: '2026-09-27', dayName: 'Posterior A' }];
+    const dom = ultimosSieteDias('2026-09-29').find(d => d.fecha === '2026-09-27');
+    expect(dom.etiqueta).toBe('Dom');
+    expect(dom.numero).toBe(27);
+    expect(dom.sesiones).toHaveLength(1);
+  });
+
+  it('cruza el cambio de mes sin saltear ni repetir días', () => {
+    const fechas = ultimosSieteDias('2026-10-02').map(d => d.fecha);
+    expect(fechas).toEqual(['2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02']);
+  });
+});
+
 describe('diasSinRegistro', () => {
-  it('lista sólo los días pasados y vacíos, sin hoy ni el futuro', () => {
+  it('lista sólo los días pasados y vacíos de la tira, del más reciente al más viejo', () => {
     S.sessions = [{ id: 'b', date: MAR, dayName: 'Anterior A' }];
-    expect(diasSinRegistro(JUE).map(d => d.fecha)).toEqual([MIE, LUN]);
+    // Jueves 10: la tira va del viernes 4 al jueves 10.
+    expect(diasSinRegistro(JUE).map(d => d.fecha)).toEqual([MIE, LUN, '2026-09-06', '2026-09-05', '2026-09-04']);
   });
 });
 

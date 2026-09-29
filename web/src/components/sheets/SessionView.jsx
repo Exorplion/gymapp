@@ -11,7 +11,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { S, useStore, openSheet, closeSheet } from '../../lib/state.js';
 import { fmtDFull, fmtNum, round1, uid } from '../../lib/format.js';
-import { sessionPRs, deleteHistorySession, updateHistorySession, entryDelta, groupSets } from '../../lib/session.js';
+import { sessionPRs, deleteHistorySession, updateHistorySession, entryDelta, groupSets, cargarSeriesRetro } from '../../lib/session.js';
 import { pinAddedToRoutine } from '../../lib/rutina-logic.js';
 import { catOf } from '../../lib/muscle.js';
 import { equipLabel, exKey } from '../../lib/equip.js';
@@ -92,12 +92,15 @@ export default function SessionView({ id, justFinished = false }) {
   return (
     <>
       <h2>{justFinished ? `${hasPR ? '🎉' : '💪'} Sesión guardada` : (s.dayName || 'Entrenamiento')}</h2>
+      {/* Una sesión anotada a mano no tiene duración medida (null = "no se
+          sabe"): antes quedaba "· min" y un "MIN" vacío. Se dice lo que es. */}
       <div className="sheet-sub">
-        {justFinished ? `${s.dayName || 'Entrenamiento'} · ` : ''}{fmtDFull(s.date)} · {s.duration} min
+        {justFinished ? `${s.dayName || 'Entrenamiento'} · ` : ''}{fmtDFull(s.date)}
+        {s.duration != null ? ` · ${s.duration} min` : s.retro ? ' · anotada a mano' : ''}
       </div>
 
       <div className="stats" style={{ '--n': 4 }}>
-        <div><div className="n">{s.duration}</div><span className="l">Min</span></div>
+        <div><div className="n">{s.duration ?? '—'}</div><span className="l">Min</span></div>
         <div><div className="n">{nsets}</div><span className="l">Series</span></div>
         <div><div className="n">{entries.length}</div><span className="l">Ejercicios</span></div>
         <div><div className="n">{Math.round(vol)}</div><span className="l">Kg vol.</span></div>
@@ -159,6 +162,21 @@ export default function SessionView({ id, justFinished = false }) {
       )}
 
       <div className="sect">Lo que hiciste</div>
+      {/* Día anotado a mano sin series (MarcarDia): se pueden cargar acá. Se
+          arranca de lo que hiciste la última vez antes de ese día (o de tu
+          meta) y se abre la corrección para ajustar lo que haya sido
+          distinto. Desde ahí cuenta como cualquier sesión: historial,
+          progresión y récords, con la fecha de ese día. */}
+      {!entries.length && (
+        <div className="card" style={{ marginBottom: 'var(--s3)' }}>
+          <p className="ptext" style={{ marginBottom: 12 }}>
+            Sin series registradas. Cargalas con lo que hiciste la última vez y corregí lo que haya sido distinto.
+          </p>
+          <button type="button" className="btn" onClick={async () => { if (await cargarSeriesRetro(s.id)) setEditando(true); }}>
+            Cargar las series de ese día
+          </button>
+        </div>
+      )}
       <div ref={entriesRef}>
       {entries.map((e, ei) => (
         <EntryCard

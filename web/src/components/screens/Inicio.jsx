@@ -13,8 +13,8 @@
 // lib/bodydata.js) y el grid usa la tipografía condensada e itálica y los
 // degradados cian/azul que ya son de Fierro.
 //
-// La tira de arriba es la SEMANA REAL (SemanaReal, lib/week.js): siete días
-// por fecha con lo que de verdad entrenaste. Ojo con el comentario histórico
+// La tira de arriba es la SEMANA REAL (SemanaReal, lib/week.js): los siete
+// días que terminan hoy, por fecha, con lo que de verdad entrenaste. Ojo con el comentario histórico
 // que decía que un calendario "mentiría sobre cómo funciona la app": eso valía
 // —y sigue valiendo— para el PLAN, porque la rutina de Fierro no vive en
 // casilleros lun-dom sino en una SECUENCIA que avanza sólo cuando entrenás
@@ -26,7 +26,7 @@ import { WDS, MO, dstr, fmtD, fmtNum, round1 } from '../../lib/format.js';
 import { pendingSlot, sesionDeHoy, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
 import { daysSinceAll, stalestGroups, untrainedGroups, MUSCLE_CATS } from '../../lib/muscle.js';
 import { diasPorPorcion } from '../../lib/fibras.js';
-import { semanaDe } from '../../lib/week.js';
+import { ultimosSieteDias } from '../../lib/week.js';
 import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
 import Silhouette from '../Silhouette.jsx';
@@ -173,7 +173,13 @@ export default function Inicio() {
   );
 }
 
-/** La semana REAL, de lunes a domingo, con lo que de verdad pasó.
+/** La semana REAL: los siete días que terminan HOY, con lo que de verdad pasó.
+
+    Hasta el 2026-09-29 era lunes a domingo de la semana de hoy, y un lunes o
+    un martes el domingo que acababa de pasar no aparecía: el "Dom" visible
+    era el próximo, futuro y deshabilitado. Enzo no pudo anotar el domingo 27
+    por eso. Ahora es una ventana móvil (ultimosSieteDias): hoy a la derecha,
+    los seis anteriores a mano, ningún día futuro.
 
     Muestra los HECHOS: qué días de esta semana entrenaste de verdad. El PLAN
     (la secuencia de turnos, que avanza cuando entrenás y no por fecha) vive en
@@ -195,7 +201,7 @@ export default function Inicio() {
     NO se puede tocar y se pinta distinto — "todavía no llegó" no es lo mismo
     que "no entrenaste", y pintarlos igual sería afirmar algo sobre el futuro. */
 function SemanaReal() {
-  const dias = semanaDe();
+  const dias = ultimosSieteDias();
   /* Un día declarado libre no es un día "sin registrar": ya contestaste la
      pregunta. Reclamarlo igual sería la app pidiéndote que le confirmes algo
      que vos mismo le dijiste. */
@@ -204,7 +210,7 @@ function SemanaReal() {
 
   return (
     <>
-      <div className="wkreal" role="group" aria-label="Tu semana">
+      <div className="wkreal" role="group" aria-label="Tus últimos 7 días">
         {dias.map(d => {
           const hecho = d.sesiones.length > 0;
           const cls = ['wkreal-d', hecho ? 'on' : '', d.esHoy ? 'hoy' : '', d.esFuturo ? 'fut' : ''].filter(Boolean).join(' ');

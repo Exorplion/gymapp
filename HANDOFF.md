@@ -4,6 +4,89 @@
 
 ---
 
+## SESIÓN 2026-09-29 (b) — Días pasados y modo prueba seguro
+
+Rama `fix/dias-pasados-y-prueba` (sobre main con #130), PR abierto sin
+mergear. **1026 tests.** Diagnóstico en `docs/debug-2026-09-29-datos-y-domingo.md`
+(ahora con "Arreglado").
+
+**Qué le pasó a Enzo (27 y 28 de septiembre).** Causa más probable (no
+confirmada con él): registró el domingo y el lunes estando en MODO PRUEBA; al
+salir, la copia `fierro-prueba` se borró entera (`deleteDatabase`) con esas
+dos sesiones adentro. En prueba no corría el respaldo automático, así que no
+quedaron en ningún JSON. Esa copia no se puede recuperar. Y no podía volver a
+cargarlas: la tira de Inicio era lun–dom de la semana de hoy (el domingo 27 no
+aparecía; el "Dom" era el 4-oct, futuro), anotar un día pasado guardaba el
+turno sin series y el peso corporal sólo se guardaba con fecha de hoy.
+
+Bug 2 — registrar días pasados:
+- **Tira = los últimos 7 días que terminan hoy** (`ultimosSieteDias`,
+  week.ts). `semanaDe()` queda como semana calendario lun–dom (nadie más la
+  usaba; la racha usa streak.ts). `diasSinRegistro` mira la tira.
+- **Series de un día pasado**: MarcarDia → turno → abre SessionView, que
+  ofrece "Cargar las series de ese día" (`cargarSeriesRetro`), prellenadas
+  con la última vez ANTES de esa fecha (`seriesPrellenadas`; sin historial,
+  la meta/peso de partida × series del plan) y abre la corrección. Cuenta
+  como sesión real (historial, progresión, PRs) con su fecha; sigue con
+  `retro: true`. Un turno ya anotado ese día se abre en vez de avisar
+  "repetido". "· min" vacío arreglado (`duration: null` → "anotada a mano", "—").
+- **Peso y medidas con fecha** (BodyForm, selector en la fila del peso, por
+  defecto hoy, `max` hoy). Guardado en `lib/cuerpo.js`: un peso viejo NO
+  pisa el peso del perfil (macros).
+- La línea "¿Entrenaste el …?" quedó más compacta: con la ventana móvil casi
+  siempre hay un día vacío y empujaba el grid 31 px bajo la barra a 390×844.
+
+Bug 1 — que el modo prueba no se coma datos reales:
+- Salir (pastilla del header, Ajustes, y la pregunta de otro día) pasa por la
+  hoja `salir-prueba` (SalirPrueba.jsx): "Registraste N sesiones y M pesos en
+  la prueba", con la lista, y "Pasarlas a mis datos reales" / "Descartarlas" /
+  "Seguir en prueba". Merge en `modoPrueba.js` (`diferenciasPrueba`,
+  `resumenPrueba`, `pasarPruebaAReal`): por id, sin duplicar turno+fecha ni
+  peso igual el mismo día; sesiones corregidas en la prueba cuentan; el
+  `seqIndex` sigue a la prueba si lo pasado es lo más reciente. Una sesión en
+  curso en la prueba se avisa (no se pasa).
+- Ajustes ya no borra sin preguntar ("Salir del modo prueba").
+- Terminar la sesión y anotar un día pasado avisan "copia de prueba"
+  (`AvisoPrueba`); el toast de anotar también.
+- Al abrir la app otro día que el de entrada (`fierro-modo-prueba-desde` en
+  localStorage) pregunta "¿Seguís en modo prueba?". Una prueba de antes de
+  este arreglo (sin fecha) también pregunta.
+- Respaldo automático también en prueba, SIEMPRE al completar, como
+  `fierro-prueba-AAAA-MM-DD.json` (`nombreRespaldo`, backup.js).
+- Marco ámbar fijo alrededor de toda la app con lengüeta "PRUEBA" y header
+  teñido (`.marco-prueba`, tokens `--warn`/`--on-warn`, sin toques, no mueve el layout).
+
+Verificado en Chrome (build + preview :4189, SW desregistrado, `seedRegistro`,
+reloj fijado al 29-sep): tira mié 23–mar 29 con Dom 27 tocable; dom 27 →
+Anterior A → Cargar → 10 ejercicios / 21 series, corregido a 50 kg → PR en la
+sesión y en Progreso "27 sep · 21 series"; peso 73.6 del 27 guardado con esa
+fecha; prueba: sáb 26 + peso → salir → resumen "1 sesión y 1 peso" → pasar →
+base real 18→19 sesiones, 31→32 pesos; repetido descartando (mié 23) → real
+sigue en 19; reloj en 30-sep → "¿Seguís en modo prueba?". Inicio sin scroll:
+844/844 a 390×844 y 932/932 a 430×932 (con y sin marco).
+
+Trampas:
+- `fill` del MCP en un `<input type="date">` cambia el DOM pero React no ve
+  el cambio (el value tracker ya tiene el valor nuevo): guarda la fecha
+  vieja. En el teléfono no pasa (el selector nativo dispara el evento). Para
+  probar: setter nativo de `value` + `dispatchEvent(new Event('input'))`.
+- `resumenPrueba()` abre la base real con `indexedDB.open(nombre)` SIN
+  versión (la actual): no la crea ni la migra.
+
+**Pendientes:**
+1. Confirmar con Enzo que fue el modo prueba (¿entró desde el 25? ¿Inicio le
+   propone el turno que hizo el domingo?). Si sigue en prueba, que NO salga
+   hasta tener esta versión: al salir se le va a ofrecer pasar lo de la copia.
+2. Los días 27 y 28 hay que cargarlos a mano (la copia borrada no vuelve).
+3. Terminar la sesión en prueba con el aviso: cubierto por test SSR, no se
+   recorrió en Chrome (el pre-check de la sesión pedía varios pasos).
+4. La línea "¿Entrenaste el …?" mide 26 px de alto (menos que los 40 del
+   resto de los controles); el día de la tira (58 px) es el blanco principal.
+5. "＋ ejercicio" en la corrección de una sesión sigue arrancando en 20 kg
+   (no usa `seriesPrellenadas`).
+
+---
+
 ## SESIÓN 2026-09-29 — Auditoría visual 2, tanda A: "Un acento que signifique"
 
 Rama `feat/visual-acento` (sobre main con #127), PR abierto sin mergear.

@@ -12,10 +12,13 @@
 // "repetí el valor de la vez pasada". saveBody() lo refleja con num():
 // parseFloat('') es NaN → null → esa columna queda null en el registro.
 import { useRef, useState } from 'react';
-import { S, closeSheet, saveCfg } from '../../lib/state.js';
-import { uid, dstr } from '../../lib/format.js';
-import { applyComputedGoals } from '../../lib/macros.js';
-import { idb } from '../../lib/db.js';
+//
+// 2026-09-29: la fecha se elige (por defecto hoy, nunca futura) y el guardado
+// vive en lib/cuerpo.js. Antes se guardaba siempre con la fecha de hoy y Enzo
+// no podía cargar el peso de los días que había perdido.
+import { S, closeSheet } from '../../lib/state.js';
+import { dstr, fmtDFull } from '../../lib/format.js';
+import { guardarRegistroCorporal } from '../../lib/cuerpo.js';
 import { toast } from '../../lib/toast.js';
 import { Button } from '../ui/primitives.jsx';
 
@@ -30,40 +33,34 @@ export default function BodyForm() {
   const [chest, setChest] = useState('');
   const [leg, setLeg] = useState('');
   const [bodyfat, setBodyfat] = useState('');
+  const hoy = dstr();
+  const [fecha, setFecha] = useState(hoy);
   const weightRef = useRef(null);
   const rootRef = useRef(null);
 
 
   async function save() {
-    const num = raw => { const v = parseFloat(raw); return isNaN(v) ? null : v; };
-    const rec = { id: uid(), date: dstr(), weight: num(weight), waist: num(waist), arm: num(arm), chest: num(chest), leg: num(leg), bodyfat: num(bodyfat) };
-    if (rec.weight == null && rec.waist == null && rec.arm == null && rec.chest == null && rec.leg == null && rec.bodyfat == null) {
-      toast('Ingresa al menos un dato');
-      return;
-    }
-    await idb.put('body', rec);
-    S.body.push(rec);
-    S.body.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
-    // sincroniza el peso del perfil → recalcula macros (Sección 0: nada fijo).
-    // El original llama saveCfg() en las dos ramas del if/else de
-    // applyComputedGoals() — o sea, siempre guarda si hay peso nuevo,
-    // recalcule o no las metas automáticas. Se porta tal cual, sin "arreglar"
-    // el if/else redundante.
-    if (rec.weight != null) {
-      S.cfg.profile.weightKg = rec.weight;
-      applyComputedGoals();
-      await saveCfg();
-    }
+    const f = fecha && fecha <= hoy ? fecha : hoy;
+    const rec = await guardarRegistroCorporal({ weight, waist, arm, chest, leg, bodyfat }, f);
+    if (!rec) { toast('Ingresa al menos un dato'); return; }
     closeSheet();
-    toast(S.cfg.goalsAuto && rec.weight != null ? 'Registro guardado · macros actualizadas' : 'Registro guardado');
+    const cuando = f === hoy ? '' : ` del ${fmtDFull(f)}`;
+    toast(S.cfg.goalsAuto && rec.weight != null && f === hoy ? 'Registro guardado · macros actualizadas' : `Registro guardado${cuando}`);
   }
 
   return (
     <div ref={rootRef}>
       <h2 className="mb-4 font-cond text-2xl font-bold text-text">Registro corporal</h2>
-      <div className="mb-3">
-        <label htmlFor="body-peso" className={labelCls}>Peso (kg)</label>
-        <input id="body-peso" ref={weightRef} type="number" inputMode="decimal" step="any" className={inputCls} placeholder={last.weight ?? '70.0'} value={weight} onChange={e => setWeight(e.target.value)} />
+      {/* Peso y fecha en la misma fila: la fecha no agrega alto a la hoja. */}
+      <div className="mb-3 grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="body-peso" className={labelCls}>Peso (kg)</label>
+          <input id="body-peso" ref={weightRef} type="number" inputMode="decimal" step="any" className={inputCls} placeholder={last.weight ?? '70.0'} value={weight} onChange={e => setWeight(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="body-fecha" className={labelCls}>Fecha</label>
+          <input id="body-fecha" type="date" max={hoy} className={inputCls} value={fecha} onChange={e => setFecha(e.target.value)} />
+        </div>
       </div>
       <div className="mb-4 grid grid-cols-2 gap-3">
         <div>
