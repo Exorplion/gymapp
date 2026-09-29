@@ -1,25 +1,22 @@
-// Cambiar o agregar un ejercicio con la sesión ya abierta.
+// Cambiar un ejercicio con la sesión ya abierta: el nuevo entra en el lugar
+// del original, que queda anotado como reemplazado.
 //
-// Un solo sheet para los dos casos porque piden lo mismo (qué ejercicio, con
-// cuántas series y reps) y sólo cambia qué se hace con la respuesta:
-//
-//   con exId  → reemplaza: saltea el original y mete el nuevo en su lugar
-//   sin exId  → agrega al final
+// Hasta el 2026-09-28 esta hoja también AGREGABA (sin exId, con un chip
+// "Después de X" por cada ejercicio, también los ya hechos). Agregar pasó al
+// asistente de 3 pasos (AgregarEjercicio.jsx), el mismo de la rutina.
 //
 // Nada de esto toca S.routine: vive en el borrador. Al cerrar la sesión, el
 // resumen ofrece dejarlo fijo en la rutina del día.
 import { useRef, useState } from 'react';
-import { S, closeSheet } from '../../lib/state.js';
-import { WD } from '../../lib/format.js';
-import { addSessionExercise, replaceSessionExercise, sessionExs } from '../../lib/session.js';
+import { closeSheet } from '../../lib/state.js';
+import { replaceSessionExercise, sessionExs } from '../../lib/session.js';
 import { recommendedExercises } from '../../lib/rutina-logic.js';
 import { EQUIP, isMachineBound } from '../../lib/equip.js';
 import MachineField from '../MachineField.jsx';
 import { toast } from '../../lib/toast.js';
 
-export default function SessionExercise({ wd, exId = null }) {
-  const esCambio = !!exId;
-  const original = esCambio ? sessionExs(+wd).find(e => e.id === exId) : null;
+export default function SessionExercise({ wd, exId }) {
+  const original = sessionExs(+wd).find(e => e.id === exId) || null;
 
   /* El nombre arranca con el del original y no vacío: cambiar de equipo es el
      caso normal ("predicador con barra" → "predicador con mancuerna"), y
@@ -31,17 +28,13 @@ export default function SessionExercise({ wd, exId = null }) {
   const [equip, setEquip] = useState(original?.equip || '');
   const [machine, setMachine] = useState(original?.machine || '');
   const [unilateral, setUnilateral] = useState(!!original?.unilateral);
-  // Dónde va el ejercicio nuevo. null = al final (comportamiento de siempre);
-  // un id = justo después de ese ejercicio. Sólo aplica al agregar: al
-  // cambiar, addSessionExercise ya lo inserta detrás del original (session.js).
-  const [afterExId, setAfterExId] = useState(null);
   const nameRef = useRef(null);
   const rootRef = useRef(null);
 
   // Sólo cuenta como "sólo cambié el equipo" si nada del resto se tocó: así el
   // mensaje de confirmación no dice "cambiaste el equipo" cuando en realidad
   // cambiaste el ejercicio entero y de paso el equipo también cambió.
-  const soloEquipo = esCambio && name.trim() === (original?.name || '').trim();
+  const soloEquipo = name.trim() === (original?.name || '').trim();
 
   // Sugerencias del catálogo para el grupo del día, sin los que ya están en la
   // sesión: cambiar de máquina es el caso normal y escribir el nombre entero
@@ -53,20 +46,18 @@ export default function SessionExercise({ wd, exId = null }) {
     const n = name.trim();
     if (!n) { toast('Ponle nombre al ejercicio'); return; }
     const datos = { name: n, sets, reps, equip, machine: equip && machine ? machine : undefined, unilateral };
-    const r = esCambio ? await replaceSessionExercise(exId, datos) : await addSessionExercise(datos, afterExId);
-    if (!r) { toast('No se pudo agregar'); return; }
+    const r = await replaceSessionExercise(exId, datos);
+    if (!r) { toast('No se pudo cambiar'); return; }
     closeSheet();
     if (soloEquipo) toast(`${n} → ahora con ${(EQUIP.find(e => e.id === equip)?.label || 'sin equipo').toLowerCase()}`);
-    else toast(esCambio ? `${original?.name} → ${n}` : `＋ ${n}`);
+    else toast(`${original?.name} → ${n}`);
   }
 
   return (
     <div ref={rootRef}>
-      <h2>{esCambio ? 'Cambiar ejercicio' : 'Agregar ejercicio'}</h2>
+      <h2>Cambiar ejercicio</h2>
       <div className="sheet-sub">
-        {esCambio
-          ? <>En vez de <b className="txt-blue">{original?.name}</b>, que queda saltado en su lugar. Podés restablecerlo después.</>
-          : <>Se suma al final de la sesión de <b className="txt-blue">{S.routine[+wd]?.name || WD[+wd]}</b>.</>}
+        En vez de <b className="txt-blue">{original?.name}</b>, que queda saltado en su lugar. Podés restablecerlo después.
       </div>
 
       <div className="calcbox" style={{ marginBottom: 'var(--s3)' }}>
@@ -80,33 +71,6 @@ export default function SessionExercise({ wd, exId = null }) {
         <label htmlFor="sessex-nombre">Ejercicio</label>
         <input id="sessex-nombre" ref={nameRef} value={name} onChange={e => setName(e.target.value)} placeholder="Remo en polea" autoComplete="off" />
       </div>
-
-      {!esCambio && sessionExs(+wd).length > 0 && (
-        <div className="field">
-          <label>Dónde va</label>
-          <div className="chips">
-            <button
-              type="button"
-              className={`chip ${afterExId === null ? 'on' : ''}`}
-              aria-pressed={afterExId === null}
-              onClick={() => setAfterExId(null)}
-            >
-              Al final
-            </button>
-            {sessionExs(+wd).map(e => (
-              <button
-                key={e.id}
-                type="button"
-                className={`chip ${afterExId === e.id ? 'on' : ''}`}
-                aria-pressed={afterExId === e.id}
-                onClick={() => setAfterExId(e.id)}
-              >
-                Después de {e.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {sugeridos.length > 0 && (
         <div className="field">
@@ -173,7 +137,7 @@ export default function SessionExercise({ wd, exId = null }) {
       </div>
 
       <button type="button" className="btn" style={{ marginTop: 'var(--s3)' }} onClick={confirmar}>
-        {esCambio ? 'Cambiar' : 'Agregar a la sesión'}
+        Cambiar
       </button>
       <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={closeSheet}>Cancelar</button>
     </div>
