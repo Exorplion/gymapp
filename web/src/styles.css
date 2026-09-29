@@ -2131,13 +2131,15 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .rfs-ring{position:relative;width:240px;height:240px}
 /* El brillo del anillo: un aro con la sombra ya pintada, calzado sobre el
    trazo (r 88 de 200 → 105,6 px de 240; trazo 12 px → de 99,6 a 111,6), que
-   sólo cambia de opacidad. Borde transparente = el ancho del trazo: la
+   sólo cambia de opacidad. Borde transparente ≈ el ancho del trazo: la
    sombra de afuera sale del borde exterior y la de adentro del interior,
-   como el drop-shadow que reemplaza. */
+   como el drop-shadow que reemplaza (18 px, su pico). El aro es 1 px más
+   angosto de cada lado que el trazo: con los bordes justo encima, los dos
+   antialias se suman y queda una línea oscura pegada al anillo. */
 .rfs-ring::before{
-  content:'';position:absolute;inset:8.4px;border-radius:50%;pointer-events:none;opacity:.45;
-  border:12px solid transparent;
-  box-shadow:0 0 16px rgba(var(--accent-rgb),.7),inset 0 0 16px rgba(var(--accent-rgb),.7);
+  content:'';position:absolute;inset:9.4px;border-radius:50%;pointer-events:none;opacity:.45;
+  border:10px solid transparent;
+  box-shadow:0 0 18px rgba(var(--accent-rgb),.7),inset 0 0 18px rgba(var(--accent-rgb),.7);
   animation:glowring 2.4s ease-in-out infinite;
 }
 .rfs-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
