@@ -2964,7 +2964,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   grid-auto-flow:column;grid-auto-columns:1fr;gap:var(--s1);
 }
 .heatmap.const .cell{border-radius:var(--r-sm);aspect-ratio:1}
-.const-stats{display:flex;gap:var(--s5);margin-top:var(--s4)}
+/* Las tres cifras repartidas a lo ancho (la última termina en el borde del
+   contenido), con --s4 como mínimo: a 390 los rótulos suman 275 px y con
+   --s5 de hueco "RACHA ACTUAL" se partía en dos renglones. */
+.const-stats{display:flex;justify-content:space-between;gap:var(--s4);margin-top:var(--s4)}
 .const-stats .cond{font-size:var(--t-2xl);font-weight:700;line-height:1}
 .const-stats span{
   display:block;margin-top:var(--s1);
