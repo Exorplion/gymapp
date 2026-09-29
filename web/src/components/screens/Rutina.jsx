@@ -41,7 +41,7 @@ import { fmtD } from '../../lib/format.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
 import MuscleFibers from '../MuscleFibers.jsx';
-import { ArrowDown, ArrowUp, Check, Info, Pencil, X } from '../Icon.jsx';
+import { ArrowDown, ArrowUp, Check, Copiar, Grip, Info, Mancuerna, Mover, Pencil, Rutinas, Traer, X } from '../Icon.jsx';
 import { RutinaVacia } from '../Illustration.jsx';
 
 /* El peso de partida declarado (ExerciseForm), sólo si está declarado: sin
@@ -102,7 +102,7 @@ function MisEjercicios() {
   return (
     <>
       <button type="button" className="btn sm ghost mb-3" onClick={() => openSheet('gyms')}>
-        🏋 {gym ? `Gimnasio: ${gym.name}` : 'Sin gimnasio activo'}
+        <Mancuerna size={17} /> {gym ? `Gimnasio: ${gym.name}` : 'Sin gimnasio activo'}
       </button>
       <div className="day-exs bg-transparent p-0">
         {exs.map(ex => {
@@ -117,7 +117,7 @@ function MisEjercicios() {
               </button>
               {gym && (
                 <button type="button" className={`gym-eq-btn${ov ? ' on' : ''}`} onClick={() => openSheet('gym-equip', { gymId: gym.id, gymName: gym.name, exName: ex.name })}>
-                  {ov ? '✓ propio' : '+ equipo'}
+                  {ov ? <><Check size={13} /> propio</> : '+ equipo'}
                 </button>
               )}
             </div>
@@ -175,10 +175,12 @@ function RutinaView() {
         <RoutineNameHeader />
         <WeekProjection dow={dow} />
         <div className="btn-row">
-          <button type="button" className="btn" onClick={toggleEdit}>‹ Listo</button>
+          {/* "Listo" confirma: con un ‹ de "volver" delante se leía como
+              atrás (auditoría total, E7). */}
+          <button type="button" className="btn" onClick={toggleEdit}><Check size={18} /> Listo</button>
         </div>
         {workouts.length > 1 && (
-          <div className="drag-hint tight mt-[var(--s4)]"><span>↕</span><span>Mantené presionado un entrenamiento y soltalo para reordenarlo — el descanso se acomoda solo.</span></div>
+          <div className="drag-hint tight mt-[var(--s4)]"><Mover /><span>Mantené presionado un entrenamiento y soltalo para reordenarlo — el descanso se acomoda solo.</span></div>
         )}
         <div className="day-cards" ref={cardsRef} data-sort="seq">
           {workouts.map(({ slot, i }, pos) => <SlotCard key={slot.id} slot={slot} index={i} n={pos + 1} editing />)}
@@ -226,13 +228,13 @@ function RutinaView() {
             {/* La acción adentro de la hero, como EMPEZAR en la de Hoy: la
                 tarjeta y su botón son un solo objeto. */}
             <div className="btn-row">
-              <button type="button" className="btn" onClick={toggleEdit}>✎ Editar rutina</button>
+              <button type="button" className="btn" onClick={toggleEdit}><Pencil size={17} /> Editar rutina</button>
             </div>
           </div>
         )}
         {!st.workoutCount && (
           <div className="btn-row">
-            <button type="button" className="btn" onClick={toggleEdit}>✎ Editar rutina</button>
+            <button type="button" className="btn" onClick={toggleEdit}><Pencil size={17} /> Editar rutina</button>
           </div>
         )}
       </div>
@@ -258,7 +260,7 @@ function RutinaView() {
           fila de estado: es sobre el plan, igual que las otras dos. */}
       <div className="group">
         <button type="button" className="grouprow" onClick={() => openSheet('library')}>
-          <span className="nav-card-ico" aria-hidden="true">📚</span>
+          <span className="nav-card-ico" aria-hidden="true"><Rutinas /></span>
           <span className="grouprow-grow">
             <span className="grouprow-t">Mis rutinas</span>
             <span className="grouprow-s">
@@ -268,7 +270,7 @@ function RutinaView() {
           <span className="grouprow-chev" aria-hidden="true">›</span>
         </button>
         <button type="button" className="grouprow" onClick={() => openSheet('gyms')}>
-          <span className="nav-card-ico" aria-hidden="true">🏋</span>
+          <span className="nav-card-ico" aria-hidden="true"><Mancuerna /></span>
           <span className="grouprow-grow">
             <span className="grouprow-t">Mis gimnasios</span>
             <span className="grouprow-s">
@@ -285,7 +287,7 @@ function RutinaView() {
       {!st.workoutCount && (
         <div className="card"><div className="empty">
           <RutinaVacia className="big" />
-          <p>Todavía no tenés rutina.<br />Tocá "Mis rutinas" arriba para elegir una plantilla, o "✎ Editar rutina" para armar la tuya turno por turno.</p>
+          <p>Todavía no tenés rutina.<br />Tocá "Mis rutinas" arriba para elegir una plantilla, o "Editar rutina" para armar la tuya turno por turno.</p>
         </div></div>
       )}
 
@@ -410,7 +412,7 @@ function CoberturaCard() {
           <div className="wiz-coverage">
             {cob.fibras.map(f => (
               <span key={f} className={`wiz-fiber ${cob.cubiertas.includes(f) ? 'on' : ''}`}>
-                {cob.cubiertas.includes(f) ? '✓ ' : ''}{f}
+                {cob.cubiertas.includes(f) && <Check size={12} />}{f}
               </span>
             ))}
           </div>
@@ -600,9 +602,14 @@ function SlotCard({ slot, index, n, editing }) {
   if (!on) {
     return (
       <div className="day-card">
-        <div className="day-head" style={{ cursor: 'default' }}>
-          <span className="day-badge off">{n}</span>
-          <span className="grow"><span className="t">Descanso</span><span className="s">libre</span></span>
+        {/* El mismo .day-headrow que los turnos de entrenamiento: con el
+            .day-head suelto la insignia y el nombre quedaban 4 px más a la
+            derecha (auditoría total, E2). */}
+        <div className="day-headrow">
+          <div className="day-head" style={{ cursor: 'default' }}>
+            <span className="day-badge off">{n}</span>
+            <span className="grow"><span className="t">Descanso</span><span className="s">libre</span></span>
+          </div>
         </div>
       </div>
     );
@@ -632,7 +639,7 @@ function SlotCard({ slot, index, n, editing }) {
   return (
     <div className={`day-card ${open ? 'open' : ''}`} data-sid={slot.id}>
       <div className="day-headrow">
-        {editing && <span className="mini day-handle" title="Arrastrar a otra posición">✥</span>}
+        {editing && <span className="mini day-handle" title="Arrastrar a otra posición" aria-hidden="true"><Grip /></span>}
         <button type="button" className="day-head" onClick={() => toggleSlotOpen(index)}>
           <span className={`day-badge ${on ? '' : 'off'}`}>{n}</span>
           <span className="grow">
@@ -655,7 +662,7 @@ function SlotCard({ slot, index, n, editing }) {
         <div className="day-collapse-in">
         <div className="day-exs">
           {editing && exs.length > 1 && (
-            <div className="drag-hint tight"><span>↕</span><span>Mantené presionado un ejercicio para reordenarlo.</span></div>
+            <div className="drag-hint tight"><Mover /><span>Mantené presionado un ejercicio para reordenarlo.</span></div>
           )}
           {editing ? (
             /* En edición la lista es PLANA (data-sort="rut" exige hijos
@@ -765,10 +772,10 @@ function SlotCard({ slot, index, n, editing }) {
                 disabled={!exs.length}
                 onClick={() => openSheet('copy-exs', { mode: 'push', wd: index })}
               >
-                ⧉ Copiar a otro turno
+                <Copiar /> Copiar a otro turno
               </button>
               <button type="button" className="btn sm dim flex-1" onClick={() => openSheet('copy-exs', { mode: 'pull', wd: index })}>
-                ⤓ Traer de otro turno
+                <Traer /> Traer de otro turno
               </button>
             </div>
           </div>

@@ -41,7 +41,7 @@ import { getPhoto, deletePhoto, guardarFotoMaquina } from '../lib/gyms.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
 import ReelPicker from './ReelPicker.jsx';
-import { Info, Skip, Dots, Later, Check, X } from './Icon.jsx';
+import { Info, Skip, Dots, Later, Check, X, Play, Restablecer, Swap } from './Icon.jsx';
 // EXPERIMENTO — coverflow 3D (pedido de Enzo, ver motion.dev/examples/react-carousel-coverflow).
 // Revertir = borrar este import + el archivo + el bloque "COVERFLOW" de abajo.
 import '../styles-coverflow.css';
@@ -666,7 +666,7 @@ function AvisoUltimaVez({ visible, onCerrar, last, obj, meta, uni, fuerza, recor
             animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: D.objeto / 1000, ease: curvaSalida } }}
             exit={{ opacity: 0, y: -6, scale: 0.98, transition: { duration: D.toque / 1000 } }}
           >
-            <button type="button" className="ex-aviso-x" aria-label="Cerrar" onClick={e => { e.stopPropagation(); onCerrar(); }}>✕</button>
+            <button type="button" className="ex-aviso-x" aria-label="Cerrar" onClick={e => { e.stopPropagation(); onCerrar(); }}><X size={14} /></button>
             <Comparativa last={last} obj={obj} meta={meta} uni={uni} />
             <FuerzaYRecord fuerza={fuerza} record={record} />
             <i className="ex-aviso-reloj" aria-hidden="true" style={{ animationDuration: `${AVISO_MS}ms` }} />
@@ -801,7 +801,8 @@ function ExerciseSlide({ m, wd, started }) {
     if (pwRef.current) {
       const warn = progressionWarn(ex.name, v.w);
       pwRef.current.style.display = warn ? '' : 'none';
-      pwRef.current.textContent = warn ? `⚠ ${warn}` : '';
+      // Sin ⚠ delante: la caja ámbar ya es el aviso (tanda 8, G7).
+      pwRef.current.textContent = warn || '';
     }
   }
   // La rueda (gesto, rueda fina o edición manual — ver ReelPicker.jsx)
@@ -924,7 +925,7 @@ function ExerciseSlide({ m, wd, started }) {
           </div>
         )}
 
-        {full && <div className="ex-state ok">✓ Completo · {serieObjetivo} de {serieObjetivo} series</div>}
+        {full && <div className="ex-state ok"><Check size={13} /> Completo · {serieObjetivo} de {serieObjetivo} series</div>}
         {waiting && <div className="ex-state">En espera · {serieHechas ? `${serieHechas}${serieAMedias ? '½' : ''}/${serieObjetivo} series` : 'te toca después'}</div>}
         {/* Omitido: la tarjeta se queda donde está, apagada. Restablecer la
             devuelve exactamente a su lugar porque omitir no toca draft.order. */}
@@ -932,7 +933,7 @@ function ExerciseSlide({ m, wd, started }) {
           <>
             <div className="ex-state skip"><Skip size={13} /> Omitido{serieHechas ? ` · ${serieHechas}${serieAMedias ? '½' : ''} serie${serieHechas === 1 && !serieAMedias ? '' : 's'} registrada${serieHechas === 1 && !serieAMedias ? '' : 's'}` : ''}</div>
             <button type="button" className="btn sm ghost" style={{ marginTop: 12 }} onClick={() => unskipExercise(ex.id)}>
-              ↺ Restablecer
+              <Restablecer /> Restablecer
             </button>
           </>
         )}
@@ -960,7 +961,7 @@ function ExerciseSlide({ m, wd, started }) {
               exit={menosMovimiento() ? undefined : { height: 0, marginTop: 0, opacity: 0, transition: { duration: D.panel / 1000, ease: curvaSalida } }}
             >
               <button type="button" className="btn" onClick={() => startExercise(ex)}>
-                {started ? '▶ Hacer ahora' : '▶ Empezar rutina'}
+                <Play /> {started ? 'Hacer ahora' : 'Empezar rutina'}
               </button>
               <div className="ex-pre-links">
                 <button type="button" className="linkcard" onClick={() => openSheet('despues', { exId: ex.id })}><Later size={14} /> Hacer después</button>
@@ -990,7 +991,7 @@ function ExerciseSlide({ m, wd, started }) {
                     <>
                       {' · '}
                       <button type="button" className="ex-lado" aria-label={`Lado: ${v.side === 'left' ? 'izquierda' : 'derecha'}. Tocá para cambiar`} onClick={() => setSide(ex.id, v.side === 'left' ? 'right' : 'left')}>
-                        {v.side === 'left' ? 'izquierda' : 'derecha'} ⇄
+                        {v.side === 'left' ? 'izquierda' : 'derecha'} <Swap size={12} />
                       </button>
                     </>
                   )}
@@ -1023,11 +1024,11 @@ function ExerciseSlide({ m, wd, started }) {
             )}
 
             <div className="prog-warn" ref={pwRef} style={{ display: pwarnInitial ? '' : 'none' }}>
-              {pwarnInitial ? `⚠ ${pwarnInitial}` : ''}
+              {pwarnInitial || ''}
             </div>
             {imbalance && (
               <div className="prog-warn" style={{ marginBottom: 8 }}>
-                ⚠ {imbalance.strongerSide === 'left' ? 'Izquierda' : 'Derecha'} viene
+                {imbalance.strongerSide === 'left' ? 'Izquierda' : 'Derecha'} viene
                 {' '}~{imbalance.pct}% más fuerte que el otro lado, sostenido en las
                 últimas sesiones.
               </div>

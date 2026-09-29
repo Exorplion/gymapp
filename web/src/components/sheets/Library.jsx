@@ -24,7 +24,7 @@ import {
   applyLibRoutine, deleteLibRoutine, saveCurrentAsLib, startBlank,
 } from '../../lib/rutina-logic.js';
 import { sheetReveal } from '../../lib/motion.js';
-import { X } from '../Icon.jsx';
+import { Guardar, X } from '../Icon.jsx';
 
 /** Una plantilla (t.secuencia: [[nombre, [[nombre,sets,reps],...]], ...]) no
     tiene la misma forma que S.routine/S.lib — se normaliza acá nomás, sólo
@@ -112,7 +112,7 @@ function LibraryList({ onPeek }) {
       </button>
       {st.workoutCount > 0 && (
         <button type="button" className="btn ghost" style={{ marginBottom: 16 }} onClick={() => openSheet('library', { mode: 'save' })}>
-          💾 Guardar la actual como…
+          <Guardar /> Guardar la actual como…
         </button>
       )}
 

@@ -60,7 +60,7 @@ export function nutriFeedback(kc, tp, tf, g, m) {
   if (rem > 150) {
     const pg = Math.max(0, g.p - tp);
     tx = `Te quedan <b>${rem} kcal</b>` + (pg > 0 ? ` y <b>${pg}g de proteína</b>` : '') + `. ${pg > 0 ? 'Prioriza proteína en lo que resta.' : 'Buen margen: llena con carbos o grasa a gusto.'}`;
-  } else if (rem >= -150) { dot = 'ok'; tx = `En el objetivo del día 👌 <span class="txt-mut">(±150 kcal está perfecto — importa el promedio semanal).</span>`; }
+  } else if (rem >= -150) { dot = 'ok'; tx = `En el objetivo del día <span class="txt-mut">(±150 kcal está perfecto — importa el promedio semanal).</span>`; }
   else { dot = 'red'; tx = `Te pasaste <b>${-rem} kcal</b>. No pasa nada: compensa con comidas más ligeras el resto de la semana, lo que cuenta es el promedio.`; }
   if (m && tf > m.fatMax * 1.1) { dot = dot === 'ok' ? 'warn' : dot; tx += ` <span class="txt-warn">Grasa alta: ${tf}g (máx ${m.fatMax}g).</span>`; }
   else if (m && tp < m.protMin && rem <= 150) { tx += ` <span class="txt-warn">Proteína baja: ${tp}g (mín ${m.protMin}g).</span>`; }

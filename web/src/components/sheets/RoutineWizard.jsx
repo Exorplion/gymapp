@@ -25,6 +25,7 @@ import { saveWizardRoutine } from '../../lib/rutina-logic.js';
 import { toast } from '../../lib/toast.js';
 import AnimatedText from '../AnimatedText.jsx';
 import Silhouette from '../Silhouette.jsx';
+import { Check } from '../Icon.jsx';
 
 const TOTAL_PASOS = 3;
 
@@ -81,7 +82,7 @@ function CoverageStrip({ cat, nombres }) {
     <div className="wiz-coverage">
       {cob.fibras.map(f => (
         <span key={f} className={`wiz-fiber ${cob.cubiertas.includes(f) ? 'on' : ''}`}>
-          {cob.cubiertas.includes(f) ? '✓ ' : ''}{f}
+          {cob.cubiertas.includes(f) && <Check size={12} />}{f}
         </span>
       ))}
     </div>
@@ -176,7 +177,7 @@ export default function RoutineWizard() {
               onClick={() => toggleCat(c)}
             >
               <span className="t">{c}</span>
-              {cats.includes(c) && <span className="check">✓</span>}
+              {cats.includes(c) && <span className="check" aria-hidden="true"><Check size={15} /></span>}
             </button>
           ))}
         </div>

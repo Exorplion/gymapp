@@ -9,7 +9,7 @@ import { blocksOf } from '../../lib/muscle.js';
 // is now orphaned dead code, a known separate gap not fixed here.
 const editDay = () => {};
 import { openSheet } from '../../lib/state.js';
-import { Info } from '../Icon.jsx';
+import { Info, Pencil } from '../Icon.jsx';
 import { sheetReveal } from '../../lib/motion.js';
 import { Button } from '../ui/primitives.jsx';
 
@@ -38,7 +38,7 @@ export default function DayPeek({ wd }) {
         {blocks.map(b => (
           <div key={b.cat} className="mb-2">
             <div className="mx-0.5 mb-1.5 mt-2.5 t-etiqueta">{b.cat}</div>
-            <div className="rounded-[var(--radius-r-lg)] border border-line bg-surface-2 p-3">
+            <div className="rounded-[var(--radius-r-lg)] border border-line-2 bg-surface-2 p-3">
               {b.exs.map((ex, i) => (
                 <div className="flex items-center gap-2.5 py-2" key={ex.id}>
                   <span className="w-5 flex-none text-sm text-text-2">{i + 1}</span>
@@ -62,7 +62,7 @@ export default function DayPeek({ wd }) {
         ))}
       </div>
       <Button type="button" variant="secondary" className="mt-3.5 w-full" onClick={() => editDay(wd)}>
-        ✎ Editar este día
+        <Pencil /> Editar este día
       </Button>
     </div>
   );

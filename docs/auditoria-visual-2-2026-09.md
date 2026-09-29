@@ -438,6 +438,69 @@ pantalla. El sangrado óptico de 2 px de `.vtitle`, `.sect`, `.slot-head` y
    renglón en "estado" (recuerdo de hace un año + tonelaje), pediría scroll:
    no se pudo forzar con el seed.
 
+#### Tanda C — estado (2026-09-29, rama `feat/visual-superficies`)
+
+Hecha, junto con la tanda 8 de la auditoría total (íconos y coherencia).
+Medido en el build de producción (`vite build` + `vite preview` :4193; el
+"antes" es `origin/main` = #133 buildeado aparte en :4194), service worker
+bloqueado y caches borradas, `seedRegistro()` desde Ajustes, Hielo a
+390×844 y Fucsia a 430×932, reloj +1 día para la sesión en vivo.
+
+**Medidor de superficies:** cada nodo visible con radio ≥ 12 px, ≥ 100 px de
+ancho y ≥ 40 de alto (más el header), con fondo, borde, sombra o
+`backdrop-filter`; la receta es la tupla `background-color + background-image
++ border-top + box-shadow + backdrop-filter` de `getComputedStyle`. Se
+excluyen los CTA con el degradado del acento (`.btn`, `.ini-cta`,
+`.hero-cta`, `.tab-ind`). Recorre las cuatro pestañas y siete hojas
+(Ajustes, Racha, Todas las sesiones, Mis rutinas, Gimnasios, Perfil, Tu
+cuerpo). No es el mismo corte que el relevamiento (13, sólo ≥ 200 px en las
+pestañas): antes y después se comparan con el mismo instrumento.
+
+| Medida | Antes (#133) | Después |
+|---|---|---|
+| Recetas de superficie distintas (4 pestañas + 7 hojas) | **20** | **6** = las 3 superficies + la barra del header (flotante sin radio ni borde arriba) + el `select` (control + la flecha dibujada) + la tarjeta punteada "Personalizada" de Mis rutinas (placeholder a propósito) |
+| Recetas por pestaña (Inicio / Entreno / Comida / Progreso) | 3 / 6 / 7 / 8 | 3 / 4 / 4 / 5 (header, tabbar, tarjeta, control y, en Progreso, el `select`) |
+| Ángulos de tinte | 112°, 135°, 150°, 155°, 158° | **uno, 158°**, sólo en la luz |
+| Luces (pseudo con degradado) en Inicio | 6 (orbe + 5 reflejos diagonales) | **1** (la tarjeta del cuerpo) |
+| Luces en Entreno / Comida / Progreso | 1 halo propio por hero | 1, la misma receta en las tres |
+| Resplandores del fondo | 3 (arriba + 2 abajo a la derecha) | **1** (arriba) |
+| `backdropFilter` activo | header 14 px, tabbar 26, hojas 24, tarjetas 22, descanso/sesión sin vidrio | flotante **24** (header, tabbar, hojas, barra de sesión, barra de descanso, aviso, ficha de músculo), tarjeta **22** (todas las `.card`, `.ini-tile`, turnos, bloques de Plan de hoy); control **sin** blur. En la sesión en vivo los slides vecinos del coverflow siguen sin blur a propósito (`styles-coverflow.css`: blur + 3D por cuadro) |
+| Emoji / glifos-ícono visibles (mismo recorrido) | **26** (Entreno 4, Comida 2, Progreso 4, Ajustes 7, sesiones 8, Mis rutinas 1) | **0** |
+
+| ID | Estado | Commit | Qué |
+|---|---|---|---|
+| **V4** | ✅ | `0f747dc`, `850edeb` | Tres superficies como tokens en `:root` (`--sup-flota-*`, `--sup-tarjeta-*`, `--sup-control-*`). **Flotante** (grafito al 90 % + `blur(24px) saturate(1.2)` + hilo al 14 % + arista + sombra): header (como barra), tabbar, hojas, diálogos, `#restbar`, `.ses-barra`, `#toast`, `.mpop`. **Tarjeta** (vidrio al 66 % + brillo metálico + `blur(22px)` + borde al 10 % + arista + sombra): `.card`, `.card.hero`, `.card.sub`, `.ini-tile`, `.day-card`, `.dcard`, `.plan-block .group`, `.sess-card`. **Control** (`surface-2` + `line-2`, sin blur ni sombra): `.group`, `.nav-card`, `.seg`, `.calcbox` (y `.blue`), campos, `.icon-btn`, `.reg-btn`, `.plan-edit`, `.plan-resumen`, chips de Un toque, `.btn.ghost/.dim/.glass`, `.illus-opt`, `.wiz-groupcard`, `.bodymini`, `.asist-fila`, `<Card>` de primitives. Las hero de Entreno, Comida y Progreso dejaron el grafito opaco y su borde del acento: son `.card.hero`. `.calcbox.warn/.ok` y los chips `.warn/.on` conservan su tinte porque son estado. |
+| **V5** | ✅ | `0f747dc`, `7a49a7c` | Una luz por pantalla: `.card.hero::before` / `.luz::before` pinta el tinte a 158° y el halo arriba a la derecha **debajo del texto** (`isolation` + `z-index:-1`). Inicio: la tarjeta del cuerpo (`.luz`). Fuera el orbe y el `::after` diagonal de las `.ini-tile`, los halos propios de `.hero-plan`, y los dos resplandores de abajo del `body::before`. El halo quedó al 18 % (al 24 % "Ver mapa ›" daba 4,3:1). |
+| **V9** | ✅ | `e8331c2` | Una sola fila tocable: "Registrar por voz" (`.pw-btn`) y la tarjeta del perfil (`.profcard`, con avatar en el degradado y el halo del acento) son `.group` + `.grouprow` con el ícono en `.nav-card-ico`, como "Mis rutinas". Comida pasa de tres voces (`.btn`, `.pw-btn`, `.profcard`) a dos: el CTA y la fila. La fila del perfil se toca entera. |
+| **G7** (total) | ✅ | `e8331c2`, `e645843`, `3a559f5`, `641d818` | Ver "Tanda 8 — estado" en `docs/auditoria-total-2026-09.md`. |
+
+**Contraste AA sobre las superficies nuevas** (texto tiza / plomo / ceniza;
+cálculo con la mezcla real sobre el grafito y el resplandor de arriba, los
+cinco acentos): flotante ≥ 14,2 / 7,4 / **5,41**; tarjeta ≥ 12,5 / 6,5 /
+**4,75**; control 14,6 / 7,6 / **5,55**; acento sobre control ≥ **8,08**
+(Fucsia). Sobre la luz, medido en el navegador texto por texto en su punto
+más cercano al halo: el peor es "Ver mapa ›" en Inicio, **4,78** (Monocromo) a
+**4,97** (Fucsia); antes de bajar el halo al 18 %, 4,32.
+
+**Sin scroll:** Inicio 844/844 (390, sesión en curso) y 932/932 (430); Hoy en
+vivo 844/844 y 932/932.
+
+**No se tocó a propósito:** tipografía (tanda B, en paralelo: los `.pwt` y
+`.pt` que se borraron eran la voz de las filas viejas, no una regla global);
+movimiento (tanda E: el brillo que barre `.btn` sigue, y cuenta como "luz" en
+el medidor en Entreno, Comida y Ajustes); los `backdrop-filter:none` de los
+slides vecinos del coverflow; `#rest-fs` y `#sheet .bk` (son velos, no
+superficies).
+
+**Pendientes que deja:**
+1. `.nav-card` quedó sin uso en el JSX (Entreno y Comida usan `.group`): se
+   deja la regla por si una fila suelta la necesita; si en la tanda E sigue
+   sin uso, borrarla.
+2. La barra del header no lleva sombra (una sombra de 22 px bajo una barra
+   sticky ensuciaba el contenido de arriba): es la única flotante sin ella.
+3. El `.btn::after` (brillo que barre) es la otra "luz" que ve el medidor: es
+   de la tanda E (G5).
+
 ### Tanda E · Movimiento percibido [choca con la rampa (sus pulsos) y con la optimización del descanso (`glowring`): al final]
 
 1. Un momento con autor por pantalla: el filo de ENTRENAR se queda (es el gesto de Inicio); el brillo que barre `.btn` sólo en el CTA principal (G5), sin loops detrás de hojas.

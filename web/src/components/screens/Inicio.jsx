@@ -281,7 +281,7 @@ function MemoriaLine({ slot }) {
     que el cuerpo real coloreado. */
 function BodyTile({ dias, viejos, porciones }) {
   return (
-    <button type="button" className="ini-tile ini-tile-body" onClick={() => openSheet('body-map')}>
+    <button type="button" className="ini-tile ini-tile-body luz" onClick={() => openSheet('body-map')}>
       <div className="ini-tile-lbl">Tu cuerpo<span className="ini-tile-go">Ver mapa ›</span></div>
       <div className="ini-tile-thumb"><Silhouette days={dias} interactivo={false} porciones={porciones} /></div>
       {viejos.length > 0 && <div className="ini-tile-hint">Hace tiempo no entrenás {viejos[0]}</div>}

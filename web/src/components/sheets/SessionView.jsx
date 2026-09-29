@@ -18,7 +18,7 @@ import { equipLabel, exKey } from '../../lib/equip.js';
 import { toast } from '../../lib/toast.js';
 import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
-import { Skip, X } from '../Icon.jsx';
+import { Baja, Check, Pencil, Plus, Skip, Sube, Trofeo, X } from '../Icon.jsx';
 import { sheetReveal } from '../../lib/motion.js';
 // El burst de récord vive en su propio módulo y entra por React.lazy: son
 // 320 KB de lottie-web (la dependencia más pesada de la app, 24% del bundle)
@@ -95,7 +95,9 @@ export default function SessionView({ id, justFinished = false }) {
 
   return (
     <>
-      <h2>{justFinished ? `${hasPR ? '🎉' : '💪'} Sesión guardada` : (s.dayName || 'Entrenamiento')}</h2>
+      {/* Sin emoji en el título (auditoría total, H9): el festejo, si hubo
+          récord, lo hace la tarjeta del récord de abajo. */}
+      <h2>{justFinished ? 'Sesión guardada' : (s.dayName || 'Entrenamiento')}</h2>
       {/* Una sesión anotada a mano no tiene duración medida (null = "no se
           sabe"): antes quedaba "· min" y un "MIN" vacío. Se dice lo que es. */}
       <div className="sheet-sub">
@@ -120,11 +122,11 @@ export default function SessionView({ id, justFinished = false }) {
               // El fallback es el MISMO trofeo que muestra una sesión vieja con
               // récord: si la carga tarda no aparece un hueco ni un spinner,
               // aparece lo que esa tarjeta muestra el resto del tiempo.
-              <Suspense fallback={<div className="pr-troph">🏆</div>}>
+              <Suspense fallback={<div className="pr-troph"><Trofeo size={24} /></div>}>
                 <PrBurst />
               </Suspense>
             )
-            : <div className="pr-troph">🏆</div>}
+            : <div className="pr-troph"><Trofeo size={24} /></div>}
           <div className="grow">
             <div className="cond" style={{ fontSize: 'var(--t-lg)', fontWeight: 700 }}>
               {justFinished ? '¡Nuevo récord!' : `${prs.length} récord${prs.length === 1 ? '' : 's'} en esta sesión`}
@@ -199,7 +201,7 @@ export default function SessionView({ id, justFinished = false }) {
           <div className="sect">Agregar un ejercicio que hiciste</div>
           <div className="chips" style={{ marginBottom: 'var(--s3)' }}>
             {delDia.map(ex => (
-              <button key={ex.id} type="button" className="chip blue" onClick={() => agregarEjercicio(ex)}>＋ {ex.name}</button>
+              <button key={ex.id} type="button" className="chip blue" onClick={() => agregarEjercicio(ex)}><Plus size={14} /> {ex.name}</button>
             ))}
           </div>
         </>
@@ -207,12 +209,13 @@ export default function SessionView({ id, justFinished = false }) {
 
       {justFinished ? (
         <button type="button" className={`btn ${hasPR ? 'ok' : ''}`} style={{ marginTop: 18 }} onClick={closeSheet}>
-          Guardar y cerrar
+          {/* Ya está guardada: el botón sólo cierra (H9). */}
+          Listo
         </button>
       ) : (
         <>
           <button type="button" className="btn ghost" style={{ marginTop: 14 }} onClick={() => setEditando(v => !v)}>
-            {editando ? '✓ Listo' : '✎ Corregir lo que anoté'}
+            {editando ? <><Check size={18} /> Listo</> : <><Pencil size={17} /> Corregir lo que anoté</>}
           </button>
           <p className="ptext sm center" style={{ marginTop: 8 }}>
             Los minutos y la fecha no cambian: sólo se corrige lo que hiciste.
@@ -252,12 +255,12 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
         <ExIcon icono={iconOf(entry)} size={22} className="entry-icon" />
         <span className={`eyebrow ${grupo ? '' : 'warn'}`}>{grupo || 'sin grupo'}</span>
         {equipLabel(entry) && <span className="eq-tag">{equipLabel(entry)}</span>}
-        {esPR && <span className="entry-pr" title="Récord en esta sesión">🏆</span>}
+        {esPR && <span className="entry-pr" title="Récord en esta sesión" role="img" aria-label="Récord en esta sesión"><Trofeo size={17} /></span>}
       </div>
       <div className="dcard-head">
         {editando ? (
           <button type="button" className="entry-name-edit" onClick={() => openSheet('entry-edit', { sessId: sess.id, idx })}>
-            {entry.name} <span className="pen">✎</span>
+            {entry.name} <span className="pen" aria-hidden="true"><Pencil size={13} /></span>
           </button>
         ) : (
           <span className="dcard-title">{entry.name}</span>
@@ -309,7 +312,7 @@ function EntryCard({ sess, entry, idx, editando, esPR, onSetSerie, onBorrarSerie
         <span>{entry.sets.length} serie{entry.sets.length === 1 ? '' : 's'} · {fmtKg(Math.round(vol))}</span>
         {d && d.delta !== 0 && (
           <span className={d.delta > 0 ? 'txt-ok' : 'txt-warn'}>
-            {d.delta > 0 ? '↗ +' : '↘ '}{fmtNum(d.delta)} kg
+            {d.delta > 0 ? <><Sube /> +</> : <><Baja />{' '}</>}{fmtNum(d.delta)} kg
           </span>
         )}
         {d && d.delta === 0 && <span className="txt-mut">= igual</span>}

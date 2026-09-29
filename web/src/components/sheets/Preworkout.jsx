@@ -20,6 +20,7 @@ import { fmtNum, round1, dstr, uid, vibrate } from '../../lib/format.js';
 import { profileWeight } from '../../lib/macros.js';
 import { idb } from '../../lib/db.js';
 import { toast } from '../../lib/toast.js';
+import { Bolt, Gota, Plus, Taza } from '../Icon.jsx';
 
 const PW = { meal: false, sensitive: false };
 
@@ -71,19 +72,19 @@ export default function Preworkout() {
       </div>
 
       <div className="calcbox">
-        <div className="cr big"><span>💧 Fluidos + electrolitos</span><b>{fluidMin}–{fluidMax} ml</b></div>
+        <div className="cr big"><span className="cr-ico"><Gota /> Fluidos + electrolitos</span><b>{fluidMin}–{fluidMax} ml</b></div>
         <div className="ptext sm" style={{ marginTop: 8 }}>Agua con sodio, potasio, magnesio y calcio (5-7 ml/kg).</div>
       </div>
 
       <div className="calcbox" style={{ marginTop: 10, opacity: PW.meal ? .55 : 1 }}>
-        <div className="cr big"><span>🍯 Carbos rápidos</span><b>{PW.meal ? '—' : `${carbs} g`}</b></div>
+        <div className="cr big"><span className="cr-ico"><Bolt size={16} /> Carbos rápidos</span><b>{PW.meal ? '—' : `${carbs} g`}</b></div>
         <div className="ptext sm" style={{ marginTop: 8 }}>
           {PW.meal ? 'Ya cubierto: comiste una comida completa 60-90 min antes, no necesitas carbo extra.' : 'Fructosa, glucosa o sacarosa (1 g/kg) para energía rápida.'}
         </div>
       </div>
 
       <div className="calcbox" style={{ marginTop: 10 }}>
-        <div className="cr big"><span>☕ Cafeína</span><b className={overCap || PW.sensitive ? 'txt-warn' : ''}>{cafRec}</b></div>
+        <div className="cr big"><span className="cr-ico"><Taza /> Cafeína</span><b className={overCap || PW.sensitive ? 'txt-warn' : ''}>{cafRec}</b></div>
         <div className="ptext sm" style={{ marginTop: 8 }}>
           {PW.sensitive
             ? <span className="txt-warn">Marcaste sensibilidad: empieza bajo (o evítala). No la tomes tarde.</span>
@@ -95,7 +96,7 @@ export default function Preworkout() {
       {!PW.meal && (
         <>
           <button type="button" className="btn ghost" style={{ marginTop: 14 }} onClick={addMacros}>
-            ＋ Sumar a Nutrición · {carbs} g carbos ({Math.round(carbs * 4)} kcal)
+            <Plus /> Sumar a Nutrición · {carbs} g carbos ({Math.round(carbs * 4)} kcal)
           </button>
           <div className="ptext sm" style={{ marginTop: 8 }}>
             Solo si de verdad los tomás. Fluidos y cafeína no aportan calorías, así que no se cuentan.

@@ -145,7 +145,7 @@ export async function importJSON(file) {
     }
 
     const viejo = d.version < 2;
-    toast(viejo ? 'Restaurado ✓ (backup v1: gyms y fotos se conservaron)' : 'Datos restaurados ✓');
+    toast(viejo ? '✓ Restaurado (backup v1: gyms y fotos se conservaron)' : '✓ Datos restaurados');
     setTimeout(() => location.reload(), 900);
   } catch {
     // Distinto del "archivo inválido" de arriba a propósito: acá el archivo

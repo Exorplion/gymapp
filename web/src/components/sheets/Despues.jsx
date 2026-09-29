@@ -8,6 +8,7 @@ import { motion } from 'motion/react';
 import { S, closeSheet } from '../../lib/state.js';
 import { sessionExs, isSkipped, setsDone, targetSets, moverEjercicio } from '../../lib/session.js';
 import { hojaProps, seccion } from '../../lib/variants.js';
+import { ArrowDown } from '../Icon.jsx';
 
 export default function Despues({ exId }) {
   const index = S.routine.findIndex(s => s.id === S.draft?.slotId);
@@ -40,7 +41,7 @@ export default function Despues({ exId }) {
             </button>
           ))}
           <button type="button" className="grouprow" onClick={y(null)}>
-            <span className="despues-n" aria-hidden="true">↓</span>
+            <span className="despues-n" aria-hidden="true"><ArrowDown size={14} /></span>
             <span className="grouprow-grow">
               <span className="grouprow-t">Al final</span>
               <span className="grouprow-s">Después de {pendientes[pendientes.length - 1].name}</span>

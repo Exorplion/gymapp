@@ -4,6 +4,68 @@
 
 ---
 
+## SESIÓN 2026-09-29 (f) — Tanda C "Superficies y luz" + tanda 8 "Íconos y coherencia"
+
+Rama `feat/visual-superficies` (rebasada sobre main con #134, la tanda B), PR abierto sin
+mergear. **1074 tests** (con `tipografia.test.js` de la tanda B). Detalle, commits y números en
+`docs/auditoria-visual-2-2026-09.md` → "Tanda C — estado" y
+`docs/auditoria-total-2026-09.md` → "Tanda 8 — estado"; `DESIGN.md`
+actualizado (Overview, Colors, Elevation & Depth con la tabla de las tres
+superficies, Components, Do's and Don'ts).
+
+- **V4 tres superficies** como tokens en `:root`: `--sup-flota-*` (header,
+  tabbar, hojas, diálogos, barra de descanso, barra de la sesión, toast,
+  ficha de músculo), `--sup-tarjeta-*` (`.card` y variantes, `.ini-tile`,
+  turnos, bloques de Plan de hoy, `.dcard`) y `--sup-control-*` (`.group`,
+  `.seg`, `.calcbox`, campos, chips de Un toque, `.icon-btn`, `.reg-btn`,
+  `.btn.ghost/.dim`, `<Card>`). Recetas distintas en 4 pestañas + 7 hojas:
+  **20 → 6** (las 3 + header como barra + `select` + la tarjeta punteada de
+  Mis rutinas).
+- **V5 una luz por pantalla**: `.card.hero::before` / `.luz::before` (tinte
+  158° + halo 18 %), debajo del texto con `isolation` + `z-index:-1`. Inicio
+  → la tarjeta del cuerpo (`.luz` en Inicio.jsx). Fuera orbes y reflejos de
+  las `.ini-tile`, halos propios de las hero, y los dos resplandores de abajo
+  del fondo. Luces en Inicio: 6 → 1.
+- **V9 una fila tocable**: "Registrar por voz" y el perfil en Comida son
+  `.group` + `.grouprow` (fuera `.pw-btn` y `.profcard` del JSX).
+- **G7 íconos**: 23 SVG nuevos en `Icon.jsx`; glifos-ícono visibles 26 → 0.
+  Los toasts siguen escribiéndose con "⚠ …" / "✓ …": `partirToast()`
+  (lib/toast.js) separa el glifo y `<Toast/>` lo dibuja.
+- **Tanda 8 bajos**: E2, I3, E5, E6, C1 ("Meta: déficit moderado"), H9, A3,
+  P2 (`marcasLindas()` en charts.ts), P3 (8 récords + "Ver los N"). E7 y A3
+  quedan parciales (abajo).
+
+Verificado en Chrome (build + preview :4193, antes en :4194 desde un build
+de #133, SW bloqueado con initScript, `seedRegistro`): Hielo 390×844 y
+Fucsia 430×932, las cuatro pestañas, siete hojas, Hoy sin sesión y en vivo
+(reloj +1 día). Inicio y Hoy en vivo sin scroll (844/844, 932/932). AA con
+los cinco acentos: ceniza sobre tarjeta ≥ 4,75, flotante ≥ 5,41, control
+5,55; el peor texto sobre una luz 4,78 (antes de bajar el halo, 4,32).
+Capturas en el scratchpad de la sesión, `visual-c/` (antes-* y despues-*).
+
+Trampas:
+- La luz va en `::before` con `z-index:-1` DENTRO de un contexto propio
+  (`isolation:isolate`): sin eso el tinte se pinta encima del texto (el orbe
+  viejo lo hacía) y baja el contraste.
+- `backdrop-filter:none` en `styles-coverflow.css` para los slides vecinos
+  no es un bug de la receta: es a propósito (blur + 3D por cuadro).
+- El medidor de superficies (`medir.js` en el scratchpad) se sirve desde
+  `dist/` y se importa con `import('/medir.js')`: `npm run build` lo borra.
+
+**Pendientes:**
+1. E7: el nombre del turno editable (`.day-name-input`, 28 px de alto) — es
+   tipografía/formulario, va con la tanda B.
+2. A3: los puntos de la vista previa del acento en Ajustes siguen pareciendo
+   tocables (decisión de diseño de esa vista).
+3. `.nav-card` quedó sin uso en el JSX; borrarla si nadie la retoma.
+4. El brillo que barre `.btn` (tanda E, G5) es la otra "luz" que ve el
+   medidor en Entreno, Comida y Ajustes.
+5. Probar en el teléfono el vidrio del header (ahora grafito al 90 %, antes
+   el fondo al 92→75 %): en Chrome se ve igual de sólido, falta el ojo de
+   Enzo con contenido pasando por detrás.
+
+---
+
 ## SESIÓN 2026-09-29 (e) — Auditoría visual 2, tanda B: "Tipografía dorsal" (+ tanda 6)
 
 Rama `feat/visual-tipografia` (rebasada sobre main con #133), PR abierto sin mergear.

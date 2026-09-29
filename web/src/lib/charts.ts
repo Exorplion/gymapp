@@ -264,6 +264,18 @@ function coloresGrafico() {
   };
 }
 
+/** Marcas "lindas" para un eje de `mn` a `mx`: unas `n` divisiones con un
+    paso de 1, 2, 2.5 o 5 × 10^k, y el rango estirado a múltiplos del paso. */
+export function marcasLindas(mn: number, mx: number, n = 3): { mn: number; mx: number; paso: number; marcas: number[] } {
+  const bruto = (mx - mn) / n || 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(bruto)));
+  const paso = [1, 2, 2.5, 5, 10].map(f => f * mag).find(p => p >= bruto - 1e-9) ?? 10 * mag;
+  const lo = Math.floor(mn / paso + 1e-9) * paso, hi = Math.ceil(mx / paso - 1e-9) * paso;
+  const marcas: number[] = [];
+  for (let v = lo; v <= hi + paso / 2; v += paso) marcas.push(Math.round(v * 1000) / 1000);
+  return { mn: lo, mx: hi, paso, marcas };
+}
+
 /** `tam` = el tamaño en CSS px si quien llama ya lo sabe (Chart.jsx lo toma
     del ResizeObserver, que corre con el layout hecho). Sin él se lee
     clientWidth/clientHeight, que con el DOM recién cambiado fuerza un layout
@@ -286,6 +298,11 @@ export function drawChart(cv: ChartCanvas, pts: ChartPoint[], opts: DrawChartOpt
   let mn = Math.min(...ys), mx = Math.max(...ys);
   if (mn === mx) { mn -= 1; mx += 1; }
   const padY = (mx - mn) * .14; mn -= padY; mx += padY;
+  // Marcas en pasos redondos (1, 2, 2.5 o 5 × 10^k): el eje de Carga decía
+  // 54.3 / 56.4 / 58.6 / 60.7 (auditoría total, P2). El rango se estira
+  // hasta la marca redonda más cercana de cada lado.
+  const escala = marcasLindas(mn, mx);
+  mn = escala.mn; mx = escala.mx;
   const t0 = +new Date(pts[0].date + 'T00:00:00'), t1 = +new Date(pts[pts.length - 1].date + 'T00:00:00');
   const span = t1 - t0 || 1;
   const X = (d: string) => P.l + (W - P.l - P.r) * ((+new Date(d + 'T00:00:00')) - t0) / span;
@@ -293,8 +310,8 @@ export function drawChart(cv: ChartCanvas, pts: ChartPoint[], opts: DrawChartOpt
   if (opts.unit) { x.font = '600 11px Barlow, sans-serif'; x.fillStyle = c.texto2; x.textAlign = 'left'; x.fillText(opts.unit, 2, 12); }
   x.font = '400 11px Barlow, sans-serif';
   x.strokeStyle = c.grilla; x.lineWidth = 1;
-  for (let i = 0; i <= 3; i++) {
-    const v = mn + (mx - mn) * i / 3, y = Y(v);
+  for (const v of escala.marcas) {
+    const y = Y(v);
     x.beginPath(); x.moveTo(P.l, y); x.lineTo(W - P.r, y); x.stroke();
     x.fillStyle = c.texto3; x.textAlign = 'right'; x.fillText(fmtNum(round1(v)), P.l - 8, y + 4);
   }

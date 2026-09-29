@@ -21,7 +21,7 @@ import { profileWeight } from '../../lib/macros.js';
 import Chart from '../Chart.jsx';
 import SessionCard from '../SessionCard.jsx';
 import { Info } from '../Icon.jsx';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { countTo, staggerRevealOnce } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 
@@ -237,7 +237,7 @@ export default function Progreso() {
       <div className="grupo">
       <div className="sect">Récords</div>
       {!exNames.length ? (
-        <div className="card"><div className="empty p-4"><p className="m-0">Aquí brillarán tus mejores marcas. 🏆</p></div></div>
+        <div className="card"><div className="empty p-4"><p className="m-0">Aquí van a aparecer tus mejores marcas.</p></div></div>
       ) : (
         <PRsList exNames={exNames} />
       )}
@@ -352,7 +352,7 @@ function VolumeTab() {
     <>
       {risk?.risk && (
         <div className="notice warn">
-          <div className="text-sm text-text font-semibold">⚠ Volumen alto esta semana</div>
+          <div className="text-sm text-text font-semibold">Volumen alto esta semana</div>
           <div className="s text-text-2 mt-1">Tonelaje 7 días ({fmtKg(risk.acute)}) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
         </div>
       )}
@@ -394,6 +394,11 @@ function PRsList({ exNames }) {
     return { n, maxW, bestSet, dV, tier: strengthTier(n, maxW, bw) };
   }).filter(p => p.bestSet).sort((a, b) => b.maxW - a.maxW);
   const listRef = useRef(null);
+  // Los 8 más pesados y el resto a pedido (auditoría total, P3): con 25
+  // récords la pantalla medía 5.000 px, casi todo de esta lista.
+  const [todos, setTodos] = useState(false);
+  const TOPE = 8;
+  const vistos = todos ? prs : prs.slice(0, TOPE);
   // Reveal escalonado de la lista de PRs — sólo la primera vez que ESTE
   // conteo de PRs se ve en la sesión. La key incluye prs.length a propósito:
   // remontar Progreso por un simple cambio de pestaña (key={store.tab} en
@@ -404,8 +409,9 @@ function PRsList({ exNames }) {
     if (rows?.length) staggerRevealOnce(`progreso-prs-${prs.length}`, rows);
   }, [prs.length]);
   return (
+    <>
     <div className="card" ref={listRef}>
-      {prs.map(p => (
+      {vistos.map(p => (
         <div key={p.n} className="row">
           <div className="grow"><div className="t">{p.n}</div>
             <div className="s">Mejor serie {fmtNum(round1(p.bestSet.w))} × {p.bestSet.r} · {fmtD(p.dV)}</div>
@@ -417,5 +423,11 @@ function PRsList({ exNames }) {
         </div>
       ))}
     </div>
+    {prs.length > TOPE && (
+      <button type="button" className="btn dim sm" aria-expanded={todos} onClick={() => setTodos(v => !v)}>
+        {todos ? 'Ver menos' : `Ver los ${prs.length}`}
+      </button>
+    )}
+    </>
   );
 }

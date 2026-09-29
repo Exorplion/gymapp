@@ -33,7 +33,7 @@ import { createGym, setActiveGym } from '../../lib/gyms.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
 import { objetivoHoy, resumenPlan } from '../../lib/objetivoHoy.js';
 import { toast } from '../../lib/toast.js';
-import { Bolt, Mic, Pencil, RecordDot, Dots, Plus, Check } from '../Icon.jsx';
+import { ArrowDown, ArrowUp, Bolt, Mic, Mover, Pencil, RecordDot, Dots, Plus, Check } from '../Icon.jsx';
 import { HoySinPlan } from '../Illustration.jsx';
 import { AvisoPrueba } from '../sheets/SalirPrueba.jsx';
 import Silhouette from '../Silhouette.jsx';
@@ -242,7 +242,7 @@ export function TerminarSesion() {
           ? `Llevás ${nsets} serie${nsets === 1 ? '' : 's'} registrada${nsets === 1 ? '' : 's'}.`
           : 'Todavía no registraste ninguna serie.'}
       </div>
-      <button type="button" className="btn ok" disabled={!nsets} onClick={() => { closeSheet(); completeSession(); }}>✓ Completar y guardar</button>
+      <button type="button" className="btn ok" disabled={!nsets} onClick={() => { closeSheet(); completeSession(); }}><Check size={18} /> Completar y guardar</button>
       <div className="dlg-fila">
         <button type="button" className="btn sm ghost" onClick={closeSheet}>Seguir entrenando</button>
         <button type="button" className="btn sm danger" onClick={confirmSessDiscard}>Descartar</button>
@@ -272,7 +272,7 @@ export function SesionMenu({ wd }) {
             (setExOrder), así que ReorderHoy funciona igual que antes de
             arrancar. */}
         <button type="button" className="grouprow" onClick={y(() => openSheet('reorder-hoy'))}>
-          <span className="opc-ico" aria-hidden="true">↕</span>
+          <span className="opc-ico" aria-hidden="true"><Mover size={18} /></span>
           <span className="grouprow-grow">
             <span className="grouprow-t">Reordenar ejercicios</span>
             <span className="grouprow-s">Cambiá el orden de lo que te falta.</span>
@@ -449,15 +449,15 @@ function PlanHoy({ index, exs }) {
           {superar > 0 && <span><b>{superar}</b> para superar reps</span>}
         </div>
       )}
-      {editando && <div className="plan-resumen">Mové los grupos y, adentro, cada ejercicio con ▲▼.</div>}
+      {editando && <div className="plan-resumen">Mové los grupos y, adentro, cada ejercicio con las flechas.</div>}
       {blocks.map((b, i) => (
         <div className="plan-block" data-sid={b.cat} key={b.cat}>
           <div className="plan-block-head">
             <span className="plan-block-t">{b.cat}<span className="plan-block-n">{b.exs.length}</span></span>
             {editando && blocks.length > 1 && (
               <span className="block-move">
-                <button type="button" disabled={i === 0} aria-label={`Mover ${b.cat} antes`} onClick={() => mover(b.cat, -1)}>▲</button>
-                <button type="button" disabled={i === blocks.length - 1} aria-label={`Mover ${b.cat} después`} onClick={() => mover(b.cat, 1)}>▼</button>
+                <button type="button" disabled={i === 0} aria-label={`Mover ${b.cat} antes`} onClick={() => mover(b.cat, -1)}><ArrowUp size={15} /></button>
+                <button type="button" disabled={i === blocks.length - 1} aria-label={`Mover ${b.cat} después`} onClick={() => mover(b.cat, 1)}><ArrowDown size={15} /></button>
               </span>
             )}
           </div>
@@ -479,8 +479,8 @@ function PlanHoy({ index, exs }) {
                   </button>
                   {editando && b.exs.length > 1 && (
                     <span className="block-move ex-move">
-                      <button type="button" disabled={k === 0} aria-label={`Subir ${ex.name}`} onClick={() => moverEj(ex.id, -1)}>▲</button>
-                      <button type="button" disabled={k === b.exs.length - 1} aria-label={`Bajar ${ex.name}`} onClick={() => moverEj(ex.id, 1)}>▼</button>
+                      <button type="button" disabled={k === 0} aria-label={`Subir ${ex.name}`} onClick={() => moverEj(ex.id, -1)}><ArrowUp size={15} /></button>
+                      <button type="button" disabled={k === b.exs.length - 1} aria-label={`Bajar ${ex.name}`} onClick={() => moverEj(ex.id, 1)}><ArrowDown size={15} /></button>
                     </span>
                   )}
                   {editando && (
