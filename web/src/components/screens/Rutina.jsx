@@ -681,9 +681,9 @@ function SlotCard({ slot, index, n, editing }) {
                     <span className="eyebrow">{i + 1}</span>
                     <button
                       type="button"
-                      className="mini info inline"
+                      className={`mini info inline${exInfo(ex.name) ? '' : ' sin-ficha'}`}
                       data-act="ex-info"
-                      style={exInfo(ex.name) ? undefined : { opacity: .4 }}
+                      aria-label={`Qué trabaja ${ex.name}`}
                       onClick={() => openSheet('ex-info', { name: ex.name, wd: index, exId: ex.id })}
                     >
                       <Info />
@@ -700,8 +700,8 @@ function SlotCard({ slot, index, n, editing }) {
                     <span className="acts">
                       {/* ↑↓ mueven dentro del grupo (moveEx): en el borde
                           del grupo no hay a dónde, así que se apagan. */}
-                      <button type="button" className="mini" data-act="ex-up" disabled={i === 0 || catOf(arr[i - 1]) !== catOf(ex)} onClick={() => handleMoveEx(index, ex.id, -1)}><ArrowUp /></button>
-                      <button type="button" className="mini" data-act="ex-down" disabled={i === arr.length - 1 || catOf(arr[i + 1]) !== catOf(ex)} onClick={() => handleMoveEx(index, ex.id, 1)}><ArrowDown /></button>
+                      <button type="button" className="mini" data-act="ex-up" aria-label={`Subir ${ex.name}`} disabled={i === 0 || catOf(arr[i - 1]) !== catOf(ex)} onClick={() => handleMoveEx(index, ex.id, -1)}><ArrowUp /></button>
+                      <button type="button" className="mini" data-act="ex-down" aria-label={`Bajar ${ex.name}`} disabled={i === arr.length - 1 || catOf(arr[i + 1]) !== catOf(ex)} onClick={() => handleMoveEx(index, ex.id, 1)}><ArrowDown /></button>
                       <button type="button" className="mini" aria-label={`Editar ${ex.name}`} onClick={() => openSheet('ex-form', { wd: index, ex })}><Pencil /></button>
                       <button type="button" className="mini red" aria-label={`Borrar ${ex.name}`} onClick={() => deleteExercise(index, ex.id)}><X /></button>
                     </span>

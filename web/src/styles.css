@@ -1781,6 +1781,9 @@ body.dragging-on .card.day.drop-target{filter:none}
   display:inline-grid;width:24px;height:24px;flex:none;
   font-size:var(--t-sm);border-radius:var(--r-sm);
 }
+/* Sin ficha en exdb: el "i" se apaga pero sigue abriendo (ahí se edita qué
+   trabaja). Antes era un style={{opacity:.4}} en línea (G17). */
+.ex-row .info.inline.sin-ficha{opacity:.4}
 /* El pictograma sólo ocupa el alto del nombre, así que la fila de abajo se
    corre a la izquierda y recupera ese ancho: sin esto el esquema de RIR se
    cortaba en las filas de números anchos ("4×15"). */
@@ -2264,32 +2267,38 @@ nav.tabbar{container-type:inline-size}
   border:1px solid rgba(var(--hi-rgb),.14);border-bottom:none;
   border-radius:26px 26px 0 0;
   padding:10px 20px calc(24px + env(safe-area-inset-bottom));
-  animation:shup var(--d2) var(--spring);
+  animation:shup var(--d3) var(--ease-push),fdin var(--d1) var(--ease-out);
   box-shadow:var(--edge-metal),0 -20px 60px -20px rgba(var(--shade-rgb),.7);
 }
-/* Sin opacity: la hoja entra sólida, sólo sube desde abajo del marco — el
-   fundido de .4→1 se leía como el mismo parpadeo que tenían las pestañas.
-   El fondo oscuro (.bk, fdin) sí sigue con su propio fundido: es una
-   cortina detrás, no contenido, y una cortina apareciendo de golpe se ve
-   más brusco que sumar movimiento ahí. */
-@keyframes shup{from{transform:translateY(60%)}}
-/* El cierre es el espejo exacto de shup/fdin, misma duración cada uno —
-   antes no existía ninguno de los dos: #sheet pasaba a display:none en el
-   instante en que open se ponía en false y todo desaparecía de golpe.
+/* La hoja sube desde FUERA del marco (auditoría total, G2). Antes arrancaba
+   en translateY(60%) sin fundido: el primer cuadro ya pintaba 155 px de
+   panel opaco (el 40 % de una hoja de 387) y en una hoja alta el salto era
+   de ~300 px — se leía como un corte, no como una hoja subiendo. Ahora
+   recorre el alto entero, así que va en --d3 con la curva de recorridos
+   largos (--ease-push, la misma de la variante pantalla y del cambio de
+   pestaña), y se funde en --d1 mientras todavía está casi toda abajo: el
+   borde no "aparece", llega. Sin el rebote de --spring: desde el 100 % el
+   sobrepaso levantaba el borde de abajo y dejaba ver el fondo por debajo.
+   Son dos animaciones y no una con keyframe intermedio: el fundido corto no
+   puede compartir la curva del recorrido largo. */
+@keyframes shup{from{transform:translateY(100%)}}
+/* El cierre: más corto que la entrada (--d2) y hasta FUERA del marco, con
+   fundido. Antes iba a translateY(60%) con --ease-out: llegaba a los
+   ~150 ms y se quedaba quieta con 155 px de panel opaco hasta que el timer
+   de Sheet.jsx la desmontaba de un cuadro para el otro. Con --ease-push el
+   panel se mueve hasta el final y termina invisible y abajo: lo que
+   desmonta el timer ya no se ve. CIERRE_MS (Sheet.jsx) es D.objeto = --d2,
+   la salida más larga de las tres variantes (hoja, diálogo, pantalla).
    #sheet.closing es más específico que #sheet .panel/.bk de arriba, así
    que gana en la cascada sin necesitar !important. */
-@keyframes shdown{to{transform:translateY(60%)}}
+@keyframes shdown{to{transform:translateY(100%);opacity:0}}
 @keyframes fdout{to{opacity:0}}
-#sheet.closing .panel{animation:shdown var(--d2) var(--ease-out) forwards}
-#sheet.closing .bk{animation:fdout var(--d1) forwards}
+#sheet.closing .panel{animation:shdown var(--d2) var(--ease-push) forwards}
+#sheet.closing .bk{animation:fdout var(--d2) var(--ease-push) forwards}
 /* La regla global de arriba (*{animation-duration:.01ms!important}) acorta
-   shdown pero no toca animation-fill-mode:forwards: bajo movimiento
-   reducido la animación "termina" casi al instante y se queda CONGELADA en
-   su keyframe final (translateY(60%);opacity:.4) — un panel fantasma,
-   translúcido y a medio bajar. Sheet.jsx igual mantiene #sheet.closing en
-   el DOM los 220ms de CIERRE_MS (ese timer es JS, no se acorta con la
-   media query), así que sin esta regla el fantasma queda visible todo ese
-   tiempo. Se saca del render directamente: no hay nada que animar. */
+   shdown pero no toca animation-fill-mode:forwards, y el timer de
+   Sheet.jsx (JS) no se acorta con la media query: #sheet.closing quedaría
+   en el DOM los CIERRE_MS sin nada que animar. Se saca del render. */
 @media (prefers-reduced-motion:reduce){
   #sheet.closing{display:none}
 }
@@ -3262,6 +3271,16 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   flex-direction:column;
 }
 @keyframes mpop-in{from{opacity:0;transform:translateY(16px)}}
+/* La salida (auditoría total, B3): el espejo de mpop-in, más corta (--d1)
+   y sin tapar toques mientras se va. SALIDA_FICHA en Silhouette.jsx es esta
+   duración: lo que la ficha queda montada después de cerrar. */
+@keyframes mpop-out{to{opacity:0;transform:translateY(16px)}}
+.mpop.out{animation:mpop-out var(--d1) var(--ease-push) forwards;pointer-events:none}
+/* Con la ficha abierta el toggle Frente/Espalda queda debajo y "FRENTE" se
+   traslucía a través del vidrio (B3). Se apaga mientras la ficha está, y
+   vuelve mientras la ficha sale. */
+.sil-caras{transition:opacity var(--d2) var(--ease)}
+.sil-pair:has(.mpop:not(.out)) .sil-caras{opacity:0;pointer-events:none}
 
 /* El único tramo que scrollea: cabecera, números y pie quedan fijos. */
 .mpop-scroll{
@@ -3287,22 +3306,22 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 /* Ya no es un chip: adentro de una hoja chica, una pastilla de color al lado
    del título leía como una alerta. Como subtítulo el color alcanza. */
-.mpop-when{font-size:var(--t-nano);font-weight:600;letter-spacing:.04em;white-space:nowrap}
+.mpop-when{font-size:var(--t-micro);font-weight:600;letter-spacing:.04em;white-space:nowrap}
 .mpop-when.t0{color:var(--accent)}
 .mpop-when.t1{color:var(--accent)}
 .mpop-when.t2{color:var(--text-2)}
 .mpop-when.t3{color:var(--warn)}
 .mpop-when.tn{color:var(--text-3)}
 /* El punto visual se queda en 20×20 —agrandarlo en un globo de 208px de
-   ancho lo abultaría de más— pero el área tocable real pasa a 28×28 con un
-   ::after invisible que se extiende más allá del borde. Por debajo de
-   24×24 un botón falla WCAG 2.5.8 (tamaño de objetivo), y acá no hay nada
-   más cerca que se pise con esos 4px de más. */
+   ancho lo abultaría de más— pero el área tocable real pasa a 44×44 con un
+   ::after invisible (G11; antes 28). Hacia arriba llega justo al borde de
+   la ficha (padding 12) y a la izquierda pisa el título, que no es tocable:
+   no se come el toque de nada. */
 .mpop-x{
   position:relative;flex:none;width:20px;height:20px;border-radius:var(--r-sm);border:0;padding:0;line-height:1;
   background:rgba(var(--hi-rgb),.07);color:var(--text-2);font-size:var(--t-body);
 }
-.mpop-x::after{content:'';position:absolute;inset:-4px}
+.mpop-x::after{content:'';position:absolute;inset:-12px}
 
 /* Una sola tira con separadores finos, no tres tarjetas. Cada número tenía su
    caja con borde adentro de una hoja que ya tiene borde: el cromo pesaba más
@@ -3318,7 +3337,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   display:block;font-family:'Barlow Condensed',sans-serif;font-size:var(--t-lg);font-weight:800;
   line-height:1.05;font-variant-numeric:tabular-nums;
 }
-.mpop-nums span{display:block;font-size:var(--t-nano);letter-spacing:.06em;text-transform:uppercase;
+.mpop-nums span{display:block;font-size:var(--t-micro);letter-spacing:.06em;text-transform:uppercase;
   color:var(--text-3);margin-top:2px;white-space:nowrap}
 
 .mpop-list{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:1px}
@@ -3332,7 +3351,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    una fila más de .mpop-list: es un encabezado, no un ejercicio. */
 .mpop-fibras{display:flex;flex-direction:column;gap:7px;margin-bottom:2px}
 .mpop-fibra-nombre{
-  font-size:var(--t-nano);font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  font-size:var(--t-micro);font-weight:700;letter-spacing:.07em;text-transform:uppercase;
   color:var(--text-3);margin-bottom:1px;
 }
 .mpop-fibra .mpop-list{margin-bottom:5px}
@@ -3347,7 +3366,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .mpop-pie{
   display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 9px;
   margin-top:8px;padding-top:7px;border-top:1px solid rgba(var(--hi-rgb),.06);
-  font-size:var(--t-nano);color:var(--text-3);
+  font-size:var(--t-micro);color:var(--text-3);
 }
 .mpop-top{color:var(--warn);font-weight:600}
 .mpop-vent{margin-left:auto;letter-spacing:.06em;text-transform:uppercase;opacity:.7}
@@ -3360,6 +3379,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 @media (prefers-reduced-motion:reduce){
   .sil-z{transition:none}
   .mpop{animation:none}
+  .sil-caras{transition:none}
   .sil-flip.suave{transition:none}
   .sil-zoom{transition:none}
 }
@@ -3758,7 +3778,16 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   background:radial-gradient(120% 100% at 50% 0%,rgba(var(--accent-rgb),.16),transparent 60%),var(--bg);
   display:flex;align-items:center;justify-content:center;
   overflow:hidden;
+  animation:fdin var(--d2) var(--ease-out);
 }
+/* Entrada y salida propias (auditoría total, H4): antes aparecía de golpe
+   encima del diálogo "Terminar" que se iba, y se desmontaba en un cuadro
+   dejando ver Hoy mientras la hoja del resumen recién subía. Al salir se
+   queda opaca --d1 (lo que tarda el fondo de la hoja en llegar) y se funde
+   en --d3 sobre la hoja que ya está subiendo; SALIDA_MS en
+   SessionComplete.jsx es esa suma. Sin toques mientras se va: la hoja de
+   abajo ya es la que manda. */
+#session-complete.saliendo{animation:fdout var(--d3) var(--ease-push) var(--d1) forwards;pointer-events:none}
 .sc-beat{
   position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
   opacity:0;padding:24px;text-align:center;

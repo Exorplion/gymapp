@@ -11,9 +11,14 @@
 // en un foco muerto, ni visible ni anunciado), y al cerrar el foco vuelve a
 // lo que lo abrió en vez de perderse en <body>.
 import { useEffect, useRef, useState } from 'react';
+import { D } from '../lib/motion.js';
 
 const FOCUSABLES = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-const CIERRE_MS = 220; // mismo tiempo que .panel usa para abrir (shup .22s)
+/* Cuánto queda montada la hoja después de cerrar: la salida más larga de
+   las tres variantes (shdown, dlgOut y asistBaja van en --d2). Sale de D y
+   no de un número suelto: si el ritmo de la app cambia, cambia acá solo.
+   Exportada para que el test de hojas-salidas la compare con el CSS. */
+export const CIERRE_MS = D.objeto;
 
 /* `variante="dialogo"`: una confirmación no es una hoja con contenido que se
    lee, es una pregunta de dos botones. Flota despegada de los bordes y entra
