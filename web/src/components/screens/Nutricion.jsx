@@ -29,7 +29,7 @@ import { logMeal, addMealFromFood } from '../sheets/MealForm.jsx';
 import { useEffect, useRef } from 'react';
 import { countTo, staggerRevealOnce } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
-import { Pencil, X } from '../Icon.jsx';
+import { Diana, Mic, Pencil, Persona, Plus, X } from '../Icon.jsx';
 
 // El botón de voz sólo aparece si el navegador reconoce voz — mismo criterio
 // que el registro por voz de sesiones en Hoy.jsx.
@@ -176,8 +176,11 @@ export default function Nutricion() {
               {kc > g.kcal ? kc - g.kcal : Math.max(0, g.kcal - kc)}<span>kcal</span>
             </div>
             <div className="t-etiqueta">{kc > g.kcal ? 'Excedente' : 'Restantes'}</div>
+            {/* "Objetivo:" delante: "EXCEDENTE 170 kcal" con "Déficit
+                moderado" justo abajo se leía como contradicción (auditoría
+                total, C1). Es la meta, no el resultado del día. */}
             <div className="text-text-2 text-micro mt-1">
-              {GOAL_LABEL[S.cfg.profile.goal]}
+              Objetivo: {GOAL_LABEL[S.cfg.profile.goal]?.toLowerCase()}
               {S.cfg.profile.weightKg ? ` · ${fmtNum(round1(S.cfg.profile.weightKg))} kg` : ''}
             </div>
           </div>
@@ -220,7 +223,7 @@ export default function Nutricion() {
 
       {proteinaPendiente && (
         <div className="notice">
-          <div className="text-sm text-text font-semibold">🥩 Entrenaste hace poco</div>
+          <div className="text-sm text-text font-semibold">Entrenaste hace poco</div>
           <div className="s text-text-2 mt-1">Todavía no registraste una comida con proteína. No es una regla dura, pero es el mejor momento para una.</div>
         </div>
       )}
@@ -238,7 +241,7 @@ export default function Nutricion() {
       {band?.adjust !== 0 && band && (
         <div className="notice">
           <div className="text-sm text-text font-semibold">
-            {band.adjust > 0 ? '↑' : '↓'} Ajuste sugerido: {band.adjust > 0 ? '+' : ''}{band.adjust} kcal
+            Ajuste sugerido: {band.adjust > 0 ? '+' : ''}{band.adjust} kcal
           </div>
           <div className="s text-text-2 mt-1">
             Tu ritmo real es {band.actualWeekly > 0 ? '+' : ''}{band.actualWeekly} kg/sem vs. {band.expected > 0 ? '+' : ''}{band.expected} kg/sem esperado para {GOAL_LABEL[S.cfg.profile.goal]?.toLowerCase()}.
@@ -264,12 +267,19 @@ export default function Nutricion() {
         >
           + Agregar comida
         </button>
+        {/* Una sola fila tocable en toda la app (tanda C, V9): era .pw-btn,
+            con su tinte, su condensada de 18 y el subtítulo al costado. */}
         {SR_FOOD && (
-          <button type="button" className="pw-btn" onClick={() => openSheet('food-voice')}>
-            <span className="pwi">🎙</span><span className="pwt">Registrar por voz</span>
-            <span className="text-text-2 text-micro">decí qué comiste</span>
-            <span className="chev">›</span>
-          </button>
+          <div className="group">
+            <button type="button" className="grouprow" onClick={() => openSheet('food-voice')}>
+              <span className="nav-card-ico" aria-hidden="true"><Mic size={18} /></span>
+              <span className="grouprow-grow">
+                <span className="grouprow-t">Registrar por voz</span>
+                <span className="grouprow-s">Decí qué comiste</span>
+              </span>
+              <span className="grouprow-chev" aria-hidden="true">›</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -279,7 +289,7 @@ export default function Nutricion() {
           <div className="chip-scroll">
             {freq.map((f, i) => (
               <button key={i} type="button" className="chip blue" onClick={() => logMeal(f)}>
-                ＋ {f.name} <span className="text-text-2">{f.kcal}</span>
+                <Plus size={14} /> {f.name} <span className="text-text-2">{f.kcal}</span>
               </button>
             ))}
           </div>
@@ -302,10 +312,10 @@ export default function Nutricion() {
       {S.foods.length > 0 ? (
         <div className="chip-scroll">
           {S.foods.map(f => S.foodEdit ? (
-            <button key={f.id} type="button" className="chip" aria-label={`Borrar ${f.name} de frecuentes`} onClick={() => deleteFood(f.id)}>{f.name}<span className="x">✕</span></button>
+            <button key={f.id} type="button" className="chip" aria-label={`Borrar ${f.name} de frecuentes`} onClick={() => deleteFood(f.id)}>{f.name}<span className="x" aria-hidden="true"><X size={14} /></span></button>
           ) : (
             <button key={f.id} type="button" className="chip blue" onClick={() => addMealFromFood(f.id)}>
-              ＋ {f.name} <span className="text-text-2">{f.kcal}</span>
+              <Plus size={14} /> {f.name} <span className="text-text-2">{f.kcal}</span>
             </button>
           ))}
         </div>
@@ -349,27 +359,34 @@ export default function Nutricion() {
 
       {/* Tus macros: el perfil que las calcula. Es un ajuste que se toca una
           vez, así que cierra la pantalla en vez de abrirla. */}
-      {m ? (
-        <div className="card profcard">
-          <div className="pavatar">👤</div>
-          <div className="grow">
-            <div className="pt">{GOAL_LABEL[S.cfg.profile.goal]} · {m.target} kcal</div>
-            <div className="text-text-2 text-micro">
-              {S.cfg.profile.sex === 'f' ? 'Mujer' : 'Hombre'} · {fmtNum(round1(m.weight))} kg · P {m.protMin}-{m.protMax} · G {m.fatMin}-{m.fatMax} · C {m.carbs}g
-            </div>
-          </div>
-          <button type="button" className="icon-btn accent" aria-label="Ver / modificar mis datos" onClick={() => openSheet('profile')}><Pencil /></button>
-        </div>
-      ) : (
-        <button type="button" className="card profcard border-line-2" onClick={() => openSheet('profile')}>
-          <div className="pavatar">🎯</div>
-          <div className="grow">
-            <div className="pt">Calcular mis macros</div>
-            <div className="text-text-2 text-micro">Perfil → TDEE → target y rangos automáticos{S.cfg.goalsAuto ? '' : ' (usando metas manuales)'}</div>
-          </div>
-          <span className="chev">›</span>
-        </button>
-      )}
+      {/* La misma fila tocable que "Mis rutinas" en Entreno (tanda C, V9).
+          Era .profcard: una tarjeta con avatar en el degradado y el halo del
+          acento —el objeto más encendido de la pantalla para un ajuste de
+          una vez— y un título en condensada 18 que no hablaba como las demás
+          filas. Ahora la fila entera abre el perfil. */}
+      <div className="group">
+        {m ? (
+          <button type="button" className="grouprow" aria-label="Ver o modificar mis datos" onClick={() => openSheet('profile')}>
+            <span className="nav-card-ico" aria-hidden="true"><Persona /></span>
+            <span className="grouprow-grow">
+              <span className="grouprow-t">{GOAL_LABEL[S.cfg.profile.goal]} · {m.target} kcal</span>
+              <span className="grouprow-s">
+                {S.cfg.profile.sex === 'f' ? 'Mujer' : 'Hombre'} · {fmtNum(round1(m.weight))} kg · P {m.protMin}-{m.protMax} · G {m.fatMin}-{m.fatMax} · C {m.carbs} g
+              </span>
+            </span>
+            <span className="grouprow-chev" aria-hidden="true"><Pencil size={16} /></span>
+          </button>
+        ) : (
+          <button type="button" className="grouprow" onClick={() => openSheet('profile')}>
+            <span className="nav-card-ico" aria-hidden="true"><Diana /></span>
+            <span className="grouprow-grow">
+              <span className="grouprow-t">Calcular mis macros</span>
+              <span className="grouprow-s">Perfil → TDEE → target y rangos automáticos{S.cfg.goalsAuto ? '' : ' (usando metas manuales)'}</span>
+            </span>
+            <span className="grouprow-chev" aria-hidden="true">›</span>
+          </button>
+        )}
+      </div>
 
       </div>
     </>

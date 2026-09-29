@@ -242,3 +242,209 @@ export function Spark({ size = 14, className, style }) {
     </svg>
   );
 }
+
+/* ---- Tanda C / tanda 8 (2026-09-29): los emoji y glifos que quedaban ----
+   📚 🏋 🎯 👤 🏆 💾 ⬇ ⬆ ⟳ 🧪 ⚠ 🖼 ▶ ↺ 💧 ☕ ↕ ☰ ⤓ ⌁ ✥, escritos a mano en
+   ~25 archivos (auditoría total, G7). Mismo material que el resto: 24×24,
+   trazo 1.8 en currentColor, puntas redondeadas. */
+
+/** Mis rutinas: tres lomos de carpeta, no una pila de libros de colores. */
+export function Rutinas({ size = 18, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <rect x="3.5" y="4" width="4" height="16" rx="1" />
+      <rect x="9" y="4" width="4" height="16" rx="1" />
+      <path d="M14.6 5.3l3.7-1 3.1 14.7-3.7 1z" />
+    </svg>
+  );
+}
+
+/** Gimnasio: la mancuerna de la marca, de trazo. */
+export function Mancuerna({ size = 18, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M3 10v4M6 8v8M9 6v12M15 6v12M18 8v8M21 10v4M9 12h6" />
+    </svg>
+  );
+}
+
+/** Metas / calcular macros: una diana. */
+export function Diana({ size = 18, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/** El perfil (sexo, peso, actividad). */
+export function Persona({ size = 18, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <circle cx="12" cy="8" r="3.6" />
+      <path d="M4.5 20c.9-3.9 3.8-6 7.5-6s6.6 2.1 7.5 6" />
+    </svg>
+  );
+}
+
+/** Récord personal. */
+export function Trofeo({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M8 4h8v5a4 4 0 0 1-8 0z" />
+      <path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4" />
+      <path d="M12 13v4M8.5 20h7M10 17h4" />
+    </svg>
+  );
+}
+
+export function Guardar({ size = 17, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M5 4h11l3 3v13H5z" /><path d="M8 4v5h7V4" /><rect x="8" y="13" width="8" height="5" rx="1" />
+    </svg>
+  );
+}
+
+/** Bajar un archivo (exportar). */
+export function Descargar({ size = 17, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M12 4v11M7.5 10.5L12 15l4.5-4.5" /><path d="M5 19.5h14" />
+    </svg>
+  );
+}
+
+/** Subir un archivo (importar). */
+export function Subir({ size = 17, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M12 15V4M7.5 8.5L12 4l4.5 4.5" /><path d="M5 19.5h14" />
+    </svg>
+  );
+}
+
+/** Traer de otro lado (⤓): una flecha que entra a una bandeja. */
+export function Traer({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M12 3v10M8 9.5l4 4 4-4" /><path d="M4 14v5h16v-5" />
+    </svg>
+  );
+}
+
+/** Buscar actualización / volver a cargar. */
+export function Recargar({ size = 17, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" /><path d="M19.5 4.5v4h-4" />
+    </svg>
+  );
+}
+
+/** Restablecer (↺): vuelve atrás. */
+export function Restablecer({ size = 15, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3" /><path d="M4.5 4.5v4h4" />
+    </svg>
+  );
+}
+
+/** Datos de prueba: un tubo de ensayo. */
+export function Probeta({ size = 17, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M9 3h6M10 3v6.5L5.2 18a2 2 0 0 0 1.7 3h10.2a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7.5 15h9" />
+    </svg>
+  );
+}
+
+/** Advertencia. Hereda el color: con .txt-warn o text-warn va en ámbar. */
+export function Alerta({ size = 15, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M12 3.5L2.8 19.5h18.4z" /><path d="M12 10v4.2" />
+      <circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function Imagen({ size = 17, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <rect x="3.5" y="5" width="17" height="14" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="M20.5 16l-5-5L6 19" />
+    </svg>
+  );
+}
+
+/** Empezar / hacer ahora. Relleno, como el ▶ que reemplaza. */
+export function Play({ size = 14, className, style }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} style={style} aria-hidden="true">
+      <path d="M7 4.5v15a1 1 0 0 0 1.5.9l12-7.5a1 1 0 0 0 0-1.7l-12-7.5A1 1 0 0 0 7 4.5z" />
+    </svg>
+  );
+}
+
+/** Fluidos. */
+export function Gota({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M12 3.5s-6 6.6-6 10.7a6 6 0 0 0 12 0C18 10.1 12 3.5 12 3.5z" />
+    </svg>
+  );
+}
+
+/** Cafeína. */
+export function Taza({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z" /><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16" /><path d="M9 3.5v2.5M12.5 3.5v2.5" />
+    </svg>
+  );
+}
+
+/** Reordenar (↕): la pista de "mantené presionado y arrastrá". */
+export function Mover({ size = 15, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M12 3.5v17M8 7.5l4-4 4 4M8 16.5l4 4 4-4" />
+    </svg>
+  );
+}
+
+/** Hace tiempo (⌁): un reloj de arena. */
+export function Arena({ size = 14, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M6.5 3.5h11M6.5 20.5h11M8 3.5c0 4.5 8 4.5 8 8.5s-8 4-8 8.5M16 3.5c0 4.5-8 4.5-8 8.5s8 4 8 8.5" />
+    </svg>
+  );
+}
+
+/** Tendencia: sube / baja (↗ ↘ de los resúmenes). */
+export function Sube({ size = 13, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M6 18L18 6M9 6h9v9" />
+    </svg>
+  );
+}
+export function Baja({ size = 13, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M6 6l12 12M18 9v9H9" />
+    </svg>
+  );
+}
+
+/** Copiar a otro lado (⧉). */
+export function Copiar({ size = 16, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <rect x="8.5" y="8.5" width="11" height="11" rx="2" /><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5" />
+    </svg>
+  );
+}
