@@ -13,6 +13,17 @@ export const fmtD = (s: string): string => `${+s.slice(8)} ${MO[+s.slice(5, 7) -
 export const fmtDFull = (s: string): string => { const dt = new Date(s + 'T12:00:00'); return `${WDS[dt.getDay()]} ${+s.slice(8)} ${MO[+s.slice(5, 7) - 1]}`; };
 export const round1 = (n: number): number => Math.round(n * 10) / 10;
 export const fmtNum = (n: number): string => Number.isInteger(n) ? String(n) : n.toFixed(1);
+// Kilos para leer (auditoría total, I4): había cuatro formatos para lo mismo
+// ("127042 kg", "7653 KG VOL.", "6.85k kg", toLocaleString('es') que agrupa
+// "151.059" pero deja "7122"). Uno solo: separador de miles y a lo sumo un
+// decimal, en es-PE (coma de miles, punto decimal), que es el punto decimal
+// que la app ya usa en todos lados ("74.2 kg") y la región del sello del build.
+const MILES = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 1 });
+export const fmtMiles = (n: number): string => MILES.format(n);
+// Con la unidad pegada por un espacio duro: "7,122 kg" no se parte entre
+// renglones (H8).
+export const NBSP = '\u00a0';
+export const fmtKg = (n: number): string => `${fmtMiles(n)}${NBSP}kg`;
 export const fmtMMSS = (s: number): string => `${Math.floor(s / 60)}:${pad(s % 60)}`;
 export const kg2lb = (kg: number): number => round1(kg * KG2LB);
 export const lb2kg = (lb: number): number => lb / KG2LB;
