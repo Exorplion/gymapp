@@ -276,7 +276,7 @@ export function drawChart(cv: ChartCanvas, pts: ChartPoint[], opts: DrawChartOpt
   x.clearRect(0, 0, W, H);
   const c = coloresGrafico();
   if (pts.length < 2) {
-    x.fillStyle = c.texto3; x.font = '500 14px Barlow, sans-serif'; x.textAlign = 'center';
+    x.fillStyle = c.texto3; x.font = '400 13px Barlow, sans-serif'; x.textAlign = 'center';
     x.fillText(pts.length ? 'Registra al menos 2 puntos para ver la curva' : 'Sin datos todavía', W / 2, H / 2);
     cv._pts = null;
     return;
@@ -290,8 +290,8 @@ export function drawChart(cv: ChartCanvas, pts: ChartPoint[], opts: DrawChartOpt
   const span = t1 - t0 || 1;
   const X = (d: string) => P.l + (W - P.l - P.r) * ((+new Date(d + 'T00:00:00')) - t0) / span;
   const Y = (v: number) => P.t + (H - P.t - P.b) * (1 - (v - mn) / (mx - mn));
-  if (opts.unit) { x.font = '600 10px Barlow, sans-serif'; x.fillStyle = c.texto2; x.textAlign = 'left'; x.fillText(opts.unit, 2, 12); }
-  x.font = '500 11px Barlow, sans-serif';
+  if (opts.unit) { x.font = '600 11px Barlow, sans-serif'; x.fillStyle = c.texto2; x.textAlign = 'left'; x.fillText(opts.unit, 2, 12); }
+  x.font = '400 11px Barlow, sans-serif';
   x.strokeStyle = c.grilla; x.lineWidth = 1;
   for (let i = 0; i <= 3; i++) {
     const v = mn + (mx - mn) * i / 3, y = Y(v);

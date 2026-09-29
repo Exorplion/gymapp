@@ -45,20 +45,20 @@ export const TEMPLATES = [
       ['Full Body B', [['Peso muerto rumano', 3, 10], ['Jalón al pecho', 3, 10], ['Press inclinado mancuernas', 3, 10], ['Elevaciones laterales', 3, 15], ['Extensiones de cuádriceps', 3, 15]]],
       ['Full Body C', [['Prensa', 3, 12], ['Fondos', 3, 10], ['Dominadas', 3, 8], ['Curl con barra', 3, 12], ['Elevación de gemelos', 3, 15]]],
     ] },
-  { id: 'ul', name: 'Upper / Lower', days: '4 días/sem', who: 'intermedios · frecuencia 2 balanceada', freq: 'cada grupo 2×/sem',
+  { id: 'ul', name: 'Upper / Lower', days: '4 días/sem', who: 'intermedios, frecuencia 2 balanceada', freq: 'cada grupo 2×/sem',
     secuencia: [
       ['Torso A', [['Press banca', 4, 8], ['Remo con barra', 4, 10], ['Press militar', 3, 10], ['Jalón al pecho', 3, 12], ['Curl con barra', 3, 12], ['Extensión tríceps polea', 3, 12]]],
       ['Pierna A', [['Sentadilla', 4, 8], ['Peso muerto rumano', 4, 10], ['Prensa', 3, 12], ['Curl femoral', 3, 12], ['Elevación de gemelos', 4, 15]]],
       ['Torso B', [['Press inclinado mancuernas', 4, 10], ['Dominadas', 4, 8], ['Elevaciones laterales', 4, 15], ['Aperturas en polea', 3, 12], ['Curl martillo', 3, 12], ['Overhead extension', 3, 12]]],
       ['Pierna B', [['Prensa', 4, 12], ['Zancadas', 3, 10], ['Extensiones de cuádriceps', 4, 15], ['Curl femoral', 4, 12], ['Elevación de gemelos', 4, 15]]],
     ] },
-  { id: 'ppl', name: 'Push / Pull / Legs', days: '3 días/sem', who: 'todo nivel · versión de 3 días', freq: 'cada grupo 1×/sem',
+  { id: 'ppl', name: 'Push / Pull / Legs', days: '3 días/sem', who: 'todo nivel, versión de 3 días', freq: 'cada grupo 1×/sem',
     secuencia: [
       ['Push (empuje)', [['Press banca', 4, 8], ['Press militar', 3, 10], ['Press inclinado mancuernas', 3, 10], ['Elevaciones laterales', 4, 15], ['Extensión tríceps polea', 3, 12]]],
       ['Pull (tracción)', [['Dominadas', 4, 8], ['Remo con barra', 4, 10], ['Jalón al pecho', 3, 12], ['Face pull', 3, 15], ['Curl con barra', 4, 12]]],
       ['Legs (pierna)', [['Sentadilla', 4, 8], ['Peso muerto rumano', 4, 10], ['Prensa', 3, 12], ['Extensiones de cuádriceps', 3, 15], ['Elevación de gemelos', 4, 15]]],
     ] },
-  { id: 'ppl6', name: 'PPL ×2', days: '6 días/sem', who: 'avanzados · máximo volumen', freq: 'cada grupo 2×/sem',
+  { id: 'ppl6', name: 'PPL ×2', days: '6 días/sem', who: 'avanzados, máximo volumen', freq: 'cada grupo 2×/sem',
     secuencia: [
       ['Push A', [['Press banca', 4, 8], ['Press militar', 3, 10], ['Aperturas en polea', 3, 12], ['Elevaciones laterales', 4, 15], ['Extensión tríceps polea', 3, 12]]],
       ['Pull A', [['Dominadas', 4, 8], ['Remo con barra', 4, 10], ['Face pull', 3, 15], ['Curl con barra', 4, 12]]],
@@ -90,7 +90,7 @@ export const TEMPLATES = [
   // nombre que ya reconoce el catálogo (EXCATALOG/KEYWORDS en muscle.ts,
   // TABLA en fibras.js) para ese mismo ejercicio y lo clasifica en Hombro; con
   // "Aperturas posteriores" la palabra "apertura" lo mandaría a Pecho.
-  { id: 'antpost', name: 'Anterior / Posterior', days: '4 días/sem', who: 'cadena anterior y posterior · ciclo de 7 días', freq: 'cada turno 2×/sem',
+  { id: 'antpost', name: 'Anterior / Posterior', days: '4 días/sem', who: 'cadena anterior y posterior, ciclo de 7 días', freq: 'cada turno 2×/sem',
     /* El ciclo es A · P · R · A · P · R · R — los dos turnos se repiten dos
        veces por semana con un descanso en medio y dos al final. Los turnos
        de descanso son parte de la plantilla, no algo que el usuario tenga

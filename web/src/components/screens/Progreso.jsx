@@ -101,7 +101,7 @@ export default function Progreso() {
                 {wk && wk.curAvg != null ? `último ${fmtKg(round1(lastW.weight))}, ` : `${fmtNum(kg2lb(lastW.weight))}${NBSP}lb, `}
                 {fmtDFull(lastW.date)}
                 {wk && wk.delta != null && (
-                  <> · <b className={`${wk.delta <= 0 ? 'text-ok' : 'text-accent'} whitespace-nowrap`}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></>
+                  <> <span className="whitespace-nowrap">·{NBSP}<b className={wk.delta <= 0 ? 'text-ok' : 'text-accent'}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></span></>
                 )}
               </div>
             )}
@@ -143,8 +143,8 @@ export default function Progreso() {
             <div className="stats" style={{ '--n': 4 }}>
               {Object.entries(lastVals).map(([k, v]) => (
                 <div key={k}>
-                  <div className="n">{fmtNum(v)}</div>
-                  <span className="l">{BODY_LABELS[k]} cm</span>
+                  <div className="n">{fmtNum(v)}<small>{NBSP}cm</small></div>
+                  <span className="l">{BODY_LABELS[k]}</span>
                 </div>
               ))}
             </div>
