@@ -1195,29 +1195,33 @@ export async function registrarDiaEntrenado(dateStr, slotId) {
       de partida.
     Son valores de arranque que se ven y se corrigen en la hoja, no datos que
     se guarden solos: la sesión se llena recién cuando se toca "Cargar". */
+/** Las series con las que arranca un ejercicio anotado para `fecha`: las de
+    la última vez ANTES de esa fecha (misma clave de ejercicio), o, si nunca
+    se hizo, las del plan con la meta (metaHoy) o el peso de partida. Sin
+    `t`: cada llamador les pone la hora que corresponde. La usan la carga de
+    un día pasado (seriesPrellenadas) y "＋ ejercicio" al corregir una
+    sesión (SessionView), que antes arrancaba en 20 kg fijos. */
+export function seriesDeEjercicio(ex, fecha) {
+  const key = exKey(ex);
+  for (const s of S.sessions) {
+    if (!(s.date < fecha)) continue;
+    const e = (s.entries || []).find(en => exKey(en) === key);
+    if (e?.sets?.length) return e.sets.map(st => ({ w: st.w, r: st.r, rpe: null, side: st.side ?? null }));
+  }
+  const uni = !!ex.unilateral;
+  const meta = metaHoy(ex, { uni });
+  const w = meta?.peso ?? pesoInicial(ex);
+  const r = meta?.reps || ex.reps || 10;
+  const n = Math.max(1, ex.sets || 3) * (uni ? 2 : 1);
+  return Array.from({ length: n }, (_, i) => ({ w, r, rpe: null, side: uni ? (i % 2 ? 'right' : 'left') : null }));
+}
+
 export function seriesPrellenadas(slotId, fecha) {
   const slot = S.routine.find(s => s.id === slotId);
   if (!slot) return [];
   const t0 = new Date(fecha + 'T12:00:00').getTime();
   return (slot.exercises || []).map(ex => {
-    const key = exKey(ex);
-    let previas = null;
-    for (const s of S.sessions) {
-      if (!(s.date < fecha)) continue;
-      const e = (s.entries || []).find(en => exKey(en) === key);
-      if (e?.sets?.length) { previas = e.sets; break; }
-    }
-    let sets;
-    if (previas) {
-      sets = previas.map(st => ({ w: st.w, r: st.r, rpe: null, side: st.side ?? null }));
-    } else {
-      const uni = !!ex.unilateral;
-      const meta = metaHoy(ex, { uni });
-      const w = meta?.peso ?? pesoInicial(ex);
-      const r = meta?.reps || ex.reps || 10;
-      const n = Math.max(1, ex.sets || 3) * (uni ? 2 : 1);
-      sets = Array.from({ length: n }, (_, i) => ({ w, r, rpe: null, side: uni ? (i % 2 ? 'right' : 'left') : null }));
-    }
+    const sets = seriesDeEjercicio(ex, fecha);
     return {
       exId: ex.id, name: ex.name, equip: ex.equip, machine: ex.machine, cat: ex.cat, unilateral: ex.unilateral,
       sets: sets.map((st, i) => ({ ...st, t: t0 + i * 60000 })),

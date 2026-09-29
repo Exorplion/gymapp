@@ -11,7 +11,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { S, useStore, openSheet, closeSheet } from '../../lib/state.js';
 import { fmtDFull, fmtNum, round1, uid } from '../../lib/format.js';
-import { sessionPRs, deleteHistorySession, updateHistorySession, entryDelta, groupSets, cargarSeriesRetro } from '../../lib/session.js';
+import { sessionPRs, deleteHistorySession, updateHistorySession, entryDelta, groupSets, cargarSeriesRetro, seriesDeEjercicio } from '../../lib/session.js';
 import { pinAddedToRoutine } from '../../lib/rutina-logic.js';
 import { catOf } from '../../lib/muscle.js';
 import { equipLabel, exKey } from '../../lib/equip.js';
@@ -82,10 +82,14 @@ export default function SessionView({ id, justFinished = false }) {
 
   const borrarEjercicio = ei => editar(c => { c.entries[ei].sets = []; }, 'Ejercicio borrado');
 
+  /* Arranca con lo último de ESE ejercicio antes de la fecha de la sesión,
+     o con la meta si nunca se hizo (seriesDeEjercicio) — antes, 20 kg
+     fijos. Las horas quedan en el día de la sesión, no en el de hoy. */
   const agregarEjercicio = ex => editar(c => {
+    const t0 = new Date(c.date + 'T12:00:00').getTime();
     c.entries.push({
-      exId: ex.id || uid(), name: ex.name, equip: ex.equip, machine: ex.machine, cat: ex.cat,
-      sets: [{ w: 20, r: ex.reps || 10, t: Date.now() }],
+      exId: ex.id || uid(), name: ex.name, equip: ex.equip, machine: ex.machine, cat: ex.cat, unilateral: ex.unilateral,
+      sets: seriesDeEjercicio(ex, c.date).map((st, i) => ({ ...st, t: t0 + i * 60000 })),
     });
   }, `${ex.name} agregado`);
 
