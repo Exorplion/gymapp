@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { S } from '../state.js';
-import { slotForTime, slotOf, mealsBySlot } from '../meals.js';
+import { slotForTime, slotOf, mealsBySlot, macroCls } from '../meals.js';
 
 describe('slotForTime', () => {
   it('reparte el día en cuatro momentos', () => {
@@ -54,5 +54,26 @@ describe('mealsBySlot', () => {
 
   it('un día sin comidas no devuelve bloques', () => {
     expect(mealsBySlot('2026-08-04')).toEqual([]);
+  });
+});
+
+/* Auditoría visual 2, V6: el color de una barra de macro es un ESTADO sólo
+   cuando hay algo que decir — verde si cumpliste, ámbar/rojo si te pasaste.
+   La proteína "casi" (75 %) iba en ámbar de alerta todos los días. */
+describe('macroCls', () => {
+  const m = { protMin: 140, fatMin: 50, fatMax: 80 };
+  it('proteína: verde al cumplir el mínimo, nada antes (ni siquiera "casi")', () => {
+    expect(macroCls(140, 'prot', m)).toBe('ok');
+    expect(macroCls(120, 'prot', m)).toBe('');   // 86 %: no es una alerta
+    expect(macroCls(50, 'prot', m)).toBe('');
+  });
+  it('grasa: ámbar si te pasaste, rojo si te pasaste más de un 10 %', () => {
+    expect(macroCls(85, 'fat', m)).toBe('warn');
+    expect(macroCls(90, 'fat', m)).toBe('red');
+    expect(macroCls(60, 'fat', m)).toBe('ok');
+    expect(macroCls(20, 'fat', m)).toBe('');
+  });
+  it('sin metas calculadas, sin estado', () => {
+    expect(macroCls(200, 'prot', null)).toBe('');
   });
 });
