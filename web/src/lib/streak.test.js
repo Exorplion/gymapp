@@ -135,6 +135,35 @@ describe('streakHeatmap', () => {
     }
   });
 
+  /* Auditoría visual 2, V7: antes de la primera sesión la app no existía
+     para vos. Pintar esos días como faltas era inventarlas (y el bloque rojo
+     más grande de Progreso). */
+  it('los días anteriores a la primera sesión son "antes", nunca "miss"', () => {
+    entrenoEn(0, 2, 10);
+    const m = streakHeatmap();
+    const de = f => m.days.find(d => d.date === f)?.status;
+    for (const n of [11, 20, 55]) expect(de(hace(n)), `hace ${n}`).toBe('antes');
+    expect(de(hace(10))).toBe('done');
+    expect(m.days.filter(d => d.status === 'miss')).toHaveLength(7);   // hace 3..9
+  });
+
+  it('el cumplimiento se cuenta desde la primera sesión, no desde hace 56 días', () => {
+    entrenoEn(0, 2, 10);
+    // 3 entrenados sobre 3 + 7 faltas; los 45 días "antes" no cuentan.
+    expect(streakHeatmap().pct).toBe(Math.round(3 / 10 * 100));
+  });
+
+  it('sin ninguna sesión todo es "antes" y el cumplimiento es 0', () => {
+    const m = streakHeatmap();
+    expect(m.days.every(d => d.status === 'antes')).toBe(true);
+    expect(m.pct).toBe(0);
+  });
+
+  it('una primera sesión de hace más de 56 días no deja ningún "antes"', () => {
+    entrenoEn(0, 70);
+    expect(streakHeatmap().days.some(d => d.status === 'antes')).toBe(false);
+  });
+
   it('devuelve 56 días y un porcentaje entre 0 y 100', () => {
     entrenoEn(0, 2, 4);
     const m = streakHeatmap();

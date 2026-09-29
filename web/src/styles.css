@@ -398,6 +398,10 @@ header.top{
 .heatmap .cell.done{background:var(--accent-grad);border-color:transparent;animation:zoom var(--d3) var(--ease) backwards}
 .heatmap .cell.rest{opacity:.28}
 .heatmap .cell.miss{background:rgba(var(--danger-rgb),.12);border-color:rgba(var(--danger-rgb),.3)}
+/* Antes de la primera sesión (streakHeatmap, V7): ni descanso ni falta, la
+   app todavía no existía para vos. Casillero vacío, sin relleno: se lee como
+   "no hay nada que contar", no como un día. */
+.heatmap .cell.antes{background:transparent;border-color:var(--line);opacity:.5}
 
 /* ---------- layout ---------- */
 /* En capa por el mismo motivo que los resets de arriba: sin ella, este

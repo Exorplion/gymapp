@@ -148,7 +148,7 @@ export function bestStreak(): number {
   return best;
 }
 
-export interface StreakDay { date: string; status: 'rest' | 'done' | 'miss' }
+export interface StreakDay { date: string; status: 'rest' | 'done' | 'miss' | 'antes' }
 export interface StreakHeatmap { days: StreakDay[]; pct: number }
 
 /** Los últimos 56 días, cada uno como entrenado / descanso / falta.
@@ -157,16 +157,24 @@ export interface StreakHeatmap { days: StreakDay[]; pct: number }
     larga que la tolerancia: recién ahí es una falta. Por eso la tanda se mide
     entera antes de etiquetar sus días — mirando un día suelto es imposible
     saber si fue descanso o abandono, y esa es justamente la diferencia que el
-    mapa tiene que mostrar. */
+    mapa tiene que mostrar.
+
+    Los días **anteriores a la primera sesión** son `antes`: no descanso ni
+    falta, porque todavía no usabas la app. Hasta el 2026-09-28 se marcaban
+    como falta y Progreso abría con tres semanas en rojo inventadas (auditoría
+    visual 2, V7); tampoco entran en el cumplimiento. */
 export function streakHeatmap(): StreakHeatmap {
   const fechas = fechasEntrenadas();
   const tol = toleranciaDescanso();
+  const primera = fechas.size ? [...fechas].reduce((a, b) => (a < b ? a : b)) : null;
   const dias: StreakDay[] = [];
   for (let i = 55; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
-    dias.push({ date: dstr(d), status: 'rest' });
+    const date = dstr(d);
+    dias.push({ date, status: primera && date >= primera ? 'rest' : 'antes' });
   }
-  let i = 0;
+  let i = dias.findIndex(x => x.status !== 'antes');
+  if (i < 0) i = dias.length;
   while (i < dias.length) {
     if (fechas.has(dias[i].date)) { dias[i].status = 'done'; i++; continue; }
     let j = i;
@@ -178,7 +186,7 @@ export function streakHeatmap(): StreakHeatmap {
     if (largo > tol) for (let k = i; k < j; k++) dias[k].status = 'miss';
     i = j;
   }
-  const contados = dias.filter(x => x.status !== 'rest').length;
+  const contados = dias.filter(x => x.status === 'done' || x.status === 'miss').length;
   const hechos = dias.filter(x => x.status === 'done').length;
   return { days: dias, pct: contados ? Math.round((hechos / contados) * 100) : 0 };
 }
