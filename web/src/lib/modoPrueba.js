@@ -10,8 +10,12 @@
 // La marca vive en localStorage (no en la base: hay que leerla ANTES de
 // saber cuál abrir). Es el único uso de localStorage de la app.
 import { DB, STORES, idbOpen } from './db.js';
+import { dstr } from './format.js';
 
 export const CLAVE = 'fierro-modo-prueba';
+/** El día en que se entró (o se confirmó "sigo probando"). Si la app se abre
+    otro día, pregunta "¿Seguís en modo prueba?" (pruebaDeOtroDia). */
+export const DESDE = 'fierro-modo-prueba-desde';
 export const BASE_REAL = 'fierro';
 export const BASE_PRUEBA = 'fierro-prueba';
 
@@ -79,17 +83,150 @@ export async function copiarAPrueba() {
   }
 }
 
-/** Arma la copia, marca el modo y recarga: la app arranca sobre la copia. */
-export async function entrarModoPrueba() {
+/** Arma la copia, marca el modo (y el día) y recarga: la app arranca sobre
+    la copia. */
+export async function entrarModoPrueba(hoy = dstr()) {
   await copiarAPrueba();
   localStorage.setItem(CLAVE, '1');
   if (!enModoPrueba()) throw new Error('Este navegador no deja guardar la marca del modo prueba');
+  seguirEnPrueba(hoy);
   location.reload();
 }
 
-/** Tira la copia entera y vuelve a la base real. */
-export async function salirModoPrueba() {
-  try { localStorage.removeItem(CLAVE); } catch { /* sin almacenamiento: igual se recarga */ }
+/* ---------------------------------------------------------------------------
+   Salir sin perder nada (2026-09-29).
+
+   Enzo entró al modo prueba, entrenó DE VERDAD el domingo 27 y el lunes 28 sin
+   notar que seguía en la copia, y al salir la copia se borró con esas dos
+   sesiones adentro (docs/debug-2026-09-29-datos-y-domingo.md). Salir ahora
+   primero mira qué tiene la copia que la base real no tiene, lo dice, y
+   ofrece pasarlo a la real o descartarlo a sabiendas.
+   ------------------------------------------------------------------------- */
+
+const mismaFila = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const porFecha = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+
+/** Qué hay en la copia de prueba que la real no tiene. Puro: recibe las filas
+    de las dos bases. Sin duplicar: una sesión con otro id pero el mismo turno
+    el mismo día que una real no cuenta, ni un peso igual el mismo día. Una
+    sesión con el mismo id pero distinta (corregida en la prueba) sí cuenta. */
+export function diferenciasPrueba(real, prueba) {
+  const sesionesReales = real.sessions || [];
+  const sesReal = new Map(sesionesReales.map(s => [s.id, s]));
+  const sesiones = (prueba.sessions || []).filter(s => {
+    const r = sesReal.get(s.id);
+    if (r) return !mismaFila(r, s);
+    return !sesionesReales.some(x => x.date === s.date && x.slotId && x.slotId === s.slotId);
+  }).sort(porFecha);
+  const bodyReal = real.body || [];
+  const idsBody = new Set(bodyReal.map(b => b.id));
+  const pesos = (prueba.body || [])
+    .filter(b => !idsBody.has(b.id) && !bodyReal.some(x => x.date === b.date && x.weight === b.weight))
+    .sort(porFecha);
+  const idsMeals = new Set((real.meals || []).map(m => m.id));
+  const comidas = (prueba.meals || []).filter(m => !idsMeals.has(m.id));
+  return { sesiones, pesos, comidas };
+}
+
+const cuenta = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+
+/** "Registraste 2 sesiones y 1 peso en la prueba." */
+export function textoResumen(dif) {
+  const partes = [];
+  if (dif.sesiones.length) partes.push(cuenta(dif.sesiones.length, 'sesión', 'sesiones'));
+  if (dif.pesos.length) partes.push(cuenta(dif.pesos.length, 'peso', 'pesos'));
+  if (dif.comidas.length) partes.push(cuenta(dif.comidas.length, 'comida', 'comidas'));
+  if (!partes.length) return 'No registraste nada nuevo en la prueba.';
+  const lista = partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}` : partes[0];
+  return `Registraste ${lista} en la prueba.`;
+}
+
+/** Abre otra base por nombre, en su versión actual, sin tocar DB.db. */
+function abrirOtra(nombre) {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(nombre);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+    r.onblocked = () => rej(new Error('La base está bloqueada por otra pestaña'));
+  });
+}
+
+async function leerDatos(db) {
+  const out = {};
+  for (const st of ['sessions', 'body', 'meals', 'settings']) {
+    out[st] = db.objectStoreNames.contains(st) ? await leerStore(db, st) : [];
+  }
+  out.cfg = out.settings.find(x => x.key === 'cfg')?.value || null;
+  return out;
+}
+
+/** Lo que tiene la copia de prueba (la conexión abierta, DB.db) que la real
+    no. Lleva también la config de la prueba, para el puntero de la secuencia. */
+export async function resumenPrueba() {
+  if (!DB.db || DB.name !== BASE_PRUEBA) throw new Error('El resumen se arma desde el modo prueba');
+  const prueba = await leerDatos(DB.db);
+  const realDb = await abrirOtra(BASE_REAL);
+  try {
+    const real = await leerDatos(realDb);
+    // Una sesión abierta en la prueba no se pasa (no está completa): se avisa.
+    const enCurso = prueba.settings.some(x => x.key === 'draft' && x.value);
+    return { ...diferenciasPrueba(real, prueba), cfgPrueba: prueba.cfg, enCurso };
+  } finally {
+    realDb.close();
+  }
+}
+
+/** Escribe en la base REAL lo que resumenPrueba() encontró. Se puede correr
+    dos veces sin duplicar (put por id). Si lo que se pasa incluye la sesión
+    más reciente de todas, el puntero de la secuencia (seqIndex) sigue al de
+    la prueba: si no, la app te volvería a proponer el turno que ya hiciste. */
+export async function pasarPruebaAReal(dif) {
+  const realDb = await abrirOtra(BASE_REAL);
+  try {
+    const real = await leerDatos(realDb);
+    const pasadas = new Set(dif.sesiones.map(s => s.id));
+    const ultimaReal = real.sessions.filter(s => !pasadas.has(s.id)).reduce((m, s) => (s.date > m ? s.date : m), '');
+    const ultimaPasada = dif.sesiones.reduce((m, s) => (s.date > m ? s.date : m), '');
+    const moverPuntero = !!ultimaPasada && ultimaPasada >= ultimaReal && typeof dif.cfgPrueba?.seqIndex === 'number';
+
+    await new Promise((res, rej) => {
+      const t = realDb.transaction(['sessions', 'body', 'meals', 'settings'], 'readwrite');
+      for (const s of dif.sesiones) t.objectStore('sessions').put(s);
+      for (const b of dif.pesos) t.objectStore('body').put(b);
+      for (const m of dif.comidas) t.objectStore('meals').put(m);
+      if (moverPuntero) {
+        const cfg = { ...(real.cfg || {}), seqIndex: dif.cfgPrueba.seqIndex, seqIndexDate: dif.cfgPrueba.seqIndexDate ?? null };
+        t.objectStore('settings').put({ key: 'cfg', value: cfg });
+      }
+      t.oncomplete = res;
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error || new Error('No se pudo pasar lo de la prueba a tus datos reales'));
+    });
+  } finally {
+    realDb.close();
+  }
+}
+
+/** La app se abrió otro día que el que se entró al modo prueba: hay que
+    preguntar si se sigue. Una prueba de antes de este arreglo no tiene fecha:
+    también pregunta (es justo el caso de quedarse días sin darse cuenta). */
+export function pruebaDeOtroDia(hoy = dstr()) {
+  if (!enModoPrueba()) return false;
+  let desde = null;
+  try { desde = localStorage.getItem(DESDE); } catch { /* sin almacenamiento */ }
+  return desde !== hoy;
+}
+
+/** "Sí, sigo probando": no vuelve a preguntar hasta otro día. */
+export function seguirEnPrueba(hoy = dstr()) {
+  try { localStorage.setItem(DESDE, hoy); } catch { /* sin almacenamiento */ }
+}
+
+/** Sale del modo prueba. Con `pasar` (el resultado de resumenPrueba), primero
+    escribe eso en la base real; sin él, la copia se descarta entera. */
+export async function salirModoPrueba({ pasar = null } = {}) {
+  if (pasar) await pasarPruebaAReal(pasar);
+  try { localStorage.removeItem(CLAVE); localStorage.removeItem(DESDE); } catch { /* sin almacenamiento: igual se recarga */ }
   DB.db?.close();
   DB.db = null;
   await borrarBase(BASE_PRUEBA);
