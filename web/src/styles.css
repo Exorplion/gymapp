@@ -3,6 +3,31 @@
    ============================================================ */
 @import "tailwindcss";
 
+/* ---- FUENTES: seis caras, servidas desde la app (tanda B, V8) ------------
+   Hasta el 2026-09-29 venían de Google Fonts por <link>: 500/600/700 y 700
+   itálica de Barlow Condensed, 400-700 de Barlow. El CSS pedía 800 en el
+   título de Inicio, sus cifras y ENTRENAR, pero el 800 no se cargaba y con
+   `font-synthesis:none` se dibujaba en 700: la app declaraba un golpe que no
+   daba. Y como el service worker no las precargaba, sin red la app caía a la
+   fuente del sistema.
+
+   Ahora son archivos propios (subconjunto latino, que cubre el castellano,
+   "·", "−" y las comillas; copiados de @fontsource 5.3.0, licencia OFL en
+   assets/fonts/OFL.txt), que Vite versiona y workbox precarga. Una cara por
+   trabajo, ninguna de más (cada una son ~22 KB):
+     Barlow 400   texto          Barlow Condensed 700  sección, controles, nombres
+     Barlow 600   filas, rótulos Barlow Condensed 800  CTA, cifras en caja normal
+     Barlow 700   énfasis        Barlow Condensed 800 itálica  títulos y cifras protagonistas
+   No hay 500 ni 700 itálica: se colapsaron (500 → 400/600, itálica → 800).
+   `swap`: la primera vez se ve el texto con la del sistema hasta que llega;
+   después viene del precache y no hay cambio visible. */
+@font-face{font-family:'Barlow';font-style:normal;font-weight:400;font-display:swap;src:url('./assets/fonts/barlow-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Barlow';font-style:normal;font-weight:600;font-display:swap;src:url('./assets/fonts/barlow-latin-600-normal.woff2') format('woff2')}
+@font-face{font-family:'Barlow';font-style:normal;font-weight:700;font-display:swap;src:url('./assets/fonts/barlow-latin-700-normal.woff2') format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:700;font-display:swap;src:url('./assets/fonts/barlow-condensed-latin-700-normal.woff2') format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:800;font-display:swap;src:url('./assets/fonts/barlow-condensed-latin-800-normal.woff2') format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-display:swap;src:url('./assets/fonts/barlow-condensed-latin-800-italic.woff2') format('woff2')}
+
 /* ---- COLOR: POR FUNCIÓN, NO POR MATIZ (rediseño 2026-09-27) --------------
    Antes los tokens se llamaban --blue, --blue2, --cyan…: la app se pensó
    azul, y el color que elegías en Ajustes se metía en casilleros que se
