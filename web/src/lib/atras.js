@@ -23,6 +23,12 @@
 // se la llevaría. Por eso, mientras hay un back propio en vuelo, las capas
 // nuevas esperan y se empujan recién cuando llega su popstate.
 
+/** Lo que devuelve el `cerrar` de una capa que se ocupó del gesto SIN
+    cerrarse: una hoja con pasos adentro (el asistente de agregar ejercicio)
+    retrocede un paso. La capa sigue viva y vuelve al historial con una
+    entrada nueva, así el próximo volver también le llega. */
+export const QUEDARSE = Symbol('quedarse');
+
 /** Crea una pila sobre un `history` (el real, o uno falso en los tests). */
 export function crearAtras(h) {
   const pila = [];        // { depth, cerrar, viva }
@@ -67,7 +73,11 @@ export function crearAtras(h) {
       if (e.depth <= d) continue;
       e.viva = false;
       pila.splice(i, 1);
-      e.cerrar();
+      if (e.cerrar() === QUEDARSE) {
+        e.viva = true;
+        pila.splice(i, 0, e);
+        empujar(e);
+      }
     }
   }
 
@@ -86,4 +96,20 @@ function atras() {
 /** Registra una capa en la pila del gesto de volver. Devuelve la limpieza. */
 export function registrarAtras(cerrar) {
   return atras()?.registrar(cerrar) || (() => {});
+}
+
+/* La hoja abierta es UNA capa (App.jsx la registra con S.sheet). Lo que vive
+   adentro puede pedir el volver antes que la hoja: `interceptarHoja(fn)`;
+   si `fn()` devuelve true, se ocupó (retrocedió un paso) y la hoja queda. */
+let interceptor = null;
+
+/** Registra quién decide el volver dentro de la hoja. Devuelve cómo soltarlo. */
+export function interceptarHoja(fn) {
+  interceptor = fn;
+  return () => { if (interceptor === fn) interceptor = null; };
+}
+
+/** ¿Lo de adentro de la hoja se ocupó del volver? */
+export function volverEnHoja() {
+  return interceptor ? interceptor() === true : false;
 }

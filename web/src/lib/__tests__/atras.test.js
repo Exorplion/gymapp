@@ -2,7 +2,7 @@
 // se comporta como el real: pushState trunca lo que había adelante y back()
 // aterriza DESPUÉS, en otro turno, con su popstate.
 import { describe, it, expect, vi } from 'vitest';
-import { crearAtras } from '../atras.js';
+import { crearAtras, QUEDARSE, interceptarHoja, volverEnHoja } from '../atras.js';
 
 function historialFalso() {
   const h = {
@@ -75,5 +75,50 @@ describe('gesto de volver', () => {
     await Promise.resolve(); await Promise.resolve();
     expect(h.i).toBe(0);
     expect(h.salio).toBeFalsy();
+  });
+});
+
+/* Una hoja con pasos adentro (el asistente de agregar ejercicio): volver
+   retrocede un paso en vez de cerrar la hoja entera, y en el paso 1 sí la
+   cierra. La capa de la hoja es UNA; su `cerrar` dice QUEDARSE y la capa
+   vuelve a la pila con una entrada nueva, así el próximo volver también
+   llega. */
+describe('hoja con pasos', () => {
+  it('una capa que responde QUEDARSE sigue abierta y el próximo volver vuelve a llegarle', async () => {
+    const { h, a, gesto } = montar();
+    let paso = 3;
+    const cerrarHoja = vi.fn();
+    a.registrar(() => {
+      if (paso > 1) { paso--; return QUEDARSE; }
+      cerrarHoja();
+    });
+    await gesto();
+    expect(paso).toBe(2);
+    expect(a.abiertas()).toBe(1);
+    expect(h.i).toBe(1);
+    await gesto();
+    expect(paso).toBe(1);
+    expect(cerrarHoja).not.toHaveBeenCalled();
+    await gesto();
+    expect(cerrarHoja).toHaveBeenCalledOnce();
+    expect(a.abiertas()).toBe(0);
+    expect(h.salio).toBeFalsy();
+  });
+
+  it('interceptarHoja: quien está adentro de la hoja decide; al soltar, vuelve a cerrar', () => {
+    expect(volverEnHoja()).toBe(false);
+    const soltar = interceptarHoja(() => true);
+    expect(volverEnHoja()).toBe(true);
+    soltar();
+    expect(volverEnHoja()).toBe(false);
+  });
+
+  it('soltar un interceptor viejo no borra al nuevo', () => {
+    const viejo = interceptarHoja(() => true);
+    const nuevo = interceptarHoja(() => true);
+    viejo();
+    expect(volverEnHoja()).toBe(true);
+    nuevo();
+    expect(volverEnHoja()).toBe(false);
   });
 });

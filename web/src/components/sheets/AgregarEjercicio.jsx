@@ -21,6 +21,7 @@ import { vibrate } from '../../lib/format.js';
 import { toast } from '../../lib/toast.js';
 import { flipSort, setAsistDrop } from '../../lib/drag.js';
 import { menosMovimiento } from '../../lib/motion.js';
+import { interceptarHoja } from '../../lib/atras.js';
 import {
   PASOS, NUEVO, estadoInicial, setNombre, setGrupo, setCampo, ajustar, necesitaGrupo,
   avanzar, volver, rangoReps, textoCTA, autocompletar, catalogoDe, teFaltaHoy,
@@ -88,6 +89,19 @@ export default function AgregarEjercicio({ wd, tipo = 'rutina', inicial }) {
   }
 
   function atras() { setDir('l'); cambiar(volver); }
+
+  /* El volver de Android / del navegador hace lo mismo que "‹": un paso
+     atrás. En el paso 1 no se ocupa y la hoja se cierra como cualquier otra.
+     Refs para no volver a registrar en cada render. */
+  const pasoRef = useRef(e.paso);
+  pasoRef.current = e.paso;
+  const atrasRef = useRef(atras);
+  atrasRef.current = atras;
+  useEffect(() => interceptarHoja(() => {
+    if (pasoRef.current <= 1) return false;
+    atrasRef.current();
+    return true;
+  }), []);
 
   async function agregar() {
     if (guardando) return;

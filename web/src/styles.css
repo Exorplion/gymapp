@@ -331,6 +331,38 @@ h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif}
 .warmup-skip::after,.sil-caras button::after,.done-again::after{
   content:'';position:absolute;left:0;right:0;top:-11px;bottom:-11px;
 }
+/* Auditoría total, G11: los controles de 20–38 px que quedaban. Mismo
+   patrón (un ::after invisible, el dibujo no cambia) con el inset justo
+   para llegar a 40 sin pisar al vecino — medido con getBoundingClientRect a
+   390 y 430 (ver HANDOFF.md). Donde el vecino está pegado, el inset es
+   sólo vertical. */
+.icon-btn,.pastilla-prueba,.chip,.seg button,.meal-del,.back-btn,.plan-edit,
+.ex-despues,.ex-tabla td.x button,.mfibras-btn,.ex-row .info.inline,
+.ex-row .acts .mini,.link-toque,.wkreal-ask{position:relative}
+.icon-btn::after,.pastilla-prueba::after,.chip::after,.seg button::after,.meal-del::after,
+.back-btn::after,.plan-edit::after,.ex-despues::after,.ex-aviso-x::after,
+.ex-tabla td.x button::after,.mfibras-btn::after,.ex-row .info.inline::after,
+.ex-row .acts .mini::after,.link-toque::after,.wkreal-ask::after{
+  content:'';position:absolute;inset:0;
+}
+.icon-btn::after{inset:-1px}                               /* 38 → 40 */
+.streak-btn::after{inset:-3px -1px}                        /* 58×35 → 60×41 */
+.pastilla-prueba::after{inset:-3px 0}                      /* alto 36 → 42 */
+.chip::after{inset:-2px}                                   /* alto 37 → 41 */
+.seg button::after{inset:-1px 0}                           /* alto 38 → 40; al lado hay otro */
+.meal-del::after{inset:-2px}                               /* 36 → 40 */
+.back-btn::after{inset:-3px}                               /* 34 → 40 */
+.plan-edit::after{inset:-3px 0}                            /* alto 36 → 42 */
+.ex-despues::after{inset:-4px 0}                           /* alto 32 → 40 */
+.ex-aviso-x::after{inset:-7px}                             /* 26 → 40 */
+.ex-tabla td.x button::after{inset:-4px}                   /* 32 → 40; filas de 41 */
+.mfibras-btn::after{inset:-4px}                            /* 32×36 → 40×44 */
+.ex-row .info.inline::after{inset:-8px}                    /* 24 → 40 */
+.ex-row .acts .mini::after{inset:-4px}                     /* 32 → 40, con 8 entre sí */
+/* Un enlace de texto en medio de una línea ("Tu Año Fierro →", "Ver cuánto
+   tomar ›"): el toque es una franja de 44 centrada en el texto, mida lo que
+   mida la letra. */
+.link-toque::after{inset:auto -4px;top:50%;height:44px;margin-top:-22px}
 /* También en @layer base. Sin capa, este `background:none;border:none` era lo
    que dejaba sin efecto el borde y el degradado de `<Button variant="icon">`
    —los botones de 38px de las filas— y de cualquier botón estilado con
@@ -1192,7 +1224,7 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 /* Series hechas: una fila por serie. */
 .ex-tabla{width:100%;margin-top:var(--s3);border-collapse:collapse;font-variant-numeric:tabular-nums}
 .ex-tabla th{padding:0 0 4px;text-align:left;font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
-.ex-tabla td{padding:3px 0;border-top:1px solid var(--line);font-size:var(--t-sm);color:var(--text-2)}
+.ex-tabla td{padding:4px 0;border-top:1px solid var(--line);font-size:var(--t-sm);color:var(--text-2)}
 .ex-tabla td b{font-family:'Barlow Condensed';font-size:var(--t-lg);color:var(--text)}
 .ex-tabla .c{text-align:center}
 .ex-tabla td.n{width:22px;font-family:'Barlow Condensed';font-weight:700;color:var(--text-3)}
@@ -1808,7 +1840,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   flex:1;min-width:0;font-size:var(--t-micro);color:var(--text-2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-.ex-row .acts{display:flex;gap:5px;flex:none}
+.ex-row .acts{display:flex;gap:var(--s2);flex:none}
 /* las acciones se apagan: antes cuatro botones de igual peso competían con el
    contenido, que es lo que hacía que la lista se leyera como una barra de
    herramientas y no como tu rutina */
@@ -3914,6 +3946,10 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   display:block;width:100%;line-height:1.15;
   background:none;border:0;border-bottom:1px dashed transparent;
   color:var(--text);padding:0 0 2px;
+  /* Un <input> no tiene ::after: el toque se agranda con padding arriba y el
+     mismo margen negativo, así el texto y la raya punteada no se mueven
+     (G11: 28 → 40 de alto). Arriba sólo hay el padding de la tarjeta. */
+  padding-top:12px;margin-top:-12px;
 }
 .day-name-input:focus{outline:none;border-bottom-color:var(--accent)}
 .day-name-input::placeholder{color:var(--text-3);font-weight:500}
