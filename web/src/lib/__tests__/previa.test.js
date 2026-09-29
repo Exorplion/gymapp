@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from '../state.js';
 import { dstr } from '../format.js';
-import { fuerzaPrevia, sparkPuntos, recordPrevia, haceTexto, recuperacionPrevia, metaHoy, metaTexto, previaEjercicio } from '../previa.js';
+import { fuerzaPrevia, sparkPuntos, recordPrevia, haceTexto, recuperacionPrevia, metaHoy, metaTexto, previaEjercicio, cambioTexto, metaPartes } from '../previa.js';
 import { e1rmSeries } from '../charts.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
@@ -234,5 +234,31 @@ describe('previaEjercicio', () => {
     const sin = previaEjercicio({ ...PRESS, equip: 'barra' }).meta.peso;
     const con = previaEjercicio({ ...PRESS, equip: 'barra' }, { ajuste: -0.1 }).meta.peso;
     expect(con).toBeLessThan(sin);
+  });
+});
+
+describe('cambioTexto y hace de la fuerza — lo que se lee debajo del 1RM', () => {
+  it('sube, baja o se queda, con las semanas medidas', () => {
+    expect(cambioTexto({ cambioPct: 6, semanas: 8 })).toEqual({ tono: 'sube', texto: '▲ 6 % en 8 semanas' });
+    expect(cambioTexto({ cambioPct: -20, semanas: 1 })).toEqual({ tono: 'baja', texto: '▼ 20 % en 1 semana' });
+    expect(cambioTexto({ cambioPct: 0, semanas: 3 })).toEqual({ tono: 'igual', texto: 'sin cambio en 3 semanas' });
+  });
+  it('sin cambio medible no hay línea (nunca un "0 %" inventado)', () => {
+    expect(cambioTexto({ cambioPct: null, semanas: null })).toBe(null);
+    expect(cambioTexto(null)).toBe(null);
+  });
+  it('fuerzaPrevia dice hace cuánto fue la última medición', () => {
+    S.sessions = [sesion('2026-09-20', [serie(50, 8)])];
+    expect(fuerzaPrevia(PRESS, { hoy: '2026-09-25' }).hace).toBe('hace 5 días');
+  });
+});
+
+describe('metaPartes', () => {
+  it('separa los números del porqué', () => {
+    expect(metaPartes({ tipo: 'sumar', peso: 47.5, reps: 8, texto: '1 rep más que la última' })).toEqual({ numeros: '47.5 kg × 8', porque: '1 rep más que la última' });
+    expect(metaPartes({ tipo: 'primera', peso: null, reps: 8, texto: 'arrancá liviano' })).toEqual({ numeros: '8 reps', porque: 'arrancá liviano' });
+  });
+  it('sin meta, todo vacío', () => {
+    expect(metaPartes(null)).toEqual({ numeros: '', porque: '' });
   });
 });

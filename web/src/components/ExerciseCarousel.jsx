@@ -29,6 +29,8 @@ import {
   pasosRampa, avanzarRampa, deshacerRampa,
 } from '../lib/session.js';
 import { estadoRampa, tocarPaso, estadoBoton } from '../lib/rampa.js';
+import { previaEjercicio, metaPartes, cambioTexto } from '../lib/previa.js';
+import PreviaEjercicio, { Sparkline } from './PreviaEjercicio.jsx';
 import { sideImbalance } from '../lib/symmetry.js';
 import { toast } from '../lib/toast.js';
 import { T } from '../lib/rest.js';
@@ -614,7 +616,40 @@ function TablaSeries({ exId, done, uni, unidad }) {
 const yaAvisadas = new Set();
 const AVISO_MS = 4000;
 
-function AvisoUltimaVez({ visible, onCerrar, last, obj, uni }) {
+/* Lo que la previa mostraba antes de empezar y sigue haciendo falta con el
+   ejercicio en marcha: el 1RM con su línea de 8 semanas y el récord. Mismas
+   columnas que la comparativa (.ex-cmp), así el aviso se lee como un solo
+   tablero. */
+function FuerzaYRecord({ fuerza, record }) {
+  if (!fuerza && !record) return null;
+  const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
+  const cambio = cambioTexto(fuerza);
+  return (
+    <div className="ex-cmp ex-aviso-fuerza">
+      {fuerza && (
+        <div className="ex-cmp-col">
+          <span className="ex-cmp-lbl">1RM estimado</span>
+          <div className="ex-aviso-1rm">
+            <b>{wDisplay(fuerza.actual)} {unidad}</b>
+            <Sparkline puntos={fuerza.puntos} ancho={56} alto={22} className="previa-spark chica" />
+          </div>
+          <small className={cambio ? { sube: 'previa-up', baja: 'previa-down', igual: '' }[cambio.tono] : ''}>
+            {cambio ? cambio.texto : `última sesión ${fuerza.hace}`}
+          </small>
+        </div>
+      )}
+      {record && (
+        <div className="ex-cmp-col">
+          <span className="ex-cmp-lbl">Récord</span>
+          <b>{wDisplay(record.w)} {unidad} × {record.r}</b>
+          <small>{record.hace}</small>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AvisoUltimaVez({ visible, onCerrar, last, obj, uni, fuerza, record }) {
   useEffect(() => {
     if (!visible) return;
     const t = setTimeout(onCerrar, AVISO_MS);
@@ -634,6 +669,7 @@ function AvisoUltimaVez({ visible, onCerrar, last, obj, uni }) {
           >
             <button type="button" className="ex-aviso-x" aria-label="Cerrar" onClick={e => { e.stopPropagation(); onCerrar(); }}>✕</button>
             <Comparativa last={last} obj={obj} uni={uni} />
+            <FuerzaYRecord fuerza={fuerza} record={record} />
             <i className="ex-aviso-reloj" aria-hidden="true" style={{ animationDuration: `${AVISO_MS}ms` }} />
           </motion.div>
         )}
@@ -698,7 +734,25 @@ function ExerciseSlide({ m, wd, started }) {
   const lastBilateral = (uni && !last) ? lastDataFor({ ...ex, unilateral: false }) : null;
   // Aviso raro, no diario: sólo si el desbalance izq/der es un patrón sostenido.
   const imbalance = uni ? sideImbalance(ex) : null;
-  const obj = (!full && !skipped) ? objetivoHoy(ex, { uni, ajuste: S.draft?.precheckAdjust || 0 }) : null;
+  const ajuste = S.draft?.precheckAdjust || 0;
+  const obj = (!full && !skipped) ? objetivoHoy(ex, { uni, ajuste }) : null;
+
+  /* La previa (rediseño 2026-09-27, pieza 3): debajo de CUALQUIER tarjeta
+     sin empezar — la siguiente, y también la que está en espera si
+     deslizás hasta ella con otro ejercicio en curso. Con el ejercicio
+     abierto los mismos datos siguen sirviendo: la meta va dentro de la
+     tarjeta y la fuerza y el récord, en el aviso de "Sesión anterior".
+     Memo por historial: recorrer las sesiones en cada bump() (cada toque
+     de la rampa) no hace falta si no terminó ninguna. */
+  const sinEmpezar = !full && !skipped && done.length === 0 && (isNext || waiting);
+  const sesiones = S.sessions;
+  const nSesiones = sesiones?.length || 0;
+  const datosPrevia = useMemo(
+    () => (sinEmpezar || open ? previaEjercicio(ex, { uni, ajuste }) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sesiones/nSesiones: el historial cambia en su lugar
+    [sinEmpezar, open, ex, uni, ajuste, sesiones, nSesiones],
+  );
+  const metaLinea = datosPrevia ? metaPartes(datosPrevia.meta) : null;
 
   /* La rampa de aproximación (50/75/90%), ahora ADENTRO de la tarjeta del
      ejercicio que la necesita y sólo antes de su primera serie. Se calcula
@@ -844,7 +898,12 @@ function ExerciseSlide({ m, wd, started }) {
             )}
           </div>
         )}
-        {hayComparativa && <AvisoUltimaVez visible={aviso} onCerrar={cerrarAviso} last={last} obj={obj} uni={uni} />}
+        {hayComparativa && (
+          <AvisoUltimaVez
+            visible={aviso} onCerrar={cerrarAviso} last={last} obj={obj} uni={uni}
+            fuerza={datosPrevia?.fuerza} record={datosPrevia?.record}
+          />
+        )}
         {/* D3: la ausencia de dato no es un cero. */}
         {!last && uni && !full && !skipped && (
           <div className="exlast text-text-2">
@@ -890,20 +949,37 @@ function ExerciseSlide({ m, wd, started }) {
             unilateral, cambiar) recién tiene sentido con el ejercicio en
             marcha, así que acá sólo quedan las dos salidas del "no puedo
             hacerlo ahora". */}
-        {isNext && (
-          <div className="ex-pre">
-            <button type="button" className="btn" onClick={() => startExercise(ex)}>
-              {started ? '▶ Hacer ahora' : '▶ Empezar rutina'}
-            </button>
-            <div className="ex-pre-links">
-              <button type="button" className="linkcard" onClick={() => openSheet('despues', { exId: ex.id })}><Later size={14} /> Hacer después</button>
-              <button type="button" className="linkcard" onClick={() => confirmarOmitir(ex)}><Skip size={13} /> Omitir ejercicio</button>
-            </div>
-          </div>
-        )}
+        {/* Al tocar Empezar este bloque se cierra por altura MIENTRAS
+            .ex-live se abre (los dos en D.panel, misma curva): la tarjeta
+            crece de corrido y la previa de abajo no salta hacia arriba
+            antes de irse. */}
+        <AnimatePresence initial={false}>
+          {isNext && (
+            <motion.div
+              key="pre"
+              className="ex-pre"
+              exit={menosMovimiento() ? undefined : { height: 0, marginTop: 0, opacity: 0, transition: { duration: D.panel / 1000, ease: curvaSalida } }}
+            >
+              <button type="button" className="btn" onClick={() => startExercise(ex)}>
+                {started ? '▶ Hacer ahora' : '▶ Empezar rutina'}
+              </button>
+              <div className="ex-pre-links">
+                <button type="button" className="linkcard" onClick={() => openSheet('despues', { exId: ex.id })}><Later size={14} /> Hacer después</button>
+                <button type="button" className="linkcard" onClick={() => confirmarOmitir(ex)}><Skip size={13} /> Omitir ejercicio</button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {open && (
           <motion.div className="ex-live" variants={desplegar} initial={animar ? 'oculto' : false} animate="visible">
+            {/* La meta de hoy, que antes de empezar estaba en la previa,
+                queda como una línea dentro de la tarjeta. */}
+            {metaLinea?.numeros && (
+              <motion.p variants={pieza} className="ex-meta-hoy">
+                <span>Meta de hoy</span> <b>{metaLinea.numeros}</b>{metaLinea.porque && <> · {metaLinea.porque}</>}
+              </motion.p>
+            )}
             <motion.div variants={pieza} className="ex-serie">
               <div className="ex-serie-top">
                 <span>
@@ -1030,6 +1106,9 @@ function ExerciseSlide({ m, wd, started }) {
 
         {done.length > 0 && <TablaSeries exId={ex.id} done={done} uni={uni} unidad={unidad} />}
       </div>
+      <AnimatePresence initial={false}>
+        {sinEmpezar && datosPrevia && <PreviaEjercicio key="previa" datos={datosPrevia} />}
+      </AnimatePresence>
     </div>
   );
 }

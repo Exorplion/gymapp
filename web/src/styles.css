@@ -1107,6 +1107,44 @@ main.arrastrando{overflow:hidden;user-select:none}
 .btn-serie-t{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-lg);letter-spacing:.1em;text-transform:uppercase;animation:btnRotulo var(--d2) var(--ease-out) both}
 .btn-serie small{margin-left:auto;font-size:var(--t-sm);color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap;animation:btnRotulo var(--d2) var(--ease-out) both}
 @keyframes btnRotulo{from{opacity:0;transform:translateY(4px)}}
+/* La meta de hoy dentro de la tarjeta abierta (antes de empezar vivía en la
+   previa): una línea, el número en la condensada y en el acento. */
+.ex-meta-hoy{
+  margin-top:var(--s3);font-size:var(--t-sm);line-height:1.3;color:var(--text-2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ex-meta-hoy span{margin-right:var(--s1);font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.ex-meta-hoy b{font-family:'Barlow Condensed';font-size:var(--t-body);font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+/* Fuerza y récord en el aviso de "Sesión anterior ›": las mismas columnas
+   que la comparativa, con la línea de 8 semanas al lado del 1RM. */
+.ex-aviso .ex-aviso-fuerza{margin-top:var(--s2)}
+.ex-aviso-1rm{display:flex;align-items:center;justify-content:space-between;gap:var(--s2)}
+/* Previa del ejercicio (rediseño 2026-09-27, pieza 3, maqueta 03 opción B):
+   debajo de la tarjeta sin empezar. Paneles del vidrio de la app (.card) con
+   el padding de la tarjeta sutil, las etiquetas del tablero (.ex-meta small)
+   y los números en la condensada del héroe. */
+.previa{display:grid;gap:var(--s2)}
+.card.previa-panel{margin-bottom:0;padding:var(--s3);min-width:0}
+.previa-dos{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:var(--s2)}
+.previa-k{font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.previa-big{
+  margin-top:2px;font-family:'Barlow Condensed';font-size:var(--t-2xl);font-weight:700;line-height:1.05;
+  color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.previa-big small{font-family:'Barlow';font-size:var(--t-micro);font-weight:600;letter-spacing:0;color:var(--text-2)}
+.previa-big.previa-nada{color:var(--text-3)}
+.previa-s{margin-top:2px;font-size:var(--t-micro);color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.previa-up,.ex-cmp-col .previa-up{color:var(--ok)}
+.previa-down,.ex-cmp-col .previa-down{color:var(--danger)}
+.previa-fuerza{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s3)}
+.previa-fuerza>div{min-width:0}
+.previa-spark{flex:none;display:block;overflow:visible}
+.previa-spark polyline{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.previa-spark circle{fill:var(--accent)}
+.previa-spark.chica polyline{stroke-width:1.5}
+.previa-spark.chica circle{r:2}
+.previa-meta p{margin-top:2px;font-size:var(--t-sm);line-height:1.35;color:var(--text-2)}
+.previa-meta b{font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
 /* Series hechas: una fila por serie. */
 .ex-tabla{width:100%;margin-top:var(--s3);border-collapse:collapse;font-variant-numeric:tabular-nums}
 .ex-tabla th{padding:0 0 4px;text-align:left;font-family:'Barlow Condensed';font-weight:600;font-size:var(--t-nano);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}

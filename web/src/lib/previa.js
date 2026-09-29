@@ -28,7 +28,7 @@ function diasEntre(desde, hasta) {
     semanas que terminan en la última sesión. `puntos` es esa ventana, lista
     para la sparkline. El cambio exige dos sesiones separadas por una semana
     o más: con menos, `cambioPct` es null, nunca un "0 %". */
-export function fuerzaPrevia(ex, { uni = false } = {}) {
+export function fuerzaPrevia(ex, { uni = false, hoy = dstr() } = {}) {
   const pts = e1rmSeries(clave(ex, uni));
   if (!pts.length) return null;
   const ultimo = pts[pts.length - 1];
@@ -43,7 +43,19 @@ export function fuerzaPrevia(ex, { uni = false } = {}) {
     puntos,
     tendencia: trend(puntos),
     fecha: ultimo.date,
+    hace: haceTexto(Math.max(0, diasEntre(ultimo.date, hoy))),
   };
+}
+
+/** La línea debajo del 1RM: "▲ 6 % en 8 semanas". `tono` elige el color
+    (sube = verde, baja = rojo, igual = neutro). Sin cambio medible, null:
+    la UI dice otra cosa en vez de un "0 %" inventado. */
+export function cambioTexto(fuerza) {
+  if (fuerza?.cambioPct == null || !(fuerza.semanas > 0)) return null;
+  const sem = `${fuerza.semanas} semana${fuerza.semanas === 1 ? '' : 's'}`;
+  if (fuerza.cambioPct === 0) return { tono: 'igual', texto: `sin cambio en ${sem}` };
+  const sube = fuerza.cambioPct > 0;
+  return { tono: sube ? 'sube' : 'baja', texto: `${sube ? '▲' : '▼'} ${Math.abs(fuerza.cambioPct)} % en ${sem}` };
 }
 
 /** Los puntos de una sparkline para `<polyline points>`, repartidos
@@ -142,6 +154,13 @@ export function metaTexto(meta) {
   return partes.join(' · ');
 }
 
+/** La meta partida en dos: los números ("47.5 kg × 8", van en la
+    condensada) y el porqué ("1 rep más que la última", en texto). */
+export function metaPartes(meta) {
+  const [numeros = '', ...resto] = metaTexto(meta).split(' · ');
+  return { numeros, porque: resto.join(' · ') };
+}
+
 /** Todo lo que muestra la previa de un ejercicio. `primeraVez` es la misma
     condición que el "Primera vez" de la tarjeta (sin historial con ESTE
     equipo, lastDataFor): en ese caso no hay gráfico ni récord, y el peso
@@ -150,7 +169,7 @@ export function previaEjercicio(ex, { uni = false, ajuste = 0, hoy = dstr() } = 
   const primeraVez = !lastDataFor(ex);
   return {
     primeraVez,
-    fuerza: primeraVez ? null : fuerzaPrevia(ex, { uni }),
+    fuerza: primeraVez ? null : fuerzaPrevia(ex, { uni, hoy }),
     record: primeraVez ? null : recordPrevia(ex, { uni, hoy }),
     recuperacion: recuperacionPrevia(ex),
     meta: metaHoy(ex, { uni, ajuste }),
