@@ -73,7 +73,7 @@ Trampas:
 ## SESIÓN 2026-09-29 — Tanda 4 de la auditoría: cambio de pestaña
 
 Rama `perf/auditoria-tanda4` (desde main, independiente de la tanda 3), PR
-abierto sin mergear. **935 tests.** Detalle en `docs/auditoria-total-2026-09.md`
+abierto sin mergear. **934 tests.** Detalle en `docs/auditoria-total-2026-09.md`
 (G4, H7, G16).
 
 - **G4**: la tarea más larga del cambio de pestaña bajó de 373–628 ms a
