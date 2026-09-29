@@ -110,6 +110,8 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
   derivado de `D` (motion.js), no un número suelto. El rebote de `--spring`
   en la entrada puede quedar, pero desde fuera del marco.
 
+> **Arreglado** en la tanda 2 (`1aa76cb`, `7659c40`, `a52a6c0`, rama `fix/hojas-y-toques`). `shup` desde `translateY(100%)` en `--d3` con `--ease-push` + `fdin` en `--d1`; `shdown` a `translateY(100%)` y opacidad 0 en `--d2` con `--ease-push`; `CIERRE_MS = D.objeto`. Dos desvíos del arreglo propuesto: la salida va en `--d2` y no en `--d1` (sigue más corta que la entrada en `--d3`, pero ahora recorre el alto entero: hasta 742 px en 150 ms era un tirón), y la entrada va sin `--spring` (desde el 100 % el sobrepaso levantaba el borde de abajo y dejaba ver el fondo). Además: la hoja se desmonta con el `animationend` de su salida (el timer de CIERRE_MS arrancaba en el toque y, con el hilo ocupado, la animación empezaba ~150 ms después: cortaba con el panel al 19 %), y el cierre pasa por `useLayoutEffect` (con `useEffect` se pintaba un cuadro con la hoja en `display:none` antes de `shdown`). Medido cuadro a cuadro (390×844, Racha, 654 px): entra desde `top 844` con opacidad 0 → 0,98 a los 84 ms → asienta en 190 a los 317 ms sin rebote; sale de 190 → 844 con opacidad 0 a los 200–220 ms y se desmonta en el cuadro siguiente. Ajustes (743 px) y el diálogo de Terminar igual; a 430×932 idem (932 → 251).
+
 ### G3 · ALTA · El descanso re-renderiza la app 4×/s y repinta sin parar
 
 - **Dónde:** `web/src/lib/rest.js:62` (`setInterval(tickRest, 250)`),
@@ -276,6 +278,9 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 - **Arreglo:** `::after` con `inset` negativo hasta 44 px donde el dibujo deba
   quedar chico (sin que se pisen los vecinos), y alto 40–44 en los que no.
 
+
+> **Arreglado** en la tanda 7 (CSS en `8316aff`, ajustes en `a52a6c0` y `2b8bbf9`). `::after` invisible con el inset justo, medido con `getBoundingClientRect` y `elementFromPoint` a 390×844 y 430×932 (Inicio, Entreno, editor, Comida, Progreso, la sesión en curso): **antes** 5 controles < 40 en Inicio, 5 en Entreno, 64 en el editor de un turno (↑↓✎✕ 32×32, "i" 24×24, fibras 32×36, nombre del turno 152×28), 7 en Comida, 11 en Progreso, 7 en Hoy, 14 en el pre-check (chips de 37 y "Ver cuánto tomar" 104×20), "i" de la tarjeta 26×26, cerrar del aviso 26×26, Después 86×32, borrar serie 32×32; **después** 0 en todas (el medidor marca "Tu Año Fierro →" como 84×28 porque no lee el `margin-top` del `::after`; `elementFromPoint` da 40 de alto). Sin pisarse: los ↑↓✎✕ pasaron a 8 px entre sí (40 de paso), las filas de la tabla de series a 40, "Ver cuánto tomar" a 12 px de los chips. La × de la ficha de músculo, 20 → 44. Frente/Espalda ya tenía 47 de alto.
+
 ### G12 · BAJA · Texto de menos de 12 px
 
 - 22 usos de `--t-nano` (10 px) y 90 de `--t-micro` (11 px) en CSS, 39 en JSX.
@@ -317,6 +322,9 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
   Perfil y macros: los dos `input type=range` sin `<label>` ni `aria-label`.
 - **Arreglo:** `aria-label="Subir {nombre}"` / "Bajar…" / "Qué trabaja…";
   `aria-labelledby` al texto "Proteína"/"Grasa" en los range.
+
+
+> **Arreglado** en `1aa76cb` (tanda 7): ↑ ↓ ⓘ del editor con `aria-label` "Subir/Bajar/Qué trabaja {nombre}"; el "i" sin ficha pasa de `opacity:.4` en línea a `.sin-ficha`. **Los range ya no aplicaba**: Perfil ya tenía `aria-labelledby` a "Proteína"/"Grasa" (tanda 1).
 
 ---
 
@@ -396,6 +404,9 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 - **Arreglo:** fundido de entrada corto y, al cerrar, dejarla encima hasta que
   el fondo de la hoja llegó (o fundirla sobre la hoja ya abierta).
 
+
+> **Arreglado** en `1aa76cb` + `7659c40` (tanda 2). `#session-complete` entra con `fdin` (`--d2`) sobre el diálogo que sale y, al cerrar, queda opaca `--d1` y se funde en `--d3` (`.saliendo`, `SALIDA_MS`), desmontándose con su `animationend`. Medido (390×844): fin de sesión 0 → 0,98 en 117 ms mientras `dlgOut` termina; al cerrar a los 2,4 s, opacidad 1 hasta que el `.bk` de la hoja llega a 1 (150 ms), después 0,99 → 0 en 300 ms con el panel ya subiendo; el `.bk` está en 1 todo el fundido: Hoy no se ve en ningún cuadro.
+
 ### H5 · MEDIA · El tiempo "cuerpo" queda casi negro en días Posterior
 
 - `SessionComplete.jsx:153-160`, `:184-188`: la silueta es siempre de frente y
@@ -462,6 +473,9 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 - Ver G11 y G17: cuatro botones de 32 px a 5 px entre sí (`styles.css:1706`),
   tres sin `aria-label`.
 
+
+> **Arreglado** con G11 y G17 (tanda 7): 40×40 de toque, 8 px entre sí, los tres con nombre.
+
 ### E4 · MEDIA · "2×9" se lee "2.9"
 
 > **Arreglado** en `14ae7ae` (tanda 1): `×` a `.65em` (16,9 px contra 26), `--mut`, 2 px de aire por lado y subida al centro de la cifra (centro de la × a 1 px del centro del dígito).
@@ -503,6 +517,9 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 - "Agregar" habilitado con la búsqueda vacía; placeholder con emoji; al tipear
   el panel pasa de 312 a 543 px de alto sin transición (el `sheetReveal` de los
   resultados corre, la hoja salta).
+
+
+> **Arreglado** en `2835fc4` (tanda 2): "Agregar" con `disabled` sin alimentos, placeholder "Buscá un alimento" y el panel anima su alto (D.objeto): medido 311 → 540 px en 200 ms en vez del salto de un cuadro.
 
 ---
 
@@ -550,6 +567,9 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
   Cerrar mide 20 px (+4). Cinco textos a 10 px. La ficha (y 379–637) tapa el
   toggle Frente/Espalda (609–634) y se trasluce "FRENTE" por debajo.
 
+
+> **Arreglado** en `1aa76cb` + `7659c40` (tanda 2): sale con `mpop-out` (`--d1`, más corta que la entrada), desmontada con su `animationend`; se sacó el `bloomOpen` de MusclePop, que anulaba `mpop-in`; × de 44; los cinco textos de 10 → 11 px; el toggle Frente/Espalda se apaga mientras la ficha está (y vuelve mientras sale). Medido: entra 395 → 379 con opacidad 0 → 1 en 220 ms; sale 379 → 395 y opacidad 0 a los 150 ms.
+
 ---
 
 ## Ajustes · Perfil y macros · ficha de ejercicio
@@ -588,6 +608,9 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 - "Salir del modo prueba" y "Eliminar sesión": Cancelar | Acción. "Terminar la
   sesión": la acción primero y a todo el ancho. **Arreglo:** un solo orden.
   (La pastilla ámbar funciona; 36 px de alto, ver G11.)
+
+
+> **Arreglado** en `f1a64cc` (tanda 7): una sola fila `.dlg-fila` en Confirmar, Terminar la sesión y Salir del modo prueba: salida segura a la izquierda, la que borra o sale a la derecha, la constructiva (si la hay) sola y a todo el ancho arriba. La pastilla ámbar: 42 de toque (G11).
 
 ---
 
