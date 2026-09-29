@@ -45,7 +45,10 @@ const TOPE = { sets: 10, reps: 50 };
 export function estadoInicial(tipo = 'rutina') {
   return {
     tipo, paso: 1, posicion: null,
-    form: { name: '', cat: '', sets: 3, reps: 10, equip: '', unilateral: false },
+    // equip null = nadie eligió todavía. '' es "Otro" (el id de esa opción)
+    // y preseleccionarlo confundía: parecía una elección hecha. Si se guarda
+    // sin elegir, datosParaGuardar lo pasa a '' — ahí sí vale "Otro".
+    form: { name: '', cat: '', sets: 3, reps: 10, equip: null, unilateral: false },
   };
 }
 
