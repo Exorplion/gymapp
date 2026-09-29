@@ -136,10 +136,12 @@
      logro y grasa en el ámbar de alerta (auditoría visual 2, V6): con
      cualquier acento, tres colores sin significado. El verde y el ámbar
      vuelven a entrar sólo como estado (meta cumplida / te pasaste).
-     Cada una: arranque y final del degradado de la barra. */
+     Cada una: arranque y final del degradado de la barra, de más luz a
+     menos. No se baja al tercer escalón del mapa (L .43–.54, croma a la
+     mitad): sobre el vidrio se leía como un malva apagado, "deshabilitado". */
   --macro-prot-a:var(--accent-strong); --macro-prot-b:var(--accent);
-  --macro-carb-a:var(--mapa-1-lo);     --macro-carb-b:var(--mapa-1-md);
-  --macro-fat-a:var(--mapa-2-md);      --macro-fat-b:var(--mapa-2-hi);
+  --macro-carb-a:var(--mapa-0-lo);     --macro-carb-b:var(--mapa-1-hi);
+  --macro-fat-a:var(--mapa-1-lo);      --macro-fat-b:var(--mapa-1-md);
 
   /* ---- ESTADOS (fijos) -----------------------------------------------------
      Verde: logrado, subiste, PR. Rojo: bajaste, peligro. Ámbar: alerta,
@@ -2814,10 +2816,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   font-size:var(--t-micro);font-weight:600;color:var(--text-2);margin-bottom:5px;
 }
 .hero-kcal .macro3 .pbar{height:7px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.06)}
-/* Un color por macro: proteína azul, carbos verde, grasa ámbar. */
-.hero-kcal .pbar.prot>i{background:linear-gradient(90deg,var(--accent-strong),var(--accent))}
-.hero-kcal .pbar.carb>i{background:linear-gradient(90deg,var(--ok-strong),var(--ok))}
-.hero-kcal .pbar.fat>i{background:linear-gradient(90deg,var(--warn-strong),var(--flame))}
+/* El color de cada macro vive en .macro3 .pbar.* (tokens --macro-*): tres
+   luces del acento. Acá había una segunda copia con carbos en verde y grasa
+   en ámbar que le ganaba por orden (V6). */
 /* El separador y el espaciado del mockup; el punto y el texto los produce
    nutriFeedback() (meals.js), que ya trae .fdot con su color según el caso. */
 .nutri-fb{margin-top:14px;padding-top:14px;border-top:1px solid rgba(var(--hi-rgb),.08)}
