@@ -176,11 +176,13 @@ export default function Nutricion() {
               {kc > g.kcal ? kc - g.kcal : Math.max(0, g.kcal - kc)}<span>kcal</span>
             </div>
             <div className="t-etiqueta">{kc > g.kcal ? 'Excedente' : 'Restantes'}</div>
-            {/* "Objetivo:" delante: "EXCEDENTE 170 kcal" con "Déficit
-                moderado" justo abajo se leía como contradicción (auditoría
-                total, C1). Es la meta, no el resultado del día. */}
+            {/* "Meta:" delante: "EXCEDENTE 170 kcal" con "Déficit moderado"
+                justo abajo se leía como contradicción (auditoría total, C1).
+                Es la meta, no el resultado del día. "Meta" y no "Objetivo":
+                con "Objetivo:" el renglón no entraba a 390 y "kg" caía solo
+                abajo. */}
             <div className="text-text-2 text-micro mt-1">
-              Objetivo: {GOAL_LABEL[S.cfg.profile.goal]?.toLowerCase()}
+              Meta: {GOAL_LABEL[S.cfg.profile.goal]?.toLowerCase()}
               {S.cfg.profile.weightKg ? ` · ${fmtNum(round1(S.cfg.profile.weightKg))} kg` : ''}
             </div>
           </div>

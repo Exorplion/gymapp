@@ -2260,7 +2260,7 @@ nav.tabbar button{
      lo fija en --mut. Hasta el 2026-09-05 esta línea repetía color:--mut2 y,
      con la misma especificidad y estando después, PISABA ese arreglo — el
      fix de contraste estaba escrito, comentado y muerto. */
-  padding:7px 0 5px;border-radius:var(--r-md);position:relative;transition:var(--d1);
+  padding:7px 0 5px;border-radius:calc(var(--r-lg) - 7px);position:relative;transition:var(--d1);
 }
 nav.tabbar button svg{width:24px;height:24px;stroke:currentColor;fill:none;fill-opacity:0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke-width var(--d1) var(--ease),fill-opacity var(--d1) var(--ease)}
 nav.tabbar button span{font-family:var(--font-cond);font-size:var(--t-micro);font-weight:700;letter-spacing:var(--tr-control);text-transform:uppercase}
@@ -2293,7 +2293,10 @@ nav.tabbar{container-type:inline-size}
 .tab-ind{
   --tab-w:min(100cqw / var(--n, 4), 110px);
   --tab-h:calc(100cqw - var(--n, 4) * var(--tab-w));
-  position:absolute;top:7px;left:7px;height:calc(100% - 14px);width:var(--tab-w);border-radius:var(--r);
+  position:absolute;top:7px;left:7px;height:calc(100% - 14px);width:var(--tab-w);
+  /* Concéntrico con la barra (radio 26, padding 7): 19. Con 18 las dos
+     curvas no eran paralelas (auditoría total, I3). */
+  border-radius:calc(var(--r-lg) - 7px);
   background:var(--accent-grad);box-shadow:0 6px 20px -4px rgba(var(--accent-rgb),.55);pointer-events:none;
   transform:translateX(calc(var(--tab-h) / (2 * var(--n, 4)) + var(--i, 0) * (var(--tab-w) + var(--tab-h) / var(--n, 4))));
   transition:transform var(--d3) var(--ease);

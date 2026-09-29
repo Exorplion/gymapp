@@ -58,10 +58,11 @@ export default function Gyms() {
   return (
     <div ref={rootRef}>
       <h2 className="font-cond text-2xl font-bold text-text">Gimnasios</h2>
+      {/* Las perillas existen recién cuando hay un gimnasio: sin ninguno, el
+          texto hablaba de un control que no estaba (auditoría total, E6). */}
       <p className="mt-1 mb-4 text-sm text-text-2">
-        Guardá los gimnasios donde entrenás. Tocá el nombre para activarlo, o las
-        perillas para ver cuál de tus ejercicios ya tiene máquina asignada ahí y
-        cuál no.
+        Guardá los gimnasios donde entrenás.
+        {S.gyms.length > 0 && ' Tocá el nombre para activarlo, o las perillas para ver cuál de tus ejercicios ya tiene máquina asignada ahí y cuál no.'}
       </p>
 
       {S.gyms.length === 0 && (

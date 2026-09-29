@@ -46,7 +46,9 @@ export function Card({ className, ...props }) {
   return (
     <div
       className={cn(
-        'rounded-[var(--radius-r-lg)] border border-line bg-surface-2 p-4',
+        // Superficie CONTROL (tanda C): el mismo grafito y el mismo hilo que
+        // .group, con el radio de las tarjetas y no el de la hoja.
+        'rounded-[var(--radius-r)] border border-line-2 bg-surface-2 p-4',
         className,
       )}
       {...props}
