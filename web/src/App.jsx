@@ -30,6 +30,7 @@ import Despues from './components/sheets/Despues.jsx';
 import SessionExercise from './components/sheets/SessionExercise.jsx';
 import EntryEdit from './components/sheets/EntryEdit.jsx';
 import ExerciseForm from './components/sheets/ExerciseForm.jsx';
+import AgregarEjercicio from './components/sheets/AgregarEjercicio.jsx';
 import Library from './components/sheets/Library.jsx';
 import DayPeek from './components/sheets/DayPeek.jsx';
 import ExInfo from './components/sheets/ExInfo.jsx';
@@ -86,6 +87,11 @@ function ConfirmSheet({ title, body, confirmLabel, onConfirm, onCancel }) {
 /* Las hojas que son una pregunta corta, no contenido: salen como tarjeta
    flotante (Sheet variante="dialogo"). */
 const DIALOGOS = new Set(['confirm', 'terminar-sesion']);
+/* Y los que van a pantalla completa (variante "pantalla"): el asistente de
+   agregar ejercicio. Son pasos que se contestan, no una hoja que se lee, y
+   cada uno tiene que entrar entero sin scroll (spec 2026-09-27 §1). */
+const PANTALLA = new Set(['agregar-ej']);
+const varianteDe = type => (DIALOGOS.has(type) ? 'dialogo' : PANTALLA.has(type) ? 'pantalla' : undefined);
 
 function SheetContent({ sheet }) {
   if (!sheet) return null;
@@ -95,6 +101,8 @@ function SheetContent({ sheet }) {
     case 'ex-swap': return <SessionExercise {...sheet.props} />;
     case 'entry-edit': return <EntryEdit {...sheet.props} />;
     case 'ex-form': return <ExerciseForm {...sheet.props} />;
+    // key: cada apertura (abrirAsistente) monta uno nuevo, en el paso 1.
+    case 'agregar-ej': return <AgregarEjercicio key={sheet.props.vez} {...sheet.props} />;
     case 'library': return <Library {...sheet.props} />;
     case 'routine-wizard': return <RoutineWizard {...sheet.props} />;
     case 'day-peek': return <DayPeek {...sheet.props} />;
@@ -609,7 +617,7 @@ export default function App() {
           cambian de pestaña en toda la app (Hoy, Inicio, BodyMap). */}
       <TabBar active={store.tab === 'hoy' ? 'inicio' : store.tab} onChange={changeTab} />
       <Toast />
-      <Sheet open={!!store.sheet} onClose={closeSheet} variante={DIALOGOS.has(store.sheet?.type) ? 'dialogo' : undefined}>
+      <Sheet open={!!store.sheet} onClose={closeSheet} variante={varianteDe(store.sheet?.type)}>
         <SheetContent sheet={store.sheet} />
       </Sheet>
       <RestTimer />

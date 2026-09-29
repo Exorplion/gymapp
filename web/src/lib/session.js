@@ -616,8 +616,17 @@ export async function dropSet(exId) {
 }
 
 /** Un ejercicio que decidiste hacer hoy y no estaba en el plan. Vive sólo en
-    el borrador; al cerrar la sesión se ofrece dejarlo fijo en la rutina. */
-export async function addSessionExercise({ name, sets, reps, equip, machine, unilateral } = {}, afterExId = null) {
+    el borrador; al cerrar la sesión se ofrece dejarlo fijo en la rutina.
+
+    `donde`: un id (= después de ese, lo que usa replaceSessionExercise),
+    `{ antesDe }` / `{ despuesDe }` (el asistente de alta, que ancla la
+    posición elegida a un vecino pendiente), o null = al final.
+
+    El orden nuevo se arma sobre sessionExs() — el orden que SE VE — y no
+    sobre S.draft.order crudo: con un `order` vacío o incompleto, el push de
+    antes dejaba el agregado PRIMERO (sessionExs pone lo que está en `order`
+    y después el resto), delante incluso de lo ya hecho. */
+export async function addSessionExercise({ name, sets, reps, equip, machine, unilateral, cat } = {}, donde = null) {
   if (!S.draft) return null;
   const ex = {
     id: uid(),
@@ -627,14 +636,18 @@ export async function addSessionExercise({ name, sets, reps, equip, machine, uni
     equip: equip || undefined,
     machine: equip && machine ? machine : undefined,
     unilateral: unilateral || undefined,
+    // el grupo elegido a mano en el asistente (nombre que catOf no reconoce)
+    cat: cat || undefined,
   };
   if (!ex.name) return null;
+  const { antesDe = null, despuesDe = null } = typeof donde === 'string' ? { despuesDe: donde } : (donde || {});
+  const ids = sessionExs(S.routine.findIndex(s => s.id === S.draft.slotId)).map(e => e.id);
+  let at = antesDe ? ids.indexOf(antesDe) : -1;
+  if (at < 0 && despuesDe) { const j = ids.indexOf(despuesDe); if (j >= 0) at = j + 1; }
+  ids.splice(at >= 0 ? at : ids.length, 0, ex.id);
   if (!S.draft.extras) S.draft.extras = [];
   S.draft.extras.push(ex);
-  if (!S.draft.order) S.draft.order = [];
-  const i = afterExId ? S.draft.order.indexOf(afterExId) : -1;
-  if (i >= 0) S.draft.order.splice(i + 1, 0, ex.id);
-  else S.draft.order.push(ex.id);
+  S.draft.order = ids;
   await saveDraft();
   vibrate(15);
   bump();
@@ -837,7 +850,7 @@ export async function completeSession() {
      agregaste y después salteaste no tiene por qué ofrecerse para el plan. */
   const added = (d.extras || [])
     .filter(e => d.entries[e.id]?.sets?.length)
-    .map(e => ({ name: e.name, sets: e.sets, reps: e.reps, equip: e.equip, machine: e.machine, unilateral: e.unilateral }));
+    .map(e => ({ name: e.name, sets: e.sets, reps: e.reps, equip: e.equip, machine: e.machine, unilateral: e.unilateral, cat: e.cat }));
 
   /* El día que se guarda es el día en que DE VERDAD entrenaste (la primera
      serie), no el día en que se abrió el borrador. Una PWA no se cierra, se

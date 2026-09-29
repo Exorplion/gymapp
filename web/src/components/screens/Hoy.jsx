@@ -25,6 +25,7 @@ import { WDS, MO, fmtMMSS, dstr } from '../../lib/format.js';
 import { opcionesDescanso } from '../../lib/descansoHoy.js';
 import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, moverEnBloque, indiceHoy, elegirTurnoHoy } from '../../lib/session.js';
 import { flipSort } from '../../lib/drag.js';
+import { abrirAsistente } from '../../lib/asistente-agregar.js';
 import { blocksOf, catOf, MUSCLE_CATS } from '../../lib/muscle.js';
 import { equipLabel } from '../../lib/equip.js';
 import { parseWorkoutSpeech } from '../../lib/voice.js';
@@ -258,7 +259,7 @@ export function SesionMenu({ wd }) {
       <div className="group" style={{ marginBottom: 'var(--s3)' }}>
         {/* Decidiste hacer algo que no estaba en el plan. Vale sólo para hoy;
             al cerrar la sesión se ofrece dejarlo fijo. */}
-        <button type="button" className="grouprow" onClick={y(() => openSheet('ex-swap', { wd }))}>
+        <button type="button" className="grouprow" onClick={y(() => abrirAsistente(wd, 'sesion'))}>
           <Plus className="opc-ico" />
           <span className="grouprow-grow">
             <span className="grouprow-t">Agregar ejercicio</span>
@@ -496,7 +497,7 @@ function PlanHoy({ index, exs }) {
       ))}
       {editando && (
         <div className="plan-edit-acts">
-          <button type="button" className="btn sm ghost" onClick={() => openSheet('ex-form', { wd: index, ex: null })}>+ Agregar ejercicio</button>
+          <button type="button" className="btn sm ghost" onClick={() => abrirAsistente(index, 'rutina')}>+ Agregar ejercicio</button>
         </div>
       )}
     </section>

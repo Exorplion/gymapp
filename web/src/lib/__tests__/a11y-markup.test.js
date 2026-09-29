@@ -10,6 +10,13 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import EquipIcon from '../../components/EquipIcon.jsx';
+import { EQUIP_ASIST } from '../equip.js';
+import { S } from '../state.js';
+import AgregarEjercicio from '../../components/sheets/AgregarEjercicio.jsx';
+import { estadoInicial, setNombre, avanzar, NUEVO } from '../asistente-agregar.js';
 
 const RAIZ = new URL('../../components', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
@@ -96,5 +103,94 @@ describe('sheets', () => {
       .filter(n => n.endsWith('.jsx'))
       .filter(n => !/<h[1-3][\s>]/.test(readFileSync(join(dir, n), 'utf8')));
     expect(sinEncabezado).toEqual([]);
+  });
+});
+
+/* Paso 3 del asistente: los equipos van con íconos SVG propios y no con
+   emoji (auditoría, G7). Un hex metido en un ícono no sigue al acento. */
+describe('íconos de equipo', () => {
+  it('son 8: los 7 equipos reales más "Otro"', () => {
+    expect(EQUIP_ASIST.map(e => e.id)).toEqual(['barra', 'mancuernas', 'discos', 'placas', 'polea', 'smith', 'corporal', '']);
+  });
+  it('cada uno es un <svg aria-hidden> en currentColor, sin colores escritos a mano', () => {
+    for (const { id } of EQUIP_ASIST) {
+      const svg = renderToStaticMarkup(createElement(EquipIcon, { id }));
+      expect(svg.startsWith('<svg'), id).toBe(true);
+      expect(svg, id).toContain('aria-hidden="true"');
+      expect(svg, id).toContain('stroke="currentColor"');
+      expect(svg, id).not.toMatch(/(fill|stroke)="#/);
+    }
+  });
+  it('dibujos distintos entre sí', () => {
+    const dibujos = EQUIP_ASIST.map(({ id }) => renderToStaticMarkup(createElement(EquipIcon, { id })));
+    expect(new Set(dibujos).size).toBe(8);
+  });
+});
+
+/* El asistente de agregar ejercicio, montado en cada paso (SSR: sin
+   efectos). Lo que se mira es lo que un lector de pantalla necesita y lo
+   que el arrastre de drag.js da por hecho. */
+describe('asistente "Agregar ejercicio"', () => {
+  const ex = (id, name) => ({ id, name, sets: 3, reps: 10 });
+  const enPaso = (tipo, paso) => {
+    let e = setNombre(estadoInicial(tipo), 'Remo en polea');
+    for (let i = 1; i < paso; i++) e = avanzar(e).estado;
+    return e;
+  };
+  const html = (tipo, paso) => renderToStaticMarkup(createElement(AgregarEjercicio, { wd: 0, tipo, inicial: enPaso(tipo, paso) }));
+
+  function preparar() {
+    S.routine = [{ id: 's1', order: 0, type: 'workout', name: 'Tirón', exercises: [
+      ex('a', 'Jalón al pecho'), ex('b', 'Curl con barra'), ex('c', 'Remo con barra'), ex('d', 'Face pull'),
+    ] }];
+    S.draft = {
+      id: 'd1', date: '2026-09-27', slotId: 's1', dayName: 'Tirón', open: 1, start: 1, cur: 'b',
+      order: ['a', 'b', 'c', 'd'], skipped: [], extraSets: {}, extras: [],
+      entries: { a: { sets: [{}, {}, {}] } },
+    };
+    S.hoyVals = {};
+  }
+
+  for (const tipo of ['rutina', 'sesion']) {
+    for (const paso of [1, 2, 3]) {
+      it(`${tipo}, paso ${paso}: un solo h2, botones con nombre y progreso`, () => {
+        preparar();
+        const h = html(tipo, paso);
+        expect(h.match(/<h2\b/g) || []).toHaveLength(1);
+        for (const b of h.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) || []) {
+          const texto = b.replace(/<[^>]+>/g, '').trim();
+          expect(texto || /aria-label="[^"]+"/.test(b), b.slice(0, 120)).toBeTruthy();
+        }
+        expect(h).toMatch(new RegExp(`role="progressbar"[^>]*aria-valuenow="${paso}"|aria-valuenow="${paso}"[^>]*role="progressbar"`));
+      });
+    }
+  }
+
+  it('paso 2: la fila nueva está en la caja arrastrable y ningún fijo', () => {
+    preparar();
+    const h = html('sesion', 2);
+    const caja = h.slice(h.indexOf('data-sort="asist"'));
+    expect(caja).toContain(`data-sid="${NUEVO}"`);
+    // "a" ya está hecho: va arriba, fuera de la caja.
+    expect(h.indexOf('Jalón al pecho')).toBeLessThan(h.indexOf('data-sort="asist"'));
+    expect(caja).not.toContain('data-sid="a"');
+    // Los pendientes están en la caja, marcados fijos (no se agarran).
+    expect(caja).toMatch(/data-sid="b"[^>]*data-fijo=""|data-fijo=""[^>]*data-sid="b"/);
+  });
+
+  it('paso 3: la grilla de equipo es un radiogroup de 8 y unilateral un switch', () => {
+    preparar();
+    const h = html('rutina', 3);
+    expect(h).toContain('role="radiogroup"');
+    expect(h.match(/role="radio"/g)).toHaveLength(8);
+    expect(h).toMatch(/role="switch"[^>]*aria-checked="false"/);
+    expect(h).toContain('Agregar a la rutina');
+  });
+
+  it('en la sesión el CTA dice sesión y avisa que vale sólo para hoy', () => {
+    preparar();
+    const h = html('sesion', 3);
+    expect(h).toContain('Agregar a la sesión');
+    expect(h).toContain('Vale sólo para hoy');
   });
 });

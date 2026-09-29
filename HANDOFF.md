@@ -4,6 +4,36 @@
 
 ---
 
+## SESIÓN 2026-09-28 (c) — Pieza 1: asistente "Agregar ejercicio" en 3 pasos
+
+Rama `feat/asistente-agregar`, PR abierto sin mergear. **918 tests** (con main al día). Spec §1
+(marcada implementada); plan `docs/superpowers/plans/2026-09-27-asistente-agregar-ejercicio.md`.
+
+- **Un solo flujo**: `AgregarEjercicio.jsx` (hoja `agregar-ej`, variante
+  `pantalla` de `Sheet`) se abre con `abrirAsistente(wd, tipo)` desde Entreno
+  → turno → "+ Ejercicio", Plan de hoy en edición y ··· → Agregar ejercicio.
+  Se fueron el `CreateWizard` de `ExerciseForm` (queda sólo editar), el modo
+  agregar de `SessionExercise` (queda sólo "Cambiar") y la máquina de 4
+  pasos de `exercise-wizard.js` (queda `resolvedCat`). `.exwiz-*` borrado.
+- **Paso 2**: arrastre con `drag.js` kind `asist` (sólo la fila nueva;
+  `data-fijo` no se agarra). En `asist` drag.js **no mueve nodos a mano**: le
+  pasa `clean` a la hoja, que lo llama dentro de `flipSort(…, root)`. Moverlos
+  por fuera dejaba a React desfasado (numeración 7, 9, 8, medido).
+- Íconos de equipo en `EquipIcon.jsx` (lista `EQUIP_ASIST` en `equip.js`);
+  `ChevronLeft`, `Grip`, `Spark` nuevos en `Icon.jsx`.
+
+Verificado en Chrome (build + preview :4184): 3 pasos × rutina/sesión × 390×844
+y 430×932, `scrollHeight == clientHeight` en los 12, nada fuera del ancho,
+ningún control < 40 px. Arrastre y ▲▼ (también con teclado) respetan los
+bloques en la rutina y son libres en la sesión; lo agregado quedó en el
+editor y en el carrusel donde se soltó. "Agregar otro" reabre en el paso 1.
+
+**Pendiente:** confirmación táctil real del long-press en el teléfono (en
+Chrome se probó con eventos de mouse); "‹" del sistema (atrás de Android)
+cierra la hoja entera en vez de volver un paso.
+
+---
+
 ## SESIÓN 2026-09-28 (b) — Piezas 2 y 3: rampa de un solo botón y previa del ejercicio
 
 Rama `feat/rampa-previa`, PR abierto sin mergear. **870 tests.** Spec §2 y §3;

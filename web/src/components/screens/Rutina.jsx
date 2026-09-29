@@ -31,6 +31,7 @@ import { catOf, stalestGroups, daysSinceAll, diasTexto, blocksOf, subCatOf } fro
 import { coberturaDe } from '../../lib/coverage.js';
 import { gymEquipFor } from '../../lib/gyms.js';
 import { flipSort } from '../../lib/drag.js';
+import { abrirAsistente } from '../../lib/asistente-agregar.js';
 import {
   routineStats, routineName, renameRoutine,
   enterEditMode, exitEditMode, toggleSlotOpen, addWorkoutDay, removeWorkoutDay, weekdayProjection,
@@ -712,7 +713,7 @@ function SlotCard({ slot, index, n, editing }) {
         {editing && (
           <div className="dbi">
             <div className="flex gap-2.5 mt-3">
-              <button type="button" className="btn sm ghost flex-1" onClick={() => openSheet('ex-form', { wd: index, ex: null })}>
+              <button type="button" className="btn sm ghost flex-1" onClick={() => abrirAsistente(index, 'rutina')}>
                 + Ejercicio
               </button>
             </div>

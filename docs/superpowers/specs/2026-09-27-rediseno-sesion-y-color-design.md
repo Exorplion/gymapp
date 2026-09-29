@@ -20,6 +20,16 @@ dice "una pantalla".
 
 ## 1 · Agregar ejercicio: asistente en 3 pasos
 
+> **Implementada el 2026-09-28** en la rama `feat/asistente-agregar` (plan
+> `docs/superpowers/plans/2026-09-27-asistente-agregar-ejercicio.md`).
+> Decisiones al implementar: 3×10 por defecto y el rango de la doble
+> progresión (10–13); los 7 `EQUIP` reales + "Otro" con íconos SVG propios;
+> en la rutina el nuevo sólo se suelta donde se queda (su bloque, o un borde
+> entre bloques), en la sesión es libre; "Cambiar ejercicio" sigue en
+> `SessionExercise.jsx`; al agregar, el toast "<nombre> agregado" ofrece
+> "Agregar otro" (reabre en el paso 1, mismo contexto). A 390×844 el paso 2
+> muestra el nuevo ±3; a 430×932, ±4.
+
 ### Problema
 
 Hay dos flujos distintos para lo mismo. En el editor de rutina,
