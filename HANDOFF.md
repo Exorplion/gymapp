@@ -41,6 +41,35 @@ SEGUIR en el teléfono.
 
 ---
 
+## SESIÓN 2026-09-29 — Tanda 3 de la auditoría: descanso liviano
+
+Rama `perf/auditoria-tanda3`, PR abierto sin mergear. **936 tests.** Detalle y
+números en `docs/auditoria-total-2026-09.md` (G3, H2, H3, G14).
+
+- **G3**: el reloj del descanso ya no pasa por `bump()`: `suscribirReloj`
+  (rest.js) avisa una vez por segundo sólo a `<Tiempo/>` y a la pill. El
+  anillo lo dibuja un worker en un OffscreenCanvas (`lib/anillo.worker.js`,
+  matemática en `lib/anillo.js`) con UN tramo que se reprograma sólo cuando
+  cambia `T.seq` (arrancar, ±30 s, volver a la app); el `<circle>` con WAAPI
+  queda de respaldo si no hay `transferControlToOffscreen`. El brillo es la
+  opacidad de `.rfs-ring::before`. Medido a 6×: hilo inactivo 48 % → 87 %.
+- **Por qué worker**: una sola animación WAAPI de `stroke-dashoffset` dejó el
+  hilo 60 % inactivo (y cayendo): toda animación fuera del compositor hace
+  recorrer estilo + pintado + capas de la página entera en cada cuadro. No
+  volver a "simplificar" a CSS sin medir contra esto.
+- **H2/H3/G14**: minimizar alineado a "Saltar", barra con `--pad-x`, "−30s".
+
+Trampas:
+- El anillo tiene su propio reloj (el del worker): si cambiás cómo se calcula
+  el tramo, `tramoAnillo`/`tramosAnillo` tienen tests; el worker no puede
+  importar rest.js (usa anillo.js).
+- Medir el descanso: una traza del MCP trae los procesos de TODAS las
+  pestañas; filtrar por el `processId` de `TracingStartedInBrowser`. Y
+  `emulate` con sólo `cpuThrottlingRate` resetea el viewport móvil y
+  recarga la página (se pierde el descanso): pasar siempre viewport + CPU.
+
+---
+
 ## SESIÓN 2026-09-28 (c) — Pieza 1: asistente "Agregar ejercicio" en 3 pasos
 
 Rama `feat/asistente-agregar`, PR abierto sin mergear. **918 tests** (con main al día). Spec §1
