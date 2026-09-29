@@ -297,7 +297,7 @@ function StrengthTab() {
               <div key={x.name} className="row">
                 <div className="grow"><div className="t">{x.name}</div><div className="s"><span className={cls}>{tag}</span></div></div>
                 <div className="text-right flex-none">
-                  <div className="num text-xl text-accent leading-none">{fmtNum(round1(x.last))}</div>
+                  <div className="num text-xl text-text leading-none">{fmtNum(round1(x.last))}</div>
                   <div className="text-text-2 text-micro tracking-[.08em]">KG 1RM</div>
                 </div>
               </div>
@@ -392,7 +392,7 @@ function PRsList({ exNames }) {
         <div key={p.n} className="row">
           <div className="grow"><div className="t">{p.n}</div>
             <div className="s">Mejor serie {fmtNum(round1(p.bestSet.w))} × {p.bestSet.r} · {fmtD(p.dV)}</div>
-            {p.tier && <div className="s text-accent">{p.tier.label} · {p.tier.ratio}× tu peso corporal</div>}</div>
+            {p.tier && <div className="s text-text">{p.tier.label} · {p.tier.ratio}× tu peso corporal</div>}</div>
           <div className="text-right flex-none">
             <div className="pr-w">{fmtNum(round1(p.maxW))}<span className="text-sm text-text-2"> kg</span></div>
             <div className="text-text-2 text-micro">{fmtNum(kg2lb(p.maxW))} lb</div>

@@ -1611,7 +1611,8 @@ body.dragging-on .card.day.drop-target{filter:none}
 .sc-name{font-family:'Barlow Condensed';font-size:var(--t-lg);font-weight:700;letter-spacing:.02em;flex:1;min-width:0}
 .sc-pr{font-size:var(--t-sm);font-weight:700;color:var(--warn);flex:none}
 .sc-meta{font-size:var(--t-micro);color:var(--text-2)}
-.sc-meta.strong{color:var(--accent);font-weight:500}
+/* La línea "21 series · 7285 kg de volumen" es metadato: tiza, no acento (V2). */
+.sc-meta.strong{color:var(--text);font-weight:500}
 .sc-exs{font-size:var(--t-micro);color:var(--text-2);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sess-week{
   font-family:'Barlow Condensed';font-size:var(--t-micro);font-weight:700;
@@ -1996,7 +1997,7 @@ canvas.chart{width:100%;height:200px;display:block}
 }
 .pr-troph{width:44px;height:44px;border-radius:var(--r-md);background:var(--accent-grad);display:grid;place-items:center;
   box-shadow:var(--accent-glow);font-size:var(--t-xl);flex:none}
-.pr-w{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-2xl);line-height:1;color:var(--accent)}
+.pr-w{font-family:'Barlow Condensed';font-weight:700;font-size:var(--t-2xl);line-height:1;color:var(--text)}
 .confetti-host{position:fixed;inset:0;z-index:80;pointer-events:none;overflow:hidden}
 .confetti-host i{position:absolute;top:-12px;width:8px;height:14px;border-radius:var(--r-xs);
   opacity:.95;animation:confettiFall linear forwards;transform:rotate(var(--rot))}
@@ -2240,7 +2241,9 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
    ("Historial"), no en versales: es el mismo gesto del título de pantalla,
    un escalón más abajo. */
 #sheet h2{font-size:var(--t-2xl);font-weight:700;font-style:italic;letter-spacing:.01em;margin-bottom:16px}
-#sheet h3{font-size:var(--t-body);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:22px 0 10px}
+/* Rótulos de sección en tiza, no en el acento (auditoría visual 2, V2): la
+   jerarquía la dan el peso, las versales y el tracking. */
+#sheet h3{font-size:var(--t-body);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text);margin:22px 0 10px}
 
 /* ---------- toast ---------- */
 #toast{
@@ -2267,7 +2270,7 @@ nav.tabbar button.on svg{filter:none;stroke-width:2.3;fill:currentColor;fill-opa
 .empty p{font-size:var(--t-body);line-height:1.5;margin-bottom:18px}
 .sect{
   font-family:'Barlow Condensed';font-size:var(--t-body);font-weight:700;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--accent);margin:22px 2px 10px;
+  text-transform:uppercase;color:var(--text);margin:22px 2px 10px;
   display:flex;align-items:center;gap:10px;
 }
 .sect::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -2622,9 +2625,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .hist-badge{
   flex:0 0 auto;min-width:42px;padding:5px 8px;border-radius:var(--r-md);text-align:center;
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;letter-spacing:.08em;
-  color:var(--accent);
-  background:linear-gradient(160deg,rgba(var(--accent-strong-rgb),.16),rgba(var(--hi-rgb),.03));
-  border:1px solid rgba(var(--accent-rgb),.3);
+  /* El día de la semana es metadato: grafito de control, sin el tinte del
+     acento (auditoría visual 2, V2). */
+  color:var(--text-2);background:var(--surface-2);border:1px solid var(--line-2);
 }
 .hist-row .grow{flex:1;min-width:0}
 .hist-row .t{display:block;font-size:var(--t-body);font-weight:600}
@@ -2646,7 +2649,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .hero-eyebrow{
   font-size:var(--t-micro);font-weight:700;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--accent);
+  color:var(--text-2);
 }
 .hero-plan .hero-day{font-size:var(--t-display)}
 
@@ -3273,7 +3276,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-top{flex:none}
 .ini-eyebrow{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-micro);font-weight:700;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--text-2);
 }
 .ini-title{
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-display);font-weight:800;
@@ -3386,15 +3389,18 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   background:linear-gradient(135deg,rgba(var(--hi-rgb),.10),transparent 40%);
 }
 /* 2026-09-25: el rótulo de cada tile, con el mismo tratamiento que los títulos
-   de sección de la app (.plan-title: condensada, mayúsculas, azul). Antes iba
-   en el tamaño más chico y el gris más apagado, y no se leía (Enzo: "no
-   resaltan"). Una rayita de acento a la izquierda lo ata al número. */
+   de sección de la app (condensada, mayúsculas). Antes iba en el tamaño más
+   chico y el gris más apagado, y no se leía (Enzo: "no resaltan").
+   2026-09-28 (auditoría visual 2, V2): sigue en ese tamaño y peso, pero en
+   plomo y no en el acento — con cinco rótulos del color del CTA, el ojo no
+   tenía un primero. Lo que resalta lo pone el tamaño; el acento queda para
+   actuar. La rayita, en ceniza. */
 .ini-tile-lbl{
   display:flex;align-items:center;gap:var(--s2);
   font-family:'Barlow Condensed',sans-serif;font-size:var(--t-sm);font-weight:700;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--text-2);
 }
-.ini-tile-lbl::before{content:"";flex:none;width:3px;height:.95em;border-radius:var(--r-full);background:var(--accent-grad)}
+.ini-tile-lbl::before{content:"";flex:none;width:3px;height:.95em;border-radius:var(--r-full);background:var(--text-3)}
 .ini-tile-lbl .ini-tile-go{margin-left:auto}
 
 /* Tu cuerpo: el vistazo de Silhouette se encoge a una franja quieta —
@@ -3404,17 +3410,19 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini-tile-body{grid-area:body;position:relative;overflow:hidden}
 .ini-tile-body::before{content:"";position:absolute;top:-40px;right:-30px;width:150px;height:150px;
   background:radial-gradient(circle,rgba(var(--accent-rgb),.22),transparent 66%);pointer-events:none}
-.ini-tile-go{color:var(--accent);text-transform:none;letter-spacing:0;font-weight:600;font-size:var(--t-micro)}
+.ini-tile-go{color:var(--text-2);text-transform:none;letter-spacing:0;font-weight:600;font-size:var(--t-micro)}
 .ini-tile-thumb{display:flex;height:112px;margin:4px 0 2px;position:relative;z-index:1}
 .ini-tile-hint{font-size:var(--t-micro);color:var(--text-2);margin-top:2px}
 
 .ini-tile-racha{grid-area:racha;align-items:center;justify-content:center;gap:4px}
+/* Las cifras en tiza con la unidad en plomo, como "74.1 kg" en Progreso. Iban
+   con el degradado del acento recortado al texto: tres cifras más del color
+   del CTA en la misma pantalla (V2, y de paso V13 en estas tarjetas). */
 .ini-tile-num{
   font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;
-  font-size:var(--t-display);line-height:1;background:var(--accent-grad);-webkit-background-clip:text;
-  background-clip:text;color:transparent;
+  font-size:var(--t-display);line-height:1;color:var(--text);
 }
-.ini-tile-num small{font-size:var(--t-micro);font-weight:600;font-style:normal;color:var(--text-2);margin-left:4px;-webkit-text-fill-color:var(--text-2)}
+.ini-tile-num small{font-size:var(--t-micro);font-weight:600;font-style:normal;color:var(--text-2);margin-left:4px}
 
 .ini-tile-stale{grid-area:stale;justify-content:center;gap:3px}
 .ini-tile-stale-name{font-size:var(--t-sm);font-weight:700}

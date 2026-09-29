@@ -264,7 +264,7 @@ function MemoriaLine({ slot }) {
         <div>
           {fmtNum(tonelaje)} kg movidos en total
           {' · '}
-          <button type="button" className="text-accent font-medium" onClick={() => openSheet('year-recap')}>Tu Año Fierro →</button>
+          <button type="button" className="text-text font-semibold" onClick={() => openSheet('year-recap')}>Tu Año Fierro →</button>
         </div>
       )}
     </div>
