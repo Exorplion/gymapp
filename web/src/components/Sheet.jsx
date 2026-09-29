@@ -10,7 +10,7 @@
 // oculta con display:none — ver styles.css — así que "escaparse" la dejaría
 // en un foco muerto, ni visible ni anunciado), y al cerrar el foco vuelve a
 // lo que lo abrió en vez de perderse en <body>.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { D } from '../lib/motion.js';
 
 const FOCUSABLES = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -61,8 +61,15 @@ export default function Sheet({ open, onClose, children, variante }) {
   /* mostrando = todavía hay algo que pintar (abierto de verdad, o cerrando
      con la animación en curso). closing sólo se prende en la transición
      true->false, nunca de entrada (si open ya arranca en false no hay nada
-     que animar). */
-  useEffect(() => {
+     que animar).
+
+     useLayoutEffect y no useEffect: en el render donde open pasa a false,
+     closing todavía es false, así que #sheet pierde .open. Con useEffect
+     ese render se PINTABA (medido en Chrome: un cuadro con la hoja en
+     display:none) y recién al siguiente volvía con .closing a hacer shdown:
+     la hoja parpadeaba al empezar a cerrarse. El layout effect pone
+     closing antes de que el navegador pinte. */
+  useLayoutEffect(() => {
     if (open) {
       clearTimeout(closeTimer.current);
       setClosing(false);

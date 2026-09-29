@@ -360,9 +360,12 @@ h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif}
 .ex-row .info.inline::after{inset:-8px}                    /* 24 → 40 */
 .ex-row .acts .mini::after{inset:-4px}                     /* 32 → 40, con 8 entre sí */
 /* Un enlace de texto en medio de una línea ("Tu Año Fierro →", "Ver cuánto
-   tomar ›"): el toque es una franja de 44 centrada en el texto, mida lo que
-   mida la letra. */
-.link-toque::after{inset:auto -4px;top:50%;height:44px;margin-top:-22px}
+   tomar ›"): el toque es una franja de 40 centrada en el texto, mida lo que
+   mida la letra (en Inicio, 44 pisaba 2 px de la tarjeta de abajo). */
+.link-toque::after{inset:auto -4px;top:50%;height:40px;margin-top:-20px}
+/* "¿Entrenaste el …?": 26 de alto entre la tira (termina 10 px arriba) y la
+   tarjeta de hoy: 7 por lado llegan a 40 y dejan 3 px libres arriba. */
+.wkreal-ask::after{inset:-7px 0}
 /* También en @layer base. Sin capa, este `background:none;border:none` era lo
    que dejaba sin efecto el borde y el degradado de `<Button variant="icon">`
    —los botones de 38px de las filas— y de cualquier botón estilado con
