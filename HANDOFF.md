@@ -1,6 +1,43 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-28
+**Última actualización:** 2026-09-29
+
+---
+
+## SESIÓN 2026-09-29 — Auditoría visual 2, tanda A: "Un acento que signifique"
+
+Rama `feat/visual-acento` (sobre main con #127), PR abierto sin mergear.
+**932 tests.** Detalle, commits y números en
+`docs/auditoria-visual-2-2026-09.md` → "Tanda A — estado"; `DESIGN.md`
+actualizado y en el formato de la spec (el lint oficial se cuelga: validado
+a mano).
+
+- **V1** SEGUIR sin pulso de opacidad: late un anillo por fuera
+  (`.ini-cta-seguir`, `ctaAnillo`, mismo ciclo que `rampaAnillo`). Contraste
+  mínimo en el ciclo 2,05 → 4,72 (Fucsia). `@keyframes pulse` borrado.
+- **V2** acento sólo para actuar: Inicio 32 % → 2,7 %, Progreso 24 % → 1,5 %,
+  Comida 8–10 % → ~2 % de los textos.
+- **V6** macros con tokens `--macro-*` (luces del acento); ojo, había una
+  segunda copia de los colores en `.hero-kcal` que ganaba por orden: borrada.
+  `macroCls` ya no pone el "casi" de proteína en ámbar.
+- **V7** `streakHeatmap()` con estado `antes` (21 faltas inventadas → 0).
+- **V11** flecha del select con gradientes y `var(--text-3)`; el test de
+  literales ahora revisa los `data:` URI.
+- **Rueda = meta de hoy**: `ensureVals()` arranca en `metaHoy()` si la meta
+  sale de la doble progresión (cierra el pendiente (1) de la rampa).
+
+Trampas:
+- `.grouprow-v` pinta a la vez valores ("4 D") y estados ("Sí/No" de los
+  interruptores): no se puede pasar a tiza en global sin borrar un estado.
+- Un color en un `data:` va escapado (`%23…`): el regex de hex no lo ve; por
+  eso el test nuevo decodifica el URI.
+- Los puertos 4186/4181/4184 los usan otros agentes: esta verificación fue
+  en 4188.
+
+**Pendientes:** tandas B–E del informe (V3, V4, V5, V8, V9, V10, V12, V13,
+V14). El pendiente (2) de la rampa ("sumá reps · meta 12" contra "Meta de
+hoy × 8") sigue para decidir con Enzo. Prueba táctil real del anillo de
+SEGUIR en el teléfono.
 
 ---
 

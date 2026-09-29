@@ -258,6 +258,32 @@ rótulos pasan a plomo y dejan de gritar.
 
 Toca Inicio, Comida, Progreso, Mis rutinas y Perfil. **No choca** con los otros agentes (no toca la tarjeta del ejercicio, el asistente ni el descanso). Puede ir ya.
 
+#### Tanda A — estado (2026-09-29, rama `feat/visual-acento`)
+
+Hecha. Medido en el build de producción (`vite build` + `vite preview`),
+service worker y caches borrados, `seedRegistro()`, con Hielo y Fucsia a
+390×844 y 430×932, con el mismo medidor de este informe (nodos de texto
+visibles de `main` pintados con `--accent` o con degradado recortado).
+
+| ID | Estado | Commit | Antes → después |
+|---|---|---|---|
+| **V1** | ✅ Arreglado | `89068aa` | SEGUIR ya no anima la opacidad: late un anillo por fuera (`ctaAnillo`, el mismo gesto y ciclo que `rampaAnillo`). Opacidad muestreada cada 200 ms: **0,50–1,00 → 1,00 fija**. Contraste mínimo de "SEGUIR" en el ciclo: Hielo **2,19 → 5,32**, Fucsia **2,05 → 4,72**; "0 de 10": Hielo 1,76 → 5,32, Fucsia **1,69 → 4,72** (sin opacidad .65). `@keyframes pulse` borrado: SEGUIR era su único uso. |
+| **V2** | ✅ Arreglado | `d6c61fa` | Texto en acento — **Inicio** (sesión en curso): **32,4 % → 2,7 %** (12 de 37 → 1, el día de hoy en la semana); Inicio "completado hoy" 33,3 % → 2,7 %. **Progreso: 23,5 % → 1,5 %** (48 de 204 → 3: "+ Registro" y "Ver todas", que son acciones). **Comida: 8,1–10,4 % → 1,6–2,1 %**. Iguales a 390 y 430 y con los dos acentos. Pasan a tiza/plomo: `.ini-tile-lbl` (y su rayita), `.ini-tile-go`, `.ini-eyebrow`, `.hero-eyebrow`, `.sect`, `#sheet h3`, `.sc-meta.strong`, `.hist-badge`, `.pr-w`, 1RM y nivel de fuerza, "Tu Año Fierro". Las cifras de las tarjetas de Inicio sin degradado recortado (de paso cubre V13 ahí). |
+| **V6** | ✅ Arreglado | `89068aa`, `536912d` | Macros en tres luces del acento (tokens `--macro-*`, desde la escala del mapa): carbos ya no en verde ni grasa en ámbar; había **una segunda copia** en `.hero-kcal` que ganaba por orden y se borró. Verde sólo si la proteína se cumplió; `macroCls` ya no marca el "casi" (≥ 75 %) en ámbar. "nada flojo esta semana" y "registrá una sesión" en plomo (el ámbar queda para "hace N días"). "en uso" en tiza con borde. |
+| **V7** | ✅ Arreglado | `49081b7` | Estado `antes` en `streakHeatmap()` para los días previos a la primera sesión (celda vacía, sólo el hilo). Con el seed: **21 celdas `miss` → 0** (20–21 `antes`), cumplimiento contado desde la primera sesión (49 % en el relevamiento → **100 %**). 4 tests nuevos en `streak.test.js`. |
+| **V11** | ✅ Arreglado | `0bb5f73` | La flecha del select son dos gradientes con `var(--text-3)`; fuera el `%238B97B4`. `colores-literales.test.js` revisa también los `data:` URI (decodifica y mira fill/stroke/stop-color): falló con el literal viejo antes del arreglo. |
+
+Además, pedido junto con la tanda:
+
+- **Rueda de reps = meta de hoy** (`dac68fe`, pendiente de la rampa): `ensureVals()` arranca en `metaHoy()` cuando la meta sale de la doble progresión (subir / sostener / sumar). En vivo: "Meta de hoy 47.5 kg × 8" y la rueda en **47.5 / 8** (antes 47.5 / 6). 6 tests nuevos en `previa.test.js`.
+
+Lo que **no** se tocó a propósito: `.grouprow-v` sigue en acento porque ahí
+vive también el "Sí/No" de los interruptores (es estado); los números de la
+previa y la meta de hoy en la tarjeta del ejercicio (Hoy en vivo: 6,6 %,
+23 de 351, todos cifras protagonistas) quedan como están porque son zona de
+la previa; el degradado de `.brand` y `.plan-title` (V13) y los eyebrows
+mismos (V12) son de la tanda B.
+
 ### Tanda B · Tipografía "dorsal" [choca con rampa/previa y asistente: toca `@theme` y `styles.css` global; después de que mergeen]
 
 1. **V8**: `body{font-size:var(--t-body)}`, `--text-xs` resuelto, y **cargar Barlow Condensed 800 itálica** (y 800 recta si se usa) para título de pantalla, nombre del día y cifras protagonistas. Es el cambio que más acerca la app a lo "deportivo" que pide Enzo: hoy todo el display está en 700.
