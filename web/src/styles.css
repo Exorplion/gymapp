@@ -3832,7 +3832,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .asist-fila .g{flex:none;font-size:var(--t-micro);letter-spacing:.04em;color:var(--text-3)}
 /* Lo ya hecho en la sesión: apagado y fuera de la caja arrastrable. */
 .asist-fila.fijo{opacity:.45}
-.asist-fila.fijo .n{color:var(--ok)}
+.asist-fila.fijo .n svg{color:var(--ok)} /* el ✓ de lo hecho; salteado y en curso quedan con su número */
 .asist-caja>[data-fijo]{cursor:default}
 /* El nuevo: iluminado con el acento. `scale` y no `transform`, para no
    pelearse con el translateY del arrastre ni con el del FLIP. */
