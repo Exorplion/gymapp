@@ -3710,55 +3710,189 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .routine-name-input:focus{outline:none}
 
 /* ============================================================
-   Onboarding de "Nuevo ejercicio" (ExerciseForm.jsx) — cuatro pasos
-   dentro del MISMO sheet (nombre / cómo se hace / confirmar / agregado).
-   El deslizamiento imita al de cambio de pestaña (pushInR/pushInL de
-   arriba, mismo --ease-push) pero acotado al ancho del panel, no de toda
-   la pantalla: acá sólo entra el contenido del paso, el sheet no se mueve.
-   La regla global de prefers-reduced-motion (más arriba, "*,*::before...")
-   ya achica esta animación a .01ms — no hace falta repetirla acá. */
-@keyframes exwizInR{from{transform:translateX(32px);opacity:0}to{transform:translateX(0);opacity:1}}
-@keyframes exwizInL{from{transform:translateX(-32px);opacity:0}to{transform:translateX(0);opacity:1}}
-.exwiz-step{animation:exwizInR var(--d3) var(--ease-push) both}
-.exwiz-step.dir-l{animation-name:exwizInL}
+   Asistente "Agregar ejercicio" (AgregarEjercicio.jsx, spec 2026-09-27 §1)
+   Tres pasos a pantalla completa: ① qué ② dónde ③ cómo. Cada paso entra
+   entero, sin scroll, a 390×844 y a 430×932 — por eso la columna es flex
+   con min-height:0 de punta a punta y el CTA vive en un pie fijo.
+   Todo sale de tokens: colores del sistema grafito, tiempos --d1..--d4,
+   --ease-push para deslizar entre pasos (el mismo del cambio de pestaña,
+   acotado al ancho del panel). La regla global de movimiento reducido
+   (más arriba, *{animation-duration:.01ms}) ya apaga todo esto. */
 
-/* Indicador de progreso: 4 barritas, sobrio — ni número de paso ni texto,
-   el mismo lenguaje visual que .wiz-progress (RoutineWizard) pero discreto
-   en vez de continuo, porque acá los pasos son unidades fijas (4), no un
-   porcentaje que avanza suelto. */
-.exwiz-progress{display:flex;gap:6px;margin-bottom:var(--s4)}
-.exwiz-progress i{
-  flex:1;height:4px;border-radius:var(--r-xs);
-  background:rgba(var(--hi-rgb),.08);
-  transition:background var(--d2) var(--ease-out);
+/* La hoja, a pantalla completa. Fondo opaco con el mismo resplandor de
+   arriba que tiene el body: es una pantalla, no un vidrio sobre otra. Entra
+   desde abajo como cualquier hoja pero recorre el alto entero, así que usa
+   --d3 y la curva de recorridos largos; sale en --d2 (más corta que la
+   entrada, y es el CIERRE_MS de Sheet.jsx). */
+#sheet.pantalla .panel{
+  top:0;bottom:0;height:100dvh;max-height:none;
+  display:flex;flex-direction:column;
+  border:0;border-radius:0;box-shadow:none;backdrop-filter:none;
+  padding:calc(env(safe-area-inset-top) + var(--s3)) var(--s4) calc(env(safe-area-inset-bottom) + var(--s4));
+  background:radial-gradient(90% 34% at 50% -6%,rgba(var(--accent-strong-rgb),.16),transparent 66%),var(--bg);
+  animation:asistSube var(--d3) var(--ease-push);
 }
-.exwiz-progress i.on{background:var(--accent-grad)}
+#sheet.pantalla .handle{display:none}
+#sheet.pantalla #sheet-c{flex:1;min-height:0;display:flex;flex-direction:column}
+#sheet.pantalla.closing .panel{animation:asistBaja var(--d2) var(--ease-push) forwards}
+@keyframes asistSube{from{transform:translateY(100%)}}
+@keyframes asistBaja{to{transform:translateY(100%)}}
 
-/* Paso 3 (confirmar): la ficha del ejercicio antes de guardar. */
-.exwiz-confirm{
-  border:1px solid var(--line-2);border-radius:var(--radius-r-lg);
-  background:var(--surface-2);padding:var(--s4);margin:var(--s3) 0 var(--s4);
-}
-.exwiz-confirm .nombre{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700;color:var(--text)}
-.exwiz-confirm .datos{margin-top:4px;color:var(--text-2);font-size:var(--t-sm)}
-.exwiz-confirm .grupo-row{display:flex;align-items:center;gap:8px;margin-top:var(--s3)}
+.asist{flex:1;min-height:0;display:flex;flex-direction:column}
 
-/* Paso 4 (agregado): check grande + lo que llevás en esta tanda. La marca
-   ✓ usa el mismo verde que el resto de la app para "hecho" (--ok), no un
-   color nuevo inventado para la ocasión. */
-.exwiz-done{display:flex;flex-direction:column;align-items:center;text-align:center;padding:var(--s4) 0 var(--s2)}
-.exwiz-done .check{
-  width:56px;height:56px;border-radius:50%;
-  background:rgba(var(--ok-rgb),.14);color:var(--ok);
-  display:grid;place-items:center;font-size:28px;margin-bottom:var(--s3);
-  animation:zoom var(--d3) var(--spring) backwards;
+/* Arriba: ✕ (paso 1) o ‹ (pasos 2 y 3) y la barra de 3 segmentos. Cada
+   segmento se llena de izquierda a derecha con --d2 al avanzar, y se vacía
+   al volver. */
+.asist-top{display:flex;align-items:center;gap:var(--s3);margin-bottom:var(--s4)}
+.asist-x{
+  width:40px;height:40px;flex:none;display:grid;place-items:center;
+  border-radius:var(--r-full);background:var(--surface-2);border:1px solid var(--line);color:var(--text-2);
+  transition:color var(--d1) var(--ease-out),border-color var(--d1) var(--ease-out);
 }
-.exwiz-done .nombre{font-family:'Barlow Condensed',sans-serif;font-size:var(--t-xl);font-weight:700;color:var(--text)}
-.exwiz-batch{
-  margin:var(--s4) 0;padding:var(--s3);border-radius:var(--radius-r);
-  background:var(--surface-2);border:1px solid var(--line-2);
-  color:var(--text-2);font-size:var(--t-sm);text-align:center;
+.asist-x:active{color:var(--accent);border-color:var(--line-2)}
+.asist-prog{flex:1;display:flex;gap:var(--s1)}
+.asist-prog i{flex:1;height:4px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.08);position:relative;overflow:hidden}
+.asist-prog i::after{
+  content:"";position:absolute;inset:0;background:var(--accent-grad);
+  transform:scaleX(0);transform-origin:left;transition:transform var(--d2) var(--ease-out);
 }
+.asist-prog i.on::after{transform:scaleX(1)}
+
+/* El paso: entra de costado. Sin dirección (la primera vez) no se mueve:
+   ya se está moviendo el panel entero, y dos movimientos a la vez es lo que
+   Sheet.jsx documenta como el problema. */
+.asist-step{flex:1;min-height:0;display:flex;flex-direction:column}
+.asist-step.dir-r{animation:asistInR var(--d3) var(--ease-push) both}
+.asist-step.dir-l{animation:asistInL var(--d3) var(--ease-push) both}
+@keyframes asistInR{from{transform:translateX(32px);opacity:0}}
+@keyframes asistInL{from{transform:translateX(-32px);opacity:0}}
+
+.asist-eyebrow{
+  display:flex;align-items:baseline;gap:var(--s2);min-width:0;
+  font-size:var(--t-micro);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);
+}
+.asist-eyebrow>span:first-child{flex:none}
+.asist-turno{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--accent);font-weight:600}
+.asist-turno::before{content:"·";margin-right:var(--s2);color:var(--text-3)}
+/* #sheet h2 (tamaño de hoja, margen de 16) le gana a una clase sola: por
+   eso el #sheet delante. La cara es la del héroe (.plan-title). */
+#sheet .asist-h{font-size:var(--t-display);margin:var(--s1) 0 var(--s4);padding:2px 4px 2px 0}
+#sheet .asist-h:focus{outline:none}
+
+.asist-cuerpo{flex:1;min-height:0;display:flex;flex-direction:column}
+.asist-sec{margin-top:var(--s4)}
+/* Rótulo de sección: el de .eyebrow. El #sheet es por #sheet h3. */
+#sheet .asist-lbl,.asist-lbl{
+  margin:0 0 var(--s2);font-size:var(--t-micro);font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text-2);
+}
+.asist .chip{min-height:40px}
+.asist-chips{margin-top:var(--s2)}
+.asist-sec .asist-chips{margin-top:0}
+/* Explorar: una sola fila que se desliza y llega al borde de la pantalla. */
+.asist-scroll{margin:0 calc(-1 * var(--s4));padding:2px var(--s4) var(--s1)}
+.asist-aparece{animation:asistAparece var(--d2) var(--ease-out)}
+@keyframes asistAparece{from{transform:translateY(6px);opacity:0}}
+
+/* ① El campo es el de .field (mismo alto, radio y foco); sólo se le hace
+   lugar al botón de borrar. */
+.asist-campo{position:relative;margin-bottom:0}
+.asist-campo .asist-input{padding-right:52px}
+.asist-input::placeholder{color:var(--text-3)}
+.asist-limpiar{
+  position:absolute;right:6px;top:50%;translate:0 -50%;width:40px;height:40px;
+  display:grid;place-items:center;border-radius:var(--r-full);color:var(--text-3);
+}
+
+/* ② La sugerencia y la lista. */
+.asist-sug{
+  display:flex;align-items:flex-start;gap:var(--s2);margin:0;
+  padding:var(--s2) var(--s3);border-radius:var(--r-md);
+  background:rgba(var(--accent-rgb),.08);border:1px dashed rgba(var(--accent-rgb),.45);
+  font-size:var(--t-sm);line-height:1.4;color:var(--text);
+}
+.asist-sug-ico{flex:none;margin-top:2px;color:var(--accent)}
+.asist-pista{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s2);min-height:40px;
+  margin:var(--s1) 0 var(--s2);font-size:var(--t-micro);line-height:1.35;color:var(--text-3);
+}
+.asist-link{flex:none;min-height:40px;padding:0 var(--s1);font-size:var(--t-sm);font-weight:600;color:var(--accent)}
+.asist-lista,.asist-caja{display:flex;flex-direction:column;gap:var(--s2)}
+.asist-fila{
+  display:flex;align-items:center;gap:var(--s3);min-height:46px;padding:0 var(--s3);
+  border-radius:var(--r-md);background:var(--grad-metal),var(--glass);border:1px solid var(--glass-border);
+  font-size:var(--t-body);color:var(--text);
+}
+.asist-fila .n{
+  flex:none;width:22px;display:grid;place-items:center;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:var(--t-body);
+  color:var(--text-3);font-variant-numeric:tabular-nums;
+}
+.asist-fila .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.asist-fila .g{flex:none;font-size:var(--t-micro);letter-spacing:.04em;color:var(--text-3)}
+/* Lo ya hecho en la sesión: apagado y fuera de la caja arrastrable. */
+.asist-fila.fijo{opacity:.45}
+.asist-fila.fijo .n{color:var(--ok)}
+.asist-caja>[data-fijo]{cursor:default}
+/* El nuevo: iluminado con el acento. `scale` y no `transform`, para no
+   pelearse con el translateY del arrastre ni con el del FLIP. */
+.asist-fila.nuevo{
+  min-height:52px;padding-right:var(--s1);scale:1.02;
+  background:linear-gradient(90deg,rgba(var(--accent-strong-rgb),.30),rgba(var(--accent-rgb),.10));
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(var(--accent-rgb),.14),0 10px 24px -12px rgba(var(--shade-rgb),.7);
+}
+.asist-fila.nuevo .n{color:var(--accent)}
+.asist-fila.nuevo .t{font-weight:700}
+.asist-fila.nuevo.dragging{box-shadow:0 0 0 3px rgba(var(--accent-rgb),.24),0 22px 44px -16px rgba(var(--shade-rgb),.85)}
+.asist-flechas{flex:none;display:flex;gap:var(--s1)}
+.asist-fila.nuevo .mini{background:rgba(var(--bg-rgb),.4);border-color:rgba(var(--accent-rgb),.3);color:var(--accent)}
+.asist-grip{flex:none;margin-right:var(--s1);color:var(--accent);opacity:.75}
+.asist-mas{display:flex;align-items:center;min-height:28px;padding:0 var(--s3);font-size:var(--t-sm);color:var(--text-3)}
+.asist-grp{margin:var(--s1) 2px 0;font-size:var(--t-micro);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+
+/* ③ Steppers (la tarjeta es .card), equipo y unilateral. */
+.asist-steppers{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
+.card.asist-stp{margin:0;padding:var(--s3);text-align:center}
+.asist-stp-v{display:flex;flex-direction:column;align-items:center;margin:var(--s1) 0 var(--s3)}
+.asist-num{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-style:italic;font-size:var(--t-display);
+  line-height:1;color:var(--text);font-variant-numeric:tabular-nums;
+  animation:asistNum var(--d2) var(--ease-out);
+}
+@keyframes asistNum{from{transform:translateY(6px);opacity:.35}}
+.asist-stp-v small{margin-top:2px;font-size:var(--t-micro);color:var(--text-3)}
+.asist-stp-b{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
+.asist-stp-b button{
+  height:44px;display:grid;place-items:center;border-radius:var(--r-md);
+  background:var(--surface-2);border:1px solid var(--line-2);color:var(--accent);
+}
+.asist-stp-b button:disabled{opacity:.35}
+.asist-eq{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s2)}
+.asist-eq button{
+  min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s1);
+  border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--line);
+  color:var(--text-3);font-size:var(--t-micro);font-weight:600;
+  transition:color var(--d1) var(--ease-out),background-color var(--d2) var(--ease-out),border-color var(--d2) var(--ease-out),box-shadow var(--d2) var(--ease-out);
+}
+.asist-eq button span{color:var(--text-2)}
+.asist-eq button[aria-checked="true"]{
+  color:var(--accent);border-color:var(--accent);background:rgba(var(--accent-rgb),.10);
+  box-shadow:0 0 0 3px rgba(var(--accent-rgb),.10);
+}
+.asist-eq button[aria-checked="true"] span{color:var(--text)}
+.asist-eq button[aria-checked="true"] svg{animation:asistIco var(--d2) var(--ease-out)}
+@keyframes asistIco{from{transform:scale(.78)}}
+.asist-uni{margin-top:var(--s4)}
+.asist-despues{margin:auto 0 0;padding-top:var(--s3);font-size:var(--t-micro);color:var(--text-3);text-align:center}
+
+/* Pie: el CTA de siempre (.btn, la píldora con degradado), el error del
+   paso inline arriba de él (no un toast: el foco no se pierde) y, en la
+   sesión, la nota de que vale sólo para hoy. */
+.asist-pie{flex:none;padding-top:var(--s3)}
+.asist-error{margin:0 0 var(--s2);font-size:var(--t-sm);color:var(--warn);text-align:center;animation:asistAparece var(--d2) var(--ease-out)}
+.asist-nota{margin:0 0 var(--s2);font-size:var(--t-sm);color:var(--text-2);text-align:center}
+.asist-cta{margin:0}
 
 /* ---------- lista agrupada + héroe ---------- */
 /* Sección agrupada: UNA superficie para toda la sección, con las filas
