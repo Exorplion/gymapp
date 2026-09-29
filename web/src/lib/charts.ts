@@ -264,9 +264,13 @@ function coloresGrafico() {
   };
 }
 
-export function drawChart(cv: ChartCanvas, pts: ChartPoint[], opts: DrawChartOpts = {}): void {
+/** `tam` = el tamaño en CSS px si quien llama ya lo sabe (Chart.jsx lo toma
+    del ResizeObserver, que corre con el layout hecho). Sin él se lee
+    clientWidth/clientHeight, que con el DOM recién cambiado fuerza un layout
+    de la página entera (G4, auditoría 2026-09). */
+export function drawChart(cv: ChartCanvas, pts: ChartPoint[], opts: DrawChartOpts = {}, tam?: { w: number; h: number } | null): void {
   const dpr = devicePixelRatio || 1;
-  const W = cv.clientWidth || 300, H = cv.clientHeight || 200;
+  const W = (tam ? tam.w : cv.clientWidth) || 300, H = (tam ? tam.h : cv.clientHeight) || 200;
   cv.width = W * dpr; cv.height = H * dpr;
   const x = cv.getContext('2d')!; x.scale(dpr, dpr);
   x.clearRect(0, 0, W, H);

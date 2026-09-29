@@ -70,6 +70,40 @@ Trampas:
 
 ---
 
+## SESIÓN 2026-09-29 — Tanda 4 de la auditoría: cambio de pestaña
+
+Rama `perf/auditoria-tanda4` (desde main, independiente de la tanda 3), PR
+abierto sin mergear. **934 tests.** Detalle en `docs/auditoria-total-2026-09.md`
+(G4, H7, G16).
+
+- **G4**: la tarea más larga del cambio de pestaña bajó de 373–628 ms a
+  126–209 ms a 6×, y el primer cuadro de 448–744 ms a 165–363 ms. Cambios: la
+  píldora de la barra por CSS (`--i` + `cqw`), `main` en grilla de una
+  celda (sin `min-height` medido), `catOf` con caché por nombre crudo, el
+  gráfico con el tamaño del ResizeObserver, `sessionPRs` en una pasada, la
+  saliente es la pantalla viva (se borró `sacarFoto`) y queda congelada
+  mientras se va (`PantallaCtx` en state.js).
+- **H7 sin arreglar**: re-medido, el layout forzado al registrar una serie lo
+  inicia el `useLayoutEffect` de ExerciseCarousel (fuera de alcance). Mover
+  `reelCenter` a un requestAnimationFrame lo empeoró (segundo layout
+  completo con el descanso ya abierto): descartado.
+
+Trampas:
+- **La saliente comparte key con la entrante de antes**: `vistaSaliente` se
+  deriva en el MISMO render del cambio (App.jsx). Si aparece recién en el
+  render de `setSaliente`, React desmonta la pantalla vieja y la vuelve a
+  montar de cero, que es justo lo que se quería evitar. Con dos toques
+  seguidos manda el cambio más nuevo, así nunca hay dos vistas con la misma key.
+- **`useStore()` dentro de una pantalla lee `PantallaCtx`**: una pantalla
+  que se va no ve los bump() hasta que vuelve a ser la de adelante. Si algo
+  tiene que actualizarse en la saliente mientras sale, eso está mal por
+  diseño: se va.
+- **Medir con otros agentes en la misma máquina**: el tiempo de pared varía
+  ±40 %. Trazar main y la rama una detrás de la otra y comparar también el
+  CPU del hilo (`tdur`) y los recálculos forzados, que no dependen de la carga.
+
+---
+
 ## SESIÓN 2026-09-28 (c) — Pieza 1: asistente "Agregar ejercicio" en 3 pasos
 
 Rama `feat/asistente-agregar`, PR abierto sin mergear. **918 tests** (con main al día). Spec §1

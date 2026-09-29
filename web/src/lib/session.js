@@ -293,16 +293,26 @@ export function indiceHoy() {
     en S.sessions — reemplaza a calcSessionPRs(), que asumía que la sesión no
     estaba en la lista y por eso sólo servía en el momento de cerrarla. */
 export function sessionPRs(sess) {
-  const prior = S.sessions.filter(s => s.id !== sess.id && s.start < sess.start);
+  /* El máximo previo de cada ejercicio se junta en UNA pasada por las
+     sesiones anteriores (G4, auditoría 2026-09). Antes se recorría todo el
+     historial una vez por cada ejercicio de la sesión, armando el exKey de
+     cada entrada vieja cada vez — y Progreso lo hace por cada tarjeta del
+     historial: ~80 ms a 6× al entrar a la pestaña. Mismo resultado. */
+  const previo = new Map();
+  for (const s of S.sessions) {
+    if (s.id === sess.id || !(s.start < sess.start)) continue;
+    for (const pe of s.entries || []) {
+      const k = exKey(pe);
+      let m = previo.get(k) ?? 0;
+      for (const st of pe.sets || []) if (st.w > m) m = st.w;
+      previo.set(k, m);
+    }
+  }
   const prs = [];
   (sess.entries || []).forEach(e => {
     if (!e.sets?.length) return;
     const bestSet = e.sets.reduce((a, b) => (b.w > a.w ? b : a), e.sets[0]);
-    let prevMax = 0;
-    prior.forEach(s => (s.entries || []).forEach(pe => {
-      if (exKey(pe) !== exKey(e)) return;
-      pe.sets.forEach(st => { if (st.w > prevMax) prevMax = st.w; });
-    }));
+    const prevMax = previo.get(exKey(e)) ?? 0;
     if (bestSet.w > prevMax) prs.push({ name: e.name, equip: e.equip, machine: e.machine, unilateral: e.unilateral, w: bestSet.w, r: bestSet.r });
   });
   return prs;

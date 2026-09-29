@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { createContext, useContext, useSyncExternalStore } from 'react';
 import { idb } from './db.js';
 import { dstr, fmtNum, round1, kg2lb, lb2kg, KG2LB, vibrate } from './format.js';
 
@@ -94,11 +94,33 @@ export function bump() {
   listeners.forEach(l => l());
 }
 function subscribe(cb) { listeners.add(cb); return () => listeners.delete(cb); }
-function getSnapshot() { return version; }
+
+/* ─── La pantalla que se va, congelada (G4, auditoría 2026-09) ───────────
+
+   Al cambiar de pestaña, la pantalla vieja sigue montada ~480 ms mientras
+   se desliza afuera: es la misma pantalla viva, no una copia (App.jsx). Sus
+   componentes se suscriben con useStore(), así que el bump() del propio
+   cambio la hacía renderizar otra vez —Progreso entero, con sus cálculos y
+   su gráfico— en el mismo cuadro en que se monta la nueva.
+
+   App envuelve cada pantalla en PantallaCtx con el id de su pestaña. Al
+   salir, changeTab() anota la versión que esa pantalla ya pintó, y mientras
+   esté anotada useStore() le devuelve ésa: el store "no cambió" y React no
+   la vuelve a renderizar. Se borra al volver a ser la de adelante. Fuera de
+   una pantalla (App, la barra, las hojas) el contexto es null y todo sigue
+   igual. */
+export const PantallaCtx = createContext(null);
+const congeladas = new Map();   // tab → versión en la que quedó
+
+/** La versión del store que ve una pantalla (null = fuera de pantalla). */
+export function versionDePantalla(tab) {
+  return tab != null && congeladas.has(tab) ? congeladas.get(tab) : version;
+}
 
 /** Suscribe el componente a S y devuelve el objeto vivo (léelo directo, ej. S.sessions). */
 export function useStore() {
-  useSyncExternalStore(subscribe, getSnapshot);
+  const tab = useContext(PantallaCtx);
+  useSyncExternalStore(subscribe, () => versionDePantalla(tab));
   return S;
 }
 
@@ -315,56 +337,17 @@ export const lastTabChangeUsedVT = false;
 
     `extra` corre en el mismo instante que S.tab (BodyMap.jsx lo usa para
     fijar S.rutMode='edit' junto con el cambio, no después). */
-/* ─── La foto de la pantalla que se va ───────────────────────────────────
-
-   Medido el 2026-09-15: durante un cambio de pestaña el hilo principal
-   quedaba bloqueado entre 370 y 970 ms, con tareas largas de hasta 523 ms.
-   La app cae de 62 fps a 1: un solo frame pintado en todo el deslizamiento.
-   Por eso se veía como un salto y no como un movimiento — la animación
-   estaba bien, no había con qué dibujarla.
-
-   La mitad de ese costo era evitable. App.jsx pintaba la pantalla saliente
-   llamando otra vez a pantallaDe(tab): React la MONTABA DE CERO, con sus
-   efectos y sus cálculos (Progreso recorre todas las sesiones para las
-   marcas, Rutina arma sus 40 filas). Todo para algo que, como dice el
-   comentario de App.jsx, "es puramente decorativo mientras se termina de
-   ir" — no se toca, no cambia, sólo se desliza hacia afuera.
-
-   Una copia del DOM hace exactamente eso y cuesta 0.44 ms en Inicio y 0.86
-   en Entreno, contra cientos de milisegundos de un montaje.
-
-   La foto se saca ACÁ y no en App.jsx porque tiene que tomarse ANTES de que
-   S.tab cambie: un instante después React ya reemplazó el nodo y lo que
-   había en pantalla no existe más. */
-let fotoSaliente = null;
-
-function sacarFoto() {
-  if (typeof document === 'undefined') return null;
-  const viva = document.querySelector('main > .view.enter');
-  if (!viva) return null;
-  const copia = viva.cloneNode(true);
-  /* cloneNode no copia lo que hay dentro de un <canvas>: son píxeles, no
-     DOM. Sin esto los gráficos de Progreso y el anillo de Comida saldrían en
-     blanco justo mientras la pantalla se desliza. */
-  const originales = viva.querySelectorAll('canvas');
-  const copias = copia.querySelectorAll('canvas');
-  for (let i = 0; i < originales.length; i++) {
-    try { copias[i]?.getContext('2d')?.drawImage(originales[i], 0, 0); } catch { /* sin contexto 2d o vacío */ }
-  }
-  return copia;
-}
-
-/** La foto tomada en el último changeTab(). Se entrega una sola vez: la usa
-    App.jsx al montar la pantalla saliente y después no sirve para nada. */
-export function tomarFotoSaliente() {
-  const f = fotoSaliente;
-  fotoSaliente = null;
-  return f;
-}
-
+/* Acá vivía "la foto de la pantalla que se va" (sacarFoto): una copia del
+   DOM de la pantalla saliente, tomada antes de cambiar S.tab, que App.jsx
+   colgaba en .view.leave para no volver a montarla con React. Se fue en la
+   auditoría total 2026-09 (G4): reinsertar esa copia obligaba a recalcular
+   estilos y layout de toda la pantalla vieja en el mismo cuadro que monta
+   la nueva (100–240 ms a 6×). Ahora la saliente es la misma pantalla viva,
+   que conserva su nodo porque lleva la misma key (ver App.jsx). */
 export function changeTab(t, extra) {
   if (S.tab === t) return;
-  fotoSaliente = sacarFoto();
+  congeladas.set(S.tab, version);   // la que se va (ver PantallaCtx)
+  congeladas.delete(t);             // la que llega, aunque se estuviera yendo
   S.tab = t;
   extra?.();
   bump();

@@ -164,6 +164,25 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
   medido; (3) `catOf`: caché por nombre crudo antes de normalizar (o categoría
   guardada en la entrada al registrar). Objetivo: < 200 ms a 6× en las cuatro.
 
+> **Arreglado** en la tanda 4 (`82decc7`, `76c3573`, `b75acb2`, `ed275ed`, `759bed6`). Los tres arreglos propuestos, más tres cosas que aparecieron al medir:
+> (1) la píldora de la barra se ubica con CSS (índice `--i` + ancho de la barra en `cqw`), sin `getBoundingClientRect`; coincide al medio píxel con el botón activo a 390, 430 y 900 px;
+> (2) `main` es una grilla de una celda y las dos vistas del cambio van en esa celda: sin `min-height` medido, y con las posiciones de todos los elementos de las cuatro pestañas iguales a main en bloque;
+> (3) `catOf` tiene caché por el nombre crudo, antes de normalizar, y `daysSinceAll` hace una sola pasada;
+> (4) el gráfico de Progreso toma su tamaño del ResizeObserver en vez de leer `clientWidth` al montar (~200 ms de layout forzado) y `sessionPRs` junta los máximos en una sola pasada (~80 ms);
+> (5) la pantalla que se va es la misma pantalla viva, con la misma key, no una copia del DOM (`sacarFoto`/`cloneNode`). Reinsertar la copia obligaba a recalcular estilo y layout de la pantalla vieja entera;
+> (6) mientras se va, esa pantalla queda congelada: sus `useStore()` no ven el `bump()` del cambio (`PantallaCtx`, state.js). Antes redibujaba Progreso y su gráfico en el mismo cuadro.
+>
+> **Medido** (build de producción, 6×, 390×844 DPR 3, main #127 y esta rama trazadas una detrás de la otra, 5 vueltas de las cuatro pestañas, mediana):
+>
+> | Destino | 1er cuadro main → rama | Tarea más larga main → rama (CPU del hilo) | Recálculos forzados desde JS | fps del deslizamiento |
+> |---|---|---|---|---|
+> | → Entreno | 744 → **363 ms** | 628 → **191 ms** (171 → 70) | 5 → 0 | 43 → 48 |
+> | → Comida | 448 → **165 ms** | 373 → **126 ms** (93 → 43) | 5 → 0 | 48 → 48 |
+> | → Progreso | 571 → **305 ms** | 470 → **192 ms** (124 → 64) | 7 → 1 | 43 → 38 |
+> | → Inicio | 733 → **298 ms** | 591 → **209 ms** (146 → 58) | 5 → 0 | 45 → 50 |
+>
+> La tarea más larga queda en 126–209 ms: se cumple el objetivo de < 200 ms, salvo Inicio, que queda en el borde. El deslizamiento lo dibuja el compositor y ya iba a 38–50 fps. Lo que cambia es el bloqueo antes del primer cuadro, que baja a la mitad o menos. Objetos de layout por cambio: Comida 1962 → 494, Inicio 1499 → 903. **Ruido**: la máquina tenía otros agentes con Chrome cargado (el hilo recibía ~30 % del CPU de pared); las columnas de pared varían ±40 % entre corridas. El CPU del hilo y los recálculos forzados son la parte estable. Queda: el recálculo de estilo de ~1.200–1.500 elementos al montar Entreno e Inicio (el tamaño de esas pantallas; ahí no hay nada forzado).
+
 ### G5 · MEDIA · El brillo que barre los botones anima `left` en loop
 
 - **Dónde:** `web/src/styles.css:677` (`@keyframes sweep{…left:-60%…left:130%}`),
@@ -288,6 +307,8 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
   a capa propia. Los de `.sil-zoom`/`.sil-flip` (`styles.css:2896`, `:2911`)
   están justificados. **Arreglo:** sólo al centro y a los dos vecinos.
 
+> **Sin tocar** en la tanda 4: es el coverflow de ExerciseCarousel, que está en rediseño (fuera de alcance).
+
 ### G17 · MEDIA · Botones sin nombre accesible
 
 - Editor de rutina: `data-act="ex-up"`, `ex-down` y `ex-info` sin
@@ -400,6 +421,8 @@ y **B1** la leyenda del mapa muscular no coincide con los colores del cuerpo.)
 - **Arreglo:** `reelCenter` dentro de `requestAnimationFrame` y con la posición
   calculada del índice (ancho fijo de ítem), sin leer layout.
 - **Saltar descanso:** handler 57 ms, primer paint 94 ms, 48 fps: bien.
+
+> **Re-medido, sin arreglar** (tanda 4). En main #127 el layout forzado después de registrar una serie ya no lo inicia `reelCenter`: lo inicia primero el `useLayoutEffect` del carrusel (`ExerciseCarousel`, `clientWidth`, ~130 ms en 4 series a 6×), y `reelCenter` paga un segundo (~250 ms). Se probó mover `reelCenter` a un `requestAnimationFrame` y salió **peor**: en el cuadro siguiente la página ya cambió (se abrió el descanso) y el layout se vuelve a hacer entero (offsetLeft ~590 ms en las mismas 4 series). Se descartó y no está en el PR. El arreglo va junto con el carrusel, que está fuera de esta tanda (rampa/previa en rediseño): leer la geometría de la rueda en el mismo momento que el carrusel, o calcular `scrollLeft = índice × ancho del diente` sin leer.
 
 ### H8 · BAJA · Unidades partidas en el calentamiento
 
