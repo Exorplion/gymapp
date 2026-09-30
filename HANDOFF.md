@@ -4,6 +4,28 @@
 
 ---
 
+## SESIÓN 2026-09-29 (g) — Tanda E "Movimiento percibido" + tanda 5 + H7
+
+Rama `feat/visual-movimiento`, rebasada sobre main con #135. **1096 tests**. El agente
+se cortó por el límite semanal con el último commit sin hacer; lo terminó la sesión
+principal (conflictos con la tanda C: superficies de C + transiciones con nombre de E).
+
+- **H7 (registrar serie):** la rueda ya no se remonta ni mide el DOM; la pregunta de RIR
+  se pliega por CSS. Medido en build de producción, CPU 6×, 390×844: **0 ms de layout
+  forzado** en 6 registros seguidos (3 aproximaciones + 3 series). Cuadro más largo
+  585 ms, en la última serie de un ejercicio (cambia de tarjeta + entra el descanso).
+- **G5/G6/G10:** transiciones con propiedad nombrada, sin `all`, sin propiedades de
+  layout animadas, duraciones sólo en tokens (`D.paso`/`--d-paso`, ciclos `--ciclo-*`).
+  Guardia nueva: `web/src/lib/__tests__/movimiento.test.js`.
+- **H5/H6:** silueta de espalda en días Posterior del fin de sesión y números quietos.
+- Hoy en vivo sigue sin scroll (844/844). Único loop activo: los anillos del paso activo.
+
+**Pendiente:** probar en el teléfono; `prefers-reduced-motion` sólo cubierto por tests
+(el MCP no lo emula). Trampa de prueba: si la sesión se abre con `Date` adelantado y la
+página se recarga sin el init script, el reloj de la barra sale negativo (no es bug).
+
+---
+
 ## SESIÓN 2026-09-29 (f) — Tanda C "Superficies y luz" + tanda 8 "Íconos y coherencia"
 
 Rama `feat/visual-superficies` (rebasada sobre main con #134, la tanda B), PR abierto sin
