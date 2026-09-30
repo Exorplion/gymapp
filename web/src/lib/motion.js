@@ -65,7 +65,7 @@ export function bloomOpen(el) {
 }
 
 // Reveal escalonado de listas (ejercicios de una rutina, comidas del día).
-export function staggerReveal(els, { delayStep = 45, distance = 14, scale = 1, delay = 0 } = {}) {
+export function staggerReveal(els, { delayStep = PASO_LISTA, distance = 14, scale = 1, delay = 0 } = {}) {
   if (!els || els.animate) return; // guard: no pasar un solo elemento por error
   // Seguro salir sin hacer nada: estas animaciones usan fill:'backwards', o
   // sea que el estado final es el CSS natural del elemento (visible). No
@@ -137,7 +137,7 @@ const revealed = new Set();
     siente lento, no elegante. Con el panel en movimiento no se notaba
     porque había algo más grande tapándolo. */
 export function sheetReveal(els, opts = {}) {
-  staggerReveal(els, { delay: D.objeto, delayStep: 30, ...opts });
+  staggerReveal(els, { delay: D.objeto, delayStep: PASO_HOJA, ...opts });
 }
 
 /** El stagger de una pantalla que acaba de entrar por el cambio de pestaña.
@@ -252,7 +252,7 @@ const colapsos = new WeakMap();
 
 // Cierre de anillo de progreso (0..1) sobre un <circle> con
 // data-circumference ya seteado. Ref: anillos de Apple Fitness.
-export function animateRing(circleEl, progress, { duration = 900 } = {}) {
+export function animateRing(circleEl, progress, { duration = D.momento * 2 } = {}) {
   if (!circleEl?.animate) return;
   const circumference = Number(circleEl.getAttribute('data-circumference')) || 0;
   if (!circumference) return;
@@ -347,7 +347,7 @@ export function impactBurst(x, y, { count = 6, color = 'var(--accent)', distance
         { transform: 'translate(0,0) scale(1)', opacity: 1 },
         { transform: `translate(${dx}px, ${dy}px) scale(.3)`, opacity: 0 },
       ],
-      { duration: D.momento + Math.random() * 140, easing: 'cubic-bezier(.2,.8,.4,1)' },
+      { duration: D.momento + Math.random() * D.toque, easing: 'cubic-bezier(.2,.8,.4,1)' },
     );
     anim.onfinish = () => p.remove();
   }
@@ -366,12 +366,19 @@ export function impactBurst(x, y, { count = 6, color = 'var(--accent)', distance
    ritmo de la app, se cambia en los dos lugares y no en 34.
      D.toque   respuesta al dedo        D.objeto  algo chico cambia de estado
      D.panel   algo grande entra/sale   D.momento celebracion, hito */
-export const D = { toque: 150, objeto: 220, panel: 320, momento: 460 };
+export const D = { toque: 150, objeto: 220, panel: 320, momento: 460, paso: 50 };
+/* D.paso = --d-paso (un tercio de --d1): el paso entre piezas de un
+   escalonado. Los ciclos de los loops viven en CSS (--ciclo-*): ninguno
+   corre desde JS. */
+/** El paso de una lista que aparece en su lugar (staggerReveal) y el de una
+    lista dentro de una hoja ya quieta (sheetReveal, más corto: ver ahí). */
+export const PASO_LISTA = 45;
+export const PASO_HOJA = 30;
 
 /** Curva estandar para lo que ENTRA o cambia de estado. Igual a --ease-out. */
 export const EASE_OUT = 'cubic-bezier(.16,1,.3,1)';
 
-export function countTo(el, to, { from = 0, duration = 600, delay = 0, format = (n) => Math.round(n) } = {}) {
+export function countTo(el, to, { from = 0, duration = D.momento, delay = 0, format = (n) => Math.round(n) } = {}) {
   if (!el) return () => {};
   /* Igual que animateRing: el conteo no es decoración, es lo que ESCRIBE el
      número. Salir sin hacer nada dejaría el elemento vacío, así que con

@@ -383,7 +383,7 @@ function PreSessionHero({ day, index, exs }) {
       </div>
       {exs.length > 0 && (
         <>
-          <button type="button" className="btn hero-cta" onClick={() => openSheet('sess-start-info', { index })}>
+          <button type="button" className="btn brilla hero-cta" onClick={() => openSheet('sess-start-info', { index })}>
             Empezar entrenamiento
           </button>
           {/* Pre-workout y voz no se usan todos los días: dos accesos chicos

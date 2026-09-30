@@ -18,7 +18,7 @@
 // aria-hidden: un lector de pantalla no tiene por qué escuchar palabra por
 // palabra lo que para el ojo es una sola frase.
 import { Fragment, useEffect, useRef } from 'react';
-import { menosMovimiento, staggerReveal } from '../lib/motion.js';
+import { menosMovimiento, staggerReveal, D } from '../lib/motion.js';
 
 export default function AnimatedText({ text, as: Tag = 'span', className, style }) {
   const ref = useRef(null);
@@ -29,7 +29,7 @@ export default function AnimatedText({ text, as: Tag = 'span', className, style 
     if (!el || menosMovimiento()) return;
     const words = el.querySelectorAll(':scope > span');
     if (!words.length) return;
-    staggerReveal(words, { delayStep: 60 });
+    staggerReveal(words, { delayStep: D.paso });
   }, [text]);
 
   return (

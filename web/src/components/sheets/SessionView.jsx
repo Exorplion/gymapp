@@ -113,7 +113,7 @@ export default function SessionView({ id, justFinished = false }) {
       </div>
 
       {hasPR && (
-        <div className="card pr-card" style={{ marginTop: 'var(--s4)', animation: justFinished ? 'flash 1.2s ease 2' : undefined }}>
+        <div className={`card pr-card${justFinished ? ' destello' : ''}`} style={{ marginTop: 'var(--s4)' }}>
           {/* El burst animado sólo se reproduce al cerrar LA sesión que generó
               el récord — reabrir una sesión vieja con PR no debería repetir el
               festejo cada vez, así que ahí se queda el trofeo fijo de siempre. */}

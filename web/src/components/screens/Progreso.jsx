@@ -22,7 +22,7 @@ import Chart from '../Chart.jsx';
 import SessionCard from '../SessionCard.jsx';
 import { Info } from '../Icon.jsx';
 import { useEffect, useRef, useState } from 'react';
-import { countTo, staggerRevealOnce } from '../../lib/motion.js';
+import { countTo, staggerRevealOnce, D } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 
 const BODY_LABELS = { waist: 'Cintura', arm: 'Brazo', chest: 'Pecho', leg: 'Pierna' };
@@ -75,7 +75,7 @@ export default function Progreso() {
   useEffect(() => {
     if (headNum == null) return;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) { if (headNumRef.current) headNumRef.current.textContent = fmtNum(round1(headNum)); return; }
-    if (headNumRef.current) countTo(headNumRef.current, headNum, { duration: 500, format: n => fmtNum(round1(n)) });
+    if (headNumRef.current) countTo(headNumRef.current, headNum, { duration: D.momento, format: n => fmtNum(round1(n)) });
   }, [headNum]);
 
   return (
@@ -370,7 +370,7 @@ function VolumeTab() {
                 <span>{c}</span>
                 <span className="num">{n} series · <span style={{ color: BAND_COLOR[band] }}>{BAND_LABEL[band]}</span></span>
               </div>
-              <div className="pbar"><i style={{ width: `${pct}%`, background: BAND_COLOR[band] }}></i></div>
+              <div className="pbar"><i style={{ '--p': pct / 100, background: BAND_COLOR[band] }}></i></div>
             </div>
           );
         })}

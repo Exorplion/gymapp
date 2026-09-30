@@ -543,6 +543,7 @@ function Rampa({ ex, estado, unidad, plegando }) {
   const pctDe = s => `${Math.round(s.pct * 100)}%`;
   return (
     <div className={`ex-rampa-pliegue${plegando ? ' plegando' : ''}`}>
+     <div className="ex-rampa-pliegue-in">
       <div className="ex-rampa">
         <div className="ex-rampa-hd">
           <span>Aproximación</span>
@@ -570,6 +571,7 @@ function Rampa({ ex, estado, unidad, plegando }) {
           <div><p>{estado.completa ? 'Aproximación completa · ahora la serie efectiva' : ''}</p></div>
         </div>
       </div>
+     </div>
     </div>
   );
 }
@@ -996,7 +998,7 @@ function ExerciseSlide({ m, wd, started }) {
               exit={menosMovimiento() ? undefined : { gridTemplateRows: '0fr', opacity: 0, transition: { duration: D.panel / 1000, ease: curvaSalida } }}
             >
              <div className="ex-pre-in">
-              <button type="button" className="btn" onClick={() => startExercise(ex)}>
+              <button type="button" className="btn brilla" onClick={() => startExercise(ex)}>
                 <Play /> {started ? 'Hacer ahora' : 'Empezar rutina'}
               </button>
               <div className="ex-pre-links">

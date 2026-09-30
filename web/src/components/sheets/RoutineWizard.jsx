@@ -17,7 +17,7 @@
 // es un paso aparte, el de siempre en "Mis rutinas".
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { menosMovimiento, sheetReveal } from '../../lib/motion.js';
+import { menosMovimiento, sheetReveal, D } from '../../lib/motion.js';
 import { closeSheet } from '../../lib/state.js';
 import { MUSCLE_CATS, EXCATALOG } from '../../lib/muscle.js';
 import { coberturaDe } from '../../lib/coverage.js';
@@ -34,10 +34,9 @@ const TOTAL_PASOS = 3;
     llena paso a paso, no un texto "paso 2 de 3". El estilo visual es el de
     Fierro (gradiente cian/azul), no una copia literal de la referencia. */
 function WizardProgress({ step }) {
-  const pct = Math.round((step / TOTAL_PASOS) * 100);
   return (
     <div className="wiz-progress" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={TOTAL_PASOS}>
-      <i style={{ width: `${pct}%` }} />
+      <i style={{ '--p': step / TOTAL_PASOS }} />
     </div>
   );
 }
@@ -67,7 +66,7 @@ function useStepReveal(step) {
     if (!el || menosMovimiento()) return;
     const targets = el.querySelectorAll('.chip, .field, .card.sub, .wiz-groupcard');
     if (!targets.length) return;
-    sheetReveal(targets, { delayStep: 60, distance: 12, scale: 0.94, delay: 50 });
+    sheetReveal(targets, { delayStep: D.paso, distance: 12, scale: 0.94, delay: D.paso });
   }, [step]);
   return ref;
 }
