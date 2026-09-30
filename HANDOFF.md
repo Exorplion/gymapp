@@ -4,6 +4,27 @@
 
 ---
 
+## SESIÓN 2026-09-29 (h) — "Failed to fetch dynamically imported module" al cerrar una sesión
+
+Enzo vio en el teléfono "Algo se rompió en esta pantalla" con
+`TypeError: Failed to fetch dynamically imported module .../assets/PrBurst-BFgPSmMD.js`
+al terminar una sesión con récord. **La sesión SÍ se guardó** (`completeSession` escribe en
+IndexedDB antes de abrir SessionView); se cayó sólo la vista.
+
+**Causa:** una pantalla abierta desde antes de una publicación corre el JS viejo y pide los
+módulos por el hash de SU build. El SW nuevo toma el control al instante
+(`skipWaiting` + `clientsClaim` + `cleanupOutdatedCaches`) y `publish-root.mjs` borraba
+`assets/` entero → el archivo no estaba ni en caché ni en el servidor. Con 13 publicaciones
+el mismo día era casi seguro.
+
+**Arreglo:** `scripts/publicaciones.mjs` (`podar`, con test): publish-root conserva los
+assets de las últimas 5 publicaciones (registro en `assets/.publicaciones.json`). Y
+`lib/lazy-respaldo.js`: PrBurst entra con `importarConRespaldo` → si no llega, queda el trofeo
+fijo. Lo mismo cubre el worker del anillo del descanso (antes, sin su archivo, el anillo
+quedaba invisible sin error).
+
+---
+
 ## SESIÓN 2026-09-29 (g) — Tanda E "Movimiento percibido" + tanda 5 + H7
 
 Rama `feat/visual-movimiento`, rebasada sobre main con #135. **1096 tests**. El agente
