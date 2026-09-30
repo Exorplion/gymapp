@@ -20,12 +20,17 @@ import { iconOf } from '../../lib/exicon.js';
 import ExIcon from '../ExIcon.jsx';
 import { Baja, Check, Pencil, Plus, Skip, Sube, Trofeo, X } from '../Icon.jsx';
 import { sheetReveal } from '../../lib/motion.js';
+import { importarConRespaldo } from '../../lib/lazy-respaldo.js';
 // El burst de récord vive en su propio módulo y entra por React.lazy: son
 // 320 KB de lottie-web (la dependencia más pesada de la app, 24% del bundle)
 // para UNA animación de 44×44 que sólo se ve al cerrar la sesión que generó el
 // récord. Cargarla ahí y no en el arranque saca ese parse+eval del arranque en
 // frío sin cambiar nada de lo que se ve. Ver components/PrBurst.jsx.
-const PrBurst = lazy(() => import('../PrBurst.jsx'));
+// Si el módulo no llega (p.ej. una pantalla abierta desde antes de una
+// publicación pide un archivo que ya no existe), se queda el trofeo fijo en
+// vez de caer la pantalla entera: es decorativo. Ver lib/lazy-respaldo.js.
+const TrofeoFijo = () => <div className="pr-troph"><Trofeo size={24} /></div>;
+const PrBurst = lazy(() => importarConRespaldo(() => import('../PrBurst.jsx'), TrofeoFijo));
 
 export default function SessionView({ id, justFinished = false }) {
   useStore();
