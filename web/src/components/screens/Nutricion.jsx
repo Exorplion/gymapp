@@ -27,7 +27,7 @@ import { cycledGoals, cycleExplain } from '../../lib/cycle.js';
 import { idb } from '../../lib/db.js';
 import { logMeal, addMealFromFood } from '../sheets/MealForm.jsx';
 import { useEffect, useRef } from 'react';
-import { countTo, staggerRevealOnce } from '../../lib/motion.js';
+import { countTo, staggerRevealOnce, D } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 import { Diana, Mic, Pencil, Persona, Plus, X } from '../Icon.jsx';
 
@@ -113,7 +113,7 @@ export default function Nutricion() {
   const kcalNumRef = useRef(null);
   useEffect(() => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) { if (kcalNumRef.current) kcalNumRef.current.textContent = kc; return; }
-    if (kcalNumRef.current) countTo(kcalNumRef.current, kc, { duration: 500 });
+    if (kcalNumRef.current) countTo(kcalNumRef.current, kc, { duration: D.momento });
   }, [kc]);
 
   // Reveal escalonado de los bloques de comidas al entrar a Nutrición —
@@ -190,15 +190,15 @@ export default function Nutricion() {
         <div className="macro3">
           <div className="m">
             <div className="lbl"><span>Proteína</span><span>{tp}/{g.p}</span></div>
-            <div className="pbar prot"><i className={macroCls(tp, 'prot', m)} style={{ width: `${pct(tp, g.p)}%` }}></i></div>
+            <div className="pbar prot"><i className={macroCls(tp, 'prot', m)} style={{ '--p': pct(tp, g.p) / 100 }}></i></div>
           </div>
           <div className="m">
             <div className="lbl"><span>Carbos</span><span>{tc}/{g.c}</span></div>
-            <div className="pbar carb"><i style={{ width: `${pct(tc, g.c)}%` }}></i></div>
+            <div className="pbar carb"><i style={{ '--p': pct(tc, g.c) / 100 }}></i></div>
           </div>
           <div className="m">
             <div className="lbl"><span>Grasa</span><span>{tf}/{g.f}</span></div>
-            <div className="pbar fat"><i className={macroCls(tf, 'fat', m)} style={{ width: `${pct(tf, g.f)}%` }}></i></div>
+            <div className="pbar fat"><i className={macroCls(tf, 'fat', m)} style={{ '--p': pct(tf, g.f) / 100 }}></i></div>
           </div>
         </div>
         <div className="nutri-fb" dangerouslySetInnerHTML={{ __html: nutriFeedback(kc, tp, tf, g, m) }} />

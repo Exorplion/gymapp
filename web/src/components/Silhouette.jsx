@@ -280,10 +280,12 @@ function Cara({ cara, days, etiqueta, sel, selSub, onPick, activa, revelar, porc
    del zoom con su transición: la mitad de la pantalla cambiaba de golpe. */
 export const SALIDA_FICHA = D.toque;
 
-export default function Silhouette({ days = {}, interactivo = true, revelar = null, porciones = null }) {
+export default function Silhouette({ days = {}, interactivo = true, revelar = null, porciones = null, desdeAtras = false }) {
   const [sel, setSel] = useState(null);   // { cat, ox, oy } — ox/oy en % del stage
   const [enc, setEnc] = useState(null);   // { esc, dy } — encuadre medido, ver el useLayoutEffect
-  const [ang, setAng] = useState(0);      // grados; los múltiplos pares de 180 son la frente
+  // grados; los múltiplos pares de 180 son la frente. `desdeAtras` arranca
+  // de espalda (el fin de sesión de un día Posterior, H5).
+  const [ang, setAng] = useState(desdeAtras ? 180 : 0);
   const [quieto, setQuieto] = useState(true);   // ni girando ni cayendo: se puede tocar
   const [tirando, setTirando] = useState(false); // el dedo manda: sin transición, el giro sigue la mano
   const caja = useRef(null);

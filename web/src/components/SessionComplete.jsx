@@ -12,6 +12,7 @@ import { S, useStore, openSheet } from '../lib/state.js';
 import { useAtras } from '../lib/useAtras.js';
 import { currentStreak } from '../lib/streak.js';
 import { catsDeSesion } from '../lib/muscle.js';
+import { caraConMas, cuerpo } from '../lib/bodydata.js';
 import { fmtKg, fmtMiles, round1 } from '../lib/format.js';
 import { fireConfetti } from '../lib/confetti.js';
 import { Flame, Mancuerna, Trofeo } from './Icon.jsx';
@@ -28,10 +29,20 @@ import { countTo, popIn, D } from '../lib/motion.js';
 // timeline normal. Los delays de cada zona del cuerpo (revelar, más abajo)
 // se suman a partir de BEAT3_DELAY, para que el revelado escalonado ocurra
 // DURANTE el tiempo en que ese bloque ya es visible, no antes.
-const BEAT2_DELAY = 650;
-const BEAT3_DELAY = 1300;
+/* Los tiempos de la celebración son de ella (G10: constantes con nombre, no
+   ms sueltos). El CSS los lee de las mismas variables que escribe
+   #session-complete (style, abajo), así no pueden desincronizarse. */
+export const BEAT2_DELAY = 650;
+export const BEAT3_DELAY = 1300;
+export const BEAT_CORTO = 700;   // lo que dura en pantalla la racha y el resumen
+export const BEAT_LARGO = 1100;  // el cuerpo: necesita tiempo para el revelado por zona
 const STAGGER_ZONA = 120;
-const DUR_TOTAL = 2400; // 1300 (arranca beat 3) + 1100 (dura beat 3)
+const DUR_TOTAL = BEAT3_DELAY + BEAT_LARGO;
+const CONTEO_MS = D.panel;
+const TIEMPOS_CSS = {
+  '--beat2': `${BEAT2_DELAY}ms`, '--beat3': `${BEAT3_DELAY}ms`,
+  '--beat-corto': `${BEAT_CORTO}ms`, '--beat-largo': `${BEAT_LARGO}ms`,
+};
 /* La salida (auditoría total, H4). Antes cerrar() la desmontaba en un
    cuadro mientras la hoja de la sesión recién arrancaba (.bk desde opacidad
    0, el panel desde abajo): durante esos cuadros se veía la pantalla Hoy
@@ -152,13 +163,17 @@ export default function SessionComplete() {
   useEffect(() => {
     if (!sess || reducido) return;
     const { ejercicios, series, kg } = resumenDe(sess);
-    popIn(flameRef.current, { scale: 0.3, rotate: -25, duration: 600 });
+    /* Los números cuentan en CONTEO_MS y quedan quietos el resto del tiempo:
+       antes contaban 800 ms desde los 650 y el tiempo 2 empezaba a fundirse
+       a los ~1266, así que se iban contando — nunca se veía el número final
+       quieto (H6). Con D.panel terminan a los 970 y se leen ~300 ms. */
+    popIn(flameRef.current, { scale: 0.3, rotate: -25, duration: D.momento });
     const cancels = [
-      countTo(streakRef.current, currentStreak(), { duration: 700 }),
-      countTo(ejRef.current, ejercicios, { duration: 800, delay: BEAT2_DELAY }),
-      countTo(serRef.current, series, { duration: 800, delay: BEAT2_DELAY }),
+      countTo(streakRef.current, currentStreak(), { duration: D.momento }),
+      countTo(ejRef.current, ejercicios, { duration: CONTEO_MS, delay: BEAT2_DELAY }),
+      countTo(serRef.current, series, { duration: CONTEO_MS, delay: BEAT2_DELAY }),
       countTo(kgRef.current, round1(kg), {
-        duration: 800, delay: BEAT2_DELAY, format: n => fmtMiles(round1(n)),
+        duration: CONTEO_MS, delay: BEAT2_DELAY, format: n => fmtMiles(round1(n)),
       }),
     ];
     return () => cancels.forEach(c => c());
@@ -178,13 +193,16 @@ export default function SessionComplete() {
   const { ejercicios, series, kg } = resumenDe(visible);
   const streak = currentStreak();
   const cats = catsDeSesion(visible);
-  // Glúteo sólo tiene geometría en la cara de espalda (ver bodydata.js), y
-  // esta pantalla no interactiva arranca de frente y nunca gira (Task 5 le
-  // sacó el gesto de rotar). Un Glúteo entrenado nunca se ve acá, pero si
-  // ocupara un turno del escalonado dejaría un hueco muerto —una pausa sin
-  // que nada se ilumine— en el ritmo de revelado de las zonas que sí se ven.
-  // Se excluye del cálculo de delays para que el resto quede parejo.
-  const catsVisibles = cats.filter(c => c !== 'Glúteo');
+  // Esta pantalla no es interactiva y nunca gira: muestra la cara con más
+  // zonas de lo trabajado (H5). Antes era siempre de frente, y un día
+  // Posterior encendía casi nada — una silueta oscura durante 1,1 s.
+  // Lo que no tiene geometría en esa cara (Glúteo de frente, Pecho de
+  // espalda) no ocupa un turno del escalonado: dejaría un hueco muerto, una
+  // pausa sin que nada se ilumine, en el ritmo de revelado.
+  const sexo = S.cfg.bodySex || S.cfg.profile?.sex;
+  const cara = caraConMas(cats, sexo);
+  const enCara = new Set(cuerpo(sexo)[cara].zonas.map(z => z.cat));
+  const catsVisibles = cats.filter(c => enCara.has(c));
   const revelar = Object.fromEntries(catsVisibles.map((c, i) => [c, BEAT3_DELAY + i * STAGGER_ZONA]));
   const diasHoy = Object.fromEntries(cats.map(c => [c, 0]));
 
@@ -198,6 +216,7 @@ export default function SessionComplete() {
     <div
       id="session-complete"
       className={sess ? undefined : 'saliendo'}
+      style={TIEMPOS_CSS}
       role="status"
       aria-label="Entrenamiento completo"
       aria-hidden={sess ? undefined : true}
@@ -224,7 +243,7 @@ export default function SessionComplete() {
       </div>
       <div className="sc-beat b3" style={estiloDe(3)}>
         <div className="sc-cuerpo">
-          <Silhouette days={diasHoy} interactivo={false} revelar={revelar} />
+          <Silhouette days={diasHoy} interactivo={false} revelar={revelar} desdeAtras={cara === 'espalda'} />
         </div>
       </div>
     </div>

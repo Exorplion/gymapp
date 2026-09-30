@@ -34,6 +34,10 @@ import { useEffect, useRef, useState } from 'react';
 import { reelValues, reelCenter, reelNearestIndex } from '../lib/reel.js';
 
 const HOLD_MS = 450;
+/** ¿El navegador centra la rueda solo al montarla? (CSS scroll-initial-target,
+    Chrome 133+). Se pregunta una vez: no cambia en la vida de la página. */
+const CENTRA_SOLA = typeof CSS !== 'undefined' && typeof CSS.supports === 'function'
+  && CSS.supports('scroll-initial-target', 'nearest');
 const FINE_COUNT = 9; // ventana de enteros vecinos en la rueda fina (±4)
 
 export default function ReelPicker({
@@ -41,6 +45,19 @@ export default function ReelPicker({
   toUnit = x => x, fromUnit = x => x,
 }) {
   const [val, setVal] = useState(value);
+  /* El valor de afuera manda cuando CAMBIA (serie registrada, meta nueva):
+     se ajusta el estado durante el render, el patrón de React para "estado
+     que sigue a una prop". Antes la tarjeta remontaba la rueda entera en cada
+     serie (key={done.length}) para lograr lo mismo: 82 dientes nuevos, su
+     estilo y su layout, y un reelCenter que medía offsetLeft en el medio del
+     commit — ~190 ms de los ~480 de la tarea al registrar una serie a 6×
+     (H7). Si el valor no cambió (lo normal: la serie 2 con el peso de la 1),
+     ahora no se toca nada: la rueda ya está donde tiene que estar. */
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    if (value !== val) setVal(value);
+  }
   const [editing, setEditing] = useState(false);
   const [fineOpen, setFineOpen] = useState(false);
 
@@ -75,7 +92,14 @@ export default function ReelPicker({
   // Recentra la rueda horizontal en el montaje y cada vez que `val` cambia
   // por un camino que NO fue el propio scroll de esta rueda (rueda fina o
   // edición manual) — el scroll nativo ya recentra por su cuenta en onScroll.
+  // Al montar, donde el navegador sabe abrir el scroll ya centrado
+  // (scroll-initial-target en .reel-tooth.on), no se escribe nada: esa
+  // escritura era un layout forzado de la página entera por cada rueda.
+  const montada = useRef(false);
   useEffect(() => {
+    const primera = !montada.current;
+    montada.current = true;
+    if (primera && CENTRA_SOLA) return;
     const idx = valuesRef.current.indexOf(onValue);
     if (idx >= 0) reelCenter(scrollerRef.current, idx);
     // eslint-disable-next-line react-hooks/exhaustive-deps

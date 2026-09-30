@@ -74,8 +74,8 @@ export default function BodyMap() {
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-line/40">
                   <div
-                    className="h-full rounded-full bg-[image:var(--accent-grad)]"
-                    style={{ width: `${Math.round(n / maxv * 100)}%`, animation: 'rise .5s var(--ease) backwards' }}
+                    className="crece-x h-full rounded-full bg-[image:var(--accent-grad)]"
+                    style={{ width: `${Math.round(n / maxv * 100)}%` }}
                   />
                 </div>
               </div>

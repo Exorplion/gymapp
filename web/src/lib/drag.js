@@ -6,6 +6,7 @@
 // limpio y que las firmas exportadas sean correctas (ver task-3-brief.md).
 import { S, bump } from './state.js';
 import { vibrate } from './format.js';
+import { D } from './motion.js';
 import { setExOrder, indiceHoy, orderedExs, sessionExs, ordenarBloques } from './session.js';
 import { porBloques } from './muscle.js';
 // Task 5 completa lo que Task 3 dejó en TODO (ver comentarios más abajo):
@@ -38,9 +39,9 @@ export function flipSort(mutate, root = document) {
     k.style.transition = 'none';
     k.style.transform = `translateY(${d}px)`;
     requestAnimationFrame(() => {
-      k.style.transition = 'transform .34s var(--ease)';
+      k.style.transition = 'transform var(--d3) var(--ease)';
       k.style.transform = '';
-      setTimeout(() => { k.style.transition = ''; k.style.transform = ''; }, 380);
+      setTimeout(() => { k.style.transition = ''; k.style.transform = ''; }, D.panel + D.paso);
     });
   });
 }

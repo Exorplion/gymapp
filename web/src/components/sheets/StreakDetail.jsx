@@ -33,7 +33,7 @@ export default function StreakDetail() {
       </div>
       <div className="heatmap" style={{ marginTop: 20 }}>
         {days.map((d, i) => (
-          <div key={d.date} className={`cell ${d.status}`} style={{ animationDelay: `${i * 8}ms` }} title={fmtDFull(d.date)}></div>
+          <div key={d.date} className={`cell ${d.status}`} style={{ '--i': i }} title={fmtDFull(d.date)}></div>
         ))}
       </div>
       <p className="ptext sm" style={{ marginTop: 14 }}>

@@ -56,7 +56,7 @@ export default function MealForm({ slot: slotInicial }) {
   const hits = useMemo(() => searchFoods(q, { slot, limit: 8 }), [q, slot]);
 
   useEffect(() => {
-    if (hitsRef.current) sheetReveal(hitsRef.current.children, { delayStep: 30 });
+    if (hitsRef.current) sheetReveal(hitsRef.current.children);
   }, [hits]);
 
   /* La hoja crece con los resultados (auditoría total, C2): al tipear el

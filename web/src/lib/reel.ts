@@ -47,14 +47,40 @@ export function reelCenter(scroller: HTMLElement | null | undefined, idx: number
   if (axis === 'y') {
     scroller.scrollTop = item.offsetTop - (scroller.clientHeight - item.offsetHeight) / 2;
   } else {
-    scroller.scrollLeft = item.offsetLeft - (scroller.clientWidth - item.offsetWidth) / 2;
+    /* Sin leer el layout (H7). Antes: offsetLeft + clientWidth + offsetWidth,
+       justo después de que React escribió el DOM de la serie nueva: el
+       navegador tenía que recalcular estilo y layout de la página entera en
+       el medio del commit (~170 ms a 6× por serie registrada). Con dientes
+       de ancho fijo y el relleno de la pista en calc(50% − diente/2), el
+       diente `idx` queda centrado exactamente en idx × diente: la cuenta no
+       depende de nada que haya que medir. La escritura de scrollLeft sigue
+       costando un layout si el árbol está sucio, por eso ReelPicker sólo
+       llama acá cuando el valor cambió de verdad. */
+    scroller.scrollLeft = reelScrollLeft(idx);
   }
+}
+
+/** Ancho de un diente de la rueda gruesa, en px. Es `--reel-diente` de
+    styles.css (un test los mantiene iguales): la pista rellena
+    calc(50% − diente/2) de cada lado, así que el diente `idx` se centra con
+    scrollLeft = idx × diente, sin medir nada. */
+export const REEL_DIENTE = 44;
+
+export function reelScrollLeft(idx: number): number {
+  return Math.max(0, idx) * REEL_DIENTE;
 }
 
 /** Índice del diente más cercano al centro visible, para leer el valor tras
     el gesto (scroll nativo, sin listener continuo de posición). */
 export function reelNearestIndex(scroller: HTMLElement | null | undefined, axis: 'x' | 'y' = 'x'): number {
   if (!scroller) return -1;
+  if (axis === 'x') {
+    // Misma cuenta que reelScrollLeft, al revés: una sola lectura (scrollLeft)
+    // en vez de offsetLeft/offsetWidth de los 41 dientes.
+    const n = scroller.children.length;
+    if (!n) return -1;
+    return Math.min(n - 1, Math.max(0, Math.round(scroller.scrollLeft / REEL_DIENTE)));
+  }
   const mid = axis === 'y'
     ? scroller.scrollTop + scroller.clientHeight / 2
     : scroller.scrollLeft + scroller.clientWidth / 2;

@@ -31,7 +31,7 @@ import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
 import Silhouette from '../Silhouette.jsx';
 import AnimatedText from '../AnimatedText.jsx';
-import { countTo, menosMovimiento, screenReveal } from '../../lib/motion.js';
+import { countTo, menosMovimiento, screenReveal, D } from '../../lib/motion.js';
 
 export default function Inicio() {
   useStore();
@@ -50,7 +50,7 @@ export default function Inicio() {
        pestaña termine. Con las tarjetas subiendo mientras la pantalla entera
        todavía viaja, se ven dos movimientos grandes a la vez — que es
        exactamente por lo que el deslizamiento se había sacado. */
-    screenReveal(tiles, { delayStep: 60, distance: 16, scale: 0.96 });
+    screenReveal(tiles, { delayStep: D.paso, distance: 16, scale: 0.96 });
   }, []);
   const slot = pendingSlot();
   // La sesión cerrada hoy, del turno que sea: el pendiente ya es el siguiente

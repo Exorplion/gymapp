@@ -341,6 +341,25 @@
      Ésta reparte el recorrido de forma pareja: arranca, viaja y frena. Es lo
      que hace que se VEA que la pantalla entra desde un lado. */
   --ease-push:cubic-bezier(.4,0,.2,1);
+  /* Distancias del vocabulario de entrada/salida (@keyframes entra / sale):
+     se entra subiendo 8 px y se sale bajando 4, más corto que la entrada. */
+  --entra-y:8px; --sale-y:4px;
+  /* Un tercio de --d1: el paso entre piezas de un escalonado y lo que tarda
+     un botón en hundirse al tocarlo (vuelve en --d1). */
+  --d-paso:calc(var(--d1) / 3);
+  /* Los ciclos de lo que late o gira, con nombre y en múltiplos del paso
+     --d4 (G10): antes eran 1.6 / 2.4 / 3.2 / 5 / .9 s sueltos. */
+  --ciclo-activo:calc(var(--d4) * 3.5);      /* 1,6 s: el anillo que late (SEGUIR, rampa) */
+  --ciclo-resplandor:calc(var(--d4) * 5);    /* 2,3 s: el brillo del anillo del descanso */
+  --ciclo-brillo:calc(var(--d4) * 7);        /* 3,2 s: el barrido del CTA principal */
+  --ciclo-filo:calc(var(--d4) * 11);         /* 5 s: el filo que recorre ENTRENAR */
+  --ciclo-alarma:calc(var(--d4) * 2);        /* ,9 s: el anillo sonando */
+  /* El giro del cuerpo (frente/espalda): acelera y frena parejo, como algo
+     con peso que da media vuelta. */
+  --ease-giro:cubic-bezier(.65,0,.35,1);
+  /* Press: un control se hunde a .96; una tarjeta o fila entera, a .985
+     (a .96 una tarjeta de 350 px se come 14 px y se lee como un salto). */
+  --press:.96; --press-tarjeta:.985;
   font-synthesis:none;
 }
 /* EL RESET VA EN @layer base, Y NO SUELTO. Es la diferencia entre que las
@@ -492,11 +511,14 @@ p,.s,.sub,.grouprow-s,.nav-card .s,.ini-sub,.field-hint,.sheet-sub,.notice .s,.e
    Las clases propias de la app (.btn, .mini, .icon-btn) siguen intactas: son
    selectores de clase sin capa, así que le ganan a esto igual que antes. */
 @layer base {
-  button{background:none;border:none;cursor:pointer;transition:transform var(--d1) cubic-bezier(.34,1.56,.64,1)}
+  button{background:none;border:none;cursor:pointer;transition:transform var(--d1) var(--spring)}
 }
-button:active{transform:scale(.96);transition-duration:.05s}
-[data-act]:not(button){transition:transform var(--d1) cubic-bezier(.34,1.56,.64,1)}
-[data-act]:not(button):active{transform:scale(.98);transition-duration:.05s}
+/* El press de la app (tanda E): se hunde en --d-paso y vuelve con resorte
+   en --d1. Todo control que declare su propia transition tiene que incluir
+   transform, o el press se vuelve un salto. */
+button:active{transform:scale(var(--press));transition-duration:var(--d-paso)}
+[data-act]:not(button){transition:transform var(--d1) var(--spring)}
+[data-act]:not(button):active{transform:scale(var(--press-tarjeta));transition-duration:var(--d-paso)}
 input[type=number]{-moz-appearance:textfield}
 input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none}
 ::placeholder{color:var(--text-3)}
@@ -556,7 +578,7 @@ header.top.en-prueba{border-bottom-color:rgba(var(--warn-rgb),.5);background:lin
   width:38px;height:38px;border-radius:var(--r-md);display:grid;place-items:center;
   border:1px solid var(--sup-control-borde);color:var(--text-2);
   background:var(--sup-control-bg);
-  transition:var(--d1);
+  transition:transform var(--d1) var(--spring),border-color var(--d1) var(--ease-out),color var(--d1) var(--ease-out),background-color var(--d1) var(--ease-out);
 }
 .icon-btn svg{width:19px;height:19px}
 .icon-btn:active{border-color:var(--line-2);color:var(--accent)}
@@ -578,7 +600,7 @@ header.top.en-prueba{border-bottom-color:rgba(var(--warn-rgb),.5);background:lin
 .streak-n{font-family:var(--font-cond);font-weight:700;font-size:var(--t-body);color:var(--flame)}
 .heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .heatmap .cell{aspect-ratio:1;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--line)}
-.heatmap .cell.done{background:var(--accent-grad);border-color:transparent;animation:zoom var(--d3) var(--ease) backwards}
+.heatmap .cell.done{background:var(--accent-grad);border-color:transparent;animation:zoom var(--d3) var(--ease) backwards;animation-delay:calc(var(--i,0) * var(--d-paso) / 6)}
 .heatmap .cell.rest{opacity:.28}
 .heatmap .cell.miss{background:rgba(var(--danger-rgb),.12);border-color:rgba(var(--danger-rgb),.3)}
 /* Antes de la primera sesión (streakHeatmap, V7): ni descanso ni falta, la
@@ -805,16 +827,22 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
 }
 /* nuevas animaciones del rediseño: zoom (aparición con rebote), sweep (brillo
-   diagonal en botones primarios), rise (barras que crecen desde 0), glowring
-   (pulso de foco en el timer), flash (resalte de logro) */
+   diagonal del CTA principal), creceX/creceY (barras que crecen desde 0),
+   glowring (pulso de foco en el timer), flash (resalte de logro) */
 @keyframes zoom{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
-@keyframes sweep{0%,20%{left:-60%}80%,100%{left:130%}}
-@keyframes rise{from{width:0}}
+@keyframes sweep{0%,20%{transform:translateX(-120%) skewX(-18deg)}80%,100%{transform:translateX(270%) skewX(-18deg)}}
+/* Crecer desde cero SIN animar el tamaño (width/height son layout): la barra
+   ya tiene su medida y se escala desde su origen. */
+@keyframes creceX{from{transform:scaleX(0)}}
+@keyframes creceY{from{transform:scaleY(0)}}
+.crece-x{transform-origin:left;animation:creceX var(--d4) var(--ease) backwards}
 /* glowring anima sólo opacidad (G3, auditoría 2026-09): antes animaba
    `filter: drop-shadow` en loop, que re-rasteriza el anillo en cada frame.
    El brillo ya pintado vive en .rfs-ring::before y sólo se enciende y apaga. */
 @keyframes glowring{0%,100%{opacity:.45}50%{opacity:1}}
 @keyframes flash{0%,100%{background-color:transparent}50%{background-color:rgba(var(--accent-strong-rgb),.14)}}
+/* El resalte del récord recién hecho (SessionView): dos destellos. */
+.destello{animation:flash calc(var(--d4) * 2.6) var(--ease) 2}
 /* @keyframes pulse (opacidad 1 → .4) se borró el 2026-09-28: su último uso
    era SEGUIR, y animar la opacidad de un CTA lo apaga hasta dejarlo ilegible
    (auditoría visual 2, V1). Para "esto está activo" está ctaAnillo /
@@ -875,12 +903,20 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
   font-family:var(--font-cond);font-weight:800;font-size:var(--t-lg);
   letter-spacing:var(--tr-control);text-transform:uppercase;
   background:var(--accent-grad);color:var(--on-accent);box-shadow:var(--accent-glow);
-  transition:var(--d1);position:relative;overflow:hidden;
+  transition:transform var(--d1) var(--spring),opacity var(--d1) var(--ease-out),box-shadow var(--d1) var(--ease-out);
+  position:relative;overflow:hidden;
 }
-.btn:not(.sm):not(.ghost):not(.dim):not(.danger)::after{
-  content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;
-  background:linear-gradient(115deg,transparent,rgba(var(--hi-rgb),.35),transparent);
-  animation:sweep 3.2s ease-in-out infinite;pointer-events:none;
+/* El brillo que barre, SÓLO en el CTA principal de la pantalla (G5, tanda
+   E): `.brilla`. Antes lo llevaba todo .btn primario —dos a la vez detrás
+   de algunas hojas— y animaba `left` (layout) con un degradado a 115° que
+   dejaba un borde vertical duro en la esquina. Ahora es transform, el
+   degradado va a 90° (transparente en todo el alto de los dos bordes) y la
+   diagonal la pone el skew. */
+.btn.brilla::after{
+  content:"";position:absolute;top:0;left:0;width:40%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(var(--hi-rgb),.32),transparent);
+  transform:translateX(-120%) skewX(-18deg);
+  animation:sweep var(--ciclo-brillo) ease-in-out infinite;pointer-events:none;
 }
 .btn.sm{min-height:44px;font-size:var(--t-body);border-radius:var(--r-md)}
 .btn.ghost{background:var(--sup-control-bg);box-shadow:none;border:1px solid var(--sup-control-borde);color:var(--accent)}
@@ -931,31 +967,43 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    overflow:hidden en .reel quedaba recortada por completo (invisible), y lo
    único que se veía era el backdrop translúcido detrás ("mantengo
    presionado y la pantalla sólo hace un blur", bug reportado por Enzo). */
-.reel{position:relative;height:64px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--line-2)}
+.reel{--reel-diente:44px;position:relative;height:64px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--line-2)}
 .reel-track{
   display:flex;align-items:center;height:100%;overflow-x:auto;border-radius:var(--r);
   scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;
-  padding:0 calc(50% - 26px);
+  padding:0 calc(50% - var(--reel-diente) / 2);
 }
 .reel-track::-webkit-scrollbar{display:none}
 .reel-tooth{
-  flex:none;width:52px;scroll-snap-align:center;text-align:center;
-  font-family:var(--font-cond);font-weight:700;font-size:var(--t-lg);color:var(--text-2);
-  font-variant-numeric:tabular-nums;transition:color var(--d1),font-size var(--d1),font-weight var(--d1);
+  flex:none;width:var(--reel-diente);scroll-snap-align:center;text-align:center;
+  font-family:var(--font-cond);font-weight:700;font-size:var(--t-xl);color:var(--text-2);
+  font-variant-numeric:tabular-nums;
+  /* Todos los dientes miden lo mismo (22 px) y los vecinos se achican por
+     transform a 18: antes el diente que quedaba centrado animaba font-size,
+     que es layout — recalculaba la línea de la rueda en cada cambio. Ahora
+     el cambio de tamaño lo hace el compositor. */
+  transform:scale(calc(18 / 22));
+  transition:color var(--d1) var(--ease-out),transform var(--d1) var(--ease-out);
 }
-.reel-tooth.on{color:var(--text);font-size:var(--t-2xl);font-weight:800}
+.reel-tooth.on{color:var(--text);font-weight:800;transform:none;scroll-initial-target:nearest}
+/* scroll-initial-target: al montarse la rueda, el navegador la abre ya
+   centrada en el diente del valor (con su scroll-snap-align:center), en el
+   mismo layout que la dibuja. Sin esto había que escribir scrollLeft desde
+   un efecto, y esa escritura obliga a hacer el layout de la página entera
+   ahí mismo, en medio del commit de React (H7). Donde no existe, ReelPicker
+   centra con reelCenter como antes. */
 /* El diente centrado es tocable (tap corto → edición manual; mantener
    presionado → rueda fina, ver ReelPicker.jsx). cursor:pointer es la única
    pista visual que hace falta —es el mismo número grande de siempre, no un
    botón nuevo. */
 .reel-tooth.on[role="button"]{cursor:pointer}
-.reel-tooth.on.editing{width:auto;min-width:52px;padding:0 4px}
+.reel-tooth.on.editing{width:auto;min-width:var(--reel-diente);padding:0 4px}
 .reel-tooth.on.editing input{
-  width:100%;min-width:52px;text-align:center;background:none;border:none;color:inherit;
+  width:100%;min-width:var(--reel-diente);text-align:center;background:none;border:none;color:inherit;
   font:inherit;font-variant-numeric:tabular-nums;
 }
 .reel-indicator{
-  position:absolute;left:50%;top:6px;bottom:6px;width:52px;transform:translateX(-50%);
+  position:absolute;left:50%;top:6px;bottom:6px;width:var(--reel-diente);transform:translateX(-50%);
   border-radius:var(--r-md);background:var(--accent-grad);opacity:.14;pointer-events:none;
 }
 
@@ -980,10 +1028,14 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 .reel-fine-track::-webkit-scrollbar{display:none}
 .reel-tooth-v{
   flex:none;height:44px;display:flex;align-items:center;justify-content:center;
-  scroll-snap-align:center;font-family:var(--font-cond);font-weight:700;font-size:var(--t-lg);
-  color:var(--text-2);font-variant-numeric:tabular-nums;transition:color var(--d1),font-size var(--d1),font-weight var(--d1);
+  scroll-snap-align:center;font-family:var(--font-cond);font-weight:700;font-size:var(--t-2xl);
+  color:var(--text-2);font-variant-numeric:tabular-nums;
+  /* Igual que la rueda gruesa: el tamaño cambia por transform (18 de 26),
+     no animando font-size. */
+  transform:scale(calc(18 / 26));
+  transition:color var(--d1) var(--ease-out),transform var(--d1) var(--ease-out);
 }
-.reel-tooth-v.on{color:var(--text);font-size:var(--t-2xl);font-weight:800}
+.reel-tooth-v.on{color:var(--text);font-weight:800;transform:none}
 .reel-fine-indicator{
   position:absolute;top:50%;left:6px;right:6px;height:44px;transform:translateY(-50%);
   border-radius:var(--r-md);background:var(--accent-grad);opacity:.14;pointer-events:none;
@@ -1014,7 +1066,7 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 @keyframes pop{from{transform:scale(.7);opacity:0}}
 /* solo la serie recién guardada hace "pop"; antes lo hacían todos los chips en
    cada re-render y la fila entera parpadeaba */
-.setchips .chip:last-child{animation:pop var(--d2) cubic-bezier(.2,.8,.3,1.2)}
+.setchips .chip:last-child{animation:pop var(--d2) var(--spring)}
 .chip.blue{background:rgba(var(--accent-strong-rgb),.14);border-color:rgba(var(--accent-strong-rgb),.4);color:var(--accent)}
 /* Tono ámbar para el chip que ACCIONA sobre un aviso cálido ("Se está
    enfriando" → "+ Hoy"). El .chip pelado es el mismo gris que un chip
@@ -1026,8 +1078,8 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    y no devolvía nada hasta que la pantalla cambiaba. Mismo hundido que ya usa
    el Button de primitives.jsx (active:scale-[.96]), para que el lenguaje de
    "esto respondió" sea uno solo en toda la app. */
-.chip{transition:transform .12s var(--ease-out),background var(--d1),border-color var(--d1)}
-.chip:active{transform:scale(.96)}
+.chip{transition:transform var(--d1) var(--spring),background-color var(--d1) var(--ease-out),border-color var(--d1) var(--ease-out),color var(--d1) var(--ease-out)}
+.chip:active{transform:scale(var(--press))}
 /* La elección firme del usuario, y no una sugerencia del auto-detectado: por
    eso no es el mismo estilo que .blue (relleno tenue, "esto detecté") — hacía
    falta que se vieran distintos para poder confiar en cuál es cuál. Mismo
@@ -1160,16 +1212,27 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 /* La etiqueta que vuelve a traer el aviso: la única tocable de la fila, en
    el azul de los enlaces para que no se lea como un dato más. */
 .ex-tag.ult{font-family:inherit;color:var(--accent);border-color:rgba(var(--accent-strong-rgb),.35);cursor:pointer}
-.ex-pre{margin-top:var(--s4)}
+.ex-pre{display:grid;grid-template-rows:1fr}
+.ex-pre-in{min-height:0;display:flow-root;overflow:clip;overflow-clip-margin:20px}
+.ex-pre-in>.btn:first-child{margin-top:var(--s4)}
 .ex-pre-links{display:flex;justify-content:center;gap:var(--s5);margin-top:var(--s1)}
 .ex-pre-links .linkcard,.ex-later,.ex-aprox-acts .linkcard{
   display:inline-flex;align-items:center;gap:5px;min-height:40px;padding:0 var(--s1);
   font-size:var(--t-sm);font-weight:600;color:var(--text-2);
 }
 .ex-later{color:var(--accent)}
-/* El despliegue anima la altura (motion, ExerciseCarousel.jsx): sin esto las
-   piezas se ven fuera de la caja mientras crece. */
-.ex-live{overflow:hidden}
+/* El despliegue (ExerciseCarousel.jsx): la caja se abre por
+   grid-template-rows 0fr → 1fr en --d3 y RECIÉN después las piezas entran
+   (`entra`, 10 px) de a una, a --d-paso entre sí. Es el "when:
+   beforeChildren + stagger" que antes hacía motion animando height, sin
+   medir nada. Sin el recorte de abajo, las piezas se verían fuera de la
+   caja mientras crece. */
+.ex-live{overflow:hidden;display:grid;grid-template-rows:1fr}
+.ex-live-in{min-height:0}
+.ex-live.despliega{animation:desplegar var(--d3) var(--ease-out)}
+@keyframes desplegar{from{grid-template-rows:0fr}}
+.ex-live.despliega .pieza{--entra-y:10px;animation:entra var(--d2) var(--ease-out) backwards;
+  animation-delay:calc(var(--d3) + var(--i, 0) * var(--d-paso))}
 /* Pero con margen: el brillo del botón de registrar (.btn-serie) quedaba
    recortado en un rectángulo oscuro de bordes rectos. overflow:clip deja
    que el brillo asome sin soltar el recorte del despliegue. */
@@ -1215,18 +1278,23 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    (--avance 0 → .5 → 1, lo pone Rampa). Los círculos MUESTRAN el avance; el
    que avanza es el botón grande (.btn-serie.aprox). El activo late con dos
    anillos desfasados que se expanden y se apagan: sólo transform y opacity,
-   nada de filter en loop. El ciclo es un múltiplo de --d4, no un ms suelto. */
-.ex-rampa{--rampa-ciclo:calc(var(--d4) * 3.5)}
+   nada de filter en loop. Es el anillo que late compartido (.late, más
+   abajo, "esto está activo"): el mismo de SEGUIR, en ámbar. El círculo ya
+   no late él mismo (rampaLate): lo activo se queda quieto y late su anillo,
+   igual que el botón de SEGUIR (tanda E, un solo lenguaje). */
 /* El pliegue al completar: la altura se va con grid-template-rows (no con
-   height:auto, que no se anima) y el margen con ella, así cuando la rampa
-   desmonta no queda ningún salto de 12px. */
+   height:auto, que no se anima). El margen vive ADENTRO de lo que se pliega
+   (.ex-rampa-pliegue-in, flow-root): se va con la fila en vez de animarse
+   aparte (tanda E: margin es layout), y cuando la rampa desmonta no queda
+   ningún salto de 12px. */
 .ex-rampa-pliegue{
-  display:grid;grid-template-rows:1fr;margin-top:var(--s3);
-  transition:grid-template-rows var(--d3) var(--ease),margin-top var(--d3) var(--ease),opacity var(--d3) var(--ease);
+  display:grid;grid-template-rows:1fr;
+  transition:grid-template-rows var(--d3) var(--ease),opacity var(--d3) var(--ease);
 }
-.ex-rampa-pliegue>.ex-rampa{min-height:0}
-.ex-rampa-pliegue.plegando{grid-template-rows:0fr;margin-top:0;opacity:0}
-.ex-rampa-pliegue.plegando>.ex-rampa{overflow:hidden}
+.ex-rampa-pliegue-in{min-height:0;display:flow-root}
+.ex-rampa-pliegue-in>.ex-rampa{margin-top:var(--s3)}
+.ex-rampa-pliegue.plegando{grid-template-rows:0fr;opacity:0}
+.ex-rampa-pliegue.plegando>.ex-rampa-pliegue-in{overflow:hidden}
 .ex-rampa-hd{display:flex;align-items:center;justify-content:space-between;min-height:32px;margin-bottom:var(--s1)}
 .ex-rampa-hd span{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--warn)}
 /* "Saltar": 40px de área tocable sin sumarle alto a la fila (el margen
@@ -1250,12 +1318,7 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
   font-family:var(--font-cond);font-weight:700;font-size:var(--t-sm);color:var(--text-3);font-variant-numeric:tabular-nums;
   transition:background var(--d2) var(--ease),border-color var(--d2) var(--ease),color var(--d2) var(--ease);
 }
-.ex-paso.cur i{background:var(--warn);border-color:var(--warn);color:var(--on-warn);animation:rampaLate var(--rampa-ciclo) ease-in-out infinite}
-.ex-paso.cur i::before,.ex-paso.cur i::after{
-  content:"";position:absolute;inset:-2px;border-radius:inherit;border:2px solid var(--warn);opacity:0;pointer-events:none;
-  animation:rampaAnillo var(--rampa-ciclo) var(--ease-out) infinite;
-}
-.ex-paso.cur i::after{animation-delay:calc(var(--rampa-ciclo) / 2)}
+.ex-paso.cur i{background:var(--warn);border-color:var(--warn);color:var(--on-warn);--anillo-color:var(--warn);--anillo-inset:-2px;--anillo-x:1.7;--anillo-y:1.7}
 /* El tinte ámbar va SOBRE la superficie opaca: translúcido solo, la línea
    de progreso se veía pasar por dentro del círculo. */
 .ex-paso.hecho i{background:linear-gradient(rgba(var(--warn-rgb),.14),rgba(var(--warn-rgb),.14)),var(--surface);border-color:var(--warn);color:var(--warn)}
@@ -1272,15 +1335,7 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 .ex-rampa-ok>div{min-height:0;overflow:hidden}
 .ex-rampa-ok p{padding-top:var(--s2);text-align:center;font-size:var(--t-sm);font-weight:600;color:var(--ok)}
 .ex-rampa-ok.on{grid-template-rows:1fr;opacity:1}
-@keyframes rampaLate{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
-@keyframes rampaAnillo{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.7);opacity:0}}
 @keyframes rampaPop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
-/* Movimiento reducido: el activo no late; queda un anillo fijo que lo marca. */
-@media (prefers-reduced-motion:reduce){
-  .ex-paso.cur i,.ex-paso.cur i::before{animation:none}
-  .ex-paso.cur i::before{opacity:.45;transform:scale(1.25)}
-  .ex-paso.cur i::after{display:none}
-}
 /* Botón de registrar: píldora oscura con borde verde que brilla, el check en
    un círculo y a la derecha lo que queda anotado. Durante la rampa (.aprox)
    es el mismo botón en ámbar. Los degradados no se interpolan, así que el
@@ -1368,7 +1423,7 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 .ex-tabla td.x{width:36px;text-align:right}
 .ex-tabla td.x button{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:var(--r-sm);color:var(--text-3)}
 /* La fila recién anotada entra con el mismo "pop" que tenían los chips. */
-.ex-tabla tbody tr:last-child{animation:pop var(--d2) cubic-bezier(.2,.8,.3,1.2)}
+.ex-tabla tbody tr:last-child{animation:pop var(--d2) var(--spring)}
 
 /* En Rutina va a la izquierda, pegado al riel. A la derecha no entra: ahí ya
    viven el ⓘ arriba y los cuatro botones de acción abajo, y el dibujo se les
@@ -1408,14 +1463,9 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    entero (medido: 2134px). */
 .setrows.dos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s3)}
 .setrows.dos>div{min-width:0}
-/* A media tarjeta, dientes de 44px en vez de 52: entran el número elegido y
-   uno a cada lado enteros. La matemática de la rueda (lib/reel.ts) mide el
-   DOM, así que no depende de este número. */
-.setrows.dos .reel-tooth{width:44px}
-.setrows.dos .reel-tooth.on{font-size:var(--t-xl)}
-.setrows.dos .reel-tooth.on.editing,.setrows.dos .reel-tooth.on.editing input{min-width:44px}
-.setrows.dos .reel-track{padding:0 calc(50% - 22px)}
-.setrows.dos .reel-indicator{width:44px}
+/* A media tarjeta (la única rueda que hay), dientes de 44 px: entran el
+   número elegido y uno a cada lado enteros. Es --reel-diente, y lib/reel.ts
+   centra con ese mismo número (REEL_DIENTE) sin medir el DOM. */
 /* Conversión kg↔lb del peso: ya no vive pegada a un input de respaldo (se
    sacó, ver ReelPicker.jsx) — es la única cosa que sigue afuera de la rueda,
    así que se la trata como un dato propio, alineada a la derecha bajo la
@@ -1562,18 +1612,21 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    Si el coverflow se revierte, esta regla vuelve a 100%. */
 .carousel.focus .carousel-slide{flex:0 0 88%}
 .carousel-dots{display:flex;justify-content:center;gap:6px;margin:10px 0 4px}
-.carousel-dots i{width:6px;height:6px;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--line-2);transition:var(--d2)}
-.carousel-dots i.on{width:18px;background:var(--accent-grad);border-color:transparent}
+.carousel-dots i{width:6px;height:6px;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--line-2);transition:background-color var(--d2) var(--ease-out),border-color var(--d2) var(--ease-out)}
+/* El activo se estira de 6 a 18 px: el ancho salta (animarlo sería layout en
+   cada cuadro) y lo que se ve crecer es un scaleX desde el tercio. */
+.carousel-dots i.on{width:18px;background:var(--accent-grad);border-color:transparent;animation:puntoOn var(--d2) var(--ease-out)}
+@keyframes puntoOn{from{transform:scaleX(calc(6 / 18))}}
 /* ---------- reordenar arrastrando ---------- */
 /* mantené presionada una fila y arrastrala: las demás se corren solas para
    abrirle lugar, como en la lista de tareas del teléfono */
 [data-sort]>[data-sid]{cursor:grab}
-[data-sid].shift{transition:transform .26s var(--ease)}
+[data-sid].shift{transition:transform var(--d3) var(--ease)}
 [data-sid].dragging{position:relative;z-index:30;cursor:grabbing;transition:none}
 /* al soltar, la fila baja Y pierde el relieve de a poco: si el fondo y la
    sombra se apagan de golpe se ve como un parpadeo */
 [data-sid].settling{position:relative;z-index:30;
-  transition:transform .26s var(--ease),box-shadow var(--d3) ease,border-color var(--d3) ease,background-color var(--d3) ease}
+  transition:transform var(--d3) var(--ease),box-shadow var(--d3) var(--ease),border-color var(--d3) var(--ease),background-color var(--d3) var(--ease)}
 .ex-card.dragging{
   border-color:rgba(var(--accent-strong-rgb),.5);
   box-shadow:0 26px 52px -20px rgba(var(--shade-rgb),.85),0 0 0 1px rgba(var(--accent-strong-rgb),.35);
@@ -1630,12 +1683,12 @@ body.dragging-on .card.day.drop-target{filter:none}
 .day-txt{flex:1;min-width:0}
 
 /* el día que recibe la rutina: entra desde arriba con un destello azul */
-.card.day.fx-arrive{animation:dayArrive .52s var(--spring)}
+.card.day.fx-arrive{animation:dayArrive var(--d4) var(--spring)}
 /* el que fue desplazado a otro día: mismo movimiento, tinte distinto, para que
    se lea como consecuencia y no como la acción que pediste */
-.card.day.fx-bumped{animation:dayBumped .52s var(--spring)}
+.card.day.fx-bumped{animation:dayBumped var(--d4) var(--spring)}
 /* el que quedó vacío: se apaga en el lugar */
-.card.day.fx-left{animation:dayLeft .52s var(--spring)}
+.card.day.fx-left{animation:dayLeft var(--d4) var(--spring)}
 @keyframes dayArrive{
   0%{transform:translateY(-10px) scale(.985);box-shadow:0 0 0 1px rgba(var(--accent-strong-rgb),.5),0 0 34px -4px rgba(var(--accent-strong-rgb),.55)}
   60%{box-shadow:0 0 0 1px rgba(var(--accent-strong-rgb),.3),0 0 24px -8px rgba(var(--accent-strong-rgb),.35)}
@@ -1736,7 +1789,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 
 /* Una entrada a escena, no efectos sueltos: los rieles se llenan en cascada al
    abrir el resumen. Es el único momento animado de la vista. */
-.dcard.entry::before{animation:railIn var(--d4) var(--ease) backwards;animation-delay:calc(var(--i,0) * 45ms)}
+.dcard.entry::before{animation:railIn var(--d4) var(--ease) backwards;animation-delay:calc(var(--i,0) * var(--d-paso))}
 @keyframes railIn{from{transform:scaleY(0)}}
 
 /* ---------- el peso como el evento ----------
@@ -1938,7 +1991,7 @@ body.dragging-on .card.day.drop-target{filter:none}
   content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
   background:linear-gradient(180deg,var(--accent),var(--accent-strong));
   transform:scaleY(var(--fill,1));transform-origin:top;
-  animation:railIn var(--d4) var(--ease) backwards;animation-delay:calc(var(--i,0) * 35ms);
+  animation:railIn var(--d4) var(--ease) backwards;animation-delay:calc(var(--i,0) * var(--d-paso));
 }
 .ex-row-top{display:flex;align-items:center;gap:8px;margin-bottom:1px}
 .ex-row-top .eyebrow{flex:1;min-width:0}
@@ -2094,26 +2147,32 @@ body.dragging-on .card.day.drop-target{filter:none}
    medía el triple de alto, con el texto centrado. */
 .day-name.off{color:var(--text-3);font-weight:700;}
 .day-meta{margin-left:auto;color:var(--text-2);font-size:var(--t-sm);font-weight:600;display:flex;align-items:center;gap:8px}
-.chev{transition:var(--d2);display:inline-block;color:var(--text-3)}
+.chev{transition:transform var(--d2) var(--ease-out),color var(--d2) var(--ease-out);display:inline-block;color:var(--text-3)}
 .day.open .chev{transform:rotate(90deg);color:var(--accent)}
 /* acordeón animable: grid-template-rows 0fr→1fr sí transiciona (display no).
    Antes usaba display:none/block + animation:vin, que re-disparaba en cada
    renderRutina() y hacía parpadear la configuración de ejercicios. */
+/* El margen de arriba es un espaciador DENTRO de lo que se pliega (::before
+   de .dbi): se va con la fila en vez de animar margin-top (tanda E). */
 .day-body{
-  display:grid;grid-template-rows:0fr;margin-top:0;opacity:0;visibility:hidden;
-  transition:grid-template-rows var(--d3) var(--ease-out),margin-top var(--d3) var(--ease-out),opacity var(--d2) ease,visibility 0s var(--d3);
+  display:grid;grid-template-rows:0fr;opacity:0;visibility:hidden;
+  transition:grid-template-rows var(--d3) var(--ease-out),opacity var(--d2) var(--ease-out),visibility 0s var(--d3);
 }
 .day-body>.dbi{overflow:hidden;min-height:0}
+.day-body>.dbi::before{content:"";display:block;height:var(--s2)}
 .day.open .day-body{
-  grid-template-rows:1fr;margin-top:8px;opacity:1;visibility:visible;
-  transition:grid-template-rows var(--d3) var(--ease-out),margin-top var(--d3) var(--ease-out),opacity var(--d2) ease,visibility 0s;
+  grid-template-rows:1fr;opacity:1;visibility:visible;
+  transition:grid-template-rows var(--d3) var(--ease-out),opacity var(--d2) var(--ease-out),visibility 0s;
 }
 
 /* ---------- barras de progreso (nutrición) ---------- */
 .pbar{height:8px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.05);overflow:hidden}
 .pbar>i{display:block;height:100%;border-radius:var(--r-xs);
   background:linear-gradient(90deg,var(--accent-strong),var(--accent) 60%,var(--accent));
-  transition:width var(--d4) var(--ease-out)}
+  /* El avance es --p (0..1, lo escribe el JSX) y se dibuja con scaleX desde
+     la izquierda: antes cada cambio animaba `width`, layout en cada cuadro. */
+  --p:1;width:100%;transform-origin:left;transform:scaleX(var(--p));
+  transition:transform var(--d4) var(--ease-out)}
 .pbar>i.over{background:linear-gradient(135deg,var(--warn-strong),var(--warn))}
 .macro3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
 .macro3 .m .lbl{display:flex;justify-content:space-between;font-size:var(--t-micro);color:var(--text-2);font-weight:600;margin-bottom:5px}
@@ -2263,7 +2322,7 @@ nav.tabbar button{
      lo fija en --mut. Hasta el 2026-09-05 esta línea repetía color:--mut2 y,
      con la misma especificidad y estando después, PISABA ese arreglo — el
      fix de contraste estaba escrito, comentado y muerto. */
-  padding:7px 0 5px;border-radius:calc(var(--r-lg) - 7px);position:relative;transition:var(--d1);
+  padding:7px 0 5px;border-radius:calc(var(--r-lg) - 7px);position:relative;transition:color var(--d1) var(--ease-out),transform var(--d1) var(--spring);
 }
 nav.tabbar button svg{width:24px;height:24px;stroke:currentColor;fill:none;fill-opacity:0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke-width var(--d1) var(--ease),fill-opacity var(--d1) var(--ease)}
 nav.tabbar button span{font-family:var(--font-cond);font-size:var(--t-micro);font-weight:700;letter-spacing:var(--tr-control);text-transform:uppercase}
@@ -2316,10 +2375,12 @@ nav.tabbar{container-type:inline-size}
   background:var(--sup-flota-bg);backdrop-filter:var(--sup-flota-blur);
   border:1px solid var(--sup-flota-borde);border-radius:var(--r);
   padding:12px 16px;box-shadow:var(--sup-flota-sombra);
-  transform:translateY(140%);opacity:0;transition:var(--d3) var(--ease-out);
+  /* Sale más corta de lo que entra (--d2 contra --d3): la transición usa
+     los tiempos del estado al que va. */
+  transform:translateY(140%);opacity:0;transition:transform var(--d2) var(--ease-out),opacity var(--d2) var(--ease-out);
   max-width:calc(520px - 2 * var(--pad-x));margin:0 auto;
 }
-#restbar.show{transform:none;opacity:1}
+#restbar.show{transform:none;opacity:1;transition-duration:var(--d3)}
 #restbar .rb-top{display:flex;align-items:center;gap:14px}
 #restbar .rb-lbl{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--accent)}
 #rest-time{font-family:var(--font-cond);font-weight:800;font-size:var(--t-titulo);line-height:1;font-variant-numeric:tabular-nums;font-style:italic;letter-spacing:var(--tr-titulo);}
@@ -2339,11 +2400,17 @@ nav.tabbar{container-type:inline-size}
   background:rgba(var(--bg-rgb),.94);backdrop-filter:blur(18px) saturate(1.2);
   animation:fdin var(--d2) var(--ease);}
 #rest-fs.show{display:grid}
+/* V14: el bloque rótulo + reloj queda ANCLADO al centro óptico (el centro
+   del anillo al 44 % del alto, un poco arriba del medio) y lo que viene
+   después —la pregunta, los botones— cuelga debajo. Antes la columna entera
+   se centraba: al plegarse la pregunta de arriba, el reloj se corría 60 px.
+   --rfs-arriba = 44dvh − (rótulo 18 + hueco 22 + medio anillo 120). */
+#rest-fs{align-items:start;justify-items:center;overflow-y:auto}
 /* Salida (RestTimer.jsx, `saliendo`): el fondo se funde y el contenido baja
    un poco, el mismo gesto que dlgOut de las confirmaciones. */
 #rest-fs.out{animation:fdout var(--d2) var(--ease) forwards;pointer-events:none}
 #rest-fs.out .rfs-inner{animation:dlgOut var(--d2) var(--ease) forwards}
-.rfs-inner{display:flex;flex-direction:column;align-items:center;gap:22px;padding:24px;position:relative;width:100%;max-width:360px}
+.rfs-inner{--rfs-arriba:max(var(--s5),calc(44dvh - 160px));display:flex;flex-direction:column;align-items:center;gap:22px;padding:var(--rfs-arriba) 24px 24px;position:relative;width:100%;max-width:360px}
 .rfs-lbl{font:var(--rol-seccion);letter-spacing:var(--tr-seccion);text-transform:uppercase;color:var(--accent)}
 .rfs-ring{position:relative;width:240px;height:240px}
 /* El brillo del anillo: un aro con la sombra ya pintada, calzado sobre el
@@ -2357,7 +2424,7 @@ nav.tabbar{container-type:inline-size}
   content:'';position:absolute;inset:9.4px;border-radius:50%;pointer-events:none;opacity:.45;
   border:10px solid transparent;
   box-shadow:0 0 18px rgba(var(--accent-rgb),.7),inset 0 0 18px rgba(var(--accent-rgb),.7);
-  animation:glowring 2.4s ease-in-out infinite;
+  animation:glowring var(--ciclo-resplandor) ease-in-out infinite;
 }
 .rfs-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 /* El anillo de progreso lo dibuja un worker en este lienzo (RestTimer.jsx,
@@ -2379,13 +2446,27 @@ nav.tabbar{container-type:inline-size}
 .rfs-rir .steplabel{margin-bottom:0;text-align:center}
 .rfs-rir .rir-opts{width:100%;margin-top:0}
 .rfs-rir-meta{font-size:var(--t-micro);color:var(--text-2);margin-top:-2px}
-/* 2026-09-25: título legible y opciones en una barra segmentada. La caja
-   anima su altura al irse (overflow:hidden para que no se vea el contenido
-   saliéndose mientras se achica). */
-.rfs-rir-caja{width:100%;overflow:hidden}
+/* 2026-09-25: título legible y opciones en una barra segmentada.
+   Contestada, la caja se pliega con grid-template-rows (1fr → 0fr) y se
+   funde: sin medir nada (antes motion animaba height hasta 'auto' y medía la
+   caja en el cuadro en que se abría el descanso, H7). El margen de -22 px se
+   come el hueco de la columna, así plegada no deja un escalón; ese aire lo
+   pone el margen del título, que se pliega con ella. overflow:clip con
+   margen para que el anillo de foco de los botones no se recorte. */
+.rfs-rir-caja{width:100%;display:grid;grid-template-rows:1fr;margin-top:-22px;
+  transition:grid-template-rows var(--d3) var(--ease-out),opacity var(--d2) var(--ease-out)}
+.rfs-rir-caja.cerrada{grid-template-rows:0fr;opacity:0}
+.rfs-rir-caja>.rfs-rir{min-height:0;overflow:clip;overflow-clip-margin:var(--s2);
+  animation:entra var(--d3) var(--ease-out) var(--d1) backwards}
+/* El aire va como margen del título y no como relleno de .rfs-rir: un
+   relleno no se pliega (el ítem no baja de su padding) y dejaba 22 px. */
+.rfs-rir-caja .rfs-rir-t{margin-top:22px}
 .rfs-rir-t{font-family:var(--font-cond);font-weight:700;font-size:var(--t-lg);color:var(--text)}
 .rir-seg{display:grid;grid-template-columns:repeat(5,1fr);width:100%;margin-top:var(--s1);border-radius:var(--r-md);border:1px solid var(--line-2);background:var(--surface);overflow:hidden}
-.rir-seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-left:1px solid var(--line);color:var(--text);transition:background var(--d2) var(--ease),color var(--d2) var(--ease)}
+/* Los cinco números a la misma altura: "fallo" cuelga debajo del 0 sin
+   empujarlo (V14: era la única opción en dos renglones). */
+.rir-seg button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-left:1px solid var(--line);color:var(--text);transition:background-color var(--d2) var(--ease),color var(--d2) var(--ease),transform var(--d1) var(--spring)}
+.rir-seg button small{position:absolute;left:0;right:0;bottom:var(--s1);text-align:center;line-height:1}
 .rir-seg button:first-child{border-left:0}
 .rir-seg b{font-family:var(--font-cond);font-size:var(--t-xl);font-weight:700;line-height:1}
 .rir-seg small{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2);}
@@ -2395,7 +2476,7 @@ nav.tabbar{container-type:inline-size}
 .rfs-btns .btn{flex:1}
 /* Al borde derecho de la columna (el padding de .rfs-inner), alineado con
    "Saltar" — antes caía 30 px afuera (H2). */
-.rfs-min{position:absolute;top:-6px;right:24px}
+.rfs-min{position:absolute;top:calc(var(--rfs-arriba) - 10px);right:24px}
 /* La unidad no se grita: "−30s", como en la barra minimizada (G14). */
 .rfs-btns .rfs-seg{text-transform:none}
 
@@ -2405,7 +2486,7 @@ nav.tabbar{container-type:inline-size}
 .rfs-inner.ringing .rfs-lbl{color:var(--warn)}
 .rfs-inner.ringing .rfs-time{font-size:var(--t-hero);color:var(--warn);}
 .rfs-inner.ringing .rfs-prog{stroke:var(--warn);transition:none}
-.rfs-inner.ringing .rfs-ring{animation:rfs-late .9s ease-in-out infinite}
+.rfs-inner.ringing .rfs-ring{animation:rfs-late var(--ciclo-alarma) ease-in-out infinite}
 /* Sonando no brillaba (rfs-late reemplazaba a glowring en la misma regla). */
 .rfs-inner.ringing .rfs-ring::before{animation:none;opacity:0}
 @keyframes rfs-late{0%,100%{transform:scale(1)}50%{transform:scale(1.055)}}
@@ -2415,7 +2496,7 @@ nav.tabbar{container-type:inline-size}
   font-family:var(--font-cond);font-weight:800;font-size:var(--t-xl);letter-spacing:var(--tr-control);
   box-shadow:0 16px 40px -12px rgba(var(--warn-rgb),.55);
 }
-.rfs-parar:active{transform:scale(.98)}
+.rfs-parar:active{transform:scale(var(--press))}
 @media (prefers-reduced-motion:reduce){
   .rfs-inner.ringing .rfs-ring{animation:none}
 }
@@ -2425,6 +2506,11 @@ nav.tabbar{container-type:inline-size}
 #sheet.open{display:block}
 #sheet .bk{position:absolute;inset:0;background:rgba(var(--bg-rgb),.7);backdrop-filter:blur(4px);animation:fdin var(--d1)}
 @keyframes fdin{from{opacity:0}}
+/* El vocabulario de entrada y salida de la app (tanda E): entrar es subir
+   un poco mientras aparece; salir, lo mismo al revés y más corto. La
+   distancia se ajusta con --entra-y / --sale-y en quien lo usa. */
+@keyframes entra{from{opacity:0;transform:translateY(var(--entra-y))}}
+@keyframes sale{to{opacity:0;transform:translateY(var(--sale-y))}}
 #sheet .panel{
   position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;
   max-height:88dvh;overflow-y:auto;
@@ -2516,10 +2602,10 @@ nav.tabbar{container-type:inline-size}
   background:var(--sup-flota-bg);backdrop-filter:var(--sup-flota-blur);
   border:1px solid var(--sup-flota-borde);color:var(--text);
   padding:11px 20px;border-radius:var(--r-full);font-size:var(--t-body);font-weight:600;
-  opacity:0;pointer-events:none;transition:var(--d2);z-index:70;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity var(--d1) var(--ease-out),transform var(--d1) var(--ease-out);z-index:70;white-space:nowrap;
   box-shadow:var(--sup-flota-sombra);
 }
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;transition-duration:var(--d2)}
 /* con un sheet abierto el toast baja... arriba: el panel del sheet ocupa hasta
    88dvh desde abajo, así que en su posición normal caía justo encima de los
    botones. Entra desde el borde de arriba, que ahí no hay nada. */
@@ -2934,9 +3020,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 .weekbars .wbar.on .b{
   background:linear-gradient(var(--accent),var(--accent-strong));border-color:transparent;
-  animation:rise-y var(--d4) var(--ease) backwards;
+  /* Crece desde abajo por transform. El rise-y de antes animaba height con
+     !important adentro del keyframe, que el navegador descarta: no corría. */
+  transform-origin:bottom;animation:creceY var(--d4) var(--ease) backwards;
 }
-@keyframes rise-y{from{height:8px !important}}
 .weekbars span{font-family:var(--font-cond);font-size:var(--t-sm);font-weight:700;color:var(--text-3)}
 
 /* Editor de Rutina: proyección de días de la semana (Rutina.jsx:
@@ -3162,7 +3249,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    que sirve igual para un día de 3 ejercicios que uno de 12. */
 .hero-slot{
   display:grid;grid-template-rows:0fr;
-  transition:grid-template-rows var(--d3) var(--ease),opacity var(--d2) var(--ease),margin-bottom var(--d3) var(--ease);
+  transition:grid-template-rows var(--d3) var(--ease),opacity var(--d2) var(--ease);
   opacity:0;margin-bottom:0;
 }
 .hero-slot.open{grid-template-rows:1fr;opacity:1}
@@ -3313,7 +3400,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    arranca rápido y se demora al final, justo al revés de lo que hace falta acá.
    Ésta pasa rápido por el medio y se toma su tiempo en las dos caras, que es
    donde hay algo para mirar. */
-.sil-flip.suave{transition:transform .55s cubic-bezier(.65,0,.35,1)}
+.sil-flip.suave{transition:transform var(--d4) var(--ease-giro)}
 /* En pleno giro el cuerpo no recibe toques: el rectángulo de un músculo
    aplastado por la perspectiva anclaría el globo en cualquier lado. */
 .sil-stage.girando .sil-flip{pointer-events:none}
@@ -3605,23 +3692,37 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    del ciclo el texto caía a 1,7:1 y con Fucsia el rosa mezclado con el
    grafito se veía malva, como deshabilitado (V1). Ahora el botón no se toca:
    late un ANILLO por fuera, el mismo gesto que el paso activo de la rampa
-   (rampaAnillo, mismo ciclo), así "esto está activo" se dice de una sola
-   manera en toda la app. El anillo crece unos 7 px por lado: la escala es
-   distinta en X y en Y porque el botón es 6 veces más ancho que alto. */
-.ini-cta-seguir{position:relative;--late-ciclo:calc(var(--d4) * 3.5)}
-.ini-cta-seguir::before,.ini-cta-seguir::after{
-  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-  border:2px solid var(--accent);opacity:0;
-  animation:ctaAnillo var(--late-ciclo) var(--ease-out) infinite;
+   (el anillo compartido de abajo), así "esto está activo" se dice de una
+   sola manera en toda la app. El anillo crece unos 7 px por lado: la escala
+   es distinta en X y en Y porque el botón es 6 veces más ancho que alto. */
+.ini-cta-seguir{position:relative;--anillo-x:1.04;--anillo-y:1.25}
+/* ---- "Esto está activo": EL anillo que late (tanda E) -------------------
+   Uno solo para toda la app: dos contornos del color del estado que salen
+   desfasados medio ciclo, crecen y se apagan por fuera. Sólo transform y
+   opacity del pseudo-elemento; lo activo queda a opacidad 1 y quieto. Cada
+   uso dice cuánto crece (--anillo-x/-y), de qué color y desde dónde. */
+:where(.ini-cta-seguir,.ex-paso.cur i){--anillo-color:var(--accent);--anillo-inset:0px}
+.ini-cta-seguir::before,.ini-cta-seguir::after,
+.ex-paso.cur i::before,.ex-paso.cur i::after{
+  content:"";position:absolute;inset:var(--anillo-inset);border-radius:inherit;pointer-events:none;
+  border:2px solid var(--anillo-color);opacity:0;
+  animation:anillo var(--ciclo-activo) var(--ease-out) infinite;
 }
-.ini-cta-seguir::after{animation-delay:calc(var(--late-ciclo) / 2)}
-@keyframes ctaAnillo{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.04,1.25);opacity:0}}
-.ini-wk{margin-top:10px;flex:none}
-/* Movimiento reducido: sin latido, un anillo quieto que igual marca "en curso". */
+.ini-cta-seguir::after,.ex-paso.cur i::after{animation-delay:calc(var(--ciclo-activo) / 2)}
+@keyframes anillo{0%{transform:scale(1);opacity:.7}100%{transform:scale(var(--anillo-x),var(--anillo-y));opacity:0}}
+/* Movimiento reducido: sin latido, un anillo quieto a mitad de camino que
+   igual marca "en curso". */
 @media (prefers-reduced-motion:reduce){
-  .ini-cta-seguir::before{animation:none;opacity:.45;transform:scale(1.02,1.14)}
-  .ini-cta-seguir::after{display:none}
+  .ini-cta-seguir::before,.ex-paso.cur i::before{animation:none;opacity:.45;
+    transform:scale(calc(1 + (var(--anillo-x) - 1) / 2),calc(1 + (var(--anillo-y) - 1) / 2))}
+  .ini-cta-seguir::after,.ex-paso.cur i::after{display:none}
 }
+/* Lo que late o barre en la pantalla de atrás se detiene mientras una hoja
+   o el descanso la tapan: un loop que nadie ve es trabajo de más en cada
+   cuadro (tanda E, "sin loops detrás de hojas"). */
+:root:has(#sheet.open, #rest-fs.show) :is(.btn.brilla, .ini-cta-go, .ini-cta-seguir, .ex-paso.cur i)::before,
+:root:has(#sheet.open, #rest-fs.show) :is(.btn.brilla, .ini-cta-go, .ini-cta-seguir, .ex-paso.cur i)::after{animation-play-state:paused}
+.ini-wk{margin-top:10px;flex:none}
 
 /* ENTRENAR: el único de los cuatro CTA que invita a HACER algo — los otros
    tres informan un estado (seguir lo empezado, ver lo hecho, no toca hoy).
@@ -3646,7 +3747,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   content:"";position:absolute;left:50%;top:50%;
   width:170%;aspect-ratio:1;translate:-50% -50%;z-index:0;
   background:conic-gradient(from 0deg,transparent 0 70%,rgba(var(--hi-rgb),.92) 83%,transparent 91%);
-  animation:ctaRing 5s linear infinite;
+  animation:ctaRing var(--ciclo-filo) linear infinite;
 }
 /* Tapa el centro y deja el reflejo asomando sólo como un filo: sin esto el
    cónico se vería como un aspa girando dentro del botón. */
@@ -3814,7 +3915,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    (referencia visual: Liftoff — el mecanismo, no la identidad: acá es el
    gradiente cian/azul de Fierro, no el elefante). */
 .wiz-progress{height:6px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.08);overflow:hidden;margin-bottom:var(--s3)}
-.wiz-progress i{display:block;height:100%;background:var(--accent-grad);border-radius:var(--r-xs);transition:width var(--d4) var(--spring)}
+.wiz-progress i{--p:0;display:block;height:100%;background:var(--accent-grad);border-radius:var(--r-xs);transform-origin:left;transform:scaleX(var(--p));transition:transform var(--d4) var(--spring)}
 
 /* El cuerpo interactivo del asistente: se enciende en vivo con los grupos
    que se van tocando (WizardBody, RoutineWizard.jsx) — mismo mecanismo que
@@ -3959,9 +4060,12 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   animation:sc-beat var(--dur) var(--ease) forwards;
 }
 @keyframes sc-beat{0%{opacity:0;transform:scale(.94);animation-timing-function:var(--spring)}12%{opacity:1;transform:none}88%{opacity:1}100%{opacity:0;transform:scale(1.04)}}
-.sc-beat.b1{--dur:700ms;animation-delay:0ms}
-.sc-beat.b2{--dur:700ms;animation-delay:650ms}
-.sc-beat.b3{--dur:1100ms;animation-delay:1300ms}
+/* Los tiempos los escribe SessionComplete.jsx en #session-complete
+   (BEAT2_DELAY, BEAT3_DELAY, BEAT_CORTO, BEAT_LARGO): son los mismos que usa
+   el modo sin movimiento, y así no pueden desincronizarse (G10). */
+.sc-beat.b1{--dur:var(--beat-corto);animation-delay:0s}
+.sc-beat.b2{--dur:var(--beat-corto);animation-delay:var(--beat2)}
+.sc-beat.b3{--dur:var(--beat-largo);animation-delay:var(--beat3)}
 /* No basta con animation:none: los tres beats son position:absolute;inset:0
    (montados unos sobre otros) y era la animación la única que los separaba
    en el tiempo. El *{animation-duration:.01ms!important} global (más arriba)

@@ -340,7 +340,7 @@ export default function Settings() {
             <b className="acento-previa-num">58.4<small> kg</small></b>
             <span className="chip on">Elegido</span>
           </div>
-          <div className="pbar"><i style={{ width: '62%' }} /></div>
+          <div className="pbar"><i style={{ '--p': 0.62 }} /></div>
           <div className="acento-previa-estados">
             <span className="ok">Logrado</span>
             <span className="danger">Bajaste</span>

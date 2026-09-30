@@ -161,6 +161,10 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
   // avanzó el ejercicio en curso) sí deslizan: antes saltaban de golpe, el
   // único movimiento suave era el que hacías vos con el dedo.
   const yaHuboSalto = useRef(false);
+  /* El viaje al ejercicio siguiente que quedó esperando a que el descanso
+     deje de tapar la pantalla (ver más abajo). */
+  const viajePendiente = useRef(null);
+  const tapaDescanso = T.state === 'fullscreen' || T.state === 'ringing';
 
   useLayoutEffect(() => {
     const car = carRef.current;
@@ -300,10 +304,17 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
        pantalla este observer no hace absolutamente nada. Reposicionar con
        'auto' y no 'smooth' a propósito: es una corrección de layout, no una
        navegación; animarla se vería como un salto fantasma. */
-    let anchoPrevio = car.clientWidth;
-    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => {
-      if (car.clientWidth === anchoPrevio) return;
-      anchoPrevio = car.clientWidth;
+    /* El ancho de partida lo da el PRIMER aviso del observer (llega siempre,
+       después del layout que el navegador hace de todos modos), no un
+       car.clientWidth leído acá: esa lectura, en el commit que cierra un
+       ejercicio, obligaba a hacer el layout de la página entera en el medio
+       del efecto (~84 ms de layout + 54 de estilo a 6×, H7). */
+    let anchoPrevio = null;
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(([e]) => {
+      const ancho = Math.round(e.contentRect.width);
+      if (anchoPrevio === null) { anchoPrevio = ancho; return; }
+      if (ancho === anchoPrevio) return;
+      anchoPrevio = ancho;
       irAlFoco('auto');
       measureAndPaint();
     }) : null;
@@ -323,6 +334,16 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
       // en App.jsx), así que igual competía con el fundido de cambio de
       // pestaña en cada visita.
       staggerRevealOnce('hoy-carousel', car.children);
+    } else if (T.state === 'fullscreen' || T.state === 'ringing') {
+      /* Cerraste la última serie y el reloj se abrió en el mismo toque: el
+         viaje al ejercicio siguiente, debajo del reloj, no lo ve nadie. Y
+         costaba caro: medir el slide destino en este mismo commit obligaba a
+         recalcular estilo y layout de la página (~85 ms a 6×, H7), y después
+         ~400 ms de scroll suave con el coverflow repintando cada cuadro. Se
+         guarda y se hace cuando el descanso deja de tapar: ahí sí se ve al
+         ejercicio siguiente llegar, que es la continuidad que tenía que
+         contar el movimiento. */
+      viajePendiente.current = () => irAlFoco('smooth');
     } else {
       irAlFoco('smooth');
     }
@@ -337,9 +358,17 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
       clearTimeout(finTimer);
       if (ro) ro.disconnect();
       if (rafId != null) cancelAnimationFrame(rafId);
+      viajePendiente.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusKey]);
+
+  useEffect(() => {
+    if (tapaDescanso || !viajePendiente.current) return;
+    const viajar = viajePendiente.current;
+    viajePendiente.current = null;
+    viajar();
+  }, [tapaDescanso]);
 
   if (!exs.length) return null;
 
@@ -514,6 +543,7 @@ function Rampa({ ex, estado, unidad, plegando }) {
   const pctDe = s => `${Math.round(s.pct * 100)}%`;
   return (
     <div className={`ex-rampa-pliegue${plegando ? ' plegando' : ''}`}>
+     <div className="ex-rampa-pliegue-in">
       <div className="ex-rampa">
         <div className="ex-rampa-hd">
           <span>Aproximación</span>
@@ -541,6 +571,7 @@ function Rampa({ ex, estado, unidad, plegando }) {
           <div><p>{estado.completa ? 'Aproximación completa · ahora la serie efectiva' : ''}</p></div>
         </div>
       </div>
+     </div>
     </div>
   );
 }
@@ -684,21 +715,13 @@ function AvisoUltimaVez({ visible, onCerrar, last, obj, meta, uni, fuerza, recor
    documenta haber sacado de los cambios de pestaña. */
 const yaAbiertas = new Set();
 
-/* El despliegue de la tarjeta activa: la altura crece y adentro las piezas
-   entran en orden — serie, aproximación, ruedas, botón. Mismos tiempos que el
-   resto de la app (D.panel para lo grande, pasos cortos entre piezas). */
+/* El despliegue de la tarjeta activa: la caja se abre y adentro las piezas
+   entran en orden — serie, aproximación, ruedas, botón. Es CSS
+   (.ex-live.despliega, styles.css): grid-template-rows 0fr → 1fr y después
+   `entra` escalonado con --i. Antes lo hacía motion animando height hasta
+   'auto', que mide la caja al arrancar (un layout forzado en el mismo commit
+   que abre el ejercicio) y escribe height en cada cuadro (H7, tanda E). */
 const curvaSalida = EASE_OUT.match(/[\d.]+/g).map(Number);
-const desplegar = {
-  oculto: { height: 0, opacity: 0 },
-  visible: {
-    height: 'auto', opacity: 1,
-    transition: { duration: D.panel / 1000, ease: curvaSalida, when: 'beforeChildren', staggerChildren: 0.05 },
-  },
-};
-const pieza = {
-  oculto: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: D.objeto / 1000, ease: curvaSalida } },
-};
 
 function ExerciseSlide({ m, wd, started }) {
   const { ex, done, target, skipped, full, open, isNext, waiting } = m;
@@ -810,7 +833,16 @@ function ExerciseSlide({ m, wd, started }) {
   function setW(newW) { v.w = Math.max(0, round1(newW)); syncDependents(); }
   function setR(newR) { v.r = Math.max(1, Math.round(newR)); syncDependents(); }
 
-  const animar = useMemo(() => open && !yaAbiertas.has(ex.id) && !menosMovimiento(), [open, ex.id]);
+  /* Tampoco se despliega debajo del descanso a pantalla completa: al cerrar
+     la última serie, el siguiente se abre en el mismo toque que abre el
+     reloj, y un despliegue que nadie ve es sólo trabajo. */
+  const animar = useMemo(
+    () => open && !yaAbiertas.has(ex.id) && !menosMovimiento() && T.state !== 'fullscreen',
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [open, ex.id],
+  );
+  let nPieza = 0;
+  const pieza = () => ({ '--i': nPieza++ });
   useEffect(() => { if (open) yaAbiertas.add(ex.id); }, [open, ex.id]);
 
   const hayComparativa = !!obj && (!!last || obj.tipo !== 'primera');
@@ -949,38 +981,46 @@ function ExerciseSlide({ m, wd, started }) {
             unilateral, cambiar) recién tiene sentido con el ejercicio en
             marcha, así que acá sólo quedan las dos salidas del "no puedo
             hacerlo ahora". */}
-        {/* Al tocar Empezar este bloque se cierra por altura MIENTRAS
-            .ex-live se abre (los dos en D.panel, misma curva): la tarjeta
-            crece de corrido y la previa de abajo no salta hacia arriba
-            antes de irse. */}
+        {/* Al tocar Empezar este bloque se pliega MIENTRAS .ex-live se abre
+            (los dos en D.panel, misma curva): la tarjeta crece de corrido y
+            la previa de abajo no salta hacia arriba antes de irse. Se pliega
+            con grid-template-rows (1fr → 0fr), no con height: height hasta
+            0 obligaba a motion a medir la caja y a escribir layout en cada
+            cuadro (tanda E). El margen vive adentro de .ex-pre-in para
+            plegarse con ella. */}
         <AnimatePresence initial={false}>
           {isNext && (
             <motion.div
               key="pre"
               className="ex-pre"
-              exit={menosMovimiento() ? undefined : { height: 0, marginTop: 0, opacity: 0, transition: { duration: D.panel / 1000, ease: curvaSalida } }}
+              initial={false}
+              animate={{ gridTemplateRows: '1fr' }}
+              exit={menosMovimiento() ? undefined : { gridTemplateRows: '0fr', opacity: 0, transition: { duration: D.panel / 1000, ease: curvaSalida } }}
             >
-              <button type="button" className="btn" onClick={() => startExercise(ex)}>
+             <div className="ex-pre-in">
+              <button type="button" className="btn brilla" onClick={() => startExercise(ex)}>
                 <Play /> {started ? 'Hacer ahora' : 'Empezar rutina'}
               </button>
               <div className="ex-pre-links">
                 <button type="button" className="linkcard" onClick={() => openSheet('despues', { exId: ex.id })}><Later size={14} /> Hacer después</button>
                 <button type="button" className="linkcard" onClick={() => confirmarOmitir(ex)}><Skip size={13} /> Omitir ejercicio</button>
               </div>
+             </div>
             </motion.div>
           )}
         </AnimatePresence>
 
         {open && (
-          <motion.div className="ex-live" variants={desplegar} initial={animar ? 'oculto' : false} animate="visible">
+          <div className={`ex-live${animar ? ' despliega' : ''}`}>
+           <div className="ex-live-in">
             {/* La meta de hoy, que antes de empezar estaba en la previa,
                 queda como una línea dentro de la tarjeta. */}
             {metaLinea?.numeros && (
-              <motion.p variants={pieza} className="ex-meta-hoy">
+              <p className="ex-meta-hoy pieza" style={pieza()}>
                 <span>Meta de hoy</span> <b>{metaLinea.numeros}</b>{metaLinea.porque && <> · {metaLinea.porque}</>}
-              </motion.p>
+              </p>
             )}
-            <motion.div variants={pieza} className="ex-serie">
+            <div className="ex-serie pieza" style={pieza()}>
               <div className="ex-serie-top">
                 <span>
                   <b className="cond">Serie {serieHechas + 1} de {serieObjetivo}</b>
@@ -1005,10 +1045,10 @@ function ExerciseSlide({ m, wd, started }) {
                   <i key={i} className={i < serieHechas ? 'on' : i === serieHechas ? 'cur' : ''} />
                 ))}
               </div>
-            </motion.div>
+            </div>
 
             {calentar && (
-              <motion.div variants={pieza}>
+              <div className="pieza" style={pieza()}>
                 {rampa.length ? <Rampa ex={ex} estado={rampaEstado} unidad={unidad} plegando={plegando} /> : (
                   <div className="ex-aprox">
                     <div className="ex-aprox-t">
@@ -1020,7 +1060,7 @@ function ExerciseSlide({ m, wd, started }) {
                     </div>
                   </div>
                 )}
-              </motion.div>
+              </div>
             )}
 
             <div className="prog-warn" ref={pwRef} style={{ display: pwarnInitial ? '' : 'none' }}>
@@ -1038,11 +1078,12 @@ function ExerciseSlide({ m, wd, started }) {
                 muestra su número y los vecinos, y le devuelve media pantalla
                 de alto al resto de la tarjeta (Enzo: "la rueda es muy
                 grande"). */}
-            <motion.div variants={pieza} className="setrows dos">
+            <div className="setrows dos pieza" style={pieza()}>
               <div>
                 <div className="steplabel">Peso <span>{unidad}{uni ? ' / lado' : ''}</span></div>
+                {/* Sin key por serie: la rueda sigue a `value` sola (ReelPicker)
+                    y no se remonta en cada serie registrada (H7). */}
                 <ReelPicker
-                  key={`w-${done.length}`}
                   value={v.w}
                   step={wStep()}
                   min={0.5}
@@ -1059,7 +1100,6 @@ function ExerciseSlide({ m, wd, started }) {
               <div>
                 <div className="steplabel">Reps</div>
                 <ReelPicker
-                  key={`r-${done.length}`}
                   value={v.r}
                   step={1}
                   min={1}
@@ -1067,8 +1107,8 @@ function ExerciseSlide({ m, wd, started }) {
                   label="Reps"
                 />
               </div>
-            </motion.div>
-            <motion.div variants={pieza}>
+            </div>
+            <div className="pieza" style={pieza()}>
               <button
                 type="button"
                 className={`btn-serie${boton.variante === 'aprox' ? ' aprox' : ''}`}
@@ -1100,8 +1140,9 @@ function ExerciseSlide({ m, wd, started }) {
                     peso del paso y las ruedas no lo tocan. */}
                 <small key={boton.variante === 'aprox' ? boton.valor : 'serie'} ref={boton.variante === 'serie' ? valRef : undefined}>{boton.valor}</small>
               </button>
-            </motion.div>
-          </motion.div>
+            </div>
+           </div>
+          </div>
         )}
 
         {done.length > 0 && <TablaSeries exId={ex.id} done={done} uni={uni} unidad={unidad} />}
