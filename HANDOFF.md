@@ -4,6 +4,91 @@
 
 ---
 
+## SESIÓN 2026-10-01 (tarde) — Auditoría de performance + pulido visual
+
+Pedido de Enzo: "auditoría completa de performance, que veas todo lo que puede
+ser optimizado y lo corrijas", y después "mejora algunas cosas con las skills
+(de diseño) que te dije, de manera visual". Rama `perf/auditoria-2026-10`,
+**1117 tests**. Todo medido en build de producción (`vite preview`), CPU 6×,
+390×844, SW anulado, "Cargar mi registro", mediana de 5.
+
+**Cambio de pestaña** (ms hasta el 2º cuadro / bloqueo en 1,2 s):
+
+| Destino | Antes | Después |
+|---|---|---|
+| Entreno | 643 / 695 | 189 / 187 |
+| Comida | 366 / 330 | 159 / 107 |
+| Progreso | 432 / 535 | 375 / 380 |
+| Inicio | 528 / 515 | 306 / 349 |
+
+Causas, en orden de peso:
+1. **Entreno montaba los turnos cerrados**: ~990 de ~1130 elementos (538 de SVG)
+   en cajas `.day-collapse` de altura 0. Ahora el contenido se monta la primera
+   vez que se abre y queda montado (el cierre se sigue animando) —
+   `Rutina.jsx`, `SlotCard`, estado `visto`.
+2. **La pantalla entrante se re-renderizaba entera 3–4 veces por cambio** (y una
+   por cada pointermove del arrastre): App creaba un elemento nuevo en cada
+   render. Ahora reusa el suyo (`pantallas.current[tab] ??=`); cada pantalla
+   llama a `useStore()` sola, así que no pierde bumps — `App.jsx`, junto a
+   `pantallas`.
+3. **`pointer-events:none` en `.view.leave`** recalculaba el estilo de toda la
+   pantalla saliente (se hereda): 2,5 ms de 3,3 a 1× para 321 elementos. Ahora
+   es un escudo `.view.leave::after` — `styles.css`, junto a `.view.leave`.
+4. **Gráficos de Progreso**: se dibujaban 3 veces por visita (y en cada bump) por
+   `opts={{unit}}` y `pts` nuevos. `Chart.jsx` redibuja por una firma de los datos.
+5. **Inicio**: la silueta (~560 nodos SVG) se reconciliaba en cada bump (abrir o
+   cerrar una hoja). `BodyTile` con `memo` y comparación por valor.
+
+**Arranque**: fuentes precargadas (`index.html`, el 2º layout bajó 278 → 31 ms);
+el motor del anillo se prepara en reposo (tarea máx 442 → ~250 ms; el bloqueo
+total casi no cambió: ese trabajo se movió, no se eliminó).
+
+**Descanso**: el worker del anillo pinta sólo cuando la punta avanza 1 px real:
+~30 % → **3,6 %** de un núcleo a 6× durante todo el descanso (`anillo.worker.js`).
+
+**Bundle**: `LazyMotion` + `domAnimation` con `m` importado como `motion`
+(`main.jsx`, 7 archivos): 969,7 → **923,4 KB** (gzip 305 → 292). `strict` hace
+fallar a la vista un `motion` completo importado de nuevo.
+
+**Medido y descartado (no tocar sin razón nueva):**
+- Selectores CSS: con SelectorStats (puppeteer) el matching es ~7 % del
+  recálculo. El bloque `@supports` de respaldo de Tailwind v4 no aplica en Chrome.
+- Abrir/cerrar hoja (~250–330 ms): el estilo es barato (`:root:has(#sheet.open)`
+  0,2 ms); el resto es React montando la hoja + Inicio re-renderizando (bajado con 5).
+- Carrusel, `get scrollLeft` (`ExerciseCarousel.jsx:194`): el layout que fuerza
+  es el de la tarjeta que se achica al cambiar de ejercicio; ocurre en el
+  `useLayoutEffect` de `focusKey` o en un rAF, se haría igual en el cuadro.
+- `bodydata.js` (100 KB): coordenadas RELATIVAS; redondear acumula error por
+  trazo, para ganar ~4 KB gzip. No vale el riesgo en una PWA cacheada.
+- Íconos PNG (−325 KB posibles): no están en el precache (`globPatterns` sin
+  png), sólo se bajan al instalar.
+
+**Pulido visual** (skill redesign-existing-projects; ya cumplía tabular-nums,
+text-wrap, `:active` y `:focus-visible` globales):
+- Inicio, Tu cuerpo: frente y espalda lado a lado en la franja (antes una figura
+  de 49 px en un hueco de 320). Mismo DOM: las dos caras ya estaban montadas
+  para el giro. La espalda —lumbares, dorsales— se ve por fin en el vistazo.
+  Con aviso la fila se corre a la derecha (`:has(.ini-tile-hint)`). Medido a 390
+  y 430: sin solaparse con el aviso, Inicio sin scroll (844/844, 932/932).
+- Gráficos: la unidad ("kg") encabeza la columna del eje; en (2,12) el radio del
+  canvas le cortaba la "k" (`charts.ts`, `drawChart`).
+- Progreso: "+0.5 kg/sem" en su propia línea; bajaba con un "·" suelto.
+
+**Pendientes (con criterio):**
+- **Progreso sigue en ~375 ms** a 6×: React ~30 ms; el resto es estilo+layout de
+  ~320 elementos nuevos. La única palanca grande que queda es no desmontar
+  pantallas (`<Activity>` o `content-visibility:hidden`), que toca el sistema
+  saliente/PantallaCtx de `App.jsx` y `state.js` (G4). Aprobar sólo si una
+  traza muestra que el montaje sigue siendo >50 % del cambio.
+- **Registrar una serie**: primer cuadro 57–109 ms (bien); después 400–900 ms de
+  tareas (abrir el reloj de descanso, viaje del carrusel). `alarm.js` aparece
+  con ~13 ms por serie a 6×. Sin causa evitable encontrada todavía.
+- Herramientas de medición en el scratchpad de la sesión (`inclusivo.mjs`,
+  `perfil.mjs`, `traza.mjs`, `donde.mjs`, `selstats.cjs`): los perfiles se
+  filtran por el `id` del Profile del hilo CrRendererMain (antes mezclaban el SW).
+
+---
+
 ## SESIÓN 2026-10-01 — La sesión en vivo que se rompió (Posterior)
 
 Enzo, en el gimnasio: abrió la sesión, le salió el calentamiento (rotación externa,
