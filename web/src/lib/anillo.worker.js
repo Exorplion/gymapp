@@ -19,6 +19,14 @@ import { progresoEn } from './anillo.js';
 let lienzo = null, ctx = null;
 let orden = null;      // { tramos, ms, inicio, colores }
 let cuadroPedido = 0;
+/* Lo último que se pintó. Un descanso de 2 min a 720 px de lienzo mueve la
+   punta del arco ~0,3 px por cuadro: redibujar los 60 cuadros por segundo era
+   pintar casi siempre lo mismo (medido a 6×: ~30 % de un núcleo durante todo
+   el descanso, que es media sesión de gimnasio). Ahora un cuadro sólo pinta
+   si la punta avanzó al menos un píxel real; los tramos rápidos (la llegada
+   suave, el cierre al sonar) siguen pintándose en cada cuadro. */
+let pintado = { p: -1, colores: null };
+let degradado = { clave: '', g: null };
 
 // performance.now() del worker y el de la página tienen orígenes distintos;
 // timeOrigin + now() es un reloj común a los dos.
@@ -41,21 +49,38 @@ function dibujar(p, colores) {
   ctx.lineCap = 'round';
   if (colores.solido) ctx.strokeStyle = colores.solido;
   else {
-    const g = ctx.createLinearGradient(-88, -88, 88, 88);
-    g.addColorStop(0, colores.a);
-    g.addColorStop(1, colores.b);
-    ctx.strokeStyle = g;
+    // El degradado vive en coordenadas del arco, que no cambian: se arma una
+    // vez por par de colores, no en cada cuadro.
+    const clave = `${colores.a}|${colores.b}`;
+    if (degradado.clave !== clave) {
+      const g = ctx.createLinearGradient(-88, -88, 88, 88);
+      g.addColorStop(0, colores.a);
+      g.addColorStop(1, colores.b);
+      degradado = { clave, g };
+    }
+    ctx.strokeStyle = degradado.g;
   }
   ctx.beginPath();
   ctx.arc(0, 0, 88, 0, 2 * Math.PI * Math.min(1, p));
   ctx.stroke();
 }
 
+/** Cuánto del arco es un píxel del lienzo (la circunferencia, r 88 en el
+    viewBox de 200, medida en píxeles reales). */
+const unPixel = () => 1 / (2 * Math.PI * 88 * (lienzo ? lienzo.width / 200 : 1));
+
+function pintar(p, colores) {
+  dibujar(p, colores);
+  pintado = { p, colores };
+}
+
 function cuadro() {
   cuadroPedido = 0;
   if (!orden) return;
   const f = (ahora() - orden.inicio) / orden.ms;
-  dibujar(progresoEn(orden.tramos, f), orden.colores);
+  const p = progresoEn(orden.tramos, f);
+  const igual = pintado.colores === orden.colores && Math.abs(p - pintado.p) < unPixel();
+  if (!igual || f >= 1) pintar(p, orden.colores);
   if (f < 1) cuadroPedido = pedirCuadro(cuadro);
   else orden = null;
 }
@@ -76,7 +101,7 @@ self.onmessage = ({ data: m }) => {
     if (!cuadroPedido) cuadroPedido = pedirCuadro(cuadro);
   } else if (m.tipo === 'quieto') {
     parar();
-    dibujar(m.p, m.colores);
+    pintar(m.p, m.colores);
   } else if (m.tipo === 'pausa') {
     parar();
   }

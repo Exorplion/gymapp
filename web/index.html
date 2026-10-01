@@ -6,6 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#101113" />
     <title>FIERRO</title>
+    <!-- Las seis caras de styles.css, pedidas ya: sin esto el navegador recién
+         las descubre en el primer layout, pinta con la fuente de respaldo y
+         cuando llegan vuelve a acomodar la página entera (278 ms a 6×, y el
+         texto cambia de forma a la vista). El JS tarda más que ellas en
+         arrancar, así que llegan antes del primer render. -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/src/assets/fonts/barlow-latin-400-normal.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/src/assets/fonts/barlow-latin-600-normal.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/src/assets/fonts/barlow-latin-700-normal.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/src/assets/fonts/barlow-condensed-latin-700-normal.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/src/assets/fonts/barlow-condensed-latin-800-normal.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/src/assets/fonts/barlow-condensed-latin-800-italic.woff2" />
   </head>
   <body>
     <div id="root"></div>
