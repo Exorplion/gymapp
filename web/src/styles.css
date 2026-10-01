@@ -813,7 +813,14 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 /* `opacity:0` se queda como estado final y como red de seguridad: si la
    animación no corre (reduced-motion la reduce a ~0ms), la saliente sigue
    invisible igual que antes y nunca se superpone con la entrante. */
-.view.leave{position:relative;z-index:0;pointer-events:none;opacity:0}
+.view.leave{position:relative;z-index:0;opacity:0}
+/* Sin toques en la saliente, con un escudo encima y NO con pointer-events:none
+   en la .view: esa propiedad se hereda, y ponerla en la raíz de la pantalla
+   obliga a recalcular el estilo de cada elemento de adentro en el mismo
+   cuadro en que se monta la nueva (medido, auditoría 2026-10: 2,5 ms de 3,3 a
+   1× para 321 elementos, ~80 % del costo de cambiarle la clase). El escudo
+   es un solo elemento: se recalcula él y nada más. */
+.view.leave::after{content:"";position:absolute;inset:0;z-index:2147483647}
 .view.leave.dir-r{animation:pushOutR var(--d3) var(--ease-push) both}
 .view.leave.dir-l{animation:pushOutL var(--d3) var(--ease-push) both}
 @media (prefers-reduced-motion:reduce){
@@ -3808,6 +3815,21 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 /* 100 y no 112 (tanda D): los 12 px son los que pagan el aire entre grupos
    sin que Inicio pida scroll a 390×844. */
 .ini-tile-thumb{display:flex;height:100px;position:relative;z-index:1}
+/* Frente Y espalda, lado a lado. La franja es ancha y baja (321×96 a 390 px):
+   el alto es el que limita, así que una sola figura quedaba de 49 px de ancho
+   en el medio de un hueco de 320 — y la espalda, donde viven los avisos
+   como "Hace tiempo no entrenás Lumbares", no se veía nunca. Dos figuras se
+   dibujan del MISMO tamaño que una, con el mismo DOM (las dos caras ya
+   estaban montadas, espalda contra espalda, para el giro de la hoja grande).
+   Acá no se gira (interactivo=false): las caras se sacan del 3D y se ponen en
+   fila. Con aviso, la fila se corre a la derecha para dejarle su esquina. */
+.ini-tile-thumb .sil-flip{
+  display:flex;justify-content:center;gap:var(--s3);
+  transform:none !important;transform-style:flat;will-change:auto;
+}
+.ini-tile-thumb .sil-face{position:relative;inset:auto;flex:0 0 72px;backface-visibility:visible}
+.ini-tile-thumb .sil-face.atras{transform:none}
+.ini-tile-body:has(.ini-tile-hint) .ini-tile-thumb .sil-flip{justify-content:flex-end;padding-right:var(--s4)}
 /* Todas con el mismo esqueleto: rótulo arriba a la izquierda, la cifra justo
    debajo, y la línea de apoyo (fecha, barra, "hace N días") abajo del todo.
    Así en cada fila los rótulos y las cifras quedan a la misma altura. */

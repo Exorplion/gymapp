@@ -49,14 +49,20 @@ export default function Chart({ pts, opts, id }) {
     bloomOpen(cvRef.current);
   }, [pts]);
 
+  /* Redibujar cuando cambian los DATOS, no la identidad de los arrays: quien
+     llama arma `pts` y `opts={{ unit }}` de nuevo en cada render, y cada
+     bump() de la app redibujaba los dos canvas de Progreso aunque nada
+     hubiera cambiado (auditoría 2026-10). */
+  const firma = (pts || []).map(p => `${p.date}:${p.y}:${p.r ?? ''}`).join('|') + '#' + (opts?.unit ?? '');
   useEffect(() => {
     const cv = cvRef.current;
     if (!cv) return;
-    cv._opts = opts;
+    const { pts: p, opts: o } = latest.current;
+    cv._opts = o;
     // Sin tamaño todavía (recién montado) dibuja el ResizeObserver. Sin
     // ResizeObserver (navegador viejo) se dibuja acá, midiendo.
-    if (tam.current || typeof ResizeObserver === 'undefined') drawChart(cv, pts, opts, tam.current);
-  }, [pts, opts]);
+    if (tam.current || typeof ResizeObserver === 'undefined') drawChart(cv, p, o, tam.current);
+  }, [firma]);
 
   useEffect(() => {
     const cv = cvRef.current;

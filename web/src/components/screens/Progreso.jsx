@@ -100,8 +100,11 @@ export default function Progreso() {
               <div className="text-text-2 text-sm mt-1">
                 {wk && wk.curAvg != null ? `último ${fmtKg(round1(lastW.weight))}, ` : `${fmtNum(kg2lb(lastW.weight))}${NBSP}lb, `}
                 {fmtDFull(lastW.date)}
+                {/* La tendencia va en su propia línea: al lado de la fecha
+                    no entraba a 390 px (el botón de registro come la mitad
+                    del ancho) y bajaba sola empezando con un "·" suelto. */}
                 {wk && wk.delta != null && (
-                  <> <span className="whitespace-nowrap">·{NBSP}<b className={wk.delta <= 0 ? 'text-ok' : 'text-accent'}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></span></>
+                  <div><b className={wk.delta <= 0 ? 'text-ok' : 'text-accent'}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></div>
                 )}
               </div>
             )}

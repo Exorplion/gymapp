@@ -6,10 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#101113" />
     <title>FIERRO</title>
-    <script type="module" crossorigin src="./assets/index-CRnZO8RG.js"></script>
+    <!-- Las seis caras de styles.css, pedidas ya: sin esto el navegador recién
+         las descubre en el primer layout, pinta con la fuente de respaldo y
+         cuando llegan vuelve a acomodar la página entera (278 ms a 6×, y el
+         texto cambia de forma a la vista). El JS tarda más que ellas en
+         arrancar, así que llegan antes del primer render. -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="./assets/barlow-latin-400-normal-qiz4-Cze.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="./assets/barlow-latin-600-normal-DILqtrty.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="./assets/barlow-latin-700-normal-A9pxMQ4z.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="./assets/barlow-condensed-latin-700-normal-v1xN8_Wq.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="./assets/barlow-condensed-latin-800-normal-BKzMuPgK.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="./assets/barlow-condensed-latin-800-italic-Cnej2eWp.woff2" />
+    <script type="module" crossorigin src="./assets/index-BimVNE-W.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/react-mKr9-DnF.js">
     <link rel="modulepreload" crossorigin href="./assets/format-BMDIWDCy.js">
-    <link rel="stylesheet" crossorigin href="./assets/index-CeBDDDGw.css">
+    <link rel="stylesheet" crossorigin href="./assets/index-Ddm4ohnU.css">
   <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script></head>
   <body>
     <div id="root"></div>

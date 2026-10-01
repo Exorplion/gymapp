@@ -137,8 +137,17 @@ export default function RestTimer() {
   const sonabaAntes = useRef(false);
   // Los colores del anillo se leen en un momento ocioso, no en el toque que
   // abre el descanso (ver coloresAnillo).
+  /* El motor del anillo también se prepara acá, ocioso, y no en el efecto de
+     abajo: transferControlToOffscreen() obliga a tener el layout al día, y en
+     el primer render de la app (el efecto corría al montar, sin ningún
+     descanso) eso era hacer el layout de TODA la pantalla de golpe: 572 ms a
+     6×, el 65 % del JS del arranque (traza del 2026-10-01). En un momento
+     ocioso el navegador ya hizo ese layout y la transferencia no cuesta nada. */
   useEffect(() => {
-    const leer = () => { if (ringRef.current) coloresAnillo(ringRef.current, false); };
+    const leer = () => {
+      if (ringRef.current) coloresAnillo(ringRef.current, false);
+      motorAnillo(lienzoRef.current);
+    };
     if (typeof requestIdleCallback === 'function') {
       const id = requestIdleCallback(leer);
       return () => cancelIdleCallback(id);
@@ -184,6 +193,13 @@ export default function RestTimer() {
   const corriendo = T.state === 'fullscreen' || T.state === 'minimized';
   useEffect(() => {
     const anillo = ringRef.current, barra = fillRef.current;
+    if (!sonandoAhora && !corriendo) {
+      // Se cortó o se saltó (o la app recién abre): el anillo se queda donde
+      // estaba para el próximo. Sin crear el motor si todavía no existe.
+      quieto.current = progresoAhora(); plan.current = null;
+      motores.get(lienzoRef.current)?.pausa();
+      return;
+    }
     const motor = motorAnillo(lienzoRef.current);
     if (sonandoAhora) {
       const previo = progresoAhora();
@@ -195,12 +211,6 @@ export default function RestTimer() {
       }
       const tramos = [{ offset: 0, p: previo, easing: CIERRE }, { offset: 1, p: 1, easing: 'linear' }];
       if (motor) motor.tramo(tramos, 900, colores); else animarTramo(anillo, PINTA_ANILLO, tramos, 900);
-      return;
-    }
-    if (!corriendo) {
-      // Se cortó o se saltó: el anillo se queda donde estaba para el próximo.
-      quieto.current = progresoAhora(); plan.current = null;
-      motor?.pausa();
       return;
     }
     const { desde, ms } = tramoAnillo();

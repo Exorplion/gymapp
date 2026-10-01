@@ -12,7 +12,7 @@
 // Paneles con el vidrio de la app (.card), sin clases de apariencia nuevas
 // que peleen con él. Al tocar Empezar la previa sale con un fundido corto
 // (AnimatePresence en ExerciseSlide) mientras la tarjeta se despliega.
-import { motion } from 'motion/react';
+import { m as motion } from 'motion/react';
 import { S, wDisplay } from '../lib/state.js';
 import { sparkPuntos, metaPartes, cambioTexto } from '../lib/previa.js';
 import { diasTexto } from '../lib/muscle.js';

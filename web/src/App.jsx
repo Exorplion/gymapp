@@ -381,8 +381,18 @@ export default function App() {
      suyo (ver el comentario en el JSX de main): mismo objeto = React no la
      vuelve a renderizar mientras se va. */
   const pantallas = useRef({});
-  const entrante = pantallaCon(store.tab);
-  pantallas.current[store.tab] = entrante;
+  /* Y la entrante también reusa el suyo: un elemento nuevo en cada render de
+     App la volvía a renderizar ENTERA en cada uno, y App renderiza 3–4 veces
+     por cambio de pestaña (el cambio, la saliente, listoParaAnimar, la
+     saliente que se va) y una por cada pointermove del arrastre. Medido en
+     Progreso: los dos gráficos se dibujaban tres veces por visita (auditoría
+     2026-10). No pierde actualizaciones: cada pantalla llama a useStore()
+     ella misma, así que un bump() la re-renderiza igual. */
+  const entrante = pantallas.current[store.tab] ??= pantallaCon(store.tab);
+  /* La vecina del arrastre, lo mismo: un elemento por destino, no uno por
+     cada movimiento del dedo. */
+  const destinoArrastre = arrastre?.destino ?? null;
+  const vecina = useMemo(() => destinoArrastre && pantallaDe(destinoArrastre), [destinoArrastre]);
   /* La saliente tiene que estar YA en el render del cambio de pestaña, no
      recién en el siguiente (el de setSaliente, en el useLayoutEffect de
      arriba): si en ese primer commit su key desaparece aunque sea una vez,
@@ -593,8 +603,9 @@ export default function App() {
         onPointerCancel={alSoltar}
       >
         {/* La saliente va PRIMERO en el DOM (así la entrante, montada después,
-            queda arriba en el stacking normal) y con pointer-events:none —
-            es puramente decorativa mientras se termina de ir.
+            queda arriba en el stacking normal) y con un escudo encima que
+            se traga los toques (.view.leave::after, styles.css) — es
+            puramente decorativa mientras se termina de ir.
 
             Es la MISMA pantalla que estaba en pantalla, no una copia (G4,
             auditoría 2026-09): lleva la misma key que tenía como entrante,
@@ -623,7 +634,7 @@ export default function App() {
             className={`view vecino${arrastre.soltando ? ' soltando' : ''}`}
             style={{ transform: `translateX(${arrastre.dx + (arrastre.dx < 0 ? arrastre.ancho : -arrastre.ancho)}px)` }}
           >
-            {pantallaDe(arrastre.destino)}
+            {vecina}
           </div>
         )}
         {/* El `key` es lo que hace que la animación se repita: sin él React

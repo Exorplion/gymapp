@@ -20,7 +20,7 @@
 // casilleros lun-dom sino en una SECUENCIA que avanza sólo cuando entrenás
 // (ver rutina-logic.js). Esta tira no muestra el plan, muestra los hechos, y
 // los hechos sí tienen fecha. El plan se ve y se edita en Rutina.
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { S, useStore, openSheet, changeTab, esDiaLibre } from '../../lib/state.js';
 import { dstr, fmtD, fmtKg, fmtNum, round1 } from '../../lib/format.js';
 import { pendingSlot, sesionDeHoy, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
@@ -160,7 +160,7 @@ export default function Inicio() {
       </div>
 
       <div className="ini-grid" ref={gridRef}>
-        <BodyTile dias={dias} viejos={viejos} porciones={porciones} />
+        <BodyTile dias={dias} viejos={viejos} porciones={porciones} sexo={S.cfg.bodySex || S.cfg.profile?.sex} />
         <RachaTile racha={racha} />
         <StaleTile grupos={viejos} dias={dias} />
         <MacrosTile />
@@ -279,7 +279,16 @@ function MemoriaLine({ slot }) {
     mapa completo al tocar. No es un botón con texto porque el propio
     dibujo ya dice de qué se trata — un ícono nunca va a explicar esto mejor
     que el cuerpo real coloreado. */
-function BodyTile({ dias, viejos, porciones }) {
+/* Memo con comparación por VALOR: Inicio arma `dias` y `porciones` de nuevo
+   en cada render, y cada bump() (abrir una hoja, cerrar otra) volvía a
+   reconciliar la silueta entera —~560 nodos SVG, la mayor parte de la
+   pantalla— para pintar exactamente lo mismo (auditoría 2026-10). `sexo`
+   viaja como prop porque Silhouette elige la lámina leyendo S.cfg. */
+const mismoPlano = (a, b) => {
+  const ka = Object.keys(a || {});
+  return ka.length === Object.keys(b || {}).length && ka.every(k => a[k] === b[k]);
+};
+const BodyTile = memo(function BodyTile({ dias, viejos, porciones }) {
   return (
     <button type="button" className="ini-tile ini-tile-body luz" onClick={() => openSheet('body-map')}>
       <div className="ini-tile-lbl">Tu cuerpo<span className="ini-tile-go">Ver mapa ›</span></div>
@@ -287,7 +296,7 @@ function BodyTile({ dias, viejos, porciones }) {
       {viejos.length > 0 && <div className="ini-tile-hint">Hace tiempo no entrenás {viejos[0]}</div>}
     </button>
   );
-}
+}, (a, b) => a.sexo === b.sexo && a.viejos[0] === b.viejos[0] && mismoPlano(a.dias, b.dias) && mismoPlano(a.porciones, b.porciones));
 
 function RachaTile({ racha }) {
   // Cuenta ascendente del número de racha al montar Inicio — el mismo touch

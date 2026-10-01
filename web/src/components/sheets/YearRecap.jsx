@@ -3,7 +3,7 @@
 // Strava Year in Sport. yearRecap() (session.js) ya sintetiza todos los
 // números; acá sólo se presentan como tarjetas con "juice" de motion,
 // coherente con el resto de la app.
-import { motion } from 'motion/react';
+import { m as motion } from 'motion/react';
 import { hojaProps, seccion } from '../../lib/variants.js';
 import { yearRecap } from '../../lib/session.js';
 import { fmtKg, fmtD, round1 } from '../../lib/format.js';

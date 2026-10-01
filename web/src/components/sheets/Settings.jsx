@@ -41,7 +41,7 @@ import { storageEstimate, daysSinceBackup, necesitaBackup } from '../../lib/pers
 import { exportFoodsMD, importFoodsMD } from '../../lib/foodmd.js';
 import { toast } from '../../lib/toast.js';
 import { PRESETS, acentoDe, acentoGuardado, aplicarAcento, alejarDeEstados, distanciaMatiz, hexAOklch, variablesDe } from '../../lib/theme.js';
-import { motion } from 'motion/react';
+import { m as motion } from 'motion/react';
 import { hojaProps, seccion } from '../../lib/variants.js';
 import AvisosAjustes from '../AvisosAjustes.jsx';
 import { Alerta, Check, Descargar, Pencil, Probeta, Recargar, Subir } from '../Icon.jsx';

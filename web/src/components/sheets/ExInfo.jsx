@@ -4,7 +4,7 @@
 // esquema de sets/reps se busca recorriendo TODOS los días de S.routine por
 // exId, no sólo `wd`.
 import { useRef } from 'react';
-import { motion } from 'motion/react';
+import { m as motion } from 'motion/react';
 import { hojaProps, seccion } from '../../lib/variants.js';
 import { illusUrl } from '../../lib/illustrations.js';
 import { equipLabel } from '../../lib/equip.js';
