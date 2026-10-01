@@ -307,7 +307,10 @@ export function drawChart(cv: ChartCanvas, pts: ChartPoint[], opts: DrawChartOpt
   const span = t1 - t0 || 1;
   const X = (d: string) => P.l + (W - P.l - P.r) * ((+new Date(d + 'T00:00:00')) - t0) / span;
   const Y = (v: number) => P.t + (H - P.t - P.b) * (1 - (v - mn) / (mx - mn));
-  if (opts.unit) { x.font = '600 11px Barlow, sans-serif'; x.fillStyle = c.texto2; x.textAlign = 'left'; x.fillText(opts.unit, 2, 12); }
+  // La unidad encabeza la columna de las marcas del eje (misma x, alineada a
+  // la derecha). En (2, 12) caía dentro de la esquina redondeada del canvas
+  // y el radio le cortaba el trazo de arriba a la "k".
+  if (opts.unit) { x.font = '600 11px Barlow, sans-serif'; x.fillStyle = c.texto2; x.textAlign = 'right'; x.fillText(opts.unit, P.l - 8, 12); }
   x.font = '400 11px Barlow, sans-serif';
   x.strokeStyle = c.grilla; x.lineWidth = 1;
   for (const v of escala.marcas) {
