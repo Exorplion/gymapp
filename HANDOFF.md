@@ -1,6 +1,82 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-09-29
+**Última actualización:** 2026-10-01
+
+---
+
+## SESIÓN 2026-10-01 — La sesión en vivo que se rompió (Posterior)
+
+Enzo, en el gimnasio: abrió la sesión, le salió el calentamiento (rotación externa,
+face pull), bloqueó el teléfono y Android cerró la app. Al volver no había
+calentamiento, sólo "Empezar rutina". Después las tarjetas se veían "raras" y en un
+ejercicio la rueda de peso/reps "hizo glitch, aparecían muchos números, no dejaba
+registrar y al cerrarla seguía igual". Tres capturas (Curl predicador, Pájaros,
+Remo neutro). Rama `fix/sesion-en-vivo`, **1117 tests**. Cuatro causas, todas
+reproducidas en Chrome antes de tocar nada:
+
+1. **Tarjeta desbordada** (capturas de Pájaros y Remo). `.ex-live` se pliega con
+   `grid-template-rows` y no tenía `grid-template-columns`: la columna implícita
+   `auto` crece al ancho mínimo del contenido, y "Meta de hoy" es `nowrap`. Con la
+   meta larga ("~62.7 kg × 9 · 80% de tu 1RM estimado · +5%…") la parte en vivo
+   medía **509 px dentro de una tarjeta de 359**: el botón "Después", la rueda de
+   reps y el botón de registrar quedaban afuera — por eso la rueda de reps "no
+   funcionaba": su número elegido estaba fuera de la vista. Con meta corta (Curl
+   predicador) no pasaba. **Arreglo:** `minmax(0,1fr)` en las 8 cajas que se
+   pliegan por filas (`.ex-pre`, `.ex-live`, `.ex-rampa-pliegue`, `.ex-rampa-ok`,
+   `.day-body`, `.rfs-rir-caja`, `.day-collapse`, `.hero-slot`). Test que lo cuida.
+2. **La rueda camina sola** (captura de Curl predicador: el peso quedó en 2.5, el
+   mínimo, sin vecinos a la derecha). Tocar el número para escribirlo metía el
+   `<input>` adentro del diente con `width:auto` → 197 px. El centrado
+   (`idx × 44`) dejaba de valer, el snap movía la pista, el eco del scroll se leía
+   como arrastre y commiteaba otro valor, la edición saltaba a ese diente
+   (remontando el input y perdiendo el foco). Medido: **9 → 3 → 1 sin tocar
+   nada**, sin foco (no se podía escribir) y sin blur (nunca salía del modo
+   edición). **Arreglo:** el campo (`.reel-edit`) flota encima de la rueda, el
+   diente queda con su ancho (escondido), `onScroll` se ignora mientras se
+   escribe y al cerrar la edición la pista vuelve a su diente.
+3. **"Serie 3 de 2"** (Pájaros 2×9 unilateral). "Una serie más" sumaba UNA fila
+   (un lado): 5 filas = 2½ series. **Arreglo:** `extraSets` cuenta en series y
+   `targetSets` las duplica igual que las de la rutina; `dropSet` saca los dos
+   lados y nunca deja un lado hecho sin pareja. Un borrador viejo se lee igual.
+4. **El calentamiento desaparecía.** Vivía sólo en la hoja. **Arreglo:** el
+   borrador guarda `calent: { pendiente, hechos }`; App.jsx reabre la hoja al
+   arrancar mientras siga pendiente (y no haya otra hoja), con los tildes. Se
+   cierra para siempre con "A entrenar", "Saltar calentamiento" o al empezar el
+   primer ejercicio (`calentamientoPendiente/tildarCalentamiento/cerrarCalentamiento`
+   en session.js).
+
+Verificado en el build de producción (preview :4201, SW anulado con initScript,
+"Cargar mi registro", reloj +1 día) a 390×844 y 430×932: tarjeta 340/375 con la
+parte en vivo 306/342 aun con una meta larga inyectada, ningún hijo pasa el borde;
+Hoy en vivo sin scroll (844/844, 932/932); editar peso (51) y reps (11) sin que la
+pista se mueva, con foco, y el botón anota "51 kg × 11"; unilateral 2 series → "+
+Una serie más" → "Serie 3 de 3", "3 × 9 +1", se cierra en "3 de 3"; calentamiento
+con un tilde → recargar → vuelve la hoja con el tilde → "A entrenar" → no vuelve.
+Capturas en el scratchpad de la sesión (`antes-desborde.png`, `despues-desborde.png`,
+`prod-430-tarjeta.png`).
+
+**Pendientes chicos del 2026-09-29, revisados contra el código:**
+- E7 (nombre del turno de 28 px): **vencido**, ya mide 40 px desde G11 (medido).
+- A3 (puntos de la vista previa del acento): **vencido**, esos puntos no existen
+  desde el rediseño de color (#125). Lo que quedaba (chip y botón de muestra) ahora
+  tiene `pointer-events:none`.
+- `.nav-card`: **borrada** del CSS (queda `.nav-card-ico`, que sí se usa). CLAUDE.md
+  y DESIGN.md ya no la recomiendan: la fila tocable es `.group` + `.grouprow`.
+
+**Pendientes (de Enzo, no de código):**
+1. Probar en el teléfono, en una sesión real: tocar el número de la rueda y escribir
+   (que aparezca el teclado numérico y el campo no se mueva); bloquear el teléfono
+   con el calentamiento abierto y volver.
+2. Siguen sin probar en el teléfono: long-press del asistente, "atrás" de Android,
+   vibración de la rampa, vidrio del header.
+3. Sin aprobar: respaldo en la nube (Google Drive). No se empieza sin su sí.
+
+Trampas:
+- En Python sobre Windows, un reemplazo que ya trae `\r\n` y se le vuelve a hacer
+  `.replace('\n', '\r\n')` deja `\r\r\n`: git pasa a ver el archivo como binario
+  (`git ls-files --eol` → `w/-text`) y el diff marca el archivo entero.
+- La rampa cambia el botón a "Aprox. …" con el peso del paso: no lee las ruedas.
+  Para verificar lo que anota una rueda hay que saltar la rampa primero.
 
 ---
 

@@ -129,6 +129,11 @@ export default function ReelPicker({
 
   function onScroll() {
     clearTimeout(timerRef.current);
+    /* Escribiendo a mano, la rueda no elige nada: cualquier scroll en ese
+       momento es un eco (el teclado que sube y reacomoda la página, el snap
+       que se re-evalúa), nunca el dedo. Antes ese eco se leía como un
+       arrastre y commiteaba otro número (ver el diente en edición, abajo). */
+    if (editing) return;
     // Se lee el diente centrado 120ms después de que el scroll se queda
     // quieto — un throttle continuo sobre scroll dispararía onChange (y su
     // re-render) decenas de veces por gesto.
@@ -183,8 +188,19 @@ export default function ReelPicker({
     e?.stopPropagation();
     setEditing(true);
   }
+  const editoAntes = useRef(false);
   useEffect(() => {
     if (editing) { inputRef.current?.focus(); inputRef.current?.select(); }
+    /* Al cerrar la edición, la pista vuelve a su diente aunque el número no
+       haya cambiado: si mientras escribías el dedo la corrió, el scroll de
+       ese rato no contó (onScroll lo ignora) y no puede quedar mostrando
+       otro número que el guardado. */
+    else if (editoAntes.current) {
+      const idx = valuesRef.current.indexOf(onValue);
+      if (idx >= 0) reelCenter(scrollerRef.current, idx);
+    }
+    editoAntes.current = editing;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing]);
   function commitEdit() {
     const raw = inputRef.current?.value;
@@ -211,21 +227,17 @@ export default function ReelPicker({
       >
         {values.map((v, i) => {
           const on = v === onValue;
+          /* Editando, el diente centrado queda en su lugar y con su ancho
+             (sólo se esconde): el campo va ENCIMA de la rueda, afuera de la
+             pista. Antes el <input> vivía adentro del diente con width:auto
+             y lo ensanchaba a su ancho propio (197 px medidos): la cuenta de
+             centrado (idx × 44) dejaba de valer, el snap movía la pista, el
+             eco de ese scroll commiteaba otro valor y la edición saltaba a
+             otro diente — que remontaba el input y perdía el foco. La rueda
+             caminaba sola (9 → 3 → 1) sin que se pudiera escribir ni salir
+             (Enzo, sesión en vivo del 2026-10-01). */
           if (on && editing) {
-            return (
-              <div key={i} className="reel-tooth on editing">
-                <input
-                  ref={inputRef}
-                  type="number"
-                  inputMode="decimal"
-                  step="any"
-                  defaultValue={toUnit(val)}
-                  onBlur={commitEdit}
-                  onKeyDown={onEditKeyDown}
-                  onClick={e => e.stopPropagation()}
-                />
-              </div>
-            );
+            return <div key={i} className="reel-tooth on editing" aria-hidden="true">{fmt ? fmt(val) : val}</div>;
           }
           // El diente centrado muestra `val` (el valor real elegido), NO
           // `v` (el múltiplo de `step` de ESE diente en particular): si
@@ -257,6 +269,20 @@ export default function ReelPicker({
           );
         })}
       </div>
+      {editing && (
+        <input
+          ref={inputRef}
+          className="reel-edit"
+          type="number"
+          inputMode="decimal"
+          step="any"
+          aria-label={label}
+          defaultValue={toUnit(val)}
+          onBlur={commitEdit}
+          onKeyDown={onEditKeyDown}
+          onClick={e => e.stopPropagation()}
+        />
+      )}
       {fineOpen && (
         <FineReel
           value={val}

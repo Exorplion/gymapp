@@ -261,7 +261,7 @@ y una sombra `rgba(var(--shade-rgb),α)`.
 ### Primary Foundation (base grafito)
 - **Grafito de fondo** (`neutral`, `#101113`): el piso de toda la app, `body`.
 - **Grafito de tarjeta** (`surface`, `#18191c`): superficie opaca, base de las hero.
-- **Grafito de control** (`surface-2`, `#202125`): chips, campos, `nav-card`, `.group`, botones fantasma, la insignia del día en el historial.
+- **Grafito de control** (`surface-2`, `#202125`): chips, campos, `.group`, botones fantasma, la insignia del día en el historial.
 - **Vidrio ahumado** (`glass`): la superficie *tarjeta*, siempre con `backdrop-filter`.
 - **Vidrio denso** (`glass-strong`): la superficie *flotante*; va sobre contenido que se mueve.
 - **Hilo** (`line`) e **hilo fuerte** (`line-2`): divisores y bordes.
@@ -384,7 +384,7 @@ componente escribe la suya:
 |---|---|---|---|
 | **Flotante** | `--sup-flota-bg/-blur/-borde/-sombra` | grafito al 90 % · `blur(24px) saturate(1.2)` · hilo blanco al 14 % · arista + `0 22px 50px -20px` | header (como barra: sin radio, borde sólo abajo, sin sombra), barra de pestañas, hojas y diálogos, `#restbar`, barra de la sesión en vivo, aviso (`#toast`), ficha de músculo |
 | **Tarjeta** | `--sup-tarjeta-bg/-blur/-borde/-sombra` | vidrio al 66 % + brillo metálico arriba · `blur(22px) saturate(1.2)` · borde blanco al 10 % · arista + `0 14px 34px -18px` | `.card` (y `.hero`, `.sub`, `.previa-panel`), `.ini-tile`, `.day-card`, `.dcard`, bloques de Plan de hoy |
-| **Control** | `--sup-control-bg/-borde` | `surface-2` sólido · hilo fuerte (`line-2`) · sin sombra ni blur | `.group`/`.grouprow`, `.nav-card`, `.seg`, `.calcbox`, campos, chips, `.icon-btn`, `.reg-btn`, `.btn.ghost/.dim`, `<Card>` de primitives |
+| **Control** | `--sup-control-bg/-borde` | `surface-2` sólido · hilo fuerte (`line-2`) · sin sombra ni blur | `.group`/`.grouprow`, `.seg`, `.calcbox`, campos, chips, `.icon-btn`, `.reg-btn`, `.btn.ghost/.dim`, `<Card>` de primitives |
 
 La **arista** es la misma en los dos vidrios: luz del acento arriba al 22 %,
 sombra abajo al 50 %. Una sola dirección de luz para toda la app.
@@ -431,7 +431,7 @@ chips y puntos. Nada con esquina viva.
 - **Tarjeta** (`.card`): superficie *tarjeta*, radio 18, padding 16.
 - **Hero** (`.card.hero`): la misma tarjeta con radio 26, padding 20 (24 en Entreno, Comida y Progreso) y **la luz de la pantalla** encima (ver Elevation).
 - **Tarjeta de Inicio** (`.ini-tile`): superficie *tarjeta*, sin tinte ni reflejo; rótulo en plomo con rayita ceniza, cifra en tiza. La del cuerpo lleva `.luz`.
-- **Fila tocable** (V9, una sola en toda la app): `.group` + `.grouprow` — ícono SVG de 18 px en su cajita de 38 (`.nav-card-ico`, trazo en el acento; `.warn`/`.ok` para una fila de estado), título Barlow 15/600 + subtítulo 13 plomo debajo, chevron. "Mis rutinas", "Mis gimnasios", "Registrar por voz", "Calcular mis macros" / el perfil. `.nav-card` sigue en el CSS pero ya no se usa.
+- **Fila tocable** (V9, una sola en toda la app): `.group` + `.grouprow` — ícono SVG de 18 px en su cajita de 38 (`.nav-card-ico`, trazo en el acento; `.warn`/`.ok` para una fila de estado), título Barlow 15/600 + subtítulo 13 plomo debajo, chevron. "Mis rutinas", "Mis gimnasios", "Registrar por voz", "Calcular mis macros" / el perfil. (`.nav-card`, la fila suelta, se borró del CSS el 2026-10-01.)
 - **Turno** (`.day-card`): superficie *tarjeta*, insignia numerada a la izquierda; el de descanso con el mismo `.day-headrow`.
 - **Lista agrupada** (`.group` + `.grouprow`): grafito de control, filas de 56 px con hilo entre ellas. `.grouprow-v` (el valor a la derecha) va en acento porque ahí vive también el estado de los interruptores ("Sí"/"No"). **Fila de estado** (`.grouprow-estado`): no se toca entera, la acción es un `.chip` a la derecha (la descarga en Entreno).
 - **Fila de sesión** (`SessionCard`, `.grouprow.sess-row` en un `.group` por semana): insignia del día en grafito de control, arriba el turno en condensada 18 y la fecha a la derecha en plomo, abajo "21 series · 7285 kg de volumen" en plomo; el trofeo en ámbar sólo si hubo PR. 64 px de alto (antes una tarjeta de 115 con la lista de ejercicios).

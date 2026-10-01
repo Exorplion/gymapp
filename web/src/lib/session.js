@@ -493,8 +493,14 @@ export function nextPending(list) {
     `ex.unilateral` a secas: respeta el override de sólo-hoy igual que el
     resto del archivo. */
 export function targetSets(ex) {
-  const base = (ex?.sets || 0) * (isUnilateral(ex) ? 2 : 1);
-  return base + (S.draft?.extraSets?.[ex?.id] || 0);
+  /* Las extra cuentan en SERIES, como las de la rutina: "una serie más" en un
+     unilateral son los dos lados. Antes se sumaban como filas, así que un
+     2×9 unilateral con una más quedaba en 5 filas = 2½ series — la tarjeta
+     pedía "Serie 3 de 2" y nunca se cerraba entera (Enzo, Pájaros,
+     2026-10-01). Un borrador viejo con extras ya guardadas se lee igual:
+     una extra pasa a valer la serie completa que se quiso pedir. */
+  const series = (ex?.sets || 0) + (S.draft?.extraSets?.[ex?.id] || 0);
+  return series * (isUnilateral(ex) ? 2 : 1);
 }
 
 /** Series REALES completadas, para mostrarle a Enzo "Serie N/3" y no
@@ -610,9 +616,13 @@ export async function dropSet(exId) {
   if (!ex) return 0;
   const hechas = (S.draft.entries?.[exId]?.sets || []).length;
   const actual = targetSets(ex);
-  const piso = Math.max(1, hechas);
-  if (actual <= piso) {
-    toast(hechas ? `Ya hiciste ${hechas} serie${hechas === 1 ? '' : 's'}` : 'Tiene que quedar al menos una');
+  // En filas, igual que targetSets: en unilateral una serie son dos filas, y
+  // un lado hecho sin su pareja cuenta como serie empezada (no se recorta).
+  const filasPorSerie = isUnilateral(ex) ? 2 : 1;
+  const piso = Math.max(filasPorSerie, Math.ceil(hechas / filasPorSerie) * filasPorSerie);
+  if (actual - filasPorSerie < piso) {
+    const series = Math.ceil(hechas / filasPorSerie);
+    toast(hechas ? `Ya hiciste ${series} serie${series === 1 ? '' : 's'}` : 'Tiene que quedar al menos una');
     return actual;
   }
   if (!S.draft.extraSets) S.draft.extraSets = {};
@@ -980,11 +990,48 @@ export async function startSession(index, precheckAdjust = 0, { preworkout = nul
     // Qué comiste antes ('nada' | 'liviano' | 'comida'), opcional. Se guarda
     // con la sesión para poder cruzarlo después con cómo te fue.
     preworkout,
+    // El calentamiento general (hoja 'calentamiento') vive en el borrador y
+    // no sólo en la hoja: ver calentamientoPendiente() más abajo.
+    calent: { pendiente: true, hechos: [] },
   };
   await saveDraft();
   closeSheet();
   vibrate(15);
   bump();
+}
+
+/* ================= el calentamiento general =================
+   Antes vivía sólo en la hoja: abrías la sesión, aparecían la rotación
+   externa y el face pull, bloqueabas el teléfono, Android cerraba la app y al
+   volver no había ni rastro — sólo "Empezar rutina" (Enzo, 2026-10-01). Ahora
+   el borrador recuerda si falta y qué tildaste, y App.jsx vuelve a abrir la
+   hoja al arrancar mientras siga pendiente. */
+
+/** ¿Hay que (volver a) mostrar el calentamiento? Sólo con la sesión abierta y
+    ningún ejercicio empezado. Un borrador anterior a este cambio no tiene el
+    campo y no lo abre: esa sesión ya venía andando. */
+export function calentamientoPendiente() {
+  return !!S.draft?.calent?.pendiente && !S.draft.start;
+}
+
+export function calentamientoHechos() {
+  return S.draft?.calent?.hechos || [];
+}
+
+export async function tildarCalentamiento(i) {
+  if (!S.draft) return;
+  const c = S.draft.calent || (S.draft.calent = { pendiente: true, hechos: [] });
+  c.hechos = c.hechos.includes(i) ? c.hechos.filter(x => x !== i) : [...c.hechos, i];
+  await saveDraft();
+}
+
+/** "A entrenar" o "Saltar calentamiento": no se vuelve a ofrecer. */
+export async function cerrarCalentamiento() {
+  if (S.draft?.calent) {
+    S.draft.calent.pendiente = false;
+    await saveDraft();
+  }
+  closeSheet();
 }
 
 /** El ejercicio que se activa cuando el actual se cierra (completo, saltado o
@@ -1101,6 +1148,8 @@ export async function startExercise(ex) {
   S.draft.cur = ex.id;
   const first = !S.draft.start;
   if (first) S.draft.start = Date.now();
+  // Ya estás en la máquina: el calentamiento general quedó atrás.
+  if (S.draft.calent) S.draft.calent.pendiente = false;
   await saveDraft();
   vibrate(15);
   bump();
