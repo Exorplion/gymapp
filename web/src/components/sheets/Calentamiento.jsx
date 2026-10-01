@@ -8,18 +8,22 @@
 //
 // Se puede saltar sin culpa: si ya calentaste y te olvidaste de abrir la
 // sesión, no tiene sentido hacerte esperar. Los tildes son sólo para vos:
-// no se guardan, igual que la rampa — es preparación, no series.
+// no son series ni van al historial, pero sí viven en el borrador de la
+// sesión (2026-10-01): bloquear el teléfono a mitad del calentamiento hacía
+// que Android cerrara la app, y al volver la hoja ya no estaba. Ahora App.jsx
+// la reabre al arrancar, con lo que ya habías tildado.
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { closeSheet } from '../../lib/state.js';
-import { sessionExs, indiceHoy } from '../../lib/session.js';
+import {
+  sessionExs, indiceHoy, calentamientoHechos, tildarCalentamiento, cerrarCalentamiento,
+} from '../../lib/session.js';
 import { calentamientoGeneral } from '../../lib/warmup.js';
 import { hojaProps, seccion } from '../../lib/variants.js';
 import { Check } from '../Icon.jsx';
 
 export default function Calentamiento({ index }) {
   const plan = calentamientoGeneral(sessionExs(index ?? indiceHoy()));
-  const [hechos, setHechos] = useState(() => new Set());
+  const [hechos, setHechos] = useState(() => new Set(calentamientoHechos()));
   const todos = hechos.size === plan.ejercicios.length;
 
   function tildar(i) {
@@ -28,6 +32,7 @@ export default function Calentamiento({ index }) {
       if (next.has(i)) next.delete(i); else next.add(i);
       return next;
     });
+    tildarCalentamiento(i);
   }
 
   return (
@@ -59,10 +64,10 @@ export default function Calentamiento({ index }) {
       </motion.div>
 
       <motion.div variants={seccion}>
-        <button type="button" className="btn" onClick={closeSheet}>
+        <button type="button" className="btn" onClick={cerrarCalentamiento}>
           {todos ? 'Listo, a entrenar' : 'A entrenar'}
         </button>
-        <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={closeSheet}>
+        <button type="button" className="btn dim" style={{ marginTop: 10 }} onClick={cerrarCalentamiento}>
           Saltar calentamiento
         </button>
       </motion.div>

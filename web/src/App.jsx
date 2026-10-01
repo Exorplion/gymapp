@@ -8,7 +8,7 @@ import { applyComputedGoals } from './lib/macros.js';
 import { initDragListeners } from './lib/drag.js';
 import { empiezaExcluido, clasificarSwipe, pintaHorizontal } from './lib/swipe.js';
 import { currentStreak } from './lib/streak.js';
-import { sessionExs } from './lib/session.js';
+import { sessionExs, calentamientoPendiente } from './lib/session.js';
 import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
 import { acentoGuardado, aplicarAcento } from './lib/theme.js';
 import { accionDeArranque, ejecutarAccion } from './lib/acciones.js';
@@ -432,6 +432,12 @@ export default function App() {
       // Recién con los datos cargados: el formulario de peso usa S.body para
       // el placeholder con tu último registro.
       accionDeArranque();
+      // Abriste la sesión y la app se cerró en pleno calentamiento (bloquear
+      // el teléfono alcanza): vuelve la hoja, con lo que ya tildaste. Nunca
+      // encima de otra hoja que el arranque haya abierto.
+      if (!S.sheet && calentamientoPendiente()) {
+        openSheet('calentamiento', { index: S.routine.findIndex(s => s.id === S.draft.slotId) });
+      }
     }).catch(err => {
       /* Sin este catch, cualquier fallo del arranque dejaba la app en una
          pantalla vacía PERMANENTE: no corría el bump(), así que React nunca

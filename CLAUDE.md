@@ -55,7 +55,8 @@ misma — inventar markup nuevo en vez de usar el patrón que ya existía.
 Antes de escribir una pantalla, un sheet o una tarjeta:
 
 1. **Buscá el patrón que ya existe y usalo.** Una tarjeta tocable con título,
-   subtítulo y chevron **ya es** `.nav-card` (`styles.css:2148`). Un panel es
+   subtítulo y chevron **ya es** `.group` + `.grouprow` (con su ícono en
+   `.nav-card-ico`). Un panel es
    `.card`. Un botón-chip es `.chip`. Si algo se parece a lo que estás
    haciendo, no lo rehagas: reusalo.
 2. **Nunca combines una clase de apariencia con un reset.** `.linkcard` es un

@@ -178,8 +178,7 @@
      · TARJETA — vidrio de contenido: .card, las tarjetas de Inicio, los
        turnos, los bloques de Plan de hoy. La hero es una tarjeta con la luz
        de la pantalla encima (.card.hero::before), no otra receta.
-     · CONTROL — grafito sólido, sin vidrio ni sombra: listas (.group), filas
-       tocables sueltas (.nav-card), campos, el riel del segmentado, las notas
+     · CONTROL — grafito sólido, sin vidrio ni sombra: listas (.group), campos, el riel del segmentado, las notas
        de cálculo (.calcbox), chips y botones de ícono.
 
      La arista es la misma en los dos vidrios: luz del acento arriba, sombra
@@ -419,8 +418,8 @@ h1,h2,h3,.cond{font-family:var(--font-cond)}
 /* G8: un título que se parte, se parte parejo ("…88 series por / ciclo" dejaba
    una palabra huérfana); un párrafo, sin viuda al final. Base global: una
    regla con `text-wrap` propio (nowrap, ellipsis) le sigue ganando. */
-h1,h2,h3,.sect,.vtitle,.ini-title,.hero-day,.plan-title,.mpop-name,.rt-name,.grouprow-t,.nav-card .t{text-wrap:balance}
-p,.s,.sub,.grouprow-s,.nav-card .s,.ini-sub,.field-hint,.sheet-sub,.notice .s,.empty p,.ptext{text-wrap:pretty}
+h1,h2,h3,.sect,.vtitle,.ini-title,.hero-day,.plan-title,.mpop-name,.rt-name,.grouprow-t{text-wrap:balance}
+p,.s,.sub,.grouprow-s,.ini-sub,.field-hint,.sheet-sub,.notice .s,.empty p,.ptext{text-wrap:pretty}
 /* tercer rol tipográfico: la "cara instrumento". En un registro de fuerza el
    contenido SON los números, y cambian todo el tiempo — sin cifras tabulares
    el ancho baila en cada actualización (68→70 kg, 9→10 series, 1:09→1:10). */
@@ -997,11 +996,18 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    pista visual que hace falta —es el mismo número grande de siempre, no un
    botón nuevo. */
 .reel-tooth.on[role="button"]{cursor:pointer}
-.reel-tooth.on.editing{width:auto;min-width:var(--reel-diente);padding:0 4px}
-.reel-tooth.on.editing input{
-  width:100%;min-width:var(--reel-diente);text-align:center;background:none;border:none;color:inherit;
-  font:inherit;font-variant-numeric:tabular-nums;
+/* Editando: el diente queda con su ancho (escondido) y el campo flota encima,
+   sobre el indicador. Nunca adentro del diente: ensancharlo rompía el centrado
+   y la rueda caminaba sola (ver ReelPicker.jsx). Un test lo cuida. */
+.reel-tooth.on.editing{visibility:hidden}
+.reel-edit{
+  position:absolute;z-index:2;left:50%;top:6px;bottom:6px;transform:translateX(-50%);
+  width:min(96px,calc(100% - 12px));box-sizing:border-box;margin:0;padding:0 4px;
+  border-radius:var(--r-md);border:1px solid var(--accent);background:var(--surface-2);
+  color:var(--text);text-align:center;outline:none;appearance:textfield;-moz-appearance:textfield;
+  font-family:var(--font-cond);font-weight:800;font-size:var(--t-xl);font-variant-numeric:tabular-nums;
 }
+.reel-edit::-webkit-inner-spin-button,.reel-edit::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .reel-indicator{
   position:absolute;left:50%;top:6px;bottom:6px;width:var(--reel-diente);transform:translateX(-50%);
   border-radius:var(--r-md);background:var(--accent-grad);opacity:.14;pointer-events:none;
@@ -1212,7 +1218,7 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 /* La etiqueta que vuelve a traer el aviso: la única tocable de la fila, en
    el azul de los enlaces para que no se lea como un dato más. */
 .ex-tag.ult{font-family:inherit;color:var(--accent);border-color:rgba(var(--accent-strong-rgb),.35);cursor:pointer}
-.ex-pre{display:grid;grid-template-rows:1fr}
+.ex-pre{display:grid;grid-template-rows:1fr;grid-template-columns:minmax(0,1fr)}
 .ex-pre-in{min-height:0;display:flow-root;overflow:clip;overflow-clip-margin:20px}
 .ex-pre-in>.btn:first-child{margin-top:var(--s4)}
 .ex-pre-links{display:flex;justify-content:center;gap:var(--s5);margin-top:var(--s1)}
@@ -1227,8 +1233,13 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    beforeChildren + stagger" que antes hacía motion animando height, sin
    medir nada. Sin el recorte de abajo, las piezas se verían fuera de la
    caja mientras crece. */
-.ex-live{overflow:hidden;display:grid;grid-template-rows:1fr}
-.ex-live-in{min-height:0}
+/* grid-template-columns:minmax(0,1fr) en TODA caja que se pliega por filas: sin
+   eso la columna implícita es `auto` y crece al ancho mínimo del contenido. Una
+   "Meta de hoy" larga (nowrap) estiró la parte en vivo a 509 px dentro de una
+   tarjeta de 359: la rueda de reps y el botón quedaron afuera (sesión en vivo
+   de Enzo, 2026-10-01). Un test lo cuida (pliegues.test.js). */
+.ex-live{overflow:hidden;display:grid;grid-template-rows:1fr;grid-template-columns:minmax(0,1fr)}
+.ex-live-in{min-height:0;min-width:0}
 .ex-live.despliega{animation:desplegar var(--d3) var(--ease-out)}
 @keyframes desplegar{from{grid-template-rows:0fr}}
 .ex-live.despliega .pieza{--entra-y:10px;animation:entra var(--d2) var(--ease-out) backwards;
@@ -1288,7 +1299,7 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    aparte (tanda E: margin es layout), y cuando la rampa desmonta no queda
    ningún salto de 12px. */
 .ex-rampa-pliegue{
-  display:grid;grid-template-rows:1fr;
+  display:grid;grid-template-rows:1fr;grid-template-columns:minmax(0,1fr);
   transition:grid-template-rows var(--d3) var(--ease),opacity var(--d3) var(--ease);
 }
 .ex-rampa-pliegue-in{min-height:0;display:flow-root}
@@ -1331,7 +1342,7 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 .ex-paso.cur b,.ex-paso.hecho b{color:var(--text)}
 .ex-paso span{margin-top:2px;font-size:var(--t-micro);color:var(--text-2);font-variant-numeric:tabular-nums}
 /* "Aproximación completa": entra por altura (no salta) antes del pliegue. */
-.ex-rampa-ok{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows var(--d2) var(--ease),opacity var(--d2) var(--ease)}
+.ex-rampa-ok{display:grid;grid-template-rows:0fr;grid-template-columns:minmax(0,1fr);opacity:0;transition:grid-template-rows var(--d2) var(--ease),opacity var(--d2) var(--ease)}
 .ex-rampa-ok>div{min-height:0;overflow:hidden}
 .ex-rampa-ok p{padding-top:var(--s2);text-align:center;font-size:var(--t-sm);font-weight:600;color:var(--ok)}
 .ex-rampa-ok.on{grid-template-rows:1fr;opacity:1}
@@ -2155,7 +2166,7 @@ body.dragging-on .card.day.drop-target{filter:none}
 /* El margen de arriba es un espaciador DENTRO de lo que se pliega (::before
    de .dbi): se va con la fila en vez de animar margin-top (tanda E). */
 .day-body{
-  display:grid;grid-template-rows:0fr;opacity:0;visibility:hidden;
+  display:grid;grid-template-rows:0fr;grid-template-columns:minmax(0,1fr);opacity:0;visibility:hidden;
   transition:grid-template-rows var(--d3) var(--ease-out),opacity var(--d2) var(--ease-out),visibility 0s var(--d3);
 }
 .day-body>.dbi{overflow:hidden;min-height:0}
@@ -2241,7 +2252,9 @@ canvas.chart{width:100%;height:200px;display:block}
    (WCAG 2.4.7): el anillo va en la muestra que sí se ve. */
 .acento-muestra:focus-visible i,.acento-muestra.propio:focus-within i{outline:2px solid var(--accent);outline-offset:3px}
 .acento-nota{margin-top:var(--s2);font-size:var(--t-sm);color:var(--text-2);line-height:1.45}
-.acento-previa{margin-top:var(--s3);display:flex;flex-direction:column;gap:var(--s2)}
+/* Es una muestra, no controles: el chip y el botón de adentro no reaccionan
+   al toque (A3). */
+.acento-previa{margin-top:var(--s3);display:flex;flex-direction:column;gap:var(--s2);pointer-events:none}
 .acento-previa-fila{display:flex;align-items:center;justify-content:space-between;gap:var(--s2)}
 .acento-previa-num{
   font-family:var(--font-cond);font-weight:800;font-style:italic;letter-spacing:var(--tr-titulo);font-size:var(--t-display);line-height:1;
@@ -2453,7 +2466,7 @@ nav.tabbar{container-type:inline-size}
    come el hueco de la columna, así plegada no deja un escalón; ese aire lo
    pone el margen del título, que se pliega con ella. overflow:clip con
    margen para que el anillo de foco de los botones no se recorte. */
-.rfs-rir-caja{width:100%;display:grid;grid-template-rows:1fr;margin-top:-22px;
+.rfs-rir-caja{width:100%;display:grid;grid-template-rows:1fr;grid-template-columns:minmax(0,1fr);margin-top:-22px;
   transition:grid-template-rows var(--d3) var(--ease-out),opacity var(--d2) var(--ease-out)}
 .rfs-rir-caja.cerrada{grid-template-rows:0fr;opacity:0}
 .rfs-rir-caja>.rfs-rir{min-height:0;overflow:clip;overflow-clip-margin:var(--s2);
@@ -3072,28 +3085,14 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 }
 
 /* Tarjetas de día, desplegables en el lugar */
-/* Fila de navegación con peso propio: una acción que abre otra pantalla, no
-   un renglón de una lista. Existe porque "Ver mis gimnasios" estaba puesta
-   como .row —sin borde y sin aire— pegada abajo de los dos botones grandes:
-   se leía como si fuera parte de ellos (Enzo: "no tiene ni bordes… está muy
-   pegado a los botones de editar rutina"). */
-.nav-card{
-  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
-  margin-top:var(--s3);padding:13px 14px;
-  border-radius:var(--r);background:var(--sup-control-bg);
-  border:1px solid var(--sup-control-borde);color:var(--text);
-  transition:border-color var(--d1) var(--ease-out),transform var(--d1) var(--ease-out);
-}
-.nav-card:active{transform:scale(.99);border-color:var(--accent)}
-.nav-card .grow{flex:1;min-width:0}
-.nav-card .t{display:block;font-size:var(--t-body);font-weight:600}
-.nav-card .s{display:block;font-size:var(--t-micro);color:var(--text-2);margin-top:2px;line-height:1.35}
+/* La cajita del ícono de una fila tocable (.group + .grouprow: "Mis rutinas",
+   "Mis gimnasios", "Registrar por voz", el perfil). La fila suelta .nav-card
+   que le daba nombre se borró el 2026-10-01: desde la tanda C nadie la usaba. */
 .nav-card-ico{
   flex:none;display:grid;place-items:center;width:38px;height:38px;
   border-radius:var(--r-md);font-size:var(--t-lg);
   background:rgba(var(--accent-strong-rgb),.12);border:1px solid rgba(var(--accent-strong-rgb),.24);
 }
-.nav-card .chev{flex:none;color:var(--text-3);font-size:var(--t-lg)}
 /* La cajita con el tono de un estado (fila de descarga): ámbar sugerida,
    verde en curso. Son estados, no categorías. */
 .nav-card-ico.warn{color:var(--warn);background:rgba(var(--warn-rgb),.12);border-color:rgba(var(--warn-rgb),.3)}
@@ -3124,7 +3123,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    queda montado para que el CIERRE también se anime — con un `{open && …}` de
    React no hay nodo que animar cuando se cierra y la tarjeta se corta seca. */
 .day-collapse{
-  display:grid;grid-template-rows:0fr;opacity:0;visibility:hidden;
+  display:grid;grid-template-rows:0fr;grid-template-columns:minmax(0,1fr);opacity:0;visibility:hidden;
   transition:grid-template-rows var(--d3) var(--ease-out),opacity var(--d2) ease,visibility 0s var(--d3);
 }
 .day-collapse-in{overflow:hidden;min-height:0}
@@ -3248,7 +3247,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    el contenido: el navegador interpola la fracción, no un píxel fijo, así
    que sirve igual para un día de 3 ejercicios que uno de 12. */
 .hero-slot{
-  display:grid;grid-template-rows:0fr;
+  display:grid;grid-template-rows:0fr;grid-template-columns:minmax(0,1fr);
   transition:grid-template-rows var(--d3) var(--ease),opacity var(--d2) var(--ease);
   opacity:0;margin-bottom:0;
 }
@@ -4481,7 +4480,7 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    hijo con su margen: por eso los márgenes verticales de los hijos se anulan,
    y una .card o un .notice metidos en un grupo no suman el suyo.
    Va al FINAL del archivo a propósito: con la misma especificidad que
-   .card, .nav-card o .notice, gana por orden. */
+   .card o .notice, gana por orden. */
 .pila{display:flex;flex-direction:column;gap:var(--s6)}
 .grupo{display:flex;flex-direction:column;gap:var(--s3)}
 .pila > *,.grupo > *{margin-top:0;margin-bottom:0}
