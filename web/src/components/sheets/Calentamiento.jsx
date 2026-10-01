@@ -13,7 +13,7 @@
 // que Android cerrara la app, y al volver la hoja ya no estaba. Ahora App.jsx
 // la reabre al arrancar, con lo que ya habías tildado.
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { m as motion } from 'motion/react';
 import {
   sessionExs, indiceHoy, calentamientoHechos, tildarCalentamiento, cerrarCalentamiento,
 } from '../../lib/session.js';

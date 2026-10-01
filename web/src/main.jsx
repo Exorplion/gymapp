@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MotionConfig } from 'motion/react'
+import { LazyMotion, MotionConfig, domAnimation } from 'motion/react'
 import './styles.css'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
@@ -27,9 +27,15 @@ createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       {/* "Reducir movimiento" del sistema: motion deja de animar
           transformaciones en todo el árbol (variants.js, RestTimer, Tu Año). */}
-      <MotionConfig reducedMotion="user">
-        <App />
-      </MotionConfig>
+      {/* LazyMotion + `m` (importado como `motion` en cada archivo): sólo
+          las funciones que se usan —animate/exit/variants, sin layout ni
+          drag—, no el motor entero (auditoría 2026-10). `strict` rompe a la
+          vista si alguien vuelve a importar el `motion` completo. */}
+      <LazyMotion features={domAnimation} strict>
+        <MotionConfig reducedMotion="user">
+          <App />
+        </MotionConfig>
+      </LazyMotion>
     </ErrorBoundary>
   </StrictMode>,
 )

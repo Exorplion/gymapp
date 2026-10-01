@@ -4,7 +4,7 @@
 // "debería decirte a dónde lo quieres mover". Una fila por cada ejercicio
 // que te queda ("Después de Aperturas") y "Al final"; elegir cierra la hoja
 // y el aviso trae "Deshacer" (moverEjercicio, session.js).
-import { motion } from 'motion/react';
+import { m as motion } from 'motion/react';
 import { S, closeSheet } from '../../lib/state.js';
 import { sessionExs, isSkipped, setsDone, targetSets, moverEjercicio } from '../../lib/session.js';
 import { hojaProps, seccion } from '../../lib/variants.js';

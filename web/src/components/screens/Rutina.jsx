@@ -594,6 +594,14 @@ function SlotNameInput({ index, slot }) {
 function SlotCard({ slot, index, n, editing }) {
   const open = S.rutOpen === index;
   const on = slot.type === 'workout';
+  /* El contenido del acordeón se monta la PRIMERA vez que se abre y después
+     queda montado (para que el cierre también se anime, ver .day-collapse en
+     styles.css). Antes se montaban todos los turnos cerrados: en Entreno eran
+     ~990 de los ~1130 elementos de la pantalla (538 de SVG, íconos y fibras)
+     armados, con estilo y layout, en una caja de altura 0 — la mayor parte
+     de los ~600 ms (a 6×) de cambiar a esta pestaña (auditoría 2026-10). */
+  const [visto, setVisto] = useState(open);
+  if (open && !visto) setVisto(true);
 
   // Turno de descanso: fila apagada, sin controles y sin data-sid — no
   // participa del drag (los descansos se recalculan solos, ver
@@ -659,7 +667,7 @@ function SlotCard({ slot, index, n, editing }) {
       </div>
 
       <div className="day-collapse">
-        <div className="day-collapse-in">
+        {(open || visto) && <div className="day-collapse-in">
         <div className="day-exs">
           {editing && exs.length > 1 && (
             <div className="drag-hint tight"><Mover /><span>Mantené presionado un ejercicio para reordenarlo.</span></div>
@@ -780,7 +788,7 @@ function SlotCard({ slot, index, n, editing }) {
             </div>
           </div>
         )}
-        </div>
+        </div>}
       </div>
     </div>
   );
