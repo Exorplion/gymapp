@@ -99,9 +99,9 @@ describe('piezas chicas', () => {
     expect(zonaDeForma(null, 'head')).toBe(null);
   });
   it('cuándo queda lista', () => {
-    expect(cuandoLista(AHORA - 1, AHORA)).toBe('lista');
-    expect(cuandoLista(AHORA + 5 * H, AHORA)).toBe('lista en 5 h');
-    expect(cuandoLista(new Date('2026-10-02T09:00:00').getTime(), AHORA)).toBe('lista mañana a la mañana');
-    expect(cuandoLista(new Date('2026-10-03T15:00:00').getTime(), AHORA)).toBe('lista el sábado');
+    expect(cuandoLista(AHORA - 1, AHORA)).toBe('al 100 %');
+    expect(cuandoLista(AHORA + 5 * H, AHORA)).toBe('al 100 % en 5 h');
+    expect(cuandoLista(new Date('2026-10-02T09:00:00').getTime(), AHORA)).toBe('al 100 % mañana a la mañana');
+    expect(cuandoLista(new Date('2026-10-03T15:00:00').getTime(), AHORA)).toBe('al 100 % el sábado');
   });
 });

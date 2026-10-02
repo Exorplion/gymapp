@@ -1,255 +1,399 @@
-// La portada.
+// La portada (rehecha el 2026-10-01).
 //
-// Antes la app abría en "Hoy", que es una pila de tarjetas que se scrollea:
-// útil, y un feed. No había un momento en que mirases la app y te dieran ganas
-// de ir al gimnasio.
+// Enzo: "en la pantalla de inicio yo debería ver lo importante para un usuario
+// de gimnasio: la rutina que le toca hoy, el porcentaje de recuperación de sus
+// músculos junto con sus días de descanso… la información no debería ser
+// redundante, al contrario, debería ser de valor". Y "cuando abrís te muestra
+// en un texto grande la rutina, yo lo entiendo pero una persona externa capaz
+// no". Maqueta aprobada para mostrar en el lienzo "FIERRO Inicio nuevo".
 //
-// Se organiza como un panel de mando (grid asimétrico, no una lista): arriba
-// una tira con los turnos de la secuencia y la tarjeta de estado del día
-// (con el NOMBRE real del turno, no un genérico "toca entrenar"); abajo un
-// grid con el vistazo del cuerpo, la racha, el grupo más flojo, las calorías
-// de hoy y el último peso registrado. Nada de esto imita ningún diseño de
-// referencia: el vistazo del cuerpo es un dibujo propio (Silhouette,
-// lib/bodydata.js) y el grid usa la tipografía condensada e itálica y los
-// degradados cian/azul que ya son de Fierro.
+// Cuatro bloques, cada uno contesta UNA pregunta:
+//   1. Hoy:            ¿qué me toca, qué trabaja y puedo hacerlo?
+//   2. Recuperación:   ¿cómo están mis músculos? (frente y espalda, lib/recuperacion.js)
+//   3. Semana:         ¿qué hice estos días? Cada día dice lo que fue
+//                      (✓ turno, Libre, + Anotar): se entiende sin tocarlo.
+//   4. Comida y peso:  lo de hoy, juntos.
 //
-// La tira de arriba es la SEMANA REAL (SemanaReal, lib/week.js): los siete
-// días que terminan hoy, por fecha, con lo que de verdad entrenaste. Ojo con el comentario histórico
-// que decía que un calendario "mentiría sobre cómo funciona la app": eso valía
-// —y sigue valiendo— para el PLAN, porque la rutina de Fierro no vive en
-// casilleros lun-dom sino en una SECUENCIA que avanza sólo cuando entrenás
-// (ver rutina-logic.js). Esta tira no muestra el plan, muestra los hechos, y
-// los hechos sí tienen fecha. El plan se ve y se edita en Rutina.
+// Lo que se fue y por qué: la tarjeta de racha (ya está arriba, en el
+// encabezado), "Más flojo" (lo dice mejor el mapa de recuperación) y el botón
+// grande "Ver lo que hiciste" (ahora es un enlace chico en la tarjeta de hoy).
+//
+// La tira de días muestra HECHOS, no el plan: la rutina de Fierro es una
+// secuencia que avanza cuando entrenás, no casilleros lun-dom (rutina-logic.js).
 import { memo, useEffect, useRef } from 'react';
 import { S, useStore, openSheet, changeTab, esDiaLibre } from '../../lib/state.js';
-import { dstr, fmtD, fmtKg, fmtNum, round1 } from '../../lib/format.js';
+import { dstr, fmtKg, fmtNum, round1 } from '../../lib/format.js';
 import { pendingSlot, sesionDeHoy, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
-import { daysSinceAll, stalestGroups, untrainedGroups, MUSCLE_CATS } from '../../lib/muscle.js';
-import { diasPorPorcion } from '../../lib/fibras.js';
+import { catOf } from '../../lib/muscle.js';
 import { ultimosSieteDias } from '../../lib/week.js';
-import { currentStreak } from '../../lib/streak.js';
 import { mealsOf } from '../../lib/meals.js';
-import Silhouette from '../Silhouette.jsx';
+import { weeklyAvg } from '../../lib/charts.js';
+import { cuerpo } from '../../lib/bodydata.js';
+import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, ZONAS } from '../../lib/recuperacion.js';
+import { LLANO, nombreZona, frase, capital, abreviar } from '../../lib/inicio.js';
 import AnimatedText from '../AnimatedText.jsx';
-import { countTo, menosMovimiento, screenReveal, D } from '../../lib/motion.js';
+import { Alerta, Check, Play, Plus, Taza } from '../Icon.jsx';
+import { menosMovimiento, screenReveal, D } from '../../lib/motion.js';
+
+const DIA = 86400000;
+const diasDesde = fecha => Math.max(0, Math.round((new Date(dstr() + 'T12:00:00') - new Date(fecha + 'T12:00:00')) / DIA));
+const haceTexto = fecha => { const d = diasDesde(fecha); return d === 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`; };
+
+const turnos = () => S.routine.filter(s => s.type === 'workout' && s.exercises?.length);
+/** El turno de entrenamiento que sigue al índice dado, dando la vuelta. */
+function siguienteTurno(desde) {
+  const n = S.routine.length;
+  for (let k = 1; k <= n; k++) {
+    const s = S.routine[(desde + k) % n];
+    if (s?.type === 'workout' && s.exercises?.length) return s;
+  }
+  return null;
+}
+/** Minutos de la última vez que hiciste ese turno; si nunca, ~3 min por serie. */
+function minutosDe(slot) {
+  const ult = S.sessions.find(s => s.slotId === slot.id && s.duration);
+  if (ult) return Math.round(ult.duration / 5) * 5;
+  return Math.round(((slot.exercises || []).reduce((a, e) => a + (e.sets || 0), 0) * 3) / 5) * 5;
+}
+const seriesDeEntrada = e => (e.unilateral ? Math.ceil((e.sets || []).length / 2) : (e.sets || []).length);
 
 export default function Inicio() {
   useStore();
-  const gridRef = useRef(null);
-  // Entrada en cascada de las tarjetas del bento al llegar a Inicio — sólo al
-  // MONTAR (deps []): Inicio se remonta entero cada vez que volvés a esta
-  // pestaña (App.jsx la desmonta al cambiar de tab, key={store.tab}), así que
-  // esto corre una vez por visita y no en cada bump() de S. GSAP anima el DOM
-  // directo, fuera del ciclo de render de React — no reemplaza nada de cómo
-  // ya se pinta el grid, sólo lo anima al aparecer.
+  const raiz = useRef(null);
+  // Entrada en cascada de los bloques al llegar a Inicio, después del
+  // deslizamiento de pestaña (screenReveal espera a que termine).
   useEffect(() => {
     if (menosMovimiento()) return;
-    const tiles = gridRef.current?.querySelectorAll('.ini-tile');
-    if (!tiles?.length) return;
-    /* screenReveal y no staggerReveal: espera a que el deslizamiento de
-       pestaña termine. Con las tarjetas subiendo mientras la pantalla entera
-       todavía viaja, se ven dos movimientos grandes a la vez — que es
-       exactamente por lo que el deslizamiento se había sacado. */
-    screenReveal(tiles, { delayStep: D.paso, distance: 16, scale: 0.96 });
+    const bloques = raiz.current?.querySelectorAll(':scope > .ini2-card');
+    if (bloques?.length) screenReveal(bloques, { delayStep: D.paso, distance: 16, scale: 0.98 });
   }, []);
-  const slot = pendingSlot();
-  // La sesión cerrada hoy, del turno que sea: el pendiente ya es el siguiente
-  // (completeSession adelanta el puntero), así que no sirve para contestarlo.
-  const hecha = sesionDeHoy();
-  const draft = S.draft;
-  const enCurso = !!draft;
-  /* Va DESPUÉS de "en curso" y de "completado" en la cadena de estados: los
-     hechos le ganan a la declaración. Si arrancaste a entrenar igual, o ya
-     cerraste la sesión, el día libre que habías marcado a la mañana no puede
-     seguir siendo el titular.
 
-     Y pide tener rutina: sin split armado, lo que la app necesita decirte es
-     "armá tu rutina", no felicitarte por un descanso de un plan que no
-     existe. */
-  const hayRutina = S.routine.some(s => s.type === 'workout' && s.exercises?.length);
-  const libreHoy = hayRutina && esDiaLibre(dstr());
-
-  const dias = daysSinceAll();
-  /* Un escalón más fino que `dias`: hace cuántos días se trabajó cada PORCIÓN.
-     Sin esto la silueta encendía el grupo grueso entero —un jalón prendía la
-     espalda completa, trapecio incluido— y eso afirmaba de más. Las porciones
-     sin registro no vienen en el objeto y la silueta las pinta apagadas: sin
-     dato es sin dato. Los grupos que la lámina no subdivide (bíceps, tríceps,
-     glúteo, gemelos) no tienen porción, así que siguen encendiéndose enteros
-     con `dias`, exactamente como antes. */
-  const porciones = diasPorPorcion(S.sessions, dstr());
-  const viejos = stalestGroups();
-  const racha = currentStreak();
-  const irAHoy = () => changeTab('hoy');
-
-  // Los cuatro estados de la misma pantalla. El título usa el nombre real
-  // del turno pendiente —"Anterior A", no "Toca entrenar"— así la tarjeta
-  // contesta directo la primera pregunta al abrir la app: ¿cuál me toca?
-  // Sin eyebrow arriba del título (tanda B, V12: "COMPLETADO · HOY" era
-  // un rótulo versal encima de cada título): lo que decía de útil pasa a la
-  // línea de abajo, y el título habla solo.
-  let titulo, sub, cta;
-  if (enCurso) {
-    const hechos = Object.values(draft.entries).filter(e => e.sets.length).length;
-    const turnoDraft = S.routine.find(s => s.id === draft.slotId);
-    const total = (turnoDraft?.exercises || []).length;
-    titulo = turnoDraft?.name || 'Entrenando';
-    sub = `En curso · ${hechos} de ${total} ejercicios`;
-    cta = (
-      <button type="button" className="ini-cta ini-cta-seguir" onClick={irAHoy}>
-        SEGUIR<small>{hechos} de {total}</small>
-      </button>
-    );
-  } else if (hecha) {
-    titulo = hecha.dayName || 'Listo por hoy';
-    const nEx = (hecha.entries || []).length;
-    sub = `Hecho hoy en ${hecha.duration} min · ${nEx} ${nEx === 1 ? 'ejercicio' : 'ejercicios'}`;
-    cta = (
-      <button type="button" className="ini-cta ok" onClick={() => openSheet('session-view', { id: hecha.id })}>
-        VER LO QUE HICISTE
-      </button>
-    );
-  } else if (libreHoy) {
-    /* Lo declaraste libre: la app deja de empujarte, pero no te cierra la
-       puerta. El CTA queda en `dim` como el del descanso del plan —"podés,
-       nadie te lo impide"— y el turno pendiente sigue ahí, esperándote
-       mañana, porque tomarte el día no te hace perder el turno. */
-    titulo = 'Descanso tomado';
-    sub = slot?.type === 'workout' && slot.exercises?.length
-      ? `${slot.name || 'Tu turno'} te espera para la próxima`
-      : 'Vos lo decidiste, así queda';
-    cta = <button type="button" className="ini-cta dim" onClick={irAHoy}>ENTRENAR IGUAL</button>;
-  } else if (slot?.type === 'workout' && slot.exercises?.length) {
-    titulo = slot.name || 'Entrenamiento';
-    sub = `${slot.exercises.length} ejercicio${slot.exercises.length === 1 ? '' : 's'} · vas por tu racha`;
-    /* "ENTRENAR", no "IR A HOY". El botón principal nombra la acción, no el
-       destino: "ir a hoy" describe una navegación dentro de la app (¿ir
-       adónde? "hoy" es una pestaña, no algo que quieras hacer), y lo que la
-       persona vino a hacer es entrenar. Con `ini-cta-go` además se distingue
-       de los otros tres CTA, que son estados y no la invitación principal. */
-    cta = (
-      <button type="button" className="ini-cta ini-cta-go" onClick={irAHoy}>
-        <span className="ini-cta-txt">ENTRENAR</span>
-      </button>
-    );
-  } else {
-    titulo = hayRutina ? 'Descanso' : 'Sin rutina';
-    sub = hayRutina ? 'Hoy no toca entrenar' : 'Armá tu split para empezar';
-    cta = hayRutina
-      ? <button type="button" className="ini-cta dim" onClick={irAHoy}>ENTRENAR IGUAL</button>
-      : <button type="button" className="ini-cta" onClick={() => changeTab('rutina')}>ARMAR MI RUTINA</button>;
-  }
-
+  const rec = recuperacion(S.sessions);
   return (
-    <div className="inicio">
-      {/* Tres grupos, separados por más aire que el que hay adentro de cada
-          uno (tanda D, V10): la semana, el estado del día con su acción, y el
-          tablero. Antes eran seis hijos sueltos a 12 px, y la línea
-          "¿Entrenaste…?" se pegaba a la tira con márgenes negativos. */}
-      <div className="ini-semana">
-        <SemanaReal />
-      </div>
-
-      <div className="ini-estado">
-        <div className="ini-top">
-          <AnimatedText as="div" className="ini-title" text={titulo} />
-          <div className="ini-sub">{sub}</div>
-        </div>
-        {cta}
-        <MemoriaLine slot={slot} />
-      </div>
-
-      <div className="ini-grid" ref={gridRef}>
-        <BodyTile dias={dias} viejos={viejos} porciones={porciones} sexo={S.cfg.bodySex || S.cfg.profile?.sex} />
-        <RachaTile racha={racha} />
-        <StaleTile grupos={viejos} dias={dias} />
-        <MacrosTile />
-        <WeightTile />
-      </div>
+    <div className="inicio ini2" ref={raiz}>
+      <HoyCard rec={rec} />
+      <RecuperacionCard rec={rec} />
+      <SemanaCard />
+      <ComidaPesoCard />
+      <MemoriaLine slot={pendingSlot()} />
     </div>
   );
 }
 
-/** La semana REAL: los siete días que terminan HOY, con lo que de verdad pasó.
+/* ============================== 1. Hoy ============================== */
 
-    Hasta el 2026-09-29 era lunes a domingo de la semana de hoy, y un lunes o
-    un martes el domingo que acababa de pasar no aparecía: el "Dom" visible
-    era el próximo, futuro y deshabilitado. Enzo no pudo anotar el domingo 27
-    por eso. Ahora es una ventana móvil (ultimosSieteDias): hoy a la derecha,
-    los seis anteriores a mano, ningún día futuro.
+function HoyCard({ rec }) {
+  const slot = pendingSlot();
+  const hecha = sesionDeHoy();
+  const draft = S.draft;
+  const hayRutina = turnos().length > 0;
+  const libreHoy = hayRutina && esDiaLibre(dstr());
+  const irAHoy = () => changeTab('hoy');
+  const fecha = capital(new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }));
 
-    Muestra los HECHOS: qué días de esta semana entrenaste de verdad. El PLAN
-    (la secuencia de turnos, que avanza cuando entrenás y no por fecha) vive en
-    la pestaña Rutina, que es donde se edita — ver el comentario de lib/week.js
-    sobre por qué tener las dos cosas separadas es lo que permite mostrar un
-    calendario sin mentir.
+  if (draft) {
+    const turno = S.routine.find(s => s.id === draft.slotId);
+    const exs = turno?.exercises || [];
+    const hechos = exs.filter(e => draft.entries?.[e.id]?.sets?.length).length;
+    const series = Object.values(draft.entries || {}).reduce((a, e) => a + seriesDeEntrada(e), 0);
+    const sigue = exs.find(e => e.id === draft.cur) || exs.find(e => !draft.entries?.[e.id]?.sets?.length);
+    const min = draft.start ? Math.max(1, Math.round((Date.now() - draft.start) / 60000)) : null;
+    return (
+      <section className="ini2-card ini2-hoy en-curso" aria-label="Sesión en curso">
+        <div className="ini2-fila">
+          <span className="ini2-rotulo acento">Entrenando ahora</span>
+          {min != null && <span className="ini2-dim">{min} min</span>}
+        </div>
+        <div className="ini2-titulo-pila">
+          <AnimatedText as="h1" className="ini2-titulo" text={turno?.name || 'Entrenando'} />
+          {sigue && <p className="ini2-sub">Sigue <b>{sigue.name}</b></p>}
+        </div>
+        <div className="ini2-avance" aria-hidden="true" style={{ '--n': Math.max(1, exs.length) }}>
+          {exs.map((e, i) => <i key={e.id} className={i < hechos ? 'on' : ''} />)}
+        </div>
+        <div className="ini2-dim"><b>{hechos} de {exs.length}</b> ejercicios, {series} {series === 1 ? 'serie hecha' : 'series hechas'}</div>
+        <button type="button" className="ini2-cta" onClick={irAHoy}>SEGUIR</button>
+      </section>
+    );
+  }
 
-    Hasta el 2026-09-10 esta pantalla tenía ADEMÁS una tira con la secuencia de
-    turnos (SeqStrip: barras numeradas 1, 2, 3…). Se borró: con las dos juntas
-    Inicio mostraba dos tiras horizontales que se leían como dos calendarios en
-    competencia, y la de turnos era justamente la que se confundía con una
-    semana ("me gusta más el nuevo, el otro borralo" — Enzo). El atajo para
-    espiar un turno (sheet 'day-peek') era lo único que sólo se abría desde
-    ahí, así que se movió a la tira de proyección de Rutina.jsx — si no, ese
-    sheet quedaba sin ninguna entrada en toda la app.
+  if (hecha) {
+    const series = (hecha.entries || []).reduce((a, e) => a + seriesDeEntrada(e), 0);
+    const kg = (hecha.entries || []).reduce((a, e) => a + (e.sets || []).reduce((b, s) => b + (s.w || 0) * (s.r || 0), 0), 0);
+    const manana = pendingSlot();
+    return (
+      <section className="ini2-card ini2-hoy hecho" aria-label="Lo que entrenaste hoy">
+        <div className="ini2-fila">
+          <span className="ini2-rotulo ok"><Check size={16} />Hecho hoy</span>
+          <button type="button" className="ini2-enlace" onClick={() => openSheet('session-view', { id: hecha.id })}>Ver resumen ›</button>
+        </div>
+        <AnimatedText as="h1" className="ini2-titulo" text={hecha.dayName || 'Listo por hoy'} />
+        <div className="ini2-cifras">
+          <div><b>{hecha.duration}</b><span>minutos</span></div>
+          <div><b>{series}</b><span>series</span></div>
+          <div><b>{fmtNum(Math.round(kg))}</b><span>kg movidos</span></div>
+        </div>
+        {manana?.type === 'workout' && manana.exercises?.length > 0 && (
+          <div className="ini2-nota">Mañana toca <b>{manana.name}</b>.</div>
+        )}
+      </section>
+    );
+  }
 
-    Un día vacío del pasado se puede tocar para anotarlo: es la respuesta a
-    "entrené el martes pero no lo anoté y la app no se entera". Un día futuro
-    NO se puede tocar y se pinta distinto — "todavía no llegó" no es lo mismo
-    que "no entrenaste", y pintarlos igual sería afirmar algo sobre el futuro. */
-function SemanaReal() {
-  const dias = ultimosSieteDias();
-  /* Un día declarado libre no es un día "sin registrar": ya contestaste la
-     pregunta. Reclamarlo igual sería la app pidiéndote que le confirmes algo
-     que vos mismo le dijiste. */
-  const sinRegistro = dias.filter(d => !d.esFuturo && !d.esHoy && !d.sesiones.length && !esDiaLibre(d.fecha));
-  const ayer = sinRegistro[sinRegistro.length - 1];
+  if (!hayRutina) {
+    return (
+      <section className="ini2-card ini2-hoy" aria-label="Tu rutina">
+        <span className="ini2-dim">{fecha}</span>
+        <div className="ini2-titulo-pila">
+          <h1 className="ini2-titulo">Sin rutina</h1>
+          <p className="ini2-sub">Armá tu plan de entrenamiento y acá vas a ver qué te toca cada día.</p>
+        </div>
+        <button type="button" className="ini2-cta" onClick={() => changeTab('rutina')}>ARMAR MI RUTINA</button>
+      </section>
+    );
+  }
+
+  const esTurno = slot?.type === 'workout' && slot.exercises?.length > 0;
+  const proximo = esTurno ? slot : siguienteTurno(S.cfg.seqIndex ?? 0);
+  if (libreHoy || !esTurno) {
+    return (
+      <section className="ini2-card ini2-hoy" aria-label="Hoy">
+        <span className="ini2-dim">{fecha}</span>
+        <div className="ini2-titulo-pila">
+          <span className="ini2-rotulo">{libreHoy ? 'Lo marcaste libre' : 'Hoy no toca entrenar'}</span>
+          <h1 className="ini2-titulo">Descanso</h1>
+          {proximo && <p className="ini2-sub">{proximo.name} te espera para la próxima.</p>}
+        </div>
+        <button type="button" className="ini2-cta dim" onClick={irAHoy}>ENTRENAR IGUAL</button>
+      </section>
+    );
+  }
+
+  const exs = slot.exercises;
+  const grupos = [...new Set(exs.map(e => catOf(e)).filter(Boolean))].map(c => LLANO[c] || c);
+  const series = exs.reduce((a, e) => a + (e.sets || 0), 0);
+  const lista = turnos();
+  const n = lista.findIndex(s => s.id === slot.id) + 1;
+  const despues = siguienteTurno(S.cfg.seqIndex ?? 0);
+  /* El aviso: la zona de HOY menos recuperada, si está por debajo del 85 %. */
+  const zonasHoy = [...new Set(exs.flatMap(e => zonasDeEjercicio(e)))];
+  const floja = zonasHoy.map(z => [z, rec[z]]).filter(([, r]) => r && r.pct < 85).sort((a, b) => a[1].pct - b[1].pct)[0];
 
   return (
-    <>
-      <div className="wkreal" role="group" aria-label="Tus últimos 7 días">
+    <section className="ini2-card ini2-hoy" aria-label="Lo que te toca hoy">
+      <div className="ini2-fila">
+        <span className="ini2-dim">{fecha}</span>
+        {lista.length > 1 && n > 0 && <span className="ini2-dim">Turno {n} de {lista.length}</span>}
+      </div>
+      <div className="ini2-titulo-pila">
+        <span className="ini2-rotulo acento">Hoy te toca</span>
+        <AnimatedText as="h1" className="ini2-titulo" text={slot.name || 'Entrenamiento'} />
+        {grupos.length > 0 && <p className="ini2-sub">{capital(frase(grupos))}</p>}
+      </div>
+      <div className="ini2-meta">
+        <span><b>{exs.length}</b> {exs.length === 1 ? 'ejercicio' : 'ejercicios'}</span>
+        <span><b>{series}</b> series</span>
+        <span>unos <b>{minutosDe(slot)}</b> min</span>
+      </div>
+      {floja && (
+        <div className="ini2-aviso" role="note">
+          <Alerta size={18} />
+          <div>
+            <b>{nombreZona(floja[0])} al {floja[1].pct} %.</b> Última vez {haceTexto(floja[1].date)}. Si hoy lo sentís cargado, sacá una serie.
+          </div>
+        </div>
+      )}
+      <button type="button" className="ini2-cta" onClick={irAHoy}><Play size={18} />ENTRENAR</button>
+      {despues && despues.id !== slot.id && <div className="ini2-pie">Después sigue {despues.name}</div>}
+    </section>
+  );
+}
+
+/* ========================== 2. Recuperación ========================== */
+
+function RecuperacionCard({ rec }) {
+  const conDato = ZONAS.filter(z => rec[z]);
+  const cargadas = conDato.filter(z => rec[z].pct < 90).sort((a, b) => rec[a].pct - rec[b].pct).slice(0, 4);
+  const listos = conDato.filter(z => rec[z].pct >= 90).map(z => LLANO[z]);
+  const sexo = S.cfg.bodySex || S.cfg.profile?.sex;
+  // Firma por valor para el memo del cuerpo: ~560 trazos que sólo cambian
+  // cuando cambia el estado de alguna zona.
+  const firma = ZONAS.map(z => rec[z]?.estado || '-').join('|') + '#' + (sexo || '');
+  return (
+    <section className="ini2-card ini2-rec" aria-label="Cómo están tus músculos">
+      <div className="ini2-fila">
+        <h2 className="ini2-h2">Cómo están tus músculos</h2>
+        <button type="button" className="ini2-enlace" onClick={() => openSheet('body-map')}>Mapa ›</button>
+      </div>
+      {conDato.length === 0 ? (
+        <div className="ini2-rec-vacio">
+          <CuerpoRecuperacion firma={firma} rec={rec} sexo={sexo} />
+          <p className="ini2-sub">Cuando registres tu primer entrenamiento, acá vas a ver cómo se recupera cada músculo.</p>
+        </div>
+      ) : (
+        <>
+          <div className="ini2-rec-grid">
+            <button type="button" className="ini2-rec-cuerpo" aria-label="Abrir el mapa del cuerpo" onClick={() => openSheet('body-map')}>
+              <CuerpoRecuperacion firma={firma} rec={rec} sexo={sexo} />
+            </button>
+            <div className="ini2-rec-lista">
+              {cargadas.length === 0 && <p className="ini2-sub">Todo lo que entrenaste está listo.</p>}
+              {cargadas.map(z => (
+                <button type="button" key={z} className="ini2-rec-fila" onClick={() => openSheet('zona-rec', { zona: z })}>
+                  <span className="ini2-rec-nombre">
+                    <b>{nombreZona(z)}</b>
+                    <small>{haceTexto(rec[z].date)}, {cuandoLista(rec[z].listaEn)}</small>
+                  </span>
+                  <span className={`ini2-rec-pct ${rec[z].estado}`}>{rec[z].pct}%</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          {listos.length > 0 && cargadas.length > 0 && (
+            <p className="ini2-rec-listos">{capital(frase(listos))} {listos.length === 1 ? 'ya está listo' : 'ya están listos'}.</p>
+          )}
+          <div className="ini2-leyenda" aria-hidden="true">
+            <span><i className="cargado" />Cargado</span>
+            <span><i className="recuperando" />Recuperando</span>
+            <span><i className="listo" />Listo</span>
+            <span className="ini2-leyenda-nota">estimado</span>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Frente y espalda, cada forma pintada por el estado de su zona. Más liviano
+    que Silhouette (sin giro, zoom ni toques): acá sólo se mira. Memo por la
+    firma de estados. */
+const CuerpoRecuperacion = memo(function CuerpoRecuperacion({ rec, sexo }) {
+  const { frente, espalda } = cuerpo(sexo);
+  const cara = (c, etiqueta) => (
+    <svg viewBox={c.viewBox} className="ini2-cuerpo-cara" role="img" aria-label={etiqueta}>
+      {c.zonas.filter(z => !z.parche).map((z, i) => {
+        const zona = z.cat && z.cat !== 'pelo' ? zonaDeForma(z.cat, z.slug) : null;
+        const cls = z.cat === 'pelo' ? 'pelo' : zona ? (rec[zona]?.estado || 'sin-dato') : 'neutro';
+        return <g key={i} className={`ini2-z ${cls}`}>{z.d.map((d, j) => <path key={j} d={d} />)}</g>;
+      })}
+    </svg>
+  );
+  return (
+    <div className="ini2-cuerpo">
+      {cara(frente, 'Frente del cuerpo')}
+      {cara(espalda, 'Espalda del cuerpo')}
+    </div>
+  );
+}, (a, b) => a.firma === b.firma);
+
+/* ============================ 3. Semana ============================ */
+
+function SemanaCard() {
+  const dias = ultimosSieteDias();
+  const slot = pendingSlot();
+  const entrenos = dias.filter(d => d.sesiones.length).length;
+  const libres = dias.filter(d => !d.sesiones.length && !d.esFuturo && esDiaLibre(d.fecha)).length;
+  const sinRegistro = dias.filter(d => !d.esFuturo && !d.esHoy && !d.sesiones.length && !esDiaLibre(d.fecha));
+  const ultimoVacio = sinRegistro[sinRegistro.length - 1];
+  return (
+    <section className="ini2-card ini2-semana" aria-label="Tus últimos 7 días">
+      <div className="ini2-fila">
+        <h2 className="ini2-h2">Tus últimos 7 días</h2>
+        <span className="ini2-dim"><b>{entrenos}</b> {entrenos === 1 ? 'entreno' : 'entrenos'}{libres > 0 && <>, <b>{libres}</b> {libres === 1 ? 'descanso' : 'descansos'}</>}</span>
+      </div>
+      <div className="ini2-dias">
         {dias.map(d => {
           const hecho = d.sesiones.length > 0;
-          const cls = ['wkreal-d', hecho ? 'on' : '', d.esHoy ? 'hoy' : '', d.esFuturo ? 'fut' : ''].filter(Boolean).join(' ');
-          const nombre = hecho ? d.sesiones.map(x => x.dayName).join(' y ') : null;
+          const libre = !hecho && esDiaLibre(d.fecha);
+          const vacio = !hecho && !libre && !d.esHoy && !d.esFuturo;
+          const nombre = hecho ? d.sesiones.map(x => x.dayName).filter(Boolean).join(' y ') : '';
+          const estado = hecho ? 'hecho' : libre ? 'libre' : d.esHoy ? 'hoy' : d.esFuturo ? 'futuro' : 'vacio';
+          const pie = hecho ? abreviar(d.sesiones[0].dayName) : libre ? 'Libre' : d.esHoy ? (slot?.type === 'workout' ? abreviar(slot.name) : 'Hoy') : vacio ? 'Anotar' : '';
+          const abrir = () => {
+            if (d.esFuturo) return;
+            if (hecho && d.sesiones.length === 1) openSheet('session-view', { id: d.sesiones[0].id });
+            else openSheet('marcar-dia', { fecha: d.fecha });
+          };
           return (
             <button
               type="button"
               key={d.fecha}
-              className={cls}
+              className={`ini2-dia ${estado}`}
               disabled={d.esFuturo}
               aria-current={d.esHoy ? 'date' : undefined}
               aria-label={
                 hecho ? `${d.etiqueta} ${d.numero}: ${nombre}`
-                  : d.esFuturo ? `${d.etiqueta} ${d.numero}: todavía no llegó`
-                    : esDiaLibre(d.fecha) ? `${d.etiqueta} ${d.numero}: día libre, tocá para cambiarlo`
-                      : `${d.etiqueta} ${d.numero}: sin registrar, tocá para anotar qué entrenaste`
+                  : libre ? `${d.etiqueta} ${d.numero}: día libre`
+                    : d.esHoy ? `${d.etiqueta} ${d.numero}: hoy`
+                      : vacio ? `${d.etiqueta} ${d.numero}: sin registrar, tocá para anotar` : `${d.etiqueta} ${d.numero}`
               }
-              onClick={() => { if (!d.esFuturo) openSheet('marcar-dia', { fecha: d.fecha }); }}
+              onClick={abrir}
             >
-              <span className="wd">{d.etiqueta}</span>
-              <span className="nu">{d.numero}</span>
-              <span className="dot" aria-hidden="true" />
+              <span className="ini2-dia-t">{d.esHoy ? 'Hoy' : `${d.etiqueta} ${d.numero}`}</span>
+              <span className="ini2-dia-c">
+                {hecho ? <Check size={18} /> : libre ? <Taza size={18} /> : vacio ? <Plus size={16} /> : d.numero}
+              </span>
+              <span className="ini2-dia-p">{pie}</span>
             </button>
           );
         })}
       </div>
-      {/* Una sola línea, sólo para el último día vacío, y sólo si hay alguno:
-          el criterio de la app es que los avisos sean raros. Los otros días
-          vacíos se anotan tocándolos, sin que nadie los reclame. */}
-      {ayer && (
-        <button type="button" className="wkreal-ask" onClick={() => openSheet('marcar-dia', { fecha: ayer.fecha })}>
-          ¿Entrenaste el {ayer.etiqueta.toLowerCase()} {ayer.numero}? Anotalo →
-        </button>
+      {ultimoVacio && (
+        <p className="ini2-pista">
+          ¿Entrenaste el {new Date(ultimoVacio.fecha + 'T12:00:00').toLocaleDateString('es', { weekday: 'long' })}? Tocá el <b>+</b> y anotalo.
+        </p>
       )}
-    </>
+    </section>
   );
 }
 
-/** Narrativa temporal de la portada (Plan Fierro · Fase 1): "hace 1 año
-    hacías esto" — recall automático sin que nadie lo pida — y un contador
-    silencioso de tonelaje de por vida. Ningún dato nuevo: ambos leen
-    S.sessions, que ya existe. */
+/* ========================= 4. Comida y peso ========================= */
+
+function ComidaPesoCard() {
+  const meals = mealsOf(dstr());
+  const kcal = Math.round(meals.reduce((a, m) => a + (m.kcal || 0), 0));
+  const prot = Math.round(meals.reduce((a, m) => a + (m.p || 0), 0));
+  const metaK = S.cfg.goals?.kcal || 0;
+  const metaP = S.cfg.goals?.p || 0;
+  const frac = metaK ? Math.min(1, kcal / metaK) : 0;
+  const C = 2 * Math.PI * 27;
+  const wk = weeklyAvg();
+  return (
+    <section className="ini2-card ini2-comida" aria-label="Comida y peso de hoy">
+      <button type="button" className="ini2-comida-izq" onClick={() => changeTab('nutri')}>
+        <span className="ini2-rotulo">Comida de hoy</span>
+        <span className="ini2-comida-num">
+          <svg width="56" height="56" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="32" cy="32" r="27" className="ini2-anillo-pista" />
+            <circle cx="32" cy="32" r="27" className="ini2-anillo" strokeDasharray={`${frac * C} ${C}`} transform="rotate(-90 32 32)" />
+          </svg>
+          <span>
+            <b>{fmtNum(kcal)}</b>
+            <small>{metaK ? `de ${fmtNum(metaK)} kcal` : 'kcal'}</small>
+          </span>
+        </span>
+        {metaP > 0 && <span className="ini2-dim">Proteína <b>{prot}</b> de {metaP} g</span>}
+      </button>
+      <div className="ini2-comida-der">
+        <span className="ini2-rotulo">Peso</span>
+        {wk ? (
+          <>
+            <span className="ini2-peso"><b>{fmtNum(round1(wk.last.weight))}</b><small> kg</small></span>
+            <span className="ini2-dim ini2-peso-sub">
+              {wk.curAvg != null && <>Promedio {fmtNum(round1(wk.curAvg))}</>}
+              {wk.delta != null && wk.delta !== 0 && <><br />{wk.delta > 0 ? 'subiendo' : 'bajando'} {fmtNum(Math.abs(wk.delta))} por semana</>}
+            </span>
+          </>
+        ) : (
+          <span className="ini2-dim">Todavía no te pesaste</span>
+        )}
+        <button type="button" className="ini2-boton-sec" onClick={() => openSheet('body-form')}>+ Anotar peso</button>
+      </div>
+    </section>
+  );
+}
+
+/** "Hace 1 año hacías esto" y el tonelaje de por vida, como pie de la portada. */
 function MemoriaLine({ slot }) {
   const tonelaje = lifetimeTonnage();
   let recall = null;
@@ -259,160 +403,13 @@ function MemoriaLine({ slot }) {
   }
   if (!recall && !tonelaje) return null;
   return (
-    <div className="text-text-2 text-micro leading-snug">
-      {recall && (
-        <div>Hace 1 año: {recall.name} {recall.sets.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(' · ')} kg</div>
-      )}
+    <div className="ini2-memoria">
+      {recall && <div>Hace 1 año: {recall.name} {recall.sets.map(s => `${fmtNum(round1(s.w))}×${s.r}`).join(', ')} kg</div>}
       {tonelaje > 0 && (
-        <div>
-          {fmtKg(tonelaje)} movidos en total
-          {' · '}
-          <button type="button" className="link-toque text-text font-semibold" onClick={() => openSheet('year-recap')}>Tu Año Fierro →</button>
-        </div>
+        <button type="button" className="ini2-enlace-pie" onClick={() => openSheet('year-recap')}>
+          {fmtKg(tonelaje)} levantados en total. <b>Tu Año Fierro ›</b>
+        </button>
       )}
     </div>
-  );
-}
-
-/** La tarjeta grande: un vistazo quieto del cuerpo (Silhouette en modo no
-    interactivo, el mismo que usa el resumen de fin de sesión) que abre el
-    mapa completo al tocar. No es un botón con texto porque el propio
-    dibujo ya dice de qué se trata — un ícono nunca va a explicar esto mejor
-    que el cuerpo real coloreado. */
-/* Memo con comparación por VALOR: Inicio arma `dias` y `porciones` de nuevo
-   en cada render, y cada bump() (abrir una hoja, cerrar otra) volvía a
-   reconciliar la silueta entera —~560 nodos SVG, la mayor parte de la
-   pantalla— para pintar exactamente lo mismo (auditoría 2026-10). `sexo`
-   viaja como prop porque Silhouette elige la lámina leyendo S.cfg. */
-const mismoPlano = (a, b) => {
-  const ka = Object.keys(a || {});
-  return ka.length === Object.keys(b || {}).length && ka.every(k => a[k] === b[k]);
-};
-const BodyTile = memo(function BodyTile({ dias, viejos, porciones }) {
-  return (
-    <button type="button" className="ini-tile ini-tile-body luz" onClick={() => openSheet('body-map')}>
-      <div className="ini-tile-lbl">Tu cuerpo<span className="ini-tile-go">Ver mapa ›</span></div>
-      <div className="ini-tile-thumb"><Silhouette days={dias} interactivo={false} porciones={porciones} /></div>
-      {viejos.length > 0 && <div className="ini-tile-hint">Hace tiempo no entrenás {viejos[0]}</div>}
-    </button>
-  );
-}, (a, b) => a.sexo === b.sexo && a.viejos[0] === b.viejos[0] && mismoPlano(a.dias, b.dias) && mismoPlano(a.porciones, b.porciones));
-
-function RachaTile({ racha }) {
-  // Cuenta ascendente del número de racha al montar Inicio — el mismo touch
-  // que Apple Fitness/Duolingo usan para que un número quieto se sienta vivo.
-  const numRef = useRef(null);
-  useEffect(() => {
-    if (menosMovimiento()) { if (numRef.current) numRef.current.textContent = racha; return; }
-    if (numRef.current) countTo(numRef.current, racha);
-  }, [racha]);
-  return (
-    <div className="ini-tile ini-tile-racha">
-      <div className="ini-tile-lbl">Racha</div>
-      <div className="ini-tile-num"><span ref={numRef}>{racha}</span><small>{racha === 1 ? 'día' : 'días'}</small></div>
-    </div>
-  );
-}
-
-/** El grupo más olvidado, con sus días reales. Nombra como mucho dos.
-
-    `stalestGroups` los devuelve del más viejo al más nuevo, así que los días
-    que se muestran son los del primero — el peor caso. */
-function StaleTile({ grupos, dias }) {
-  if (!grupos.length) {
-    /* `grupos` vacío tiene DOS causas opuestas y hasta el 2026-09-15 la
-       tarjeta las confundía: decía "Todo entrenado esta semana" tanto si de
-       verdad estaba todo al día como si no había una sola sesión registrada.
-       Con la app recién instalada afirmaba haber entrenado los nueve grupos
-       sin tener un dato — justo lo que la app no hace (ver CLAUDE.md).
-
-       `stalestGroups()` descarta los "nunca" a propósito y está bien que lo
-       haga: un grupo que nunca entrenaste no se está enfriando, y listarlo
-       sería gritarle a alguien que recién empieza. Lo que faltaba era que
-       ESTA tarjeta supiera de qué vacío se trata. */
-    const sinDato = untrainedGroups();
-    if (sinDato.length === MUSCLE_CATS.length) {
-      return (
-        <div className="ini-tile ini-tile-stale">
-          <div className="ini-tile-lbl">Más flojo</div>
-          <div className="ini-tile-stale-name">Sin datos</div>
-          <div className="ini-tile-stale-days">registrá una sesión</div>
-        </div>
-      );
-    }
-    return (
-      <div className="ini-tile ini-tile-stale ini-tile-ok">
-        <div className="ini-tile-lbl">Más flojo</div>
-        <div className="ini-tile-stale-name">Al día</div>
-        {/* Se dice sobre cuánto se está afirmando. "Todo entrenado" a secas
-            daba por cubiertos también los grupos de los que no hay registro
-            —gemelos y abs son los que más se saltean— y eso es afirmar de
-            más. Mismo criterio que el `coverage` de microsOfDay(). */}
-        <div className="ini-tile-stale-days">
-          {sinDato.length === 0
-            ? 'nada flojo esta semana'
-            : `${MUSCLE_CATS.length - sinDato.length} de ${MUSCLE_CATS.length} grupos con registro`}
-        </div>
-      </div>
-    );
-  }
-  const top = grupos.slice(0, 2);
-  const d = dias[top[0]];
-  return (
-    <div className="ini-tile ini-tile-stale">
-      <div className="ini-tile-lbl">Más flojo</div>
-      <div className="ini-tile-stale-name">{top.join(' y ')}</div>
-      <div className="ini-tile-stale-days warn">hace {d} día{d === 1 ? '' : 's'}</div>
-    </div>
-  );
-}
-
-/** Calorías de hoy: mismo dato que la tarjeta hero de Comida (mealsOf +
-    S.cfg.goals), resumido a un solo número — el detalle completo (anillo,
-    macros por separado) ya vive ahí, acá alcanza con la cifra que importa
-    para decidir si conviene comer algo antes de entrenar. */
-function MacrosTile() {
-  const meals = mealsOf(dstr());
-  const kcal = Math.round(meals.reduce((a, m) => a + m.kcal, 0));
-  const goal = S.cfg.goals?.kcal || 0;
-  if (!goal) {
-    return (
-      <button type="button" className="ini-tile ini-tile-macros" onClick={() => changeTab('nutri')}>
-        <div className="ini-tile-lbl">Calorías</div>
-        <div className="ini-tile-hint">Calculá tu objetivo en Comida</div>
-      </button>
-    );
-  }
-  const restantes = Math.max(0, goal - kcal);
-  return (
-    <button type="button" className="ini-tile ini-tile-macros" onClick={() => changeTab('nutri')}>
-      <div className="ini-tile-lbl">Calorías</div>
-      <div className="ini-tile-num">{restantes}<small>kcal restantes</small></div>
-      <div className="ini-tile-bar"><i style={{ width: `${Math.min(100, Math.round(kcal / goal * 100))}%` }}></i></div>
-    </button>
-  );
-}
-
-/** Último peso registrado: mismo dato que el hero de Progreso (S.body),
-    pero mostrado como último valor y no como serie — acá importa "¿cuándo
-    fue la última vez que me pesé?", el gráfico completo ya vive en
-    Progreso. */
-function WeightTile() {
-  const registros = S.body.filter(b => b.weight != null);
-  const ultimo = registros[registros.length - 1];
-  if (!ultimo) {
-    return (
-      <button type="button" className="ini-tile ini-tile-weight" onClick={() => changeTab('prog')}>
-        <div className="ini-tile-lbl">Peso</div>
-        <div className="ini-tile-hint">Todavía no registraste</div>
-      </button>
-    );
-  }
-  return (
-    <button type="button" className="ini-tile ini-tile-weight" onClick={() => changeTab('prog')}>
-      <div className="ini-tile-lbl">Peso</div>
-      <div className="ini-tile-num">{ultimo.weight}<small>kg</small></div>
-      <div className="ini-tile-hint">{ultimo.date === dstr() ? 'hoy' : fmtD(ultimo.date)}</div>
-    </button>
   );
 }

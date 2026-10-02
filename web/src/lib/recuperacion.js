@@ -131,16 +131,16 @@ export function zonaDeForma(cat, slug) {
   return slug === 'hamstring' ? 'Femoral' : 'Cuádriceps';
 }
 
-/** "lista el sábado", "lista mañana a la tarde", "lista en 5 h". */
+/** Cuándo llega al 100 %, sin género (sirve para "pecho" y para "piernas"):
+    "al 100 % en 5 h", "al 100 % mañana a la mañana", "al 100 % el sábado". */
 export function cuandoLista(listaEn, ahora = Date.now()) {
   const h = (listaEn - ahora) / HORA;
-  if (h <= 0) return 'lista';
-  if (h < 12) return `lista en ${Math.max(1, Math.round(h))} h`;
+  if (h <= 0) return 'al 100 %';
+  if (h < 12) return `al 100 % en ${Math.max(1, Math.round(h))} h`;
   const d = new Date(listaEn), hoy = new Date(ahora);
   const dias = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())) / 86400000);
   const franja = d.getHours() < 12 ? 'a la mañana' : d.getHours() < 19 ? 'a la tarde' : 'a la noche';
-  if (dias <= 0) return `lista hoy ${franja}`;
-  if (dias === 1) return `lista mañana ${franja}`;
-  const nombre = d.toLocaleDateString('es', { weekday: 'long' });
-  return `lista el ${nombre}`;
+  if (dias <= 0) return `al 100 % hoy ${franja}`;
+  if (dias === 1) return `al 100 % mañana ${franja}`;
+  return `al 100 % el ${d.toLocaleDateString('es', { weekday: 'long' })}`;
 }

@@ -17,7 +17,7 @@ afterAll(() => { vi.useRealTimers(); });
 
 function tira() {
   const html = renderToStaticMarkup(createElement(Inicio));
-  const m = html.match(/<div class="wkreal"[^>]*>([\s\S]*?)<\/div>/);
+  const m = html.match(/<div class="ini2-dias"[^>]*>([\s\S]*?)<\/div>/);
   return [...(m?.[1] || '').matchAll(/aria-label="([^"]+)"/g)].map(x => x[1]);
 }
 

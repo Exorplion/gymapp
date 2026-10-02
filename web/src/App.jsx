@@ -58,6 +58,7 @@ import YearRecap from './components/sheets/YearRecap.jsx';
 import SalirPrueba, { MarcoPrueba } from './components/sheets/SalirPrueba.jsx';
 import Calentamiento from './components/sheets/Calentamiento.jsx';
 import ExOpciones from './components/sheets/ExOpciones.jsx';
+import ZonaRec from './components/sheets/ZonaRec.jsx';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
 // globales en index.html). No es uno de los 5 sheets nombrados en el plan de
@@ -131,6 +132,7 @@ function SheetContent({ sheet }) {
     case 'guide': return <Guide {...sheet.props} />;
     case 'settings': return <Settings {...sheet.props} />;
     case 'body-map': return <BodyMap {...sheet.props} />;
+    case 'zona-rec': return <ZonaRec {...sheet.props} />;
     case 'gyms': return <Gyms {...sheet.props} />;
     case 'gym-equip': return <GymEquip {...sheet.props} />;
     case 'gym-photo': return <GymPhotoView {...sheet.props} />;
@@ -596,7 +598,7 @@ export default function App() {
           tampoco (2026-09-25): tiene que entrar entera en la pantalla. */}
       <main
         ref={mainRef}
-        className={`${store.tab === 'inicio' || (store.tab === 'hoy' && store.draft) ? 'full' : ''}${arrastre ? ' arrastrando' : ''}`}
+        className={`${store.tab === 'hoy' && store.draft ? 'full' : ''}${arrastre ? ' arrastrando' : ''}`}
         onPointerDown={alBajar}
         onPointerMove={alMover}
         onPointerUp={alSoltar}

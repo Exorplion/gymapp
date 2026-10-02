@@ -24,14 +24,16 @@ describe('Inicio deja de pedir entrenar en un día libre', () => {
   });
 
   it('el branch de día libre va ANTES del que muestra ENTRENAR', () => {
-    const libre = src.indexOf('} else if (libreHoy) {');
-    const entrenar = src.indexOf("} else if (slot?.type === 'workout'");
+    // Inicio nuevo (2026-10-01): el día libre y el descanso del plan
+    // comparten rama, y la de ENTRENAR es la última.
+    const libre = src.indexOf('if (libreHoy || !esTurno) {');
+    const entrenar = src.indexOf('<Play size={18} />ENTRENAR');
     expect(libre).toBeGreaterThan(-1);
     expect(entrenar).toBeGreaterThan(libre);
   });
 
   it('pero deja una salida: se puede entrenar igual', () => {
-    const bloque = src.slice(src.indexOf('} else if (libreHoy) {'), src.indexOf("} else if (slot?.type === 'workout'"));
+    const bloque = src.slice(src.indexOf('if (libreHoy || !esTurno) {'), src.indexOf('<Play size={18} />ENTRENAR'));
     expect(bloque).toContain('ENTRENAR IGUAL');
   });
 
