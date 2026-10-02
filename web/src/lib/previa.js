@@ -7,7 +7,8 @@ import { S, wDisplay } from './state.js';
 import { e1rmSeries, trend } from './charts.js';
 import { objetivoHoy } from './objetivoHoy.js';
 import { lastDataFor } from './session.js';
-import { catOf, recoveryPct, daysSinceGroup, diasTexto } from './muscle.js';
+import { catOf, daysSinceGroup, diasTexto } from './muscle.js';
+import { recuperacion, zonasDeEjercicio } from './recuperacion.js';
 import { round1, dstr } from './format.js';
 
 const UNI = ' (unilateral)';
@@ -112,7 +113,11 @@ export function recordPrevia(ex, { uni = false, hoy = dstr() } = {}) {
 export function recuperacionPrevia(ex) {
   const cat = catOf(ex);
   if (!cat) return null;
-  return { cat, pct: recoveryPct(cat), dias: daysSinceGroup(cat) };
+  /* El modelo por horas (lib/recuperacion.js), por ZONA: un leg press dice
+     "Cuádriceps" y no "Pierna", así el femoral de ayer no lo frena. */
+  const zona = zonasDeEjercicio(ex)[0] || cat;
+  const r = recuperacion(S.sessions)[zona];
+  return { cat: zona, pct: r ? r.pct : 100, dias: r ? daysSinceGroup(cat) : null };
 }
 
 const repsDe = ex => {
