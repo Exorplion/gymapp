@@ -25,12 +25,14 @@ describe('cambio de pestaña sin layout forzado', () => {
     expect(src).not.toMatch(/style\.minHeight/);
   });
 
-  it('la saliente es la pantalla viva (misma key), no una copia del DOM', () => {
+  it('la saliente es la pantalla viva, no una copia del DOM', () => {
     const app = sinComentarios(leer('../../App.jsx'));
     const estado = sinComentarios(leer('../state.js'));
     expect(app + estado).not.toMatch(/cloneNode|sacarFoto|tomarFotoSaliente/);
-    expect(app).toMatch(/key=\{vistaSaliente\.tab\}/);
-    expect(app).toMatch(/key=\{store\.tab\}/);
+    // 2026-10-01: una vista por pestaña, con key fija (la pestaña) dentro de
+    // su <Activity>: la saliente y la que vuelve son el mismo nodo vivo.
+    expect(app).toMatch(/<Activity key=\{t\} mode=\{activa \|\| saliendo \? 'visible' : 'hidden'\}>/);
+    expect(app).toMatch(/TAB_ORDEN\.filter\(/);
   });
 
   it('el CSS apila las dos vistas en la misma celda y calcula la píldora', () => {

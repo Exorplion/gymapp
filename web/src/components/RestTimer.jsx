@@ -31,7 +31,7 @@ import {
   suscribirReloj, versionReloj, tramoAnillo,
 } from '../lib/rest.js';
 import { tramosAnillo, CIERRE } from '../lib/anillo.js';
-import { setRirUltimaSerie } from '../lib/session.js';
+import { setRirUltimaSerie, setRirLado } from '../lib/session.js';
 import { RIR_OPTS } from '../lib/rir.js';
 import { useStore } from '../lib/state.js';
 import { useAtras } from '../lib/useAtras.js';
@@ -414,35 +414,61 @@ const PAUSA_CONFIRMAR = 450;
 
 function PreguntaRir() {
   const p = T.rir;
-  const elegido = p.valor;
   return (
     <div className="rfs-rir">
       <div className="rfs-rir-t">¿Cuántas reps te quedaban?</div>
       <div className="rfs-rir-meta">
         Opcional{p.pedia != null && ` · pedía ${p.pedia === 0 ? 'al fallo' : `RIR ${p.pedia}`}`}
       </div>
-      <div className="rir-seg" role="group" aria-label="Repeticiones en reserva que te quedaron">
-        {RIR_OPTS.map(n => {
-          const on = elegido === n;
-          return (
-            <button
-              key={n}
-              type="button"
-              aria-pressed={on}
-              aria-label={n === 0 ? '0, al fallo' : n === 4 ? '4 o más' : String(n)}
-              className={on ? 'on' : ''}
-              onClick={e => {
-                e.stopPropagation();
-                setRirUltimaSerie(n);
-                setTimeout(cerrarPreguntaRir, PAUSA_CONFIRMAR);
-              }}
-            >
-              <b>{n === 4 ? '4+' : n}</b>
-              {n === 0 && <small>fallo</small>}
-            </button>
-          );
-        })}
-      </div>
+      {p.lados ? (
+        /* Unilateral: una barra por lado, en el orden en que los hiciste.
+           La pregunta se va recién con los dos contestados. */
+        <div className="rfs-rir-lados">
+          {p.lados.map((l, i) => (
+            <div className="rfs-rir-lado" key={l.setIdx}>
+              <span className="rfs-rir-lado-t">{l.side === 'left' ? 'Izquierda' : l.side === 'right' ? 'Derecha' : `Lado ${i + 1}`}</span>
+              <SegRir
+                elegido={l.valor}
+                etiqueta={`Repeticiones en reserva, ${l.side === 'left' ? 'lado izquierdo' : l.side === 'right' ? 'lado derecho' : `lado ${i + 1}`}`}
+                onPick={n => {
+                  setRirLado(i, n);
+                  if (p.lados.every((x, j) => (j === i ? n : x.valor) != null)) setTimeout(cerrarPreguntaRir, PAUSA_CONFIRMAR);
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <SegRir
+          elegido={p.valor}
+          etiqueta="Repeticiones en reserva que te quedaron"
+          onPick={n => { setRirUltimaSerie(n); setTimeout(cerrarPreguntaRir, PAUSA_CONFIRMAR); }}
+        />
+      )}
+    </div>
+  );
+}
+
+/** La barra segmentada 0/1/2/3/4+ de una respuesta. */
+function SegRir({ elegido, etiqueta, onPick }) {
+  return (
+    <div className="rir-seg" role="group" aria-label={etiqueta}>
+      {RIR_OPTS.map(n => {
+        const on = elegido === n;
+        return (
+          <button
+            key={n}
+            type="button"
+            aria-pressed={on}
+            aria-label={n === 0 ? '0, al fallo' : n === 4 ? '4 o más' : String(n)}
+            className={on ? 'on' : ''}
+            onClick={e => { e.stopPropagation(); onPick(n); }}
+          >
+            <b>{n === 4 ? '4+' : n}</b>
+            {n === 0 && <small>fallo</small>}
+          </button>
+        );
+      })}
     </div>
   );
 }

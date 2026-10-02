@@ -4,6 +4,68 @@
 
 ---
 
+## SESIÓN 2026-10-01 (noche) — Inicio nuevo, recuperación por horas, RIR por lado, pestañas montadas
+
+Pedido de Enzo: la portada repetía datos (racha dos veces, "Más flojo"), el
+nombre del turno no le dice nada a alguien de afuera, el calendario no avisa
+que se puede tocar, "Ver lo que hiciste" ocupaba un botón entero; quiere ver
+"la rutina que le toca hoy y el porcentaje de recuperación de sus músculos,
+en el modelo anatómico". Y "en los RIR sólo me preguntás el último lado".
+Dio permiso para "botar el diseño de la pantalla principal y romper las
+reglas". Maqueta: lienzo privado "FIERRO Inicio nuevo"
+(claude.ai/artifact/FaRiKjRvqPtsjpsjb8y5tk). Rama `feat/inicio-recuperacion`,
+**1138 tests**.
+
+1. **RIR por lado** (`lib/session.js:797` arma `lados`, `setRirLado` en
+   `:861`; `components/RestTimer.jsx` `PreguntaRir`/`SegRir`). En unilateral la
+   pregunta trae una barra por lado, en el orden en que se hicieron; cada una
+   escribe su fila y la pregunta se cierra con las dos. Verificado en Chrome:
+   izquierda RIR 2 → rpe 8, derecha fallo → rpe 10; botones del reloj terminan
+   en 749 px a 390×844.
+2. **Recuperación por horas** (`lib/recuperacion.js`). Ventana base por zona
+   (`VENTANA_BASE`, 42–72 h) × series (0,8–1,35) × RIR (1,15 al fallo … 0,85
+   con 4+), contra la hora de la última serie. Pierna partida en Cuádriceps y
+   Femoral con la tabla de fibras (`zonasDeEjercicio`). Sin historial = null,
+   nunca "100 %". Sólo la última sesión de cada zona y sólo músculos
+   principales (simplificaciones documentadas en el archivo). La vista previa
+   del ejercicio (`lib/previa.js` `recuperacionPrevia`) ya usa este modelo;
+   `recoveryPct` (muscle.ts) quedó sólo para BodyMap/tests.
+3. **Inicio nuevo** (`components/screens/Inicio.jsx`, CSS `.ini2-*` al final
+   de styles.css, textos en `lib/inicio.js`, detalle `sheets/ZonaRec.jsx`):
+   Hoy / Cómo están tus músculos / Tus últimos 7 días / Comida y peso.
+   Inicio ahora hace scroll (`main.full` ya no aplica a Inicio).
+4. **Pestañas montadas con `<Activity>`** (`App.jsx:650`). Una vista por
+   pestaña visitada, orden fijo TAB_ORDEN, congeladas mientras están ocultas.
+   Desde la 2ª visita, a 6×: →Entreno 189→107 ms, →Comida 159→118,
+   →Progreso 375→234, →Inicio 306→137. Ajustes que hizo falta: el carrusel se
+   reubica de golpe al reaparecer (`ExerciseCarousel.jsx:333`) y los gráficos
+   no se redibujan si no cambió tamaño, datos ni acento (`Chart.jsx`).
+
+**Trampas nuevas:**
+- Con `<Activity>` los efectos se DESMONTAN al ocultar y vuelven a correr al
+  mostrar, con el estado y los refs intactos. Un efecto que asume "corro una
+  vez por montaje" ahora corre una vez por VISITA, y uno que asume "si corro
+  de nuevo es porque cambió algo" se equivoca (el carrusel deslizaba).
+- `display:none` (lo que pone Activity) hace perder el scroll de un
+  contenedor con overflow; el canvas sí conserva su dibujo.
+- Estado local inicializado desde S queda viejo entre visitas: p. ej.
+  `Hoy.jsx` `useState(S.cfg.activeGym)`. Antes se remontaba en cada visita.
+
+**Pendientes (con criterio):**
+- Estilos de la portada vieja sin uso (`.ini-tile*`, `.ini-grid`, `.wkreal*`,
+  `.ini-cta*`, `.ini-legend`, `.ini-stale`…): borrarlos con cuidado, algunos
+  viven en selectores compuestos (p. ej. `:root:has(#sheet.open…) :is(…
+  .ini-cta-go …)`). Aprobar cuando `grep` de cada clase dé 0 fuera de styles.css
+  y los tests de CSS sigan verdes.
+- `Hoy.jsx` `selGym` (`useState(S.cfg.activeGym)`): si se cambia el gym desde
+  otro lado con Hoy oculta, queda el viejo. Pasarlo a leer de S o resetear con
+  un efecto por `S.cfg.activeGym`.
+- La recuperación no suma fatiga de sesiones anteriores ni de músculos
+  secundarios: si Enzo ve números que no le cierran, ése es el primer lugar.
+- BodyMap (`sheets/BodyMap.jsx` StaleLine) sigue con `recoveryPct` viejo.
+
+---
+
 ## SESIÓN 2026-10-01 (tarde) — Auditoría de performance + pulido visual
 
 Pedido de Enzo: "auditoría completa de performance, que veas todo lo que puede

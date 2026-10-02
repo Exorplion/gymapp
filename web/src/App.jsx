@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Activity, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { idbOpenOnce } from './lib/db.js';
 import { elegirBase, pruebaDeOtroDia } from './lib/modoPrueba.js';
 import { ensurePersisted } from './lib/persist.js';
@@ -58,6 +58,7 @@ import YearRecap from './components/sheets/YearRecap.jsx';
 import SalirPrueba, { MarcoPrueba } from './components/sheets/SalirPrueba.jsx';
 import Calentamiento from './components/sheets/Calentamiento.jsx';
 import ExOpciones from './components/sheets/ExOpciones.jsx';
+import ZonaRec from './components/sheets/ZonaRec.jsx';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
 // globales en index.html). No es uno de los 5 sheets nombrados en el plan de
@@ -131,6 +132,7 @@ function SheetContent({ sheet }) {
     case 'guide': return <Guide {...sheet.props} />;
     case 'settings': return <Settings {...sheet.props} />;
     case 'body-map': return <BodyMap {...sheet.props} />;
+    case 'zona-rec': return <ZonaRec {...sheet.props} />;
     case 'gyms': return <Gyms {...sheet.props} />;
     case 'gym-equip': return <GymEquip {...sheet.props} />;
     case 'gym-photo': return <GymPhotoView {...sheet.props} />;
@@ -388,7 +390,16 @@ export default function App() {
      Progreso: los dos gráficos se dibujaban tres veces por visita (auditoría
      2026-10). No pierde actualizaciones: cada pantalla llama a useStore()
      ella misma, así que un bump() la re-renderiza igual. */
-  const entrante = pantallas.current[store.tab] ??= pantallaCon(store.tab);
+  pantallas.current[store.tab] ??= pantallaCon(store.tab);
+  /* Las pestañas que ya visitaste quedan MONTADAS (2026-10-01), dentro de un
+     <Activity> de React 19.2: al irte se ocultan (display:none, sus efectos
+     se desmontan: timers, observers) pero conservan su árbol y su estado, y
+     al volver React sólo las actualiza en vez de montarlas de cero. Siguen
+     congeladas mientras están ocultas (PantallaCtx, state.js): un bump() no
+     las re-renderiza de fondo; al volver, changeTab() las descongela y se
+     ponen al día en un solo render. */
+  const visitadas = useRef(new Set());
+  visitadas.current.add(store.tab);
   /* La vecina del arrastre, lo mismo: un elemento por destino, no uno por
      cada movimiento del dedo. */
   const destinoArrastre = arrastre?.destino ?? null;
@@ -596,35 +607,51 @@ export default function App() {
           tampoco (2026-09-25): tiene que entrar entera en la pantalla. */}
       <main
         ref={mainRef}
-        className={`${store.tab === 'inicio' || (store.tab === 'hoy' && store.draft) ? 'full' : ''}${arrastre ? ' arrastrando' : ''}`}
+        className={`${store.tab === 'hoy' && store.draft ? 'full' : ''}${arrastre ? ' arrastrando' : ''}`}
         onPointerDown={alBajar}
         onPointerMove={alMover}
         onPointerUp={alSoltar}
         onPointerCancel={alSoltar}
       >
-        {/* La saliente va PRIMERO en el DOM (así la entrante, montada después,
-            queda arriba en el stacking normal) y con un escudo encima que
-            se traga los toques (.view.leave::after, styles.css) — es
-            puramente decorativa mientras se termina de ir.
+        {/* Una vista por pestaña visitada, en el orden fijo de TAB_ORDEN: así
+            ningún nodo se mueve en el DOM al cambiar (moverlo es sacarlo y
+            volverlo a insertar, con estilo y layout de cero). Quién va arriba
+            lo decide el z-index de .enter/.leave, no el orden.
 
-            Es la MISMA pantalla que estaba en pantalla, no una copia (G4,
-            auditoría 2026-09): lleva la misma key que tenía como entrante,
-            así que React conserva su nodo y sólo le cambia la clase. Antes
-            se colgaba acá una copia del DOM (cloneNode) y reinsertarla
-            obligaba a recalcular estilos y layout de toda la pantalla vieja
-            en el mismo cuadro en que se monta la nueva: 100–240 ms a 6×.
-            Y no se vuelve a renderizar: el elemento es el mismo objeto que
-            React ya tenía (pantallas.current), así que se saltea, y sus
-            useStore() quedan congelados (PantallaCtx, state.js). Se
-            desmonta a los 480 ms, cuando ya salió del marco. */}
-        {vistaSaliente && (
-          <div
-            key={vistaSaliente.tab}
-            className={`view leave dir-${vistaSaliente.dir}${listoParaAnimar ? '' : ' esperando'}`}
-          >
-            {pantallas.current[vistaSaliente.tab] ?? pantallaCon(vistaSaliente.tab)}
-          </div>
-        )}
+            - La de adelante: `view enter`. Al pasar de oculta a visible el
+              navegador vuelve a correr su animación de entrada (con
+              display:none no hay animación viva que continuar), que es lo
+              que antes conseguía cambiarle la `key`.
+            - La saliente: `view leave`, la MISMA pantalla viva, con un escudo
+              que se traga los toques (.view.leave::after). A los 480 ms deja
+              de ser saliente y su Activity la oculta.
+            - El resto: ocultas.
+
+            El elemento de cada una es siempre el mismo objeto
+            (pantallas.current): React se saltea re-renderizarla desde App. */}
+        {TAB_ORDEN.filter(t => visitadas.current.has(t) || vistaSaliente?.tab === t).map(t => {
+          const activa = t === store.tab;
+          const saliendo = !activa && vistaSaliente?.tab === t;
+          const espera = listoParaAnimar ? '' : ' esperando';
+          const cls = activa
+            ? `view enter dir-${dir}${arrastre ? (arrastre.soltando ? ' arrastrada soltando' : ' arrastrada') : ''}${espera}`
+            : saliendo ? `view leave dir-${vistaSaliente.dir}${espera}` : 'view';
+          return (
+            <Activity key={t} mode={activa || saliendo ? 'visible' : 'hidden'}>
+              <div
+                className={cls}
+                /* `animation:'none'` no es decorativo: las animaciones de
+                   entrada usan fill:both, o sea que su valor final de
+                   `transform` queda aplicado para siempre y le gana a un
+                   transform inline. Sin apagarla, la pantalla no se movería
+                   ni un píxel con el dedo. */
+                style={activa && arrastre ? { animation: 'none', transform: `translateX(${arrastre.dx}px)` } : undefined}
+              >
+                {pantallas.current[t] ??= pantallaCon(t)}
+              </div>
+            </Activity>
+          );
+        })}
         {/* La vecina, sólo mientras dura el gesto: esperando fuera del marco,
             del lado hacia el que estás arrastrando, y moviéndose lo mismo que
             la de adelante. Es lo que hace que se vea que hay algo del otro
@@ -637,19 +664,6 @@ export default function App() {
             {vecina}
           </div>
         )}
-        {/* El `key` es lo que hace que la animación se repita: sin él React
-            reusa el mismo div y el navegador no vuelve a correr el keyframe. */}
-        <div
-          className={`view enter dir-${dir}${arrastre ? (arrastre.soltando ? ' arrastrada soltando' : ' arrastrada') : ''}${listoParaAnimar ? '' : ' esperando'}`}
-          key={store.tab}
-          /* `animation:'none'` no es decorativo: las animaciones de entrada
-             usan fill:both, o sea que su valor final de `transform` queda
-             aplicado para siempre y le gana a un transform inline. Sin
-             apagarla, la pantalla no se movería ni un píxel con el dedo. */
-          style={arrastre ? { animation: 'none', transform: `translateX(${arrastre.dx}px)` } : undefined}
-        >
-          {entrante}
-        </div>
       </main>
       {/* Con S.tab === 'hoy' ninguna pestaña sería la activa, y
           moveTabIndicator() (TabBar.jsx) busca `button.on`: sin encontrarlo

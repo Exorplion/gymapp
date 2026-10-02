@@ -9,7 +9,7 @@
 // contenido de T.rir, no que "se llamó a una función".
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from '../state.js';
-import { saveSet, ensureVals, setRirUltimaSerie, toggleUnilateral, seriesCompletas } from '../session.js';
+import { saveSet, ensureVals, setRirUltimaSerie, setRirLado, toggleUnilateral, seriesCompletas } from '../session.js';
 import { rirScheme } from '../exdb.js';
 import { RIR_OPTS, rirPedido } from '../rir.js';
 import { T, startRest, pedirRir } from '../rest.js';
@@ -26,7 +26,7 @@ vi.mock('../rest.js', () => {
     // arranca SIN pregunta, y sólo pedirRir() la pone
     startRest: vi.fn(() => { T.rir = null; }),
     stopRest: vi.fn(),
-    pedirRir: vi.fn(({ exId, setIdx, pedia }) => { T.rir = { exId, setIdx, pedia: pedia ?? null, valor: null }; }),
+    pedirRir: vi.fn(({ exId, setIdx, pedia, lados }) => { T.rir = { exId, setIdx, pedia: pedia ?? null, valor: null, lados: lados ? lados.map(l => ({ ...l, valor: null })) : null }; }),
     marcarRirElegido: vi.fn(v => { if (T.rir) T.rir.valor = v; }),
   };
 });
@@ -135,9 +135,41 @@ describe('RIR en unilateral', () => {
     expect(pedirRir).toHaveBeenCalledTimes(1);
     expect(T.rir).toMatchObject({ exId: 'u', setIdx: 1 });
 
-    // y el rpe cae en la fila 2, la que acaba de cerrar la serie
-    await setRirUltimaSerie(2);
-    expect(setsDe('u').map(s => s.rpe)).toEqual([null, 8]);
+    // la pregunta trae los DOS lados de la serie, en el orden en que se hicieron
+    expect(T.rir.lados.map(l => l.setIdx)).toEqual([0, 1]);
+  });
+
+  /* Enzo, 2026-10-01: "si hago izquierda sólo me preguntás el RIR en
+     derecha, debería haber RIR para ambos brazos". */
+  it('cada lado guarda su propio RIR', async () => {
+    const e = S.routine[0].exercises[0];
+    toggleUnilateral('u');
+    await serie(e);
+    await serie(e);
+    const lados = T.rir.lados.map(l => l.side);
+    expect(new Set(lados).size).toBe(2); // izquierda y derecha, no dos veces lo mismo
+    await setRirLado(0, 2);
+    await setRirLado(1, 0);
+    expect(setsDe('u').map(s => s.rpe)).toEqual([8, 10]);
+    expect(T.rir.lados.map(l => l.valor)).toEqual([2, 0]);
+    // corregir un lado no toca el otro, y null des-selecciona
+    await setRirLado(1, null);
+    expect(setsDe('u').map(s => s.rpe)).toEqual([8, null]);
+  });
+
+  it('contestar la serie de una vez vale para los dos lados', async () => {
+    const e = S.routine[0].exercises[0];
+    toggleUnilateral('u');
+    await serie(e);
+    await serie(e);
+    await setRirUltimaSerie(1);
+    expect(setsDe('u').map(s => s.rpe)).toEqual([9, 9]);
+  });
+
+  it('en bilateral no hay lados', async () => {
+    armar([ex('b', 'Press banca', 3)]);
+    await serie(S.routine[0].exercises[0]);
+    expect(T.rir.lados).toBe(null);
   });
 });
 

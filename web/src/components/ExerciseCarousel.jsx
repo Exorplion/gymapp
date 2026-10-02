@@ -161,6 +161,7 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
   // avanzó el ejercicio en curso) sí deslizan: antes saltaban de golpe, el
   // único movimiento suave era el que hacías vos con el dedo.
   const yaHuboSalto = useRef(false);
+  const claveAnterior = useRef(null);
   /* El viaje al ejercicio siguiente que quedó esperando a que el descanso
      deje de tapar la pantalla (ver más abajo). */
   const viajePendiente = useRef(null);
@@ -324,7 +325,16 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
        listeners) y no al principio del efecto: el scroll tiene que salir con
        su red de seguridad ya puesta. Sigue siendo la misma pasada síncrona de
        useLayoutEffect, o sea antes de que el navegador pinte. */
-    if (!yaHuboSalto.current) {
+    /* Hoy queda montada entre visitas (<Activity>, App.jsx): al volver, este
+       efecto corre de nuevo con la MISMA clave. No es que cambió el
+       ejercicio —eso sí desliza—, es que la pantalla reapareció, y oculta
+       con display:none el carrusel perdió su scroll: se reubica de golpe,
+       como en la primera vez. */
+    const reaparece = claveAnterior.current === focusKey;
+    claveAnterior.current = focusKey;
+    if (reaparece && yaHuboSalto.current) {
+      jumpToSlide(car, idx);
+    } else if (!yaHuboSalto.current) {
       jumpToSlide(car, idx);
       yaHuboSalto.current = true;
       // Reveal escalonado sólo la primera vez que se pinta el carrusel EN
