@@ -2488,13 +2488,13 @@ nav.tabbar{container-type:inline-size}
 .rfs-rir-caja .rfs-rir-t{margin-top:22px}
 .rfs-rir-t{font-family:var(--font-cond);font-weight:700;font-size:var(--t-lg);color:var(--text)}
 /* Unilateral: una barra por lado, rótulo a la izquierda. Un poco más bajas
-   (46 y no 52 px) para que las dos entren donde antes entraba una sin
+   (50 y no 52 px) para que las dos entren donde antes entraba una sin
    empujar los botones del reloj fuera de la pantalla a 390×844. */
 .rfs-rir-lados{width:100%;display:flex;flex-direction:column;gap:var(--s2);margin-top:var(--s1)}
 .rfs-rir-lado{display:grid;grid-template-columns:72px minmax(0,1fr);align-items:center;gap:var(--s2)}
 .rfs-rir-lado-t{font-size:var(--t-sm);font-weight:600;color:var(--text-2);text-align:left}
 .rfs-rir-lado .rir-seg{margin-top:0}
-.rfs-rir-lado .rir-seg button{min-height:46px}
+.rfs-rir-lado .rir-seg button{min-height:50px}
 .rir-seg{display:grid;grid-template-columns:repeat(5,1fr);width:100%;margin-top:var(--s1);border-radius:var(--r-md);border:1px solid var(--line-2);background:var(--surface);overflow:hidden}
 /* Los cinco números a la misma altura: "fallo" cuelga debajo del 0 sin
    empujarlo (V14: era la única opción en dos renglones). */
