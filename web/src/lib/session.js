@@ -791,10 +791,17 @@ export async function saveSet(exId) {
        de antes. Esta cuenta tiene que dar igual que la de la tarjeta
        (ExerciseCarousel.jsx) o la prescripción y la pregunta se contradicen. */
     const techoSeries = seriesCompletas(techo, uni);
+    /* Y en unilateral se pregunta por CADA lado, en la misma pregunta: las
+       dos filas de la serie que acaba de cerrarse, en el orden en que las
+       hiciste. Cada respuesta cae en su fila (setRirLado). */
+    const lados = uni && cur.length >= 2
+      ? [cur.length - 2, cur.length - 1].map(i => ({ setIdx: i, side: cur[i].side ?? null }))
+      : null;
     pedirRir({
       exId,
       setIdx: cur.length - 1,
       pedia: rirPedido(rirScheme(techoSeries, ex.name), seriesCompletas(cur.length, uni) - 1),
+      lados,
     });
   }
   if (finished) {
@@ -836,7 +843,29 @@ export async function setRirUltimaSerie(rir) {
   const set = sets && sets[p.setIdx];
   if (!set) return false;
   set.rpe = rir == null ? null : rpeFromRir(rir);
+  /* Con dos lados, contestar "la serie" de una vez vale para los dos. */
+  for (const l of p.lados || []) {
+    const s = sets[l.setIdx];
+    if (s) s.rpe = set.rpe;
+    l.valor = rir;
+  }
   marcarRirElegido(rir);
+  await saveDraft();
+  bump();
+  return true;
+}
+
+/** El RIR de UN lado de una serie unilateral (`i` = su lugar en T.rir.lados).
+    Mismo contrato que setRirUltimaSerie: escribe sobre la fila exacta que
+    anotó pedirRir(), y null des-selecciona. Devuelve si escribió. */
+export async function setRirLado(i, rir) {
+  const p = T.rir;
+  const l = p?.lados?.[i];
+  if (!l) return false;
+  const set = S.draft?.entries?.[p.exId]?.sets?.[l.setIdx];
+  if (!set) return false;
+  set.rpe = rir == null ? null : rpeFromRir(rir);
+  l.valor = rir;
   await saveDraft();
   bump();
   return true;

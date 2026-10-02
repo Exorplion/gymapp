@@ -122,8 +122,13 @@ export function shiftRest(secs) {
     puede haber cambiado si mientras tanto registraste otra cosa. `pedia` es
     lo que la rutina pedía para esa serie, para poder leer "pedía RIR 2,
     dejaste 1" sin buscar el número treinta píxeles más arriba. */
-export function pedirRir({ exId, setIdx, pedia }) {
-  T.rir = { exId, setIdx, pedia: pedia ?? null, valor: null };
+export function pedirRir({ exId, setIdx, pedia, lados }) {
+  /* `lados` sólo en unilateral: una fila por lado de la serie que cerró
+     ({ setIdx, side }), cada una con su respuesta. Hasta el 2026-10-01 se
+     preguntaba una sola vez y el RIR caía sólo en el segundo lado: el
+     primero quedaba sin esfuerzo registrado (Enzo: "si hago izquierda sólo
+     me preguntás el RIR en derecha"). */
+  T.rir = { exId, setIdx, pedia: pedia ?? null, valor: null, lados: lados ? lados.map(l => ({ ...l, valor: null })) : null };
   bump();
 }
 
