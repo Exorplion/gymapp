@@ -1,6 +1,53 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-10-01
+**Última actualización:** 2026-10-03
+
+---
+
+## SESIÓN 2026-10-03 — Tarjeta de recuperación (opción A) y mapa "Tu cuerpo" rehecho
+
+Pedido de Enzo: la tarjeta "Cómo están tus músculos" mostraba sólo los 4 más
+cargados ("hoy me toca posterior y quiero ver cómo van mis músculos de
+posterior") y "Ver mapa" se veía todo azul, distinto de la tarjeta. Le di 4
+opciones para la tarjeta (A lo de hoy primero, B rotan con desvanecido, C
+lista con scroll interno, D los once compactos) y la ventana rehecha en el
+lienzo privado "FIERRO Mapa de recuperación"
+(claude.ai/artifact/XBEVEwm9Ak92HW5sCyH9xf). Eligió **A + la ventana**:
+"están perfectas". Rama `feat/mapa-recuperacion`, **1145 tests**.
+
+1. **Por qué el mapa era azul**: `BodyMap.jsx` usaba `Silhouette` pintada por
+   días (`daysSinceAll`, escala de azules), no `lib/recuperacion.js`.
+2. **Tarjeta, opción A** (`Inicio.jsx` `RecuperacionCard`): `.seg` con
+   "Hoy · <turno>" / "Más cargados"; hasta 6 filas (nombre, %, barra) y el
+   cuerpo apaga lo que no es del turno (`.ini2-z.apagado`). El turno lo da
+   `lib/turnoFoco.js` (`turnoFoco()`: en curso → pendiente sin entrenar →
+   próximo). Cada fila abre el mapa con esa zona desplegada
+   (`openSheet('body-map', { zona })`). `ZonaRec.jsx` se borró.
+3. **Mapa rehecho** (`sheets/BodyMap.jsx`, CSS `.bm-*` al final de
+   styles.css): hero con el promedio del turno y lo más justo con consejo;
+   cuerpo frente+espalda en tres capas (masa, degradado por estado con
+   `Paradas`, luz), lo cargado brilla; "Cómo vas a estar" (`momentos()`:
+   ahora / noche / mañana / pasado, recalcula con el reloj adelantado);
+   músculo por músculo con pliegue (ejercicios, series, RIR, series de la
+   semana); "Series esta semana" con franja 10–20 (`seriesPorZona` desde
+   `lunesDe()`). Tokens nuevos: `--rec-cargado-hi/-md/-lo`,
+   `--rec-recup-hi/-md/-lo`, `--rec-cargado-rgb`, `--cuerpo-masa`.
+4. Verificado en Chrome (build + preview, SW bloqueado, `seedRegistro`) a
+   390×844 y 430×932: sin desbordes, tocar músculo → ficha + fila abierta,
+   "Lunes" → todo listo, fila de la tarjeta → mapa con la zona. Consola sin
+   errores nuevos.
+
+**Trampas:**
+- `movimiento.test.js` prohíbe transicionar `width/height`: las barras van
+  con `transform: scaleX/scaleY` desde `style`.
+- `tokens.test.js` exige que toda `var(--x)` tenga definición en CSS: las
+  `--r0/--r1` que pone el JSX llevan valor por defecto en `.card.bm-semana`.
+- `.sil-grande` se fue con el mapa viejo; `.sil-porcion` quedó en 2 fijo.
+
+**Pendientes:** que Enzo lo pruebe en el teléfono (sobre todo el brillo
+`drop-shadow` de lo cargado en el mapa: si se siente pesado, sacarlo primero).
+`Silhouette`/`LeyendaTonos` siguen vivos en otras pantallas (Hoy,
+SessionComplete).
 
 ---
 

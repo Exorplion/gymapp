@@ -105,3 +105,58 @@ describe('piezas chicas', () => {
     expect(cuandoLista(new Date('2026-10-03T15:00:00').getTime(), AHORA)).toBe('al 100 % el sábado');
   });
 });
+
+// 2026-10-03: la tarjeta de Inicio y el mapa muestran primero lo del turno
+// que toca, y el mapa suma las series de la semana y una proyección.
+import { zonasDeTurno, seriesPorZona, momentos } from '../recuperacion.js';
+import { haceTexto, diasDesde } from '../inicio.js';
+
+describe('zonasDeTurno', () => {
+  it('junta las zonas de los ejercicios, sin repetir y en el orden de ZONAS', () => {
+    const slot = { exercises: [{ name: 'Curl femoral sentado' }, { name: 'Jalón al pecho' }, { name: 'Remo con barra' }] };
+    expect(zonasDeTurno(slot)).toEqual(['Espalda', 'Femoral']);
+  });
+  it('sin turno o sin ejercicios reconocidos, ninguna', () => {
+    expect(zonasDeTurno(null)).toEqual([]);
+    expect(zonasDeTurno({ exercises: [{ name: 'Qwerty' }] })).toEqual([]);
+  });
+});
+
+describe('seriesPorZona', () => {
+  const ses = (date, entradas) => ({ date, entries: entradas.map(([name, n, uni = false]) => ({ name, unilateral: uni, sets: Array.from({ length: n }, () => ({ w: 1, r: 1 })) })) });
+  it('cuenta desde la fecha dada, inclusive', () => {
+    const r = seriesPorZona([ses('2026-09-28', [['Press banca', 4]]), ses('2026-09-27', [['Press banca', 9]])], '2026-09-28');
+    expect(r.Pecho).toBe(4);
+  });
+  it('trae todas las zonas, con 0 las que no se tocaron', () => {
+    const r = seriesPorZona([], '2026-09-28');
+    expect(Object.keys(r)).toEqual(ZONAS);
+    expect(Object.values(r).every(n => n === 0)).toBe(true);
+  });
+  it('en unilaterales un par de lados es una serie', () => {
+    const r = seriesPorZona([ses('2026-09-29', [['Curl femoral sentado', 6, true]])], '2026-09-28');
+    expect(r.Femoral).toBe(3);
+  });
+});
+
+describe('momentos', () => {
+  it('a la mañana: ahora, esta noche y los dos días siguientes', () => {
+    const m = momentos(new Date('2026-10-03T10:00:00').getTime());
+    expect(m.map(x => x.etiqueta)).toEqual(['Ahora', 'Noche', 'Domingo', 'Lunes']);
+    expect(m[1].horas).toBe(12);
+    expect(m[3].texto).toBe('el lunes a esta hora');
+  });
+  it('a la noche ya no hay "esta noche": pasa a "en 12 h"', () => {
+    const m = momentos(new Date('2026-10-03T21:30:00').getTime());
+    expect(m[1]).toMatchObject({ etiqueta: 'En 12 h', horas: 12 });
+  });
+});
+
+describe('haceTexto', () => {
+  it('hoy, ayer y hace N días', () => {
+    expect(haceTexto('2026-10-03', '2026-10-03')).toBe('hoy');
+    expect(haceTexto('2026-10-02', '2026-10-03')).toBe('ayer');
+    expect(haceTexto('2026-09-30', '2026-10-03')).toBe('hace 3 días');
+    expect(diasDesde('2026-10-05', '2026-10-03')).toBe(0);
+  });
+});
