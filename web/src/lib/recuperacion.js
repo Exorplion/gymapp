@@ -124,6 +124,49 @@ export function recuperacion(sesiones, ahora = Date.now()) {
   return out;
 }
 
+/** Las zonas que trabaja un turno, en el orden de ZONAS (2026-10-03: la
+    tarjeta de Inicio y el mapa muestran primero lo del turno que toca). */
+export function zonasDeTurno(slot) {
+  const hay = new Set((slot?.exercises || []).flatMap(e => zonasDeEjercicio(e)));
+  return ZONAS.filter(z => hay.has(z));
+}
+
+/** Series por zona desde la fecha `desde` ('YYYY-MM-DD', incluida). Cuenta
+    igual que recuperacion(): músculos principales, y en unilaterales cada
+    par de lados es una serie. Toda zona viene, con 0 si no hubo nada. */
+export function seriesPorZona(sesiones, desde) {
+  const out = Object.fromEntries(ZONAS.map(z => [z, 0]));
+  for (const s of sesiones || []) {
+    if (!s.date || s.date < desde) continue;
+    for (const e of s.entries || []) {
+      if (!e.sets?.length) continue;
+      for (const z of zonasDeEjercicio(e)) out[z] += seriesDe(e);
+    }
+  }
+  return out;
+}
+
+const DIA_SEMANA = t => new Date(t).toLocaleDateString('es', { weekday: 'long' });
+
+/** Los cuatro momentos del "Cómo vas a estar" del mapa: ahora, esta noche
+    (las 22; si faltan menos de 2 h, "en 12 h"), mañana y pasado a esta
+    misma hora. `horas` es cuánto se adelanta el reloj de recuperacion(). */
+export function momentos(ahora = Date.now()) {
+  const noche = new Date(ahora);
+  noche.setHours(22, 0, 0, 0);
+  const hNoche = (noche.getTime() - ahora) / HORA;
+  const d1 = DIA_SEMANA(ahora + 24 * HORA), d2 = DIA_SEMANA(ahora + 48 * HORA);
+  const may = t => t[0].toUpperCase() + t.slice(1);
+  return [
+    { etiqueta: 'Ahora', texto: 'ahora', horas: 0 },
+    hNoche >= 2
+      ? { etiqueta: 'Noche', texto: 'esta noche', horas: hNoche }
+      : { etiqueta: 'En 12 h', texto: 'en 12 horas', horas: 12 },
+    { etiqueta: may(d1), texto: `el ${d1} a esta hora`, horas: 24 },
+    { etiqueta: may(d2), texto: `el ${d2} a esta hora`, horas: 48 },
+  ];
+}
+
 /** La zona que pinta cada forma de la lámina: Pierna se reparte por su slug
     (hamstring → Femoral; cuádriceps, aductores, flexores, tibial → Cuádriceps). */
 export function zonaDeForma(cat, slug) {

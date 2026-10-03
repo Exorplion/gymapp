@@ -20,7 +20,7 @@
 //
 // La tira de días muestra HECHOS, no el plan: la rutina de Fierro es una
 // secuencia que avanza cuando entrenás, no casilleros lun-dom (rutina-logic.js).
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { S, useStore, openSheet, changeTab, esDiaLibre } from '../../lib/state.js';
 import { dstr, fmtKg, fmtNum, round1 } from '../../lib/format.js';
 import { pendingSlot, sesionDeHoy, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
@@ -30,25 +30,13 @@ import { mealsOf } from '../../lib/meals.js';
 import { weeklyAvg } from '../../lib/charts.js';
 import { cuerpo } from '../../lib/bodydata.js';
 import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, ZONAS } from '../../lib/recuperacion.js';
-import { LLANO, nombreZona, frase, capital, abreviar } from '../../lib/inicio.js';
+import { LLANO, nombreZona, frase, capital, abreviar, haceTexto } from '../../lib/inicio.js';
+import { turnoFoco, siguienteTurno } from '../../lib/turnoFoco.js';
 import AnimatedText from '../AnimatedText.jsx';
 import { Alerta, Check, Play, Plus, Taza } from '../Icon.jsx';
 import { menosMovimiento, screenReveal, D } from '../../lib/motion.js';
 
-const DIA = 86400000;
-const diasDesde = fecha => Math.max(0, Math.round((new Date(dstr() + 'T12:00:00') - new Date(fecha + 'T12:00:00')) / DIA));
-const haceTexto = fecha => { const d = diasDesde(fecha); return d === 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`; };
-
 const turnos = () => S.routine.filter(s => s.type === 'workout' && s.exercises?.length);
-/** El turno de entrenamiento que sigue al índice dado, dando la vuelta. */
-function siguienteTurno(desde) {
-  const n = S.routine.length;
-  for (let k = 1; k <= n; k++) {
-    const s = S.routine[(desde + k) % n];
-    if (s?.type === 'workout' && s.exercises?.length) return s;
-  }
-  return null;
-}
 /** Minutos de la última vez que hiciste ese turno; si nunca, ~3 min por serie. */
 function minutosDe(slot) {
   const ult = S.sessions.find(s => s.slotId === slot.id && s.duration);
@@ -211,47 +199,78 @@ function HoyCard({ rec }) {
 
 /* ========================== 2. Recuperación ========================== */
 
+/* Dos vistas (2026-10-03, opción A del lienzo "FIERRO Mapa de
+   recuperación"): las zonas del turno que toca —lo que Enzo quería ver en un
+   día de posterior— y las más cargadas de todas, que era lo único que había.
+   Hasta seis filas: entran al lado del cuerpo sin agrandar la tarjeta. El
+   resto está a un toque, en el mapa. */
+const FILAS = 6;
+
 function RecuperacionCard({ rec }) {
+  const foco = turnoFoco();
+  const [modo, setModo] = useState('turno');
   const conDato = ZONAS.filter(z => rec[z]);
-  const cargadas = conDato.filter(z => rec[z].pct < 90).sort((a, b) => rec[a].pct - rec[b].pct).slice(0, 4);
-  const listos = conDato.filter(z => rec[z].pct >= 90).map(z => LLANO[z]);
   const sexo = S.cfg.bodySex || S.cfg.profile?.sex;
+  const verTurno = !!foco && modo === 'turno';
+  // Las sin dato van al final: no son "las más cargadas", son desconocidas.
+  const porPct = (a, b) => (rec[a]?.pct ?? 101) - (rec[b]?.pct ?? 101);
+  const zonas = (verTurno ? [...foco.zonas] : [...conDato]).sort(porPct).slice(0, FILAS);
+  const apagadas = verTurno ? ZONAS.filter(z => !foco.zonas.includes(z)) : [];
   // Firma por valor para el memo del cuerpo: ~560 trazos que sólo cambian
-  // cuando cambia el estado de alguna zona.
-  const firma = ZONAS.map(z => rec[z]?.estado || '-').join('|') + '#' + (sexo || '');
+  // cuando cambia el estado de alguna zona o cuáles van apagadas.
+  const firma = ZONAS.map(z => rec[z]?.estado || '-').join('|') + '#' + (sexo || '') + '#' + apagadas.join(',');
+  const abrir = zona => openSheet('body-map', zona ? { zona } : undefined);
   return (
     <section className="ini2-card ini2-rec" aria-label="Cómo están tus músculos">
       <div className="ini2-fila">
         <h2 className="ini2-h2">Cómo están tus músculos</h2>
-        <button type="button" className="ini2-enlace" onClick={() => openSheet('body-map')}>Mapa ›</button>
+        <button type="button" className="ini2-enlace" onClick={() => abrir()}>Mapa ›</button>
       </div>
       {conDato.length === 0 ? (
         <div className="ini2-rec-vacio">
-          <CuerpoRecuperacion firma={firma} rec={rec} sexo={sexo} />
+          <CuerpoRecuperacion firma={firma} rec={rec} sexo={sexo} apagadas={apagadas} />
           <p className="ini2-sub">Cuando registres tu primer entrenamiento, acá vas a ver cómo se recupera cada músculo.</p>
         </div>
       ) : (
         <>
+          {foco && (
+            <div className="seg ini2-rec-seg" role="group" aria-label="Qué músculos mostrar">
+              <button type="button" className={verTurno ? 'on' : ''} aria-pressed={verTurno} onClick={() => setModo('turno')}>
+                <span>{foco.cuando === 'hoy' ? 'Hoy' : 'Próximo'} · {foco.slot.name}</span>
+              </button>
+              <button type="button" className={verTurno ? '' : 'on'} aria-pressed={!verTurno} onClick={() => setModo('cargados')}>
+                <span>Más cargados</span>
+              </button>
+            </div>
+          )}
           <div className="ini2-rec-grid">
-            <button type="button" className="ini2-rec-cuerpo" aria-label="Abrir el mapa del cuerpo" onClick={() => openSheet('body-map')}>
-              <CuerpoRecuperacion firma={firma} rec={rec} sexo={sexo} />
+            <button type="button" className="ini2-rec-cuerpo" aria-label="Abrir el mapa del cuerpo" onClick={() => abrir()}>
+              <CuerpoRecuperacion firma={firma} rec={rec} sexo={sexo} apagadas={apagadas} />
             </button>
             <div className="ini2-rec-lista">
-              {cargadas.length === 0 && <p className="ini2-sub">Todo lo que entrenaste está listo.</p>}
-              {cargadas.map(z => (
-                <button type="button" key={z} className="ini2-rec-fila" onClick={() => openSheet('zona-rec', { zona: z })}>
-                  <span className="ini2-rec-nombre">
-                    <b>{nombreZona(z)}</b>
-                    <small>{haceTexto(rec[z].date)}, {cuandoLista(rec[z].listaEn)}</small>
-                  </span>
-                  <span className={`ini2-rec-pct ${rec[z].estado}`}>{rec[z].pct}%</span>
-                </button>
-              ))}
+              {zonas.map(z => {
+                const r = rec[z];
+                return (
+                  <button
+                    type="button"
+                    key={z}
+                    className="ini2-rec-fila"
+                    aria-label={r ? `${nombreZona(z)}: ${r.pct} %, ${cuandoLista(r.listaEn)}` : `${nombreZona(z)}: sin registro`}
+                    onClick={() => abrir(r ? z : null)}
+                  >
+                    <span className="ini2-rec-linea">
+                      <b>{nombreZona(z)}</b>
+                      <span className={`ini2-rec-pct ${r?.estado || 'sin-dato'}`}>{r ? `${r.pct}%` : '–'}</span>
+                    </span>
+                    <span className={`ini2-rec-barra ${r?.estado || 'sin-dato'}`} aria-hidden="true">
+                      <i style={{ transform: `scaleX(${(r?.pct ?? 0) / 100})` }} />
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-          {listos.length > 0 && cargadas.length > 0 && (
-            <p className="ini2-rec-listos">{capital(frase(listos))} {listos.length === 1 ? 'ya está listo' : 'ya están listos'}.</p>
-          )}
+          <p className="ini2-rec-listos">{resumenRec(rec, verTurno ? foco : null, conDato)}</p>
           <div className="ini2-leyenda" aria-hidden="true">
             <span><i className="cargado" />Cargado</span>
             <span><i className="recuperando" />Recuperando</span>
@@ -264,17 +283,41 @@ function RecuperacionCard({ rec }) {
   );
 }
 
+/** La línea de abajo de la tarjeta. Con turno: lo más justo de ese turno y
+    cuándo llega, y qué está listo. Sin turno: qué ya está listo. */
+function resumenRec(rec, foco, conDato) {
+  if (foco) {
+    const conRec = foco.zonas.filter(z => rec[z]).sort((a, b) => rec[a].pct - rec[b].pct);
+    if (!conRec.length) return `Todavía no registraste nada de ${foco.slot.name}.`;
+    const listos = conRec.filter(z => rec[z].pct >= 90).map(z => LLANO[z]);
+    const justo = conRec[0];
+    const cuando = foco.cuando === 'hoy' ? 'de hoy' : `de ${foco.slot.name}`;
+    let t = rec[justo].pct >= 90
+      ? `Todo lo ${cuando} está listo.`
+      : `Lo más justo ${cuando}: ${LLANO[justo]}, ${cuandoLista(rec[justo].listaEn)}.`;
+    if (listos.length && rec[justo].pct < 90) t += ` ${capital(frase(listos))}, ${listos.length === 1 ? 'listo' : 'listos'}.`;
+    const fuera = foco.zonas.length - FILAS;
+    if (fuera > 0) t += ` ${fuera === 1 ? 'Otro más' : `Otros ${fuera}`} en el mapa.`;
+    return t;
+  }
+  const listos = conDato.filter(z => rec[z].pct >= 90).map(z => LLANO[z]);
+  if (listos.length === conDato.length) return 'Todo lo que entrenaste está listo.';
+  return listos.length ? `${capital(frase(listos))} ${listos.length === 1 ? 'ya está listo' : 'ya están listos'}.` : 'Nada está al 100 % todavía.';
+}
+
 /** Frente y espalda, cada forma pintada por el estado de su zona. Más liviano
-    que Silhouette (sin giro, zoom ni toques): acá sólo se mira. Memo por la
-    firma de estados. */
-const CuerpoRecuperacion = memo(function CuerpoRecuperacion({ rec, sexo }) {
+    que el mapa (sin luz ni toques): acá sólo se mira. Las zonas `apagadas`
+    (las que no son del turno que se está mirando) quedan tenues. Memo por
+    la firma de estados. */
+const CuerpoRecuperacion = memo(function CuerpoRecuperacion({ rec, sexo, apagadas }) {
   const { frente, espalda } = cuerpo(sexo);
   const cara = (c, etiqueta) => (
     <svg viewBox={c.viewBox} className="ini2-cuerpo-cara" role="img" aria-label={etiqueta}>
       {c.zonas.filter(z => !z.parche).map((z, i) => {
         const zona = z.cat && z.cat !== 'pelo' ? zonaDeForma(z.cat, z.slug) : null;
         const cls = z.cat === 'pelo' ? 'pelo' : zona ? (rec[zona]?.estado || 'sin-dato') : 'neutro';
-        return <g key={i} className={`ini2-z ${cls}`}>{z.d.map((d, j) => <path key={j} d={d} />)}</g>;
+        const apagada = zona && apagadas.includes(zona) ? ' apagado' : '';
+        return <g key={i} className={`ini2-z ${cls}${apagada}`}>{z.d.map((d, j) => <path key={j} d={d} />)}</g>;
       })}
     </svg>
   );

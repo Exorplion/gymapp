@@ -235,6 +235,14 @@
   --rec-cargado:#E8793A;
   --cuerpo-neutro:#2B3038;
   --cuerpo-pelo:#3A3F47;
+  /* El cuerpo grande del mapa (sheets/BodyMap.jsx, 2026-10-03): los mismos
+     tres estados con luz, cuerpo y sombra, como los escalones del mapa viejo.
+     "Listo" usa --mapa-0-*, que sigue al acento. La masa une los músculos
+     por debajo. */
+  --rec-cargado-rgb:232,121,58;
+  --rec-cargado-hi:#FFB486; --rec-cargado-md:var(--rec-cargado); --rec-cargado-lo:#9C400E;
+  --rec-recup-hi:#FFE391; --rec-recup-md:var(--warn); --rec-recup-lo:#A47000;
+  --cuerpo-masa:#0B0C0E;
   --warn-soft:#FDE08A;
   --on-warn:#2A1603;
   --flame:#FFC46B;
@@ -3490,20 +3498,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    tiene exactamente el mismo tono —entrenaste el grupo y la porción el mismo
    día— y sin contorno el resaltado sería invisible. Claro y fino a propósito:
    el ámbar de "7+ días" y el --accent de la selección ya están tomados. */
-.sil-porcion{stroke:rgba(var(--hi-rgb),.55);stroke-width:var(--sil-porcion-w,2);pointer-events:none}
+.sil-porcion{stroke:rgba(var(--hi-rgb),.55);stroke-width:2;pointer-events:none}
 
-/* El grosor se calibra por TAMAÑO DE RENDER, no de una vez.
-
-   `stroke-width` va en unidades del SVG y la lámina mide ~1444 de alto, así que
-   el mismo 2 se convierte en 0.15px en la miniatura de Inicio (112px) y en
-   0.58px en el mapa grande (420px): las dos veces menos de un píxel. En la
-   miniatura da igual —ahí el dato lo lleva el color, la porción es un parche de
-   pocos píxeles— pero el mapa grande es justamente donde se abre para mirar el
-   detalle, y un contorno de medio píxel se pierde. 7 unidades ≈ 2px reales a
-   420px (medido en Chrome a 390 y 430px de viewport): legible sin taparle el
-   color al músculo, que es el que lleva el dato. Se aplica sólo acá para no engordar la miniatura, donde 2px sobre un cuerpo
-   de 112px taparían el músculo en vez de marcarlo. */
-.sil-grande{--sil-porcion-w:7}
+/* El mapa grande que subía este grosor (.sil-grande, 7 unidades) se rehízo
+   el 2026-10-03 sin la silueta: sheets/BodyMap.jsx pinta recuperación. */
 
 .sil-tap{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .sil-tap:focus{outline:none}
@@ -4636,18 +4634,34 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini2-z.cargado path{fill:var(--rec-cargado)}
 .ini2-z.recuperando path{fill:var(--warn)}
 .ini2-z.listo path{fill:var(--accent)}
-.ini2-rec-lista{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ini2-z path{transition:opacity var(--d3) var(--ease)}
+.ini2-z.apagado path{opacity:.22}
+/* El selector de vista (turno que toca / más cargados) es el .seg de la app,
+   apretado para entrar en la tarjeta: el nombre del turno se corta con
+   puntos suspensivos antes que partir el botón en dos renglones. */
+.ini2-rec-seg button{min-width:0;padding:var(--s2) var(--s2);font-size:var(--t-sm)}
+.ini2-rec-seg button>span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ini2-rec-lista{display:flex;flex-direction:column;min-width:0}
+/* Seis filas al lado del cuerpo: nombre y cifra arriba, la barra abajo. 36
+   de alto cada una (6 × 36 = el alto del cuerpo): con 44 la tarjeta crecía
+   80 px. Pegadas una a otra, el toque cae siempre en alguna. */
+.ini2-rec-grid .ini2-cuerpo{height:212px}
 .ini2-rec-fila{
-  display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
-  min-height:44px;padding:4px 0;background:none;border:0;text-align:left;width:100%;min-width:0;
+  display:flex;flex-direction:column;justify-content:center;gap:5px;
+  min-height:36px;padding:4px 0;background:none;border:0;text-align:left;width:100%;min-width:0;
 }
-.ini2-rec-nombre{display:flex;flex-direction:column;min-width:0}
-.ini2-rec-nombre b{font-size:var(--t-body);font-weight:600;color:var(--text)}
-.ini2-rec-nombre small{font-size:var(--t-micro);line-height:1.3;color:var(--text-2);text-wrap:pretty}
-.ini2-rec-pct{flex:none;font-family:var(--font-cond);font-weight:700;font-size:var(--t-xl);font-variant-numeric:tabular-nums}
+.ini2-rec-linea{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);min-width:0}
+.ini2-rec-linea b{font-size:var(--t-body);font-weight:600;line-height:1.2;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ini2-rec-pct{flex:none;font-family:var(--font-cond);font-weight:700;font-size:var(--t-xl);line-height:1;font-variant-numeric:tabular-nums}
 .ini2-rec-pct.cargado{color:var(--rec-cargado)}
 .ini2-rec-pct.recuperando{color:var(--warn)}
 .ini2-rec-pct.listo{color:var(--accent)}
+.ini2-rec-pct.sin-dato{color:var(--text-3)}
+.ini2-rec-barra{display:block;height:4px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.08);overflow:hidden}
+.ini2-rec-barra>i{display:block;height:100%;border-radius:inherit;transform-origin:left;transition:transform var(--d3) var(--ease-out)}
+.ini2-rec-barra.cargado>i{background:var(--rec-cargado)}
+.ini2-rec-barra.recuperando>i{background:var(--warn)}
+.ini2-rec-barra.listo>i{background:var(--accent)}
 .ini2-rec-listos{margin:0;padding-top:var(--s3);border-top:1px solid var(--line);font-size:var(--t-sm);color:var(--text-2)}
 .ini2-rec-vacio{display:flex;align-items:center;gap:var(--s4)}
 .ini2-rec-vacio .ini2-cuerpo{height:120px;flex:none}
@@ -4697,16 +4711,137 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
 .ini2-enlace-pie{background:none;border:0;color:var(--text-2);font-size:var(--t-sm);min-height:40px}
 .ini2-enlace-pie b{color:var(--accent);font-weight:600}
 
-/* Detalle de una zona (sheets/ZonaRec.jsx) */
-.zona-rec{display:flex;flex-direction:column;gap:var(--s4)}
-.zona-rec-cifra{display:flex;align-items:baseline;gap:var(--s3);flex-wrap:wrap}
-.zona-rec-cifra b{font-family:var(--font-cond);font-weight:800;font-size:var(--t-cifra);line-height:1}
-.zona-rec-cifra b.cargado{color:var(--rec-cargado)}
-.zona-rec-cifra b.recuperando{color:var(--warn)}
-.zona-rec-cifra b.listo{color:var(--accent)}
-.zona-rec-cifra span{font-size:var(--t-body);color:var(--text-2)}
-.zona-rec-caja{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:var(--r);background:var(--surface-2)}
-.zona-rec-k{font-size:var(--t-sm);font-weight:600;color:var(--text-2)}
-.zona-rec-k.sm{font-size:var(--t-micro);font-weight:400}
-.zona-rec-ex{display:flex;justify-content:space-between;gap:var(--s3);font-size:var(--t-body);color:var(--text)}
-.zona-rec-ex span:last-child{color:var(--text-2);text-align:right}
+
+
+/* ======================================================================
+   MAPA "TU CUERPO" (sheets/BodyMap.jsx, rehecho el 2026-10-03)
+   Pinta recuperación con los colores de la tarjeta de Inicio (cargado,
+   recuperando, listo). Cinco bloques: lo del turno, el cuerpo, la
+   proyección, músculo por músculo y las series de la semana.
+   ====================================================================== */
+.bm{display:flex;flex-direction:column;gap:var(--s5)}
+.bm>.bm-bloque{margin:0}
+section.bm-bloque{display:flex;flex-direction:column;gap:var(--s3)}
+.bm-cabeza{display:flex;flex-direction:column;gap:6px}
+/* "Romper las reglas" del mapa (Enzo, 2026-10-03): el título es de pantalla
+   (40, versal), no de hoja (26). #sheet delante porque #sheet h2 le gana a
+   una clase sola. */
+#sheet .bm-titulo{
+  margin:0;font-family:var(--font-cond);font-style:italic;font-weight:800;font-size:var(--t-titulo);
+  line-height:.95;letter-spacing:var(--tr-titulo);text-transform:uppercase;
+}
+.bm-sub{margin:0;font-size:var(--t-sm);color:var(--text-2)}
+#sheet .bm-sect{margin:0}
+
+/* 1. Lo del turno: la hero de la hoja (lleva la luz de la pantalla). */
+.card.hero.bm-hero{padding:var(--s5)}
+.bm-hero-fila{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s4)}
+.bm-hero-pct{
+  font-family:var(--font-cond);font-style:italic;font-weight:800;font-size:var(--t-record);
+  line-height:.9;letter-spacing:var(--tr-titulo);font-variant-numeric:tabular-nums;margin-bottom:var(--s2);
+  transition:color var(--d4) var(--ease);
+}
+.bm-hero-pct small{font-size:var(--t-2xl)}
+.bm-hero-barras{display:flex;gap:4px;align-items:flex-end;height:56px;padding-bottom:4px}
+.bm-hero-barras span{width:12px;height:52px;border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.07);display:flex;align-items:flex-end;overflow:hidden}
+.bm-hero-barras i{display:block;width:100%;height:100%;border-radius:inherit;transform-origin:bottom;transition:transform var(--d4) var(--ease-out)}
+.bm-hero-frase{margin:0;font-size:var(--t-body);line-height:1.5;color:var(--text)}
+
+/* Un color por estado, el mismo en cifras, barras y la ficha. */
+.bm-hero-pct.cargado,.bm-ficha .cargado,.bm-fila-pct.cargado{color:var(--rec-cargado)}
+.bm-hero-pct.recuperando,.bm-ficha .recuperando,.bm-fila-pct.recuperando{color:var(--warn)}
+.bm-hero-pct.listo,.bm-ficha .listo,.bm-fila-pct.listo{color:var(--accent)}
+.bm-hero-barras .cargado i,.bm-barra.cargado>i,.bm-leyenda i.cargado{background:var(--rec-cargado)}
+.bm-hero-barras .recuperando i,.bm-barra.recuperando>i,.bm-leyenda i.recuperando{background:var(--warn)}
+.bm-hero-barras .listo i,.bm-barra.listo>i,.bm-leyenda i.listo{background:var(--accent)}
+
+/* 2. El cuerpo: tres capas por cara (masa, músculo, luz), como la silueta. */
+.bm-cuerpo-caja{position:relative}
+.bm-cuerpo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding-top:var(--s2)}
+.bm-defs{position:absolute;width:0;height:0}
+.bm-cara{margin:0;display:flex;flex-direction:column;align-items:center;gap:var(--s2);min-width:0}
+.bm-cara svg{height:clamp(260px,42dvh,340px);width:auto;max-width:100%;display:block;overflow:visible}
+.bm-masa path{fill:var(--cuerpo-masa);stroke:var(--cuerpo-masa);stroke-width:18;stroke-linejoin:round}
+.bm-z path{stroke:var(--text);stroke-width:0;stroke-linejoin:round;transition:stroke-width var(--d1) var(--ease)}
+.bm-z.toca{cursor:pointer}
+.bm-z.cargado path{fill:url(#bm-g-cargado)}
+.bm-z.recuperando path{fill:url(#bm-g-recuperando)}
+.bm-z.listo path{fill:url(#bm-g-listo)}
+.bm-z.sin-dato path{fill:url(#bm-g-neutro)}
+.bm-z.pelo path{fill:var(--cuerpo-pelo)}
+/* Lo cargado brilla: es lo primero que el ojo tiene que encontrar. */
+.bm-z.cargado{filter:drop-shadow(0 0 30px rgba(var(--rec-cargado-rgb),.5))}
+.bm-z.sel path{stroke-width:7}
+.bm-luz{pointer-events:none}
+.bm-luz path{stroke:none}
+.bm-ficha{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:var(--s3);padding:6px var(--s4);border-radius:var(--r-full);
+  background:var(--sup-flota-bg);border:1px solid var(--sup-flota-borde);box-shadow:var(--sup-flota-sombra);
+  white-space:nowrap;pointer-events:none;
+}
+.bm-ficha b{font-weight:600;font-size:var(--t-body)}
+.bm-ficha span{font-family:var(--font-cond);font-style:italic;font-weight:800;font-size:var(--t-xl);font-variant-numeric:tabular-nums}
+.bm-leyenda{display:flex;flex-wrap:wrap;justify-content:center;gap:6px var(--s4);font-size:var(--t-micro);color:var(--text-2)}
+.bm-leyenda span{display:inline-flex;align-items:center;gap:6px}
+.bm-leyenda i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* 3. Cómo vas a estar: el .seg de la app con cuatro momentos. */
+.bm-momentos button{min-width:0;padding:var(--s2) 0;font-size:var(--t-sm)}
+.bm-nota{margin:0;font-size:var(--t-sm);line-height:1.45;color:var(--text-2)}
+.bm-nota b{color:var(--text);font-weight:600}
+.bm-etq-resto{margin-top:var(--s2)}
+
+/* 4. Músculo por músculo: filas de un .group que se abren. */
+.bm-fila+.bm-fila{border-top:1px solid var(--line)}
+.bm-fila-btn{
+  width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto 18px;column-gap:var(--s3);row-gap:3px;align-items:center;
+  padding:14px var(--s4);background:none;border:0;text-align:left;color:var(--text);
+  transition:background var(--d1) var(--ease);
+}
+.bm-fila-btn:active{background:rgba(var(--hi-rgb),.04)}
+.bm-fila-nombre{font-weight:600;font-size:var(--t-body);line-height:1.2}
+.bm-fila-pct{
+  grid-row:span 2;font-family:var(--font-cond);font-style:italic;font-weight:800;font-size:var(--t-2xl);
+  line-height:1;font-variant-numeric:tabular-nums;transition:color var(--d4) var(--ease);
+}
+.bm-chev{grid-row:span 2;color:var(--text-3);transition:transform var(--d2) var(--ease)}
+.bm-fila.abierta .bm-chev{transform:rotate(180deg)}
+.bm-fila-sub{font-size:var(--t-sm);line-height:1.35;color:var(--text-2)}
+.bm-barra{grid-column:1/-1;display:block;height:4px;margin-top:var(--s2);border-radius:var(--r-xs);background:rgba(var(--hi-rgb),.07);overflow:hidden}
+.bm-barra>i{display:block;height:100%;border-radius:inherit;transform-origin:left;transition:transform var(--d4) var(--ease-out)}
+/* El pliegue: columna acotada (minmax) para que un nombre largo no saque el
+   contenido de la fila (ver .day-body). */
+.bm-pliegue{
+  display:grid;grid-template-rows:0fr;grid-template-columns:minmax(0,1fr);opacity:0;
+  transition:grid-template-rows var(--d3) var(--ease-out),opacity var(--d2) var(--ease-out);
+}
+.bm-pliegue>div{min-height:0;overflow:hidden}
+.bm-fila.abierta .bm-pliegue{grid-template-rows:1fr;opacity:1}
+.bm-detalle{
+  margin:2px var(--s4) var(--s2);padding:var(--s3) 14px;border-radius:var(--r-md);
+  background:rgba(var(--hi-rgb),.035);display:flex;flex-direction:column;gap:var(--s2);
+}
+.bm-ej{display:flex;justify-content:space-between;gap:var(--s3);font-size:var(--t-sm);color:var(--text)}
+.bm-ej span:last-child{color:var(--text-2);white-space:nowrap;text-align:right}
+.bm-ej-semana{margin:0 var(--s4) var(--s4);color:var(--text-2)}
+.bm-ej-semana b{color:var(--text);font-weight:600}
+
+/* 5. Series esta semana: la franja de 10–20 va por --r0/--r1 (BodyMap). */
+.card.bm-semana{display:flex;flex-direction:column;gap:10px;margin:0;--r0:41.6%;--r1:83.3%}
+.bm-sem-fila{display:grid;grid-template-columns:86px minmax(0,1fr) 28px;gap:10px;align-items:center}
+.bm-sem-nombre{font-size:var(--t-sm);color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bm-sem-pista{position:relative;height:10px;border-radius:5px;background:rgba(var(--hi-rgb),.05)}
+.bm-sem-pista>b{
+  position:absolute;top:-3px;bottom:-3px;left:var(--r0);right:calc(100% - var(--r1));
+  border-left:1px dashed rgba(var(--hi-rgb),.22);border-right:1px dashed rgba(var(--hi-rgb),.22);background:rgba(var(--hi-rgb),.045);
+}
+.bm-sem-pista>i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:rgba(var(--hi-rgb),.3)}
+.bm-sem-n{font-family:var(--font-cond);font-weight:700;font-size:var(--t-body);text-align:right;font-variant-numeric:tabular-nums;color:var(--text-2)}
+.bm-sem-fila.en .bm-sem-nombre,.bm-sem-fila.en .bm-sem-n{color:var(--text)}
+.bm-sem-fila.en .bm-sem-pista>i{background:var(--accent-grad)}
+.bm-sem-escala{font-size:var(--t-micro);color:var(--text-3)}
+.bm-sem-marcas{position:relative;height:14px}
+.bm-sem-marcas i{position:absolute;transform:translateX(-50%);font-style:normal}
+.bm-pie{margin:0;padding-top:var(--s4);border-top:1px solid var(--line);font-size:var(--t-sm);line-height:1.5;color:var(--text-3)}
+.bm-vacio{display:flex;flex-direction:column;align-items:center;gap:var(--s4);text-align:center}

@@ -248,31 +248,24 @@ describe('MusclePop — el sub tocado viaja desde la silueta', () => {
   });
 });
 
-// El mapa grande (sheets/BodyMap.jsx) es el otro consumidor de esto. Lo que se
-// puede testear sin navegador es el contrato: que el markup pida las porciones,
-// que la clase de recalibrado del contorno exista de verdad en styles.css (una
-// clase muerta no falla y no avisa — ver CLAUDE.md) y que no se le haya colado
-// un valor suelto donde va la variable.
-describe('BodyMap — el mapa grande recibe las porciones', () => {
+// El mapa grande (sheets/BodyMap.jsx) dejó de usar la silueta el 2026-10-03:
+// ahora pinta RECUPERACIÓN, con los colores de la tarjeta de Inicio (lo que
+// pidió Enzo: "debería verse igual al de la tarjeta, en vez de todo azul").
+// Lo que se testea es ese contrato: que no vuelva la escala de días.
+describe('BodyMap — pinta recuperación, no días', () => {
   const src = readFileSync(new URL('../../components/sheets/BodyMap.jsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../../styles.css', import.meta.url), 'utf8');
 
-  it('calcula las porciones del historial y se las pasa a la silueta', () => {
-    expect(src).toMatch(/diasPorPorcion\(S\.sessions, dstr\(\)\)/);
-    expect(src).toMatch(/<Silhouette[^>]*porciones=\{porciones\}/);
+  it('usa el modelo de lib/recuperacion.js y no la silueta por días', () => {
+    expect(src).toMatch(/recuperacion\(S\.sessions, ahora \+ h \* HORA\)/);
+    expect(src).not.toMatch(/<Silhouette/);
+    expect(src).not.toMatch(/daysSinceAll/);
   });
 
-  it('marca el contenedor como grande para recalibrar el contorno', () => {
-    expect(src).toMatch(/className="sil-grande/);
-    expect(css).toMatch(/\.sil-grande\{--sil-porcion-w:/);
-    // El contorno tiene que LEER la variable: si alguien vuelve a un número
-    // suelto, el mapa grande se queda con el grosor de la miniatura.
-    expect(css).toMatch(/\.sil-porcion\{[^}]*stroke-width:var\(--sil-porcion-w,\s*2\)/);
-  });
-
-  it('la aclaración de la leyenda sólo sale si hay alguna porción con registro', () => {
-    // Sin dato no hay nada distinto que explicar, y un texto fijo prometería un
-    // detalle que la figura no está mostrando.
-    expect(src).toMatch(/Object\.keys\(porciones\)\.length > 0 &&/);
+  it('cada estado tiene su degradado y su regla en styles.css', () => {
+    for (const est of ['cargado', 'recuperando', 'listo']) {
+      expect(src).toMatch(new RegExp(`id="bm-g-${est}"`));
+      expect(css).toMatch(new RegExp(`\\.bm-z\\.${est} path\\{fill:url\\(#bm-g-${est}\\)`));
+    }
   });
 });

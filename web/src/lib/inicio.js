@@ -1,5 +1,6 @@
 // Textos de la portada (Inicio.jsx, 2026-10-01): cómo se nombra cada zona en
 // una frase y cómo se abrevia un turno para que entre en un día de la tira.
+import { dstr } from './format.js';
 
 /** Cómo se dice cada grupo/zona dentro de una frase ("Pecho, hombros y tríceps"). */
 export const LLANO = {
@@ -11,6 +12,16 @@ export const capital = t => (t ? t[0].toUpperCase() + t.slice(1) : t);
 
 /** Una zona sola, con mayúscula: "Hombros", "Abdomen". */
 export const nombreZona = z => capital(LLANO[z] || z);
+
+const DIA = 86400000;
+/** Días enteros entre `fecha` y `hoy` (nunca negativo). */
+export const diasDesde = (fecha, hoy = dstr()) =>
+  Math.max(0, Math.round((new Date(hoy + 'T12:00:00') - new Date(fecha + 'T12:00:00')) / DIA));
+/** "hoy", "ayer", "hace 3 días". */
+export const haceTexto = (fecha, hoy = dstr()) => {
+  const d = diasDesde(fecha, hoy);
+  return d === 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`;
+};
 
 /** "a", "a y b", "a, b y c". */
 export const frase = xs => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} y ${xs[xs.length - 1]}`);
