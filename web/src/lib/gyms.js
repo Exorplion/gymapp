@@ -18,12 +18,14 @@
 // visual de "esta es la variante de la que hablás", no una galería aparte
 // para pasear) — se guarda como Blob nativo en su propio store
 // ('gymPhotos', db.js) para no inflar el blob de 'settings'.
-import { S, bump, saveCfg } from './state.js';
+import { S, bump, saveCfg, saveDraft } from './state.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
 import { persistSlot } from './rutina-logic.js';
 import { indiceHoy } from './session.js';
 import { shrinkImageBlob } from './photo.js';
+import { uid } from './format.js';
+import { aplicarMaquina, keyEj, maquinasDe } from './maquinas.js';
 
 export const saveGyms = () => idb.put('settings', { key: 'gyms', value: S.gyms });
 
@@ -109,27 +111,32 @@ export function setGymEquip(gymId, exName, equip, machine) {
   bump();
 }
 
-const photoId = (gymId, exName) => `${gymId}::${keyOf(exName)}`;
+/** La foto de la "Máquina 1" legada es la que ya existía (gym::ejercicio);
+    cada máquina nueva lleva su id al final. */
+export const LEGADO = 'legado';
+const photoId = (gymId, exName, maqId) => (maqId && maqId !== LEGADO
+  ? `${gymId}::${keyOf(exName)}::${maqId}`
+  : `${gymId}::${keyOf(exName)}`);
 
 /** Guarda/reemplaza la foto de "esta máquina, en este gym" — un campo más
     del registro equip[exKey], no una galería aparte (ver comentario de
     cabecera). `blob` es lo que entrega el <input type="file"> de la
     cámara/rollo, tal cual, sin recodificar. */
-export async function savePhoto(gymId, exName, blob) {
-  await idb.put('gymPhotos', { id: photoId(gymId, exName), blob, ts: Date.now() });
+export async function savePhoto(gymId, exName, blob, maqId) {
+  await idb.put('gymPhotos', { id: photoId(gymId, exName, maqId), blob, ts: Date.now() });
 }
 
 /** Devuelve el Blob guardado o null. El caller arma su propio object URL
     (URL.createObjectURL) y lo revoca al desmontar — acá no se cachea nada,
     para no pelear con la limpieza de esas URLs. */
-export async function getPhoto(gymId, exName) {
+export async function getPhoto(gymId, exName, maqId) {
   if (!gymId) return null;
-  const row = await idb.get('gymPhotos', photoId(gymId, exName));
+  const row = await idb.get('gymPhotos', photoId(gymId, exName, maqId));
   return row?.blob || null;
 }
 
-export async function deletePhoto(gymId, exName) {
-  await idb.del('gymPhotos', photoId(gymId, exName));
+export async function deletePhoto(gymId, exName, maqId) {
+  await idb.del('gymPhotos', photoId(gymId, exName, maqId));
   S.fotoRev = (S.fotoRev || 0) + 1;
   bump();
 }
@@ -142,7 +149,7 @@ export async function deletePhoto(gymId, exName) {
 
     `S.fotoRev` sube con cada cambio: la miniatura de la tarjeta lo tiene en
     sus dependencias y se vuelve a leer sola. Devuelve si guardó. */
-export async function guardarFotoMaquina(gymId, exName, file) {
+export async function guardarFotoMaquina(gymId, exName, file, maqId) {
   if (!gymId || !file) return false;
   let blob;
   try {
@@ -152,7 +159,7 @@ export async function guardarFotoMaquina(gymId, exName, file) {
     return false;
   }
   try {
-    await savePhoto(gymId, exName, blob);
+    await savePhoto(gymId, exName, blob, maqId);
   } catch {
     toast('No se pudo guardar la foto (¿sin espacio?)');
     return false;
@@ -174,10 +181,19 @@ export async function setActiveGym(id) {
   const gym = S.gyms.find(g => g.id === id);
   const idx = indiceHoy();
   const slot = S.routine[idx];
-  if (gym && slot?.exercises?.length) {
+  // La máquina elegida de cada ejercicio es de ESTE gym: se aplica a todos
+  // los turnos (en otro gym, otra máquina u ninguna — maquinas.js).
+  for (let i = 0; i < S.routine.length; i++) {
+    if (i === idx) continue;
+    let cambio = false;
+    for (const ex of S.routine[i].exercises || []) cambio = aplicarMaquina(ex, id) || cambio;
+    if (cambio) await persistSlot(i);
+  }
+  if (slot?.exercises?.length) {
     let changed = false;
     for (const ex of slot.exercises) {
-      const ov = gym.equip[keyOf(ex.name)];
+      if (aplicarMaquina(ex, id)) changed = true;
+      const ov = gym?.equip[keyOf(ex.name)];
       if (ov && (ex.equip !== ov.equip || ex.machine !== (ov.machine || undefined))) {
         ex.equip = ov.equip;
         ex.machine = ov.machine || undefined;
@@ -187,5 +203,87 @@ export async function setActiveGym(id) {
     if (changed) await persistSlot(idx);
   }
   await saveCfg();
+  bump();
+}
+
+/* ================= máquinas de un ejercicio (2026-10-06) =================
+   Ver lib/maquinas.js: qué son y por qué el ejercicio lleva puesta la
+   elegida. Acá lo que toca las fotos y persiste. */
+
+/** La foto que ya tenías de este ejercicio en este gym pasa a ser la
+    "Máquina 1", con tu historial de siempre. Sin foto vieja no se inventa
+    nada. Se llama al abrir la hoja de máquinas. */
+export async function asegurarLegado(gymId, exName) {
+  const gym = S.gyms.find(g => g.id === gymId);
+  if (!gym || maquinasDe(gymId, exName).length) return;
+  if (!(await getPhoto(gymId, exName))) return;
+  gym.maquinas = { ...(gym.maquinas || {}), [keyEj(exName)]: [{ id: LEGADO, nombre: 'Máquina 1', legado: true }] };
+  await saveGyms();
+  bump();
+}
+
+/** Una máquina nueva: nombre (el que quieras) y foto opcional. Queda elegida. */
+export async function crearMaquina(gymId, exName, nombre, file = null) {
+  const gym = S.gyms.find(g => g.id === gymId);
+  if (!gym) return null;
+  const k = keyEj(exName);
+  const lista = maquinasDe(gymId, exName);
+  const m = { id: uid(), nombre: String(nombre || '').trim() || `Máquina ${lista.length + 1}` };
+  gym.maquinas = { ...(gym.maquinas || {}), [k]: [...lista, m] };
+  if (file) await guardarFotoMaquina(gymId, exName, file, m.id);
+  await elegirMaquina(gymId, exName, m.id);
+  return m;
+}
+
+export async function renombrarMaquina(gymId, exName, maqId, nombre) {
+  const n = String(nombre || '').trim();
+  const m = maquinasDe(gymId, exName).find(x => x.id === maqId);
+  if (!m || !n) return;
+  m.nombre = n;
+  await saveGyms();
+  await reaplicar(gymId, exName);
+}
+
+/** Borra la máquina y su foto. El historial que hiciste en ella queda en tus
+    sesiones (no se borra el pasado), sólo deja de ofrecerse. */
+export async function borrarMaquina(gymId, exName, maqId) {
+  const gym = S.gyms.find(g => g.id === gymId);
+  if (!gym) return;
+  const k = keyEj(exName);
+  gym.maquinas = { ...(gym.maquinas || {}), [k]: maquinasDe(gymId, exName).filter(m => m.id !== maqId) };
+  if (gym.ultimaMaquina?.[k] === maqId) delete gym.ultimaMaquina[k];
+  try { await deletePhoto(gymId, exName, maqId); } catch { /* la foto pudo no existir */ }
+  await saveGyms();
+  await reaplicar(gymId, exName);
+}
+
+/** Elige la máquina (null = ninguna) y se la pone al ejercicio en todos los
+    turnos y en lo agregado hoy. */
+export async function elegirMaquina(gymId, exName, maqId) {
+  const gym = S.gyms.find(g => g.id === gymId);
+  if (!gym) return;
+  const k = keyEj(exName);
+  gym.ultimaMaquina = { ...(gym.ultimaMaquina || {}) };
+  if (maqId) gym.ultimaMaquina[k] = maqId; else delete gym.ultimaMaquina[k];
+  await saveGyms();
+  await reaplicar(gymId, exName);
+}
+
+/** Vuelve a ponerle a cada ejercicio con ese nombre la máquina elegida del
+    gym activo. Con otro gym activo no toca nada: lo de este gym se aplica
+    cuando lo actives (setActiveGym). */
+async function reaplicar(gymId, exName) {
+  if (gymId === S.cfg.activeGym) {
+    const k = keyEj(exName);
+    for (let i = 0; i < S.routine.length; i++) {
+      let cambio = false;
+      for (const ex of S.routine[i].exercises || []) if (keyEj(ex.name) === k) cambio = aplicarMaquina(ex, gymId) || cambio;
+      if (cambio) await persistSlot(i);
+    }
+    let enBorrador = false;
+    for (const ex of S.draft?.extras || []) if (keyEj(ex.name) === k) enBorrador = aplicarMaquina(ex, gymId) || enBorrador;
+    if (enBorrador) await saveDraft();
+  }
+  S.fotoRev = (S.fotoRev || 0) + 1;
   bump();
 }

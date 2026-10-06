@@ -32,12 +32,12 @@ import { estadoRampa, tocarPaso, estadoBoton } from '../lib/rampa.js';
 import { previaEjercicio, metaPartes, cambioTexto, columnaHoy } from '../lib/previa.js';
 import PreviaEjercicio, { Sparkline } from './PreviaEjercicio.jsx';
 import { sideImbalance } from '../lib/symmetry.js';
-import { toast } from '../lib/toast.js';
 import { T } from '../lib/rest.js';
 import { jumpToSlide, scrollToSlideEl, slideScrollLeft } from '../lib/carousel.js';
 import { staggerRevealOnce, squashStretch, impactBurst, menosMovimiento, D, EASE_OUT } from '../lib/motion.js';
 import { relatedHistory, equipLabel, sufijoPeso, rotuloPeso, textoDiscos } from '../lib/equip.js';
-import { getPhoto, deletePhoto, guardarFotoMaquina } from '../lib/gyms.js';
+import { getPhoto } from '../lib/gyms.js';
+import { maquinaElegida, nombreConMaquina } from '../lib/maquinas.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
 import ReelPicker from './ReelPicker.jsx';
@@ -415,22 +415,23 @@ function confirmarOmitir(ex) {
     Antes era un chip adentro del acordeón de "más opciones", donde nadie la
     encontraba.
 
-    Sin foto no se dibuja nada: sacarla vive en la hoja de opciones (⋯). Tocar
-    la miniatura MUESTRA la foto (sheet 'gym-photo'); reemplazar y borrar viven
-    adentro de ese preview. El <input> de la cámara se queda acá porque
-    'gym-photo' lo dispara por callback para reemplazar.
+    Sin foto no se dibuja nada: las máquinas se eligen desde ⋯ → "En qué
+    máquina". Tocar la miniatura abre esa misma hoja (Maquinas.jsx), que
+    muestra la foto grande y deja cambiarla, elegir otra o crear una nueva.
 
     `S.fotoRev` en las dependencias: la hoja de opciones guarda una foto nueva
     y sube ese número (gyms.js), y la miniatura se vuelve a leer sola. */
-function FotoMaquina({ gymId, exName }) {
+function FotoMaquina({ gymId, ex, wd }) {
   const [url, setUrl] = useState(null);
-  const inputRef = useRef(null);
   const urlRef = useRef(null);
   const rev = S.fotoRev || 0;
+  // La foto de la máquina elegida en este gym; sin elegida, la de siempre
+  // (la que después pasa a ser "Máquina 1", maquinas.js).
+  const maqId = maquinaElegida(gymId, ex.name)?.id;
 
   useEffect(() => {
     let cancelled = false;
-    getPhoto(gymId, exName).then(blob => {
+    getPhoto(gymId, ex.name, maqId).then(blob => {
       if (cancelled) return;
       if (urlRef.current) URL.revokeObjectURL(urlRef.current);
       const next = blob ? URL.createObjectURL(blob) : null;
@@ -445,42 +446,15 @@ function FotoMaquina({ gymId, exName }) {
       cancelled = true;
       if (urlRef.current) { URL.revokeObjectURL(urlRef.current); urlRef.current = null; }
     };
-  }, [gymId, exName, rev]);
-
-  async function onFile(e) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    await guardarFotoMaquina(gymId, exName, file);
-  }
-
-  async function borrarFoto() {
-    try {
-      await deletePhoto(gymId, exName);
-    } catch {
-      toast('No se pudo borrar la foto');
-      return;
-    }
-    toast('Foto borrada');
-  }
-
-  function verFoto() {
-    openSheet('gym-photo', {
-      gymId,
-      gymName: S.gyms?.find(g => g.id === gymId)?.name || '',
-      exName,
-      onReemplazar: () => inputRef.current?.click(),
-      onBorrar: borrarFoto,
-    });
-  }
+  }, [gymId, ex.name, maqId, rev]);
 
   if (!url) return null;
+  // Tocar la foto abre "¿En qué máquina?": ahí se ve grande, se cambia y se
+  // elige otra (2026-10-06). Ver, no volver a sacarla — Enzo, 2026-09.
   return (
-    <>
-      <input ref={inputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={onFile} />
-      <button type="button" className="ex-foto" onClick={verFoto} aria-label={`Ver la foto de la máquina de ${exName}`}>
-        <img src={url} alt="" />
-      </button>
-    </>
+    <button type="button" className="ex-foto" onClick={() => openSheet('maquinas', { exId: ex.id, wd })} aria-label={`Máquina de ${ex.name}: ver o cambiar`}>
+      <img src={url} alt="" />
+    </button>
   );
 }
 
@@ -890,7 +864,7 @@ function ExerciseSlide({ m, wd, started }) {
           <ExIcon icono={iconOf(ex)} size={34} className="exh-icon" />
           <div className="exh-main">
             <div className="exname">
-              {ex.name}{uni && <span className="txt-blue"> · unilateral</span>}{' '}
+              {nombreConMaquina(ex)}{uni && <span className="txt-blue"> · unilateral</span>}{' '}
               {info && (
                 <button
                   type="button"
@@ -908,7 +882,7 @@ function ExerciseSlide({ m, wd, started }) {
             {equipLabel(ex) && <div className="ex-equipo">{equipLabel(ex)}</div>}
           </div>
           <div className="exh-side">
-            {gymId && <FotoMaquina gymId={gymId} exName={ex.name} />}
+            {gymId && <FotoMaquina gymId={gymId} ex={ex} wd={wd} />}
             {open && (
               <button
                 type="button"

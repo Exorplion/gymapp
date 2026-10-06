@@ -99,11 +99,15 @@ export function exKey(ex) {
   // clave bilateral de siempre — cero migración, cero riesgo de partir el
   // pasado en dos. `unilateral: false` se comporta igual que no tenerlo.
   const uni = ex?.unilateral ? '·uni' : '';
-  if (!ex?.equip) return `${name}${uni}`;
+  // La máquina elegida en el gym (maquinas.js) parte el historial como el
+  // equipo: el Close grip row en la polea no es el de la Low row. Sin
+  // `variante` (todo lo viejo, y la "Máquina 1" legada) la clave no cambia.
+  const maq = ex?.variante ? `@${ex.variante}` : '';
+  if (!ex?.equip) return `${name}${uni}${maq}`;
   const machine = isMachineBound(ex.equip) && ex.machine
     ? `·${String(ex.machine).trim().toLowerCase()}`
     : '';
-  return `${name}·${ex.equip}${machine}${uni}`;
+  return `${name}·${ex.equip}${machine}${uni}${maq}`;
 }
 
 /* D6: ejercicios que por naturaleza mueven las dos mitades del cuerpo a la
@@ -211,7 +215,8 @@ export function relatedHistory(ex, sessions) {
       const k = exKey(e);
       if (seen.has(k)) continue;                  // sólo la vez más reciente de cada variante
       const best = e.sets.reduce((a, b) => (b.w > a.w ? b : a), e.sets[0]);
-      seen.set(k, { label: equipLabel(e) || 'sin equipo', w: best.w, r: best.r, date: s.date });
+      // Sin equipo ni máquina declarados, en la frase "lo venís haciendo en …" es otra máquina.
+      seen.set(k, { label: e.varianteNombre || equipLabel(e) || 'otra máquina', w: best.w, r: best.r, date: s.date });
     }
   }
   return [...seen.values()];
