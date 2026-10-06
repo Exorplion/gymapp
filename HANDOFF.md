@@ -4,6 +4,51 @@
 
 ---
 
+## SESIÓN 2026-10-06 (tarde) — el orden manda sobre el activo
+
+Pedido de Enzo: estaba en Curl predicador (activo, sin series), agregó un
+Curl reclinado ANTES y la app lo hizo terminar el predicador primero. "Si lo
+he puesto antes del activo, debería priorizarse el orden". Y lo mismo al
+reordenar ("hazlo todo con la misma regla"). Rama `fix/activo-sigue-orden`,
+**1176 tests**.
+
+- **Causa:** `S.draft.cur` es una marca aparte del orden; `addSessionExercise`
+  y `setExOrder` cambiaban el orden sin tocarla, y sólo `saveSet` la movía al
+  cerrar el activo.
+- **Arreglo:** `activoSegunOrden(idsAntes)` en `lib/session.js` (debajo de
+  `setExOrder`), llamado por `setExOrder` (con sesión) y `addSessionExercise`.
+  Sólo cuentan los pendientes que CRUZARON por encima del activo — si Enzo
+  saltó adelante a propósito, reacomodar lo de arriba no lo devuelve — y un
+  activo con series hechas no se corta. 9 tests en
+  `__tests__/session-live.test.js` ("el orden manda sobre el activo").
+- **Aviso:** `AgregarEjercicio.jsx` dice "X va ahora · Y después" cuando pasa.
+  `#toast` (styles.css) ahora tiene `max-width: calc(100vw - 32px)` y pasa a
+  dos líneas: antes cualquier aviso largo se salía por los dos bordes a 390px.
+- Verificado en Chromium (dev server, 390 y 430): agregar antes del activo lo
+  activa, la tarjeta cambia sola, avisos cortos siguen en una línea.
+
+**Pendientes de esta charla (diseño, NO aprobado todavía):**
+1. **El peso con su aclaración** (chico). Mancuernas → "17 kg por mancuerna"
+   en la tarjeta en vivo (sólo si `equip === 'mancuernas'`; el dato ya era
+   por mano, ver `EQUIP` en `lib/equip.js`). Barra: Enzo eligió **"depende de
+   la barra"** — barra fija (curl predicador, 30 kg) = el número es el total;
+   barra olímpica = barra + discos por lado, se elige por ejercicio. Falta
+   presentarle el diseño concreto y que lo apruebe. Dónde se muestra el peso:
+   `ultimaVez()` en `ExerciseCarousel.jsx` (~:494) y la rueda de peso.
+2. **Variantes y máquinas por gimnasio** (grande, lleva spec). Ejercicio = el
+   movimiento; variante = equipo + máquina con nombre y foto ("Péndulo 2"),
+   por gimnasio; la línea `equipLabel` de la tarjeta en vivo se vuelve tocable
+   y lista las variantes con foto y último peso + "Nueva variante". Hoy
+   `gym.equip[ejercicio]` guarda UNA sola variante y `gymPhotos` una foto por
+   (gym, ejercicio) (`lib/gyms.js`); `exKey` (`lib/equip.js`) ya separa el
+   historial por equipo+máquina pero no por gimnasio, y las sesiones no
+   guardan el gimnasio. Recomendado: **A, ampliar `gym.equip[ej]` a una
+   lista** (sin migración riesgosa); descartable B: catálogo de máquinas por
+   gym (reescribe claves de historial). Mancuernas/barra se comparten entre
+   gyms; máquinas no. Abierto: a qué gym asignar el historial viejo.
+
+---
+
 ## SESIÓN 2026-10-06 — Entreno y Progreso rehechos
 
 Pedido de Enzo: rehacer TODAS las pantallas de Entreno como se hizo con Inicio
