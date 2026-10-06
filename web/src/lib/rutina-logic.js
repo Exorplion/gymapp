@@ -717,8 +717,10 @@ export function toggleSlotOpen(index) { S.rutOpen = S.rutOpen === index ? null :
    pintar. Con ella, se inserta ahí y la lista se guarda en ese orden — lo
    guardado es lo que se ve (mismo criterio que moveEx y commitSort).
    Devuelve el ejercicio creado o editado, para que quien llama sepa cuál. */
-export async function saveExercise(index, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral, pesoInicialKg }, { mantenerSheet = false, posicion = null } = {}) {
+export async function saveExercise(index, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral, pesoInicialKg, barraKg }, { mantenerSheet = false, posicion = null } = {}) {
   const pKg = typeof pesoInicialKg === 'number' && pesoInicialKg > 0 ? pesoInicialKg : undefined;
+  // Sólo la barra olímpica lleva peso de barra (BarraField); cambiar de equipo lo borra.
+  const bKg = equip === 'barra' && barraKg > 0 ? barraKg : undefined;
   name = (name || '').trim();
   const s = Math.max(1, parseInt(sets) || 4);
   const r = Math.max(1, parseInt(reps) || 10);
@@ -742,6 +744,7 @@ export async function saveExercise(index, exId, { name, sets, reps, equip, machi
       // Vaciar el campo en el formulario borra el dato: vuelve a "sin
       // declarar" y la sesión retoma su default de siempre.
       ex.pesoInicialKg = pKg;
+      ex.barraKg = bKg;
     }
   } else {
     const nuevo = {
@@ -753,6 +756,7 @@ export async function saveExercise(index, exId, { name, sets, reps, equip, machi
       cat: cat || undefined,
       unilateral: unilateral || undefined,
       pesoInicialKg: pKg,
+      barraKg: bKg,
     };
     if (posicion == null) d.exercises.push(nuevo);
     else {

@@ -78,6 +78,24 @@ export async function toggleUnilateral(exId) {
   bump();
 }
 
+/** Barra fija (`kg` null: el número es el total) u olímpica (`kg` = lo que
+    pesa la barra sola; la tarjeta calcula los discos por lado). Es un dato
+    del ejercicio, no de hoy: se guarda en la rutina, o en el borrador si el
+    ejercicio se agregó sólo para hoy. No toca el historial — en las dos el
+    número que se anota es el total (textoDiscos, equip.js). */
+export async function setBarra(exId, kg) {
+  const ex = findEx(exId);
+  if (!ex) return;
+  ex.barraKg = kg > 0 ? kg : undefined;
+  const slotIndex = S.routine.findIndex(slot => (slot.exercises || []).some(e => e.id === exId));
+  if (slotIndex >= 0) {
+    const { persistSlot } = await import('./rutina-logic.js');
+    await persistSlot(slotIndex);
+  }
+  if (S.draft) await saveDraft();
+  bump();
+}
+
 /** Tu peso corporal registrado, o 0 si nunca cargaste uno. Sale del perfil,
     que BodyForm mantiene sincronizado con el último registro de cuerpo. */
 export function bodyWeightKg() {

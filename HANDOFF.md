@@ -27,8 +27,15 @@ reordenar ("hazlo todo con la misma regla"). Rama `fix/activo-sigue-orden`,
 - Verificado en Chromium (dev server, 390 y 430): agregar antes del activo lo
   activa, la tarjeta cambia sola, avisos cortos siguen en una línea.
 
+**Hecho después (PR siguiente, `feat/peso-por-equipo`):** el peso dice qué
+es. `sufijoPeso` / `rotuloPeso` / `textoDiscos` en `lib/equip.js`, `setBarra`
+en `lib/session.js`, `components/BarraField.jsx` (editar ejercicio y ⋯ de la
+tarjeta). Mancuernas: "kg / mancuerna" y "c/u"; barra: "kg total"; olímpica
+(`ex.barraKg` = la barra sola) muestra "barra 20 + 20 por lado" bajo la
+rueda. Lo anotado sigue siendo el total. Tests: `peso-por-equipo.test.js`.
+
 **Pendientes de esta charla (diseño, NO aprobado todavía):**
-1. **El peso con su aclaración** (chico). Mancuernas → "17 kg por mancuerna"
+1. ~~**El peso con su aclaración**~~ HECHO (arriba). Diseño original: Mancuernas → "17 kg por mancuerna"
    en la tarjeta en vivo (sólo si `equip === 'mancuernas'`; el dato ya era
    por mano, ver `EQUIP` en `lib/equip.js`). Barra: Enzo eligió **"depende de
    la barra"** — barra fija (curl predicador, 30 kg) = el número es el total;

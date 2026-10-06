@@ -10,6 +10,7 @@ import { lastDataFor } from './session.js';
 import { catOf, daysSinceGroup, diasTexto } from './muscle.js';
 import { recuperacion, zonasDeEjercicio } from './recuperacion.js';
 import { round1, dstr } from './format.js';
+import { sufijoPeso } from './equip.js';
 
 const UNI = ' (unilateral)';
 /** La ventana del cambio de fuerza: 8 semanas. */
@@ -149,11 +150,12 @@ export function metaHoy(ex, { uni = false, ajuste = 0 } = {}) {
 
 /** La meta en una línea: "47.5 kg × 8 · 1 rep más que la última". La misma
     línea va en la previa y, después de Empezar, dentro de la tarjeta. */
-export function metaTexto(meta) {
+export function metaTexto(meta, sufijo = '') {
   if (!meta) return '';
   const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
   const partes = [];
-  if (meta.peso != null) partes.push(`${meta.tipo === 'sugerido' ? '~' : ''}${wDisplay(meta.peso)} ${unidad}${meta.reps ? ` × ${meta.reps}` : ''}`);
+  // `sufijo`: qué es el número ("17.5 kg c/u" en mancuernas, sufijoPeso).
+  if (meta.peso != null) partes.push(`${meta.tipo === 'sugerido' ? '~' : ''}${wDisplay(meta.peso)} ${unidad}${sufijo}${meta.reps ? ` × ${meta.reps}` : ''}`);
   else if (meta.reps) partes.push(`${meta.reps} reps`);
   if (meta.texto) partes.push(meta.texto);
   return partes.join(' · ');
@@ -161,8 +163,8 @@ export function metaTexto(meta) {
 
 /** La meta partida en dos: los números ("47.5 kg × 8", van en la
     condensada) y el porqué ("1 rep más que la última", en texto). */
-export function metaPartes(meta) {
-  const [numeros = '', ...resto] = metaTexto(meta).split(' · ');
+export function metaPartes(meta, sufijo = '') {
+  const [numeros = '', ...resto] = metaTexto(meta, sufijo).split(' · ');
   return { numeros, porque: resto.join(' · ') };
 }
 
@@ -170,9 +172,9 @@ export function metaPartes(meta) {
     MISMA meta que la línea "Meta de hoy" de la tarjeta. Antes salía de
     objetivoHoy ("sumá reps · meta 12", el tope del rango) y la tarjeta decía
     "45 kg × 8": dos metas para lo mismo. Subir de peso lleva la flecha. */
-export function columnaHoy(meta) {
+export function columnaHoy(meta, sufijo = '') {
   if (!meta) return { numeros: '—', porque: '' };
-  const { numeros, porque } = metaPartes(meta);
+  const { numeros, porque } = metaPartes(meta, sufijo);
   return { numeros: numeros ? `${numeros}${meta.tipo === 'subir' ? ' ↑' : ''}` : '—', porque };
 }
 
@@ -188,5 +190,7 @@ export function previaEjercicio(ex, { uni = false, ajuste = 0, hoy = dstr() } = 
     record: primeraVez ? null : recordPrevia(ex, { uni, hoy }),
     recuperacion: recuperacionPrevia(ex),
     meta: metaHoy(ex, { uni, ajuste }),
+    // qué es el número del peso: " c/u" en mancuernas (equip.js)
+    sufijo: sufijoPeso(ex, uni),
   };
 }
