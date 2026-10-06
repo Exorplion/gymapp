@@ -86,6 +86,8 @@ function SlotSummaryLine({ slots }) {
 function LibraryList({ onPeek }) {
   const st = routineStats();
   const tmplRef = useRef(null);
+  const enLib = S.lib.some(r => r.name === S.cfg.routineName);
+  const libOrdenada = [...S.lib].sort((a, b) => (b.name === S.cfg.routineName) - (a.name === S.cfg.routineName));
 
   useEffect(() => {
     if (tmplRef.current) sheetReveal(tmplRef.current.children);
@@ -95,58 +97,56 @@ function LibraryList({ onPeek }) {
     <>
       <h2>Mis rutinas</h2>
       <div className="sheet-sub">
-        La que estás usando, las que armaste vos, y plantillas listas. Tocá cualquiera para ver su contenido completo antes de cambiarte.
+        Tocá cualquiera para ver todo lo que trae antes de cambiarte.
       </div>
 
-      {/* 1. La que estás usando — la ÚNICA caja de la pantalla (héroe): todo
-          lo demás es lista agrupada, así que el destaque se nota de verdad. */}
-      <div className="eyebrow" style={{ marginBottom: 6 }}>La que estás usando</div>
-      <button
-        type="button"
-        className="card hero cardbtn"
-        style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: 16 }}
-        onClick={() => onPeek({ kind: 'current' })}
-      >
-        <div className="cond" style={{ fontSize: 'var(--t-lg)', fontWeight: 700 }}>{routineName()}</div>
-        <SlotSummaryLine slots={S.routine} />
-      </button>
+      {/* Tuyas (2026-10-06): se fue la caja "La que estás usando" — era la
+          misma rutina que Entreno ya muestra arriba de todo, con su nombre.
+          Ahora la que usás va PRIMERA en tu lista, marcada "en uso"; si
+          nunca la guardaste, igual aparece (sin fecha), para poder mirarla
+          entera. "Guardar una copia" pasa a ser un enlace chico: es una
+          acción rara, no la principal de la hoja. */}
+      <div className="eyebrow" style={{ marginBottom: 6 }}>Tuyas</div>
+      <div className="group" style={{ marginBottom: 8 }}>
+        {!enLib && st.workoutCount > 0 && (
+          <button type="button" className="grouprow" onClick={() => onPeek({ kind: 'current' })}>
+            <span className="grouprow-grow">
+              <span className="grouprow-t">{routineName()}<span className="lib-tag">en uso</span></span>
+              <span className="grouprow-s">{slotsFrequencyText(S.routine)} · sin guardar</span>
+            </span>
+            <span className="grouprow-v">{st.workoutCount} D</span>
+            <span className="grouprow-chev">›</span>
+          </button>
+        )}
+        {libOrdenada.map(r => {
+          const cur = r.name === S.cfg.routineName;
+          const st2 = summarizeSlots(r.days);
+          return (
+            <div className="grouprow" key={r.id} style={{ paddingRight: 'var(--s2)' }}>
+              <button type="button" className="grouprow-grow" style={{ background: 'none', border: 0, padding: 0, textAlign: 'left', font: 'inherit', color: 'inherit', cursor: 'pointer' }} onClick={() => onPeek({ kind: 'lib', id: r.id })}>
+                <span className="grouprow-t">{r.name}{cur && <span className="lib-tag">en uso</span>}</span>
+                <span className="grouprow-s">{slotsFrequencyText(r.days)} · guardada {fmtD(r.savedAt)}</span>
+              </button>
+              <span className="grouprow-v">{st2.workoutCount} D</span>
+              <span className="grouprow-chev">›</span>
+              <button type="button" className="mini red" aria-label={`Borrar la rutina ${r.name}`} onClick={() => deleteLibRoutine(r.id)}><X /></button>
+            </div>
+          );
+        })}
+        {!S.lib.length && !st.workoutCount && (
+          <div className="grouprow grouprow-estado"><span className="grouprow-grow"><span className="grouprow-s">Todavía no tenés rutinas: elegí una plantilla o armá la tuya.</span></span></div>
+        )}
+      </div>
       {st.workoutCount > 0 && (
-        <button type="button" className="btn ghost" style={{ marginBottom: 16 }} onClick={() => openSheet('library', { mode: 'save' })}>
-          <Guardar /> Guardar la actual como…
+        <button type="button" className="lib-copia" onClick={() => openSheet('library', { mode: 'save' })}>
+          <Guardar size={15} /> Guardar una copia de la que usás
         </button>
-      )}
-
-      {/* 2. Las que creaste vos — misma data que "la que estás usando", para
-          poder comparar un split contra otro de un vistazo (Enzo: "PPL dice
-          los días y frecuencia y abajo está anterior posterior con la misma
-          data"). Lista agrupada: una superficie, filas con hairline. */}
-      {S.lib.length > 0 && (
-        <>
-          <div className="eyebrow" style={{ marginBottom: 6 }}>Las que creaste vos</div>
-          <div className="group" style={{ marginBottom: 16 }}>
-            {S.lib.map(r => {
-              const cur = r.name === S.cfg.routineName;
-              const st2 = summarizeSlots(r.days);
-              return (
-                <div className="grouprow" key={r.id} style={{ paddingRight: 'var(--s2)' }}>
-                  <button type="button" className="grouprow-grow" style={{ background: 'none', border: 0, padding: 0, textAlign: 'left', font: 'inherit', color: 'inherit', cursor: 'pointer' }} onClick={() => onPeek({ kind: 'lib', id: r.id })}>
-                    <span className="grouprow-t">{r.name}{cur && <span className="lib-tag">en uso</span>}</span>
-                    <span className="grouprow-s">{slotsFrequencyText(r.days)} · guardada {fmtD(r.savedAt)}</span>
-                  </button>
-                  <span className="grouprow-v">{st2.workoutCount} D</span>
-                  <span className="grouprow-chev">›</span>
-                  <button type="button" className="mini red" aria-label={`Borrar la rutina ${r.name}`} onClick={() => deleteLibRoutine(r.id)}><X /></button>
-                </div>
-              );
-            })}
-          </div>
-        </>
       )}
 
       {/* 3. Plantillas — mismo patrón de lista agrupada. */}
       <div className="eyebrow" style={{ marginBottom: 6 }}>Plantillas</div>
       <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', margin: '-2px 0 8px' }}>
-        Reemplazan tu split actual. Después las editás a gusto.
+        Reemplazan tu rutina. Después la editás a gusto.
       </div>
       <div className="group" ref={tmplRef} style={{ marginBottom: 16 }}>
       {TEMPLATES.map(t => (

@@ -4845,3 +4845,174 @@ section.bm-bloque{display:flex;flex-direction:column;gap:var(--s3)}
 .bm-sem-marcas i{position:absolute;transform:translateX(-50%);font-style:normal}
 .bm-pie{margin:0;padding-top:var(--s4);border-top:1px solid var(--line);font-size:var(--t-sm);line-height:1.5;color:var(--text-3)}
 .bm-vacio{display:flex;flex-direction:column;align-items:center;gap:var(--s4);text-align:center}
+
+/* =====================================================================
+   ENTRENO (2026-10-06, opción A "el riel del ciclo"; Rutina.jsx)
+   Cabecera compacta (nombre + lápiz + dos chips + Plan/Ejercicios), el
+   ciclo en un riel y UN turno a la vez con los ejercicios abiertos. Antes:
+   hero con barras 1–7, dos accesos y siete tarjetas que repetían el plan.
+   ===================================================================== */
+.ent{display:flex;flex-direction:column;gap:var(--s4);padding-bottom:var(--s4)}
+.ent-cab{display:flex;flex-direction:column;gap:var(--s3);padding-top:var(--s1)}
+.ent-ojo{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2)}
+.ent-nombre-fila{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s3)}
+.ent-nombre{margin:0;min-width:0;font-family:var(--font-cond);font-size:var(--t-titulo);font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:var(--tr-titulo);line-height:.9;text-wrap:balance;overflow-wrap:anywhere}
+.ent-ico{flex:none;width:44px;height:44px;border-radius:var(--r-md);display:grid;place-items:center;background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);color:var(--text);cursor:pointer;transition:transform var(--d1) var(--spring)}
+.ent-ico:active{transform:scale(var(--press))}
+.ent-chips{display:flex;gap:var(--s2);flex-wrap:wrap}
+.ent-chips .chip svg{color:var(--accent);flex:none}
+.ent-chip-dim{color:var(--text-3);font-weight:400}
+.ent-vistas{display:flex;gap:var(--s5);border-bottom:1px solid var(--line)}
+.ent-vistas button{position:relative;padding:var(--s2) 0 var(--s3);background:none;border:0;cursor:pointer;font-family:var(--font-cond);font-size:var(--t-body);font-weight:700;letter-spacing:var(--tr-control);text-transform:uppercase;color:var(--text-3);transition:color var(--d2) var(--ease)}
+.ent-vistas button.on{color:var(--text)}
+.ent-vistas button::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;border-radius:var(--r-xs);background:var(--accent);transform:scaleX(0);transition:transform var(--d2) var(--ease)}
+.ent-vistas button.on::after{transform:scaleX(1)}
+
+/* El riel: la línea cruza el centro de cada parada (46 px de alto, con el
+   número de 15 px y 6 de separación debajo: 15 + 6 + 23 = 44). */
+.ent-riel-caja{display:flex;flex-direction:column;gap:var(--s2)}
+.ent-riel{position:relative;display:flex;align-items:flex-end;gap:var(--s1);padding-top:22px}
+.ent-riel::before{content:"";position:absolute;left:var(--s4);right:var(--s4);bottom:43px;height:2px;border-radius:var(--r-xs);background:var(--line-2)}
+.ent-parada{position:relative;z-index:1;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0;color:inherit;cursor:pointer}
+.ent-parada.libre{flex:0 0 14px;cursor:default}
+.ent-parada.mas{flex:0 0 46px}
+.ent-cod{display:grid;place-items:center;width:100%;height:46px;padding:0 var(--s1);border-radius:var(--r-md);background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);font-family:var(--font-cond);font-size:var(--t-lg);font-weight:800;font-style:italic;text-transform:uppercase;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background-color var(--d2) var(--ease),color var(--d2) var(--ease),border-color var(--d2) var(--ease),box-shadow var(--d2) var(--ease),transform var(--d1) var(--spring)}
+.ent-parada:active .ent-cod{transform:scale(var(--press))}
+.ent-parada.sel .ent-cod{background:var(--accent-grad);color:var(--on-accent);border-color:transparent;box-shadow:var(--accent-glow)}
+.ent-num{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);color:var(--text-3)}
+.ent-marca{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font:var(--rol-etiqueta);font-weight:700;letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--accent);white-space:nowrap}
+.ent-parada.libre .ent-cod{width:14px;height:14px;padding:0;border-radius:var(--r-full);background:var(--bg);border:2px solid var(--line-2);margin-bottom:37px}
+.ent-parada.mas .ent-cod{color:var(--accent);background:transparent;border:1px dashed rgba(var(--accent-rgb),.5);font-style:normal}
+.ent-riel-pie{display:flex;justify-content:space-between;gap:var(--s3);font-size:var(--t-micro);color:var(--text-3)}
+
+/* El turno elegido. Al cambiar entra desde el lado hacia el que se fue
+   (--dx lo pone el JSX: 22 px por la dirección). */
+@keyframes ent-entra{from{opacity:0;transform:translateX(var(--dx,0px))}}
+@keyframes ent-baja{from{opacity:0;transform:translateY(-4px)}}
+.ent-turno{--dx:0px;display:flex;flex-direction:column;gap:var(--s4);margin-top:var(--s2);touch-action:pan-y;animation:ent-entra var(--d3) var(--ease-out) both}
+.ent-turno-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3)}
+.ent-turno-tit{display:flex;flex-direction:column;gap:var(--s1);min-width:0;flex:1}
+.ent-estado{font:var(--rol-etiqueta);font-weight:700;letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2)}
+.ent-estado.toca{color:var(--accent)}
+.ent-turno-nombre{margin:0;font-family:var(--font-cond);font-size:var(--t-hero);font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:var(--tr-titulo);line-height:.92;overflow-wrap:anywhere}
+.ent-turno-input,.ent-nombre-input{width:100%;min-width:0;background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);border-radius:var(--r-md);padding:var(--s2) var(--s3);color:var(--text);font-family:var(--font-cond);font-size:var(--t-2xl);font-weight:800;font-style:italic;text-transform:uppercase}
+.ent-nombre-input{font-size:var(--t-display)}
+.ent-flechas{display:flex;gap:var(--s2);flex:none;padding-top:var(--s1)}
+.ent-flecha{width:40px;height:40px;border-radius:var(--r-md);display:grid;place-items:center;background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);color:var(--text-2);cursor:pointer;transition:transform var(--d1) var(--spring),opacity var(--d2) var(--ease)}
+.ent-flecha:disabled{opacity:.35;cursor:default}
+.ent-flecha:not(:disabled):active{transform:scale(var(--press))}
+.ent-flecha.der svg,.ent-btn-der svg{transform:scaleX(-1)}
+.ent-cifras{display:flex;gap:var(--s5)}
+.ent-cifras div{display:flex;flex-direction:column;gap:2px}
+.ent-cifras b{font-family:var(--font-cond);font-size:var(--t-2xl);font-weight:800;font-style:italic;line-height:1;font-variant-numeric:tabular-nums}
+.ent-cifras span{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2)}
+
+/* Lo que trabaja el turno: el cuerpo con sus zonas encendidas y las cinco
+   con más series. Superficie opaca (sin vidrio): va sobre el fondo quieto. */
+.ent-musculos{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--s4);align-items:center;padding:var(--s4);border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
+.ent-cuerpo{display:flex;gap:2px;height:132px}
+.ent-cara{height:100%;width:auto;display:block}
+.ent-z{--a:1}
+.ent-z path{fill:var(--cuerpo-neutro)}
+.ent-z.pelo path{fill:var(--cuerpo-pelo)}
+.ent-z.on path{fill:var(--accent);fill-opacity:var(--a,1)}
+.ent-mz{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s2);min-width:0}
+.ent-mz-f{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px var(--s2);align-items:baseline;font-size:var(--t-sm)}
+.ent-mz-f .n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ent-mz-f .v{font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-lg);line-height:1;font-variant-numeric:tabular-nums}
+.ent-mz-f .b{grid-column:1/-1;height:4px;border-radius:var(--r-xs);background:var(--line);overflow:hidden}
+.ent-mz-f .b i{display:block;height:100%;border-radius:var(--r-xs);background:var(--accent);transform-origin:left;transform:scaleX(var(--p,0))}
+
+/* Ejercicios del turno, por grupo. */
+.ent-lista{display:flex;flex-direction:column;gap:var(--s4)}
+.ent-lista.ed{gap:0}
+.ent-grupo{display:flex;flex-direction:column}
+.ent-grupo-h{display:flex;align-items:center;gap:var(--s3);padding-bottom:var(--s1);font:var(--rol-seccion);font-size:var(--t-sm);letter-spacing:var(--tr-seccion);text-transform:uppercase;color:var(--text)}
+.ent-grupo-h::after{content:"";order:1;flex:1;height:1px;background:var(--line)}
+.ent-grupo-h .c{order:2;font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);color:var(--text-3)}
+.ent-ex{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:var(--s3);width:100%;text-align:left;padding:var(--s3) 0;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;cursor:pointer;transition:background-color var(--d1) var(--ease-out)}
+.ent-grupo .ent-ex:last-child{border-bottom:0}
+.ent-ex:active{background:var(--line)}
+.ent-ex-n{font-family:var(--font-cond);font-weight:700;font-size:var(--t-sm);color:var(--text-3);font-variant-numeric:tabular-nums}
+.ent-ex-m{display:flex;flex-direction:column;min-width:0}
+.ent-ex-t{font-weight:600;font-size:var(--t-body);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ent-ex-s{font-size:var(--t-sm);color:var(--text-2);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ent-ex-p{font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-xl);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ent-ex-p i{font-style:normal;font-weight:600;font-size:var(--t-sm);color:var(--text-3);margin:0 1px}
+.ent-sin-ej{margin:0;color:var(--text-2);font-size:var(--t-sm)}
+
+/* Editando: tocar una fila abre sus acciones; mantenerla, la arrastra. */
+.ent-pista{margin:0;font-size:var(--t-sm);color:var(--text-3)}
+.ent-exe{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;column-gap:var(--s3);padding:var(--s3) 0;border-bottom:1px solid var(--line);background:var(--bg);cursor:pointer}
+.ent-exe:last-child{border-bottom:0}
+.ent-exe.primero{padding-top:var(--s4)}
+.ent-exe .ent-grupo-h{grid-column:1/-1;margin-bottom:var(--s2)}
+.ent-exe.dragging{background:var(--surface-2);border-radius:var(--r-md);border-bottom-color:transparent;box-shadow:0 16px 32px -14px rgba(var(--shade-rgb),.8),0 0 0 1px rgba(var(--accent-strong-rgb),.3)}
+.ent-agarre{color:var(--text-3);display:grid;place-items:center}
+.ent-agarre svg{width:16px;height:16px}
+.ent-bandeja{grid-column:1/-1;display:none}
+.ent-exe.ab .ent-bandeja{display:block;padding-top:var(--s3);animation:ent-baja var(--d2) var(--ease-out) both}
+.ent-bandeja>div{display:flex;gap:var(--s2)}
+.ent-acc{flex:1 1 auto;min-width:0;height:40px;display:inline-flex;align-items:center;justify-content:center;gap:var(--s1);padding:0 var(--s2);border-radius:var(--r-md);background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);color:var(--text);font:inherit;font-size:var(--t-sm);font-weight:600;white-space:nowrap;cursor:pointer;transition:transform var(--d1) var(--spring)}
+.ent-acc:not(:disabled):active{transform:scale(var(--press))}
+.ent-acc[data-act="ex-up"],.ent-acc[data-act="ex-down"]{flex:0 0 40px;padding:0}
+.ent-acc:disabled{opacity:.35;cursor:default}
+.ent-acc.rojo{color:var(--danger)}
+.ent-acc.sin-ficha{color:var(--text-3)}
+.ent-acciones{display:flex;flex-direction:column;gap:var(--s2);margin-top:var(--s2)}
+.ent-acciones .btn{margin:0}
+.ent-dos{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
+.ent-quitar{align-self:center;padding:var(--s2) var(--s3);background:none;border:0;color:var(--danger);font:inherit;font-size:var(--t-sm);font-weight:600;cursor:pointer}
+.ent-ed-barra{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) var(--s2) var(--s2) var(--s4);border-radius:var(--r);background:rgba(var(--accent-rgb),.10);border:1px solid rgba(var(--accent-rgb),.35)}
+.ent-ed-modo{font-family:var(--font-cond);font-weight:700;font-size:var(--t-sm);letter-spacing:var(--tr-control);text-transform:uppercase;color:var(--accent)}
+.ent-ed-nota{flex:1;min-width:0;font-size:var(--t-sm);color:var(--text-2)}
+.ent-listo{display:inline-flex;align-items:center;gap:var(--s1);height:40px;padding:0 var(--s4);border-radius:var(--r-md);border:0;background:var(--accent-grad);color:var(--on-accent);font-family:var(--font-cond);font-weight:800;font-size:var(--t-body);letter-spacing:var(--tr-control);text-transform:uppercase;cursor:pointer;transition:transform var(--d1) var(--spring)}
+.ent-listo:active{transform:scale(var(--press))}
+
+/* Tu semana en series: lo que el PLAN le da a cada músculo, contra la
+   franja de 10–20 (--franja-a/-b las pone el JSX en fracción del tope). */
+.ent-sec{display:flex;flex-direction:column;gap:var(--s3);margin-top:var(--s4)}
+.ent-sec .sect{margin:0}
+.ent-descarga{margin:var(--s2) 0 0}
+.ent-semana{--franja-a:.45;--franja-b:.9;display:flex;flex-direction:column;gap:var(--s3);margin:0}
+.ent-semana-sub{margin:0;font-size:var(--t-sm);color:var(--text-2)}
+.ent-sem-f{display:grid;grid-template-columns:88px minmax(0,1fr) 28px;align-items:center;gap:var(--s3);font-size:var(--t-sm)}
+.ent-sem-f .n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ent-sem-f .v{text-align:right;font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-lg);line-height:1;font-variant-numeric:tabular-nums}
+.ent-barra{position:relative;height:8px;border-radius:var(--r-sm);background:var(--line);overflow:hidden}
+.ent-barra i{position:absolute;inset:0;border-radius:var(--r-sm);background:var(--accent);transform-origin:left;transform:scaleX(var(--p,0))}
+.ent-barra i.bajo{background:var(--warn)}
+.ent-barra .franja{position:absolute;top:0;bottom:0;left:calc(var(--franja-a) * 100%);width:calc((var(--franja-b) - var(--franja-a)) * 100%);background:rgba(var(--ok-rgb),.16)}
+.ent-barra::after{content:"";position:absolute;z-index:1;top:0;bottom:0;left:calc(var(--franja-a) * 100%);width:calc((var(--franja-b) - var(--franja-a)) * 100%);border-left:1px dashed rgba(var(--ok-rgb),.75);border-right:1px dashed rgba(var(--ok-rgb),.75)}
+.ent-sem-ley{display:flex;align-items:center;gap:var(--s2);font-size:var(--t-micro);color:var(--text-3)}
+.ent-sem-ley i{flex:none;width:18px;height:8px;border-radius:var(--r-xs);background:rgba(var(--ok-rgb),.16);border-left:1px dashed rgba(var(--ok-rgb),.75);border-right:1px dashed rgba(var(--ok-rgb),.75)}
+.ent-nota{display:flex;flex-direction:column;gap:var(--s2);padding-top:var(--s3);border-top:1px solid var(--line);font-size:var(--t-sm);color:var(--text-2)}
+.ent-nota p{margin:0}
+.ent-nota b{color:var(--text);font-weight:600}
+.ent-frio{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+
+/* Ejercicios: cada uno con sus turnos, su equipo y su último peso. */
+.ent-gym{display:flex;align-items:center;gap:var(--s3);padding:var(--s3);border-radius:var(--r);background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);font-size:var(--t-sm);color:var(--text-2)}
+.ent-gym svg{color:var(--accent);flex:none}
+.ent-gym b{color:var(--text)}
+.ent-gym .grow{flex:1;min-width:0}
+.ent-ej{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s3);align-items:center;padding:var(--s3) 0;border-bottom:1px solid var(--line)}
+.ent-grupo .ent-ej:last-child{border-bottom:0}
+.ent-ej-main{display:flex;flex-direction:column;gap:var(--s1);min-width:0;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
+.ent-ej-en{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1)}
+.ent-tag{font-family:var(--font-cond);font-weight:700;font-size:var(--t-micro);letter-spacing:var(--tr-control);text-transform:uppercase;padding:1px 7px;border-radius:var(--r-sm);background:var(--sup-control-bg);color:var(--text-2)}
+.ent-ej-eq{font-size:var(--t-micro);color:var(--text-3)}
+.ent-ej-kg{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}
+.ent-ej-kg b{font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-xl);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ent-ej-kg span{font-size:var(--t-micro);color:var(--text-3);white-space:nowrap}
+.ent-ej-kg .sube{color:var(--ok)}
+.ent-ej-kg .baja{color:var(--danger)}
+.ent-ej-kg .gym-eq-btn{margin-top:var(--s1)}
+.ent-vacio{text-align:center;margin:0}
+.ent-vacio p{margin:var(--s3) 0 var(--s4);color:var(--text-2)}
+
+@media (prefers-reduced-motion:reduce){
+  .ent-turno,.ent-exe.ab .ent-bandeja{animation:none}
+}
+/* "Guardar una copia" en Mis rutinas: un enlace chico, no un botón de ancho completo. */
+.lib-copia{display:inline-flex;align-items:center;gap:var(--s2);margin:0 0 var(--s4);padding:var(--s2) 0;background:none;border:0;color:var(--accent);font:inherit;font-size:var(--t-sm);font-weight:600;cursor:pointer}
