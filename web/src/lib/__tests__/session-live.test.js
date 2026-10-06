@@ -4,6 +4,7 @@ import {
   targetSets, sessionExs, nextPending, isSkipped,
   skipExercise, unskipExercise, addExtraSet, addSessionExercise, replaceSessionExercise,
   dropSet, reemplazaA, isUnilateral, toggleUnilateral, saveSet, hacerDespues,
+  setExOrder,
 } from '../session.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
@@ -165,6 +166,69 @@ describe('addSessionExercise', () => {
   it('el agregado aparece en sessionExs', async () => {
     await addSessionExercise({ name: 'Face pull', sets: 3, reps: 12 });
     expect(sessionExs(0).map(e => e.name)).toContain('Face pull');
+  });
+});
+
+// Enzo, 2026-10-06: estaba en Curl predicador (activo, sin series), agregó un
+// Curl reclinado ANTES y la app lo hizo terminar el predicador primero. El
+// orden manda: lo que ponés antes del activo pasa a ser el activo.
+describe('el orden manda sobre el activo', () => {
+  beforeEach(() => {
+    S.draft.start = 1;
+    S.draft.cur = 'b';
+    S.draft.entries = { a: { sets: [{}, {}, {}] } };   // Press ya hecho
+  });
+
+  it('agregar uno antes del activo lo activa', async () => {
+    const nuevo = await addSessionExercise({ name: 'Curl reclinado' }, { antesDe: 'b' });
+    expect(S.draft.order).toEqual(['a', nuevo.id, 'b', 'c']);
+    expect(S.draft.cur).toBe(nuevo.id);
+  });
+
+  it('el que dejó de estar activo sigue pendiente y vuelve después', async () => {
+    const nuevo = await addSessionExercise({ name: 'Curl reclinado', sets: 2 }, { antesDe: 'b' });
+    S.draft.entries[nuevo.id] = { sets: [{}, {}] };
+    expect(nextPending(sessionExs(0)).id).toBe('b');
+  });
+
+  it('agregar uno después del activo no lo cambia', async () => {
+    await addSessionExercise({ name: 'Face pull' }, { despuesDe: 'b' });
+    expect(S.draft.cur).toBe('b');
+  });
+
+  it('si el activo ya tiene series, no se corta a la mitad', async () => {
+    S.draft.entries.b = { sets: [{}] };
+    await addSessionExercise({ name: 'Curl reclinado' }, { antesDe: 'b' });
+    expect(S.draft.cur).toBe('b');
+  });
+
+  it('reordenar: subir uno por encima del activo lo activa', async () => {
+    await setExOrder(0, ['a', 'c', 'b']);
+    expect(S.draft.cur).toBe('c');
+  });
+
+  it('reordenar sin cruzar al activo no lo cambia', async () => {
+    S.draft.cur = 'a'; S.draft.entries = {};
+    await setExOrder(0, ['a', 'c', 'b']);
+    expect(S.draft.cur).toBe('a');
+  });
+
+  it('si saltaste adelante a propósito, reacomodar lo de arriba no te devuelve', async () => {
+    S.draft.cur = 'c'; S.draft.entries = {};
+    await setExOrder(0, ['b', 'a', 'c']);
+    expect(S.draft.cur).toBe('c');
+  });
+
+  it('un salteado subido por encima no se activa', async () => {
+    S.draft.skipped = ['c'];
+    await setExOrder(0, ['a', 'c', 'b']);
+    expect(S.draft.cur).toBe('b');
+  });
+
+  it('antes de empezar la rutina no activa nada', async () => {
+    S.draft.start = null; S.draft.cur = null; S.draft.entries = {};
+    await setExOrder(0, ['c', 'a', 'b']);
+    expect(S.draft.cur).toBe(null);
   });
 });
 
