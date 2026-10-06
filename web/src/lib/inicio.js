@@ -4,7 +4,7 @@ import { dstr } from './format.js';
 
 /** Cómo se dice cada grupo/zona dentro de una frase ("Pecho, hombros y tríceps"). */
 export const LLANO = {
-  Pecho: 'pecho', Espalda: 'espalda', Lumbares: 'lumbares', Hombro: 'hombros', Bíceps: 'bíceps', Tríceps: 'tríceps',
+  Pecho: 'pecho', Espalda: 'espalda', Trapecio: 'trapecio', Romboides: 'romboides', 'Dorsal ancho': 'dorsal ancho', Lumbares: 'lumbares', Hombro: 'hombros', Bíceps: 'bíceps', Tríceps: 'tríceps',
   Pierna: 'piernas', Cuádriceps: 'cuádriceps', Femoral: 'femoral', Glúteo: 'glúteos', Gemelos: 'gemelos', Abs: 'abdomen',
 };
 

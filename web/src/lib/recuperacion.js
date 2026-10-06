@@ -20,14 +20,18 @@
 import { catOf } from './muscle.js';
 import { fibrasDe } from './fibras.js';
 
-/** Las zonas que se muestran: los grupos de la app con Pierna partida en dos,
-    porque es la única que junta dos músculos que se entrenan en días
-    distintos (en un Anterior/Posterior, justamente). */
-export const ZONAS = ['Pecho', 'Espalda', 'Lumbares', 'Hombro', 'Bíceps', 'Tríceps', 'Cuádriceps', 'Femoral', 'Glúteo', 'Gemelos', 'Abs'];
+/** Las zonas que se muestran: los grupos de la app con Pierna partida en dos
+    (cuádriceps y femoral se entrenan en días distintos) y Espalda en tres
+    (2026-10-06, Enzo: "espalda no es un grupo en general, tiene trapecios y
+    dorsales"): un jalón carga el dorsal ancho y no el trapecio, y juntarlos
+    frenaba al uno por el otro. Las tres son las piezas que la lámina ya
+    dibujaba (bodydata.js). El grupo "Espalda" sigue entero para armar la
+    rutina y ordenar la sesión: se parte sólo acá. */
+export const ZONAS = ['Pecho', 'Trapecio', 'Romboides', 'Dorsal ancho', 'Lumbares', 'Hombro', 'Bíceps', 'Tríceps', 'Cuádriceps', 'Femoral', 'Glúteo', 'Gemelos', 'Abs'];
 
 /** Horas hasta el 100 % para una sesión "normal" (6 series, RIR 2). */
 export const VENTANA_BASE = {
-  Pecho: 60, Espalda: 72, Lumbares: 72, Hombro: 54, Bíceps: 48, Tríceps: 48,
+  Pecho: 60, Trapecio: 54, Romboides: 60, 'Dorsal ancho': 72, Lumbares: 72, Hombro: 54, Bíceps: 48, Tríceps: 48,
   Cuádriceps: 72, Femoral: 72, Glúteo: 66, Gemelos: 42, Abs: 42,
 };
 
@@ -45,12 +49,29 @@ const HORA = 3600000;
 export function zonasDeEjercicio(ex) {
   const cat = catOf(ex);
   if (!cat) return [];
+  if (cat === 'Espalda') return zonasDeEspalda(ex);
   if (cat !== 'Pierna') return ZONAS.includes(cat) ? [cat] : [];
   const p = fibrasDe(ex)?.p || [];
   const out = [];
   if (p.some(n => /^vasto|cuádri|flexores de cadera/i.test(n))) out.push('Cuádriceps');
   if (p.includes('Femoral')) out.push('Femoral');
   return out.length ? out : ['Cuádriceps', 'Femoral'];
+}
+
+/** Espalda, por la porción que trabaja (fibras.js): jalón → Dorsal ancho,
+    remo neutro → Romboides, encogimiento → Trapecio. El peso muerto no tiene
+    porción de espalda principal (es femoral y glúteo), pero su grupo es
+    Espalda: ahí cuenta lo que la espalda hace de sostén, sus secundarios
+    (trapecio y lumbares). Uno que no se reconoce va a romboides y dorsal,
+    como un remo genérico: decir de más antes que esconder. */
+const PORCION_A_ZONA = { Trapecio: 'Trapecio', 'Dorsal alto': 'Romboides', 'Dorsal bajo': 'Dorsal ancho', Lumbares: 'Lumbares' };
+function zonasDeEspalda(ex) {
+  const f = fibrasDe(ex);
+  const de = xs => [...new Set((xs || []).map(n => PORCION_A_ZONA[n]).filter(Boolean))];
+  const p = de(f?.p);
+  const zs = p.length ? p : de(f?.s);
+  const out = zs.length ? zs : ['Romboides', 'Dorsal ancho'];
+  return ZONAS.filter(z => out.includes(z));
 }
 
 /** El momento de la última serie de una entrada: su `t` si lo tiene, si no
@@ -146,6 +167,24 @@ export function seriesPorZona(sesiones, desde) {
   return out;
 }
 
+/** Series de tríceps desde `desde`, por cabeza: `larga` lo hecho con el
+    brazo arriba (extensión sobre la cabeza, overhead — Maeo 2022: es lo que
+    más hace crecer la cabeza larga) y `resto` todo lo demás (pushdown, JM
+    press, rompecráneos: lateral y medial, más parejo). No es un % por
+    cabeza: las tres se recuperan juntas y un número así no existe. */
+export function cabezasTriceps(sesiones, desde) {
+  const out = { larga: 0, resto: 0 };
+  for (const s of sesiones || []) {
+    if (!s.date || s.date < desde) continue;
+    for (const e of s.entries || []) {
+      if (!e.sets?.length || !zonasDeEjercicio(e).includes('Tríceps')) continue;
+      const larga = (fibrasDe(e)?.p || []).includes('Tríceps cabeza larga');
+      out[larga ? 'larga' : 'resto'] += seriesDe(e);
+    }
+  }
+  return out;
+}
+
 const DIA_SEMANA = t => new Date(t).toLocaleDateString('es', { weekday: 'long' });
 
 /** Los cuatro momentos del "Cómo vas a estar" del mapa: ahora, esta noche
@@ -168,8 +207,12 @@ export function momentos(ahora = Date.now()) {
 }
 
 /** La zona que pinta cada forma de la lámina: Pierna se reparte por su slug
-    (hamstring → Femoral; cuádriceps, aductores, flexores, tibial → Cuádriceps). */
+    (hamstring → Femoral; cuádriceps, aductores, flexores, tibial → Cuádriceps)
+    y Espalda también (trapezius → Trapecio, upperBack → Romboides, lats →
+    Dorsal ancho). */
+const FORMA_ESPALDA = { trapezius: 'Trapecio', upperBack: 'Romboides', lats: 'Dorsal ancho' };
 export function zonaDeForma(cat, slug) {
+  if (cat === 'Espalda') return FORMA_ESPALDA[slug] || null;
   if (cat !== 'Pierna') return ZONAS.includes(cat) ? cat : null;
   return slug === 'hamstring' ? 'Femoral' : 'Cuádriceps';
 }

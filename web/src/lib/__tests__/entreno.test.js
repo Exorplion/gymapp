@@ -55,7 +55,7 @@ describe('qué turno se muestra', () => {
 
 describe('series por zona', () => {
   it('el turno suma series por zona, de mayor a menor', () => {
-    expect(seriesPorZonaDeTurno(RUTINA[1])).toEqual([['Espalda', 4], ['Femoral', 2]]);
+    expect(seriesPorZonaDeTurno(RUTINA[1])).toEqual([['Dorsal ancho', 4], ['Femoral', 2]]);
   });
   it('el plan, por semana con un ciclo de 7', () => {
     const { filas, factor, sinEntrenar } = seriesSemanaDelPlan();
