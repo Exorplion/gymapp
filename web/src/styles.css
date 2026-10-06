@@ -1502,6 +1502,7 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    así que se la trata como un dato propio, alineada a la derecha bajo la
    rueda y un toque más grande que antes (era 13px, casi invisible). */
 .reel-alt{text-align:center;margin-top:6px;font-size:var(--t-sm);color:var(--text-2);}
+.reel-discos{margin-top:2px}
 /* 2026-09-25: centrada bajo la rueda de peso y dicha como equivalencia
    ("≈ 99.2 lb", el número en azul claro). A la derecha y gris no se
    entendía qué era (Enzo: "no se nota que es la conversión"). */

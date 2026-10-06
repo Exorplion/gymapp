@@ -36,7 +36,7 @@ import { toast } from '../lib/toast.js';
 import { T } from '../lib/rest.js';
 import { jumpToSlide, scrollToSlideEl, slideScrollLeft } from '../lib/carousel.js';
 import { staggerRevealOnce, squashStretch, impactBurst, menosMovimiento, D, EASE_OUT } from '../lib/motion.js';
-import { relatedHistory, equipLabel } from '../lib/equip.js';
+import { relatedHistory, equipLabel, sufijoPeso, rotuloPeso, textoDiscos } from '../lib/equip.js';
 import { getPhoto, deletePhoto, guardarFotoMaquina } from '../lib/gyms.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
@@ -491,25 +491,25 @@ function FotoMaquina({ gymId, exName }) {
     grande la contestan de un vistazo. El número de Hoy sale de
     objetivoHoy() — la doble progresión, o el sugerido por 1RM — nunca de un
     relleno. */
-function ultimaVez(last) {
+function ultimaVez(last, sufijo = '') {
   const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
   let ultima = null;
   if (last?.length) {
     const top = Math.max(...last.map(s => s.w));
     const parejas = last.every(s => Math.abs(s.w - top) < 0.01);
     ultima = {
-      peso: `${wDisplay(top)} ${unidad}`,
+      peso: `${wDisplay(top)} ${unidad}${sufijo}`,
       detalle: parejas ? `${last.map(s => s.r).join(' · ')} reps` : last.map(s => `${wDisplay(s.w)}×${s.r}`).join(' · '),
     };
   }
   return ultima;
 }
 
-function Comparativa({ last, obj, meta, uni }) {
-  const ultima = ultimaVez(last);
+function Comparativa({ last, obj, meta, uni, sufijo }) {
+  const ultima = ultimaVez(last, sufijo);
   /* La columna Hoy dice la misma meta que "Meta de hoy" en la tarjeta
      (columnaHoy, previa.js). `obj` sigue mandando el color de "subir". */
-  const hoy = columnaHoy(meta);
+  const hoy = columnaHoy(meta, sufijo);
   return (
     <div className="ex-cmp">
       <div className="ex-cmp-col">
@@ -660,7 +660,7 @@ const AVISO_MS = 4000;
    ejercicio en marcha: el 1RM con su línea de 8 semanas y el récord. Mismas
    columnas que la comparativa (.ex-cmp), así el aviso se lee como un solo
    tablero. */
-function FuerzaYRecord({ fuerza, record }) {
+function FuerzaYRecord({ fuerza, record, sufijo = '' }) {
   if (!fuerza && !record) return null;
   const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
   const cambio = cambioTexto(fuerza);
@@ -681,7 +681,7 @@ function FuerzaYRecord({ fuerza, record }) {
       {record && (
         <div className="ex-cmp-col">
           <span className="ex-cmp-lbl">Récord</span>
-          <b>{wDisplay(record.w)} {unidad} × {record.r}</b>
+          <b>{wDisplay(record.w)} {unidad}{sufijo} × {record.r}</b>
           <small>{record.hace}</small>
         </div>
       )}
@@ -689,7 +689,7 @@ function FuerzaYRecord({ fuerza, record }) {
   );
 }
 
-function AvisoUltimaVez({ visible, onCerrar, last, obj, meta, uni, fuerza, record }) {
+function AvisoUltimaVez({ visible, onCerrar, last, obj, meta, uni, sufijo, fuerza, record }) {
   useEffect(() => {
     if (!visible) return;
     const t = setTimeout(onCerrar, AVISO_MS);
@@ -708,8 +708,8 @@ function AvisoUltimaVez({ visible, onCerrar, last, obj, meta, uni, fuerza, recor
             exit={{ opacity: 0, y: -6, scale: 0.98, transition: { duration: D.toque / 1000 } }}
           >
             <button type="button" className="ex-aviso-x" aria-label="Cerrar" onClick={e => { e.stopPropagation(); onCerrar(); }}><X size={14} /></button>
-            <Comparativa last={last} obj={obj} meta={meta} uni={uni} />
-            <FuerzaYRecord fuerza={fuerza} record={record} />
+            <Comparativa last={last} obj={obj} meta={meta} uni={uni} sufijo={sufijo} />
+            <FuerzaYRecord fuerza={fuerza} record={record} sufijo={sufijo} />
             <i className="ex-aviso-reloj" aria-hidden="true" style={{ animationDuration: `${AVISO_MS}ms` }} />
           </motion.div>
         )}
@@ -784,7 +784,7 @@ function ExerciseSlide({ m, wd, started }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sesiones/nSesiones: el historial cambia en su lugar
     [sinEmpezar, open, ex, uni, ajuste, sesiones, nSesiones],
   );
-  const metaLinea = datosPrevia ? metaPartes(datosPrevia.meta) : null;
+  const metaLinea = datosPrevia ? metaPartes(datosPrevia.meta, datosPrevia.sufijo) : null;
 
   /* La rampa de aproximación (50/75/90%), ahora ADENTRO de la tarjeta del
      ejercicio que la necesita y sólo antes de su primera serie. Se calcula
@@ -824,12 +824,13 @@ function ExerciseSlide({ m, wd, started }) {
     const marcar = setTimeout(() => marcarCalentado(exRef.current, true), D.momento + D.panel);
     return () => { clearTimeout(plegar); clearTimeout(marcar); };
   }, [rampaCompleta]);
-  const altRef = useRef(null), pwRef = useRef(null), valRef = useRef(null);
+  const altRef = useRef(null), pwRef = useRef(null), valRef = useRef(null), discosRef = useRef(null);
   // altRef/pwRef sin controlar (refs, no state): son texto derivado que cambia
   // con cada peso y no vale un bump() de toda la app — peso/reps viven enteros
   // dentro de ReelPicker.jsx.
   function syncDependents() {
     if (altRef.current) altRef.current.textContent = wAltPartes(v.w).n;
+    if (discosRef.current) discosRef.current.textContent = textoDiscos(ex, v.w, wDisplay);
     if (valRef.current) valRef.current.textContent = `${wDisplay(v.w)} ${unidad} × ${v.r}`;
     if (pwRef.current) {
       const warn = progressionWarn(ex.name, v.w);
@@ -856,7 +857,7 @@ function ExerciseSlide({ m, wd, started }) {
   useEffect(() => { if (open) yaAbiertas.add(ex.id); }, [open, ex.id]);
 
   const hayComparativa = !!obj && (!!last || obj.tipo !== 'primera');
-  const ultima = ultimaVez(last);
+  const ultima = ultimaVez(last, sufijoPeso(ex, uni));
   const [aviso, setAviso] = useState(false);
   const cerrarAviso = useCallback(() => setAviso(false), []);
   /* Al activarse el ejercicio: después del despliegue de la tarjeta, no
@@ -942,7 +943,7 @@ function ExerciseSlide({ m, wd, started }) {
         )}
         {hayComparativa && (
           <AvisoUltimaVez
-            visible={aviso} onCerrar={cerrarAviso} last={last} obj={obj} meta={datosPrevia?.meta} uni={uni}
+            visible={aviso} onCerrar={cerrarAviso} last={last} obj={obj} meta={datosPrevia?.meta} uni={uni} sufijo={sufijoPeso(ex, uni)}
             fuerza={datosPrevia?.fuerza} record={datosPrevia?.record}
           />
         )}
@@ -1090,7 +1091,7 @@ function ExerciseSlide({ m, wd, started }) {
                 grande"). */}
             <div className="setrows dos pieza" style={pieza()}>
               <div>
-                <div className="steplabel">Peso <span>{unidad}{uni ? ' / lado' : ''}</span></div>
+                <div className="steplabel">Peso <span>{unidad}{rotuloPeso(ex, uni)}</span></div>
                 {/* Sin key por serie: la rueda sigue a `value` sola (ReelPicker)
                     y no se remonta en cada serie registrada (H7). */}
                 <ReelPicker
@@ -1106,6 +1107,11 @@ function ExerciseSlide({ m, wd, started }) {
                 {/* La otra unidad, centrada bajo SU rueda y dicha como
                     equivalencia (≈), no como un dato más. */}
                 <div className="reel-alt">≈ <b ref={altRef}>{wAltPartes(v.w).n}</b> {wAltPartes(v.w).u}</div>
+                {/* Barra olímpica: la rueda es el total y acá se lee cómo
+                    cargarla (Enzo, 2026-10-06). Barra fija: no aparece. */}
+                {textoDiscos(ex, v.w, wDisplay) && (
+                  <div className="reel-alt reel-discos" ref={discosRef}>{textoDiscos(ex, v.w, wDisplay)}</div>
+                )}
               </div>
               <div>
                 <div className="steplabel">Reps</div>

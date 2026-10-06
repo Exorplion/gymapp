@@ -11,8 +11,9 @@
 import { useRef } from 'react';
 import { S, closeSheet, openSheet } from '../../lib/state.js';
 import {
-  sessionExs, addExtraSet, dropSet, toggleUnilateral, isUnilateral, skipExercise,
+  sessionExs, addExtraSet, dropSet, toggleUnilateral, isUnilateral, skipExercise, setBarra,
 } from '../../lib/session.js';
+import BarraField from '../BarraField.jsx';
 import { puedeSerUnilateral } from '../../lib/equip.js';
 import { guardarFotoMaquina } from '../../lib/gyms.js';
 import { Later, Plus, Minus, Sides, Swap, Camera, Skip } from '../Icon.jsx';
@@ -97,6 +98,13 @@ export default function ExOpciones({ exId, wd }) {
         )}
       </div>
       <input ref={inputRef} type="file" accept="image/*" capture="environment" hidden onChange={onFoto} />
+      {/* Barra fija u olímpica: un dato del ejercicio, no de hoy (setBarra).
+          Acá y no sólo en editar, porque es en la máquina donde te das cuenta. */}
+      {ex.equip === 'barra' && (
+        <div style={{ marginBottom: 'var(--s3)' }}>
+          <BarraField kg={ex.barraKg} onChange={kg => setBarra(ex.id, kg)} />
+        </div>
+      )}
       <div className="group">
         <button type="button" className="grouprow opc-peligro" onClick={omitir}>
           <Skip className="opc-ico" />

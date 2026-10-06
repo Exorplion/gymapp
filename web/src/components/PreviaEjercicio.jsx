@@ -36,9 +36,9 @@ export function Sparkline({ puntos, ancho = 96, alto = 38, className = 'previa-s
 
 export default function PreviaEjercicio({ datos }) {
   const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
-  const { primeraVez, fuerza, record, recuperacion, meta } = datos;
+  const { primeraVez, fuerza, record, recuperacion, meta, sufijo } = datos;
   const cambio = cambioTexto(fuerza);
-  const { numeros, porque } = metaPartes(meta);
+  const { numeros, porque } = metaPartes(meta, sufijo);
   const salida = menosMovimiento()
     ? undefined
     : { opacity: 0, y: 12, transition: { duration: D.objeto / 1000, ease: curva } };

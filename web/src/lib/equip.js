@@ -138,6 +138,46 @@ export function puedeSerUnilateral(ex) {
   return !BILATERAL_NOMBRES.some(k => n.includes(k));
 }
 
+/* Qué ES el número del peso (Enzo, 2026-10-06: "si son mancuernas de 17
+   kilos, debería decir 17 kilos por lado"). El dato no cambia —en mancuernas
+   ya era por mano (ver EQUIP), en barra siempre el total, también en la
+   olímpica: anotar discos por lado partiría el historial en dos números que
+   no se comparan—. Cambia lo que se lee. */
+
+/** Lo que va pegado al número: "17.5 kg c/u" en mancuernas. En unilateral
+    no, porque ahí el rótulo ya dice "por lado". */
+export function sufijoPeso(ex, uni = false) {
+  return !uni && ex?.equip === 'mancuernas' ? ' c/u' : '';
+}
+
+/** Lo que acompaña a la unidad en el rótulo de la rueda: "kg / lado",
+    "kg / mancuerna", "kg total". */
+export function rotuloPeso(ex, uni = false) {
+  if (uni) return ' / lado';
+  if (ex?.equip === 'mancuernas') return ' / mancuerna';
+  if (ex?.equip === 'barra') return ' total';
+  return '';
+}
+
+/** Barra olímpica (`barraKg` declarado): cuánto va de cada lado para llegar
+    a `totalKg`. null en barra fija o sin declarar — ahí el número ya es todo
+    — y en cualquier otro equipo, aunque le haya quedado un `barraKg` viejo. */
+export function discosPorLado(ex, totalKg) {
+  const barra = ex?.equip === 'barra' ? Number(ex.barraKg) : 0;
+  if (!(barra > 0) || !(totalKg > 0)) return null;
+  return { barra, lado: Math.max(0, (totalKg - barra) / 2) };
+}
+
+/** discosPorLado dicho como se carga: "barra 20 + 12.5 por lado". `fmt`
+    formatea un peso en kg a la unidad que se ve (wDisplay). '' si no aplica. */
+export function textoDiscos(ex, totalKg, fmt) {
+  const d = discosPorLado(ex, totalKg);
+  if (!d) return '';
+  if (totalKg < d.barra) return `menos que la barra (${fmt(d.barra)})`;
+  if (d.lado === 0) return 'sólo la barra';
+  return `barra ${fmt(d.barra)} + ${fmt(d.lado)} por lado`;
+}
+
 /** Etiqueta corta para mostrar junto al ejercicio: "Placas · Life Fitness". */
 export function equipLabel(ex) {
   if (!ex?.equip) return '';

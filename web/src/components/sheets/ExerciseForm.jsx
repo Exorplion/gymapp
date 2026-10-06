@@ -7,6 +7,7 @@
 import { useRef, useState } from 'react';
 import { EQUIP, EQUIP_HINT, isMachineBound } from '../../lib/equip.js';
 import MachineField from '../MachineField.jsx';
+import BarraField from '../BarraField.jsx';
 import { MUSCLE_CATS, catOf } from '../../lib/muscle.js';
 import { shrinkImage } from '../../lib/photo.js';
 import { illusUrl } from '../../lib/illustrations.js';
@@ -105,6 +106,7 @@ function EditForm({ wd, ex }) {
   const [cat, setCat] = useState(ex.cat || '');
   const [machine, setMachine] = useState(ex.machine || '');
   const [unilateral, setUnilateral] = useState(!!ex.unilateral);
+  const [barraKg, setBarraKg] = useState(ex.barraKg || null);
   // En la unidad que se ve; se convierte a kg recién al guardar.
   const [pesoInicial, setPesoInicial] = useState(() => campoDesdeKg(ex.pesoInicialKg));
   const [photo, setPhoto] = useState(ex.photo || '');
@@ -130,6 +132,7 @@ function EditForm({ wd, ex }) {
     saveExercise(wd, ex.id, {
       name, sets, reps, equip, machine, photo, illus, cat, unilateral,
       pesoInicialKg: kgDesdeCampo(pesoInicial),
+      barraKg,
     });
   }
 
@@ -228,6 +231,7 @@ function EditForm({ wd, ex }) {
       {isMachineBound(equip) && (
         <MachineField equip={equip} machine={machine} onChange={setMachine} />
       )}
+      {equip === 'barra' && <BarraField kg={barraKg} onChange={setBarraKg} />}
 
       {equip && (
         <div className="mt-3">
