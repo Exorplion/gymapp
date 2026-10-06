@@ -13,7 +13,7 @@
 //      Tocar un músculo lo marca y abre su fila.
 //   3. Cómo vas a estar: el mismo modelo con el reloj adelantado (esta
 //      noche, mañana, pasado) para planear sin hacer cuentas.
-//   4. Músculo por músculo: los once, primero los del turno; cada fila se
+//   4. Músculo por músculo: todas las zonas, primero las del turno; cada fila se
 //      abre con lo que hiciste (series, RIR) y las series de la semana.
 //   5. Series esta semana, con la franja de 10–20 marcada.
 //
@@ -25,7 +25,7 @@ import { uncategorized } from '../../lib/muscle.js';
 import { dstr } from '../../lib/format.js';
 import { lunesDe } from '../../lib/week.js';
 import { cuerpo } from '../../lib/bodydata.js';
-import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, seriesPorZona, momentos, estadoDe, ZONAS } from '../../lib/recuperacion.js';
+import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, seriesPorZona, cabezasTriceps, dorsalPorRegion, momentos, estadoDe, ZONAS } from '../../lib/recuperacion.js';
 import { turnoFoco } from '../../lib/turnoFoco.js';
 import { LLANO, nombreZona, frase, capital, haceTexto } from '../../lib/inicio.js';
 import { sheetReveal, menosMovimiento } from '../../lib/motion.js';
@@ -52,6 +52,8 @@ export default function BodyMap({ zona = null }) {
   const h = ms[m].horas;
   const rec = useMemo(() => recuperacion(S.sessions, ahora + h * HORA), [ahora, h]);
   const semana = useMemo(() => seriesPorZona(S.sessions, dstr(lunesDe())), []);
+  const cabezas = useMemo(() => cabezasTriceps(S.sessions, dstr(lunesDe())), []);
+  const regiones = useMemo(() => dorsalPorRegion(S.sessions, dstr(lunesDe())), []);
   const foco = turnoFoco();
   const sexo = S.cfg.bodySex || S.cfg.profile?.sex;
   const conDato = ZONAS.filter(z => rec[z]);
@@ -93,6 +95,7 @@ export default function BodyMap({ zona = null }) {
     return (
       <FilaZona
         key={z} zona={z} r={r} sub={sub} series={semana[z]}
+        desglose={z === 'Tríceps' ? <CabezasTriceps {...cabezas} /> : z === 'Dorsal' ? <DorsalRegiones {...regiones} /> : null}
         abierta={abierta === z}
         onToggle={() => { const ab = abierta === z; setAbierta(ab ? null : z); setSel(ab ? null : z); }}
       />
@@ -209,7 +212,7 @@ function fraseHero({ rec, base, foco, h, textoM, prom, ahora }) {
 
 /** Una fila de "Músculo por músculo": cifra, cuándo llega, barra, y al
     abrirla lo que hiciste en la última sesión que tocó la zona. */
-function FilaZona({ zona, r, sub, series, abierta, onToggle }) {
+function FilaZona({ zona, r, sub, series, desglose, abierta, onToggle }) {
   const fecha = new Date(r.date + 'T12:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric' });
   return (
     <div className={`bm-fila${abierta ? ' abierta' : ''}`}>
@@ -231,9 +234,50 @@ function FilaZona({ zona, r, sub, series, abierta, onToggle }) {
               </div>
             ))}
           </div>
+          {desglose}
           <div className="bm-ej bm-ej-semana"><span>Esta semana</span><span><b>{series}</b> {series === 1 ? 'serie' : 'series'}</span></div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** El tríceps tiene un solo % (las tres cabezas se recuperan juntas), pero
+    sí se puede decir cómo repartiste la semana entre ellas (Enzo,
+    2026-10-06: "que te dé un insight de las tres cabezas"). */
+function CabezasTriceps({ larga, resto }) {
+  const total = larga + resto;
+  if (!total) return null;
+  const serie = n => `${n} ${n === 1 ? 'serie' : 'series'}`;
+  const consejo = !larga
+    ? 'Nada con el brazo arriba esta semana: es lo que más hace crecer la cabeza larga. Sumá una extensión sobre la cabeza.'
+    : larga * 3 < total
+      ? 'La cabeza larga va floja: una extensión sobre la cabeza más la emparejaría.'
+      : null;
+  return (
+    <div className="bm-detalle">
+      <span className="t-etiqueta">Esta semana, por cabeza</span>
+      <div className="bm-ej"><span>Larga · con el brazo arriba</span><span>{serie(larga)}</span></div>
+      <div className="bm-ej"><span>Lateral y medial · pushdown, press</span><span>{serie(resto)}</span></div>
+      {consejo && <p className="bm-nota">{consejo}</p>}
+    </div>
+  );
+}
+
+/** El dorsal tiene un solo %: nadie midió cuánto tarda en recuperarse cada
+    región (ver ZONAS en recuperacion.js). Lo que sí se puede decir es cómo
+    repartiste la semana entre la parte alta (con el redondo mayor) y la baja
+    (Enzo, 2026-10-06). */
+function DorsalRegiones({ alto, bajo, ambos }) {
+  if (!alto && !bajo && !ambos) return null;
+  const serie = n => `${n} ${n === 1 ? 'serie' : 'series'}`;
+  return (
+    <div className="bm-detalle">
+      <span className="t-etiqueta">Esta semana, por región</span>
+      <div className="bm-ej"><span>Alto · remos en polea, sentado</span><span>{serie(alto)}</span></div>
+      <div className="bm-ej"><span>Bajo · jalón, dominadas</span><span>{serie(bajo)}</span></div>
+      {ambos > 0 && <div className="bm-ej"><span>Los dos · remo con barra</span><span>{serie(ambos)}</span></div>}
+      <p className="bm-nota">Orientativo: la diferencia entre regiones se midió en ejercicios estáticos, no en series reales.</p>
     </div>
   );
 }

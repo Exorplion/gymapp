@@ -78,10 +78,11 @@ describe('recuperacion', () => {
 
   it('trae lo que la cargó', () => {
     const r = recuperacion([sesion(10, [['Remo con barra', 3, 9], ['Jalón al pecho', 3, 10]], { dayName: 'Posterior B' })], AHORA);
-    expect(r.Espalda.dayName).toBe('Posterior B');
-    expect(r.Espalda.ejercicios.map(e => e.name)).toEqual(['Remo con barra', 'Jalón al pecho']);
-    expect(r.Espalda.series).toBe(6);
-    expect(r.Espalda.listaEn).toBeGreaterThan(AHORA);
+    const d = r.Dorsal;
+    expect(d.dayName).toBe('Posterior B');
+    expect(d.ejercicios.map(e => e.name)).toEqual(['Remo con barra', 'Jalón al pecho']);
+    expect(d.series).toBe(6);
+    expect(d.listaEn).toBeGreaterThan(AHORA);
   });
 });
 
@@ -90,7 +91,7 @@ describe('piezas chicas', () => {
     expect([0, 59, 60, 89, 90, 100].map(estadoDe)).toEqual(['cargado', 'cargado', 'recuperando', 'recuperando', 'listo', 'listo']);
   });
   it('ventana de un músculo grande > uno chico', () => {
-    expect(ventanaHoras('Espalda', 6, 2)).toBeGreaterThan(ventanaHoras('Bíceps', 6, 2));
+    expect(ventanaHoras('Dorsal', 6, 2)).toBeGreaterThan(ventanaHoras('Bíceps', 6, 2));
   });
   it('las formas de la pierna en la lámina', () => {
     expect(zonaDeForma('Pierna', 'hamstring')).toBe('Femoral');
@@ -114,7 +115,7 @@ import { haceTexto, diasDesde } from '../inicio.js';
 describe('zonasDeTurno', () => {
   it('junta las zonas de los ejercicios, sin repetir y en el orden de ZONAS', () => {
     const slot = { exercises: [{ name: 'Curl femoral sentado' }, { name: 'Jalón al pecho' }, { name: 'Remo con barra' }] };
-    expect(zonasDeTurno(slot)).toEqual(['Espalda', 'Femoral']);
+    expect(zonasDeTurno(slot)).toEqual(['Dorsal', 'Femoral']);
   });
   it('sin turno o sin ejercicios reconocidos, ninguna', () => {
     expect(zonasDeTurno(null)).toEqual([]);
