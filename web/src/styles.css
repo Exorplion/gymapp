@@ -2643,8 +2643,14 @@ nav.tabbar{container-type:inline-size}
   background:var(--sup-flota-bg);backdrop-filter:var(--sup-flota-blur);
   border:1px solid var(--sup-flota-borde);color:var(--text);
   padding:11px 20px;border-radius:var(--r-full);font-size:var(--t-body);font-weight:600;
-  opacity:0;pointer-events:none;transition:opacity var(--d1) var(--ease-out),transform var(--d1) var(--ease-out);z-index:70;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity var(--d1) var(--ease-out),transform var(--d1) var(--ease-out);z-index:70;
   box-shadow:var(--sup-flota-sombra);
+  /* Nunca más ancho que la pantalla: con white-space:nowrap y sin tope, un
+     aviso largo ("Curl reclinado va ahora · Press inclinado después" + la
+     acción) se salía por los dos bordes a 390px. Ahora el texto pasa a dos
+     líneas y la acción queda entera a la derecha. */
+  display:flex;align-items:center;gap:var(--s2);
+  width:max-content;max-width:calc(100vw - 32px);text-wrap:balance;
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;transition-duration:var(--d2)}
 /* con un sheet abierto el toast baja... arriba: el panel del sheet ocupa hasta
@@ -2652,7 +2658,7 @@ nav.tabbar{container-type:inline-size}
    botones. Entra desde el borde de arriba, que ahí no hay nada. */
 #toast.over-sheet{bottom:auto;top:calc(env(safe-area-inset-top) + 14px);transform:translateX(-50%) translateY(-20px)}
 #toast.over-sheet.show{transform:translateX(-50%) translateY(0)}
-.toast-act{background:none;border:none;color:var(--accent);font-weight:700;font-size:var(--t-sm);padding:0 0 0 4px;text-transform:uppercase;letter-spacing:var(--tr-control);cursor:pointer}
+.toast-act{flex:none;white-space:nowrap;background:none;border:none;color:var(--accent);font-weight:700;font-size:var(--t-sm);padding:0 0 0 4px;text-transform:uppercase;letter-spacing:var(--tr-control);cursor:pointer}
 
 /* ---------- misc ---------- */
 .empty{

@@ -15,7 +15,7 @@
 // alrededor del nuevo (recortar()) en vez de scrollear.
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { closeSheet } from '../../lib/state.js';
+import { S, closeSheet } from '../../lib/state.js';
 import { MUSCLE_CATS, catOf } from '../../lib/muscle.js';
 import { vibrate } from '../../lib/format.js';
 import { toast } from '../../lib/toast.js';
@@ -106,12 +106,18 @@ export default function AgregarEjercicio({ wd, tipo = 'rutina', inicial }) {
   async function agregar() {
     if (guardando) return;
     setGuardando(true);
+    const activoAntes = S.draft?.cur;
     const nuevo = await confirmarAgregar(e, wd);
     if (!nuevo) { setGuardando(false); setError('No se pudo agregar. Probá de nuevo.'); return; }
     closeSheet();
     // addSessionExercise ya vibra; saveExercise (rutina) no.
     if (tipo !== 'sesion') vibrate(15);
-    toast(`${nuevo.name} agregado`, { actionLabel: 'Agregar otro', onAction: () => abrirAsistente(wd, tipo) });
+    // Puesto antes del activo, pasa a ser el que toca (activoSegunOrden,
+    // session.js): se dice, porque la tarjeta en pantalla cambia sola.
+    const desplazado = tipo === 'sesion' && activoAntes && S.draft?.cur === nuevo.id
+      ? [...ctx.fijos, ...ctx.movibles].find(x => x.id === activoAntes)?.name
+      : null;
+    toast(desplazado ? `${nuevo.name} va ahora · ${desplazado} después` : `${nuevo.name} agregado`, { actionLabel: 'Agregar otro', onAction: () => abrirAsistente(wd, tipo) });
   }
 
   function moverFlecha(d) {

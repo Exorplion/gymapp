@@ -202,8 +202,34 @@ export async function ordenarBloques(index, exs, cats) {
 
 export async function setExOrder(index, ids) {
   const slotId = S.routine[index]?.id;
-  if (S.draft && S.draft.slotId === slotId) { S.draft.order = ids; await saveDraft(); }
+  if (S.draft && S.draft.slotId === slotId) {
+    const antes = sessionExs(index).map(e => e.id);
+    S.draft.order = ids;
+    activoSegunOrden(antes);
+    await saveDraft();
+  }
   else { S.hoyOrder = S.hoyOrder || {}; S.hoyOrder[slotId] = ids; }
+}
+
+/** El orden manda sobre el activo (Enzo, 2026-10-06): un ejercicio pendiente
+    que quedó ANTES del activo —porque lo agregaste ahí o lo subiste al
+    reordenar— pasa a ser el activo. Antes la marca `cur` no se enteraba del
+    orden nuevo: había que terminar todas las series del activo para que
+    recién se activara el que habías puesto adelante.
+
+    Sólo cuentan los que CRUZARON al activo (no estaban antes de él en
+    `idsAntes`): si saltaste adelante a propósito y reacomodás lo que dejaste
+    arriba, no te devuelve. Y un activo con series hechas no se corta a la
+    mitad. Muta S.draft.cur; guardar es trabajo del que llama. */
+function activoSegunOrden(idsAntes) {
+  const cur = S.draft?.cur;
+  if (!cur || setsDone(cur).length) return;
+  const exs = sessionExs(S.routine.findIndex(s => s.id === S.draft.slotId));
+  const i = exs.findIndex(e => e.id === cur);
+  if (i < 0) return;
+  const yaArriba = new Set(idsAntes.slice(0, Math.max(0, idsAntes.indexOf(cur))));
+  const sube = nextPending(exs.slice(0, i).filter(e => !yaArriba.has(e.id)));
+  if (sube) S.draft.cur = sube.id;
 }
 
 /** Mueve un BLOQUE entero (todos los ejercicios de un grupo muscular, juntos)
@@ -672,12 +698,14 @@ export async function addSessionExercise({ name, sets, reps, equip, machine, uni
   if (!ex.name) return null;
   const { antesDe = null, despuesDe = null } = typeof donde === 'string' ? { despuesDe: donde } : (donde || {});
   const ids = sessionExs(S.routine.findIndex(s => s.id === S.draft.slotId)).map(e => e.id);
+  const antes = [...ids];
   let at = antesDe ? ids.indexOf(antesDe) : -1;
   if (at < 0 && despuesDe) { const j = ids.indexOf(despuesDe); if (j >= 0) at = j + 1; }
   ids.splice(at >= 0 ? at : ids.length, 0, ex.id);
   if (!S.draft.extras) S.draft.extras = [];
   S.draft.extras.push(ex);
   S.draft.order = ids;
+  activoSegunOrden(antes);   // puesto antes del activo = el que toca ahora
   await saveDraft();
   vibrate(15);
   bump();
