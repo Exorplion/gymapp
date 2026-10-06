@@ -35,14 +35,17 @@ const TABLA = [
   ['pull up', { p: ['Dorsal bajo'], s: ['Bíceps'] }],
   ['pullover', { p: ['Dorsal bajo'] }],
 
-  ['remo espalda alta', { p: ['Dorsal alto', 'Trapecio'] }],
+  // Codos abiertos: el dorsal casi no trabaja y sube el trapecio superior y
+  // medio (de Abreu Vasconcelos 2023, vía Di Fonza 2026). 'Romboides' es la
+  // región del medio de la lámina: romboides + trapecio medio.
+  ['remo espalda alta', { p: ['Romboides', 'Trapecio'] }],
   ['remo neutro', { p: ['Dorsal alto'], s: ['Bíceps'] }],
   ['remo en polea', { p: ['Dorsal alto'], s: ['Bíceps'] }],
   ['remo sentado', { p: ['Dorsal alto'], s: ['Bíceps'] }],
   ['face pull', { p: ['Trapecio'] }],
   // Kelso: encogimiento en posición de remo — trapecio medio, sin bíceps
   // (el codo no se flexiona), por eso no lleva secundarios.
-  ['kelso', { p: ['Trapecio', 'Dorsal alto'] }],
+  ['kelso', { p: ['Romboides', 'Trapecio'] }],
   ['shrug', { p: ['Trapecio'] }],
   ['encogimiento', { p: ['Trapecio'] }],
   ['remo', { p: ['Dorsal alto', 'Dorsal bajo'], s: ['Bíceps'] }],

@@ -15,7 +15,8 @@ describe('fibrasDe', () => {
     expect(fibrasDe('Jalón al pecho').p).toContain('Dorsal bajo');
     expect(fibrasDe('Jalón ancho').p).toContain('Dorsal bajo');
     expect(fibrasDe('Remo neutro').p).toContain('Dorsal alto');
-    expect(fibrasDe('Remo espalda alta').p).toContain('Dorsal alto');
+    // Codos abiertos: romboides y trapecio, casi sin dorsal (2026-10-06).
+    expect(fibrasDe('Remo espalda alta').p).toEqual(['Romboides', 'Trapecio']);
   });
 
   it('distingue clavicular de costal en el pecho', () => {

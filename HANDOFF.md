@@ -73,6 +73,23 @@ como `@id`) y `varianteNombre`; las entradas de sesión las copian.
 - Pendiente menor: Progreso agrupa por nombre (e1rmSeries), así que la
   curva de fuerza mezcla máquinas — igual que ya mezclaba equipos.
 
+**Corregido después (`fix/cuerpo-espalda-visible`), a pedido de Enzo** ("no
+aparece trapecio… tocás trapecio y romboides y no muestra nada… tampoco la
+separación de dorsal alto y bajo"):
+- La espalda son CUATRO zonas con % propio: Trapecio, Romboides, Dorsal
+  alto, Dorsal bajo (+ Lumbares). Enzo pidió dos veces el % separado del
+  dorsal: se hizo, con la aclaración de que la región es estimación.
+  `dorsalPorRegion` se fue.
+- La lámina: la forma `trapezius` de la espalda (m y f) se partió con un
+  corte horizontal en arriba (Trapecio) y una forma nueva `rhomboids`
+  (sub 'Romboides') entre los omóplatos. Generado muestreando el contorno
+  (getPointAtLength) y recortando con Sutherland–Hodgman, corte en y=350 (m)
+  e y=322 (f) con 5 u de separación. Script en el scratchpad de la sesión;
+  si hay que rehacerlo: mismo método.
+- fibras.js: remo espalda alta y Kelso → p ['Romboides', 'Trapecio'].
+- BodyMap: todo músculo se puede tocar; sin registro, la ficha dice qué lo
+  trabaja (`QUE_LO_TRABAJA`).
+
 **Pendientes de esta charla (diseño, NO aprobado todavía):**
 1. ~~**El peso con su aclaración**~~ HECHO (arriba). Diseño original: Mancuernas → "17 kg por mancuerna"
    en la tarjeta en vivo (sólo si `equip === 'mancuernas'`; el dato ya era

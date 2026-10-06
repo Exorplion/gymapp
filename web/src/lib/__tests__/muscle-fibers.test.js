@@ -113,10 +113,10 @@ describe('porcionesDe', () => {
 // completas, sin parche, para que MuscleFibers las dibuje TODAS —apagada la
 // que no se entrenó, encendida la que sí.
 describe('bodydata.js: Espalda son tres zonas hermanas, no un parche sobre una base', () => {
-  it('las tres —Trapecio, Dorsal alto, Dorsal bajo— existen en la cara de espalda, ninguna es parche', () => {
+  it('las cuatro —Trapecio, Romboides, Dorsal alto, Dorsal bajo— existen en la cara de espalda, ninguna es parche', () => {
     const espaldaCara = CUERPOS.m.espalda.zonas.filter(z => z.cat === 'Espalda');
     const subs = espaldaCara.map(z => z.sub).sort();
-    expect(subs).toEqual(['Dorsal alto', 'Dorsal bajo', 'Trapecio'].sort());
+    expect(subs).toEqual(['Dorsal alto', 'Dorsal bajo', 'Romboides', 'Trapecio'].sort());
     expect(espaldaCara.every(z => !z.parche)).toBe(true);
   });
 });

@@ -83,8 +83,8 @@ describe('claseDeZona — hermanas (Espalda, sin músculo base)', () => {
   ].filter(z => z.sub && !z.parche);
   const buscar = sub => hermanas.find(z => z.sub === sub);
 
-  it('la lámina tiene las tres hermanas de Espalda y ninguna es parche', () => {
-    expect(hermanas.map(z => z.sub).sort()).toEqual(['Dorsal alto', 'Dorsal bajo', 'Trapecio']);
+  it('la lámina tiene las cuatro hermanas de Espalda y ninguna es parche', () => {
+    expect(hermanas.map(z => z.sub).sort()).toEqual(['Dorsal alto', 'Dorsal bajo', 'Romboides', 'Trapecio']);
   });
 
   it('sólo la porción entrenada se enciende; las hermanas quedan apagadas', () => {
