@@ -1,385 +1,237 @@
-// Puerto de renderProg() (index.html, sección PROGRESO) — hero de peso +
-// gráfico, selector de rango, pestañas Carga/1RM/Volumen, sección de
-// frecuencia y tabla de PRs.
+// La pestaña Progreso, rehecha el 2026-10-06.
 //
-// La pestaña Volumen NO reusa el markup del card de volumen muscular de
-// Hoy.jsx: en el original ambas pantallas llaman a la misma muscleVolume(7)
-// pero pintan el resultado con estilos distintos (Hoy: wrapper "card sub",
-// barras de 7px con animación "rise"; Progreso: wrapper "card" liso, barras
-// de altura default sin animación, otro espaciado). Reusar el componente de
-// Hoy tal cual habría sido más corto pero cambia el aspecto visual de esta
-// pestaña respecto del original — se prioriza fidelidad sobre el ahorro de
-// líneas.
+// Enzo: "la mayoría de la pestaña es solo ver el peso y un gráfico, y abajo
+// 'tus sesiones' que no se entiende muy bien… te muestra tu entrenamiento,
+// tu carga, el one rep max, el volumen… debería ser más estético, más
+// ordenado, tiene que servir un propósito, darle valor al usuario, ver ese
+// progreso". Antes medía 3.682 px y abría con el peso; la pregunta del
+// gimnasio ("¿estoy más fuerte?") no la contestaba nada.
+//
+// Ahora, de arriba a abajo, cada bloque contesta UNA pregunta:
+//   1. Tu fuerza           ¿estoy más fuerte? Un % y su curva (lib/progreso.js).
+//   2. Ejercicio por ejer. ¿qué sube, qué se estancó, qué bajó? Con su curva.
+//   3. Récords             ¿qué marqué este mes?
+//   4. Tu cuerpo           peso (promedio semanal) y medidas, juntos.
+//   5. Esta semana         ¿cuánto volumen real le di a cada músculo?
+//   6. Constancia          ¿vengo cumpliendo? Racha y mapa por semanas.
+//   7. Historial           la lista de sesiones vive en su hoja (era la
+//                          sección "Tus sesiones", que repetía Inicio).
+import { useEffect, useRef, useState } from 'react';
 import { S, useStore, bump, openSheet } from '../../lib/state.js';
 import { streakHeatmap, currentStreak, bestStreak } from '../../lib/streak.js';
 import { NBSP, fmtD, fmtDFull, fmtKg, fmtNum, kg2lb, round1 } from '../../lib/format.js';
 import { muscleVolume } from '../../lib/muscle.js';
-import { sessionsSince, routineStability } from '../../lib/rutina-logic.js';
-import { groupSessionsByWeek } from '../../lib/session.js';
-import { weeklyAvg, exerciseSeries, filterByRange, strengthReadout, project, volumeBand, VOLUME_BANDS, strengthTier, acwr } from '../../lib/charts.js';
+import { weeklyAvg, exerciseSeries, filterByRange, volumeBand, VOLUME_BANDS, strengthTier, acwr } from '../../lib/charts.js';
 import { profileWeight } from '../../lib/macros.js';
+import { resumenFuerza, proyeccion, recordsRecientes, semanasDeConstancia } from '../../lib/progreso.js';
 import Chart from '../Chart.jsx';
-import SessionCard from '../SessionCard.jsx';
-import { Info } from '../Icon.jsx';
-import { useEffect, useRef, useState } from 'react';
-import { countTo, staggerRevealOnce, D } from '../../lib/motion.js';
+import { Info, Trofeo } from '../Icon.jsx';
+import { countTo, staggerRevealOnce, D, menosMovimiento } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 
 const BODY_LABELS = { waist: 'Cintura', arm: 'Brazo', chest: 'Pecho', leg: 'Pierna' };
+const UNI = ' (unilateral)';
+const nombreEj = n => (n.endsWith(UNI) ? n.slice(0, -UNI.length) : n);
+const signo = v => (v > 0 ? '+' : v < 0 ? '−' : '');
+const pctTxt = v => `${signo(v)}${fmtNum(Math.abs(round1(v)))}${NBSP}%`;
 
 export default function Progreso() {
   useStore();
-
-  const weights = S.body.filter(b => b.weight != null);
-  const lastW = weights[weights.length - 1];
-  const wk = weeklyAvg();
-  const series = exerciseSeries();
-  const exNames = Object.keys(series).sort((a, b) => a.localeCompare(b));
-  // Igual que el original: S es un store mutable externo a React, así que
-  // normalizar S.progEx acá (sin bump — sólo lo lee este mismo render) es
-  // el mismo patrón que ya usan session.js/rutina-logic.js en otros lados.
-  if (!S.progEx || !series[S.progEx]) S.progEx = exNames[0] || null;
-
-  const lastVals = {};
-  ['waist', 'arm', 'chest', 'leg'].forEach(k => {
-    for (let i = S.body.length - 1; i >= 0; i--) {
-      if (S.body[i][k] != null) { lastVals[k] = S.body[i][k]; break; }
-    }
-  });
-
-  const headNum = wk && wk.curAvg != null ? wk.curAvg : (lastW ? lastW.weight : null);
-  const headLabel = wk && wk.curAvg != null ? `Promedio de ${wk.n} día${wk.n === 1 ? '' : 's'}` : 'Peso corporal';
-  const wpts = filterByRange(weights.map(b => ({ date: b.date, y: round1(b.weight) })), S.progRange);
-  // Composición corporal (Plan Fierro · Fase 3): masa magra = peso ×
-  // (1-%grasa), a partir del último registro con %grasa — separa "bajar de
-  // peso" de "recomponer" sin inventar un dato que falta.
-  const lastBf = [...S.body].reverse().find(b => b.bodyfat != null);
-
-  const tab = S.progTab;
-  const exPts = (tab === 'carga' && S.progEx)
-    ? filterByRange((series[S.progEx] || []).map(p => ({ date: p.date, y: Math.round(p.w), r: p.r })), S.progRange)
-    : [];
-
-  const trainDays = S.routine.filter(s => s.type === 'workout' && s.exercises?.length);
-
-  // Cuántas semanas de historia hay: el mockup lo pone junto al título como
-  // contexto de todo lo que se ve abajo.
-  const heat = streakHeatmap();
+  const res = resumenFuerza();
   const oldest = S.sessions.length ? S.sessions[S.sessions.length - 1].start : null;
   const weeksTracked = oldest ? Math.max(1, Math.round((Date.now() - oldest) / 6048e5)) : 0;
 
-  // Cuenta ascendente del número grande de peso/promedio del hero al montar
-  // o al cambiar de dato — mismo touch que el resto de la app (Inicio,
-  // Comida) para que un número frío sienta que "llegó".
-  const headNumRef = useRef(null);
-  useEffect(() => {
-    if (headNum == null) return;
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { if (headNumRef.current) headNumRef.current.textContent = fmtNum(round1(headNum)); return; }
-    if (headNumRef.current) countTo(headNumRef.current, headNum, { duration: D.momento, format: n => fmtNum(round1(n)) });
-  }, [headNum]);
-
   return (
-    <>
+    <div className="prog">
       <div className="vtitle">
         <h1>Progreso</h1>
         <span className="sub">{weeksTracked} semana{weeksTracked === 1 ? '' : 's'}</span>
         <button type="button" className="icon-btn ml-auto" aria-label="Guía" onClick={() => openSheet('guide')}><Info /></button>
       </div>
-
-      {/* Tanda D (auditoría visual 2, V10): grupos a --s6 y adentro --s3. El
-          peso y sus medidas son un grupo (el cuerpo); cada sección que sigue
-          abre el suyo con su título. */}
-      <div className="pila">
-      <div className="grupo">
-      <div className="card hero hero-prog">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <div className="bignum">{headNum != null ? <span ref={headNumRef}>{fmtNum(round1(headNum))}</span> : '—'}<small> kg</small></div>
-            <div className="t-etiqueta">{headLabel}</div>
-            {lastW && (
-              <div className="text-text-2 text-sm mt-1">
-                {wk && wk.curAvg != null ? `último ${fmtKg(round1(lastW.weight))}, ` : `${fmtNum(kg2lb(lastW.weight))}${NBSP}lb, `}
-                {fmtDFull(lastW.date)}
-                {/* La tendencia va en su propia línea: al lado de la fecha
-                    no entraba a 390 px (el botón de registro come la mitad
-                    del ancho) y bajaba sola empezando con un "·" suelto. */}
-                {wk && wk.delta != null && (
-                  <div><b className={wk.delta <= 0 ? 'text-ok' : 'text-accent'}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</b></div>
-                )}
-              </div>
-            )}
-          </div>
-          <button type="button" className="reg-btn" onClick={() => openSheet('body-form')}>+ Registro</button>
-        </div>
-        {wk && wk.curAvg != null && (
-          <div className="text-text-2 text-micro mt-2 leading-snug">El peso fluctúa 1-2 kg por día; el promedio semanal es la métrica que importa.</div>
-        )}
-        <div className="seg mt-3">
-          {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['all', 'Todo']].map(([r, label]) => (
-            <button key={r} type="button" className={(S.progRange || 'all') === r ? 'on' : ''} aria-pressed={(S.progRange || 'all') === r} onClick={() => { S.progRange = r; bump(); }}>{label}</button>
-          ))}
-        </div>
-        <div className="mt-3"><Chart id="chartWeight" pts={wpts} opts={{ unit: 'kg' }} /></div>
-        {lastBf && (
-          <div className="text-text-2 text-micro mt-2">
-            {lastBf.bodyfat}% grasa · masa magra estimada {fmtNum(round1(lastBf.weight * (1 - lastBf.bodyfat / 100)))} kg
-          </div>
-        )}
-      </div>
-
-      {/* Las medidas salieron del hero (2026-09-15).
-
-          El hero venía haciendo ocho trabajos en una sola tarjeta: el número
-          grande, la variación semanal, el botón de registrar, la advertencia
-          de que el peso fluctúa, el selector de rango, el gráfico, el
-          porcentaje de grasa y estas cuatro medidas. Era el bloque más denso
-          de la app y las medidas eran lo que peor quedaba: cuatro números sin
-          una etiqueta que dijera qué son, colgados debajo de un gráfico que
-          habla de otra cosa.
-
-          Acá arriba el hero contesta una sola pregunta —cuánto pesás y cómo
-          viene— y las medidas contestan la suya con su propio título. */}
-      {Object.keys(lastVals).length > 0 && (
-        <>
-          <div className="sect">Medidas</div>
-          <div className="card">
-            <div className="stats" style={{ '--n': 4 }}>
-              {Object.entries(lastVals).map(([k, v]) => (
-                <div key={k}>
-                  <div className="n">{fmtNum(v)}<small>{NBSP}cm</small></div>
-                  <span className="l">{BODY_LABELS[k]}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-      </div>
-
-      <SesionesSection />
-
-      {/* Este bloque era el único de la pantalla sin título (2026-09-15).
-
-          Todo lo demás en Progreso se anuncia: "Tus sesiones", "Frecuencia",
-          "Constancia", "PRs". Pero después de la lista de sesiones aparecían
-          tres pestañas sueltas —Carga, 1RM, Volumen— y un gráfico, sin nada
-          que dijera de qué van. Peor: una de las tres (1RM) traía su propio
-          título adentro, así que el mismo selector a veces tenía encabezado
-          y a veces no, según la pestaña elegida.
-
-          Ahora el título lo pone el bloque, una vez, y las pestañas son lo
-          que son: tres maneras de mirar el mismo entrenamiento. */}
-      <div className="grupo">
-      <div className="sect">Tu entrenamiento</div>
-      <div className="seg">
-        {[['carga', 'Carga'], ['1rm', '1RM'], ['volumen', 'Volumen']].map(([k, label]) => (
-          <button key={k} type="button" className={tab === k ? 'on' : ''} aria-pressed={tab === k} onClick={() => { S.progTab = k; bump(); }}>{label}</button>
-        ))}
-      </div>
-
-      {tab === 'carga' && (
-        !exNames.length ? (
-          <div className="card"><div className="empty p-4"><p className="m-0">Completa sesiones para ver la progresión<br />de tu mejor serie (peso × reps).</p></div></div>
-        ) : (
-          <div className="card">
-            <div className="field mb-3">
-              <select aria-label="Elegir ejercicio" value={S.progEx || ''} onChange={e => { S.progEx = e.target.value; bump(); }}>
-                {exNames.map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-            </div>
-            <Chart id="chartEx" pts={exPts} opts={{ unit: 'kg' }} />
-            <div className="text-text-2 text-micro text-center mt-2">Peso de tu mejor serie por sesión · tocá un punto para ver las reps</div>
-          </div>
-        )
-      )}
-
-      {tab === '1rm' && <StrengthTab />}
-
-      {tab === 'volumen' && <VolumeTab />}
-      </div>
-
-      {trainDays.length > 0 && (
-        <div className="grupo">
-          <div className="sect">Frecuencia</div>
-          <div className="card">
-            <div className="stats" style={{ '--n': 2 }}>
-              <div><div className="n">{sessionsSince(7)}</div><span className="l">Últimos 7 días</span></div>
-              <div><div className="n">{sessionsSince(30)}</div><span className="l">Últimos 30 días</span></div>
-            </div>
-          </div>
-          <div className="card">
-            {trainDays.map(slot => {
-              const st = routineStability(slot.id);
-              const bits = [];
-              bits.push(st?.last ? `última vez ${fmtD(st.last)}` : 'sin sesiones registradas aún');
-              if (st?.sessions) bits.push(`mismos ejercicios hace ${st.sessions} ${st.sessions === 1 ? 'sesión' : 'sesiones'}`);
-              return (
-                <div key={slot.id} className="row"><div className="grow"><div className="t">{slot.name || 'Rutina'}</div><div className="s">{bits.join(' · ')}</div></div></div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Constancia: en el mockup el mapa de calor vive acá, no escondido
-          detrás de la racha del header. */}
-      <div className="grupo">
-      <div className="sect">Constancia</div>
-      <div className="card">
-        <div className="heatmap const">
-          {heat.days.map(d => <div key={d.date} className={cn('cell', d.status)} title={d.date}></div>)}
-        </div>
-        <div className="const-stats">
-          <div><div className="cond">{currentStreak()}</div><span>Racha actual</span></div>
-          <div><div className="cond">{bestStreak()}</div><span>Mejor racha</span></div>
-          <div><div className="cond">{heat.pct}%</div><span>Cumplimiento</span></div>
-        </div>
-      </div>
-      </div>
-
-      <div className="grupo">
-      <div className="sect">Récords</div>
-      {!exNames.length ? (
-        <div className="card"><div className="empty p-4"><p className="m-0">Aquí van a aparecer tus mejores marcas.</p></div></div>
-      ) : (
-        <PRsList exNames={exNames} />
-      )}
-      </div>
-      </div>
-    </>
+      <FuerzaHero res={res} />
+      {res && res.ejercicios.length > 0 && <PorEjercicio res={res} />}
+      <Records />
+      <Cuerpo />
+      <EstaSemana />
+      <Constancia />
+      <HistorialFila />
+    </div>
   );
 }
 
-/** "Qué hice" es lo que más se consulta de Progreso, así que va arriba de los
-    gráficos y debajo del hero de peso. Antes el historial no estaba en esta
-    pantalla: vivía detrás del reloj del header, como una lista de filas planas.
-    Muestra las últimas 8 agrupadas por semana; el resto vive en el sheet de
-    todas las sesiones. */
-function SesionesSection() {
-  const recientes = S.sessions.slice(0, 8);
+/* ============================ 1. Tu fuerza ============================ */
+
+function FuerzaHero({ res }) {
+  const numRef = useRef(null);
+  const pct = res?.pct;
+  useEffect(() => {
+    if (pct == null || !numRef.current) return;
+    const fmt = n => `${signo(n)}${fmtNum(Math.abs(round1(n)))}`;
+    if (menosMovimiento()) { numRef.current.textContent = fmt(pct); return; }
+    countTo(numRef.current, pct, { duration: D.momento, format: fmt });
+  }, [pct]);
+
+  if (!res || pct == null) {
+    return (
+      <section className="card hero prog-fuerza" aria-label="Tu fuerza">
+        <span className="prog-ojo">Tu fuerza</span>
+        <h2 className="prog-vacio-t">Todavía no hay con qué comparar</h2>
+        <p className="prog-sub">Cuando registres el mismo ejercicio en sesiones separadas por dos semanas, acá vas a ver si estás más fuerte, y cuánto.</p>
+      </section>
+    );
+  }
+
+  const { cuenta, semanas, indice } = res;
+  const total = cuenta.sube + cuenta.igual + cuenta.baja;
+  const tono = pct >= 1 ? 'sube' : pct <= -1 ? 'baja' : 'igual';
   return (
-    <div id="sesiones" className="grupo scroll-mt-[70px]">
-      <div className="sect">
-        Tus sesiones
-        {S.sessions.length > 8 && (
+    <section className="card hero prog-fuerza" aria-label="Tu fuerza">
+      <span className="prog-ojo">Tu fuerza · últimas {semanas} {semanas === 1 ? 'semana' : 'semanas'}</span>
+      <div className={`prog-cifra ${tono}`}><span ref={numRef}>{`${signo(pct)}${fmtNum(Math.abs(round1(pct)))}`}</span><small>%</small></div>
+      <p className="prog-sub">
+        {cuenta.sube > 0 ? <>Subiste en <b>{cuenta.sube}</b> de {total} ejercicios</> : <>Ningún ejercicio subió</>}
+        {cuenta.igual > 0 && <>, <b>{cuenta.igual}</b> {cuenta.igual === 1 ? 'sigue' : 'siguen'} igual</>}
+        {cuenta.baja > 0 && <> y <b>{cuenta.baja}</b> {cuenta.baja === 1 ? 'bajó' : 'bajaron'}</>}.
+      </p>
+      <div className="prog-chart"><Chart id="chartFuerza" pts={indice} opts={{ unit: '%' }} /></div>
+      <p className="prog-nota">1RM estimado de tu mejor serie, promedio de {total} ejercicios. 100 es cómo estabas al principio del período.</p>
+    </section>
+  );
+}
+
+/* ====================== 2. Ejercicio por ejercicio ====================== */
+
+const FILTROS = [['sube', 'Suben'], ['igual', 'Igual'], ['baja', 'Bajan']];
+const TOPE_LISTA = 6;
+
+function PorEjercicio({ res }) {
+  const { ejercicios, cuenta } = res;
+  const porDefecto = FILTROS.find(([k]) => cuenta[k] > 0)?.[0] || 'sube';
+  const [filtro, setFiltro] = useState(porDefecto);
+  const [abierto, setAbierto] = useState(null);
+  const [todos, setTodos] = useState(false);
+  const lista = ejercicios
+    .filter(e => e.estado === filtro)
+    .sort((a, b) => (filtro === 'baja' ? a.pct - b.pct : b.pct - a.pct));
+  const vistos = todos ? lista : lista.slice(0, TOPE_LISTA);
+  const listaRef = useRef(null);
+  useEffect(() => {
+    const filas = listaRef.current?.querySelectorAll(':scope > .prog-ej');
+    if (filas?.length) staggerRevealOnce(`prog-ej-${filtro}`, filas);
+  }, [filtro]);
+
+  return (
+    <section className="prog-sec" aria-label="Ejercicio por ejercicio">
+      <h2 className="sect">Ejercicio por ejercicio</h2>
+      <div className="seg" role="tablist">
+        {FILTROS.map(([k, label]) => (
           <button
-            type="button" className="sect-link"
-            onClick={() => openSheet('history')}
+            key={k} type="button" role="tab" aria-selected={filtro === k}
+            className={filtro === k ? 'on' : ''} disabled={!cuenta[k]}
+            onClick={() => { setFiltro(k); setAbierto(null); setTodos(false); }}
           >
-            Ver todas
+            {label} {cuenta[k]}
           </button>
-        )}
+        ))}
       </div>
-      {!recientes.length ? (
-        <div className="card"><div className="empty p-4">
-          <p className="m-0">Cuando cierres tu primera sesión va a aparecer acá.</p>
-        </div></div>
-      ) : (
-        /* Una lista agrupada por semana, con filas de dos renglones
-           (SessionCard): antes cada sesión era una tarjeta de 115 px con la
-           lista de ejercicios, y ocho ocupaban 1.136 px — más de una
-           pantalla y media para "qué hice". */
-        groupSessionsByWeek(recientes).map(g => (
-          <div key={g.key} className="sess-semana">
-            <div className="sess-week">{g.label} · {g.sessions.length} {g.sessions.length === 1 ? 'sesión' : 'sesiones'}</div>
-            <div className="group">
-              {g.sessions.map(s => <SessionCard key={s.id} sess={s} />)}
-            </div>
-          </div>
-        ))
+      <div className="card prog-lista" ref={listaRef}>
+        {!lista.length && <p className="prog-sub">Ninguno en este grupo.</p>}
+        {vistos.map(e => <FilaEjercicio key={e.name} e={e} abierto={abierto === e.name} onToggle={() => setAbierto(abierto === e.name ? null : e.name)} />)}
+      </div>
+      {lista.length > TOPE_LISTA && (
+        <button type="button" className="btn dim sm" aria-expanded={todos} onClick={() => setTodos(v => !v)}>
+          {todos ? 'Ver menos' : `Ver los ${lista.length}`}
+        </button>
+      )}
+      {cuenta.nuevo > 0 && (
+        <p className="prog-nota">{cuenta.nuevo} {cuenta.nuevo === 1 ? 'ejercicio todavía no tiene' : 'ejercicios todavía no tienen'} dos semanas de datos para comparar.</p>
+      )}
+    </section>
+  );
+}
+
+function FilaEjercicio({ e, abierto, onToggle }) {
+  const pr = abierto ? proyeccion(e) : null;
+  const uni = e.name.endsWith(UNI);
+  return (
+    <div className={`prog-ej${abierto ? ' ab' : ''}`}>
+      <button type="button" className="prog-ej-fila" aria-expanded={abierto} onClick={onToggle}>
+        <span className="prog-ej-m">
+          <span className="prog-ej-t">{nombreEj(e.name)}{uni && <span className="prog-ej-uni">unilateral</span>}</span>
+          <span className="prog-ej-s">1RM ≈ {fmtNum(round1(e.ult.y))} kg · {fmtD(e.ult.date)}</span>
+        </span>
+        <Sparkline pts={e.pts} estado={e.estado} />
+        <span className={`prog-ej-d ${e.estado}`}>
+          <b>{signo(e.delta)}{fmtNum(Math.abs(e.delta))}<small> kg</small></b>
+          <span>{pctTxt(e.pct * 100)}</span>
+        </span>
+      </button>
+      {abierto && (
+        <div className="prog-ej-det">
+          <Chart id="chartEj" pts={e.pts.map(p => ({ date: p.date, y: round1(p.y) }))} opts={{ unit: 'kg' }} />
+          <p className="prog-nota">
+            {pr
+              ? `A este ritmo, en 4 semanas rondarías ${fmtNum(round1(pr.value))} kg de 1RM${pr.capped ? ' (ritmo acotado a 1 % por semana)' : ''}.`
+              : e.estado === 'igual' ? 'Estable: probá sumar una rep por serie o cambiar el rango de reps.'
+                : e.estado === 'baja' ? 'Bajando: revisá descanso, comida y que el RIR no esté siempre en 0.'
+                  : 'Subiendo, todavía sin señal clara para proyectar.'}
+          </p>
+        </div>
       )}
     </div>
   );
 }
 
-function StrengthTab() {
-  const readout = strengthReadout();
+/** Mini curva del 1RM estimado. Sin ejes: es para leer la forma, el número
+    va al lado. */
+function Sparkline({ pts, estado }) {
+  if (pts.length < 2) return <span className="prog-spark" aria-hidden="true" />;
+  const ys = pts.map(p => p.y);
+  const mn = Math.min(...ys), mx = Math.max(...ys);
+  const W = 64, H = 26, pad = 3;
+  const x = i => pad + (i * (W - pad * 2)) / (pts.length - 1);
+  const y = v => (mx === mn ? H / 2 : H - pad - ((v - mn) * (H - pad * 2)) / (mx - mn));
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(p.y).toFixed(1)}`).join(' ');
   return (
-    <>
-      {/* Sin "Fuerza · 1RM estimado" acá: el bloque ya se anuncia arriba con
-          "Tu entrenamiento", y de las tres pestañas ésta era la única que
-          además metía su propio título — el selector parecía cambiar de
-          estructura según lo que tocaras. Qué es el 1RM lo dice la pestaña
-          que elegiste y lo explica la tabla de abajo. */}
-      {!readout.length ? (
-        <div className="card"><div className="empty p-4"><p className="m-0">Registrá un ejercicio en dos sesiones para empezar a ver su tendencia.</p></div></div>
-      ) : (
-        <div className="card">
-          {readout.slice(0, 10).map(x => {
-            const pr = project(x.t, 4);
-            let cls = 'text-text-2', tag = '';
-            if (!x.t) tag = `${x.pts.length} sesion${x.pts.length === 1 ? '' : 'es'} · faltan datos para calcular tendencia`;
-            else if (pr) { cls = 'text-ok'; tag = `+${fmtNum(round1(pr.perWeek))} kg/sem · en 4 semanas ≈ ${fmtNum(round1(pr.value))} kg${pr.capped ? ' (ritmo acotado)' : ''}`; }
-            else if (x.t.slope > 0) { cls = 'text-accent'; tag = 'subiendo pero irregular · sin señal suficiente para proyectar'; }
-            else if (x.t.slope === 0) { cls = 'text-warn'; tag = `plano en las últimas ${x.t.n} sesiones · probá variar reps, series o ejercicio`; }
-            else { cls = 'text-warn'; tag = `bajando en las últimas ${x.t.n} sesiones · revisá descanso y alimentación`; }
-            return (
-              <div key={x.name} className="row">
-                <div className="grow"><div className="t">{x.name}</div><div className="s"><span className={cls}>{tag}</span></div></div>
-                <div className="text-right flex-none">
-                  <div className="num text-xl text-text leading-none">{fmtNum(round1(x.last))}</div>
-                  <div className="t-etiqueta">kg 1RM</div>
-                </div>
-              </div>
-            );
-          })}
-          <div className="text-text-2 text-sm leading-normal mt-[var(--s3)]">Calculado con la fórmula de Epley sobre tu mejor serie de cada sesión (se ignoran las de más de 12 reps, donde la fórmula se desvía). La proyección supone que mantenés el ritmo y se limita a 1 %/semana: la fuerza no sube en línea recta.</div>
-        </div>
-      )}
-    </>
+    <svg className={`prog-spark ${estado}`} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+      <path d={`${d} L${x(pts.length - 1).toFixed(1)} ${H} L${x(0).toFixed(1)} ${H} Z`} className="area" />
+      <path d={d} className="linea" />
+      <circle cx={x(pts.length - 1)} cy={y(ys[ys.length - 1])} r="2.6" className="punto" />
+    </svg>
   );
 }
 
-/* Los colores de las bandas de volumen.
+/* ============================== 3. Récords ============================== */
 
-   Estaban escritos como `var(--token, #hex)`, y dos de esos cuatro tokens no
-   existen en la app: `--text-mut` y `--danger` nunca se definieron (los
-   nombres reales son `--mut` y `--red`). Un `var()` con un nombre inexistente
-   no falla ni avisa: usa el fallback. Así que "Bajo mínimo" y "Excedido" se
-   venían pintando SIEMPRE con dos hex sueltos de la paleta vieja, anteriores
-   al rediseño "acero", sin seguir el tema ni el color que elegiste en
-   Ajustes. Y justo "Excedido" es el aviso más serio de la pantalla — el de
-   sobreentrenamiento — pintado con un rojo que no es el rojo de la app.
-
-   Sin fallback a propósito: un fallback que nombra un valor distinto al del
-   token es peor que ninguno, porque esconde exactamente este error. */
-const BAND_COLOR = { bajo: 'var(--text-2)', efectivo: 'var(--ok)', 'cerca-max': 'var(--warn)', excedido: 'var(--danger)' };
-const BAND_LABEL = { bajo: 'Bajo mínimo', efectivo: 'Rango efectivo', 'cerca-max': 'Cerca del máximo', excedido: 'Excedido' };
-
-function VolumeTab() {
-  const mv = muscleVolume(7);
-  const cats = Object.entries(mv).sort((a, b) => b[1] - a[1]);
-  if (!cats.length) return null;
-  const risk = acwr();
+function Records() {
+  const recs = recordsRecientes(30);
+  const [todos, setTodos] = useState(false);
+  const series = exerciseSeries();
+  const exNames = Object.keys(series);
+  if (!exNames.length) return null;
   return (
-    <>
-      {risk?.risk && (
-        <div className="notice warn">
-          <div className="text-sm text-text font-semibold">Volumen alto esta semana</div>
-          <div className="s text-text-2 mt-1">Tonelaje 7 días ({fmtKg(risk.acute)}) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
+    <section className="prog-sec diferida" aria-label="Récords">
+      <h2 className="sect">Récords</h2>
+      <div className="card prog-recs">
+        <div className="prog-recs-cab">
+          <span className="prog-recs-n">{recs.length}</span>
+          <span className="prog-recs-l">{recs.length === 1 ? 'récord' : 'récords'} en los últimos 30 días</span>
         </div>
-      )}
-      {/* El "· 7 días" no se pierde al sacar el título: pasa a la leyenda de
-          abajo, que es donde Carga ya explica qué estás mirando. Las tres
-          pestañas se comportan igual. */}
-      <div className="card">
-        {cats.map(([c, n]) => {
-          const band = volumeBand(c, n);
-          const b = VOLUME_BANDS[c];
-          const pct = b ? Math.min(100, Math.round((n / (b.mrv * 1.15)) * 100)) : Math.round(n / cats[0][1] * 100);
-          return (
-            <div key={c} className="mb-[var(--s3)]">
-              <div className="flex justify-between text-sm mb-[var(--s1)]">
-                <span>{c}</span>
-                <span className="num">{n} series · <span style={{ color: BAND_COLOR[band] }}>{BAND_LABEL[band]}</span></span>
-              </div>
-              <div className="pbar"><i style={{ '--p': pct / 100, background: BAND_COLOR[band] }}></i></div>
-            </div>
-          );
-        })}
-        <div className="text-text-2 text-sm leading-normal">Series por grupo muscular en los últimos 7 días. Bandas de Renaissance Periodization (Mike Israetel): mínimo efectivo, rango que hace crecer y máximo recuperable — varían por grupo.</div>
+        {recs.slice(0, 4).map((r, i) => (
+          <div key={`${r.date}-${r.name}-${i}`} className="prog-rec">
+            <span className="prog-rec-ico" aria-hidden="true"><Trofeo size={16} /></span>
+            <span className="prog-rec-t">{r.name}</span>
+            <span className="prog-rec-v">{fmtNum(round1(r.w))} kg × {r.r}</span>
+            <span className="prog-rec-f">{fmtD(r.date)}</span>
+          </div>
+        ))}
+        {!recs.length && <p className="prog-sub">Ninguno este mes. Tus mejores marcas siguen abajo.</p>}
       </div>
-    </>
+      <button type="button" className="btn dim sm" aria-expanded={todos} onClick={() => setTodos(v => !v)}>
+        {todos ? 'Ocultar tus mejores marcas' : `Tus mejores marcas (${exNames.length})`}
+      </button>
+      {todos && <PRsList exNames={exNames} />}
+    </section>
   );
 }
 
@@ -387,8 +239,8 @@ function PRsList({ exNames }) {
   const bw = profileWeight();
   const prs = exNames.map(n => {
     let maxW = 0, bestVol = 0, bestSet = null, dV = '';
-    [...S.sessions].forEach(s => (s.entries || []).forEach(e => {
-      if (e.name.trim() !== n) return;
+    S.sessions.forEach(s => (s.entries || []).forEach(e => {
+      if (e.name.trim() !== nombreEj(n)) return;
       e.sets.forEach(st => {
         if (st.w > maxW) maxW = st.w;
         if (st.w * st.r > bestVol) { bestVol = st.w * st.r; bestSet = st; dV = s.date; }
@@ -397,24 +249,13 @@ function PRsList({ exNames }) {
     return { n, maxW, bestSet, dV, tier: strengthTier(n, maxW, bw) };
   }).filter(p => p.bestSet).sort((a, b) => b.maxW - a.maxW);
   const listRef = useRef(null);
-  // Los 8 más pesados y el resto a pedido (auditoría total, P3): con 25
-  // récords la pantalla medía 5.000 px, casi todo de esta lista.
-  const [todos, setTodos] = useState(false);
-  const TOPE = 8;
-  const vistos = todos ? prs : prs.slice(0, TOPE);
-  // Reveal escalonado de la lista de PRs — sólo la primera vez que ESTE
-  // conteo de PRs se ve en la sesión. La key incluye prs.length a propósito:
-  // remontar Progreso por un simple cambio de pestaña (key={store.tab} en
-  // App.jsx) no debe volver a animar la lista si nada cambió, pero un PR
-  // nuevo de verdad (prs.length distinto) sí tiene que revelarse.
   useEffect(() => {
     const rows = listRef.current?.querySelectorAll(':scope > .row');
     if (rows?.length) staggerRevealOnce(`progreso-prs-${prs.length}`, rows);
   }, [prs.length]);
   return (
-    <>
     <div className="card" ref={listRef}>
-      {vistos.map(p => (
+      {prs.map(p => (
         <div key={p.n} className="row">
           <div className="grow"><div className="t">{p.n}</div>
             <div className="s">Mejor serie {fmtNum(round1(p.bestSet.w))} × {p.bestSet.r} · {fmtD(p.dV)}</div>
@@ -426,11 +267,148 @@ function PRsList({ exNames }) {
         </div>
       ))}
     </div>
-    {prs.length > TOPE && (
-      <button type="button" className="btn dim sm" aria-expanded={todos} onClick={() => setTodos(v => !v)}>
-        {todos ? 'Ver menos' : `Ver los ${prs.length}`}
+  );
+}
+
+/* ============================ 4. Tu cuerpo ============================ */
+
+function Cuerpo() {
+  const weights = S.body.filter(b => b.weight != null);
+  const lastW = weights[weights.length - 1];
+  const wk = weeklyAvg();
+  const headNum = wk && wk.curAvg != null ? wk.curAvg : (lastW ? lastW.weight : null);
+  const wpts = filterByRange(weights.map(b => ({ date: b.date, y: round1(b.weight) })), S.progRange);
+  const lastBf = [...S.body].reverse().find(b => b.bodyfat != null);
+  const lastVals = {};
+  ['waist', 'arm', 'chest', 'leg'].forEach(k => {
+    for (let i = S.body.length - 1; i >= 0; i--) if (S.body[i][k] != null) { lastVals[k] = S.body[i][k]; break; }
+  });
+
+  return (
+    <section className="prog-sec" aria-label="Tu cuerpo">
+      <h2 className="sect">Tu cuerpo</h2>
+      <div className="card prog-cuerpo">
+        <div className="prog-cuerpo-cab">
+          <div>
+            <div className="prog-peso">{headNum != null ? fmtNum(round1(headNum)) : '—'}<small> kg</small></div>
+            <span className="prog-ojo">{wk && wk.curAvg != null ? `Promedio de ${wk.n} día${wk.n === 1 ? '' : 's'}` : 'Peso corporal'}</span>
+          </div>
+          <div className="prog-cuerpo-der">
+            {wk && wk.delta != null && (
+              <span className={cn('prog-tend', wk.delta <= 0 ? 'baja' : 'sube')}>{wk.delta > 0 ? '+' : ''}{fmtNum(wk.delta)} kg/sem</span>
+            )}
+            <button type="button" className="chip" onClick={() => openSheet('body-form')}>+ Registro</button>
+          </div>
+        </div>
+        {lastW && <p className="prog-nota">Último {fmtKg(round1(lastW.weight))}, {fmtDFull(lastW.date)}. El peso se mueve 1-2 kg de un día a otro: mirá el promedio.</p>}
+        <div className="seg">
+          {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['all', 'Todo']].map(([r, label]) => (
+            <button key={r} type="button" className={(S.progRange || 'all') === r ? 'on' : ''} aria-pressed={(S.progRange || 'all') === r} onClick={() => { S.progRange = r; bump(); }}>{label}</button>
+          ))}
+        </div>
+        <Chart id="chartWeight" pts={wpts} opts={{ unit: 'kg' }} />
+        {(Object.keys(lastVals).length > 0 || lastBf) && (
+          <div className="prog-medidas">
+            {Object.entries(lastVals).map(([k, v]) => (
+              <div key={k}><b>{fmtNum(v)}<small>{NBSP}cm</small></b><span>{BODY_LABELS[k]}</span></div>
+            ))}
+            {lastBf && <div><b>{fmtNum(lastBf.bodyfat)}<small>{NBSP}%</small></b><span>Grasa</span></div>}
+            {lastBf && <div><b>{fmtNum(round1(lastBf.weight * (1 - lastBf.bodyfat / 100)))}<small>{NBSP}kg</small></b><span>Masa magra</span></div>}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ============================ 5. Esta semana ============================ */
+
+const BAND_LABEL = { bajo: 'bajo el mínimo', efectivo: 'en rango', 'cerca-max': 'cerca del máximo', excedido: 'excedido' };
+
+/** Series REALES por grupo en los últimos 7 días, contra su banda (RP,
+    Israetel): la franja verde va del mínimo efectivo al rango que hace
+    crecer, y varía por grupo. Mismo dibujo que "Tu semana en series" de
+    Entreno, que muestra lo que el PLAN promete. */
+function EstaSemana() {
+  const mv = muscleVolume(7);
+  const cats = Object.entries(mv).sort((a, b) => b[1] - a[1]);
+  if (!cats.length) return null;
+  const risk = acwr();
+  return (
+    <section className="prog-sec diferida" aria-label="Esta semana">
+      <h2 className="sect">Esta semana</h2>
+      {risk?.risk && (
+        <div className="notice warn">
+          <div className="text-sm text-text font-semibold">Volumen alto esta semana</div>
+          <div className="s text-text-2 mt-1">Tonelaje 7 días ({fmtKg(risk.acute)}) es {risk.ratio}× tu promedio de las últimas 4 semanas — riesgo de sobreentrenamiento.</div>
+        </div>
+      )}
+      <div className="card prog-semana">
+        {cats.map(([c, n]) => {
+          const b = VOLUME_BANDS[c] || { mev: 8, mav: 16, mrv: 22 };
+          const tope = Math.max(b.mrv * 1.1, n);
+          const band = volumeBand(c, n);
+          return (
+            <div key={c} className="prog-vol" style={{ '--franja-a': b.mev / tope, '--franja-b': b.mav / tope }}>
+              <span className="n">{c}</span>
+              <span className="ent-barra" aria-hidden="true"><span className="franja" /><i className={band} style={{ '--p': n / tope }} /></span>
+              <span className="v">{n}</span>
+              <span className={`prog-vol-b ${band}`}>{BAND_LABEL[band]}</span>
+            </div>
+          );
+        })}
+        <div className="ent-sem-ley"><i aria-hidden="true" />rango que hace crecer, según el grupo (Renaissance Periodization)</div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================ 6. Constancia ============================ */
+
+function Constancia() {
+  const heat = streakHeatmap();
+  const semanas = semanasDeConstancia(heat.days);
+  return (
+    <section className="prog-sec diferida" aria-label="Constancia">
+      <h2 className="sect">Constancia</h2>
+      <div className="card prog-const">
+        <div className="prog-const-cifras">
+          <div><b>{currentStreak()}</b><span>Racha actual</span></div>
+          <div><b>{bestStreak()}</b><span>Mejor racha</span></div>
+          <div><b>{heat.pct}%</b><span>Cumplimiento</span></div>
+        </div>
+        <div className="prog-mapa" role="img" aria-label={`Tus últimas ${semanas.length} semanas: ${heat.days.filter(d => d.status === 'done').length} días entrenados`}>
+          <div className="prog-mapa-dias" aria-hidden="true">{['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => <span key={i}>{d}</span>)}</div>
+          {semanas.map((sem, i) => (
+            <div key={i} className="prog-mapa-sem">
+              {sem.map(d => <span key={d.date} className={`c ${d.status}`} title={d.status === 'fuera' ? undefined : d.date} />)}
+            </div>
+          ))}
+        </div>
+        <div className="prog-mapa-ley" aria-hidden="true">
+          <span><i className="c done" />entrenaste</span>
+          <span><i className="c rest" />descanso</span>
+          <span><i className="c miss" />faltaste</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================ 7. Historial ============================ */
+
+function HistorialFila() {
+  if (!S.sessions.length) return null;
+  const ult = S.sessions[0];
+  return (
+    <div className="group prog-hist">
+      <button type="button" className="grouprow" onClick={() => openSheet('history')}>
+        <span className="grouprow-grow">
+          <span className="grouprow-t">Todas tus sesiones</span>
+          <span className="grouprow-s">{S.sessions.length} registradas · la última, {ult.dayName || 'sesión'} del {fmtD(ult.date)}</span>
+        </span>
+        <span className="grouprow-chev" aria-hidden="true">›</span>
       </button>
-    )}
-    </>
+    </div>
   );
 }
