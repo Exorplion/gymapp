@@ -25,7 +25,7 @@ import { uncategorized } from '../../lib/muscle.js';
 import { dstr } from '../../lib/format.js';
 import { lunesDe } from '../../lib/week.js';
 import { cuerpo } from '../../lib/bodydata.js';
-import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, seriesPorZona, cabezasTriceps, dorsalPorRegion, momentos, estadoDe, ZONAS } from '../../lib/recuperacion.js';
+import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, seriesPorZona, cabezasTriceps, momentos, estadoDe, ZONAS } from '../../lib/recuperacion.js';
 import { turnoFoco } from '../../lib/turnoFoco.js';
 import { LLANO, nombreZona, frase, capital, haceTexto } from '../../lib/inicio.js';
 import { sheetReveal, menosMovimiento } from '../../lib/motion.js';
@@ -40,6 +40,17 @@ const RANGO = [10, 20];
 const rirTexto = rir => (rir == null ? null : rir < 0.5 ? 'al fallo' : `RIR ${Math.round(rir) >= 4 ? '4+' : Math.round(rir)}`);
 const promedio = xs => Math.round(xs.reduce((a, b) => a + b, 0) / xs.length);
 
+/** Qué lo trabaja, para la ficha de un músculo que todavía no registraste:
+    tocarlo tiene que decir algo (Enzo, 2026-10-06: "cuando tocás el trapecio
+    no muestra nada"). */
+const QUE_LO_TRABAJA = {
+  Pecho: 'press de banca, aperturas', Trapecio: 'encogimientos, peso muerto', Romboides: 'remo con codos abiertos, Kelso',
+  'Dorsal alto': 'remo en polea, remo sentado', 'Dorsal bajo': 'jalón, dominadas', Lumbares: 'hiperextensiones, peso muerto',
+  Hombro: 'press militar, elevaciones laterales', Bíceps: 'curl', Tríceps: 'pushdown, extensión sobre la cabeza',
+  Cuádriceps: 'sentadilla, prensa, extensiones', Femoral: 'curl femoral, peso muerto rumano', Glúteo: 'hip thrust, sentadilla',
+  Gemelos: 'elevación de talones', Abs: 'crunch, elevación de piernas',
+};
+
 export default function BodyMap({ zona = null }) {
   // El "ahora" se fija al abrir: la proyección se mide contra un reloj
   // quieto, si no las cifras cambiarían solas mientras se lee.
@@ -53,7 +64,6 @@ export default function BodyMap({ zona = null }) {
   const rec = useMemo(() => recuperacion(S.sessions, ahora + h * HORA), [ahora, h]);
   const semana = useMemo(() => seriesPorZona(S.sessions, dstr(lunesDe())), []);
   const cabezas = useMemo(() => cabezasTriceps(S.sessions, dstr(lunesDe())), []);
-  const regiones = useMemo(() => dorsalPorRegion(S.sessions, dstr(lunesDe())), []);
   const foco = turnoFoco();
   const sexo = S.cfg.bodySex || S.cfg.profile?.sex;
   const conDato = ZONAS.filter(z => rec[z]);
@@ -86,6 +96,7 @@ export default function BodyMap({ zona = null }) {
   const listos = conDato.filter(z => rec[z].pct >= 90).length;
   const firma = ZONAS.map(z => rec[z]?.estado || '-').join('|') + '#' + (sexo || '') + '#' + (sel || '');
   const s = sel && rec[sel];
+  const sinDato = sel && !rec[sel];
   const textoM = ms[m].texto;
   const fila = z => {
     const r = rec[z];
@@ -95,7 +106,9 @@ export default function BodyMap({ zona = null }) {
     return (
       <FilaZona
         key={z} zona={z} r={r} sub={sub} series={semana[z]}
-        desglose={z === 'Tríceps' ? <CabezasTriceps {...cabezas} /> : z === 'Dorsal' ? <DorsalRegiones {...regiones} /> : null}
+        desglose={z === 'Tríceps' ? <CabezasTriceps {...cabezas} />
+          : z.startsWith('Dorsal') ? <p className="bm-nota bm-nota-fila">Alto o bajo es una estimación: la diferencia entre regiones se midió en ejercicios estáticos.</p>
+            : null}
         abierta={abierta === z}
         onToggle={() => { const ab = abierta === z; setAbierta(ab ? null : z); setSel(ab ? null : z); }}
       />
@@ -130,6 +143,12 @@ export default function BodyMap({ zona = null }) {
             <div className="bm-ficha" role="status">
               <b>{nombreZona(sel)}</b>
               <span className={s.estado}>{s.pct}%</span>
+            </div>
+          )}
+          {sinDato && (
+            <div className="bm-ficha sin" role="status">
+              <b>{nombreZona(sel)}</b>
+              <span className="bm-ficha-sin">Sin registro · lo trabajan {QUE_LO_TRABAJA[sel] || 'sus ejercicios'}</span>
             </div>
           )}
         </div>
@@ -264,24 +283,6 @@ function CabezasTriceps({ larga, resto }) {
   );
 }
 
-/** El dorsal tiene un solo %: nadie midió cuánto tarda en recuperarse cada
-    región (ver ZONAS en recuperacion.js). Lo que sí se puede decir es cómo
-    repartiste la semana entre la parte alta (con el redondo mayor) y la baja
-    (Enzo, 2026-10-06). */
-function DorsalRegiones({ alto, bajo, ambos }) {
-  if (!alto && !bajo && !ambos) return null;
-  const serie = n => `${n} ${n === 1 ? 'serie' : 'series'}`;
-  return (
-    <div className="bm-detalle">
-      <span className="t-etiqueta">Esta semana, por región</span>
-      <div className="bm-ej"><span>Alto · remos en polea, sentado</span><span>{serie(alto)}</span></div>
-      <div className="bm-ej"><span>Bajo · jalón, dominadas</span><span>{serie(bajo)}</span></div>
-      {ambos > 0 && <div className="bm-ej"><span>Los dos · remo con barra</span><span>{serie(ambos)}</span></div>}
-      <p className="bm-nota">Orientativo: la diferencia entre regiones se midió en ejercicios estáticos, no en series reales.</p>
-    </div>
-  );
-}
-
 /** Series por zona desde el lunes, con la franja del rango habitual. */
 function SemanaSeries({ semana, zonas }) {
   if (!zonas.length) return null;
@@ -349,7 +350,7 @@ const CuerpoGrande = memo(function CuerpoGrande({ rec, sexo, sel, onPick }) {
             const r = zona && rec[zona];
             const cls = z.cat === 'pelo' ? 'pelo' : r ? r.estado : 'sin-dato';
             return (
-              <g key={i} className={`bm-z ${cls}${zona && zona === sel ? ' sel' : ''}${r ? ' toca' : ''}`} onClick={r ? () => onPick(zona) : undefined}>
+              <g key={i} className={`bm-z ${cls}${zona && zona === sel ? ' sel' : ''}${zona ? ' toca' : ''}`} onClick={zona ? () => onPick(zona) : undefined}>
                 {z.d.map((d, j) => <path key={j} d={d} />)}
               </g>
             );
