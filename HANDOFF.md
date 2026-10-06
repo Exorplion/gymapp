@@ -34,6 +34,26 @@ tarjeta). Mancuernas: "kg / mancuerna" y "c/u"; barra: "kg total"; olímpica
 (`ex.barraKg` = la barra sola) muestra "barra 20 + 20 por lado" bajo la
 rueda. Lo anotado sigue siendo el total. Tests: `peso-por-equipo.test.js`.
 
+**Hecho después (`feat/espalda-en-tres`):** "Tu cuerpo" (BodyMap, se abre
+desde Inicio) parte Espalda en tres zonas de recuperación: **Trapecio**
+(encogimientos; peso muerto de sostén), **Romboides** = espalda media (Kelso,
+remo espalda alta: codos abiertos, casi sin dorsal) y **Dorsal** (jalón,
+dominadas, remos). Todo en `lib/recuperacion.js` (`ZONAS`, `zonasDeEspalda`,
+`zonaDeForma`); Inicio, Entreno y el mapa lo toman solos. El grupo "Espalda"
+sigue entero para la rutina y la sesión.
+- Enzo pidió dorsal alto (redondo mayor) y bajo con % propio. Investigado:
+  las regiones existen (Paton & Brown 1995, Muñoz-Garcés 2026, Ackland 2008)
+  pero sólo hay EMG isométrico, nada de recuperación por región. Por eso un
+  % de Dorsal + `dorsalPorRegion` (series alto/bajo/los dos) en su fila, y
+  `cabezasTriceps` igual para el tríceps. Si Enzo insiste en dos %, se cambia
+  `PORCION_A_ZONA` y `FORMA_ESPALDA` (la lámina ya tiene upperBack = alto y
+  lats = bajo).
+- Romboides no tiene forma en la lámina (está bajo el trapecio): sale en las
+  filas, no se pinta. Se reconoce por nombre (`ROMBOIDES`), no por fibras.js,
+  porque fibras-bodydata-bridge.test exige que cada porción esté dibujada.
+- La forma `upperBack` de la lámina NO son romboides: es el costado del
+  omóplato (redondo mayor / infraespinoso).
+
 **Pendientes de esta charla (diseño, NO aprobado todavía):**
 1. ~~**El peso con su aclaración**~~ HECHO (arriba). Diseño original: Mancuernas → "17 kg por mancuerna"
    en la tarjeta en vivo (sólo si `equip === 'mancuernas'`; el dato ya era

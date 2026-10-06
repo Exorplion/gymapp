@@ -25,7 +25,7 @@ import { uncategorized } from '../../lib/muscle.js';
 import { dstr } from '../../lib/format.js';
 import { lunesDe } from '../../lib/week.js';
 import { cuerpo } from '../../lib/bodydata.js';
-import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, seriesPorZona, cabezasTriceps, momentos, estadoDe, ZONAS } from '../../lib/recuperacion.js';
+import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, seriesPorZona, cabezasTriceps, dorsalPorRegion, momentos, estadoDe, ZONAS } from '../../lib/recuperacion.js';
 import { turnoFoco } from '../../lib/turnoFoco.js';
 import { LLANO, nombreZona, frase, capital, haceTexto } from '../../lib/inicio.js';
 import { sheetReveal, menosMovimiento } from '../../lib/motion.js';
@@ -53,6 +53,7 @@ export default function BodyMap({ zona = null }) {
   const rec = useMemo(() => recuperacion(S.sessions, ahora + h * HORA), [ahora, h]);
   const semana = useMemo(() => seriesPorZona(S.sessions, dstr(lunesDe())), []);
   const cabezas = useMemo(() => cabezasTriceps(S.sessions, dstr(lunesDe())), []);
+  const regiones = useMemo(() => dorsalPorRegion(S.sessions, dstr(lunesDe())), []);
   const foco = turnoFoco();
   const sexo = S.cfg.bodySex || S.cfg.profile?.sex;
   const conDato = ZONAS.filter(z => rec[z]);
@@ -93,7 +94,8 @@ export default function BodyMap({ zona = null }) {
       : `${capital(haceTexto(r.date))}, ${r.pct >= 100 ? 'listo' : cuandoLista(r.listaEn, ahora)}`;
     return (
       <FilaZona
-        key={z} zona={z} r={r} sub={sub} series={semana[z]} cabezas={z === 'Tríceps' ? cabezas : null}
+        key={z} zona={z} r={r} sub={sub} series={semana[z]}
+        desglose={z === 'Tríceps' ? <CabezasTriceps {...cabezas} /> : z === 'Dorsal' ? <DorsalRegiones {...regiones} /> : null}
         abierta={abierta === z}
         onToggle={() => { const ab = abierta === z; setAbierta(ab ? null : z); setSel(ab ? null : z); }}
       />
@@ -210,7 +212,7 @@ function fraseHero({ rec, base, foco, h, textoM, prom, ahora }) {
 
 /** Una fila de "Músculo por músculo": cifra, cuándo llega, barra, y al
     abrirla lo que hiciste en la última sesión que tocó la zona. */
-function FilaZona({ zona, r, sub, series, cabezas, abierta, onToggle }) {
+function FilaZona({ zona, r, sub, series, desglose, abierta, onToggle }) {
   const fecha = new Date(r.date + 'T12:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric' });
   return (
     <div className={`bm-fila${abierta ? ' abierta' : ''}`}>
@@ -232,8 +234,8 @@ function FilaZona({ zona, r, sub, series, cabezas, abierta, onToggle }) {
               </div>
             ))}
           </div>
+          {desglose}
           <div className="bm-ej bm-ej-semana"><span>Esta semana</span><span><b>{series}</b> {series === 1 ? 'serie' : 'series'}</span></div>
-          {cabezas && <CabezasTriceps {...cabezas} />}
         </div>
       </div>
     </div>
@@ -253,11 +255,30 @@ function CabezasTriceps({ larga, resto }) {
       ? 'La cabeza larga va floja: una extensión sobre la cabeza más la emparejaría.'
       : null;
   return (
-    <>
-      <div className="bm-ej"><span>Cabeza larga · brazo arriba</span><span>{serie(larga)}</span></div>
+    <div className="bm-detalle">
+      <span className="t-etiqueta">Esta semana, por cabeza</span>
+      <div className="bm-ej"><span>Larga · con el brazo arriba</span><span>{serie(larga)}</span></div>
       <div className="bm-ej"><span>Lateral y medial · pushdown, press</span><span>{serie(resto)}</span></div>
       {consejo && <p className="bm-nota">{consejo}</p>}
-    </>
+    </div>
+  );
+}
+
+/** El dorsal tiene un solo %: nadie midió cuánto tarda en recuperarse cada
+    región (ver ZONAS en recuperacion.js). Lo que sí se puede decir es cómo
+    repartiste la semana entre la parte alta (con el redondo mayor) y la baja
+    (Enzo, 2026-10-06). */
+function DorsalRegiones({ alto, bajo, ambos }) {
+  if (!alto && !bajo && !ambos) return null;
+  const serie = n => `${n} ${n === 1 ? 'serie' : 'series'}`;
+  return (
+    <div className="bm-detalle">
+      <span className="t-etiqueta">Esta semana, por región</span>
+      <div className="bm-ej"><span>Alto · remos en polea, sentado</span><span>{serie(alto)}</span></div>
+      <div className="bm-ej"><span>Bajo · jalón, dominadas</span><span>{serie(bajo)}</span></div>
+      {ambos > 0 && <div className="bm-ej"><span>Los dos · remo con barra</span><span>{serie(ambos)}</span></div>}
+      <p className="bm-nota">Orientativo: la diferencia entre regiones se midió en ejercicios estáticos, no en series reales.</p>
+    </div>
   );
 }
 
