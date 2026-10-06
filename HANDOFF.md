@@ -54,6 +54,25 @@ sigue entero para la rutina y la sesión.
 - La forma `upperBack` de la lámina NO son romboides: es el costado del
   omóplato (redondo mayor / infraespinoso).
 
+**Hecho después (`feat/maquinas-por-ejercicio`): máquinas por ejercicio y
+gym.** Pedido de Enzo: el Close grip row en la Low row machine o en la polea;
+cada máquina = foto + nombre que él pone, y el ejercicio pasa a llamarse
+"Close grip row en Polea". Modelo en `lib/maquinas.js` (puro: `maquinasDe`,
+`maquinaElegida`, `aplicarMaquina`, `nombreConMaquina`); fotos y guardado en
+`lib/gyms.js` (`crearMaquina`, `elegirMaquina`, `renombrarMaquina`,
+`borrarMaquina`, `asegurarLegado`). Datos: `gym.maquinas[ej]`,
+`gym.ultimaMaquina[ej]`; el ejercicio lleva `variante` (id, entra en `exKey`
+como `@id`) y `varianteNombre`; las entradas de sesión las copian.
+- La foto que ya existía pasa a "Máquina 1" (`legado: true`, SIN `variante`
+  → conserva el historial de siempre). Se crea al abrir la hoja.
+- Hoja `sheets/Maquinas.jsx` ('maquinas'): se abre tocando la miniatura de
+  la tarjeta o desde ⋯ → "En qué máquina" (reemplazó a "Foto de la
+  máquina"). Se borró `GymPhotoView.jsx` (ya nadie la abría).
+- Cambiar de máquina con series ya hechas hoy se bloquea (como unilateral).
+- `setActiveGym` y `startSession` re-aplican la máquina del gym activo.
+- Pendiente menor: Progreso agrupa por nombre (e1rmSeries), así que la
+  curva de fuerza mezcla máquinas — igual que ya mezclaba equipos.
+
 **Pendientes de esta charla (diseño, NO aprobado todavía):**
 1. ~~**El peso con su aclaración**~~ HECHO (arriba). Diseño original: Mancuernas → "17 kg por mancuerna"
    en la tarjeta en vivo (sólo si `equip === 'mancuernas'`; el dato ya era
@@ -62,7 +81,7 @@ sigue entero para la rutina y la sesión.
    barra olímpica = barra + discos por lado, se elige por ejercicio. Falta
    presentarle el diseño concreto y que lo apruebe. Dónde se muestra el peso:
    `ultimaVez()` en `ExerciseCarousel.jsx` (~:494) y la rueda de peso.
-2. **Variantes y máquinas por gimnasio** (grande, lleva spec). Ejercicio = el
+2. ~~**Variantes y máquinas por gimnasio**~~ HECHO (arriba). Diseño original: Ejercicio = el
    movimiento; variante = equipo + máquina con nombre y foto ("Péndulo 2"),
    por gimnasio; la línea `equipLabel` de la tarjeta en vivo se vuelve tocable
    y lista las variantes con foto y último peso + "Nueva variante". Hoy

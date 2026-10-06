@@ -8,18 +8,16 @@
 //
 // "Hacer después" es nueva y distinta de "Omitir": la máquina está ocupada,
 // así que el ejercicio pasa al final y sigue pendiente. Omitir es no hacerlo.
-import { useRef } from 'react';
 import { S, closeSheet, openSheet } from '../../lib/state.js';
 import {
   sessionExs, addExtraSet, dropSet, toggleUnilateral, isUnilateral, skipExercise, setBarra,
 } from '../../lib/session.js';
 import BarraField from '../BarraField.jsx';
 import { puedeSerUnilateral } from '../../lib/equip.js';
-import { guardarFotoMaquina } from '../../lib/gyms.js';
+import { maquinaElegida } from '../../lib/maquinas.js';
 import { Later, Plus, Minus, Sides, Swap, Camera, Skip } from '../Icon.jsx';
 
 export default function ExOpciones({ exId, wd }) {
-  const inputRef = useRef(null);
   const index = wd ?? S.routine.findIndex(s => s.id === S.draft?.slotId);
   const ex = sessionExs(index).find(e => e.id === exId);
   if (!ex) return <h2>Opciones</h2>;
@@ -40,11 +38,6 @@ export default function ExOpciones({ exId, wd }) {
     });
   }
 
-  async function onFoto(e) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (await guardarFotoMaquina(gymId, ex.name, file)) closeSheet();
-  }
 
   return (
     <>
@@ -79,25 +72,21 @@ export default function ExOpciones({ exId, wd }) {
           <Swap className="opc-ico" />
           <span className="grouprow-grow"><span className="grouprow-t">Cambiar por otro ejercicio</span></span>
         </button>
-        {gymId ? (
-          <button type="button" className="grouprow" onClick={() => inputRef.current?.click()}>
-            <Camera className="opc-ico" />
-            <span className="grouprow-grow">
-              <span className="grouprow-t">Foto de la máquina</span>
-              <span className="grouprow-s">Para reconocerla la próxima vez. Queda en la tarjeta.</span>
+        {/* Las máquinas de este ejercicio en el gym (Maquinas.jsx): foto,
+            nombre y su propio historial. Reemplaza a "Foto de la máquina",
+            que sólo guardaba una. */}
+        <button type="button" className="grouprow" onClick={() => openSheet('maquinas', { exId: ex.id, wd: index })}>
+          <Camera className="opc-ico" />
+          <span className="grouprow-grow">
+            <span className="grouprow-t">En qué máquina</span>
+            <span className="grouprow-s">
+              {!gymId ? 'Se guardan por gimnasio: elegí en cuál estás.'
+                : maquinaElegida(gymId, ex.name) ? `Ahora: ${maquinaElegida(gymId, ex.name).nombre}. Elegí otra o agregá una.`
+                  : 'Foto y nombre de cada máquina, cada una con su historial.'}
             </span>
-          </button>
-        ) : (
-          <div className="grouprow" style={{ cursor: 'default' }}>
-            <Camera className="opc-ico" />
-            <span className="grouprow-grow">
-              <span className="grouprow-t">Foto de la máquina</span>
-              <span className="grouprow-s">Elegí un gym al empezar la sesión para poder guardarla.</span>
-            </span>
-          </div>
-        )}
+          </span>
+        </button>
       </div>
-      <input ref={inputRef} type="file" accept="image/*" capture="environment" hidden onChange={onFoto} />
       {/* Barra fija u olímpica: un dato del ejercicio, no de hoy (setBarra).
           Acá y no sólo en editar, porque es en la máquina donde te das cuenta. */}
       {ex.equip === 'barra' && (

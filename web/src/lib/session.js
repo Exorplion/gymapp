@@ -15,6 +15,7 @@ import { currentStreak, bestStreak } from './streak.js';
 import { bloqueDe, DESCANSO } from './warmup.js';
 import { clampHechos } from './rampa.js';
 import { metaHoy } from './previa.js';
+import { aplicarMaquina } from './maquinas.js';
 
 /** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
     ejercicio completo; un string sigue funcionando y se compara sólo por
@@ -357,7 +358,7 @@ export function sessionPRs(sess) {
     if (!e.sets?.length) return;
     const bestSet = e.sets.reduce((a, b) => (b.w > a.w ? b : a), e.sets[0]);
     const prevMax = previo.get(exKey(e)) ?? 0;
-    if (bestSet.w > prevMax) prs.push({ name: e.name, equip: e.equip, machine: e.machine, unilateral: e.unilateral, w: bestSet.w, r: bestSet.r });
+    if (bestSet.w > prevMax) prs.push({ name: e.name, equip: e.equip, machine: e.machine, variante: e.variante, varianteNombre: e.varianteNombre, unilateral: e.unilateral, w: bestSet.w, r: bestSet.r });
   });
   return prs;
 }
@@ -781,7 +782,7 @@ export async function saveSet(exId) {
   // mejorar el matcher arregla también el historial viejo. Lo que no puede
   // quedar afuera es el override manual, porque ese vive en la rutina y
   // renombrar un ejercicio ahí no debe reescribir el pasado.
-  if (!S.draft.entries[exId]) S.draft.entries[exId] = { name: ex.name, equip: ex.equip, machine: ex.machine, cat: ex.cat, unilateral: isUnilateral(ex), sets: [] };
+  if (!S.draft.entries[exId]) S.draft.entries[exId] = { name: ex.name, equip: ex.equip, machine: ex.machine, variante: ex.variante, varianteNombre: ex.varianteNombre, cat: ex.cat, unilateral: isUnilateral(ex), sets: [] };
   const cur = S.draft.entries[exId].sets;
   /* el objetivo es el techo: llegado a él el ejercicio se cierra solo y pasamos
      al siguiente, en vez de dejar registrar series infinitas. El techo de HOY
@@ -937,7 +938,7 @@ export async function completeSession() {
   const order = (d.order && d.order.length) ? d.order : (slot?.exercises || []).map(e => e.id);
   const entries = Object.entries(d.entries)
     .sort((a, b) => { const ia = order.indexOf(a[0]), ib = order.indexOf(b[0]); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); })
-    .map(([exId, e]) => ({ exId, name: e.name, equip: e.equip, machine: e.machine, cat: e.cat, unilateral: e.unilateral, sets: e.sets }));
+    .map(([exId, e]) => ({ exId, name: e.name, equip: e.equip, machine: e.machine, variante: e.variante, varianteNombre: e.varianteNombre, cat: e.cat, unilateral: e.unilateral, sets: e.sets }));
   if (!entries.length) { toast('No registraste ninguna serie. Usá "Descartar" para cerrar la sesión.'); return; }
   /* d.open cubre borradores viejos (formato anterior) y el caso raro de que
      falte start; la duración mide de la primera serie al cierre */
@@ -1053,6 +1054,14 @@ export async function startSession(index, precheckAdjust = 0, { preworkout = nul
   // Acá y no al terminar el primer descanso: abrir la sesión es un toque de
   // botón, que es el gesto que los navegadores exigen para poder preguntar.
   pedirPermiso();
+  // La máquina de cada ejercicio, la del gym activo (maquinas.js): si la
+  // última vez entrenaste en otro gym, el ejercicio todavía lleva aquella.
+  let cambioMaq = false;
+  for (const ex of slot.exercises) cambioMaq = aplicarMaquina(ex) || cambioMaq;
+  if (cambioMaq) {
+    const { persistSlot } = await import('./rutina-logic.js');
+    await persistSlot(index);
+  }
   S.draft = {
     id: uid(), date: dstr(), slotId: slot.id, dayName: slot.name || 'Entrenamiento', open: Date.now(), start: null, cur: null,
     order: orderedExs(index, slot.exercises).map(e => e.id), entries: {},
@@ -1347,7 +1356,7 @@ export function seriesPrellenadas(slotId, fecha) {
   return (slot.exercises || []).map(ex => {
     const sets = seriesDeEjercicio(ex, fecha);
     return {
-      exId: ex.id, name: ex.name, equip: ex.equip, machine: ex.machine, cat: ex.cat, unilateral: ex.unilateral,
+      exId: ex.id, name: ex.name, equip: ex.equip, machine: ex.machine, variante: ex.variante, varianteNombre: ex.varianteNombre, cat: ex.cat, unilateral: ex.unilateral,
       sets: sets.map((st, i) => ({ ...st, t: t0 + i * 60000 })),
     };
   });
