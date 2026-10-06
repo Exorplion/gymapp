@@ -4913,9 +4913,9 @@ section.bm-bloque{display:flex;flex-direction:column;gap:var(--s3)}
 .ent-cuerpo{display:flex;gap:2px;height:132px}
 .ent-cara{height:100%;width:auto;display:block}
 .ent-z{--a:1}
-.ent-z path{fill:var(--cuerpo-neutro)}
-.ent-z.pelo path{fill:var(--cuerpo-pelo)}
-.ent-z.on path{fill:var(--accent);fill-opacity:var(--a,1)}
+.ent-z{fill:var(--cuerpo-neutro)}
+.ent-z.pelo{fill:var(--cuerpo-pelo)}
+.ent-z.on{fill:var(--accent);fill-opacity:var(--a,1)}
 .ent-mz{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s2);min-width:0}
 .ent-mz-f{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px var(--s2);align-items:baseline;font-size:var(--t-sm)}
 .ent-mz-f .n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -4971,7 +4971,9 @@ section.bm-bloque{display:flex;flex-direction:column;gap:var(--s3)}
 
 /* Tu semana en series: lo que el PLAN le da a cada músculo, contra la
    franja de 10–20 (--franja-a/-b las pone el JSX en fracción del tope). */
-.ent-sec{display:flex;flex-direction:column;gap:var(--s3);margin-top:var(--s4)}
+/* Debajo del pliegue: el navegador no calcula estilo ni layout hasta que te
+   acercás (content-visibility). Sin gráficos de canvas adentro. */
+.ent-sec{display:flex;flex-direction:column;gap:var(--s3);margin-top:var(--s4);content-visibility:auto;contain-intrinsic-size:auto 640px}
 .ent-sec .sect{margin:0}
 .ent-descarga{margin:var(--s2) 0 0}
 .ent-semana{--franja-a:.45;--franja-b:.9;display:flex;flex-direction:column;gap:var(--s3);margin:0}
@@ -5028,6 +5030,9 @@ section.bm-bloque{display:flex;flex-direction:column;gap:var(--s3)}
 .prog .card{margin:0}
 .prog-sec{display:flex;flex-direction:column;gap:var(--s3)}
 .prog-sec .sect{margin:0}
+/* Récords, semana y constancia quedan debajo del pliegue: se calculan al
+   acercarte. Tu cuerpo no (tiene un canvas que mide su ancho al montarse). */
+.prog-sec.diferida{content-visibility:auto;contain-intrinsic-size:auto 520px}
 .prog-ojo{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2)}
 .prog-sub{margin:0;font-size:var(--t-body);color:var(--text-2);line-height:1.45}
 .prog-sub b{color:var(--text);font-weight:700}

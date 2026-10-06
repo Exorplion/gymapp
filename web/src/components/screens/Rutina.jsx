@@ -348,7 +348,9 @@ const CuerpoTurno = memo(function CuerpoTurno({ zonas, sexo }) {
         const zona = z.cat && z.cat !== 'pelo' ? zonaDeForma(z.cat, z.slug) : null;
         const v = zona ? mapa.get(zona) : 0;
         const cls = z.cat === 'pelo' ? 'pelo' : v ? 'on' : 'off';
-        return <g key={i} className={`ent-z ${cls}`} style={v ? { '--a': 0.35 + 0.65 * (v / max) } : undefined}>{z.d.map((d, j) => <path key={j} d={d} />)}</g>;
+        // Un solo <path> por zona (sus trazos unidos): 40 elementos en vez
+        // de 200, que se notaba al entrar a la pestaña con el CPU lento.
+        return <path key={i} d={z.d.join(' ')} className={`ent-z ${cls}`} style={v ? { '--a': 0.35 + 0.65 * (v / max) } : undefined} />;
       })}
     </svg>
   );

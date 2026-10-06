@@ -1,6 +1,68 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-10-03
+**Última actualización:** 2026-10-06
+
+---
+
+## SESIÓN 2026-10-06 — Entreno y Progreso rehechos
+
+Pedido de Enzo: rehacer TODAS las pantallas de Entreno como se hizo con Inicio
+("rompe las reglas… original y creativo"): el plan se repetía, los descansos
+ocupaban tarjetas, era "toda una pantalla de scrolleo". Y después Progreso:
+"la mayoría es solo ver el peso… tus sesiones no se entiende… tiene que servir
+un propósito". Lienzo con 3 caminos (claude.ai/artifact/Kcz1pv3bXBbTWuJJKtKHj5;
+el link no le abrió — copia local en `Documents/Enzo/FIERRO-maquetas/`). Eligió
+**A, el riel del ciclo**. Rama `feat/entreno-rediseno`, **1167 tests**. Spec:
+`docs/superpowers/specs/2026-10-06-entreno-y-progreso-design.md`.
+
+1. **Entreno** (`screens/Rutina.jsx`, lógica en `lib/entreno.js`, CSS `.ent-*`
+   al final de styles.css): cabecera (nombre + lápiz + chips Cambiar rutina /
+   Gimnasio + Plan/Ejercicios), riel `Riel` (Rutina.jsx:219), un turno a la vez
+   `Turno` (:262) con el cuerpo encendido por series, edición en el lugar
+   `ListaEditable` (:401) y `AccionesTurno` (:456, mover el turno con
+   `moverTurno`), `SemanaSeries` (:545) que absorbió Cobertura y "Se está
+   enfriando", y `MisEjercicios` (:590) con último peso y cambio en 3+ semanas.
+   `S.rutOpen` ahora es el turno ELEGIDO. Se fue `WeekProjection`.
+2. **Mis rutinas** (`sheets/Library.jsx`): sin la caja "La que estás usando";
+   la que usás va primera en "Tuyas".
+3. **Progreso** (`screens/Progreso.jsx`, `lib/progreso.js`, CSS `.prog-*`):
+   Tu fuerza (índice de 1RM, :64), Ejercicio por ejercicio (:107), Récords
+   (:206), Tu cuerpo, Esta semana (:332), Constancia (:368) y una fila al
+   historial. El reloj del header abre `history` directo (App.jsx).
+4. Rendimiento (prod, 6×, mediana de 7 alternadas vs #141): Entreno 459 → 611
+   ms, Progreso 967 → 920 ms. Lo que lo bajó: un `<path>` por zona en el cuerpo
+   (200 → 40 elementos) y `content-visibility:auto` debajo del pliegue.
+
+**Lo que se probó y se descartó:**
+- Arrastrar los turnos en el riel horizontal: drag.js es sólo vertical. Se
+  reemplazó por "Mover antes / después" en edición (más accesible, sin tocar
+  drag.js).
+- Medir con una corrida suelta: la misma build dio 2,4 s y 7,1 s. Sólo sirven
+  medianas de corridas alternadas entre builds.
+
+**Trampas:**
+- La extensión de Chrome abrió una pestaña en OTRA computadora de Enzo. Se usó
+  Playwright headless (`npm-cache/_npx/420ff84f11983ee5/node_modules/playwright`);
+  en el dev server se cargan datos con `import('/src/lib/seed.js')`, en
+  producción con Ajustes → "Cargar mi registro".
+- Con `<Activity>` el que scrollea no es `main`: buscar el contenedor con
+  overflow antes de setear `scrollTop` en una prueba.
+- `tokens.test.js` exige definición en CSS de toda `var(--x)` aunque la ponga
+  el JSX: `--dx` y `--a` tienen valor por defecto en `.ent-turno` / `.ent-z`.
+- El test G17 (`hojas-salidas.test.js`) busca en Rutina.jsx los botones
+  `data-act="ex-up|ex-down|ex-info"` con `aria-label` ANTES del primer `>`
+  (un `onClick={() =>` antes lo rompe).
+
+**Pendientes (con criterio):**
+- Que Enzo lo pruebe en el teléfono: deslizar entre turnos (Rutina.jsx:262,
+  umbral 56 px) y que no choque con el scroll; tocar/mantener un ejercicio en
+  edición. Aprobado cuando diga que se siente bien.
+- Clases viejas sin uso tras el cambio (`.hero-plan`, `.weekbars`, `.wbar`,
+  `.week-proj*`, `.routine-name-*`, `.day-card`, `.day-ex*`, `.ex-row*`,
+  `.hero-prog`, `.const-stats`, `.sess-semana`, `.sess-week`): borrarlas cuando
+  `grep` de cada una dé 0 fuera de styles.css (algunas las usan DayPeek/Hoy).
+- Entreno sigue ~150 ms más lento a 6× que la versión de tarjetas cerradas. Si
+  Enzo lo nota: montar la lista de ejercicios en un segundo cuadro.
 
 ---
 

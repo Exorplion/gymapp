@@ -210,7 +210,7 @@ function Records() {
   const exNames = Object.keys(series);
   if (!exNames.length) return null;
   return (
-    <section className="prog-sec" aria-label="Récords">
+    <section className="prog-sec diferida" aria-label="Récords">
       <h2 className="sect">Récords</h2>
       <div className="card prog-recs">
         <div className="prog-recs-cab">
@@ -335,7 +335,7 @@ function EstaSemana() {
   if (!cats.length) return null;
   const risk = acwr();
   return (
-    <section className="prog-sec" aria-label="Esta semana">
+    <section className="prog-sec diferida" aria-label="Esta semana">
       <h2 className="sect">Esta semana</h2>
       {risk?.risk && (
         <div className="notice warn">
@@ -369,7 +369,7 @@ function Constancia() {
   const heat = streakHeatmap();
   const semanas = semanasDeConstancia(heat.days);
   return (
-    <section className="prog-sec" aria-label="Constancia">
+    <section className="prog-sec diferida" aria-label="Constancia">
       <h2 className="sect">Constancia</h2>
       <div className="card prog-const">
         <div className="prog-const-cifras">
