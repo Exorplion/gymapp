@@ -90,6 +90,23 @@ separación de dorsal alto y bajo"):
 - BodyMap: todo músculo se puede tocar; sin registro, la ficha dice qué lo
   trabaja (`QUE_LO_TRABAJA`).
 
+**PRÓXIMO PASO EXACTO — pedido activo de Enzo (sin empezar):** ordenar
+Entreno → pestaña Ejercicios. Textual: "siento que el texto hace que te
+pierdas muy fácilmente; veo que lo separa por grupo muscular pero no se
+distingue tan bien; debería estar estrictamente organizado y visible todo;
+muéstrame cómo lo arreglarías".
+- Dónde: `MisEjercicios` en `web/src/components/screens/Rutina.jsx:590`
+  (último peso y cambio en 3+ semanas; lógica en `lib/entreno.js`).
+- Cómo (memoria "maquetas-opciones-lienzo"): primero captura de cómo se ve
+  hoy (Chromium, seed, 390 px); después un lienzo privado y tocable con SUS
+  ejercicios reales, 2–3 opciones con pros y contras (p. ej. encabezado de
+  grupo fuerte con conteo y separación clara, tabla compacta por grupo,
+  índice de grupos fijo arriba). Enzo elige; recién ahí se implementa.
+- Criterio de aprobado: cada grupo se distingue de un vistazo, todo visible
+  sin perderse en texto, verificado a 390 y 430 px en build de producción.
+- Pendiente menor aparte: la curva de fuerza en Progreso (`e1rmSeries`, por
+  nombre) mezcla las máquinas de un mismo ejercicio.
+
 **Pendientes de esta charla (diseño, NO aprobado todavía):**
 1. ~~**El peso con su aclaración**~~ HECHO (arriba). Diseño original: Mancuernas → "17 kg por mancuerna"
    en la tarjeta en vivo (sólo si `equip === 'mancuernas'`; el dato ya era
