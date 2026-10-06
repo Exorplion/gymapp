@@ -594,11 +594,9 @@ export default function App() {
         streak={currentStreak()}
         onOpenStreak={() => openSheet('streak-detail')}
         onOpenSettings={() => openSheet('settings')}
-        onOpenSessions={() => {
-          changeTab('prog');
-          // el scroll espera a que Progreso esté pintado
-          setTimeout(() => document.getElementById('sesiones')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
-        }}
+        // Desde el 2026-10-06 Progreso ya no lista las sesiones (repetía
+        // Inicio): el reloj abre directo el historial completo.
+        onOpenSessions={() => openSheet('history')}
       />
       {/* Inicio no scrollea: necesita que main deje de reservar el colchón
           inferior que sí usan las pantallas largas. La sesión en vivo

@@ -5016,3 +5016,113 @@ section.bm-bloque{display:flex;flex-direction:column;gap:var(--s3)}
 }
 /* "Guardar una copia" en Mis rutinas: un enlace chico, no un botón de ancho completo. */
 .lib-copia{display:inline-flex;align-items:center;gap:var(--s2);margin:0 0 var(--s4);padding:var(--s2) 0;background:none;border:0;color:var(--accent);font:inherit;font-size:var(--t-sm);font-weight:600;cursor:pointer}
+
+/* =====================================================================
+   PROGRESO (2026-10-06; Progreso.jsx, lib/progreso.js)
+   Abre con "¿estoy más fuerte?" (índice de 1RM estimado) en vez del peso.
+   Después: ejercicio por ejercicio, récords, cuerpo, volumen real de la
+   semana, constancia y el historial como una fila.
+   ===================================================================== */
+.prog{display:flex;flex-direction:column;gap:var(--s5);padding-bottom:var(--s4)}
+.prog .vtitle{margin-bottom:0}
+.prog .card{margin:0}
+.prog-sec{display:flex;flex-direction:column;gap:var(--s3)}
+.prog-sec .sect{margin:0}
+.prog-ojo{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2)}
+.prog-sub{margin:0;font-size:var(--t-body);color:var(--text-2);line-height:1.45}
+.prog-sub b{color:var(--text);font-weight:700}
+.prog-nota{margin:0;font-size:var(--t-sm);color:var(--text-3);line-height:1.45}
+
+/* 1. Tu fuerza */
+.prog-fuerza{display:flex;flex-direction:column;gap:var(--s2)}
+.prog-cifra{font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-record);line-height:.95;letter-spacing:var(--tr-titulo);font-variant-numeric:tabular-nums;margin-top:var(--s1)}
+.prog-cifra small{font-size:var(--t-display);margin-left:2px}
+.prog-cifra.sube{color:var(--ok)}
+.prog-cifra.baja{color:var(--danger)}
+.prog-cifra.igual{color:var(--text)}
+.prog-chart{margin-top:var(--s2)}
+.prog-vacio-t{margin:var(--s1) 0 0;font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-2xl);line-height:1.1;text-transform:uppercase;letter-spacing:var(--tr-titulo)}
+
+/* 2. Ejercicio por ejercicio */
+.prog-lista{padding-top:var(--s1);padding-bottom:var(--s1)}
+.prog-ej{border-bottom:1px solid var(--line)}
+.prog-ej:last-child{border-bottom:0}
+.prog-ej-fila{display:grid;grid-template-columns:minmax(0,1fr) 64px 72px;align-items:center;gap:var(--s3);width:100%;padding:var(--s3) 0;background:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.prog-ej-m{display:flex;flex-direction:column;min-width:0}
+.prog-ej-t{font-weight:600;font-size:var(--t-body);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog-ej-uni{margin-left:var(--s2);font-size:var(--t-micro);font-weight:600;color:var(--text-3)}
+.prog-ej-s{font-size:var(--t-sm);color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog-spark{display:block;width:64px;height:26px;color:var(--text-2)}
+.prog-spark.sube{color:var(--ok)}
+.prog-spark.baja{color:var(--danger)}
+.prog-spark .linea{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.prog-spark .area{fill:currentColor;fill-opacity:.12;stroke:none}
+.prog-spark .punto{fill:currentColor}
+.prog-ej-d{display:flex;flex-direction:column;align-items:flex-end;text-align:right}
+.prog-ej-d b{font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-xl);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.prog-ej-d b small{font-size:var(--t-sm);font-style:normal;font-weight:600;color:var(--text-3)}
+.prog-ej-d span{font-size:var(--t-micro);color:var(--text-3);font-variant-numeric:tabular-nums}
+.prog-ej-d.sube b{color:var(--ok)}
+.prog-ej-d.baja b{color:var(--danger)}
+.prog-ej-det{display:flex;flex-direction:column;gap:var(--s2);padding:0 0 var(--s3);animation:ent-baja var(--d2) var(--ease-out) both}
+
+/* 3. Récords */
+.prog-recs{display:flex;flex-direction:column;gap:var(--s2)}
+.prog-recs-cab{display:flex;align-items:baseline;gap:var(--s3);padding-bottom:var(--s2)}
+.prog-recs-n{font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-cifra);line-height:1;color:var(--flame);font-variant-numeric:tabular-nums}
+.prog-recs-l{font-size:var(--t-body);color:var(--text-2)}
+.prog-rec{display:grid;grid-template-columns:28px minmax(0,1fr) auto;grid-template-areas:"i t v" "i f v";column-gap:var(--s3);align-items:center;padding:var(--s2) 0;border-top:1px solid var(--line)}
+.prog-rec-ico{grid-area:i;width:28px;height:28px;border-radius:var(--r-full);display:grid;place-items:center;background:rgba(var(--flame-rgb),.14);color:var(--flame)}
+.prog-rec-t{grid-area:t;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog-rec-f{grid-area:f;font-size:var(--t-micro);color:var(--text-3)}
+.prog-rec-v{grid-area:v;font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-lg);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* 4. Tu cuerpo */
+.prog-cuerpo{display:flex;flex-direction:column;gap:var(--s3)}
+.prog-cuerpo-cab{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s3)}
+.prog-cuerpo-der{display:flex;flex-direction:column;align-items:flex-end;gap:var(--s2)}
+.prog-peso{font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-cifra);line-height:1;letter-spacing:var(--tr-titulo);font-variant-numeric:tabular-nums}
+.prog-peso small{font-size:var(--t-xl);font-style:normal;font-weight:700;color:var(--text-2)}
+.prog-tend{font-family:var(--font-cond);font-weight:700;font-size:var(--t-body);color:var(--accent)}
+.prog-tend.baja{color:var(--ok)}
+.prog-medidas{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:var(--s3);padding-top:var(--s3);border-top:1px solid var(--line)}
+.prog-medidas div{display:flex;flex-direction:column;gap:2px}
+.prog-medidas b{font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-xl);line-height:1;font-variant-numeric:tabular-nums}
+.prog-medidas b small{font-size:var(--t-sm);font-style:normal;font-weight:600;color:var(--text-3)}
+.prog-medidas span{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2)}
+
+/* 5. Esta semana: la barra y la franja son las de Entreno (.ent-barra). */
+.prog-semana{display:flex;flex-direction:column;gap:var(--s3)}
+.prog-vol{display:grid;grid-template-columns:76px minmax(0,1fr) 26px;grid-template-areas:"n b v" ". l l";align-items:center;column-gap:var(--s3);row-gap:2px;font-size:var(--t-sm)}
+.prog-vol .n{grid-area:n;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog-vol .ent-barra{grid-area:b}
+.prog-vol .v{grid-area:v;text-align:right;font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-lg);line-height:1;font-variant-numeric:tabular-nums}
+.prog-vol .ent-barra i.excedido{background:var(--danger)}
+.prog-vol-b{grid-area:l;font-size:var(--t-micro);color:var(--text-3)}
+.prog-vol-b.bajo{color:var(--warn)}
+.prog-vol-b.efectivo{color:var(--ok)}
+.prog-vol-b.excedido{color:var(--danger)}
+
+/* 6. Constancia: columnas por semana, lunes arriba. */
+.prog-const{display:flex;flex-direction:column;gap:var(--s4)}
+.prog-const-cifras{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s3)}
+.prog-const-cifras div{display:flex;flex-direction:column;gap:2px}
+.prog-const-cifras b{font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-2xl);line-height:1;font-variant-numeric:tabular-nums}
+.prog-const-cifras span{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2)}
+.prog-mapa{display:flex;gap:4px}
+.prog-mapa-dias,.prog-mapa-sem{display:grid;grid-template-rows:repeat(7,14px);gap:4px}
+.prog-mapa-dias{flex:none;width:14px}
+.prog-mapa-dias span{font-size:var(--t-micro);line-height:14px;color:var(--text-3);text-align:center}
+.prog-mapa-sem{flex:1;min-width:0}
+.prog-mapa .c,.prog-mapa-ley .c{display:block;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--line)}
+.prog-mapa .c.done,.prog-mapa-ley .c.done{background:var(--accent-grad);border-color:transparent}
+.prog-mapa .c.rest,.prog-mapa-ley .c.rest{opacity:.4}
+.prog-mapa .c.miss,.prog-mapa-ley .c.miss{background:rgba(var(--danger-rgb),.14);border-color:rgba(var(--danger-rgb),.35)}
+.prog-mapa .c.antes{background:transparent;border-color:var(--line);opacity:.5}
+.prog-mapa .c.fuera{visibility:hidden}
+.prog-mapa-ley{display:flex;gap:var(--s4);flex-wrap:wrap;font-size:var(--t-micro);color:var(--text-3)}
+.prog-mapa-ley span{display:inline-flex;align-items:center;gap:var(--s1)}
+.prog-mapa-ley .c{width:12px;height:12px}
+
+/* 7. Historial */
+.prog-hist{margin:0}
