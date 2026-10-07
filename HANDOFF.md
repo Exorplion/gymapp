@@ -90,18 +90,43 @@ separación de dorsal alto y bajo"):
 - BodyMap: todo músculo se puede tocar; sin registro, la ficha dice qué lo
   trabaja (`QUE_LO_TRABAJA`).
 
-**PRÓXIMO PASO EXACTO — pedido activo de Enzo (sin empezar):** ordenar
+**PRÓXIMO PASO EXACTO — preguntarle a Enzo qué opción eligió.** El lienzo
+ya está hecho (2026-10-06, noche): claude.ai/artifact/HjsCGPh3kvjns23zE3Mxrp,
+copia local `Documents/Enzo/FIERRO-maquetas/ejercicios-orden.html` (fuera
+del repo). Muestra hoy vs tres opciones con sus 22 ejercicios del seed:
+- **A — un bloque por grupo:** tarjeta por grupo, nombre grande ("PECHO 3").
+  Contra: sigue siendo largo de scrollear.
+- **B — tabla con índice (RECOMENDADA):** `.b-idx` = chips sticky con conteo
+  (salta al tocar, marca el grupo al scrollear); `.b-band` = franja
+  surface-2 con borde izquierdo de acento; filas en grilla
+  `minmax(0,1fr) 34px 64px 44px` = ejercicio / series / último kg / cambio
+  en 3 sem ("+5" verde o "=" tenue). Contra: más planilla; nombres largos
+  en dos líneas.
+- **C — tablero de grupos:** grilla 2×5 con conteo y "N de M subieron";
+  tocar abre la lista. Contra: esconde los ejercicios.
+- Las tres comparten: el grupo es lo más visible; los turnos se dicen una
+  vez por grupo si todos sus ejercicios los comparten (`turnosDeEjercicio`,
+  `lib/entreno.js:146`), si no van en la fila; se va "igual en 3 sem". Se
+  pueden mezclar (p. ej. índice de B sobre bloques de A).
+- Diagnóstico de hoy: el título del grupo (13 px) mide casi lo mismo que
+  las etiquetas "ANT A · ANT B" repetidas en las 22 filas, y 9 filas dicen
+  "igual en 3 sem". Además la barra flotante de abajo tapa el encabezado
+  "TRÍCEPS" en la captura a 390 px.
+- Al implementar, no perder: tocar la fila abre 'ex-info', el botón
+  "+ equipo"/"propio" (`gym-equip`) y la caja de gimnasio de arriba (el seed
+  no elige gym, por eso la maqueta no los muestra). Con el índice sticky,
+  revisar el choque con el header de vidrio y la barra de abajo. CSS de hoy:
+  `.ent-grupo*` (styles.css ~:4955) y `.ent-ej*` (~:5027).
+
+Pedido original de Enzo, para contexto: ordenar
 Entreno → pestaña Ejercicios. Textual: "siento que el texto hace que te
 pierdas muy fácilmente; veo que lo separa por grupo muscular pero no se
 distingue tan bien; debería estar estrictamente organizado y visible todo;
 muéstrame cómo lo arreglarías".
 - Dónde: `MisEjercicios` en `web/src/components/screens/Rutina.jsx:590`
   (último peso y cambio en 3+ semanas; lógica en `lib/entreno.js`).
-- Cómo (memoria "maquetas-opciones-lienzo"): primero captura de cómo se ve
-  hoy (Chromium, seed, 390 px); después un lienzo privado y tocable con SUS
-  ejercicios reales, 2–3 opciones con pros y contras (p. ej. encabezado de
-  grupo fuerte con conteo y separación clara, tabla compacta por grupo,
-  índice de grupos fijo arriba). Enzo elige; recién ahí se implementa.
+- Cómo (memoria "maquetas-opciones-lienzo"): HECHO, ver arriba. Enzo
+  elige; recién ahí se implementa.
 - Criterio de aprobado: cada grupo se distingue de un vistazo, todo visible
   sin perderse en texto, verificado a 390 y 430 px en build de producción.
 - Pendiente menor aparte: la curva de fuerza en Progreso (`e1rmSeries`, por
