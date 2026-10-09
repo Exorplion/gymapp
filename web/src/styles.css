@@ -4671,6 +4671,12 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
   display:flex;flex-direction:column;justify-content:center;gap:5px;
   min-height:36px;padding:4px 0;background:none;border:0;text-align:left;width:100%;min-width:0;
 }
+/* Con el turno van todas sus zonas por región (2026-10-08): la lista pasa el
+   alto del cuerpo, así que el cuerpo se queda arriba en vez de centrarse. */
+.ini2-rec-grid:has(.por-region){align-items:start}
+.ini2-rec-region{display:flex;flex-direction:column;min-width:0}
+.ini2-rec-region+.ini2-rec-region{margin-top:var(--s2)}
+.ini2-rec-region-t{display:block;padding-top:2px}
 .ini2-rec-linea{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);min-width:0}
 .ini2-rec-linea b{font-size:var(--t-body);font-weight:600;line-height:1.2;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ini2-rec-pct{flex:none;font-family:var(--font-cond);font-weight:700;font-size:var(--t-xl);line-height:1;font-variant-numeric:tabular-nums}
@@ -4817,6 +4823,10 @@ section.bm-bloque{display:flex;flex-direction:column;gap:var(--s3)}
 .bm-nota{margin:0;font-size:var(--t-sm);line-height:1.45;color:var(--text-2)}
 .bm-nota b{color:var(--text);font-weight:600}
 .bm-etq-resto{margin-top:var(--s2)}
+/* Regiones (2026-10-08): un rótulo chico, en minúscula para no competir con
+   la etiqueta "Para el próximo", sobre cada grupo de filas. */
+.bm-region{display:flex;flex-direction:column;gap:var(--s2);min-width:0}
+.bm-region-t{font-size:var(--t-sm);font-weight:600;color:var(--text-2);padding-left:var(--s1)}
 
 /* 4. Músculo por músculo: filas de un .group que se abren. */
 .bm-fila+.bm-fila{border-top:1px solid var(--line)}

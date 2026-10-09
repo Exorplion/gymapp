@@ -14,6 +14,11 @@ export const capital = t => (t ? t[0].toUpperCase() + t.slice(1) : t);
 /** Una zona sola, con mayúscula: "Hombros", "Abdomen". */
 export const nombreZona = z => capital(LLANO[z] || z);
 
+/** Para la columna angosta de la tarjeta de Inicio, al lado del cuerpo:
+    "Hombro anterior" no entra a 390 px y se cortaba en "Hombro anter…". */
+const CORTO = { 'Hombro anterior': 'Hombro ant.', 'Hombro lateral': 'Hombro lat.', 'Hombro posterior': 'Hombro post.' };
+export const nombreCorto = z => CORTO[z] || nombreZona(z);
+
 const DIA = 86400000;
 /** Días enteros entre `fecha` y `hoy` (nunca negativo). */
 export const diasDesde = (fecha, hoy = dstr()) =>

@@ -1,6 +1,50 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-10-06
+**Última actualización:** 2026-10-08
+
+---
+
+## SESIÓN 2026-10-08 — hombro en tres, femoral fuera de Anterior, zonas por región
+
+Pedido de Enzo (mirando "Músculo por músculo · Para el próximo · Anterior"):
+"me muestra femoral… no estoy seguro de que deba estar en anterior", "el
+hombro tiene tres partes… separarlas también en el modelo, de manera sutil",
+"¿el posterior trabaja en el militar o en las laterales?" y "debería estar
+más organizado". Rama `feat/musculos-precisos`, **1221 tests**.
+
+- **Causa del femoral:** `zonasDeEjercicio` (lib/recuperacion.js) manda a
+  cuádriceps Y femoral toda pierna sin porción reconocida. Caían ahí el
+  Aductor (porción 'Aductores' sin zona) y "Extensión de cuádriceps" en
+  singular (fibras.js sólo tenía "extensiones de cuadricep"). El Abductor
+  (Posterior B) también. Arreglo: zona **Aductores**, abductor → Glúteo,
+  claves 'extension de cuadricep', 'hack', 'sissy', 'cuadricep' en fibras.js.
+- **Hombro en tres zonas:** Hombro anterior / lateral / posterior
+  (`zonasDeHombro`, `PORCION_DE_HOMBRO`). fibras.js: press militar → p
+  anterior, s lateral+tríceps; laterales → p lateral, s anterior+posterior;
+  pájaros, face pull, aperturas posteriores, rear delt → p posterior. Lo de
+  `s` no suma a la recuperación (regla de siempre). Respuesta a Enzo: el
+  posterior casi no trabaja en el militar; en las laterales ayuda, no manda.
+- **Lámina:** la forma `deltoids` se partió en `deltAnterior` + `deltLateral`
+  (frente) y `deltPosterior` + `deltLateral` (espalda: el lateral se ve de
+  los dos lados). Hombre: corte recto con Sutherland–Hodgman sobre el
+  contorno muestreado (getPointAtLength), 5 u de separación; parámetros en
+  bbox normalizado (frente a=(.45,0) b=(.75,1); espalda a=(.62,0) b=(.72,1),
+  u=0 borde medial). Mujer frente: ya venía en dos piezas por lado (la
+  medial = anterior). Se borró el parche `frontDeltoid` (era un punto).
+- **Orden por región:** `ZONAS` en orden del cuerpo + `REGIONES` /
+  `porRegion` (Pecho y hombros, Espalda, Brazos, Abdomen, Piernas). Inicio
+  ("Cómo están tus músculos") con el turno muestra TODAS sus zonas por
+  región (antes un tope de 6 por %: en Posterior escondía trapecio y
+  romboides); "Más cargados" sigue siendo top 6 por %. En la columna
+  angosta, `nombreCorto` ("Hombro ant."). El mapa (BodyMap, "Músculo por
+  músculo") agrupa igual con `PorRegion`.
+- Tests: `__tests__/hombro-y-anterior.test.js` (con la rutina real de Enzo).
+- Verificado en Chromium (dev, seed) a 390 y 430: Anterior = pecho, hombro
+  ant., hombro lat., tríceps, abdomen, cuádriceps (+ aductores si hay).
+- **Trampa:** dos dev servers en el mismo puerto: `--strictPort` falla y el
+  que ya escuchaba es OTRO worktree — las capturas mienten. Mirar el log.
+- **Trampa:** `npm ci` en un worktree nuevo falla con ERESOLVE; usar
+  `npm ci --legacy-peer-deps`.
 
 ---
 
