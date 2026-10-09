@@ -48,6 +48,54 @@ más organizado". Rama `feat/musculos-precisos`, **1221 tests**.
 
 ---
 
+## SESIÓN 2026-10-08 — Ejercicios: tabla con índice (opción B)
+
+Enzo eligió la opción B del lienzo (`FIERRO-maquetas/ejercicios-orden.html`).
+Rama `feat/ejercicios-tabla-indice`, **1212 tests** verdes (más los de #150 al rebasar).
+PR #151, publicado después de #150.
+
+- **Qué cambió** (`web/src/components/screens/Rutina.jsx`):
+  `MisEjercicios` (:605) arma un índice fijo de chips (`.chip-scroll
+  .ent-idx`, grupo + conteo) y el encabezado de columnas dentro de
+  `.ent-fijo`; cada grupo es una `section.ent-g` con su franja `.ent-banda`
+  (nombre 18 px, borde izquierdo de acento) y filas `FilaEjercicio` (:672) en
+  grilla `minmax(0,1fr) 34px 64px 44px` = ejercicio / series / último peso /
+  cambio en 3 sem ("+5" verde, "−2.5" rojo, "=" tenue; vacío si todavía no
+  hay 3 semanas; "sin registro" ocupando las dos columnas si nunca se hizo).
+  Se fue "igual en 3 sem" y la etiqueta de equipo de cada fila.
+- `useIndiceDeGrupos` (:720): salto al tocar un chip (scroll de la ventana,
+  restando header + índice) y marca del grupo visible al scrollear (el
+  primero cuyo borde de abajo no pasó por debajo del índice, :745). Tras un
+  salto la marca queda en el chip tocado hasta que el scroll se detiene: los
+  últimos grupos (Bíceps → Lumbares) no pueden llegar arriba de todo.
+- Lógica pura en `lib/entreno.js`: `seriesDeEjercicio` (:154, "2–3" si
+  cambia entre turnos, p. ej. Press plano máquina 1–2 en el seed) y
+  `turnosComunes` (:168; los turnos van en la franja si todo el grupo los
+  comparte, si no en la fila). Tests en `entreno.test.js` (:99).
+- No se perdió nada: tocar la fila abre 'ex-info' (botón del nombre
+  estirado con `::after`), "+ equipo"/"propio" (`gym-equip`) va debajo del
+  nombre con `z-index` encima del velo, y la caja del gimnasio sigue arriba.
+- CSS: `styles.css` `.ent-fijo` (:5045) a `.ent-fila-nada`; se borraron las
+  `.ent-ej*` viejas.
+
+**Trampas:**
+- **`main` pasó de `overflow:hidden` a `overflow:clip`** (styles.css :641 y
+  `main.arrastrando` :687). Con hidden, main era un contenedor de scroll y
+  todo `position:sticky` adentro se pegaba a main (que nunca scrollea): el
+  índice no se pegaba. clip recorta igual. Verificado: el arrastre entre
+  pestañas sigue andando y el índice queda pegado durante el gesto.
+- El alto del header se mide (ResizeObserver) y va en `--cab-alto` sobre
+  `.ent-fijo`; está en `POR_ELEMENTO` de `tokens.test.js`.
+- `npm ci` en un worktree nuevo falla por peers (vite 8 vs
+  vite-plugin-pwa): usar `npm ci --legacy-peer-deps`.
+- Verificado en Chromium (Playwright) a 390 y 430, dev y build de
+  producción: sin desborde horizontal, índice pegado a y=59 justo debajo del
+  header, salto deja la franja 8 px debajo del índice, la marca sigue al
+  scroll, nombre largo (3 líneas) no rompe la grilla. Lo que no se probó:
+  en un teléfono real (táctil, safe-area de iPhone) ni con unidad lb.
+
+---
+
 ## SESIÓN 2026-10-06 (tarde) — el orden manda sobre el activo
 
 Pedido de Enzo: estaba en Curl predicador (activo, sin series), agregó un
@@ -134,7 +182,9 @@ separación de dorsal alto y bajo"):
 - BodyMap: todo músculo se puede tocar; sin registro, la ficha dice qué lo
   trabaja (`QUE_LO_TRABAJA`).
 
-**PRÓXIMO PASO EXACTO — preguntarle a Enzo qué opción eligió.** El lienzo
+**~~PRÓXIMO PASO EXACTO — preguntarle a Enzo qué opción eligió.~~ RESUELTO:
+Enzo eligió B el 2026-10-08 y está implementada (ver la sesión 2026-10-08
+arriba).** Lo que sigue queda como contexto del lienzo. El lienzo
 ya está hecho (2026-10-06, noche): claude.ai/artifact/HjsCGPh3kvjns23zE3Mxrp,
 copia local `Documents/Enzo/FIERRO-maquetas/ejercicios-orden.html` (fuera
 del repo). Muestra hoy vs tres opciones con sus 22 ejercicios del seed:
