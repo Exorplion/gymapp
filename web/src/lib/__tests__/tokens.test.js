@@ -49,6 +49,8 @@ const POR_ELEMENTO = new Set([
   '--tw-leading',
   // Los tiempos del fin de sesión: los escribe SessionComplete.jsx.
   '--beat2', '--beat3', '--beat-corto', '--beat-largo',
+  // El alto del header, medido: lo escribe MisEjercicios (Rutina.jsx) en el índice fijo.
+  '--cab-alto',
 ]);
 
 describe('tokens de CSS', () => {
