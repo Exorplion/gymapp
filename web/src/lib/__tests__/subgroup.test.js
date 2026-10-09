@@ -49,9 +49,18 @@ describe('subCatOf', () => {
   });
 
   it('sin reconocer el ejercicio cae al grupo, no adivina un subgrupo', () => {
-    // "Elevaciones laterales" no tiene porción propia en la tabla de fibras:
-    // devolver "Hombro" es decir menos, que es lo correcto.
-    expect(subCatOf('Elevaciones laterales')).toBe(catOf('Elevaciones laterales'));
+    // "Hip thrust" va a un solo subgrupo, pero un nombre de grupo sin porción
+    // ("Hombro" pelado) no tiene cómo afinarse: devolver el grupo es decir
+    // menos, que es lo correcto.
+    expect(subCatOf('Ejercicio de hombro')).toBe(catOf('Ejercicio de hombro'));
+    expect(subCatOf('Ejercicio de hombro')).toBe('Hombro');
+  });
+
+  it('el hombro se afina en sus tres porciones (2026-10-08)', () => {
+    expect(subCatOf('Press militar')).toBe('Hombro anterior');
+    expect(subCatOf('Elevaciones laterales')).toBe('Hombro lateral');
+    expect(subCatOf('Pájaros')).toBe('Hombro posterior');
+    expect(subCatOf('Face pull')).toBe('Hombro posterior');
   });
 
   it('un ejercicio con dos porciones de subgrupos distintos NO se afina', () => {

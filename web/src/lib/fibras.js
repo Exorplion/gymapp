@@ -42,7 +42,9 @@ const TABLA = [
   ['remo neutro', { p: ['Dorsal alto'], s: ['Bíceps'] }],
   ['remo en polea', { p: ['Dorsal alto'], s: ['Bíceps'] }],
   ['remo sentado', { p: ['Dorsal alto'], s: ['Bíceps'] }],
-  ['face pull', { p: ['Trapecio'] }],
+  // Face pull: el posterior es el motor; trapecio medio y romboides acompañan.
+  // (Antes decía sólo trapecio, y el face pull es del grupo Hombro.)
+  ['face pull', { p: ['Deltoides posterior'], s: ['Trapecio', 'Romboides'] }],
   // Kelso: encogimiento en posición de remo — trapecio medio, sin bíceps
   // (el codo no se flexiona), por eso no lleva secundarios.
   ['kelso', { p: ['Romboides', 'Trapecio'] }],
@@ -78,6 +80,12 @@ const TABLA = [
   ['curl inverso', { p: ['Braquiorradial'] }],
   ['reverse curl', { p: ['Braquiorradial'] }],
 
+  // Aperturas de hombro posterior: antes que pecho, o "apertura" las mandaría
+  // al pecho (mismo motivo que los curls de arriba).
+  ['aperturas posteriores', { p: ['Deltoides posterior'], s: ['Romboides', 'Trapecio'] }],
+  ['apertura posterior', { p: ['Deltoides posterior'], s: ['Romboides', 'Trapecio'] }],
+  ['apertura invertida', { p: ['Deltoides posterior'], s: ['Romboides', 'Trapecio'] }],
+
   // ---- pecho: clavicular arriba, costal abajo ----
   ['press inclinado', { p: ['Clavicular'], s: ['Deltoides anterior', 'Tríceps'] }],
   ['inclinado', { p: ['Clavicular'], s: ['Deltoides anterior'] }],
@@ -92,12 +100,28 @@ const TABLA = [
   ['banca', { p: ['Clavicular', 'Costal'], s: ['Tríceps'] }],
   ['press plano', { p: ['Clavicular', 'Costal'], s: ['Tríceps'] }],
 
-  // ---- hombro ----
-  ['press militar', { p: ['Deltoides anterior'], s: ['Tríceps'] }],
-  ['militar', { p: ['Deltoides anterior'], s: ['Tríceps'] }],
-  ['elevaciones laterales', { p: ['Hombro'] }],
-  ['lateral raise', { p: ['Hombro'] }],
-  ['pajaro', { p: ['Hombro', 'Trapecio'] }],
+  // ---- hombro: anterior, lateral y posterior (2026-10-08) ----
+  // Enzo: "el hombro tiene tres partes… ¿el posterior trabaja en el militar
+  // o en las laterales?". El press sobre la cabeza lo mueve el anterior con
+  // mucha ayuda del lateral; el posterior casi no participa. Las laterales
+  // aíslan el lateral, con algo de anterior y posterior de apoyo. El pájaro
+  // y el face pull son del posterior. Lo que ayuda va en `s`: no suma a la
+  // recuperación, igual que el tríceps del press de banca.
+  ['press militar', { p: ['Deltoides anterior'], s: ['Deltoides lateral', 'Tríceps'] }],
+  ['militar', { p: ['Deltoides anterior'], s: ['Deltoides lateral', 'Tríceps'] }],
+  ['press de hombro', { p: ['Deltoides anterior'], s: ['Deltoides lateral', 'Tríceps'] }],
+  ['press hombro', { p: ['Deltoides anterior'], s: ['Deltoides lateral', 'Tríceps'] }],
+  ['arnold', { p: ['Deltoides anterior'], s: ['Deltoides lateral', 'Tríceps'] }],
+  ['elevacion frontal', { p: ['Deltoides anterior'] }],
+  ['elevaciones frontales', { p: ['Deltoides anterior'] }],
+  ['front raise', { p: ['Deltoides anterior'] }],
+  ['elevaciones laterales', { p: ['Deltoides lateral'], s: ['Deltoides anterior', 'Deltoides posterior'] }],
+  ['elevacion lateral', { p: ['Deltoides lateral'], s: ['Deltoides anterior', 'Deltoides posterior'] }],
+  ['lateral raise', { p: ['Deltoides lateral'], s: ['Deltoides anterior', 'Deltoides posterior'] }],
+  ['pajaro', { p: ['Deltoides posterior'], s: ['Romboides', 'Trapecio'] }],
+  ['rear delt', { p: ['Deltoides posterior'], s: ['Romboides', 'Trapecio'] }],
+  ['reverse fly', { p: ['Deltoides posterior'], s: ['Romboides', 'Trapecio'] }],
+  ['deltoide posterior', { p: ['Deltoides posterior'], s: ['Romboides', 'Trapecio'] }],
 
   // ---- pierna: vasto interno / externo ----
   ['curl femoral', { p: ['Femoral'] }],
@@ -110,7 +134,14 @@ const TABLA = [
   ['peso muerto', { p: ['Femoral', 'Glúteo mayor'], s: ['Lumbares', 'Trapecio'] }],
 
   ['extensiones de cuadricep', { p: ['Vasto interno', 'Vasto externo'] }],
+  // "Extensión de cuádriceps" (en singular) no entraba en la de arriba: caía
+  // sin porción y la recuperación la mandaba a cuádriceps Y femoral — por eso
+  // salía femoral en el día de Anterior de Enzo (2026-10-08).
+  ['extension de cuadricep', { p: ['Vasto interno', 'Vasto externo'] }],
   ['leg extension', { p: ['Vasto interno', 'Vasto externo'] }],
+  ['hack', { p: ['Vasto externo', 'Vasto interno'], s: ['Glúteo'] }],
+  ['sissy', { p: ['Vasto interno', 'Vasto externo'] }],
+  ['cuadricep', { p: ['Vasto interno', 'Vasto externo'] }],
   ['sentadilla', { p: ['Vasto externo', 'Vasto interno'], s: ['Glúteo'] }],
   ['squat', { p: ['Vasto externo', 'Vasto interno'], s: ['Glúteo'] }],
   ['prensa', { p: ['Vasto externo', 'Vasto interno'], s: ['Glúteo'] }],

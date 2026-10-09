@@ -46,8 +46,9 @@ const promedio = xs => Math.round(xs.reduce((a, b) => a + b, 0) / xs.length);
 const QUE_LO_TRABAJA = {
   Pecho: 'press de banca, aperturas', Trapecio: 'encogimientos, peso muerto', Romboides: 'remo con codos abiertos, Kelso',
   'Dorsal alto': 'remo en polea, remo sentado', 'Dorsal bajo': 'jalón, dominadas', Lumbares: 'hiperextensiones, peso muerto',
-  Hombro: 'press militar, elevaciones laterales', Bíceps: 'curl', Tríceps: 'pushdown, extensión sobre la cabeza',
-  Cuádriceps: 'sentadilla, prensa, extensiones', Femoral: 'curl femoral, peso muerto rumano', Glúteo: 'hip thrust, sentadilla',
+  'Hombro anterior': 'press militar, elevaciones frontales', 'Hombro lateral': 'elevaciones laterales',
+  'Hombro posterior': 'pájaros, face pull', Bíceps: 'curl', Tríceps: 'pushdown, extensión sobre la cabeza',
+  Cuádriceps: 'sentadilla, prensa, extensiones', Aductores: 'máquina de aductores', Femoral: 'curl femoral, peso muerto rumano', Glúteo: 'hip thrust, sentadilla',
   Gemelos: 'elevación de talones', Abs: 'crunch, elevación de piernas',
 };
 
