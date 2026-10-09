@@ -743,9 +743,12 @@ function useIndiceDeGrupos(n) {
       const fijo = fijoRef.current;
       if (!fijo) return;
       const linea = fijo.getBoundingClientRect().bottom + 8;
+      // El primer grupo que todavía no pasó entero por debajo del índice: con
+      // "el último cuyo borde de arriba pasó", un grupo ya tapado seguía
+      // marcado mientras el siguiente asomaba en el hueco entre los dos.
       const gs = grupoRefs.current.slice(0, n);
-      let cur = 0;
-      gs.forEach((g, i) => { if (g && g.getBoundingClientRect().top <= linea) cur = i; });
+      let cur = gs.findIndex(g => g && g.getBoundingClientRect().bottom > linea);
+      if (cur < 0) cur = n - 1;
       const alFondo = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
       if (alFondo && scrollY > 0) cur = n - 1;
       setActivo(cur);
