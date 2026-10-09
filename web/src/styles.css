@@ -634,6 +634,11 @@ header.top.en-prueba{border-bottom-color:rgba(var(--warn-rgb),.5);background:lin
 @layer base {
   main{
     position:relative;overflow:hidden;
+    /* clip y no hidden (2026-10-08): hidden vuelve a main un contenedor de
+       scroll, y todo lo sticky de adentro (el índice de Entreno → Ejercicios)
+       se pegaba a main, que nunca scrollea, en vez de a la ventana. clip
+       recorta igual y no crea ese contenedor; hidden queda de respaldo. */
+    overflow:clip;
     max-width:520px;margin:0 auto;
     /* Una celda: las dos pantallas del cambio de pestaña se apilan ahí
        (ver "main es una grilla de una celda" más abajo). */
@@ -679,7 +684,7 @@ input,textarea,select,[contenteditable]{touch-action:auto}
 .view.soltando{transition:transform var(--d2) var(--ease-push)}
 /* Mientras se arrastra, main no debe scrollear ni mostrar el contenido que
    se sale por los costados. */
-main.arrastrando{overflow:hidden;user-select:none}
+main.arrastrando{overflow:hidden;overflow:clip;user-select:none}
 /* En la app original .view envolvía a TODAS las pantallas a la vez y se
    mostraba la activa con .active. En React sólo se renderiza la activa, así que
    el interruptor sobra y esconderlas por defecto dejaría la pantalla en blanco.
@@ -5029,23 +5034,58 @@ section.bm-bloque{display:flex;flex-direction:column;gap:var(--s3)}
 .ent-nota b{color:var(--text);font-weight:600}
 .ent-frio{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
 
-/* Ejercicios: cada uno con sus turnos, su equipo y su último peso. */
+/* Ejercicios: la caja del gimnasio y la etiqueta de turno. */
 .ent-gym{display:flex;align-items:center;gap:var(--s3);padding:var(--s3);border-radius:var(--r);background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);font-size:var(--t-sm);color:var(--text-2)}
 .ent-gym svg{color:var(--accent);flex:none}
 .ent-gym b{color:var(--text)}
 .ent-gym .grow{flex:1;min-width:0}
-.ent-ej{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s3);align-items:center;padding:var(--s3) 0;border-bottom:1px solid var(--line)}
-.ent-grupo .ent-ej:last-child{border-bottom:0}
-.ent-ej-main{display:flex;flex-direction:column;gap:var(--s1);min-width:0;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
-.ent-ej-en{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1)}
 .ent-tag{font-family:var(--font-cond);font-weight:700;font-size:var(--t-micro);letter-spacing:var(--tr-control);text-transform:uppercase;padding:1px 7px;border-radius:var(--r-sm);background:var(--sup-control-bg);color:var(--text-2)}
-.ent-ej-eq{font-size:var(--t-micro);color:var(--text-3)}
-.ent-ej-kg{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}
-.ent-ej-kg b{font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-xl);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
-.ent-ej-kg span{font-size:var(--t-micro);color:var(--text-3);white-space:nowrap}
-.ent-ej-kg .sube{color:var(--ok)}
-.ent-ej-kg .baja{color:var(--danger)}
-.ent-ej-kg .gym-eq-btn{margin-top:var(--s1)}
+/* Ejercicios en tabla con índice (opción B, elegida por Enzo el 2026-10-08;
+   MisEjercicios en Rutina.jsx). Un índice fijo de grupos, una franja por
+   grupo y una fila por ejercicio en columnas fijas: ejercicio / series /
+   último peso / cambio en 3 semanas. Antes el título del grupo (13 px) medía
+   lo mismo que las etiquetas de turno repetidas en cada fila.
+
+   .ent-fijo se pega debajo del header (que es sticky en la ventana; su alto
+   lo mide el JSX en --cab-alto). Para eso main recorta con overflow:clip y
+   no hidden: hidden lo volvía un contenedor de scroll y lo sticky se pegaba
+   a main, que nunca scrollea. Superficie FLOTANTE, como el header, a todo el
+   ancho (sangra el margen de la pantalla). */
+.ent{--ent-cols:minmax(0,1fr) 34px 64px 44px}
+.ent-fijo{position:sticky;top:var(--cab-alto,0px);z-index:2;display:flex;flex-direction:column;margin:0 calc(-1 * var(--pad-x));padding:0 var(--pad-x);background:var(--sup-flota-bg);backdrop-filter:var(--sup-flota-blur);border-bottom:1px solid var(--sup-flota-borde)}
+.ent-idx{margin:0 calc(-1 * var(--pad-x));padding:var(--s2) var(--pad-x)}
+.ent-idx .chip{padding:var(--s2) var(--s3);font-family:var(--font-cond);font-size:var(--t-body);font-weight:700;letter-spacing:var(--tr-control);text-transform:uppercase;align-items:baseline}
+.ent-idx .chip-sub{font-family:var(--font-body);font-weight:600;letter-spacing:0;font-variant-numeric:tabular-nums}
+.ent-idx .chip.on .chip-sub{color:inherit;opacity:.7}
+.ent-cols{display:grid;grid-template-columns:var(--ent-cols);column-gap:var(--s2);padding:0 0 var(--s2) var(--s3);font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-3);white-space:nowrap}
+.ent-cols span:not(:first-child){text-align:right}
+.ent-tabla{display:flex;flex-direction:column;gap:var(--s4)}
+.ent-g{display:flex;flex-direction:column}
+.ent-banda{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);border-radius:var(--r-sm);background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);border-left:3px solid var(--accent)}
+.ent-banda-n{margin:0;min-width:0;font:var(--rol-seccion);font-size:var(--t-lg);font-weight:800;letter-spacing:var(--tr-seccion);text-transform:uppercase;line-height:1.1;color:var(--text)}
+.ent-banda-c{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);color:var(--text-3);font-variant-numeric:tabular-nums}
+.ent-banda-en{margin-left:auto;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--s1)}
+.ent-fila{position:relative;display:grid;grid-template-columns:var(--ent-cols);column-gap:var(--s2);align-items:center;min-height:46px;padding:var(--s2) 0 var(--s2) var(--s3);border-bottom:1px solid var(--line)}
+.ent-g .ent-fila:last-child{border-bottom:0}
+.ent-fila-m{display:flex;flex-direction:column;gap:var(--s1);min-width:0}
+/* Toda la fila abre la ficha: el botón del nombre se estira encima (::after);
+   el de equipo del gimnasio queda por encima de ese velo (z-index). */
+.ent-fila-btn{background:none;border:0;padding:0;color:inherit;font:inherit;font-weight:600;font-size:var(--t-body);line-height:1.25;text-align:left;cursor:pointer;overflow-wrap:anywhere;text-wrap:balance}
+.ent-fila-btn::after{content:"";position:absolute;inset:0;border-radius:var(--r-sm);transition:background-color var(--d1) var(--ease-out)}
+.ent-fila-btn:active::after{background:var(--line)}
+.ent-fila-btn:focus-visible{outline:0}
+.ent-fila-btn:focus-visible::after{outline:2px solid var(--accent);outline-offset:-2px}
+.ent-fila-sub{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s2)}
+.ent-fila-en{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-3)}
+.ent-fila .gym-eq-btn{position:relative;z-index:1;padding:var(--s1) var(--s2)}
+.ent-fila .gym-eq-btn::after{content:"";position:absolute;inset:calc(-1 * var(--s2)) calc(-1 * var(--s1))}
+.ent-fila-s{text-align:right;font-size:var(--t-body);color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ent-fila-kg{text-align:right;font-family:var(--font-cond);font-weight:800;font-style:italic;font-size:var(--t-xl);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ent-fila-d{display:flex;flex-direction:column;align-items:flex-end;font-family:var(--font-cond);font-weight:700;font-size:var(--t-body);line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--text-3)}
+.ent-fila-d.sube{color:var(--ok)}
+.ent-fila-d.baja{color:var(--danger)}
+.ent-fila-d small{font-family:var(--font-body);font-weight:400;font-size:var(--t-micro);color:var(--text-3)}
+.ent-fila-nada{grid-column:3 / 5;text-align:right;font-size:var(--t-micro);color:var(--text-3);white-space:nowrap}
 .ent-vacio{text-align:center;margin:0}
 .ent-vacio p{margin:var(--s3) 0 var(--s4);color:var(--text-2)}
 

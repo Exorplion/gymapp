@@ -148,6 +148,31 @@ export function turnosDeEjercicio(nombre, rutina = S.routine) {
   return rutina.filter(s => esTurno(s) && (s.exercises || []).some(e => clave(e.name) === k));
 }
 
+/** Las series de un ejercicio (por nombre) en los turnos donde aparece:
+    { min, max } — distintos si en un turno lleva 2 y en otro 3, y entonces
+    la tabla dice "2–3" en vez de elegir uno. null si no está en la rutina. */
+export function seriesDeEjercicio(nombre, rutina = S.routine) {
+  const k = clave(nombre);
+  const ns = [];
+  for (const s of rutina) {
+    if (!esTurno(s)) continue;
+    for (const e of s.exercises || []) if (clave(e.name) === k && e.sets > 0) ns.push(e.sets);
+  }
+  return ns.length ? { min: Math.min(...ns), max: Math.max(...ns) } : null;
+}
+
+/** Los turnos de un grupo, si TODOS sus ejercicios van en los mismos
+    (Entreno → Ejercicios, opción B, 2026-10-08): entonces se dicen una vez,
+    en el encabezado del grupo, y no repetidos en cada fila. null si alguno
+    va en otros turnos, o si el grupo está vacío. */
+export function turnosComunes(nombres, rutina = S.routine) {
+  if (!nombres?.length) return null;
+  const ids = n => turnosDeEjercicio(n, rutina).map(t => t.id).join('|');
+  const primero = ids(nombres[0]);
+  if (!primero || nombres.some(n => ids(n) !== primero)) return null;
+  return turnosDeEjercicio(nombres[0], rutina);
+}
+
 /** Corre un turno de entrenamiento un lugar antes (-1) o después (+1) en la
     secuencia; los descansos se recalculan solos (applyWorkoutOrder). Devuelve
     el índice nuevo del turno, o null si no se movió. */

@@ -21,7 +21,7 @@
 // S.rutTab la vista (Plan / Ejercicios). El drag de ejercicios es el de
 // siempre (data-sort="rut", drag.js); el orden de los turnos se cambia con
 // "Mover antes / después", que llama a applyWorkoutOrder como el drag viejo.
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { S, bump, useStore, openSheet, changeTab, wDisplay } from '../../lib/state.js';
 import { exInfo, rirScheme } from '../../lib/exdb.js';
@@ -41,9 +41,10 @@ import {
 import {
   indicesDeTurnos, turnoElegido, marcaDeTurno, seriesPorZonaDeTurno, seriesSemanaDelPlan,
   huecosDeCobertura, enfriandose, minutosDeTurno, ultimaVezDeTurno, progresoDeEjercicio,
-  turnosDeEjercicio, moverTurno,
+  turnosDeEjercicio, moverTurno, seriesDeEjercicio, turnosComunes,
 } from '../../lib/entreno.js';
 import { fmtD } from '../../lib/format.js';
+import { menosMovimiento } from '../../lib/motion.js';
 import { Check, ChevronLeft, Copiar, Grip, Info, Mancuerna, Pencil, Rutinas, Traer, X, ArrowUp, ArrowDown, Plus } from '../Icon.jsx';
 import { RutinaVacia } from '../Illustration.jsx';
 
@@ -583,10 +584,24 @@ function SemanaSeries() {
 
 /* =========================== Ejercicios =========================== */
 
-/** Cada ejercicio distinto de tu rutina, una sola vez, por grupo: en qué
-    turnos está, tu último peso y cuánto cambió. Sale de S.routine, así que
-    nunca se desincroniza de lo que entrenás. El gimnasio vive acá: decide
-    con qué máquina hacés cada ejercicio. */
+/** Cada ejercicio distinto de tu rutina, una sola vez, por grupo: series,
+    tu último peso y cuánto cambió. Sale de S.routine, así que nunca se
+    desincroniza de lo que entrenás. El gimnasio vive acá: decide con qué
+    máquina hacés cada ejercicio.
+
+    Opción B "tabla con índice" (elegida por Enzo el 2026-10-08, lienzo
+    FIERRO-maquetas/ejercicios-orden.html). Enzo: "siento que el texto hace
+    que te pierdas muy fácilmente; veo que lo separa por grupo muscular pero
+    no se distingue tan bien; debería estar estrictamente organizado y
+    visible todo". Por eso:
+      - un índice fijo arriba (chips con el grupo y cuántos tiene): tocar
+        salta al grupo, y al scrollear queda marcado el grupo en el que estás;
+      - cada grupo abre con una franja (.ent-banda), no con un rótulo de 13 px
+        que medía lo mismo que las etiquetas de las filas;
+      - una fila por ejercicio en columnas fijas: series, último peso y el
+        cambio en 3 semanas ("+5" o "="; se fue "igual en 3 sem");
+      - los turnos se dicen UNA vez, en la franja, si todo el grupo los
+        comparte (turnosComunes); si no, en la fila. */
 function MisEjercicios() {
   const vistos = new Map();
   for (const slot of S.routine) for (const ex of slot.exercises || []) {
@@ -595,6 +610,7 @@ function MisEjercicios() {
   }
   const bloques = blocksOf([...vistos.values()]);
   const gym = S.gyms.find(g => g.id === S.cfg.activeGym);
+  const { fijoRef, idxRef, grupoRefs, activo, saltar } = useIndiceDeGrupos(bloques.length);
 
   if (!vistos.size) {
     return <p className="ent-sin-ej">Armá tu rutina primero: acá van a aparecer sus ejercicios.</p>;
@@ -607,48 +623,174 @@ function MisEjercicios() {
         <span className="grow">{gym ? <>Máquinas de <b>{gym.name}</b></> : 'Sin gimnasio elegido'}</span>
         <button type="button" className="chip" onClick={() => openSheet('gyms')}>{gym ? 'Cambiar' : 'Elegir'}</button>
       </div>
-      <div className="ent-lista">
-        {bloques.map(b => (
-          <div key={b.cat} className="ent-grupo">
-            <div className="ent-grupo-h">
-              <span>{b.cat === 'Otros' ? 'Sin grupo' : b.cat}</span>
-              <span className="c">{b.exs.length} {b.exs.length === 1 ? 'ejercicio' : 'ejercicios'}</span>
-            </div>
-            {b.exs.map((ex, i) => {
-              const p = progresoDeEjercicio(ex.name);
-              const ov = gym ? gymEquipFor(gym.id, ex.name) : null;
-              return (
-                <div key={ex.id} className="ent-ej" style={{ '--i': i }}>
-                  <button type="button" className="ent-ej-main" onClick={() => openSheet('ex-info', { name: ex.name, exId: ex.id })}>
-                    <span className="ent-ex-t">{ex.name}</span>
-                    <span className="ent-ej-en">
-                      {turnosDeEjercicio(ex.name).map(t => <span key={t.id} className="ent-tag">{abreviar(t.name)}</span>)}
-                      {equipLabel(ex) && <span className="ent-ej-eq">{equipLabel(ex)}</span>}
-                    </span>
-                  </button>
-                  <div className="ent-ej-kg">
-                    {p ? (
-                      <>
-                        <b>{kgTxt(p.kg)}</b>
-                        {p.delta != null && (
-                          <span className={p.delta > 0 ? 'sube' : p.delta < 0 ? 'baja' : ''}>
-                            {p.delta > 0 ? `+${wDisplay(p.delta)}` : p.delta < 0 ? `−${wDisplay(-p.delta)}` : 'igual'} en {p.semanas} sem
-                          </span>
-                        )}
-                      </>
-                    ) : <span>sin registro</span>}
-                    {gym && (
-                      <button type="button" className={`gym-eq-btn${ov ? ' on' : ''}`} onClick={() => openSheet('gym-equip', { gymId: gym.id, gymName: gym.name, exName: ex.name })}>
-                        {ov ? <><Check size={13} /> propio</> : '+ equipo'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ))}
+      <div ref={fijoRef} className="ent-fijo">
+        <nav ref={idxRef} className="chip-scroll ent-idx" aria-label="Grupos musculares">
+          {bloques.map((b, i) => (
+            <button
+              key={b.cat} type="button" className={`chip${i === activo ? ' on' : ''}`}
+              aria-current={i === activo ? 'true' : undefined}
+              onClick={() => saltar(i)}
+            >
+              {nombreGrupo(b.cat)}<span className="chip-sub">{b.exs.length}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="ent-cols" aria-hidden="true">
+          <span>Ejercicio</span><span>Ser.</span><span>Últ. {S.cfg.unit}</span><span>3 sem</span>
+        </div>
+      </div>
+      <div className="ent-tabla">
+        {bloques.map((b, gi) => {
+          const comunes = turnosComunes(b.exs.map(e => e.name));
+          return (
+            <section key={b.cat} ref={el => { grupoRefs.current[gi] = el; }} className="ent-g" aria-label={nombreGrupo(b.cat)}>
+              <div className="ent-banda">
+                <h2 className="ent-banda-n">{nombreGrupo(b.cat)}</h2>
+                <span className="ent-banda-c">{b.exs.length}</span>
+                {comunes && (
+                  <span className="ent-banda-en">
+                    {comunes.map(t => <span key={t.id} className="ent-tag">{abreviar(t.name)}</span>)}
+                  </span>
+                )}
+              </div>
+              {b.exs.map(ex => (
+                <FilaEjercicio key={ex.id} ex={ex} gym={gym} conTurnos={!comunes} />
+              ))}
+            </section>
+          );
+        })}
       </div>
     </>
   );
+}
+
+const nombreGrupo = cat => (cat === 'Otros' ? 'Sin grupo' : cat);
+
+/** Una fila de la tabla. Toda la fila abre la ficha ('ex-info'): el botón del
+    nombre se estira sobre ella (::after); el de equipo del gimnasio queda por
+    encima. Así no hay un botón dentro de otro. */
+function FilaEjercicio({ ex, gym, conTurnos }) {
+  const p = progresoDeEjercicio(ex.name);
+  const ser = seriesDeEjercicio(ex.name);
+  const ov = gym ? gymEquipFor(gym.id, ex.name) : null;
+  const turnos = conTurnos ? turnosDeEjercicio(ex.name).map(t => abreviar(t.name)) : [];
+  const d = p?.delta;
+  return (
+    <div className="ent-fila">
+      <div className="ent-fila-m">
+        <button type="button" className="ent-fila-btn" onClick={() => openSheet('ex-info', { name: ex.name, exId: ex.id })}>
+          {ex.name}
+        </button>
+        {(turnos.length > 0 || gym) && (
+          <span className="ent-fila-sub">
+            {turnos.length > 0 && <span className="ent-fila-en">{turnos.join(' · ')}</span>}
+            {gym && (
+              <button type="button" className={`gym-eq-btn${ov ? ' on' : ''}`} onClick={() => openSheet('gym-equip', { gymId: gym.id, gymName: gym.name, exName: ex.name })}>
+                {ov ? <><Check size={13} /> propio</> : '+ equipo'}
+              </button>
+            )}
+          </span>
+        )}
+      </div>
+      <span className="ent-fila-s">{ser ? (ser.min === ser.max ? ser.min : `${ser.min}–${ser.max}`) : ''}</span>
+      {p ? (
+        <>
+          <span className="ent-fila-kg">{wDisplay(p.kg)}</span>
+          <span
+            className={`ent-fila-d${d > 0 ? ' sube' : d < 0 ? ' baja' : ''}`}
+            aria-label={d == null ? 'todavía sin 3 semanas de registro' : undefined}
+          >
+            {d == null ? '' : d > 0 ? `+${wDisplay(d)}` : d < 0 ? `−${wDisplay(-d)}` : '='}
+            {d != null && p.semanas !== 3 && <small>{p.semanas} sem</small>}
+          </span>
+        </>
+      ) : <span className="ent-fila-nada">sin registro</span>}
+    </div>
+  );
+}
+
+/** El índice de grupos: salta al tocar y marca el grupo visible al
+    scrollear. La página scrollea en window (header.top es sticky ahí), así
+    que el índice se pega justo debajo del header: su alto se mide (lo cambia
+    el safe-area del teléfono) y va en --cab-alto.
+
+    Después de un salto, la marca queda en el grupo tocado hasta que el
+    scroll se detiene: los últimos grupos no llegan arriba de todo (no hay
+    tanto contenido debajo) y el cálculo por posición marcaría otro. */
+function useIndiceDeGrupos(n) {
+  const fijoRef = useRef(null);
+  const idxRef = useRef(null);
+  const grupoRefs = useRef([]);
+  const saltando = useRef(null);
+  const [activo, setActivo] = useState(0);
+
+  useLayoutEffect(() => {
+    const cab = document.querySelector('header.top');
+    const fijo = fijoRef.current;
+    if (!cab || !fijo) return;
+    const medir = () => fijo.style.setProperty('--cab-alto', `${cab.offsetHeight}px`);
+    medir();
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(medir) : null;
+    ro?.observe(cab);
+    return () => ro?.disconnect();
+  }, [n]);
+
+  useEffect(() => {
+    if (!n) return;
+    let raf = 0;
+    const calcular = () => {
+      raf = 0;
+      const fijo = fijoRef.current;
+      if (!fijo) return;
+      const linea = fijo.getBoundingClientRect().bottom + 8;
+      // El primer grupo que todavía no pasó entero por debajo del índice: con
+      // "el último cuyo borde de arriba pasó", un grupo ya tapado seguía
+      // marcado mientras el siguiente asomaba en el hueco entre los dos.
+      const gs = grupoRefs.current.slice(0, n);
+      let cur = gs.findIndex(g => g && g.getBoundingClientRect().bottom > linea);
+      if (cur < 0) cur = n - 1;
+      const alFondo = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
+      if (alFondo && scrollY > 0) cur = n - 1;
+      setActivo(cur);
+    };
+    const alScrollear = () => {
+      if (saltando.current) {
+        clearTimeout(saltando.current);
+        saltando.current = setTimeout(() => { saltando.current = null; }, 160);
+        return;
+      }
+      if (!raf) raf = requestAnimationFrame(calcular);
+    };
+    calcular();
+    addEventListener('scroll', alScrollear, { passive: true });
+    return () => {
+      removeEventListener('scroll', alScrollear);
+      if (raf) cancelAnimationFrame(raf);
+      clearTimeout(saltando.current);
+      saltando.current = null;
+    };
+  }, [n]);
+
+  // El chip marcado siempre a la vista dentro del índice (que scrollea de costado).
+  useEffect(() => {
+    const idx = idxRef.current;
+    const b = idx?.children[activo];
+    if (!idx || !b) return;
+    const izq = b.offsetLeft - idx.clientWidth / 2 + b.offsetWidth / 2;
+    idx.scrollTo({ left: Math.max(0, izq), behavior: menosMovimiento() ? 'instant' : 'smooth' });
+  }, [activo]);
+
+  const saltar = i => {
+    const g = grupoRefs.current[i];
+    const fijo = fijoRef.current;
+    if (!g || !fijo) return;
+    setActivo(i);
+    clearTimeout(saltando.current);
+    saltando.current = setTimeout(() => { saltando.current = null; }, 160);
+    const cab = parseFloat(getComputedStyle(fijo).getPropertyValue('--cab-alto')) || 0;
+    const top = g.getBoundingClientRect().top + scrollY - cab - fijo.offsetHeight - 8;
+    scrollTo({ top: Math.max(0, top), behavior: menosMovimiento() ? 'instant' : 'smooth' });
+  };
+
+  return { fijoRef, idxRef, grupoRefs, activo, saltar };
 }

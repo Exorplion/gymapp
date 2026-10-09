@@ -3,6 +3,7 @@ import { S } from '../state.js';
 import {
   turnoQueToca, turnoElegido, marcaDeTurno, seriesPorZonaDeTurno, seriesSemanaDelPlan,
   progresoDeEjercicio, turnosDeEjercicio, indicesDeTurnos, minutosDeTurno,
+  seriesDeEjercicio, turnosComunes,
 } from '../entreno.js';
 
 const W = (id, name, exs) => ({ id, type: 'workout', name, exercises: exs.map(([n, sets], i) => ({ id: `${id}-${i}`, name: n, sets, reps: 9 })) });
@@ -92,5 +93,30 @@ describe('peso y progreso de un ejercicio', () => {
     expect(minutosDeTurno(RUTINA[0])).toBe(20);
     S.sessions = [{ slotId: 'a', duration: 52, date: '2026-10-05', entries: [] }];
     expect(minutosDeTurno(RUTINA[0])).toBe(50);
+  });
+});
+
+describe('Ejercicios en tabla (opción B): series y turnos por grupo', () => {
+  it('series: un número si es igual en todos los turnos, rango si cambia', () => {
+    expect(seriesDeEjercicio('Leg press')).toEqual({ min: 3, max: 3 });
+    expect(seriesDeEjercicio('press banca')).toEqual({ min: 2, max: 3 });
+  });
+  it('series: null si el ejercicio no está en la rutina', () => {
+    expect(seriesDeEjercicio('Sentadilla')).toBe(null);
+  });
+  it('turnos comunes: los de todos, si todos van en los mismos', () => {
+    S.routine = [
+      W('a', 'Anterior A', [['Press banca', 3], ['Aperturas', 2]]),
+      W('c', 'Anterior B', [['Press banca', 2], ['Aperturas', 2]]),
+    ];
+    expect(turnosComunes(['Press banca', 'Aperturas']).map(t => t.id)).toEqual(['a', 'c']);
+  });
+  it('turnos comunes: null si uno va en otro turno (se dicen en cada fila)', () => {
+    expect(turnosComunes(['Press banca', 'Leg press'])).toBe(null);
+  });
+  it('turnos comunes: un grupo de uno lleva los suyos; vacío o fuera de la rutina, null', () => {
+    expect(turnosComunes(['Jalón al pecho']).map(t => t.id)).toEqual(['b']);
+    expect(turnosComunes([])).toBe(null);
+    expect(turnosComunes(['Sentadilla'])).toBe(null);
   });
 });
