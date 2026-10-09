@@ -32,13 +32,44 @@ import { fibrasDe } from './fibras.js';
     Dorsal alto y bajo con un % cada uno lo pidió Enzo dos veces. Las regiones
     existen (fibras torácicas vs. ilíacas: Paton & Brown 1995, Muñoz-Garcés
     2026), pero la diferencia está medida en EMG isométrico: qué ejercicio va a
-    cuál es una estimación, y la UI lo dice. */
-export const ZONAS = ['Pecho', 'Trapecio', 'Romboides', 'Dorsal alto', 'Dorsal bajo', 'Lumbares', 'Hombro', 'Bíceps', 'Tríceps', 'Cuádriceps', 'Femoral', 'Glúteo', 'Gemelos', 'Abs'];
+    cuál es una estimación, y la UI lo dice.
 
-/** Horas hasta el 100 % para una sesión "normal" (6 series, RIR 2). */
+    2026-10-08, Enzo: "el hombro tiene tres partes" y "femoral no debería
+    estar en anterior". Hombro se parte en anterior, lateral y posterior
+    (los pájaros de Posterior ya no frenan el press militar de Anterior), y
+    los aductores son zona propia: antes caían en "no sé" y se contaban como
+    cuádriceps Y femoral.
+
+    El orden es el del cuerpo, de arriba abajo, agrupado por REGIONES. */
+export const ZONAS = [
+  'Pecho', 'Hombro anterior', 'Hombro lateral', 'Hombro posterior',
+  'Trapecio', 'Romboides', 'Dorsal alto', 'Dorsal bajo', 'Lumbares',
+  'Bíceps', 'Tríceps', 'Abs',
+  'Glúteo', 'Cuádriceps', 'Aductores', 'Femoral', 'Gemelos',
+];
+
+/** Las zonas por región, para listarlas ordenadas (Enzo, 2026-10-08:
+    "debería estar más organizado"). Todas las ZONAS, cada una una vez. */
+export const REGIONES = [
+  { nombre: 'Pecho y hombros', zonas: ['Pecho', 'Hombro anterior', 'Hombro lateral', 'Hombro posterior'] },
+  { nombre: 'Espalda', zonas: ['Trapecio', 'Romboides', 'Dorsal alto', 'Dorsal bajo', 'Lumbares'] },
+  { nombre: 'Brazos', zonas: ['Bíceps', 'Tríceps'] },
+  { nombre: 'Abdomen', zonas: ['Abs'] },
+  { nombre: 'Piernas', zonas: ['Glúteo', 'Cuádriceps', 'Aductores', 'Femoral', 'Gemelos'] },
+];
+
+/** Las zonas dadas, repartidas en sus regiones (sin las regiones vacías). */
+export const porRegion = zonas => REGIONES
+  .map(r => ({ nombre: r.nombre, zonas: r.zonas.filter(z => zonas.includes(z)) }))
+  .filter(r => r.zonas.length);
+
+/** Horas hasta el 100 % para una sesión "normal" (6 series, RIR 2). Las
+    tres porciones del hombro son músculos chicos; el anterior un poco más
+    porque además lo cargan todos los press. */
 export const VENTANA_BASE = {
-  Pecho: 60, Trapecio: 54, Romboides: 60, 'Dorsal alto': 66, 'Dorsal bajo': 72, Lumbares: 72, Hombro: 54, Bíceps: 48, Tríceps: 48,
-  Cuádriceps: 72, Femoral: 72, Glúteo: 66, Gemelos: 42, Abs: 42,
+  Pecho: 60, 'Hombro anterior': 54, 'Hombro lateral': 48, 'Hombro posterior': 48,
+  Trapecio: 54, Romboides: 60, 'Dorsal alto': 66, 'Dorsal bajo': 72, Lumbares: 72, Bíceps: 48, Tríceps: 48,
+  Cuádriceps: 72, Aductores: 60, Femoral: 72, Glúteo: 66, Gemelos: 42, Abs: 42,
 };
 
 /** Cuánto estira la ventana el esfuerzo: al fallo tarda más, con margen menos. */
@@ -49,19 +80,30 @@ const RIR_SUPUESTO = 2;
 const HORA = 3600000;
 
 /** A qué zonas va un ejercicio. Pierna se parte con la tabla de fibras:
-    curl femoral → Femoral, leg press → Cuádriceps; uno que no se reconoce
-    (o que trabaja las dos) va a las dos, que es decir de más en vez de
-    esconder una zona cargada. */
+    curl femoral → Femoral, leg press → Cuádriceps, aductor → Aductores,
+    abductor → Glúteo (el medio); uno que no se reconoce va a cuádriceps y
+    femoral, que es decir de más en vez de esconder una zona cargada.
+    Hombro igual: cada porción a la suya, y uno sin reconocer a las tres. */
 export function zonasDeEjercicio(ex) {
   const cat = catOf(ex);
   if (!cat) return [];
   if (cat === 'Espalda') return zonasDeEspalda(ex);
+  if (cat === 'Hombro') return zonasDeHombro(ex);
   if (cat !== 'Pierna') return ZONAS.includes(cat) ? [cat] : [];
   const p = fibrasDe(ex)?.p || [];
   const out = [];
+  if (p.some(n => /^glúteo/i.test(n))) out.push('Glúteo');
   if (p.some(n => /^vasto|cuádri|flexores de cadera/i.test(n))) out.push('Cuádriceps');
+  if (p.includes('Aductores')) out.push('Aductores');
   if (p.includes('Femoral')) out.push('Femoral');
-  return out.length ? out : ['Cuádriceps', 'Femoral'];
+  return out.length ? ZONAS.filter(z => out.includes(z)) : ['Cuádriceps', 'Femoral'];
+}
+
+const PORCION_DE_HOMBRO = { 'Deltoides anterior': 'Hombro anterior', 'Deltoides lateral': 'Hombro lateral', 'Deltoides posterior': 'Hombro posterior' };
+const HOMBRO_ENTERO = ['Hombro anterior', 'Hombro lateral', 'Hombro posterior'];
+function zonasDeHombro(ex) {
+  const zs = (fibrasDe(ex)?.p || []).map(n => PORCION_DE_HOMBRO[n]).filter(Boolean);
+  return zs.length ? HOMBRO_ENTERO.filter(z => zs.includes(z)) : HOMBRO_ENTERO;
 }
 
 /** Espalda, por la porción que trabaja (fibras.js, que nombra las mismas
@@ -216,14 +258,19 @@ export function momentos(ahora = Date.now()) {
 }
 
 /** La zona que pinta cada forma de la lámina: Pierna se reparte por su slug
-    (hamstring → Femoral; cuádriceps, aductores, flexores, tibial → Cuádriceps)
+    (hamstring → Femoral; adductors → Aductores; cuádriceps, flexores,
+    tibial → Cuádriceps)
     y Espalda también: trapezius → Trapecio, rhomboids → Romboides,
     upperBack (porción alta del dorsal, junto al redondo mayor) → Dorsal alto,
-    lats → Dorsal bajo. */
+    lats → Dorsal bajo. Hombro, por porción (2026-10-08), y los aductores
+    con su propia zona. */
 const FORMA_ESPALDA = { trapezius: 'Trapecio', rhomboids: 'Romboides', upperBack: 'Dorsal alto', lats: 'Dorsal bajo' };
+const FORMA_HOMBRO = { deltAnterior: 'Hombro anterior', deltLateral: 'Hombro lateral', deltPosterior: 'Hombro posterior' };
 export function zonaDeForma(cat, slug) {
   if (cat === 'Espalda') return FORMA_ESPALDA[slug] || null;
+  if (cat === 'Hombro') return FORMA_HOMBRO[slug] || null;
   if (cat !== 'Pierna') return ZONAS.includes(cat) ? cat : null;
+  if (slug === 'adductors') return 'Aductores';
   return slug === 'hamstring' ? 'Femoral' : 'Cuádriceps';
 }
 

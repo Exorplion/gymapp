@@ -29,8 +29,8 @@ import { ultimosSieteDias } from '../../lib/week.js';
 import { mealsOf } from '../../lib/meals.js';
 import { weeklyAvg } from '../../lib/charts.js';
 import { cuerpo } from '../../lib/bodydata.js';
-import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, ZONAS } from '../../lib/recuperacion.js';
-import { LLANO, nombreZona, frase, capital, abreviar, haceTexto } from '../../lib/inicio.js';
+import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, porRegion, ZONAS } from '../../lib/recuperacion.js';
+import { LLANO, nombreZona, nombreCorto, frase, capital, abreviar, haceTexto } from '../../lib/inicio.js';
 import { turnoFoco, siguienteTurno } from '../../lib/turnoFoco.js';
 import AnimatedText from '../AnimatedText.jsx';
 import { Alerta, Check, Play, Plus, Taza } from '../Icon.jsx';
@@ -202,8 +202,8 @@ function HoyCard({ rec }) {
 /* Dos vistas (2026-10-03, opción A del lienzo "FIERRO Mapa de
    recuperación"): las zonas del turno que toca —lo que Enzo quería ver en un
    día de posterior— y las más cargadas de todas, que era lo único que había.
-   Hasta seis filas: entran al lado del cuerpo sin agrandar la tarjeta. El
-   resto está a un toque, en el mapa. */
+   "Más cargados" muestra hasta seis filas, que entran al lado del cuerpo; el
+   turno muestra todas las suyas, por región (2026-10-08). */
 const FILAS = 6;
 
 function RecuperacionCard({ rec }) {
@@ -214,7 +214,13 @@ function RecuperacionCard({ rec }) {
   const verTurno = !!foco && modo === 'turno';
   // Las sin dato van al final: no son "las más cargadas", son desconocidas.
   const porPct = (a, b) => (rec[a]?.pct ?? 101) - (rec[b]?.pct ?? 101);
-  const zonas = (verTurno ? [...foco.zonas] : [...conDato]).sort(porPct).slice(0, FILAS);
+  /* Con el turno van TODAS sus zonas, por región y en el orden del cuerpo
+     (2026-10-08, Enzo: "debería estar más organizado"; con el tope de seis,
+     trapecio y romboides de Posterior quedaban fuera). "Más cargados" sigue
+     siendo un top: ahí el orden es la cifra. */
+  const grupos = verTurno
+    ? porRegion(foco.zonas)
+    : [{ nombre: null, zonas: [...conDato].sort(porPct).slice(0, FILAS) }];
   const apagadas = verTurno ? ZONAS.filter(z => !foco.zonas.includes(z)) : [];
   // Firma por valor para el memo del cuerpo: ~560 trazos que sólo cambian
   // cuando cambia el estado de alguna zona o cuáles van apagadas.
@@ -247,27 +253,32 @@ function RecuperacionCard({ rec }) {
             <button type="button" className="ini2-rec-cuerpo" aria-label="Abrir el mapa del cuerpo" onClick={() => abrir()}>
               <CuerpoRecuperacion firma={firma} rec={rec} sexo={sexo} apagadas={apagadas} />
             </button>
-            <div className="ini2-rec-lista">
-              {zonas.map(z => {
-                const r = rec[z];
-                return (
-                  <button
-                    type="button"
-                    key={z}
-                    className="ini2-rec-fila"
-                    aria-label={r ? `${nombreZona(z)}: ${r.pct} %, ${cuandoLista(r.listaEn)}` : `${nombreZona(z)}: sin registro`}
-                    onClick={() => abrir(r ? z : null)}
-                  >
-                    <span className="ini2-rec-linea">
-                      <b>{nombreZona(z)}</b>
-                      <span className={`ini2-rec-pct ${r?.estado || 'sin-dato'}`}>{r ? `${r.pct}%` : '–'}</span>
-                    </span>
-                    <span className={`ini2-rec-barra ${r?.estado || 'sin-dato'}`} aria-hidden="true">
-                      <i style={{ transform: `scaleX(${(r?.pct ?? 0) / 100})` }} />
-                    </span>
-                  </button>
-                );
-              })}
+            <div className={`ini2-rec-lista${verTurno ? ' por-region' : ''}`}>
+              {grupos.map(g => (
+                <div key={g.nombre || 'top'} className="ini2-rec-region" role={g.nombre ? 'group' : undefined} aria-label={g.nombre || undefined}>
+                  {g.nombre && <span className="ini2-rec-region-t t-etiqueta" aria-hidden="true">{g.nombre}</span>}
+                  {g.zonas.map(z => {
+                    const r = rec[z];
+                    return (
+                      <button
+                        type="button"
+                        key={z}
+                        className="ini2-rec-fila"
+                        aria-label={r ? `${nombreZona(z)}: ${r.pct} %, ${cuandoLista(r.listaEn)}` : `${nombreZona(z)}: sin registro`}
+                        onClick={() => abrir(z)}
+                      >
+                        <span className="ini2-rec-linea">
+                          <b>{nombreCorto(z)}</b>
+                          <span className={`ini2-rec-pct ${r?.estado || 'sin-dato'}`}>{r ? `${r.pct}%` : '–'}</span>
+                        </span>
+                        <span className={`ini2-rec-barra ${r?.estado || 'sin-dato'}`} aria-hidden="true">
+                          <i style={{ transform: `scaleX(${(r?.pct ?? 0) / 100})` }} />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           </div>
           <p className="ini2-rec-listos">{resumenRec(rec, verTurno ? foco : null, conDato)}</p>
@@ -296,8 +307,6 @@ function resumenRec(rec, foco, conDato) {
       ? `Todo lo ${cuando} está listo.`
       : `Lo más justo ${cuando}: ${LLANO[justo]}, ${cuandoLista(rec[justo].listaEn)}.`;
     if (listos.length && rec[justo].pct < 90) t += ` ${capital(frase(listos))}, ${listos.length === 1 ? 'listo' : 'listos'}.`;
-    const fuera = foco.zonas.length - FILAS;
-    if (fuera > 0) t += ` ${fuera === 1 ? 'Otro más' : `Otros ${fuera}`} en el mapa.`;
     return t;
   }
   const listos = conDato.filter(z => rec[z].pct >= 90).map(z => LLANO[z]);

@@ -25,7 +25,7 @@ import { uncategorized } from '../../lib/muscle.js';
 import { dstr } from '../../lib/format.js';
 import { lunesDe } from '../../lib/week.js';
 import { cuerpo } from '../../lib/bodydata.js';
-import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, seriesPorZona, cabezasTriceps, momentos, estadoDe, ZONAS } from '../../lib/recuperacion.js';
+import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, seriesPorZona, cabezasTriceps, momentos, estadoDe, porRegion, ZONAS } from '../../lib/recuperacion.js';
 import { turnoFoco } from '../../lib/turnoFoco.js';
 import { LLANO, nombreZona, frase, capital, haceTexto } from '../../lib/inicio.js';
 import { sheetReveal, menosMovimiento } from '../../lib/motion.js';
@@ -46,8 +46,9 @@ const promedio = xs => Math.round(xs.reduce((a, b) => a + b, 0) / xs.length);
 const QUE_LO_TRABAJA = {
   Pecho: 'press de banca, aperturas', Trapecio: 'encogimientos, peso muerto', Romboides: 'remo con codos abiertos, Kelso',
   'Dorsal alto': 'remo en polea, remo sentado', 'Dorsal bajo': 'jalón, dominadas', Lumbares: 'hiperextensiones, peso muerto',
-  Hombro: 'press militar, elevaciones laterales', Bíceps: 'curl', Tríceps: 'pushdown, extensión sobre la cabeza',
-  Cuádriceps: 'sentadilla, prensa, extensiones', Femoral: 'curl femoral, peso muerto rumano', Glúteo: 'hip thrust, sentadilla',
+  'Hombro anterior': 'press militar, elevaciones frontales', 'Hombro lateral': 'elevaciones laterales',
+  'Hombro posterior': 'pájaros, face pull', Bíceps: 'curl', Tríceps: 'pushdown, extensión sobre la cabeza',
+  Cuádriceps: 'sentadilla, prensa, extensiones', Aductores: 'máquina de aductores', Femoral: 'curl femoral, peso muerto rumano', Glúteo: 'hip thrust, sentadilla',
   Gemelos: 'elevación de talones', Abs: 'crunch, elevación de piernas',
 };
 
@@ -176,13 +177,13 @@ export default function BodyMap({ zona = null }) {
         {focoZ.length > 0 && (
           <>
             <span className="t-etiqueta">{foco.cuando === 'hoy' ? 'Para hoy' : 'Para el próximo'} · {foco.slot.name}</span>
-            <div className="group bm-filas">{focoZ.map(fila)}</div>
+            <PorRegion zonas={focoZ} fila={fila} />
           </>
         )}
         {resto.length > 0 && (
           <>
             {focoZ.length > 0 && <span className="t-etiqueta bm-etq-resto">El resto</span>}
-            <div className="group bm-filas">{resto.map(fila)}</div>
+            <PorRegion zonas={resto} fila={fila} />
           </>
         )}
         {nunca.length > 0 && (
@@ -378,6 +379,18 @@ const CuerpoGrande = memo(function CuerpoGrande({ rec, sexo, sel, onPick }) {
     </div>
   );
 }, (a, b) => a.firma === b.firma);
+
+/** Las filas de "Músculo por músculo" agrupadas por región, en el orden del
+    cuerpo (2026-10-08, Enzo: "debería estar más organizado"). Lo más justo
+    lo dice el resumen de arriba; acá se busca un músculo por dónde está. */
+function PorRegion({ zonas, fila }) {
+  return porRegion(zonas).map(g => (
+    <div key={g.nombre} className="bm-region" role="group" aria-label={g.nombre}>
+      <span className="bm-region-t" aria-hidden="true">{g.nombre}</span>
+      <div className="group bm-filas">{g.zonas.map(fila)}</div>
+    </div>
+  ));
+}
 
 /** Los ejercicios sin grupo muscular no suman en el mapa ni en las series.
     Antes se descartaban en silencio, así que el resumen se veía completo

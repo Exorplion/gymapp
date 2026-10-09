@@ -86,6 +86,12 @@ const KEYWORDS: [string, string][] = [
   // hombro
   ['elevaciones laterales', 'Hombro'], ['lateral raise', 'Hombro'], ['pajaro', 'Hombro'],
   ['face pull', 'Hombro'], ['rear delt', 'Hombro'], ['deltoide', 'Hombro'], ['hombro', 'Hombro'],
+  // 2026-10-08, con el hombro en tres: los nombres de cada porción que no
+  // tenían grupo ("Elevación lateral" en singular no es "Elevaciones
+  // laterales") o que se iban a Pecho por "apertura".
+  ['elevacion lateral', 'Hombro'], ['elevacion frontal', 'Hombro'], ['elevaciones frontales', 'Hombro'],
+  ['front raise', 'Hombro'], ['arnold', 'Hombro'], ['reverse fly', 'Hombro'],
+  ['aperturas posteriores', 'Hombro'], ['apertura posterior', 'Hombro'], ['apertura invertida', 'Hombro'],
   // glúteo
   ['hip thrust', 'Glúteo'], ['gluteo', 'Glúteo'], ['patada', 'Glúteo'], ['puente', 'Glúteo'],
   // abs
@@ -236,6 +242,8 @@ const SUBGRUPO_DE: Record<string, string> = {
   Clavicular: 'Pecho superior',
   Costal: 'Pecho',
   'Deltoides anterior': 'Hombro anterior',
+  'Deltoides lateral': 'Hombro lateral',
+  'Deltoides posterior': 'Hombro posterior',
   Hombro: 'Hombro',
   'Tríceps cabeza larga': 'Tríceps',
   Tríceps: 'Tríceps',
