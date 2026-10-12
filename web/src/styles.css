@@ -1010,6 +1010,8 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
   transition:color var(--d1) var(--ease-out),transform var(--d1) var(--ease-out);
 }
 .reel-tooth.on{color:var(--text);font-weight:800;transform:none;scroll-initial-target:nearest}
+/* Los vecinos se tocan para elegirlos (ReelPicker, elegirDiente). */
+.reel-tooth:not(.on){cursor:pointer}
 /* scroll-initial-target: al montarse la rueda, el navegador la abre ya
    centrada en el diente del valor (con su scroll-snap-align:center), en el
    mismo layout que la dibuja. Sin esto había que escribir scrollLeft desde

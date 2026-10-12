@@ -31,7 +31,8 @@
 // picker fino como la edición manual pueden recentrar la rueda horizontal
 // ellos mismos sin depender de un ciclo de render del padre.
 import { useEffect, useRef, useState } from 'react';
-import { reelValues, reelCenter, reelNearestIndex } from '../lib/reel.js';
+import { reelValues, reelCenter, reelNearestIndex, reelScrollLeft } from '../lib/reel.js';
+import { menosMovimiento } from '../lib/motion.js';
 
 const HOLD_MS = 450;
 /** ¿El navegador centra la rueda solo al montarla? (CSS scroll-initial-target,
@@ -66,6 +67,7 @@ export default function ReelPicker({
   const inputRef = useRef(null);
   const holdTimerRef = useRef(null);
   const movedRef = useRef(false);
+  const inicioXRef = useRef(null);
 
   // Se regenera sólo cuando el valor actual se corrió fuera de la ventana ya
   // renderizada — si se regenerara en cada valor, cada tick recentraría la
@@ -164,7 +166,8 @@ export default function ReelPicker({
   // Mantener presionado (sin arrastrar) en cualquier parte de la rueda abre
   // el picker fino. Si el dedo se mueve antes de los HOLD_MS, es un gesto de
   // scroll normal y se cancela — el scroll nativo sigue su curso solo.
-  function onPressStart() {
+  function onPressStart(e) {
+    inicioXRef.current = e?.clientX ?? null;
     if (editing) return;
     movedRef.current = false;
     clearTimeout(holdTimerRef.current);
@@ -178,6 +181,18 @@ export default function ReelPicker({
   }
   function onPressEnd() {
     clearTimeout(holdTimerRef.current);
+  }
+
+  /* Tocar un número del costado lo elige (Enzo, 2026-10-12: "si el número
+     está al costado sería sólo hacer un tap"). No commitea directo: desliza
+     la pista hasta ese diente y el mismo onScroll de un arrastre lo lee y lo
+     guarda — un solo camino para elegir, y se ve llegar. Un toque que en
+     realidad fue el final de un arrastre (el dedo corrió más de 10 px) no
+     cuenta. */
+  function elegirDiente(i, e) {
+    if (editing) return;
+    if (inicioXRef.current != null && e && Math.abs(e.clientX - inicioXRef.current) > 10) return;
+    scrollerRef.current?.scrollTo({ left: reelScrollLeft(i), behavior: menosMovimiento() ? 'auto' : 'smooth' });
   }
 
   // Tocar (tap corto, sin mantener) el número centrado lo vuelve editable,
@@ -262,7 +277,7 @@ export default function ReelPicker({
                 'aria-valuetext': String(fmt ? fmt(val) : val),
                 onClick: openEdit,
                 onKeyDown: onWheelKeyDown,
-              } : {})}
+              } : { onClick: e => elegirDiente(i, e) })}
             >
               {on ? (fmt ? fmt(val) : val) : (fmt ? fmt(v) : v)}
             </div>
