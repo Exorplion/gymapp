@@ -79,6 +79,15 @@ export function marcarGuia(id) {
   return saveCfg();
 }
 
+/** Se registró una serie. La primera marca el botón; desde la segunda el
+    globo de la rueda ya estuvo a la vista, y si la serie salió sin tocarla
+    es que no le hacía falta: cuenta como visto. Si no, a quien nunca cambia
+    el número le volvía a aparecer en cada serie y frenaba a los de la tabla
+    y el ⋯ hasta que lo cerrara con la ✕. */
+export function serieRegistrada() {
+  return vista('btn') ? marcarGuia('rueda') : marcarGuia('btn');
+}
+
 /** Ajustes → "Ver la guía otra vez". */
 export function reiniciarGuia() {
   S.cfg.guia = { visto: {} };

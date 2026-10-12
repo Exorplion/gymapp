@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from '../state.js';
 import { idb } from '../db.js';
-import {
+import { serieRegistrada,
   PISTAS, TEXTOS, pistaQueToca, guiaInicial, iniciarGuia, marcarGuia, reiniciarGuia, vista,
   ubicarGlobo, HUECO, MARGEN, FLECHA_BORDE,
 } from '../guia.js';
@@ -206,5 +206,15 @@ describe('cuando el otro lado taparía algo que hace falta', () => {
     const tabla = { left: 42, right: 348, top: 570, bottom: 629 };
     expect(ubicarGlobo({ objetivo: tabla, globo, vista, lado: 'abajo', soloEse: true })).toBe(null);
     expect(ubicarGlobo({ objetivo: tabla, globo, vista: { ...vista, bottom: 844 }, lado: 'abajo', soloEse: true }).lado).toBe('abajo');
+  });
+});
+
+describe('registrar una serie', () => {
+  it('la primera marca el botón; la segunda, sin tocar la rueda, también la rueda', async () => {
+    S.cfg = { guia: { visto: {} } };
+    await serieRegistrada();
+    expect(S.cfg.guia.visto).toEqual({ btn: true });
+    await serieRegistrada();
+    expect(S.cfg.guia.visto).toEqual({ btn: true, rueda: true });
   });
 });

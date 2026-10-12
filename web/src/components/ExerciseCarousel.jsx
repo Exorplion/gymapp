@@ -33,7 +33,7 @@ import { previaEjercicio, metaPartes, cambioTexto, columnaHoy } from '../lib/pre
 import PreviaEjercicio, { Sparkline } from './PreviaEjercicio.jsx';
 import { sideImbalance } from '../lib/symmetry.js';
 import { T } from '../lib/rest.js';
-import { marcarGuia } from '../lib/guia.js';
+import { marcarGuia, serieRegistrada } from '../lib/guia.js';
 import { jumpToSlide, scrollToSlideEl, slideScrollLeft } from '../lib/carousel.js';
 import { staggerRevealOnce, squashStretch, impactBurst, menosMovimiento, D, EASE_OUT } from '../lib/motion.js';
 import { relatedHistory, equipLabel, sufijoPeso, rotuloPeso, textoDiscos } from '../lib/equip.js';
@@ -1148,7 +1148,7 @@ function ExerciseSlide({ m, wd, started }) {
                   // arranca saveSet, no hace falta otro).
                   if (rampaCompleta) marcarCalentado(ex, false);
                   saveSet(ex.id);
-                  marcarGuia('btn');
+                  serieRegistrada();
                 }}
               >
                 <span className="btn-serie-ok" aria-hidden="true"><Check size={22} /></span>
