@@ -1,6 +1,67 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-10-08
+**Última actualización:** 2026-10-12
+
+---
+
+## SESIÓN 2026-10-12 — borrar una serie ya no te deja sin terminar + plan del núcleo de IA
+
+Bug de Enzo en el gimnasio: "eliminé una serie y el ejercicio se cerró y
+pasó al siguiente y no me dejaba terminarlo". Rama `fix/serie-borrada-retomar`,
+**1241 tests** (15 nuevos en `__tests__/serie-borrada.test.js`).
+
+- **Causa 1 — la ✕ de la tabla** (`deleteSet`, hoy `borrarSeries` en
+  lib/session.js): sólo reabría el ejercicio si no había OTRO en curso, y
+  casi siempre lo hay porque la app avanza sola al completar. El ejercicio
+  quedaba "En espera · 1/2" sin ningún botón. Ahora, si queda bajo su
+  objetivo (y no está omitido), vuelve a estar en curso; aviso "Serie N
+  borrada · X vuelve a estar en curso" con **Deshacer** (no pisa una serie
+  anotada después); cierra `T.rir` si apuntaba a ese ejercicio (el índice
+  de fila quedaba corrido).
+- **Causa 2 — "Una serie menos"** (`dropSet`, ExOpciones): baja el OBJETIVO,
+  no borra; si queda completo cierra y pasa al siguiente (a propósito). Se
+  confunde con borrar: ahora lleva subtítulo "Baja el objetivo de hoy. Lo
+  que anotaste no se borra." y aviso con **Deshacer** (objetivo + en curso).
+- **"Retomar"** en toda tarjeta "En espera" con series hechas
+  (`retomarEjercicio`). Es el "volver al anterior" que pidió Enzo, pero
+  para cualquier ejercicio a medio hacer.
+- **De paso:** el carrusel nunca deslizaba de vuelta al PRIMER ejercicio
+  (`irAlFoco` salía con `idx <= 0`, ExerciseCarousel.jsx ~:254). Ahora sólo
+  sale con -1. `jumpToSlide` (lib/carousel.js:59) sigue con `<= 0`: es el
+  salto al montar, donde el 0 sí ya está en su lugar.
+- Verificado en Chrome (build de producción, seed, 390 y 430): Press plano
+  2/2 → Press inclinado 1/2 en curso → borrar la serie 2 de Press plano lo
+  reabre y el carrusel vuelve a él; Press inclinado muestra "Retomar" y al
+  tocarlo pasa a estar en curso.
+
+### Decisiones de Enzo para lo que sigue (2026-10-12)
+
+1. **Turno universal.** Un turno (Anterior, Posterior, Push…) es UNO solo,
+   no una copia por día. Hoy NO es así: `applyDays` (lib/rutina-logic.js:321)
+   crea un slot con `uid()` y ejercicios propios por cada aparición, y toda
+   edición va a un índice (`saveExercise`/`persistSlot`, rutina-logic.js
+   ~:720-810). Migración: si las copias difieren, **se queda la primera de
+   la secuencia** ("las que tocaría lunes y martes"). El editor pasa a
+   elegir QUÉ turno cambiar; el orden de la semana se edita aparte.
+2. **"Hoy hago otra cosa"** (entrenar con un amigo, etc.) en cualquier día:
+   otro turno o una sesión libre. **Lo que tocaba queda pendiente.** Hoy
+   sólo existe en descanso y sólo con turnos propios (`opcionesDescanso`,
+   lib/descansoHoy.js:17; `MarcarDia.jsx:8-11` rechaza turnos libres a
+   propósito — revisar esa regla, no saltarla).
+3. **Recomendar cómo cerrar la semana** después de algo fuera del plan
+   (ej.: Anterior lun, Pull con amigo mar en vez de Posterior → falta
+   pierna): sugerir ajustes de series/ejercicios en lo que queda para
+   cumplir la **frecuencia por grupo muscular** (volumen por fibra). Son
+   recomendaciones: se pueden ignorar. Motores existentes a reusar:
+   `seriesSemanaDelPlan`/`huecosDeCobertura` (lib/entreno.js:64,80),
+   `seriesPorZona` (lib/recuperacion.js:209), `coberturaDe` (lib/coverage.js).
+4. **Núcleo de IA** (después de 1–3): Cloudflare Worker como proxy mínimo
+   (la clave NO puede ir en el bundle: el repo es público) + Gemini;
+   primera función = importar una rutina pegada como texto (lector local +
+   IA para lo desordenado, siempre con pantalla de revisión). Después el
+   coach con las reglas de Enzo. Principio: la app calcula, la IA explica.
+   Ojo: el free tier de Gemini Flash bajó mucho en 2026 (verificar cuota en
+   AI Studio) y en el plan gratis Google puede usar lo enviado.
 
 ---
 
