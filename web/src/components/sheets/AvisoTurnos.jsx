@@ -19,13 +19,11 @@ export default function AvisoTurnos({ aviso }) {
     <>
       <h2>{t.titulo}</h2>
       <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 10 }}>{t.intro}</div>
-      {t.lineas.length === 1 ? (
-        <div style={{ fontSize: 'var(--t-body)', lineHeight: 1.5, marginBottom: 8 }}>{t.lineas[0]}</div>
-      ) : (
-        <ul style={{ fontSize: 'var(--t-body)', lineHeight: 1.5, margin: '0 0 8px', paddingLeft: 18 }}>
-          {t.lineas.map(l => <li key={l}>{l}</li>)}
-        </ul>
-      )}
+      {/* Una línea por turno, como párrafos: la lista con sangría y sin
+          viñetas (el reset global las saca) se leía como un solo bloque. */}
+      {t.lineas.map(l => (
+        <div key={l} style={{ fontSize: 'var(--t-body)', lineHeight: 1.5, marginBottom: 8 }}>{l}</div>
+      ))}
       <div className="txt-mut" style={{ fontSize: 'var(--t-sm)', lineHeight: 1.5, marginBottom: 18 }}>{t.respaldo}</div>
       <button type="button" className="btn ok" onClick={() => exportJSON()}>Descargar respaldo</button>
       <div className="dlg-fila">
