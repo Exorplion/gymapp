@@ -16,7 +16,7 @@
 // Este módulo no importa state.js (recibe el estado): state.js lo usa en
 // loadAll y rutina-logic.js en cada guardado, sin ciclos de imports.
 import { idb } from './db.js';
-import { norm, uid, fmtD } from './format.js';
+import { norm, uid, fmtD, dstr } from './format.js';
 
 /* ------------------------------------------------------------------ puro */
 
@@ -182,6 +182,81 @@ export function planReconciliacion({ filas, guardados, hoy }) {
     return { ...f, turnoId: t.id, turnoFirma: firma(t), name: t.name, exercises: t.exercises };
   });
   return { turnos, filas: nuevas, distintas };
+}
+
+/* ------------------------------------------------------- hidratación */
+
+/* En memoria, cada slot de entrenamiento VINCULADO tiene `name` y `exercises`
+   como propiedades de acceso (get/set, enumerables) que leen y escriben su
+   turno. Así:
+     - los ~40 lectores de slot.exercises / slot.name no cambian;
+     - `slot.exercises = lista` (las seis reasignaciones del editor) cae en el
+       turno, y `ex.sets = 2` muta el objeto compartido;
+     - structuredClone, JSON y {...slot} llaman a los getters: los clones, el
+       backup y el historial salen con datos planos.
+   Trampa: un {...slot} es un objeto PLANO; nunca guardarlo como slot ni
+   volver a meterlo en S.routine sin pasar por hidratar(). */
+const VINCULOS = new WeakMap();   // slot → turno
+
+export function vincular(slot, turno) {
+  delete slot.turnoFirma;   // la firma se calcula al escribir (filaDe)
+  Object.defineProperty(slot, 'name', {
+    enumerable: true, configurable: true,
+    get() { return turno.name; },
+    set(v) { turno.name = v; },
+  });
+  Object.defineProperty(slot, 'exercises', {
+    enumerable: true, configurable: true,
+    get() { return turno.exercises; },
+    set(v) { turno.exercises = v; },
+  });
+  slot.turnoId = turno.id;
+  VINCULOS.set(slot, turno);
+}
+
+export const esVinculado = slot => !!slot && VINCULOS.has(slot);
+export const turnoVinculado = slot => (slot && VINCULOS.get(slot)) || null;
+
+/**
+ * Vincula cada slot de entrenamiento con su turno. Se llama después de
+ * cualquier `S.routine = …` o `S.turnos = …` (loadAll, deshacer, applyDays,
+ * applyWorkoutOrder, persistAll).
+ *  - `st.turnos === null` (modo viejo: migración postergada o fallida): no
+ *    toca nada; cada slot sigue siendo su propia copia, como antes.
+ *  - los ids de `st.turnosSinVincular` quedan planos: son filas editadas por
+ *    otra versión mientras había un borrador abierto, que se reconcilian en
+ *    el próximo arranque (ver reconciliarTurnos).
+ *  - un slot de entrenamiento sin turno (recién creado por el editor) recibe
+ *    uno nuevo con su contenido.
+ */
+export function hidratar(st, hoy = null) {
+  if (!Array.isArray(st.turnos)) return;
+  const quietas = new Set(st.turnosSinVincular || []);
+  const porId = new Map(st.turnos.map(t => [t.id, t]));
+  for (const slot of st.routine || []) {
+    if (slot?.type !== 'workout' || quietas.has(slot.id)) continue;
+    let t = slot.turnoId && porId.get(slot.turnoId);
+    if (!t) {
+      t = {
+        id: slot.turnoId && !porId.has(slot.turnoId) ? slot.turnoId : uid(),
+        name: slot.name || '',
+        exercises: slot.exercises || [],
+        creado: hoy || dstr(),
+      };
+      st.turnos.push(t);
+      porId.set(t.id, t);
+    }
+    if (VINCULOS.get(slot) !== t) vincular(slot, t);
+  }
+}
+
+/** La fila que se guarda en `routine`: la copia completa del turno con su
+    firma. Un slot sin vincular (descanso, modo viejo) sale tal cual. */
+export function filaDe(slot) {
+  if (!esVinculado(slot)) return slot;
+  const fila = { ...slot };
+  fila.turnoFirma = firma(fila);
+  return fila;
 }
 
 /** El nombre de la rutina de respaldo en "Mis rutinas". */

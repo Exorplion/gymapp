@@ -9,7 +9,25 @@ import { dstr, fmtNum, round1, kg2lb, lb2kg, KG2LB, vibrate } from './format.js'
 // React (en S), no en un componente; es la API que React expone para
 // exactamente este caso ("external mutable store").
 export const S = {
-  routine: [],   // [{id, order, type:'workout'|'rest', name?, exercises?}]
+  /* La secuencia: [{id, order, type:'workout'|'rest', turnoId?, name?, exercises?}].
+     OJO — turnos universales (2026-10-12, lib/turnos.js): en un slot de
+     entrenamiento vinculado, `name` y `exercises` NO son datos propios sino
+     propiedades de acceso que leen y escriben su turno (S.turnos). Dos
+     apariciones de "Posterior" devuelven el MISMO array. Reglas:
+       - después de cualquier `S.routine = …` o `S.turnos = …`, hidratar(S);
+       - se guarda con persistSlot/persistTurno/persistAll (rutina-logic.js),
+         nunca con idb.put('routine') suelto;
+       - un {...slot} es un objeto plano: no se vuelve a meter como slot;
+       - lo que MUTA ejercicios recorre turnos, no slots (porTurno), o el
+         mismo ejercicio se toca dos veces. */
+  routine: [],
+  /* Los turnos: [{id, name, exercises, creado}] (settings.turnos).
+     null = modo viejo: la migración se postergó (borrador abierto) o falló,
+     y cada slot sigue siendo su propia copia, como antes. */
+  turnos: null,
+  /* Slots que quedan sin vincular hasta el próximo arranque: filas que otra
+     versión editó mientras había un borrador abierto (ver reconciliarTurnos). */
+  turnosSinVincular: [],
   sessions: [],         // desc por start
   meals: [], foods: [], body: [],
   cfg: {
