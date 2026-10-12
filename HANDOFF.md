@@ -4,6 +4,66 @@
 
 ---
 
+## SESIÓN 2026-10-12 (9) — turnos universales, Fase 4: "Para cerrar la semana"
+
+Lienzo: claude.ai/artifact/4Qswpo9x8WCfX5Y1BQhkY2 (copia
+`Documents/Enzo/FIERRO-maquetas/cerrar-semana.html`). Enzo eligió la **A**
+(tarjeta entre el turno y el plan). Rama `feat/turnos-fase4-compensar`
+(worktree `.claude/worktrees/compensar`). **1413 tests** (+23:
+`lib/__tests__/compensacion.test.js`, el ejemplo de la spec §6, y
+`turnos-compensar.test.js`, contra la sesión real).
+
+**Qué cambió:**
+- `lib/compensacion.js` (nuevo, puro): `faltasDelCiclo` (lo que dejó sin hacer
+  cada sesión fuera del plan del ciclo actual, menos lo hecho por encima del
+  plan después; frecuencia por zona), `compensacion()` (la propuesta de hoy:
+  `hoy`, `despues`, `sinLugar`, `clave` = 'ciclo:slotId'), `avisoAlCerrar`
+  y los textos (`diaLargo`, `listaZonas`, `listaDias`).
+- `session.js`: `compensacionHoy()` (sólo sin sesión abierta, sin haber
+  entrenado hoy, con el turno que toca), `aceptarCompensacion` /
+  `descartarCompensacion` / `deshacerCompensacion` (en `S.cfg.compensar` y
+  `S.cfg.compensarNo`), `conCompensacion` (el plan con lo sumado) y
+  `startSession` lo vuelca al borrador: series → `extraSets`, traído →
+  `extras` con `compensa: true`, que `completeSession` NO ofrece fijar.
+- `components/CerrarSemana.jsx`: la tarjeta (`.group` + `.grouprow`, rótulo
+  con rayita ámbar), filas tildables con el motivo, "Ver qué falta" (barras
+  por zona y "1 de 2 veces esta semana"), nota de lo que va otro día / no
+  entra, "Sumar a hoy" y "Hoy no" (toast con Deshacer). Aceptada, queda una
+  línea `.hoy-elegido` "✓ Sumado a hoy: … · Deshacer" y el plan marca
+  "+2 compensa" / "De Posterior"; cifras del héroe actualizadas.
+- `SessionView`: al cerrar una sesión fuera del plan, una línea "El jueves y
+  el viernes te voy a proponer cómo compensar femoral, glúteo, gemelos y 2
+  más. Podés ignorarlo." Nada en Inicio.
+
+**Desvíos de la spec (§6):**
+- Desempate: menos zonas, después **menos** series planeadas (no "más"): es
+  lo que da el ejemplo de la spec (Curl femoral 3 antes que PMR 4) y es lo más
+  liviano de sumar. La regla de fibras (`coberturaDe`) no se implementó: con
+  ≥ 3 series o frecuencia perdida ya alcanza y no cambiaba ningún caso.
+- Tope de MRV por grupo: no se aplica. `Pierna` junta cuádriceps y femoral y
+  la plantilla A/P ya pasa 22; como nunca se propone más que la falta, lo
+  compensado nunca supera lo que tu plan ya tenía.
+- Traer: vale cualquier ejercicio del turno no hecho que trabaje la zona (no
+  sólo su zona "principal"), para que Kelso cuente para romboides.
+
+**Verificado (build de producción, Playwright, 390 y 430, sin errores, sin
+scroll horizontal):** plantilla A/P, sesión libre "Pull con Juan" en vez de
+Posterior. Jueves (Anterior): "Traer Elevación de gemelos · 3×15", "Femoral,
+glúteo, trapecio y romboides: el martes en Posterior" (fecha estimada), Sumar
+→ 12 ej / 40 series / ~87 min y "De Posterior" en el plan. Viernes: +2 Curl
+femoral y +2 Hip thrust, "No entra esta semana: 5 series de femoral, 3 de
+trapecio y 3 de romboides".
+
+**Trampa:** `.grouprow` está más abajo en styles.css y su `font:inherit`
+pisa el tamaño de una clase sola: la nota va como `.grouprow.cs-nota`.
+**Trampa 2:** un `vite preview` huérfano de otra sesión seguía en el 4192 y
+servía un build viejo (sin la Fase 3): comparar el hash de `index-*.js`.
+
+**Pendiente:** que Enzo lo pruebe en el teléfono la próxima vez que salga del
+plan. La línea del resumen no se miró en navegador (sí en tests).
+
+---
+
 ## SESIÓN 2026-10-12 (8) — turnos universales, Fase 3: "Hoy hago otra cosa" + regla del puntero
 
 Spec §4–5. Rama `feat/turnos-fase3-otra-cosa` (worktree `.claude/worktrees/otra-cosa`).

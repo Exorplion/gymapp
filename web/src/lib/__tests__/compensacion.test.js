@@ -157,3 +157,13 @@ describe('el aviso al cerrar la sesión fuera del plan', () => {
     expect(avisoAlCerrar({ routine, sessions: [s], seqIndex: 5, ciclo: 0, fecha: '2026-10-17' })).toBe(null);
   });
 });
+
+describe('los textos', async () => {
+  const { listaZonas, listaDias } = await import('../compensacion.js');
+  it('zonas y días en castellano', () => {
+    expect(listaZonas(['Femoral'])).toBe('femoral');
+    expect(listaZonas(['Femoral', 'Glúteo', 'Gemelos'])).toBe('femoral, glúteo y gemelos');
+    expect(listaZonas(['Femoral', 'Glúteo', 'Gemelos', 'Trapecio', 'Romboides'], 3)).toBe('femoral, glúteo, gemelos y 2 más');
+    expect(listaDias([DIA.jue, DIA.vie])).toBe('El jueves y el viernes');
+  });
+});

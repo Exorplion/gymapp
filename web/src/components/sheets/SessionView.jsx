@@ -21,6 +21,7 @@ import ExIcon from '../ExIcon.jsx';
 import { Baja, Check, Pencil, Plus, Skip, Sube, Trofeo, X } from '../Icon.jsx';
 import { sheetReveal } from '../../lib/motion.js';
 import { importarConRespaldo } from '../../lib/lazy-respaldo.js';
+import { avisoAlCerrar, listaDias, listaZonas } from '../../lib/compensacion.js';
 // El burst de récord vive en su propio módulo y entra por React.lazy: son
 // 320 KB de lottie-web (la dependencia más pesada de la app, 24% del bundle)
 // para UNA animación de 44×44 que sólo se ve al cerrar la sesión que generó el
@@ -109,6 +110,10 @@ export default function SessionView({ id, justFinished = false }) {
         {justFinished ? `${s.dayName || 'Entrenamiento'} · ` : ''}{fmtDFull(s.date)}
         {s.duration != null ? ` · ${s.duration} min` : s.retro ? ' · anotada a mano' : ''}
       </div>
+
+      {/* Fuera del plan (Fase 4): una sola línea, para que la propuesta de
+          los días que siguen no sorprenda. Nada en Inicio. */}
+      {justFinished && s.fueraDePlan && s.reemplaza && <AvisoCompensar />}
 
       <div className="stats" style={{ '--n': 4 }}>
         <div><div className="n">{s.duration ?? '—'}</div><span className="l">Min</span></div>
@@ -335,4 +340,18 @@ function confirmDel(id) {
     onConfirm: () => deleteHistorySession(id),
     onCancel: () => openSheet('session-view', { id }),
   });
+}
+
+/** "El jueves y el viernes te voy a proponer cómo compensar femoral, glúteo
+    y gemelos. Podés ignorarlo." — o nada, si no queda qué ni cuándo. */
+function AvisoCompensar() {
+  const a = avisoAlCerrar({
+    routine: S.routine, sessions: S.sessions, seqIndex: S.cfg.seqIndex, ciclo: S.cfg.ciclo || 0, fecha: S.cfg.seqIndexDate,
+  });
+  if (!a?.dias.every(Boolean)) return null;
+  return (
+    <p className="cs-aviso">
+      <b>{listaDias(a.dias)}</b> te voy a proponer cómo compensar <b>{listaZonas(a.zonas, 3)}</b>. Podés ignorarlo.
+    </p>
+  );
 }

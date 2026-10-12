@@ -2909,6 +2909,51 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .otra-libre .btn{margin:0}
 .otra-nota{margin:0 0 var(--s3);font-size:var(--t-sm);line-height:1.5;color:var(--text-2)}
 .otra-nota b{color:var(--text)}
+/* "Para cerrar la semana" (Fase 4, opción A): la tarjeta entre el turno y
+   el plan de Hoy. Es una lista agrupada (.group + .grouprow) con su rótulo
+   como los de los bloques del plan, pero con la rayita en ámbar: es una
+   propuesta, no el plan. Lo sumado se marca en el plan con .cs-tag. */
+.cs{display:flex;flex-direction:column;gap:var(--s2);margin:var(--s4) 0 0}
+.cs-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);min-height:30px;margin:0 2px}
+.cs-t{
+  margin:0;font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2);
+  display:inline-flex;align-items:center;gap:var(--s2);
+}
+.cs-t::before{content:"";width:3px;height:1em;border-radius:var(--r-full);background:var(--warn)}
+.cs-ver{color:var(--accent);font-size:var(--t-sm);font-weight:600;min-height:40px;padding:0 var(--s1)}
+.cs-origen{margin:0 2px;font-size:var(--t-sm);line-height:1.45;color:var(--text-2);text-wrap:pretty}
+.cs-origen b{color:var(--text);font-weight:600}
+.cs-fila .grouprow-t em{font-style:normal;color:var(--accent)}
+.cs-tick{
+  flex:none;width:24px;height:24px;border-radius:var(--r-sm);display:grid;place-items:center;
+  border:1.5px solid var(--sup-control-borde);color:transparent;
+  transition-property:background-color,border-color,color;transition-duration:var(--d1);transition-timing-function:var(--ease);
+}
+.cs-fila[aria-pressed="true"] .cs-tick{background:var(--accent-grad);border-color:transparent;color:var(--on-accent)}
+.grouprow.cs-nota{min-height:0;font-size:var(--t-micro);line-height:1.45;color:var(--text-2);text-wrap:pretty}
+.cs-acts{display:flex;gap:var(--s2)}
+.cs-acts .btn{flex:1;margin:0}
+.cs-hecho{margin-top:var(--s3)}
+.cs-hecho>span{display:inline-flex;align-items:center;gap:var(--s1);min-width:0}
+.cs-hecho svg{flex:none;color:var(--ok)}
+/* Qué falta: una barra por zona, la más larga es la que más falta. */
+.cs-falta{display:flex;flex-direction:column;gap:var(--s2);padding:var(--s3) var(--s4);border-top:1px solid var(--line)}
+.cs-zf{display:grid;grid-template-columns:minmax(0,96px) minmax(0,1fr) auto;align-items:center;column-gap:var(--s2);font-size:var(--t-sm)}
+.cs-zf-n{font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-zf-barra{height:8px;border-radius:var(--r-full);background:rgba(var(--hi-rgb),.07);overflow:hidden}
+.cs-zf-barra i{display:block;height:100%;border-radius:inherit;background:rgba(var(--warn-rgb),.7)}
+.cs-zf-v{font-family:var(--font-cond);font-weight:700;color:var(--warn);font-variant-numeric:tabular-nums}
+.cs-zf-f{grid-column:2 / -1;font-size:var(--t-micro);color:var(--text-3)}
+.cs-falta-pie{margin:0;font-size:var(--t-micro);color:var(--text-3)}
+/* En el plan: lo que se sumó para cerrar la semana. */
+.cs-tag{
+  display:inline-block;margin-left:var(--s2);padding:0 6px;border-radius:var(--r-full);vertical-align:1px;
+  font:700 var(--t-micro)/17px var(--font-body);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;
+  color:var(--warn);border:1px solid rgba(var(--warn-rgb),.4);background:rgba(var(--warn-rgb),.08);
+}
+/* El aviso del resumen al cerrar una sesión fuera del plan. */
+.cs-aviso{margin:var(--s3) 0 0;padding:var(--s3);border-radius:var(--r-md);font-size:var(--t-sm);line-height:1.45;color:var(--text-2);background:rgba(var(--warn-rgb),.06);border:1px solid rgba(var(--warn-rgb),.3)}
+.cs-aviso b{color:var(--text);font-weight:600}
 /* ---- Plan de hoy, pasada estética (2026-09-26) ----
    Enzo: "Plan de hoy suena harto", los nombres de los ejercicios "débiles,
    neutros", las burbujas de orden desalineadas. Se toma el lenguaje del

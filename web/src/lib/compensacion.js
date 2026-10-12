@@ -94,7 +94,6 @@ export function faltasDelCiclo({ routine, sessions, seqIndex, ciclo = 0 }) {
   // Frecuencia por zona: veces que el ciclo planeaba trabajarla contra las
   // que va a quedar trabajada (lo planeado antes de la primera sesión fuera
   // del plan + lo que de verdad se hizo desde ahí + lo que queda desde hoy).
-  const n = routine.length;
   const primera = origenes[0].s;
   const iPrimera = routine.findIndex(x => x.id === origenes[0].slot.id);
   const planVeces = {}, realVeces = {};
@@ -282,4 +281,24 @@ export function avisoAlCerrar({ routine, sessions, seqIndex, ciclo = 0, fecha })
   }
   if (!dias.length) return null;
   return { zonas, dias };
+}
+
+/* ---------- textos (los usan la tarjeta de Hoy y el resumen) ---------- */
+
+/** "martes", "viernes"… de una fecha 'YYYY-MM-DD'. */
+export const diaLargo = fecha => new Date(fecha + 'T12:00:00').toLocaleDateString('es', { weekday: 'long' });
+
+/** "femoral, glúteo y gemelos" (en minúscula, con "y" al final). Con más
+    de `max`, "femoral, glúteo, gemelos y 2 más". */
+export function listaZonas(zonas, max = 99) {
+  const zs = zonas.map(z => z.toLowerCase());
+  if (zs.length > max) return `${zs.slice(0, max).join(', ')} y ${zs.length - max} más`;
+  return zs.length < 2 ? zs.join('') : `${zs.slice(0, -1).join(', ')} y ${zs[zs.length - 1]}`;
+}
+
+/** "El jueves y el viernes" / "El viernes". */
+export function listaDias(fechas) {
+  const ds = [...new Set(fechas)].map(f => `el ${diaLargo(f)}`);
+  const t = ds.length < 2 ? ds.join('') : `${ds.slice(0, -1).join(', ')} y ${ds[ds.length - 1]}`;
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }
