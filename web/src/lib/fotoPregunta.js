@@ -13,16 +13,37 @@
 // se mostró sin respuesta).
 import { S, saveCfg } from './state.js';
 import { isMachineBound } from './equip.js';
+import { norm } from './format.js';
 import { keyEj, maquinasDe } from './maquinas.js';
 
 export const VECES_SIN_RESPUESTA = 2;
+
+/* Sin equipo declarado (lo común: el seed y muchas rutinas cargadas a mano no
+   lo tienen) se decide por el nombre. Sólo palabras que nombran una máquina o
+   una polea: "press" o "remo" a secas pueden ser con barra o mancuernas, y ahí
+   no se pregunta. */
+const DICE_MAQUINA = [
+  'maquina', 'polea', 'cable', 'crossover', 'prensa', 'leg press', 'hack',
+  'pec deck', 'peck deck', 'chest press', 'jalon', 'pulldown', 'low row',
+  'remo sentado', 'seated row', 'leg extension', 'extension de cuadricep',
+  'extensiones de cuadricep', 'curl femoral', 'leg curl', 'hamstring curl',
+  'abductor', 'aductor', 'pushdown', 'face pull',
+];
+
+/** ¿Este ejercicio se hace en una máquina concreta (su número no es
+    comparable fuera de ella)? El equipo declarado manda; sin él, el nombre. */
+export function esDeMaquina(ex) {
+  if (ex?.equip) return isMachineBound(ex.equip);
+  const n = norm(ex?.name || '');
+  return DICE_MAQUINA.some(k => n.includes(k));
+}
 
 /** ¿Toca ofrecer la foto en el descanso de esta serie? Sin mirar la foto
     guardada (eso es asíncrono, lo resuelve quien llama con getPhoto).
     `idx` es la fila recién anotada; en unilateral la primera serie completa
     es la fila 1 (izquierda + derecha). */
 export function tocaOfrecerFoto(ex, idx, { uni = false, gymId = S.cfg?.activeGym, cfg = S.cfg } = {}) {
-  if (!ex || !isMachineBound(ex.equip)) return false;
+  if (!ex || !esDeMaquina(ex)) return false;
   if (idx !== (uni ? 1 : 0)) return false;
   const r = cfg?.fotoPreg?.[keyEj(ex.name)];
   if (r === 'no' || r === 'hecha' || (typeof r === 'number' && r >= VECES_SIN_RESPUESTA)) return false;

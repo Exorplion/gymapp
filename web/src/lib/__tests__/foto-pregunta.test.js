@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from '../state.js';
-import { tocaOfrecerFoto, fotoOfrecida, fotoRechazada, fotoHecha } from '../fotoPregunta.js';
+import { tocaOfrecerFoto, fotoOfrecida, fotoRechazada, fotoHecha, esDeMaquina } from '../fotoPregunta.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn(), get: vi.fn() } }));
 
@@ -56,5 +56,25 @@ describe('cuándo se ofrece la foto de la máquina', () => {
     expect(tocaOfrecerFoto(polea, 0)).toBe(true);
     await fotoOfrecida('Remo neutro');
     expect(tocaOfrecerFoto(polea, 0)).toBe(false);
+  });
+});
+
+describe('qué cuenta como máquina', () => {
+  it('el equipo declarado manda', () => {
+    expect(esDeMaquina({ name: 'Press plano máquina', equip: 'barra' })).toBe(false);
+    expect(esDeMaquina({ name: 'Remo', equip: 'placas' })).toBe(true);
+  });
+
+  it('sin equipo, lo dice el nombre', () => {
+    expect(esDeMaquina({ name: 'Press plano máquina' })).toBe(true);
+    expect(esDeMaquina({ name: 'Jalón al pecho' })).toBe(true);
+    expect(esDeMaquina({ name: 'Abs polea' })).toBe(true);
+    expect(esDeMaquina({ name: 'Leg extension' })).toBe(true);
+  });
+
+  it('sin equipo y con un nombre que no lo dice, no se pregunta', () => {
+    expect(esDeMaquina({ name: 'Press inclinado' })).toBe(false);
+    expect(esDeMaquina({ name: 'Remo' })).toBe(false);
+    expect(esDeMaquina({ name: 'Elevaciones laterales' })).toBe(false);
   });
 });
