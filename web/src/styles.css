@@ -1470,7 +1470,8 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 .ex-tabla td b{font-family:var(--font-cond);font-size:var(--t-lg);color:var(--text)}
 .ex-tabla .c{text-align:center}
 .ex-tabla td.n{width:22px;font-family:var(--font-cond);font-weight:700;color:var(--text-3)}
-.ex-tabla td.x{width:36px;text-align:right}
+.ex-tabla td.x{width:72px;text-align:right;white-space:nowrap}
+.ex-tabla tr.fila-tocable{cursor:pointer}
 .ex-tabla td.x button{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:var(--r-sm);color:var(--text-3)}
 /* La fila recién anotada entra con el mismo "pop" que tenían los chips. */
 .ex-tabla tbody tr:last-child{animation:pop var(--d2) var(--spring)}

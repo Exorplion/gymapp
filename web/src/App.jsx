@@ -28,6 +28,7 @@ import Progreso from './components/screens/Progreso.jsx';
 import DayDrop from './components/sheets/DayDrop.jsx';
 import CopyExercises from './components/sheets/CopyExercises.jsx';
 import Despues from './components/sheets/Despues.jsx';
+import EditarSerie from './components/sheets/EditarSerie.jsx';
 import SessionExercise from './components/sheets/SessionExercise.jsx';
 import EntryEdit from './components/sheets/EntryEdit.jsx';
 import ExerciseForm from './components/sheets/ExerciseForm.jsx';
@@ -113,6 +114,7 @@ function SheetContent({ sheet }) {
     case 'terminar-sesion': return <TerminarSesion {...sheet.props} />;
     case 'sesion-menu': return <SesionMenu {...sheet.props} />;
     case 'despues': return <Despues {...sheet.props} />;
+    case 'editar-serie': return <EditarSerie {...sheet.props} />;
     case 'calentamiento': return <Calentamiento {...sheet.props} />;
     case 'ex-opciones': return <ExOpciones {...sheet.props} />;
     case 'reorder-hoy': return <ReorderHoy {...sheet.props} />;
