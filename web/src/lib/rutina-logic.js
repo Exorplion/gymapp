@@ -13,7 +13,7 @@ import { EXCATALOG, catOf, muscleVolume, porBloques } from './muscle.js';
 import { VOLUME_BANDS } from './charts.js';
 import { exKey } from './equip.js';
 import { toast } from './toast.js';
-import { hidratar, esVinculado, turnoVinculado, filaDe, claveNombre, claveTurno, claveDeSesion } from './turnos.js';
+import { hidratar, esVinculado, turnoVinculado, filaDe, claveNombre, claveTurno, claveDeSesion, snapshotDeFilas } from './turnos.js';
 
 /* ================= RUTINA ================= */
 /* insights derivados del historial de sesiones: sin esquema nuevo, se calcula
@@ -189,16 +189,8 @@ export function slotsFrequencyText(slots) {
    `photo` queda afuera a propósito: son data-URLs y S.lib entero vive en un
    único registro de `settings`, así que meter fotos ahí lo infla sin límite. */
 export function routineSnapshot() {
-  return S.routine.map(s => s.type === 'rest'
-    ? { type: 'rest' }
-    : {
-        type: 'workout',
-        name: s.name || '',
-        exercises: (s.exercises || []).map(e => ({
-          name: e.name, sets: e.sets, reps: e.reps,
-          equip: e.equip, machine: e.machine, illus: e.illus, cat: e.cat, unilateral: e.unilateral,
-        })),
-      });
+  // El mismo formato que el respaldo de la unificación de turnos (turnos.js).
+  return snapshotDeFilas(S.routine);
 }
 
 /** Copia de un ejercicio con id NUEVO.
