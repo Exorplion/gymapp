@@ -37,6 +37,7 @@ import { useStore } from '../lib/state.js';
 import { useAtras } from '../lib/useAtras.js';
 import { fmtMMSS } from '../lib/format.js';
 import { ChevronDown } from './Icon.jsx';
+import OfertaFoto from './OfertaFoto.jsx';
 import { impactBurst, squashStretch, menosMovimiento, D } from '../lib/motion.js';
 
 /** El segundo que se ve. Sólo re-renderiza a quien lo llama, una vez por
@@ -345,6 +346,8 @@ export default function RestTimer() {
               <PreguntaRir />
             </div>
           )}
+          {/* La foto de la máquina, después del RIR (OfertaFoto.jsx). */}
+          {T.serie && T.state === 'fullscreen' && (!T.rir || T.rir.cerrada) && <OfertaFoto serie={T.serie} />}
           {sonandoAhora ? (
             /* Un solo botón, ancho y sin vecinos: está sonando y lo único que
                querés es callarla. Poner "+30s" al lado sería invitarte a errarle. */

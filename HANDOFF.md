@@ -4,6 +4,33 @@
 
 ---
 
+## SESIÓN 2026-10-12 (4) — la foto de la máquina se ofrece en el descanso
+
+Enzo: "el usuario no va a entender para qué es la foto de la máquina… al
+terminar la serie le podría preguntar si desea tomar foto para guardar su
+progreso". Rama `feat/foto-en-descanso`, **1268 tests**.
+
+- **Cuándo** (`lib/fotoPregunta.js`, `tocaOfrecerFoto`): descanso de la
+  PRIMERA serie (fila 0; en unilateral fila 1) de un ejercicio de máquina sin
+  foto ni máquinas armadas en el gym. "De máquina" = equipo discos/placas/
+  polea; sin equipo declarado, por el nombre (`esDeMaquina`, lista
+  `DICE_MAQUINA`: máquina, polea, jalón, prensa, pec deck, leg extension…;
+  "press"/"remo" a secas NO).
+- **Cuántas veces:** `S.cfg.fotoPreg[ejercicio]` = 'no' (Ahora no: nunca
+  más), 'hecha', o n = veces mostrada sin respuesta (tope 2).
+- **Dónde** (`components/OfertaFoto.jsx` dentro de RestTimer): en el lugar de
+  la pregunta del RIR y recién cuando esa se cerró (una pregunta por vez);
+  misma caja y pliegue (`.rfs-foto-caja`, styles.css junto a `.rfs-rir-caja`).
+- **Sin gimnasio elegido:** "Sacar foto" crea "Mi gimnasio" y lo activa
+  (las fotos se guardan por gym) y avisa "Foto guardada en «Mi gimnasio»".
+- `findEx` de session.js ahora se exporta (lo usa OfertaFoto).
+- Verificado en Chrome (build de producción, seed, 390): Press plano máquina
+  → serie 1 → RIR → aparece la caja; foto generada por canvas → toast, la
+  caja se pliega y la miniatura aparece en la tarjeta. "Ahora no" cubierto
+  por tests, no probado en navegador.
+
+---
+
 ## SESIÓN 2026-10-12 (3) — tocar un número de la rueda lo elige
 
 Enzo: "si el número está al costado sería sólo hacer un tap en vez de

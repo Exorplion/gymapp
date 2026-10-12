@@ -1494,7 +1494,7 @@ export async function deleteHistorySession(id) {
 
 // === Helper functions ===
 
-function findEx(exId) {
+export function findEx(exId) {
   // los agregados durante la sesión viven en el borrador, no en la rutina
   const extra = (S.draft?.extras || []).find(x => x.id === exId);
   if (extra) return extra;
