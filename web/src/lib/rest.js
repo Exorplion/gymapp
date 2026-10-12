@@ -28,7 +28,10 @@ import { prepararAlarma, pedirPermiso, sonar, callar } from './alarm.js';
 // <RestTimer/> sin suscripción propia.
 // `seq` sube cada vez que cambia el tramo que el anillo tiene que recorrer
 // (arrancar, ±30 s): es lo único que obliga a reprogramar su animación.
-export const T = { end: 0, total: 0, int: null, state: 'hidden', leftSec: 0, pct: 0, rir: null, seq: 0 };
+/* `serie`: de qué serie es este descanso ({ exId, idx }), o null si no es de
+   ninguna (el calentamiento). Lo escribe saveSet() después de startRest(); lo
+   lee borrarSeries() para cancelar el descanso de una serie que se borra. */
+export const T = { end: 0, total: 0, int: null, state: 'hidden', leftSec: 0, pct: 0, rir: null, seq: 0, serie: null };
 
 /* ───────── El reloj tiene su propio canal (G3, auditoría 2026-09) ─────────
 
@@ -91,9 +94,26 @@ export function startRest(segs) {
      atarle un RIR, y la respuesta se escribiría sobre la serie anterior. Sólo
      saveSet() llama después a pedirRir(), y sólo cuando cerró la serie. */
   T.rir = null;
+  T.serie = null;
   T.total = total; T.end = Date.now() + T.total * 1000;
   T.seq++;
   T.state = 'fullscreen';
+  bump();
+  if (!T.int) T.int = setInterval(() => tickRest(), 250);
+  tickRest(true);
+}
+
+/** Vuelve a poner un descanso cancelado, con el MISMO final: lo usa el
+    "Deshacer" de borrar una serie. Entra en la barra y no a pantalla
+    completa — estás mirando la tarjeta, no esperando el reloj. Si ese final
+    ya pasó no revive nada: sonaría una alarma por un descanso que terminó. */
+export function reanudarRest({ end, total }) {
+  if (!(end > Date.now())) return;
+  callar();
+  T.rir = null;
+  T.total = total; T.end = end;
+  T.seq++;
+  T.state = 'minimized';
   bump();
   if (!T.int) T.int = setInterval(() => tickRest(), 250);
   tickRest(true);
@@ -196,6 +216,7 @@ export function stopRest() {
   clearInterval(T.int); T.int = null;
   callar();
   T.rir = null;
+  T.serie = null;
   T.state = 'hidden';
   bump();
 }

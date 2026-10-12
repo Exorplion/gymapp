@@ -4,7 +4,7 @@ import { dstr, uid, round1, fmtD, vibrate } from './format.js';
 import { blocksOf, porBloques } from './muscle.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
-import { T, startRest, stopRest, pedirRir, marcarRirElegido } from './rest.js';
+import { T, startRest, stopRest, reanudarRest, pedirRir, marcarRirElegido } from './rest.js';
 import { rirScheme } from './exdb.js';
 import { rirPedido } from './rir.js';
 import { rpeFromRir } from './rir.js';
@@ -830,9 +830,10 @@ export async function saveSet(exId) {
      pueda pasar al otro brazo/pierna sin esperar el descanso completo. Fila
      PAR es "cerré la serie de los dos lados" → descanso normal. En
      bilateral no cambia nada: siempre es el descanso normal, como siempre. */
-  if (uni && cur.length % 2 === 1) startRest(S.cfg.restSide);
+  if (uni && cur.length % 2 === 1) { startRest(S.cfg.restSide); T.serie = { exId, idx: cur.length - 1 }; }
   else {
     startRest();
+    T.serie = { exId, idx: cur.length - 1 };
     /* Y recién acá se pregunta el RIR. Antes se pedía ANTES de confirmar,
        adentro del <details> "Más opciones": nadie abre un acordeón con el
        pulso a 150, así que el dato no llegaba nunca. Invertido el orden —
@@ -1282,6 +1283,28 @@ export async function borrarSeries(exId, idxs, { n } = {}) {
   // corrida) la respuesta caería en otra serie.
   if (T.rir?.exId === exId) T.rir = null;
 
+  /* El descanso de una serie que no pasó no corre: se cancela (Enzo: "le di
+     a la X pero el descanso ya estaba corriendo"). Si el descanso es de una
+     serie POSTERIOR del mismo ejercicio, sólo se corre su índice. */
+  let descanso = null;
+  const enCurso = T.state !== 'hidden' && T.serie?.exId === exId;
+  if (enCurso && idxs.includes(T.serie.idx)) {
+    descanso = { end: T.end, total: T.total, serie: { ...T.serie } };
+    stopRest();
+  } else if (enCurso) {
+    T.serie = { exId, idx: T.serie.idx - idxs.filter(i => i < T.serie.idx).length };
+  }
+
+  /* Unilateral: la rueda ya había pasado al otro lado al registrar. Si quedó
+     una serie a medias, sigue el lado que le falta; si se borró la mitad que
+     estaba sola, se vuelve a empezar por ESE lado. Borrar una serie entera no
+     cambia nada (y respeta el lado que hayas elegido a mano). */
+  const v = S.hoyVals?.[exId];
+  if (v && ex0Unilateral(exId)) {
+    if (quedan % 2 === 1) v.side = ladoPendiente(exId);
+    else if (antes.sets.length % 2 === 1) v.side = antes.sets[antes.sets.length - 1]?.side || 'left';
+  }
+
   const ex = findEx(exId);
   const incompleto = ex && !isSkipped(exId) && quedan < targetSets(ex);
   if (incompleto || !S.draft.cur) S.draft.cur = exId;
@@ -1299,10 +1322,32 @@ export async function borrarSeries(exId, idxs, { n } = {}) {
       if (ahora) ahora.sets = antes.sets;
       else S.draft.entries[exId] = { ...e, sets: antes.sets };
       S.draft.cur = antes.cur;
+      if (v && ex0Unilateral(exId)) v.side = ladoPendiente(exId);
+      if (descanso && descanso.end > Date.now()) {
+        reanudarRest({ end: descanso.end, total: descanso.total });
+        T.serie = descanso.serie;
+      }
       await saveDraft();
       bump();
     },
   });
+}
+
+const ex0Unilateral = exId => { const ex = findEx(exId); return !!ex && isUnilateral(ex); };
+
+/** Corregir una serie ya registrada: el número estaba mal, pero la serie SÍ
+    se hizo. Por eso no toca el descanso ni la secuencia — sólo peso y reps
+    (Enzo, 2026-10: borrar para volver a anotar le reiniciaba el descanso).
+    Conserva el lado y el esfuerzo. `n` es el número que ve la persona. */
+export async function editarSerie(exId, idx, { w, r }, { n } = {}) {
+  const set = S.draft?.entries?.[exId]?.sets?.[idx];
+  if (!set) return false;
+  set.w = Math.max(0, round1(w));
+  set.r = Math.max(1, Math.round(r));
+  await saveDraft();
+  bump();
+  toast(n ? `Serie ${n} corregida` : 'Serie corregida');
+  return true;
 }
 
 /** Volver a un ejercicio que quedó en espera a medio hacer: pasa a estar en
