@@ -4,6 +4,55 @@
 
 ---
 
+## SESIÓN 2026-10-12 (2) — corregir una serie, el descanso sabe de qué serie es, Primera vez corto
+
+Enzo: "registré una serie, el número estaba mal, le di a la X pero el
+descanso ya estaba corriendo; en las unilaterales la secuencia se bugea".
+Y con captura: "el timer tapa algunas tarjetas… el texto de Primera vez
+debería ser conciso". Rama `fix/editar-serie-descanso`, **1256 tests**.
+
+- **Corregir ≠ borrar.** Tocar una fila de la tabla (o su lápiz) abre la
+  hoja `editar-serie` (components/sheets/EditarSerie.jsx) con las mismas
+  ReelPicker de la tarjeta; en unilateral, un par por lado. `editarSerie`
+  (lib/session.js) cambia peso y reps y conserva lado y rpe; NO toca el
+  descanso ni la secuencia.
+- **El descanso sabe de qué serie es:** `T.serie = { exId, idx }` (lib/rest.js),
+  lo escribe saveSet después de startRest; startRest/stopRest lo limpian.
+  Borrar esa serie cancela el descanso; borrar una anterior sólo corre el
+  índice. Deshacer lo devuelve con el MISMO final (`reanudarRest`, entra en
+  la barra, no a pantalla completa; si ya habría terminado no lo revive).
+- **Unilateral:** después de borrar, el lado de la rueda se recalcula: serie a
+  medias → el lado que falta; se borró la mitad sola → se vuelve a empezar
+  por ese lado; serie entera → no se toca (respeta la elección a mano).
+- **Primera vez** (ExerciseCarousel.jsx, caja `.ex-first`): título + una
+  línea ("Referencia: 50 kg × 11 en otra máquina." o "Arrancá liviano: lo de
+  hoy es tu punto de partida."), y sólo hasta la primera serie. La "Meta de
+  hoy" ya dice "arrancá liviano" y la columna RIR cuánto dejar. La causa de
+  "el timer tapa": la caja larga empujaba la tabla detrás de la barra de
+  descanso (main ya tiene padding para scrollear; el problema era el alto).
+- Verificado en Chrome (build de producción, seed, 390): corregir 47.5×8 →
+  ×9 con el descanso corriendo (2:32 → 2:31, sigue); borrar esa serie lo
+  cancela y Deshacer la devuelve con 2:20; unilateral (Elevaciones laterales
+  marcadas unilateral): anotar izquierda → borrar → vuelve "Izquierda lista"
+  y el descanso corto se cancela. **No verificado visualmente:** la caja
+  Primera vez nueva (el seed no tiene ejercicios sin historial).
+
+### Pedidos nuevos de Enzo (2026-10-12, sin diseñar todavía)
+
+- **Guía para usuarios nuevos** en la sesión en vivo: no se entiende qué es
+  "una serie más/menos", omitir, la foto de la máquina. Pide indicaciones /
+  tooltips animados.
+- **Foto de la máquina:** ofrecerla en el momento (al terminar la primera
+  serie en una máquina nueva: "¿sacás foto para guardar tu progreso en esta
+  máquina?"), en vez de un botón que nadie entiende. Reconocer la máquina
+  por IA = futuro.
+- **Ruedas de peso/reps:** tocar un número vecino debería seleccionarlo (hoy
+  sólo se desliza; tocar el centrado lo hace editable — ReelPicker.jsx).
+- Sigue sin respuesta: después de entrenar fuera del plan, ¿la semana sigue
+  (A, recomendado) o se corre (B)?
+
+---
+
 ## SESIÓN 2026-10-12 — borrar una serie ya no te deja sin terminar + plan del núcleo de IA
 
 Bug de Enzo en el gimnasio: "eliminé una serie y el ejercicio se cerró y
