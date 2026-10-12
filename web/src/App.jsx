@@ -63,6 +63,7 @@ import Calentamiento from './components/sheets/Calentamiento.jsx';
 import ExOpciones from './components/sheets/ExOpciones.jsx';
 import AvisoTurnos from './components/sheets/AvisoTurnos.jsx';
 import TuSemana from './components/sheets/TuSemana.jsx';
+import OtraCosa from './components/sheets/OtraCosa.jsx';
 import { abrirAvisoTurnos } from './lib/rutina-logic.js';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
@@ -145,6 +146,7 @@ function SheetContent({ sheet }) {
     case 'salir-prueba': return <SalirPrueba {...sheet.props} />;
     case 'aviso-turnos': return <AvisoTurnos {...sheet.props} />;
     case 'tu-semana': return <TuSemana {...sheet.props} />;
+    case 'otra-cosa': return <OtraCosa {...sheet.props} />;
     default: return null;
   }
 }

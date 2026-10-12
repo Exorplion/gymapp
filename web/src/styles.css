@@ -2897,6 +2897,18 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    y deja volver a la lista de turnos (Hoy.jsx, RestHero). */
 .hoy-elegido{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);margin:0 2px var(--s2);font-size:var(--t-micro);color:var(--text-2)}
 .hoy-elegido .linkcard{color:var(--accent);font-weight:600;min-height:40px;padding:0 var(--s1)}
+/* "Hoy hago otra cosa" (Fase 3): el renglón discreto debajo del plan, la
+   marca en el historial y la tarjeta vacía de una sesión libre. */
+.hoy-otra{display:flex;align-items:center;justify-content:center;gap:var(--s1);width:100%;min-height:44px;margin:var(--s2) 0 0;color:var(--text-2);font-size:var(--t-sm);font-weight:600}
+.hoy-otra:active{color:var(--accent)}
+.hoy-elegido b{color:var(--text);font-weight:600}
+.sess-fuera{display:block;font-size:var(--t-micro);font-weight:600;color:var(--warn)}
+.otra-libre{display:flex;flex-direction:column;gap:var(--s2);padding:var(--s3);margin-top:var(--s2);border-radius:var(--r-md);background:var(--surface-2);border:1px solid rgba(var(--accent-rgb),.35)}
+.otra-libre label{font-size:var(--t-sm);color:var(--text-2)}
+.otra-libre input{width:100%;min-width:0;height:46px;padding:0 var(--s3);border-radius:var(--r-md);background:var(--sup-control-bg);border:1px solid var(--sup-control-borde);color:var(--text);font:inherit;font-size:var(--t-body)}
+.otra-libre .btn{margin:0}
+.otra-nota{margin:0 0 var(--s3);font-size:var(--t-sm);line-height:1.5;color:var(--text-2)}
+.otra-nota b{color:var(--text)}
 /* ---- Plan de hoy, pasada estética (2026-09-26) ----
    Enzo: "Plan de hoy suena harto", los nombres de los ejercicios "débiles,
    neutros", las burbujas de orden desalineadas. Se toma el lenguaje del

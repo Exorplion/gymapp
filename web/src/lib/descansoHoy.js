@@ -70,3 +70,18 @@ export function opcionesDescanso({ routine, seqIndex, sessions, hoy }) {
     opciones,
   };
 }
+
+/** "Hoy hago otra cosa" (turnos universales, Fase 3): lo mismo que en un
+    descanso, pero en un día de ENTRENAMIENTO no aparece el turno que tocaba
+    (ya está en pantalla) y ninguno es "el recomendado": salirse del plan es
+    tu decisión. En un descanso devuelve exactamente opcionesDescanso. */
+export function opcionesDelDia(args) {
+  const o = opcionesDescanso(args);
+  const p = args.routine[args.seqIndex];
+  if (p?.type !== 'workout') return o;
+  const k = claveTurno(p);
+  const opciones = o.opciones
+    .filter(op => claveTurno(args.routine[op.index]) !== k)
+    .map(op => ({ ...op, recomendado: false, reciente: op.dias !== null && op.dias <= 1 }));
+  return { ...o, recomendado: null, despues: null, opciones };
+}

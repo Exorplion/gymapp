@@ -27,6 +27,7 @@
 // reutilice el nodo DOM de una fila borrada para la fila siguiente (lo que
 // dejaría un <input> no controlado mostrando el valor tecleado de OTRO
 // ejercicio). Se genera una vez, al sembrar el estado inicial.
+import { avanzarPuntero } from '../../lib/puntero.js';
 import { useEffect, useRef, useState } from 'react';
 import { S, bump, saveCfg, wStep, closeSheet } from '../../lib/state.js';
 import { dstr, uid, round1, vibrate } from '../../lib/format.js';
@@ -112,9 +113,7 @@ export default function VoiceLog({ items: initialItems, duration: initialDuratio
     // Mismo avance de puntero que completeSession() (session.js): un
     // registro por voz cierra el turno pendiente igual que cualquier otra
     // sesión, así la racha y el "qué sigue" no se desincronizan.
-    const finishedAt = S.routine.findIndex(s => s.id === slot?.id);
-    S.cfg.seqIndex = finishedAt >= 0 ? (finishedAt + 1) % Math.max(1, S.routine.length) : S.cfg.seqIndex;
-    S.cfg.seqIndexDate = dstr();
+    avanzarPuntero(S.cfg, S.routine.length, S.routine.findIndex(s => s.id === slot?.id), dstr());
     await saveCfg();
     const n = entries.reduce((a, e) => a + e.sets.length, 0);
     closeSheet();

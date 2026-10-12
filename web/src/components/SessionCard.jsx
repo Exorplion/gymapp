@@ -47,6 +47,10 @@ export default function SessionCard({ sess }) {
             ? 'Anotada a mano · sin series registradas'
             : `${nsets} ${nsets === 1 ? 'serie' : 'series'} · ${fmtKg(vol)} de volumen`}
         </span>
+        {/* Fuera del plan (Fase 3): qué tocaba ese día, si tocaba algo. */}
+        {sess.fueraDePlan && (
+          <span className="sess-fuera">Fuera del plan{sess.reemplaza?.nombre ? ` · en vez de ${sess.reemplaza.nombre}` : ''}</span>
+        )}
       </span>
     </button>
   );
