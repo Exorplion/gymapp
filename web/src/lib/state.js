@@ -1,5 +1,6 @@
 import { createContext, useContext, useSyncExternalStore } from 'react';
 import { idb } from './db.js';
+import { reconciliarTurnos } from './turnos.js';
 import { dstr, fmtNum, round1, kg2lb, lb2kg, KG2LB, vibrate } from './format.js';
 
 // S sigue siendo el mismo objeto mutable de la app original: todo el código
@@ -158,12 +159,18 @@ export async function loadAll() {
   S.sessions = ss.sort((a, b) => b.start - a.start);
   S.meals = ms; S.foods = fs;
   S.body = bd.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  let turnosGuardados, hayCrudo = false;
   st.forEach(kv => {
     if (kv.key === 'cfg') S.cfg = { ...S.cfg, ...kv.value, goals: { ...S.cfg.goals, ...(kv.value.goals || {}) }, profile: { ...S.cfg.profile, ...(kv.value.profile || {}) } };
     if (kv.key === 'draft') S.draft = kv.value;
     if (kv.key === 'lib') S.lib = kv.value || [];
     if (kv.key === 'gyms') S.gyms = kv.value || [];
+    if (kv.key === 'turnos') turnosGuardados = kv.value;
+    if (kv.key === 'rutinaAntesDeTurnos') hayCrudo = true;
   });
+  // Turnos universales: un nombre = un turno. Antes de resolveAutoRest (que
+  // escribe cfg) y sin tirar nunca: si falla, la app abre con lo de antes.
+  await reconciliarTurnos(S, { guardados: turnosGuardados, hayCrudo });
   S.ready = true;
   await resolveAutoRest();
   // TDEE adaptativo continuo (Plan Fierro · Fase 3): se recalcula una vez

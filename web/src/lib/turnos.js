@@ -261,3 +261,86 @@ export function filaDe(slot) {
 
 /** El nombre de la rutina de respaldo en "Mis rutinas". */
 export const nombreRespaldo = hoy => `Respaldo antes de unificar turnos (${fmtD(hoy)})`;
+
+/* ------------------------------------------------------- reconciliación */
+
+/**
+ * Corre en cada arranque (loadAll, antes de resolveAutoRest) y no hace nada
+ * si todo está en orden. Con el mismo código cubre la primera migración, un
+ * backup viejo importado (filas sin turnoId) y una fila editada por una
+ * versión vieja de la app (firma que no coincide). Spec §2.
+ *
+ * NUNCA tira: si algo falla, la app abre con la rutina de antes, en el modo
+ * viejo (S.turnos = null), y se reintenta en el próximo arranque — como el
+ * try/catch del TDEE en loadAll. Devuelve qué pasó, para los tests y la
+ * consola: 'al-dia' | 'migrado' | 'postergado' | 'fallo'.
+ *
+ * @param st       el estado (S): lee routine (filas crudas recién leídas),
+ *                 draft, lib y cfg; escribe turnos, routine, lib y cfg.
+ * @param guardados el valor de settings.turnos (undefined si no existe).
+ * @param hayCrudo  ¿ya existe settings.rutinaAntesDeTurnos? (sólo se guarda
+ *                 la primera vez).
+ */
+export async function reconciliarTurnos(st, { guardados, hayCrudo = false, hoy = dstr() } = {}) {
+  st.turnosSinVincular = [];
+  const crudas = st.routine;
+  try {
+    const plan = planReconciliacion({ filas: crudas, guardados, hoy });
+    if (!plan) {
+      st.turnos = Array.isArray(guardados) ? guardados : [];
+      hidratar(st, hoy);
+      return 'al-dia';
+    }
+
+    /* Con un borrador abierto no se migra (paso 0 de la spec): si estás
+       entrenando la SEGUNDA aparición de Posterior y gana la primera, los
+       ids de ejercicio de tu sesión dejan de existir en la rutina y
+       sessionExs/findEx no encuentran lo que estás anotando. Se vincula lo
+       que ya estaba en orden, y lo demás queda plano hasta el próximo
+       arranque. Sin turnos guardados (primera vez), modo viejo entero. */
+    if (st.draft) {
+      if (Array.isArray(guardados)) {
+        st.turnos = guardados;
+        st.turnosSinVincular = [...filasInconsistentes(crudas, guardados)];
+        hidratar(st, hoy);
+      } else {
+        st.turnos = null;
+      }
+      return 'postergado';
+    }
+
+    // Sólo si alguna copia descartada era distinta: un respaldo igual a la
+    // rutina sería ruido.
+    const respaldo = plan.distintas.length
+      ? { id: uid(), name: nombreRespaldo(hoy), days: snapshotDeFilas(crudas), savedAt: hoy }
+      : null;
+    const lib = respaldo ? [respaldo, ...(st.lib || [])] : st.lib;
+    const cfg = {
+      ...st.cfg,
+      turnosMigrados: hoy,
+      ...(respaldo ? { avisoTurnos: { fecha: hoy, grupos: plan.distintas, respaldo: respaldo.name } } : {}),
+    };
+
+    // Todo o nada: si esto aborta, en disco y en memoria queda lo de antes.
+    await idb.tx(['routine', 'settings'], ({ routine, settings }) => {
+      if (!hayCrudo) settings.put({ key: 'rutinaAntesDeTurnos', value: { fecha: hoy, filas: crudas } });
+      plan.filas.forEach(f => routine.put(f));
+      settings.put({ key: 'turnos', value: plan.turnos });
+      if (respaldo) settings.put({ key: 'lib', value: lib });
+      settings.put({ key: 'cfg', value: cfg });
+    });
+
+    st.turnos = plan.turnos;
+    st.routine = plan.filas;
+    st.lib = lib;
+    st.cfg = cfg;
+    hidratar(st, hoy);
+    return 'migrado';
+  } catch (e) {
+    console.error('[FIERRO] no se pudieron unificar los turnos; la app abre con la rutina de antes:', e);
+    st.turnos = null;
+    st.turnosSinVincular = [];
+    st.routine = crudas;
+    return 'fallo';
+  }
+}
