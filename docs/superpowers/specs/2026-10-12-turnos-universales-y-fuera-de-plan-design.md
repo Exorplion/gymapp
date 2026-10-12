@@ -309,7 +309,7 @@ como siempre). La pestaña Entreno separa dos cosas:
    `hasOpenSession`, `:480`). Los descansos son paradas **explícitas**: lo que
    armás es lo que queda, al revés de `applyWorkoutOrder`. `pideDescanso`
    puede quedar como un botón "Acomodar descansos solo", de una vez y con
-   deshacer. **Pregunta abierta 1.**
+   deshacer. **Decidido: los pone él** (ver Decisiones).
 
 **El puntero al editar la semana.** Antes de editar se anota el `id` del slot
 pendiente; después, `seqIndex` pasa al índice nuevo de ese slot (si se sacó,
@@ -511,7 +511,7 @@ que falta. El volumen se mide en series por zona (`seriesPorZona`), y la
   que cubre la fibra que falta, después el de más series planeadas. Si la
   elegida no pasa la recuperación se prueba la otra; si ninguna pasa, la zona
   no recibe nada hoy.
-- **Topes** (números propuestos; pregunta abierta 3): **+4 series** extra por
+- **Topes** (decididos, ver Decisiones): **+4 series** extra por
   sesión en total; **+2** por ejercicio existente; **1** ejercicio traído por
   sesión, con `min(sus series, la falta, 3)`; nunca más que la falta de la
   zona; nunca el grupo por encima de su MRV semanal (`VOLUME_BANDS`,
@@ -696,15 +696,16 @@ ofrecen para fijar.
 - Convertir un borrador ya empezado en "otra cosa"; una sesión libre
   retroactiva; el enfoque C; las maquetas (van en un lienzo aparte).
 
-## Preguntas abiertas para Enzo
+## Decisiones de Enzo (2026-10-12)
 
-1. **Descansos en "Tu semana":** ¿los ponés vos donde quieras (recomendado:
-   lo que armás es lo que queda, más un botón "acomodar descansos solo"), o
-   se siguen acomodando solos como hoy? Hoy mover un turno te convierte
-   A·P·R·A·P·R·R en A·R·P·R·A·R·P.
-2. **En un descanso, entrenar "el que sigue":** ¿adelanta la semana como hoy
-   (el jueves pasa a ser lo del viernes), o cuenta como fuera del plan y la
-   semana no se mueve?
-3. **Topes de la compensación:** +4 series por sesión, +2 por ejercicio, un
-   ejercicio traído por sesión, y avisar sólo si a una zona le faltan 3
-   series o más. ¿Te parecen bien, o preferís más o menos?
+Respondió "hacelo según tus recomendaciones":
+
+1. **Descansos en "Tu semana": los pone él.** Lo que arma es lo que queda;
+   "Acomodar descansos solo" es un botón opcional, de una vez y con deshacer.
+2. **En un descanso, entrenar "el que sigue" adelanta la semana** (como hoy:
+   es adelantar el plan, no salirse de él). Cualquier otro turno o una sesión
+   libre en un descanso cuenta como fuera del plan y no mueve el puntero
+   (tabla de la sección 5, sin cambios).
+3. **Topes de la compensación, como están propuestos:** +4 series por sesión,
+   +2 por ejercicio, un ejercicio traído por sesión, y sólo si a una zona le
+   faltan 3 series o más.
