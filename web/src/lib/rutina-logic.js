@@ -13,6 +13,7 @@ import { EXCATALOG, catOf, muscleVolume, porBloques } from './muscle.js';
 import { VOLUME_BANDS } from './charts.js';
 import { exKey } from './equip.js';
 import { toast } from './toast.js';
+import { hidratar, esVinculado, turnoVinculado, filaDe } from './turnos.js';
 
 /* ================= RUTINA ================= */
 /* insights derivados del historial de sesiones: sin esquema nuevo, se calcula
@@ -421,12 +422,82 @@ export function ensureSlot(index) {
   }
   return S.routine[index];
 }
-export async function persistSlot(index) { await idb.put('routine', S.routine[index]); }
+/* ---------- guardar (turnos universales, 2026-10-12) ----------
+   Un turno se guarda ENTERO: el registro en settings.turnos y todas las
+   filas de `routine` que lo nombran, con su copia y su firma, en UNA
+   transacción (lib/turnos.js explica por qué cada fila lleva la copia). */
+
+/** Guarda el turno `turnoId` y todas las filas VINCULADAS a él. Una fila
+    plana con el mismo turnoId (editada por otra versión, reconciliación
+    postergada) no se toca: pisarla sería borrar esa edición. */
+export async function persistTurno(turnoId) {
+  if (!Array.isArray(S.turnos)) return;
+  const turnos = S.turnos;
+  const filas = S.routine.filter(s => esVinculado(s) && s.turnoId === turnoId).map(filaDe);
+  await idb.tx(['routine', 'settings'], ({ routine, settings }) => {
+    settings.put({ key: 'turnos', value: turnos });
+    filas.forEach(f => routine.put(f));
+  });
+}
+
+/** Compat: los llamadores de siempre guardan "el slot `index`". Si es de un
+    turno, se guarda el turno entero (y con él las otras apariciones); si no
+    (descanso, modo viejo, fila postergada), la fila sola, como antes. */
+export async function persistSlot(index) {
+  const slot = S.routine[index];
+  if (!slot) return;
+  if (slot.type === 'workout' && !esVinculado(slot)) hidratar(S);   // recién creado → su turno
+  if (esVinculado(slot)) return persistTurno(slot.turnoId);
+  await idb.put('routine', slot);
+}
 export function slotIsWorkout(index) { return S.routine[index]?.type === 'workout'; }
 
-async function persistAll() {
-  await idb.clear('routine');
-  await Promise.all(S.routine.map(s => idb.put('routine', s)));
+/** Reescribe la secuencia entera y los turnos en una sola transacción. Antes
+    era clear() y después N put en transacciones separadas: si la app moría
+    en el medio, la rutina quedaba vacía. */
+export async function persistAll() {
+  hidratar(S);
+  const conTurnos = Array.isArray(S.turnos);
+  const turnos = S.turnos;
+  const filas = S.routine.map(filaDe);
+  await idb.tx(conTurnos ? ['routine', 'settings'] : ['routine'], st => {
+    st.routine.clear();
+    filas.forEach(f => st.routine.put(f));
+    if (conTurnos) st.settings.put({ key: 'turnos', value: turnos });
+  });
+}
+
+/** Un índice de S.routine por turno (la primera aparición), más cada slot
+    suelto. Lo que MUTA ejercicios recorre esto y no S.routine: con
+    ejercicios compartidos, recorrer slots toca el mismo objeto dos veces
+    (la descarga cortaba 4 → 2 → 1). */
+export function indicesPorTurno() {
+  const vistos = new Set();
+  const out = [];
+  S.routine.forEach((slot, i) => {
+    const k = esVinculado(slot) ? `t:${slot.turnoId}` : `s:${slot.id}`;
+    if (vistos.has(k)) return;
+    vistos.add(k);
+    out.push(i);
+  });
+  return out;
+}
+
+/** El turno de una referencia: índice de S.routine, id de slot o id de
+    turno. null si no tiene (descanso, modo viejo) o no existe. */
+export function turnoDe(ref) {
+  if (ref == null) return null;
+  const slot = typeof ref === 'number' ? S.routine[ref] : S.routine.find(s => s.id === ref);
+  if (slot) return turnoVinculado(slot) || (S.turnos || []).find(t => t.id === slot.turnoId) || null;
+  return (S.turnos || []).find(t => t.id === ref) || null;
+}
+
+/** El turno de una sesión: por su `turnoId` (sesiones nuevas) o por su
+    slot (las de antes de los turnos). null si ya no existe. */
+export function turnoDeSesion(s) {
+  if (!s) return null;
+  if (s.turnoId) return (S.turnos || []).find(t => t.id === s.turnoId) || null;
+  return s.slotId ? turnoDe(s.slotId) : null;
 }
 
 function reindex() { S.routine.forEach((s, i) => { s.order = i; }); }
