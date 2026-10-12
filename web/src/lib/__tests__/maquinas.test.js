@@ -12,7 +12,11 @@ vi.mock('../db.js', () => ({
 }));
 vi.mock('../toast.js', () => ({ toast: vi.fn() }));
 vi.mock('../photo.js', () => ({ shrinkImageBlob: vi.fn(async f => f) }));
-vi.mock('../rutina-logic.js', () => ({ persistSlot: vi.fn() }));
+// indicesPorTurno (turnos universales): acá cada slot es su propio turno.
+vi.mock('../rutina-logic.js', async () => {
+  const { S } = await import('../state.js');
+  return { persistSlot: vi.fn(), indicesPorTurno: vi.fn(() => S.routine.map((_, i) => i)) };
+});
 
 const { S } = await import('../state.js');
 const { exKey } = await import('../equip.js');
