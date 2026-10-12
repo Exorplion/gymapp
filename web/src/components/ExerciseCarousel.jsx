@@ -33,6 +33,7 @@ import { previaEjercicio, metaPartes, cambioTexto, columnaHoy } from '../lib/pre
 import PreviaEjercicio, { Sparkline } from './PreviaEjercicio.jsx';
 import { sideImbalance } from '../lib/symmetry.js';
 import { T } from '../lib/rest.js';
+import { marcarGuia } from '../lib/guia.js';
 import { jumpToSlide, scrollToSlideEl, slideScrollLeft } from '../lib/carousel.js';
 import { staggerRevealOnce, squashStretch, impactBurst, menosMovimiento, D, EASE_OUT } from '../lib/motion.js';
 import { relatedHistory, equipLabel, sufijoPeso, rotuloPeso, textoDiscos } from '../lib/equip.js';
@@ -585,6 +586,7 @@ function filasDeSeries(done, uni) {
 function TablaSeries({ exId, done, uni, unidad }) {
   const filas = filasDeSeries(done, uni);
   function borrar(f, n) {
+    marcarGuia('tabla');
     openSheet('confirm', {
       title: `¿Borrar la serie ${n}?`,
       body: uni ? 'Se borran los dos lados de esa serie.' : 'Se borra lo que anotaste en esa serie.',
@@ -595,7 +597,7 @@ function TablaSeries({ exId, done, uni, unidad }) {
   /* Corregir no borra: la serie se hizo, el número estaba mal. Toda la fila
      es tocable (blanco grande con el pulso a 150); el lápiz es la entrada
      visible y la del teclado. */
-  const corregir = (f, n) => openSheet('editar-serie', { exId, idxs: f.idx, n });
+  const corregir = (f, n) => { marcarGuia('tabla'); openSheet('editar-serie', { exId, idxs: f.idx, n }); };
   return (
     <table className="ex-tabla">
       <thead>
@@ -824,8 +826,18 @@ function ExerciseSlide({ m, wd, started }) {
   }
   // La rueda (gesto, rueda fina o edición manual — ver ReelPicker.jsx)
   // entrega siempre un valor absoluto en kg.
-  function setW(newW) { v.w = Math.max(0, round1(newW)); syncDependents(); }
-  function setR(newR) { v.r = Math.max(1, Math.round(newR)); syncDependents(); }
+  /* Mover la rueda es haber entendido la rueda: su aviso de la guía no
+     vuelve (lib/guia.js). Sólo si el número cambió de verdad. */
+  function setW(newW) {
+    const w = Math.max(0, round1(newW));
+    if (w !== v.w) marcarGuia('rueda');
+    v.w = w; syncDependents();
+  }
+  function setR(newR) {
+    const r = Math.max(1, Math.round(newR));
+    if (r !== v.r) marcarGuia('rueda');
+    v.r = r; syncDependents();
+  }
 
   /* Tampoco se despliega debajo del descanso a pantalla completa: al cerrar
      la última serie, el siguiente se abre en el mismo toque que abre el
@@ -897,7 +909,7 @@ function ExerciseSlide({ m, wd, started }) {
                 type="button"
                 className="ex-opts"
                 aria-label={`Opciones de ${ex.name}`}
-                onClick={() => openSheet('ex-opciones', { exId: ex.id, wd })}
+                onClick={() => { marcarGuia('dots'); openSheet('ex-opciones', { exId: ex.id, wd }); }}
               >
                 <Dots />
               </button>
@@ -1136,6 +1148,7 @@ function ExerciseSlide({ m, wd, started }) {
                   // arranca saveSet, no hace falta otro).
                   if (rampaCompleta) marcarCalentado(ex, false);
                   saveSet(ex.id);
+                  marcarGuia('btn');
                 }}
               >
                 <span className="btn-serie-ok" aria-hidden="true"><Check size={22} /></span>
