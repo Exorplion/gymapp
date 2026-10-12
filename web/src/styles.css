@@ -2536,6 +2536,17 @@ nav.tabbar{container-type:inline-size}
 .rir-seg small{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2);}
 .rir-seg button.on{background:var(--accent-grad);color:var(--on-accent)}
 .rir-seg button.on small{color:var(--on-accent)}
+/* La foto de la máquina (OfertaFoto.jsx): misma caja y mismo pliegue que
+   la pregunta del RIR, en su lugar y después de ella. */
+.rfs-foto-caja{width:100%;display:grid;grid-template-rows:1fr;grid-template-columns:minmax(0,1fr);margin-top:-22px;
+  transition:grid-template-rows var(--d3) var(--ease-out),opacity var(--d2) var(--ease-out)}
+.rfs-foto-caja.cerrada{grid-template-rows:0fr;opacity:0}
+.rfs-foto-caja>.rfs-foto{min-height:0;overflow:clip;overflow-clip-margin:var(--s2);text-align:left;
+  animation:entra var(--d3) var(--ease-out) var(--d1) backwards}
+.rfs-foto-t{display:flex;align-items:center;gap:var(--s2);margin-top:22px;font-family:var(--font-cond);font-weight:700;font-size:var(--t-lg);color:var(--text)}
+.rfs-foto-t svg{color:var(--accent);flex:none}
+.rfs-foto-s{margin:var(--s1) 0 var(--s3);font-size:var(--t-sm);line-height:1.45;color:var(--text-2)}
+.rfs-foto .dlg-fila .btn{flex:1}
 .rfs-btns{display:flex;gap:12px;width:100%}
 .rfs-btns .btn{flex:1}
 /* Al borde derecho de la columna (el padding de .rfs-inner), alineado con
