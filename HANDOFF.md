@@ -4,6 +4,68 @@
 
 ---
 
+## SESIÓN 2026-10-12 (5) — guía de la sesión en vivo (globos)
+
+Enzo pidió indicaciones para quien empieza y aprobó la opción B "Globo" de
+`docs/referencias-guia-sesion.html` (ahora commiteada). Rama
+`feat/guia-globos`, **1296 tests** (+29 en `lib/__tests__/guia.test.js`).
+Sin push ni PR.
+
+- **Lógica** (`lib/guia.js`): `pistaQueToca(ctx, visto)` decide UN aviso por
+  vez en orden btn → rueda → rir → tabla → dots. Ninguno con una hoja
+  abierta; con el descanso a pantalla completa sólo el del RIR (sonando,
+  ninguno). La rueda recién con el del botón ya visto; el ⋯ con los otros
+  cuatro vistos o en el tercer ejercicio con series. Guardado en
+  `S.cfg.guia = { visto: {…} }`. `iniciarGuia()` (App.jsx, tras loadAll)
+  decide UNA vez: sin `cfg.guia` y con sesiones guardadas = todo visto
+  (quien ya usa la app no los ve). `ubicarGlobo()` pone el globo arriba o
+  abajo del control sin taparlo ni salirse (16 px al borde, flecha al centro).
+- **Pintado** (`components/GuiaSesion.jsx`, montado en App junto a
+  RestTimer, fuera de las pantallas): después de cada bump busca el control
+  con querySelector (sin layout), espera D.momento + D.panel a que la
+  tarjeta se acomode, mide UNA vez (el primer aviso de un ResizeObserver
+  sobre la tarjeta) y pinta en un portal a body (absoluto: scrollea solo).
+  Se esconde mientras el carrusel se desliza y se vuelve a medir en
+  scrollend; también con resize y con cada cambio de T.state. El del RIR se
+  pinta adentro de `.rfs-inner`. Estilos: `.guia-globo`/`.guia-anillo` en
+  styles.css; el anillo es EL anillo que late (`@keyframes anillo`, mismo
+  selector compartido y su regla de movimiento reducido); el globo entra con
+  `pop` + `--spring`. z-index 35: debajo del encabezado, la barra del
+  descanso, las hojas y el descanso.
+- **"Ya lo usó"** = `marcarGuia(id)` (no-op si ya estaba): botón de la serie
+  (ExerciseCarousel, después de saveSet), rueda (setW/setR sólo si el número
+  cambió), RIR (SegRir en RestTimer), tabla (al TOCAR una fila, el lápiz o la
+  ✕ — no recién al guardar la corrección), ⋯ (al abrir la hoja). La ✕ del
+  globo también.
+- **Decisión:** la rueda y la tabla tienen lado fijo (`SOLO_ESE`): el de la
+  tabla abajo, porque arriba tapa el botón de la serie. A 390 px con la barra
+  del descanso abajo no entra, así que **espera** a que el descanso termine
+  (o se salte). A 430 px entra con la barra.
+- **⋯ (ExOpciones.jsx)**: cada fila tiene su subtítulo. Una serie más: "Sólo
+  por hoy; la rutina no cambia." (addExtraSet vive en el borrador). Cambiar
+  por otro: "Sólo para hoy. Al terminar podés dejarlo fijo en la rutina." —
+  la misma frase que "Agregar ejercicio" en Hoy; ojo, fijarlo SUMA el nuevo a
+  la rutina, no saca el original (pinAddedToRoutine). Omitir: "Hoy no se
+  hace. Podés restablecerlo desde su tarjeta."
+- **Ajustes**: sección "Guía de la sesión" con la fila "Ver la guía otra
+  vez" (`.group`/`.grouprow` + chevron) → `reiniciarGuia()`; vale también
+  para la sesión en curso.
+- **Verificado en Chrome** (build de producción, seed, 390×844 y 430×932):
+  perfil nuevo → `guia: {visto:{}}`; borrar `cfg.guia` con 19 sesiones y
+  recargar → todo visto. Los cinco globos medidos con getBoundingClientRect:
+  dentro de la pantalla, punta de la flecha al centro del control (±1 px),
+  12 px de hueco, sin tapar el control. El del RIR no tapa el reloj (sólo el
+  borde inferior del anillo). Usar el control pasa al siguiente (serie → RIR
+  → rueda → tabla → ⋯); la ✕ también; con una hoja abierta y en otra pestaña
+  no hay globo; deslizar el carrusel lo esconde y al volver reaparece en su
+  lugar; el ⋯ aparece en el tercer ejercicio con la tabla sin ver; la tabla
+  espera con la barra del descanso a 390 y sale al saltarlo. Sin errores en
+  consola. **No verificado:** movimiento reducido en navegador (sólo CSS),
+  tocar en un teléfono real, ni la rueda movida a dedo (se probó con el
+  click de un diente vecino).
+
+---
+
 ## SESIÓN 2026-10-12 (4) — la foto de la máquina se ofrece en el descanso
 
 Enzo: "el usuario no va a entender para qué es la foto de la máquina… al

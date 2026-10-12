@@ -11,6 +11,7 @@ import { currentStreak } from './lib/streak.js';
 import { sessionExs, calentamientoPendiente } from './lib/session.js';
 import { mostrarSesion, ocultarSesion } from './lib/ongoing.js';
 import { acentoGuardado, aplicarAcento } from './lib/theme.js';
+import { iniciarGuia } from './lib/guia.js';
 import { accionDeArranque, ejecutarAccion } from './lib/acciones.js';
 import { useAtras } from './lib/useAtras.js';
 import { QUEDARSE, volverEnHoja } from './lib/atras.js';
@@ -19,6 +20,7 @@ import TabBar from './components/TabBar.jsx';
 import Sheet from './components/Sheet.jsx';
 import Toast from './components/Toast.jsx';
 import RestTimer from './components/RestTimer.jsx';
+import GuiaSesion from './components/GuiaSesion.jsx';
 import SessionComplete from './components/SessionComplete.jsx';
 import Rutina from './components/screens/Rutina.jsx';
 import Inicio from './components/screens/Inicio.jsx';
@@ -437,6 +439,9 @@ export default function App() {
     elegirBase();
     idbOpenOnce().then(loadAll).then(() => {
       applyComputedGoals();
+      // La guía de la sesión se decide una sola vez: quien ya tiene
+      // sesiones guardadas cuando llega no la ve (lib/guia.js).
+      iniciarGuia();
       // El color se aplica ACÁ, apenas se conoce S.cfg, y no cuando se abre
       // Ajustes: si no, la app arrancaría siempre con el azul de fábrica y
       // recién cambiaría al tuyo si entrabas a Ajustes.
@@ -676,6 +681,7 @@ export default function App() {
         <SheetContent sheet={store.sheet} />
       </Sheet>
       <RestTimer />
+      <GuiaSesion />
       <SessionComplete />
     </>
   );

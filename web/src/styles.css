@@ -3758,22 +3758,58 @@ main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
    desfasados medio ciclo, crecen y se apagan por fuera. Sólo transform y
    opacity del pseudo-elemento; lo activo queda a opacidad 1 y quieto. Cada
    uso dice cuánto crece (--anillo-x/-y), de qué color y desde dónde. */
-:where(.ini-cta-seguir,.ex-paso.cur i){--anillo-color:var(--accent);--anillo-inset:0px}
+:where(.ini-cta-seguir,.ex-paso.cur i,.guia-anillo){--anillo-color:var(--accent);--anillo-inset:0px}
+.guia-anillo::before,.guia-anillo::after,
 .ini-cta-seguir::before,.ini-cta-seguir::after,
 .ex-paso.cur i::before,.ex-paso.cur i::after{
   content:"";position:absolute;inset:var(--anillo-inset);border-radius:inherit;pointer-events:none;
   border:2px solid var(--anillo-color);opacity:0;
   animation:anillo var(--ciclo-activo) var(--ease-out) infinite;
 }
-.ini-cta-seguir::after,.ex-paso.cur i::after{animation-delay:calc(var(--ciclo-activo) / 2)}
+.guia-anillo::after,.ini-cta-seguir::after,.ex-paso.cur i::after{animation-delay:calc(var(--ciclo-activo) / 2)}
 @keyframes anillo{0%{transform:scale(1);opacity:.7}100%{transform:scale(var(--anillo-x),var(--anillo-y));opacity:0}}
 /* Movimiento reducido: sin latido, un anillo quieto a mitad de camino que
    igual marca "en curso". */
 @media (prefers-reduced-motion:reduce){
-  .ini-cta-seguir::before,.ex-paso.cur i::before{animation:none;opacity:.45;
+  .guia-anillo::before,.ini-cta-seguir::before,.ex-paso.cur i::before{animation:none;opacity:.45;
     transform:scale(calc(1 + (var(--anillo-x) - 1) / 2),calc(1 + (var(--anillo-y) - 1) / 2))}
-  .ini-cta-seguir::after,.ex-paso.cur i::after{display:none}
+  .guia-anillo::after,.ini-cta-seguir::after,.ex-paso.cur i::after{display:none}
 }
+
+/* ---- La guía de la sesión en vivo (GuiaSesion.jsx, 2026-10-12) ----------
+   Opción B "Globo" de docs/referencias-guia-sesion.html: un globito del
+   acento con flecha señala el control y EL anillo de arriba late alrededor.
+   No bloquea ni oscurece nada. Va por encima del contenido pero debajo del
+   encabezado (40), la barra del descanso (45), las hojas (60) y el descanso
+   a pantalla completa (65); el del RIR vive adentro de ese descanso.
+   GuiaSesion.jsx le escribe left/top/width y --flecha (dónde cae la punta). */
+.guia-anillo{position:absolute;z-index:34;pointer-events:none}
+.guia-globo{
+  --flecha:50%;
+  position:absolute;z-index:35;max-width:min(260px,calc(100vw - 2 * var(--pad-x)));
+  padding:var(--s2) var(--s6) var(--s2) var(--s3);border-radius:var(--r-md);
+  background:var(--accent-grad);color:var(--on-accent);box-shadow:var(--accent-glow);
+  font-size:var(--t-sm);font-weight:600;line-height:1.35;text-wrap:pretty;
+  transform-origin:var(--flecha) 0;
+  /* Asoma desde la flecha: el `pop` de siempre con el resorte. */
+  animation:pop var(--d3) var(--spring) backwards;
+}
+.guia-globo.arriba{transform-origin:var(--flecha) 100%}
+/* Antes de ubicarlo se mide su tamaño: invisible y sin animar. */
+.guia-globo.midiendo{left:0;top:0;visibility:hidden;animation:none}
+.guia-globo::after{
+  content:"";position:absolute;left:var(--flecha);width:12px;height:12px;
+  background:var(--accent);border-radius:2px;transform:translateX(-50%) rotate(45deg);
+}
+.guia-globo.abajo::after{top:-5px}
+.guia-globo.arriba::after{bottom:-5px}
+.guia-globo.midiendo::after{display:none}
+/* La ✕: 32 px de área para el pulgar, dentro del relleno derecho del globo. */
+.guia-globo-x{
+  position:absolute;top:0;right:0;width:32px;height:32px;display:grid;place-items:center;
+  color:inherit;opacity:.75;border-radius:var(--r-sm);
+}
+@media (prefers-reduced-motion:reduce){.guia-globo{animation:none}}
 /* Lo que late o barre en la pantalla de atrás se detiene mientras una hoja
    o el descanso la tapan: un loop que nadie ve es trabajo de más en cada
    cuadro (tanda E, "sin loops detrás de hojas"). */

@@ -1,0 +1,239 @@
+<title>Guía de la sesión en vivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:ital,wght@0,700;0,800;1,800&display=swap">
+<style>
+/* Layout: una franja de presentación arriba, tres teléfonos lado a lado (apilados en el teléfono),
+   cada uno con su propio "siguiente momento"; abajo, lo que comparten. Mismo grafito + celeste de FIERRO. */
+:root{
+  --bg:#101113; --surface:#18191c; --surface-2:#202125; --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
+  --text:#f3f4f6; --text-2:#b1b1b9; --text-3:#97979f;
+  --accent:#49cffc; --accent-strong:#12a4d6; --on-accent:#02141b; --flame:#FFC46B; --ok:#3ddc97;
+  --accent-grad:linear-gradient(112deg,var(--accent-strong),var(--accent));
+  --font-cond:'Barlow Condensed','Arial Narrow',sans-serif; --font-body:'Barlow',system-ui,sans-serif;
+  --r:18px; --r-sm:10px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 56px}
+.eyebrow{font-family:var(--font-cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-size:13px}
+h1{font-family:var(--font-cond);font-style:italic;font-weight:800;font-size:clamp(34px,6vw,52px);line-height:1;margin:6px 0 10px;text-wrap:balance}
+.lead{max-width:68ch;color:var(--text-2);margin:0}
+.momentos{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0;padding:0;list-style:none}
+.momentos li{font-size:13px;color:var(--text-2);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+.momentos b{color:var(--text);font-family:var(--font-cond);margin-right:4px}
+
+.opciones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin-top:34px}
+@media (max-width:1000px){.opciones{grid-template-columns:minmax(0,1fr)}}
+.opcion{display:flex;flex-direction:column;align-items:center;gap:14px;min-width:0}
+.opcion header{width:100%;max-width:330px}
+.opcion h2{font-family:var(--font-cond);font-weight:800;font-size:26px;margin:0;display:flex;align-items:baseline;gap:10px}
+.opcion h2 .letra{font-style:italic;color:var(--accent)}
+.opcion .rec{font-family:var(--font-cond);font-size:12px;letter-spacing:.1em;text-transform:uppercase;background:var(--accent-grad);color:var(--on-accent);border-radius:999px;padding:2px 9px;font-weight:700;align-self:center}
+.opcion header p{margin:4px 0 0;color:var(--text-2);font-size:14px}
+
+/* ---------- el teléfono ---------- */
+.phone{position:relative;width:300px;max-width:100%;height:560px;border-radius:38px;border:1px solid var(--line-2);background:var(--bg);overflow:hidden;box-shadow:0 30px 60px -30px rgba(0,0,0,.8)}
+.scr{position:absolute;inset:0;padding:20px 14px 0;display:flex;flex-direction:column;gap:10px}
+.top{display:flex;align-items:center;justify-content:space-between;font-family:var(--font-cond);font-weight:800;font-style:italic;color:var(--accent);letter-spacing:.12em;font-size:18px}
+.top span{font-style:normal;font-weight:700;font-size:13px;color:var(--flame);border:1px solid rgba(255,196,107,.4);border-radius:999px;padding:2px 10px;letter-spacing:0}
+.ses{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 12px;font-size:12px;color:var(--text-2)}
+.ses b{font-family:var(--font-cond);font-size:17px;color:var(--text);display:block}
+.ses i{font-style:normal;font-family:var(--font-cond);font-weight:700;color:var(--ok);border:1px solid rgba(61,220,151,.4);border-radius:10px;padding:4px 10px;letter-spacing:.06em}
+.card{position:relative;background:var(--surface);border:1px solid rgba(73,207,252,.25);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:9px}
+.card-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.card-h b{font-family:var(--font-cond);font-size:21px;line-height:1.05}
+.dots{width:34px;height:34px;border-radius:10px;border:1px solid var(--line-2);display:grid;place-items:center;color:var(--accent);flex:none;font-weight:800;letter-spacing:1px}
+.meta{display:grid;grid-template-columns:repeat(3,1fr);border-block:1px solid var(--line);padding:6px 0}
+.meta small{display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.meta div{font-family:var(--font-cond);font-weight:700;font-size:16px}
+.meta .az{color:var(--accent)}
+.serie{display:flex;justify-content:space-between;align-items:center;font-family:var(--font-cond);font-weight:700;font-size:16px}
+.serie span{font-size:12px;color:var(--accent);border:1px solid rgba(73,207,252,.35);border-radius:999px;padding:2px 9px;font-family:var(--font-body);font-weight:600}
+.ruedas{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rueda{border:1px solid var(--line-2);border-radius:14px;display:flex;justify-content:space-around;align-items:center;height:46px;font-family:var(--font-cond);font-weight:700;color:var(--text-3);font-size:15px}
+.rueda b{color:var(--text);font-size:21px;background:var(--surface-2);border-radius:8px;padding:2px 7px}
+.btn-serie{display:flex;align-items:center;gap:10px;border:1px solid rgba(61,220,151,.45);border-radius:999px;padding:5px 14px 5px 5px;font-family:var(--font-cond);font-weight:800;letter-spacing:.08em;color:var(--ok);font-size:15px}
+.btn-serie i{width:34px;height:34px;border-radius:50%;background:var(--ok);display:grid;place-items:center;color:#06281a;font-style:normal;font-size:16px}
+.btn-serie small{margin-left:auto;color:var(--text-2);font-family:var(--font-body);font-weight:600;letter-spacing:0;font-size:12px}
+.tabla{width:100%;border-collapse:collapse;font-size:12px}
+.tabla td{border-top:1px solid var(--line);padding:4px 0;color:var(--text-2)}
+.tabla td b{font-family:var(--font-cond);font-size:16px;color:var(--text)}
+.tabla .x{text-align:right;color:var(--text-3);letter-spacing:8px}
+
+/* pantalla de descanso */
+.rest{position:absolute;inset:0;background:rgba(16,17,19,.97);display:flex;flex-direction:column;align-items:center;padding:46px 22px 0;gap:14px}
+.rest .lbl{font-family:var(--font-cond);font-weight:700;letter-spacing:.14em;color:var(--accent);font-size:14px}
+.anillo{width:150px;height:150px;border-radius:50%;border:7px solid var(--accent);display:grid;place-items:center;font-family:var(--font-cond);font-weight:800;font-size:44px;box-shadow:0 0 30px -6px rgba(73,207,252,.6)}
+.rir{width:100%}
+.rir p{margin:0 0 6px;font-family:var(--font-cond);font-weight:700;font-size:17px}
+.seg{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--line-2);border-radius:12px;overflow:hidden}
+.seg span{text-align:center;padding:9px 0;font-family:var(--font-cond);font-weight:700;font-size:18px;border-left:1px solid var(--line)}
+.seg span:first-child{border-left:0}
+.rbtns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
+.rbtns span{border:1px solid var(--line-2);border-radius:12px;text-align:center;padding:8px 0;font-family:var(--font-cond);font-weight:700;color:var(--accent)}
+
+/* ---------- A · foco ---------- */
+.foco{position:absolute;border-radius:14px;box-shadow:0 0 0 999px rgba(5,6,8,.78);pointer-events:none;transition:all .45s cubic-bezier(.2,.8,.2,1);z-index:5}
+.foco::after{content:"";position:absolute;inset:-5px;border-radius:inherit;border:2px solid var(--accent);animation:latido 1.6s ease-out infinite}
+.foco-txt{position:absolute;left:16px;right:16px;z-index:6;background:var(--surface-2);border:1px solid var(--line-2);border-radius:16px;padding:12px 14px;transition:top .45s cubic-bezier(.2,.8,.2,1),opacity .3s}
+/* ---------- B · globo ---------- */
+.globo{position:absolute;z-index:6;max-width:220px;background:var(--accent-grad);color:var(--on-accent);border-radius:14px;padding:9px 30px 9px 12px;font-weight:600;font-size:13px;line-height:1.35;box-shadow:0 12px 30px -10px rgba(73,207,252,.55);transform-origin:var(--ox,50%) var(--oy,100%);animation:asoma .4s cubic-bezier(.2,1.4,.4,1) both}
+.globo::after{content:"";position:absolute;left:var(--px,50%);width:12px;height:12px;background:var(--accent);transform:translateX(-50%) rotate(45deg);border-radius:2px}
+.globo.abajo::after{top:-5px}.globo.arriba::after{bottom:-5px}
+.globo .cerrar{position:absolute;top:5px;right:7px;font-weight:800;opacity:.7;font-size:14px;cursor:pointer;background:none;border:0;color:inherit;padding:2px 4px}
+.anillo-toque{position:absolute;z-index:5;border-radius:14px;pointer-events:none;border:2px solid var(--accent);animation:latido 1.6s ease-out infinite}
+/* ---------- C · línea en la tarjeta ---------- */
+.tip{display:flex;gap:9px;align-items:flex-start;background:rgba(73,207,252,.08);border:1px solid rgba(73,207,252,.28);border-radius:12px;padding:8px 10px;font-size:12.5px;line-height:1.4;color:var(--text);animation:baja .35s ease-out both}
+.tip i{font-style:normal;font-family:var(--font-cond);font-weight:800;color:var(--accent);letter-spacing:.08em;font-size:11px;margin-top:1px}
+.tip button{margin-left:auto;background:none;border:0;color:var(--text-3);font-size:14px;cursor:pointer;padding:0 2px}
+
+@keyframes latido{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.12)}}
+@keyframes asoma{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes baja{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.ctrl{display:flex;gap:10px;align-items:center;width:100%;max-width:300px}
+.ctrl button{flex:1;font-family:var(--font-cond);font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:15px;border-radius:14px;padding:11px 0;cursor:pointer;border:1px solid var(--line-2);background:var(--surface);color:var(--accent)}
+.ctrl button.pri{background:var(--accent-grad);color:var(--on-accent);border:0}
+.ctrl button:focus-visible,.globo .cerrar:focus-visible,.tip button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.paso{font-family:var(--font-cond);font-weight:700;color:var(--text-3);font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.pc{width:100%;max-width:330px;display:grid;gap:6px;font-size:13.5px;color:var(--text-2)}
+.pc div{display:grid;grid-template-columns:18px minmax(0,1fr);gap:6px}
+.pc .mas::before{content:"+";color:var(--ok);font-weight:800}
+.pc .menos::before{content:"−";color:var(--flame);font-weight:800}
+
+.comun{margin-top:44px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px}
+.comun h3{font-family:var(--font-cond);font-weight:800;font-size:22px;margin:0 0 8px}
+.comun ul{margin:0;padding-left:18px;color:var(--text-2);display:grid;gap:5px;max-width:80ch}
+.comun b{color:var(--text)}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">FIERRO · sesión en vivo</div>
+  <h1>¿Cómo le explicamos la sesión a alguien nuevo?</h1>
+  <p class="lead">Tres formas de mostrar la misma guía. Cada aviso sale <b>una sola vez</b>, en el momento en que importa, y no vuelve. Tocá “Siguiente” en cada teléfono para recorrer los cinco momentos; en la B y la C también podés cerrar el aviso.</p>
+  <ul class="momentos" aria-label="Los cinco momentos">
+    <li><b>1</b>Primera serie</li><li><b>2</b>La rueda</li><li><b>3</b>El RIR en el descanso</li><li><b>4</b>Corregir una serie</li><li><b>5</b>El menú ⋯</li>
+  </ul>
+
+  <div class="opciones">
+    <section class="opcion" data-opt="A" aria-label="Opción A">
+      <header><h2><span class="letra">A</span> Foco</h2><p>Oscurece todo menos lo que se explica. Hay que tocar “Entendido” para seguir.</p></header>
+      <div class="phone"></div>
+      <div class="ctrl"><button type="button" class="ant">Atrás</button><span class="paso"></span><button type="button" class="pri sig">Siguiente</button></div>
+      <div class="pc"><div class="mas">Imposible no verlo.</div><div class="menos">Te frena: con el pulso a 150 y la máquina esperando, un toque más molesta.</div><div class="menos">Tapa la pantalla justo cuando querés anotar.</div></div>
+    </section>
+
+    <section class="opcion" data-opt="B" aria-label="Opción B">
+      <header><h2><span class="letra">B</span> Globo <span class="rec">Recomendada</span></h2><p>Un globito señala el control y late suave. No bloquea: se va solo cuando usás ese control o tocás la ✕.</p></header>
+      <div class="phone"></div>
+      <div class="ctrl"><button type="button" class="ant">Atrás</button><span class="paso"></span><button type="button" class="pri sig">Siguiente</button></div>
+      <div class="pc"><div class="mas">Señala exactamente qué tocar, sin frenarte.</div><div class="mas">Usar el control ya cuenta como “entendido”.</div><div class="menos">Más chico: si estás apurado, podés no leerlo (pero vuelve a aparecer hasta que lo uses).</div></div>
+    </section>
+
+    <section class="opcion" data-opt="C" aria-label="Opción C">
+      <header><h2><span class="letra">C</span> Línea en la tarjeta</h2><p>Una línea “Tip” dentro de la tarjeta, arriba de todo. No apunta a nada: lo dice con palabras.</p></header>
+      <div class="phone"></div>
+      <div class="ctrl"><button type="button" class="ant">Atrás</button><span class="paso"></span><button type="button" class="pri sig">Siguiente</button></div>
+      <div class="pc"><div class="mas">La más tranquila, nunca tapa nada.</div><div class="menos">No señala: hay que buscar de qué habla.</div><div class="menos">Empuja la tarjeta hacia abajo (lo mismo que hacía el “Primera vez” largo).</div></div>
+    </section>
+  </div>
+
+  <div class="comun">
+    <h3>Igual en las tres</h3>
+    <ul>
+      <li><b>Una vez y en el momento:</b> el aviso de la rueda aparece la primera vez que hay una rueda, el del RIR en el primer descanso. Nada de tour al abrir la app.</li>
+      <li><b>Se van para siempre</b> cuando usás el control o los cerrás. En Ajustes queda “Ver la guía otra vez”.</li>
+      <li><b>El menú ⋯</b> además lleva una línea debajo de cada opción (“Una serie más · sólo por hoy”, “Omitir · no cuenta como hecho”), como ya tiene “Hacer después”.</li>
+      <li><b>Quien ya usa la app</b> (tiene sesiones guardadas) no ve ninguno.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const MOMENTOS = [
+  { t: 'btn',   v: 'card', txt: 'Hacé la serie y tocá acá. El descanso arranca solo.' },
+  { t: 'rueda', v: 'card', txt: 'Deslizá o tocá un número para cambiarlo. Mantené apretado para elegir uno exacto.' },
+  { t: 'rir',   v: 'rest', txt: '¿Cuántas reps más podías hacer? Con eso la app decide si subirte el peso la próxima.' },
+  { t: 'tabla', v: 'card', txt: 'Tocá una serie para corregir el número. La ✕ es para borrarla.' },
+  { t: 'dots',  v: 'card', txt: 'Más opciones: hacer después, una serie más o menos, cambiar de ejercicio.' },
+];
+
+function pantalla(m, opt) {
+  const tip = opt === 'C' && m.v === 'card' ? `<div class="tip"><i>TIP</i><span>${m.txt}</span><button type="button" aria-label="Cerrar tip">✕</button></div>` : '';
+  const card = `
+    <div class="top">FIERRO <span>🔥 27</span></div>
+    <div class="ses"><div><b>Posterior</b>0:18 · 1/7 ejerc.</div><i>TERMINAR</i></div>
+    <div class="card">
+      ${tip}
+      <div class="card-h"><b>Remo neutro agarre cerrado en Polea</b><span class="dots" data-t="dots">•••</span></div>
+      <div class="meta"><div><small>Series</small>3 × 9</div><div><small>RIR</small>2 → fallo</div><div><small>Anterior</small><span class="az">50 kg</span></div></div>
+      <div class="serie">Serie 2 de 3 <span>Después</span></div>
+      <div class="ruedas" data-t="rueda"><div class="rueda">47.5 <b>50</b> 52.5</div><div class="rueda">10 <b>11</b> 12</div></div>
+      <div class="btn-serie" data-t="btn"><i>✓</i>SERIE 2 LISTA<small>50 kg × 11</small></div>
+      <table class="tabla" data-t="tabla"><tr><td>1</td><td><b>50</b> kg</td><td><b>11</b></td><td class="x">✎ ✕</td></tr></table>
+    </div>`;
+  const rest = m.v === 'rest' ? `
+    <div class="rest">
+      <div class="lbl">DESCANSO</div><div class="anillo">2:41</div>
+      ${opt === 'C' ? `<div class="tip" style="width:100%"><i>TIP</i><span>${m.txt}</span><button type="button" aria-label="Cerrar tip">✕</button></div>` : ''}
+      <div class="rir" data-t="rir"><p>¿Cuántas reps te quedaban?</p><div class="seg"><span>0</span><span>1</span><span>2</span><span>3</span><span>4+</span></div></div>
+      <div class="rbtns"><span>−30s</span><span>+30s</span><span>Saltar</span></div>
+    </div>` : '';
+  return `<div class="scr">${card}</div>${rest}`;
+}
+
+function montar(sec) {
+  const opt = sec.dataset.opt, phone = sec.querySelector('.phone');
+  const paso = sec.querySelector('.paso');
+  let i = 0;
+  function pintar() {
+    const m = MOMENTOS[i];
+    phone.innerHTML = pantalla(m, opt);
+    paso.textContent = `${i + 1} de ${MOMENTOS.length}`;
+    sec.querySelector('.ant').disabled = i === 0;
+    sec.querySelector('.sig').textContent = i === MOMENTOS.length - 1 ? 'De nuevo' : 'Siguiente';
+    const target = phone.querySelector(`[data-t="${m.t}"]`);
+    if (!target) return;
+    const pr = phone.getBoundingClientRect(), tr = target.getBoundingClientRect();
+    const r = { x: tr.left - pr.left, y: tr.top - pr.top, w: tr.width, h: tr.height };
+    if (opt === 'A') {
+      const f = document.createElement('div'); f.className = 'foco';
+      Object.assign(f.style, { left: r.x - 6 + 'px', top: r.y - 6 + 'px', width: r.w + 12 + 'px', height: r.h + 12 + 'px' });
+      const t = document.createElement('div'); t.className = 'foco-txt';
+      const abajo = r.y + r.h + 120 < phone.clientHeight;
+      t.style.top = (abajo ? r.y + r.h + 16 : Math.max(12, r.y - 120)) + 'px';
+      t.innerHTML = `<div style="font-size:13.5px;margin-bottom:10px">${m.txt}</div><div class="ctrl" style="max-width:none"><button type="button" class="pri">Entendido</button></div>`;
+      t.querySelector('button').onclick = () => sec.querySelector('.sig').click();
+      phone.append(f, t);
+    } else if (opt === 'B') {
+      const ring = document.createElement('div'); ring.className = 'anillo-toque';
+      Object.assign(ring.style, { left: r.x - 4 + 'px', top: r.y - 4 + 'px', width: r.w + 8 + 'px', height: r.h + 8 + 'px' });
+      const g = document.createElement('div');
+      const abajo = r.y + r.h + 90 < phone.clientHeight;
+      g.className = 'globo ' + (abajo ? 'abajo' : 'arriba');
+      g.innerHTML = `${m.txt}<button type="button" class="cerrar" aria-label="Cerrar aviso">✕</button>`;
+      phone.append(ring, g);
+      const gw = Math.min(220, phone.clientWidth - 24);
+      const cx = r.x + r.w / 2;
+      const left = Math.min(Math.max(12, cx - gw / 2), phone.clientWidth - gw - 12);
+      g.style.width = gw + 'px'; g.style.left = left + 'px';
+      g.style.top = (abajo ? r.y + r.h + 12 : r.y - g.offsetHeight - 12) + 'px';
+      g.style.setProperty('--px', (cx - left) + 'px'); g.style.setProperty('--ox', (cx - left) + 'px'); g.style.setProperty('--oy', abajo ? '0%' : '100%');
+      const quitar = () => { g.remove(); ring.remove(); };
+      g.querySelector('.cerrar').onclick = quitar;
+      target.style.cursor = 'pointer'; target.onclick = quitar;
+    } else {
+      phone.querySelectorAll('.tip button').forEach(b => b.onclick = () => b.closest('.tip').remove());
+    }
+  }
+  sec.querySelector('.sig').onclick = () => { i = (i + 1) % MOMENTOS.length; pintar(); };
+  sec.querySelector('.ant').onclick = () => { if (i > 0) { i--; pintar(); } };
+  pintar();
+  if (document.fonts) document.fonts.ready.then(pintar);
+}
+document.querySelectorAll('.opcion').forEach(montar);
+</script>

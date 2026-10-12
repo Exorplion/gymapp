@@ -52,7 +52,10 @@ export default function ExOpciones({ exId, wd }) {
         </button>
         <button type="button" className="grouprow" onClick={y(() => addExtraSet(ex.id))}>
           <Plus className="opc-ico" />
-          <span className="grouprow-grow"><span className="grouprow-t">Una serie más</span></span>
+          <span className="grouprow-grow">
+            <span className="grouprow-t">Una serie más</span>
+            <span className="grouprow-s">Sólo por hoy; la rutina no cambia.</span>
+          </span>
         </button>
         <button type="button" className="grouprow" onClick={y(() => dropSet(ex.id))}>
           <Minus className="opc-ico" />
@@ -73,7 +76,12 @@ export default function ExOpciones({ exId, wd }) {
         )}
         <button type="button" className="grouprow" onClick={y(() => openSheet('ex-swap', { wd: index, exId: ex.id }))}>
           <Swap className="opc-ico" />
-          <span className="grouprow-grow"><span className="grouprow-t">Cambiar por otro ejercicio</span></span>
+          {/* Lo mismo que "Agregar ejercicio" en Hoy: el reemplazo vive en el
+              borrador y al terminar se ofrece dejarlo fijo (SessionView). */}
+          <span className="grouprow-grow">
+            <span className="grouprow-t">Cambiar por otro ejercicio</span>
+            <span className="grouprow-s">Sólo para hoy. Al terminar podés dejarlo fijo en la rutina.</span>
+          </span>
         </button>
         {/* Las máquinas de este ejercicio en el gym (Maquinas.jsx): foto,
             nombre y su propio historial. Reemplaza a "Foto de la máquina",
@@ -100,7 +108,10 @@ export default function ExOpciones({ exId, wd }) {
       <div className="group">
         <button type="button" className="grouprow opc-peligro" onClick={omitir}>
           <Skip className="opc-ico" />
-          <span className="grouprow-grow"><span className="grouprow-t">Omitir ejercicio</span></span>
+          <span className="grouprow-grow">
+            <span className="grouprow-t">Omitir ejercicio</span>
+            <span className="grouprow-s">Hoy no se hace. Podés restablecerlo desde su tarjeta.</span>
+          </span>
         </button>
       </div>
     </>

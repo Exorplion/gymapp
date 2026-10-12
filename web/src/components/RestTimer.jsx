@@ -34,6 +34,7 @@ import { tramosAnillo, CIERRE } from '../lib/anillo.js';
 import { setRirUltimaSerie, setRirLado } from '../lib/session.js';
 import { RIR_OPTS } from '../lib/rir.js';
 import { useStore } from '../lib/state.js';
+import { marcarGuia } from '../lib/guia.js';
 import { useAtras } from '../lib/useAtras.js';
 import { fmtMMSS } from '../lib/format.js';
 import { ChevronDown } from './Icon.jsx';
@@ -465,7 +466,7 @@ function SegRir({ elegido, etiqueta, onPick }) {
             aria-pressed={on}
             aria-label={n === 0 ? '0, al fallo' : n === 4 ? '4 o más' : String(n)}
             className={on ? 'on' : ''}
-            onClick={e => { e.stopPropagation(); onPick(n); }}
+            onClick={e => { e.stopPropagation(); marcarGuia('rir'); onPick(n); }}
           >
             <b>{n === 4 ? '4+' : n}</b>
             {n === 0 && <small>fallo</small>}

@@ -40,6 +40,7 @@ import { exportJSON, importJSON, wipeAll } from '../../lib/backup.js';
 import { storageEstimate, daysSinceBackup, necesitaBackup } from '../../lib/persist.js';
 import { exportFoodsMD, importFoodsMD } from '../../lib/foodmd.js';
 import { toast } from '../../lib/toast.js';
+import { reiniciarGuia } from '../../lib/guia.js';
 import { PRESETS, acentoDe, acentoGuardado, aplicarAcento, alejarDeEstados, distanciaMatiz, hexAOklch, variablesDe } from '../../lib/theme.js';
 import { m as motion } from 'motion/react';
 import { hojaProps, seccion } from '../../lib/variants.js';
@@ -149,6 +150,13 @@ export default function Settings() {
   function setUnit(u) {
     S.cfg.unit = u; saveCfg();
     bump(); // re-renderiza toda la app: wDisplay/wAlt en Hoy/Rutina/Progreso dependen de S.cfg.unit
+  }
+
+  /* Vuelven todos los avisos de la guía; aparecen solos en la sesión (la
+     que está en curso también), en el momento de cada uno (lib/guia.js). */
+  function verGuia() {
+    reiniciarGuia();
+    toast('Listo: los avisos vuelven en la sesión en vivo');
   }
 
   function stepRest(d) {
@@ -389,6 +397,21 @@ export default function Settings() {
       <motion.section variants={seccion}>
         <h3>Avisos</h3>
         <AvisosAjustes />
+      </motion.section>
+
+      {/* La guía de la sesión en vivo (lib/guia.js): cada aviso sale una vez;
+          esto los vuelve a mostrar, uno por vez, en la próxima sesión. */}
+      <motion.section variants={seccion}>
+        <h3>Guía de la sesión</h3>
+        <div className="group">
+          <button type="button" className="grouprow" onClick={verGuia}>
+            <span className="grouprow-grow">
+              <span className="grouprow-t">Ver la guía otra vez</span>
+              <span className="grouprow-s">Los avisos de la sesión en vivo vuelven a aparecer, uno por vez.</span>
+            </span>
+            <span className="grouprow-chev" aria-hidden="true">›</span>
+          </button>
+        </div>
       </motion.section>
 
       <motion.section variants={seccion}>
