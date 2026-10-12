@@ -96,6 +96,29 @@ export const idb = {
   put: (st, v) => new Promise((res, rej) => { const t = DB.db.transaction(st, 'readwrite'); t.objectStore(st).put(v); t.oncomplete = res; t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('transacción abortada')); }),
   del: (st, k) => new Promise((res, rej) => { const t = DB.db.transaction(st, 'readwrite'); t.objectStore(st).delete(k); t.oncomplete = res; t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('transacción abortada')); }),
   clear: st => new Promise((res, rej) => { const t = DB.db.transaction(st, 'readwrite'); t.objectStore(st).clear(); t.oncomplete = res; t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('transacción abortada')); }),
+  /* Una sola transacción readwrite sobre VARIOS stores (turnos universales,
+     2026-10-12): o se escribe todo, o no se escribe nada. La usan
+     persistTurno/persistAll (rutina-logic.js) y la reconciliación del
+     arranque (turnos.js), que escriben `routine` y `settings` juntos.
+     Antes persistAll hacía clear() y después N put en transacciones
+     separadas: si la app moría en el medio, la rutina quedaba vacía.
+
+     `fn(stores)` recibe { nombre: IDBObjectStore } y tiene que ser
+     SÍNCRONA: un await adentro deja que la transacción se cierre sola.
+     Si `fn` tira, se aborta y no queda nada escrito. */
+  tx: (stores, fn) => new Promise((res, rej) => {
+    let t;
+    try { t = DB.db.transaction(stores, 'readwrite'); } catch (e) { rej(e); return; }
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error || new Error('transacción abortada'));
+    try {
+      fn(Object.fromEntries(stores.map(st => [st, t.objectStore(st)])));
+    } catch (e) {
+      try { t.abort(); } catch { /* ya había terminado */ }
+      rej(e);
+    }
+  }),
 };
 
 // idbOpen() usa indexedDB.open, que es seguro de llamar más de una vez (cada
