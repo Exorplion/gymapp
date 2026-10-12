@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S } from './state.js';
 import { ensureSlot, reorderSeq, insertWorkout, insertRest, removeSlot, routineStats, routineName, undoRutina, applyDeload, endDeload, deloadActivo, weekdayProjection, summarizeSlots, slotsFrequencyText } from './rutina-logic.js';
 
-vi.mock('./db.js', () => ({ idb: { put: vi.fn(), clear: vi.fn(), del: vi.fn(), all: vi.fn() } }));
+// `tx` (2026-10-12): persistAll escribe la secuencia en UNA transacción; el
+// doble llama a la función con stores falsos que registran clear/put.
+const txStores = { routine: { clear: vi.fn(), put: vi.fn() }, settings: { put: vi.fn(), delete: vi.fn() } };
+vi.mock('./db.js', () => ({ idb: { put: vi.fn(), clear: vi.fn(), del: vi.fn(), all: vi.fn(), tx: vi.fn(async (stores, fn) => fn(txStores)) } }));
 
 describe('rutina-logic — secuencia', () => {
   beforeEach(() => {
@@ -61,14 +64,15 @@ describe('rutina-logic — secuencia', () => {
 
   it('undoRutina no tira ReferenceError tras un mutator nuevo (regresión: usaba persistDay, que este task borró)', async () => {
     const { idb } = await import('./db.js');
-    idb.clear.mockClear(); idb.put.mockClear();
     await insertRest(0); // pushHistory + persistAll ya corrieron acá sin explotar
     expect(S.routine.length).toBe(4);
-    idb.clear.mockClear(); idb.put.mockClear();
+    idb.tx.mockClear(); txStores.routine.clear.mockClear(); txStores.routine.put.mockClear();
     await expect(undoRutina()).resolves.not.toThrow();
-    // persistAll (no persistDay) es lo que debe haber corrido: clear + put por cada turno
-    expect(idb.clear).toHaveBeenCalledWith('routine');
-    expect(idb.put).toHaveBeenCalled();
+    // persistAll (no persistDay) es lo que debe haber corrido: clear + put por
+    // cada turno, ahora dentro de UNA transacción (idb.tx)
+    expect(idb.tx).toHaveBeenCalledTimes(1);
+    expect(txStores.routine.clear).toHaveBeenCalled();
+    expect(txStores.routine.put).toHaveBeenCalled();
   });
 });
 

@@ -13,6 +13,7 @@ import { EXCATALOG, catOf, muscleVolume, porBloques } from './muscle.js';
 import { VOLUME_BANDS } from './charts.js';
 import { exKey } from './equip.js';
 import { toast } from './toast.js';
+import { hidratar, esVinculado, turnoVinculado, filaDe, claveNombre, claveTurno, claveDeSesion, snapshotDeFilas } from './turnos.js';
 
 /* ================= RUTINA ================= */
 /* insights derivados del historial de sesiones: sin esquema nuevo, se calcula
@@ -27,7 +28,9 @@ import { toast } from './toast.js';
     que no se intenta — mejor no mostrar nada que mostrar algo por
     coincidencia de índice. */
 export function daySessions(slotId) {
-  return S.sessions.filter(s => s.slotId === slotId).slice().sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+  // Por turno (turnos universales): las sesiones de cualquier aparición.
+  const k = claveTurno(S.routine.find(s => s.id === slotId)) || slotId;
+  return S.sessions.filter(s => claveDeSesion(s, S.routine) === k).slice().sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 }
 export function sessionsSince(days) {
   const cutoff = dstr(new Date(Date.now() - days * 86400000));
@@ -91,7 +94,9 @@ export async function applyDeload(grupos) {
   const antes = {};
   let tocados = 0;
   pushHistory('Descarga aplicada');
-  S.routine.forEach(slot => {
+  // Por turno, no por slot: un ejercicio compartido por dos apariciones se
+  // visitaría dos veces (4 → 2 → 1) y `antes` guardaría 2 en vez de 4.
+  indicesPorTurno().map(i => S.routine[i]).forEach(slot => {
     (slot.exercises || []).forEach(ex => {
       if (!grupos.includes(catOf(ex))) return;
       const nuevo = Math.max(1, Math.round(ex.sets * FACTOR_DESCARGA));
@@ -117,7 +122,7 @@ export async function endDeload() {
   const d = S.cfg.deload;
   if (!d) return false;
   pushHistory('Descarga terminada');
-  S.routine.forEach(slot => {
+  indicesPorTurno().map(i => S.routine[i]).forEach(slot => {
     (slot.exercises || []).forEach(ex => {
       if (d.antes[ex.id] != null) ex.sets = d.antes[ex.id];
     });
@@ -184,16 +189,8 @@ export function slotsFrequencyText(slots) {
    `photo` queda afuera a propósito: son data-URLs y S.lib entero vive en un
    único registro de `settings`, así que meter fotos ahí lo infla sin límite. */
 export function routineSnapshot() {
-  return S.routine.map(s => s.type === 'rest'
-    ? { type: 'rest' }
-    : {
-        type: 'workout',
-        name: s.name || '',
-        exercises: (s.exercises || []).map(e => ({
-          name: e.name, sets: e.sets, reps: e.reps,
-          equip: e.equip, machine: e.machine, illus: e.illus, cat: e.cat, unilateral: e.unilateral,
-        })),
-      });
+  // El mismo formato que el respaldo de la unificación de turnos (turnos.js).
+  return snapshotDeFilas(S.routine);
 }
 
 /** Copia de un ejercicio con id NUEVO.
@@ -283,7 +280,11 @@ export async function copyExercises(src, to, ids, mode = 'merge') {
   if (toIdx < 0) return { copied: 0, reason: 'no-target' };
   const fromIdx = src?.libId != null ? -1
     : (src?.fromId != null ? slotIndexOf(src.fromId) : +src?.fromIndex);
-  if (src?.libId == null && fromIdx === toIdx) return { copied: 0, reason: 'same' };   // copiar sobre sí mismo
+  // copiar sobre sí mismo: el mismo slot, u otra aparición del mismo turno
+  if (src?.libId == null && (fromIdx === toIdx
+    || (S.routine[fromIdx] && S.routine[toIdx] && claveTurno(S.routine[fromIdx]) === claveTurno(S.routine[toIdx])))) {
+    return { copied: 0, reason: 'same' };
+  }
   const elegidos = copySourceExercises(src).filter(e => ids.includes(e.id ?? e.name));
   if (!elegidos.length) return { copied: 0, reason: 'none-selected' };
 
@@ -318,21 +319,44 @@ export async function copyExercises(src, to, ids, mode = 'merge') {
   return { copied: nuevos.length, toIndex: toIdx, toId: destino.id };
 }
 export async function saveLib() { await idb.put('settings', { key: 'lib', value: S.lib }); }
+/* Turnos universales: las apariciones con el mismo nombre (claveNombre) son
+   UN turno, así que la plantilla A·P·R·A·P·R·R crea dos turnos y no cuatro
+   copias. Si una rutina de la biblioteca trae copias distintas del mismo
+   nombre, se aplica la primera; la entrada de S.lib no se toca, así que no
+   se pierde nada. Los turnos de antes se reemplazan, igual que el split (es
+   "¿Reemplazar tu split?", con confirmación). En el modo viejo (S.turnos
+   null: migración postergada o fallida) sigue armando copias, como antes, y
+   el próximo arranque las unifica. */
 export async function applyDays(seq, name) {
-  await idb.clear('routine');
-  S.routine = seq.map((s, i) => s.type === 'rest'
-    ? { id: uid(), order: i, type: 'rest' }
-    : {
-        id: uid(), order: i, type: 'workout', name: s.name,
-        // conserva equip/machine/illus: sin ellos la rutina cargada pierde el
-        // enlace a su historial (ver routineSnapshot)
-        exercises: s.exercises.map(e => ({
-          id: uid(), name: e.name, sets: e.sets, reps: e.reps,
-          equip: e.equip || undefined, machine: e.machine || undefined, illus: e.illus || undefined,
-          cat: e.cat || undefined, unilateral: e.unilateral || undefined,
-        })),
-      });
-  await persistAll();
+  const conTurnos = Array.isArray(S.turnos);
+  const porNombre = new Map();
+  const turnos = [];
+  S.routine = seq.map((s, i) => {
+    if (s.type === 'rest') return { id: uid(), order: i, type: 'rest' };
+    const slot = {
+      id: uid(), order: i, type: 'workout', name: s.name,
+      // conserva equip/machine/illus: sin ellos la rutina cargada pierde el
+      // enlace a su historial (ver routineSnapshot)
+      exercises: s.exercises.map(e => ({
+        id: uid(), name: e.name, sets: e.sets, reps: e.reps,
+        equip: e.equip || undefined, machine: e.machine || undefined, illus: e.illus || undefined,
+        cat: e.cat || undefined, unilateral: e.unilateral || undefined,
+      })),
+    };
+    if (conTurnos) {
+      const k = claveNombre(s.name);
+      let t = k ? porNombre.get(k) : null;
+      if (!t) {
+        t = { id: uid(), name: s.name, exercises: slot.exercises, creado: dstr() };
+        turnos.push(t);
+        if (k) porNombre.set(k, t);
+      }
+      slot.turnoId = t.id;
+    }
+    return slot;
+  });
+  if (conTurnos) { S.turnos = turnos; S.turnosSinVincular = []; }
+  await persistAll();   // hidrata y escribe secuencia + turnos en una transacción
   S.cfg.routineName = name;
   S.cfg.seqIndex = 0; S.cfg.seqIndexDate = null;
   await saveCfg();
@@ -388,25 +412,30 @@ export async function renameRoutineExercise(slotId, nombreViejo, { name, equip, 
 }
 
 /* ---------- deshacer/rehacer del editor de rutina ---------- */
+/* Cada foto guarda la secuencia Y los turnos: structuredClone llama a los
+   getters, así que los slots salen planos (con su turnoId) y el vínculo se
+   vuelve a armar al restaurar con hidratar(). */
 let RUT_HISTORY = [], RUT_REDO = [];
+const fotoRutina = () => ({ routine: structuredClone(S.routine), turnos: structuredClone(S.turnos) });
+function restaurarRutina(f) { S.routine = f.routine; S.turnos = f.turnos; hidratar(S); }
 export function pushHistory(msg) {
-  RUT_HISTORY.push(structuredClone(S.routine));
+  RUT_HISTORY.push(fotoRutina());
   if (RUT_HISTORY.length > 20) RUT_HISTORY.shift();
   RUT_REDO = [];
   toast(msg, { actionLabel: 'Deshacer', onAction: undoRutina });
 }
 export async function undoRutina() {
   if (!RUT_HISTORY.length) return;
-  RUT_REDO.push(structuredClone(S.routine));
-  S.routine = RUT_HISTORY.pop();
+  RUT_REDO.push(fotoRutina());
+  restaurarRutina(RUT_HISTORY.pop());
   await persistAll();
   bump();
   toast('Deshecho', { actionLabel: 'Rehacer', onAction: redoRutina });
 }
 export async function redoRutina() {
   if (!RUT_REDO.length) return;
-  RUT_HISTORY.push(structuredClone(S.routine));
-  S.routine = RUT_REDO.pop();
+  RUT_HISTORY.push(fotoRutina());
+  restaurarRutina(RUT_REDO.pop());
   await persistAll();
   bump();
   toast('Rehecho', { actionLabel: 'Deshacer', onAction: undoRutina });
@@ -421,12 +450,95 @@ export function ensureSlot(index) {
   }
   return S.routine[index];
 }
-export async function persistSlot(index) { await idb.put('routine', S.routine[index]); }
+/* ---------- guardar (turnos universales, 2026-10-12) ----------
+   Un turno se guarda ENTERO: el registro en settings.turnos y todas las
+   filas de `routine` que lo nombran, con su copia y su firma, en UNA
+   transacción (lib/turnos.js explica por qué cada fila lleva la copia). */
+
+/** Guarda el turno `turnoId` y todas las filas VINCULADAS a él. Una fila
+    plana con el mismo turnoId (editada por otra versión, reconciliación
+    postergada) no se toca: pisarla sería borrar esa edición. */
+export async function persistTurno(turnoId) {
+  if (!Array.isArray(S.turnos)) return;
+  const turnos = S.turnos;
+  const filas = S.routine.filter(s => esVinculado(s) && s.turnoId === turnoId).map(filaDe);
+  await idb.tx(['routine', 'settings'], ({ routine, settings }) => {
+    settings.put({ key: 'turnos', value: turnos });
+    filas.forEach(f => routine.put(f));
+  });
+}
+
+/** Compat: los llamadores de siempre guardan "el slot `index`". Si es de un
+    turno, se guarda el turno entero (y con él las otras apariciones); si no
+    (descanso, modo viejo, fila postergada), la fila sola, como antes. */
+export async function persistSlot(index) {
+  const slot = S.routine[index];
+  if (!slot) return;
+  if (slot.type === 'workout' && !esVinculado(slot)) hidratar(S);   // recién creado → su turno
+  if (esVinculado(slot)) return persistTurno(slot.turnoId);
+  await idb.put('routine', slot);
+}
 export function slotIsWorkout(index) { return S.routine[index]?.type === 'workout'; }
 
-async function persistAll() {
-  await idb.clear('routine');
-  await Promise.all(S.routine.map(s => idb.put('routine', s)));
+/** Reescribe la secuencia entera y los turnos en una sola transacción. Antes
+    era clear() y después N put en transacciones separadas: si la app moría
+    en el medio, la rutina quedaba vacía. */
+export async function persistAll() {
+  hidratar(S);
+  const conTurnos = Array.isArray(S.turnos);
+  const turnos = S.turnos;
+  const filas = S.routine.map(filaDe);
+  await idb.tx(conTurnos ? ['routine', 'settings'] : ['routine'], st => {
+    st.routine.clear();
+    filas.forEach(f => st.routine.put(f));
+    if (conTurnos) st.settings.put({ key: 'turnos', value: turnos });
+  });
+}
+
+/** Un índice de S.routine por turno (la primera aparición), más cada slot
+    suelto. Lo que MUTA ejercicios recorre esto y no S.routine: con
+    ejercicios compartidos, recorrer slots toca el mismo objeto dos veces
+    (la descarga cortaba 4 → 2 → 1). */
+export function indicesPorTurno() {
+  const vistos = new Set();
+  const out = [];
+  S.routine.forEach((slot, i) => {
+    const k = esVinculado(slot) ? `t:${slot.turnoId}` : `s:${slot.id}`;
+    if (vistos.has(k)) return;
+    vistos.add(k);
+    out.push(i);
+  });
+  return out;
+}
+
+/** El turno de una referencia: índice de S.routine, id de slot o id de
+    turno. null si no tiene (descanso, modo viejo) o no existe. */
+export function turnoDe(ref) {
+  if (ref == null) return null;
+  const slot = typeof ref === 'number' ? S.routine[ref] : S.routine.find(s => s.id === ref);
+  if (slot) return turnoVinculado(slot) || (S.turnos || []).find(t => t.id === slot.turnoId) || null;
+  return (S.turnos || []).find(t => t.id === ref) || null;
+}
+
+/** El aviso de la unificación de turnos (reconciliarTurnos lo deja en
+    S.cfg.avisoTurnos sólo si se descartó una copia distinta). Sale UNA vez:
+    se borra al mostrarse, no al cerrarse, así cerrar la hoja tocando afuera
+    también cuenta. Devuelve si lo abrió. */
+export function abrirAvisoTurnos() {
+  const aviso = S.cfg.avisoTurnos;
+  if (!aviso) return false;
+  delete S.cfg.avisoTurnos;
+  saveCfg();
+  openSheet('aviso-turnos', { aviso });
+  return true;
+}
+
+/** El turno de una sesión: por su `turnoId` (sesiones nuevas) o por su
+    slot (las de antes de los turnos). null si ya no existe. */
+export function turnoDeSesion(s) {
+  if (!s) return null;
+  if (s.turnoId) return (S.turnos || []).find(t => t.id === s.turnoId) || null;
+  return s.slotId ? turnoDe(s.slotId) : null;
 }
 
 function reindex() { S.routine.forEach((s, i) => { s.order = i; }); }
@@ -818,7 +930,9 @@ export function startBlank() {
     body: 'Se borran todos los días y ejercicios.',
     confirmLabel: 'Vaciar',
     onConfirm: async () => {
-      await idb.clear('routine'); S.routine = [];
+      S.routine = [];
+      if (Array.isArray(S.turnos)) { S.turnos = []; S.turnosSinVincular = []; }
+      await persistAll();
       S.cfg.routineName = ''; await saveCfg();
       S.rutMode = 'edit'; closeSheet(); bump();
       toast('Split vacío — armá el tuyo');

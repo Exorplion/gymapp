@@ -6,6 +6,7 @@
 // para elegir cualquier turno.
 //
 // Puro (sin S): recibe rutina, puntero, sesiones y la fecha de hoy.
+import { claveTurno, claveDeSesion } from './turnos.js';
 
 /** Días calendario entre dos 'YYYY-MM-DD'. Al mediodía, para que el cambio
     de horario no corra el resultado un día (igual que diasEntre en state.js). */
@@ -18,26 +19,34 @@ export function opcionesDescanso({ routine, seqIndex, sessions, hoy }) {
   const n = routine.length;
   const entrena = t => t?.type === 'workout' && t.exercises?.length;
 
-  // Última fecha por turno, y la última sesión de todas.
+  // Última fecha por turno (turnos universales: la clave del turno, así la
+  // sesión de un Posterior cuenta para sus dos apariciones), y la última
+  // sesión de todas.
   const ultimaDe = new Map();
   let ultima = null;
   for (const s of sessions) {
     if (!s?.date || s.date > hoy) continue;
-    if (s.slotId && (!ultimaDe.has(s.slotId) || s.date > ultimaDe.get(s.slotId))) ultimaDe.set(s.slotId, s.date);
+    const k = claveDeSesion(s, routine);
+    if (k && (!ultimaDe.has(k) || s.date > ultimaDe.get(k))) ultimaDe.set(k, s.date);
     if (!ultima || s.date > ultima.date) ultima = s;
   }
 
   // Los turnos de entrenamiento en el orden de la secuencia, empezando por
-  // el primero que viene después del puntero: ése es el que te toca.
+  // el primero que viene después del puntero: ése es el que te toca. Cada
+  // turno UNA vez, en su próxima aparición: en A·P·R·A·P·R·R son dos
+  // opciones, no cuatro.
   const orden = [];
+  const vistos = new Set();
   for (let k = 0; k < n; k++) {
     const i = (seqIndex + k) % n;
-    if (entrena(routine[i])) orden.push(i);
+    if (!entrena(routine[i]) || vistos.has(claveTurno(routine[i]))) continue;
+    vistos.add(claveTurno(routine[i]));
+    orden.push(i);
   }
 
   const opciones = orden.map((i, pos) => {
     const t = routine[i];
-    const f = ultimaDe.get(t.id);
+    const f = ultimaDe.get(claveTurno(t));
     const d = f ? dias(f, hoy) : null;
     return {
       index: i,
