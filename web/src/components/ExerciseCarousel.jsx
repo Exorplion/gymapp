@@ -253,7 +253,11 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
     let destino = null;
     let intentos = 0;
     function irAlFoco(behavior) {
-      if (idx <= 0) return; // idx<=0: el primer slide ya está en su lugar (mismo criterio que jumpToSlide)
+      /* Sólo -1 (nada abierto) se queda quieto. El 0 también viaja: antes
+         se suponía que "el primer slide ya está en su lugar", y era cierto
+         sólo al montar. Volver al primero con la vista en otro (borrar una
+         serie y que se reabra, Deshacer) dejaba el carrusel donde estaba. */
+      if (idx < 0) return;
       const slide = car.children[idx];
       if (!slide) return;
       destino = slideScrollLeft(car, slide);
