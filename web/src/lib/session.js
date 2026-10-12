@@ -17,6 +17,8 @@ import { clampHechos } from './rampa.js';
 import { metaHoy } from './previa.js';
 import { aplicarMaquina } from './maquinas.js';
 import { planDeLaSesion, desdeAlCerrar, avanzarPuntero } from './puntero.js';
+import { compensacion } from './compensacion.js';
+import { recuperacion } from './recuperacion.js';
 
 /** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
     ejercicio completo; un string sigue funcionando y se compara sólo por
@@ -347,6 +349,85 @@ export function fueraDelPlanHoy() {
   const plan = planDeLaSesion({ routine: S.routine, seqIndex: S.cfg.seqIndex, index: i });
   if (!plan.fueraDePlan) return false;
   return plan.reemplaza ? { nombre: plan.reemplaza.nombre || 'tu turno' } : null;
+}
+
+/* ================= cerrar la semana (Fase 4) =================
+   Después de una sesión fuera del plan, Hoy propone compensar lo que quedó
+   sin hacer (compensacion.js). Sólo antes de empezar, con el turno que toca,
+   y si hoy todavía no entrenaste. Aceptar guarda la propuesta en la cfg y
+   startSession la vuelca al borrador: nunca toca S.routine ni S.turnos. */
+
+/** La propuesta para hoy, o null. */
+export function compensacionHoy() {
+  if (S.draft || sesionDeHoy()) return null;
+  const i = indiceHoy();
+  if (i !== S.cfg.seqIndex || S.routine[i]?.type !== 'workout') return null;
+  return compensacion({
+    routine: S.routine, sessions: S.sessions, seqIndex: i, ciclo: S.cfg.ciclo || 0,
+    rec: recuperacion(S.sessions), fecha: dstr(),
+  });
+}
+
+/** Lo aceptado para esta propuesta (sus ítems), o null. */
+export function compensacionAceptada(c) {
+  const a = S.cfg.compensar;
+  return c && a?.clave === c.clave && a.items?.length ? a.items : null;
+}
+
+/** "Hoy no" para esta propuesta. */
+export const compensacionDescartada = c => !!c && S.cfg.compensarNo === c.clave;
+
+/** "Sumar a hoy" con los ítems tildados. */
+export async function aceptarCompensacion(c, ids) {
+  const items = c.hoy.filter(h => ids.includes(h.id));
+  if (!items.length) return;
+  S.cfg.compensar = { clave: c.clave, items };
+  if (S.cfg.compensarNo === c.clave) delete S.cfg.compensarNo;
+  await saveCfg();
+  bump();
+}
+
+/** "Hoy no". */
+export async function descartarCompensacion(c) {
+  S.cfg.compensarNo = c.clave;
+  if (S.cfg.compensar?.clave === c.clave) delete S.cfg.compensar;
+  await saveCfg();
+  bump();
+}
+
+/** Deshacer cualquiera de las dos: vuelve la propuesta. */
+export async function deshacerCompensacion() {
+  delete S.cfg.compensar;
+  delete S.cfg.compensarNo;
+  await saveCfg();
+  bump();
+}
+
+/** Los ejercicios del plan de hoy con lo aceptado ya puesto, para que el
+    plan y las cifras de antes de empezar muestren lo que vas a hacer:
+    `_mas` en los que suman series y los traídos al final, con `compensa`. */
+export function conCompensacion(exs, items) {
+  if (!items?.length) return exs;
+  const mas = Object.fromEntries(items.filter(h => h.tipo === 'series').map(h => [h.exId, h.mas]));
+  const out = exs.map(e => (mas[e.id] ? { ...e, sets: e.sets + mas[e.id], _mas: mas[e.id] } : e));
+  for (const h of items) if (h.tipo === 'traer') out.push({ ...h.ex, id: `comp:${h.id}`, compensa: true, desde: h.desde });
+  return out;
+}
+
+/** Vuelca lo aceptado al borrador recién abierto (series extra y ejercicios
+    traídos, marcados `compensa`). */
+function aplicarCompensacion(d, slot) {
+  const a = S.cfg.compensar;
+  if (!a?.items?.length || d.fueraDePlan || a.clave !== `${S.cfg.ciclo || 0}:${d.slotId}`) return;
+  for (const h of a.items) {
+    if (h.tipo === 'series' && (slot.exercises || []).some(e => e.id === h.exId)) {
+      d.extraSets[h.exId] = (d.extraSets[h.exId] || 0) + h.mas;
+    } else if (h.tipo === 'traer') {
+      const ex = { ...h.ex, id: uid(), compensa: true };
+      d.extras.push(ex);
+      d.order.push(ex.id);
+    }
+  }
 }
 
 /** Récords de `sess`: la mejor serie de cada ejercicio contra el máximo de las
@@ -987,7 +1068,8 @@ export async function completeSession() {
   /* Los agregados que de verdad hiciste (los que tienen series). Uno que
      agregaste y después salteaste no tiene por qué ofrecerse para el plan. */
   const added = (d.extras || [])
-    .filter(e => d.entries[e.id]?.sets?.length)
+    // Lo traído para compensar es de ESE día: no se ofrece para el plan.
+    .filter(e => d.entries[e.id]?.sets?.length && !e.compensa)
     .map(e => ({ name: e.name, sets: e.sets, reps: e.reps, equip: e.equip, machine: e.machine, unilateral: e.unilateral, cat: e.cat }));
 
   /* El día que se guarda es el día en que DE VERDAD entrenaste (la primera
@@ -1126,6 +1208,7 @@ export async function startSession(index, precheckAdjust = 0, { preworkout = nul
     // no sólo en la hoja: ver calentamientoPendiente() más abajo.
     calent: { pendiente: true, hechos: [] },
   };
+  aplicarCompensacion(S.draft, cumple);
   await saveDraft();
   closeSheet();
   vibrate(15);
