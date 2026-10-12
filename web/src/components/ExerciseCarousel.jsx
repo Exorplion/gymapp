@@ -23,7 +23,7 @@ import { rirPedido } from '../lib/rir.js';
 import { objetivoHoy } from '../lib/objetivoHoy.js';
 import { tocaCalentar, warmupSets } from '../lib/warmup.js';
 import {
-  ensureVals, lastDataFor, setsDone, saveSet, deleteSet, startExercise,
+  ensureVals, lastDataFor, setsDone, saveSet, borrarSeries, retomarEjercicio, startExercise,
   targetSets, isSkipped, skipExercise, unskipExercise, addExtraSet, reemplazaA,
   isUnilateral, setSide, seriesCompletas, marcarCalentado,
   pasosRampa, avanzarRampa, deshacerRampa,
@@ -253,7 +253,11 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
     let destino = null;
     let intentos = 0;
     function irAlFoco(behavior) {
-      if (idx <= 0) return; // idx<=0: el primer slide ya está en su lugar (mismo criterio que jumpToSlide)
+      /* Sólo -1 (nada abierto) se queda quieto. El 0 también viaja: antes
+         se suponía que "el primer slide ya está en su lugar", y era cierto
+         sólo al montar. Volver al primero con la vista en otro (borrar una
+         serie y que se reabra, Deshacer) dejaba el carrusel donde estaba. */
+      if (idx < 0) return;
       const slide = car.children[idx];
       if (!slide) return;
       destino = slideScrollLeft(car, slide);
@@ -585,7 +589,7 @@ function TablaSeries({ exId, done, uni, unidad }) {
       title: `¿Borrar la serie ${n}?`,
       body: uni ? 'Se borran los dos lados de esa serie.' : 'Se borra lo que anotaste en esa serie.',
       confirmLabel: 'Borrar',
-      onConfirm: async () => { for (const i of [...f.idx].sort((a, b) => b - a)) await deleteSet(exId, i); },
+      onConfirm: () => borrarSeries(exId, f.idx, { n }),
     });
   }
   return (
@@ -953,6 +957,14 @@ function ExerciseSlide({ m, wd, started }) {
               <Restablecer /> Restablecer
             </button>
           </>
+        )}
+        {/* A medio hacer y con otro en curso: sin este botón la tarjeta no
+            tenía salida y sólo volvía sola al terminar el otro (Enzo,
+            2026-10: "no me dejaba terminarlo"). */}
+        {waiting && done.length > 0 && (
+          <button type="button" className="btn sm ghost" style={{ marginTop: 12 }} onClick={() => retomarEjercicio(ex.id)}>
+            <Play /> Retomar
+          </button>
         )}
         {full && (
           <button type="button" className="btn sm ghost" style={{ marginTop: 12 }} onClick={() => addExtraSet(ex.id)}>

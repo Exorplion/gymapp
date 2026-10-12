@@ -56,7 +56,10 @@ export default function ExOpciones({ exId, wd }) {
         </button>
         <button type="button" className="grouprow" onClick={y(() => dropSet(ex.id))}>
           <Minus className="opc-ico" />
-          <span className="grouprow-grow"><span className="grouprow-t">Una serie menos</span></span>
+          <span className="grouprow-grow">
+            <span className="grouprow-t">Una serie menos</span>
+            <span className="grouprow-s">Baja el objetivo de hoy. Lo que anotaste no se borra.</span>
+          </span>
         </button>
         {puedeSerUnilateral(ex) && (
           <button type="button" className="grouprow" role="switch" aria-checked={uni} onClick={() => toggleUnilateral(ex.id)}>

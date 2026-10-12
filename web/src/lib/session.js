@@ -671,7 +671,8 @@ export async function dropSet(exId) {
     return actual;
   }
   if (!S.draft.extraSets) S.draft.extraSets = {};
-  S.draft.extraSets[exId] = (S.draft.extraSets[exId] || 0) - 1;
+  const antes = { extra: S.draft.extraSets[exId] || 0, cur: S.draft.cur };
+  S.draft.extraSets[exId] = antes.extra - 1;
 
   // si al bajar el objetivo el ejercicio queda completo, se cierra y pasamos al
   // siguiente, igual que cuando lo completás registrando
@@ -687,6 +688,20 @@ export async function dropSet(exId) {
   await saveDraft();
   vibrate(15);
   bump();
+  /* Con aviso y "Deshacer": se confundía con borrar una serie (Enzo, 2026-10,
+     "eliminé una serie y pasó al siguiente"), y cerrar el ejercicio sin forma
+     de volver era justo lo que lo dejaba sin terminar. */
+  const series = nuevo / filasPorSerie;
+  toast(`${ex.name}: hoy ${series} serie${series === 1 ? '' : 's'}`, {
+    actionLabel: 'Deshacer',
+    onAction: async () => {
+      if (!S.draft) return;
+      S.draft.extraSets[exId] = antes.extra;
+      S.draft.cur = antes.cur;
+      await saveDraft();
+      bump();
+    },
+  });
   return nuevo;
 }
 
@@ -1242,15 +1257,63 @@ export async function startExercise(ex) {
   toast(first ? `⏱ Rutina en marcha · ${ex.name}` : `${ex.name} · serie 1 de ${ex.sets}`);
 }
 
-/** Borra una serie ya registrada (chip ✕). Si el ejercicio quedaba cerrado
-    (full) vuelve a quedar abierto — vaciarle una serie lo reabre. */
-export async function deleteSet(exId, i) {
+/** Borra series ya registradas (la ✕ de la tabla; en unilateral, los dos
+    lados de una vez). `n` es el número de serie que ve la persona, para el
+    aviso.
+
+    Si el ejercicio queda por debajo de su objetivo, VUELVE A ESTAR EN CURSO,
+    aunque la app ya haya pasado a otro. Antes sólo se reabría si no había
+    ninguno en curso — y casi siempre lo hay, porque al completar el ejercicio
+    la app avanza sola. Enzo (2026-10): "eliminé una serie y el ejercicio se
+    cerró y pasó al siguiente y no me dejaba terminarlo". Borrar una serie es
+    decir "esa no cuenta, me falta": igual que addExtraSet, el que estaba en
+    curso queda en espera en su lugar.
+
+    El aviso trae "Deshacer" (borrar era definitivo), que devuelve las series y
+    el ejercicio en curso — salvo que ya hayas anotado otra serie ahí, para no
+    pisarla. */
+export async function borrarSeries(exId, idxs, { n } = {}) {
   const e = S.draft?.entries[exId]; if (!e) return;
-  e.sets.splice(i, 1);
-  if (!e.sets.length) delete S.draft.entries[exId];
-  if (S.draft && !S.draft.cur) S.draft.cur = exId;
-  if (S.draft && !Object.keys(S.draft.entries).length && !S.draft.start) S.draft.cur = null;
+  const antes = { sets: e.sets.slice(), cur: S.draft.cur };
+  for (const i of [...idxs].sort((a, b) => b - a)) e.sets.splice(i, 1);
+  const quedan = e.sets.length;
+  if (!quedan) delete S.draft.entries[exId];
+  // La pregunta de RIR apunta a una fila por índice: con la fila borrada (o
+  // corrida) la respuesta caería en otra serie.
+  if (T.rir?.exId === exId) T.rir = null;
+
+  const ex = findEx(exId);
+  const incompleto = ex && !isSkipped(exId) && quedan < targetSets(ex);
+  if (incompleto || !S.draft.cur) S.draft.cur = exId;
+  if (!Object.keys(S.draft.entries).length && !S.draft.start) S.draft.cur = null;
   await saveDraft();
+  bump();
+
+  const vuelve = S.draft.cur === exId && antes.cur !== exId && ex;
+  toast(`${n ? `Serie ${n} borrada` : 'Serie borrada'}${vuelve ? ` · ${ex.name} vuelve a estar en curso` : ''}`, {
+    actionLabel: 'Deshacer',
+    onAction: async () => {
+      if (!S.draft) return;
+      const ahora = S.draft.entries[exId];
+      if ((ahora?.sets.length || 0) !== quedan) return;
+      if (ahora) ahora.sets = antes.sets;
+      else S.draft.entries[exId] = { ...e, sets: antes.sets };
+      S.draft.cur = antes.cur;
+      await saveDraft();
+      bump();
+    },
+  });
+}
+
+/** Volver a un ejercicio que quedó en espera a medio hacer: pasa a estar en
+    curso y el que estaba queda en espera en su lugar de la secuencia. Es la
+    salida que le faltaba a la tarjeta "En espera · 2/3 series" — antes no
+    tenía ningún botón y sólo volvía sola al terminar el ejercicio en curso. */
+export async function retomarEjercicio(exId) {
+  if (!S.draft) return;
+  S.draft.cur = exId;
+  await saveDraft();
+  vibrate(15);
   bump();
 }
 
