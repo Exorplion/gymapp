@@ -197,3 +197,14 @@ describe('dónde va el globo', () => {
     }
   });
 });
+
+describe('cuando el otro lado taparía algo que hace falta', () => {
+  const vista = { top: 60, bottom: 648, width: 390 };   // la barra del descanso abajo
+  const globo = { w: 240, h: 52 };
+
+  it('con soloEse, si el lado pedido no entra no hay globo (espera a que entre)', () => {
+    const tabla = { left: 42, right: 348, top: 570, bottom: 629 };
+    expect(ubicarGlobo({ objetivo: tabla, globo, vista, lado: 'abajo', soloEse: true })).toBe(null);
+    expect(ubicarGlobo({ objetivo: tabla, globo, vista: { ...vista, bottom: 844 }, lado: 'abajo', soloEse: true }).lado).toBe('abajo');
+  });
+});

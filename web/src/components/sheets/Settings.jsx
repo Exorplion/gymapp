@@ -152,11 +152,11 @@ export default function Settings() {
     bump(); // re-renderiza toda la app: wDisplay/wAlt en Hoy/Rutina/Progreso dependen de S.cfg.unit
   }
 
-  /* Vuelven todos los avisos de la guía; aparecen solos en la sesión, en
-     el momento de cada uno (lib/guia.js). */
+  /* Vuelven todos los avisos de la guía; aparecen solos en la sesión (la
+     que está en curso también), en el momento de cada uno (lib/guia.js). */
   function verGuia() {
     reiniciarGuia();
-    toast('Listo: la guía vuelve en tu próxima sesión');
+    toast('Listo: los avisos vuelven en la sesión en vivo');
   }
 
   function stepRest(d) {

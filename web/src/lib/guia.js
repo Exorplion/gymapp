@@ -105,14 +105,18 @@ const entre = (v, min, max) => Math.min(Math.max(v, min), Math.max(min, max));
       encima de la barra de abajo
     - lado: el preferido ('abajo' | 'arriba'). Si no entra, el otro; si no
       entra ninguno, el preferido igual.
+    - soloEse: el otro lado taparía algo que hace falta en ese momento (el
+      de la tabla, puesto arriba, tapa el botón de la serie). Si el pedido
+      no entra devuelve null: mejor esperar que tapar.
     Devuelve { left, top, lado, flecha } con `flecha` = dónde cae la punta,
     medido desde el borde izquierdo del globo. Nunca se superpone al control:
     va entero arriba o entero abajo. */
-export function ubicarGlobo({ objetivo, globo, vista, lado = 'abajo' }) {
+export function ubicarGlobo({ objetivo, globo, vista, lado = 'abajo', soloEse = false }) {
   const cabe = {
     abajo: objetivo.bottom + HUECO + globo.h <= vista.bottom - MARGEN / 2,
     arriba: objetivo.top - HUECO - globo.h >= vista.top + MARGEN / 2,
   };
+  if (soloEse && !cabe[lado]) return null;
   const otro = lado === 'abajo' ? 'arriba' : 'abajo';
   const l = cabe[lado] || !cabe[otro] ? lado : otro;
   const top = l === 'abajo' ? objetivo.bottom + HUECO : objetivo.top - HUECO - globo.h;

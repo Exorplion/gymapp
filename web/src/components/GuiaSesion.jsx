@@ -29,6 +29,11 @@ import { X } from './Icon.jsx';
    (abajo está el botón de la serie), el del botón y la tabla abajo (arriba
    están las ruedas), el del RIR arriba (abajo están −30s / +30s / Saltar). */
 const LADO = { btn: 'abajo', rueda: 'arriba', rir: 'arriba', tabla: 'abajo', dots: 'abajo' };
+/* Los que NO pueden irse al otro lado: el de la rueda abajo taparía el botón
+   de la serie, y el de la tabla arriba también. Si no entran, esperan: con
+   la barra del descanso abajo, el de la tabla sale cuando el descanso
+   termina (GuiaSesion vuelve a medir con cada cambio de T.state). */
+const SOLO_ESE = { rueda: true, tabla: true };
 
 /** Los controles que hay ahora en pantalla. Sólo busca nodos: nada de layout. */
 function controles() {
@@ -90,6 +95,7 @@ export default function GuiaSesion() {
       id={pista.id}
       objetivo={pista.objetivo}
       host={pista.host}
+      descanso={T.state}
     />
   );
 }
@@ -98,8 +104,10 @@ export default function GuiaSesion() {
     flota abajo (barra de pestañas, barra del descanso). */
 function vistaDePantalla(ancho, alto) {
   const header = document.querySelector('header.top')?.getBoundingClientRect();
+  /* offsetTop y no el rect: las dos barras son fixed y entran deslizándose
+     (transform); se quiere dónde QUEDAN, no dónde están en el medio. */
   const abajo = ['nav.tabbar', '#restbar.show']
-    .map(s => document.querySelector(s)?.getBoundingClientRect().top)
+    .map(s => document.querySelector(s)?.offsetTop)
     .filter(v => v != null && v > 0);
   return { top: header ? Math.max(0, header.bottom) : 0, bottom: Math.min(alto, ...abajo), width: ancho };
 }
@@ -112,7 +120,7 @@ const ESPERA = D.momento + D.panel;
 /* El anillo, unos px por fuera del control, como .ex-paso.cur. */
 const AIRE = 4;
 
-function Globo({ id, objetivo, host }) {
+function Globo({ id, objetivo, host, descanso }) {
   const ref = useRef(null);
   const [listo, setListo] = useState(false);
   const [pos, setPos] = useState(null);
@@ -138,7 +146,8 @@ function Globo({ id, objetivo, host }) {
       radio ??= getComputedStyle(objetivo).borderRadius.replace(/^0px$/, 'var(--r)');
       // El control se fue de costado (deslizaste el carrusel): sin globo.
       if (!r.width || r.right <= 0 || r.left >= ancho) { setPos(null); return; }
-      const u = ubicarGlobo({ objetivo: r, globo: { w, h }, vista, lado: LADO[id] });
+      const u = ubicarGlobo({ objetivo: r, globo: { w, h }, vista, lado: LADO[id], soloEse: SOLO_ESE[id] });
+      if (!u) { setPos(null); return; }
       setPos({
         w, lado: u.lado, flecha: u.flecha,
         left: u.left - base.left, top: u.top - base.top,
@@ -176,7 +185,8 @@ function Globo({ id, objetivo, host }) {
       }
       window.removeEventListener('resize', medir);
     };
-  }, [listo, objetivo, host, id]);
+    // `descanso`: la barra del descanso aparece o se va y cambia lo visible.
+  }, [listo, objetivo, host, id, descanso]);
 
   if (!listo) return null;
   const a = pos?.anillo;
