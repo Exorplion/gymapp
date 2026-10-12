@@ -3,6 +3,7 @@ import { S } from '../state.js';
 import { idb } from '../db.js';
 import {
   PISTAS, TEXTOS, pistaQueToca, guiaInicial, iniciarGuia, marcarGuia, reiniciarGuia, vista,
+  ubicarGlobo, HUECO, MARGEN, FLECHA_BORDE,
 } from '../guia.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn(), get: vi.fn() } }));
@@ -144,5 +145,55 @@ describe('marcar y reiniciar', () => {
     expect(S.cfg.guia).toEqual({ visto: {} });
     for (const p of PISTAS) expect(vista(p)).toBe(false);
     expect(idb.put).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('dónde va el globo', () => {
+  const vista = { top: 60, bottom: 844, width: 390 };
+  const globo = { w: 240, h: 70 };
+
+  it('debajo del control si entra, con la flecha apuntando a su centro', () => {
+    const objetivo = { left: 30, right: 360, top: 400, bottom: 456 };
+    const u = ubicarGlobo({ objetivo, globo, vista, lado: 'abajo' });
+    expect(u.lado).toBe('abajo');
+    expect(u.top).toBe(456 + HUECO);
+    expect(u.left + u.flecha).toBe(195);          // el centro del control
+  });
+
+  it('arriba si se lo pide y entra', () => {
+    const objetivo = { left: 30, right: 360, top: 400, bottom: 456 };
+    const u = ubicarGlobo({ objetivo, globo, vista, lado: 'arriba' });
+    expect(u.lado).toBe('arriba');
+    expect(u.top + globo.h).toBe(400 - HUECO);
+  });
+
+  it('si abajo no entra, va arriba (y al revés)', () => {
+    const alFondo = { left: 30, right: 360, top: 760, bottom: 816 };
+    expect(ubicarGlobo({ objetivo: alFondo, globo, vista, lado: 'abajo' }).lado).toBe('arriba');
+    const arriba = { left: 30, right: 360, top: 70, bottom: 110 };
+    expect(ubicarGlobo({ objetivo: arriba, globo, vista, lado: 'arriba' }).lado).toBe('abajo');
+  });
+
+  it('nunca se sale de la pantalla: se corre y la flecha sigue al control', () => {
+    const dots = { left: 330, right: 370, top: 120, bottom: 160 };
+    const u = ubicarGlobo({ objetivo: dots, globo, vista, lado: 'abajo' });
+    expect(u.left).toBeGreaterThanOrEqual(MARGEN);
+    expect(u.left + globo.w).toBeLessThanOrEqual(390 - MARGEN);
+    expect(u.left + u.flecha).toBe(350);
+  });
+
+  it('la flecha no se mete en la esquina redondeada', () => {
+    const pegado = { left: 372, right: 388, top: 120, bottom: 160 };
+    const u = ubicarGlobo({ objetivo: pegado, globo, vista, lado: 'abajo' });
+    expect(u.flecha).toBeLessThanOrEqual(globo.w - FLECHA_BORDE);
+  });
+
+  it('no tapa el control', () => {
+    const objetivo = { left: 30, right: 360, top: 400, bottom: 456 };
+    for (const lado of ['abajo', 'arriba']) {
+      const u = ubicarGlobo({ objetivo, globo, vista, lado });
+      const choca = u.top < objetivo.bottom && u.top + globo.h > objetivo.top;
+      expect(choca).toBe(false);
+    }
   });
 });

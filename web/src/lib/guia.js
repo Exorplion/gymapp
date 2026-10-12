@@ -85,3 +85,39 @@ export function reiniciarGuia() {
   bump();
   return saveCfg();
 }
+
+/* ---- Dónde va el globo -------------------------------------------------- */
+
+/** Px entre el globo y el control (la flecha asoma en ese hueco). */
+export const HUECO = 12;
+/** Px mínimos al borde de la pantalla: el margen lateral de las pantallas. */
+export const MARGEN = 16;
+/** La flecha no baja de esta distancia a cada punta del globo: más cerca se
+    metería en la esquina redondeada. */
+export const FLECHA_BORDE = 18;
+
+const entre = (v, min, max) => Math.min(Math.max(v, min), Math.max(min, max));
+
+/** Ubica el globo junto al control, en coordenadas de la pantalla.
+    - objetivo: el rect del control ({left, right, top, bottom})
+    - globo: su tamaño ({w, h}), medido una vez
+    - vista: lo visible ({top, bottom, width}) — debajo del encabezado y
+      encima de la barra de abajo
+    - lado: el preferido ('abajo' | 'arriba'). Si no entra, el otro; si no
+      entra ninguno, el preferido igual.
+    Devuelve { left, top, lado, flecha } con `flecha` = dónde cae la punta,
+    medido desde el borde izquierdo del globo. Nunca se superpone al control:
+    va entero arriba o entero abajo. */
+export function ubicarGlobo({ objetivo, globo, vista, lado = 'abajo' }) {
+  const cabe = {
+    abajo: objetivo.bottom + HUECO + globo.h <= vista.bottom - MARGEN / 2,
+    arriba: objetivo.top - HUECO - globo.h >= vista.top + MARGEN / 2,
+  };
+  const otro = lado === 'abajo' ? 'arriba' : 'abajo';
+  const l = cabe[lado] || !cabe[otro] ? lado : otro;
+  const top = l === 'abajo' ? objetivo.bottom + HUECO : objetivo.top - HUECO - globo.h;
+  const centro = (objetivo.left + objetivo.right) / 2;
+  const left = entre(centro - globo.w / 2, MARGEN, vista.width - MARGEN - globo.w);
+  const flecha = entre(centro - left, FLECHA_BORDE, globo.w - FLECHA_BORDE);
+  return { left, top, lado: l, flecha };
+}
