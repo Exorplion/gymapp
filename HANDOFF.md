@@ -4,6 +4,114 @@
 
 ---
 
+## SESIÓN 2026-10-12 (6) — turnos universales, Fase 1 (modelo y reconciliación)
+
+Spec: `docs/superpowers/specs/2026-10-12-turnos-universales-y-fuera-de-plan-design.md`
+(§1, §2, §7 "Fase 1"). Plan: `docs/superpowers/plans/2026-10-12-turnos-fase1.md`.
+Rama `feat/turnos-fase1` (worktree `.claude/worktrees/turnos`), rebasada sobre
+origin/main (#156, la guía). **1362 tests** (+67). **SIN push, SIN PR, SIN build
+en la raíz**: falta que Enzo lo apruebe.
+
+**Qué cambió.** "Posterior" existe una vez. La secuencia sigue siendo de slots
+(ids, `seqIndex` y sesiones viejas intactos); cada fila de `routine` lleva
+`turnoId`, `turnoFirma` y una COPIA completa de `name`/`exercises` (la versión
+vieja de la app lee una rutina válida). Los turnos viven en `settings.turnos`
+(`S.turnos`). Sin subir la versión de IndexedDB.
+
+- `lib/turnos.js` (nuevo): `firma` (:43, sin ids de ejercicio: dos copias de la
+  plantilla con ids distintos son "iguales"), `planReconciliacion` (:116, puro),
+  `vincular`/`hidratar`/`filaDe` (:201-255), `reconciliarTurnos` (:298),
+  `textoAvisoTurnos` (:268).
+- Hidratación = propiedades de acceso **enumerables** (como la spec): en memoria
+  `slot.name`/`slot.exercises` leen y escriben el turno; dos apariciones
+  devuelven el MISMO array. `structuredClone`/JSON/spread dan datos planos.
+  Reglas escritas en `state.js` (comentario de `S.routine`).
+- `state.js:173` `loadAll` → `reconciliarTurnos` antes de `resolveAutoRest`.
+  Nunca tira: si falla, modo viejo (`S.turnos = null`, todo como antes).
+- `db.js:109` `idb.tx(stores, fn)`. `rutina-logic.js`: `persistTurno` (:461),
+  `persistSlot` (:474, envoltorio por índice), `persistAll` (:486, ATÓMICO: antes
+  era clear + N put sueltos), `indicesPorTurno` (:502), `turnoDe`/`turnoDeSesion`,
+  `applyDays` (:330) agrupa por nombre, historial `{routine, turnos}` (:419),
+  `abrirAvisoTurnos` (:527).
+- Lo que muta recorre turnos: `applyDeload`/`endDeload` (antes, con ejercicios
+  compartidos, cortaba 4→2→1 y volvía a 2), `gyms.js` `setActiveGym`/`reaplicar`.
+- Lectores por turno (`claveTurno`/`claveDeSesion`): `ultimaVezDeTurno`,
+  `minutosDeTurno` (y `minutosDe` de Inicio, que ahora lo usa), `daySessions`,
+  `routineStability`, `opcionesDescanso` (cada turno una vez en un descanso),
+  `turnosDeEjercicio`/`turnosComunes`, `copyExercises` ("same" entre dos
+  apariciones), `CopyExercises.jsx` (no ofrece el mismo turno ni lo repite).
+- Sesiones nuevas (`startSession`, `completeSession`, `registrarDiaEntrenado`)
+  guardan `turnoId`.
+- Respaldo v3 (`backup.js:47` `datosDelRespaldo`): `turnos` + filas con firma.
+  Importar es atómico (rutina + clave `turnos`); un backup v1/v2 BORRA la clave
+  y al recargar se unifica.
+- Aviso (`components/sheets/AvisoTurnos.jsx`, diálogo, patrones de SalirPrueba):
+  sale UNA vez (se borra `cfg.avisoTurnos` al abrirse), sólo si se descartó una
+  copia distinta; "Descargar respaldo" → `exportJSON()`, "Ver en Mis rutinas".
+
+**Reconciliación (cada arranque, no-op si todo está en orden):** agrupa por
+`claveNombre` (norm + espacios colapsados; "Anterior A" ≠ "Anterior B"; sin
+nombre nunca se agrupa). Gana la primera por `order`, salvo una fila editada
+por otra versión (firma ≠) → gana esa. Una transacción; la primera vez guarda
+las filas crudas en `settings.rutinaAntesDeTurnos`; si alguna copia difería,
+respaldo al principio de `S.lib` ("Respaldo antes de unificar turnos (12 oct)",
+la secuencia entera como estaba) + aviso. Con borrador abierto se posterga: se
+vinculan sólo las filas en orden, las demás quedan planas
+(`S.turnosSinVincular`) y `persistTurno` NUNCA las pisa.
+
+**Decisiones mías (anotadas en el plan):**
+- El aviso no dice "quedó la del martes" (el día sale de una proyección):
+  dice "quedó la primera de tu semana" / "la que cambiaste último".
+- Un turno guardado que ya no nombra ninguna fila se CONSERVA (huérfano); una
+  fila nueva con el nombre de un turno *con filas* se suma a él y gana el
+  establecido. `applyDays`/`startBlank` sí reemplazan los turnos (igual que hoy
+  reemplazan el split, con confirmación).
+- Para recuperar la versión descartada: Entreno → "Traer de otro" → rutina
+  guardada → el Respaldo (aplicar el respaldo entero vuelve a unificar y gana la
+  primera, como dice la spec).
+
+**Verificado en Chrome (build de producción, 390 y 430, mismo puerto 4191):**
+1. Build de origin/main: plantilla Anterior/Posterior; el Posterior del viernes
+   editado **escribiendo la fila en IndexedDB** (Curl femoral 3→2 + Abductor), no
+   con el editor de la app vieja (su editor tiene muchos pasos; el efecto en
+   disco es el mismo `put` de la fila).
+2. Build nuevo (SW fuera, caches limpias): aviso una vez con el texto correcto;
+   "Descargar respaldo" generó `fierro-backup-2026-10-12.json` v3 con turnos y el
+   respaldo (se interceptó el click del `<a>` para no bajar el archivo); en disco
+   2 turnos, ids de slot y `seqIndex` intactos, filas crudas guardadas, respaldo
+   con las dos versiones; al recargar el aviso NO vuelve. Editor: "Quitar
+   Pájaros" en el Posterior del turno 5 → recargar → falta en el turno 2 (UI y
+   disco). Descanso → "¿Entrenar igual?" lista Anterior y Posterior una vez.
+3. Build viejo otra vez: muestra la rutina completa (11/9/11/9 ejercicios) y
+   abrió una sesión de Posterior (borrador guardado).
+4. Extra: con esa sesión abierta y una fila editada "por la vieja", el build
+   nuevo postergó (no escribió nada, la sesión siguió); sin borrador, la
+   editada ganó y el aviso dijo "la que cambiaste último".
+
+**No verificado:** con la rutina REAL de Enzo (sólo plantilla); el editor de la
+app vieja editando a mano después de migrar (cubierto por test); fotos
+(`photo` data-URL) duplicadas en las copias — tamaño no medido.
+
+**Riesgos / pendientes:**
+- Dos reconciliaciones el mismo día dejan dos respaldos con el MISMO nombre en
+  Mis rutinas (se vio en la prueba 4). Inofensivo; se puede numerar en Fase 2.
+- Si una versión vieja aplica una plantilla después de migrar, los turnos de
+  antes quedan huérfanos y pueden repetirse nombres en `S.turnos` (Fase 2 los
+  va a mostrar como "no está en tu semana").
+- Bug viejo encontrado, NO tocado: `insertRest`/`insertWorkout`/`reorderSeq`
+  llaman `pushHistory` DESPUÉS de mutar, así que "Deshacer" no deshace la
+  inserción (rutina-logic.js, ver el test de undo en rutina-logic.test.js).
+- `S.hoyOrder` sigue por `slotId` (en memoria; la spec lo pasa a `turnoId`).
+
+**Próximo paso exacto (Fase 2):** lienzo de opciones (maquetas tocables con
+datos reales) para "Tus turnos" + "Tu semana" (spec §3) ANTES de implementar.
+Después: `S.rutOpen` → `turnoId`; `saveExercise`/`deleteExercise`/`moveEx`/
+`saveSlot`/drag `rut` aceptan `{turnoId}` (la firma por índice queda como
+envoltorio); nombres únicos ("Ya tenés un turno que se llama así"); descansos
+explícitos (los pone Enzo) y `seqIndex` seguido por id de slot.
+
+---
+
 ## SESIÓN 2026-10-12 (5) — guía de la sesión en vivo (globos)
 
 Enzo pidió indicaciones para quien empieza y aprobó la opción B "Globo" de
