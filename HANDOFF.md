@@ -4,6 +4,21 @@
 
 ---
 
+## SESIÓN 2026-10-12 (3) — tocar un número de la rueda lo elige
+
+Enzo: "si el número está al costado sería sólo hacer un tap en vez de
+deslizar". `ReelPicker.jsx`: los dientes no centrados tienen `onClick` →
+`elegirDiente(i)`, que hace `scrollTo(reelScrollLeft(i), smooth)` y deja que
+el `onScroll` de siempre (debounce 120 ms) lo lea y commitee: un solo camino
+para elegir. Guarda: si entre el pointerdown y el click el dedo corrió más de
+10 px, no cuenta (era el final de un arrastre). Tocar el centrado sigue
+abriendo la edición manual; mantener, la rueda fina. Con movimiento reducido
+el salto es instantáneo. Verificado en Chrome (build de producción, 390):
+8 → tocar 9 → "Serie 1 lista 47.5 kg × 9"; 47.5 → tocar 50; un click a 40 px
+del pointerdown se ignora; tocar el centro abre el input.
+
+---
+
 ## SESIÓN 2026-10-12 (2) — corregir una serie, el descanso sabe de qué serie es, Primera vez corto
 
 Enzo: "registré una serie, el número estaba mal, le di a la X pero el
