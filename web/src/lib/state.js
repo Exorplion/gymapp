@@ -75,6 +75,9 @@ export const S = {
   // acá — reemplazados en las tasks siguientes por sus equivalentes de
   // secuencia (S.rutOpen pasa a ser un índice o null, ver Task 9).
   rutOpen: null,
+  // Un turno guardado (fuera de la semana) que se está mirando en Entreno:
+  // no tiene índice en S.routine, así que va por id (Rutina.jsx).
+  rutTurno: null,
   rutMode: 'view',      // 'view' = resumen de la semana · 'edit' = editor
   rutTab: 'semana',     // 'semana' = tu plan · 'ejercicios' = Mis ejercicios (transitorio, no persiste)
   lib: [],              // rutinas guardadas por el usuario

@@ -12,7 +12,7 @@ import { porBloques } from './muscle.js';
 // Task 5 completa lo que Task 3 dejó en TODO (ver comentarios más abajo):
 // rutina-logic.js no importa nada de este archivo, así que este import es
 // unidireccional — no hay ciclo drag.js<->rutina-logic.js.
-import { pushHistory, persistSlot, applyWorkoutOrder } from './rutina-logic.js';
+import { pushHistory, persistSlot, applyWorkoutOrder, ordenarSemana } from './rutina-logic.js';
 // El único uso de React en este módulo: colapsar el día abierto antes de medir
 // los rects tiene que estar pintado ANTES de medir, y sólo flushSync lo
 // garantiza. Ver dragStart.
@@ -102,7 +102,8 @@ export function dragTick() {
   let v = 0;
   // El asistente es una hoja fija que entra sin scroll: desplazar la ventana
   // movería la página de ATRÁS y la fila arrastrada se correría del dedo.
-  if (DRAG.kind === 'asist') { DRAG.raf = requestAnimationFrame(dragTick); return; }
+  // Lo mismo "Tu semana" (TuSemana.jsx), que también es una hoja.
+  if (DRAG.kind === 'asist' || DRAG.kind === 'semana') { DRAG.raf = requestAnimationFrame(dragTick); return; }
   if (DRAG.cy < DRAG_EDGE) v = -DRAG_SPEED * (1 - DRAG.cy / DRAG_EDGE);
   else if (DRAG.cy > h - DRAG_EDGE) v = DRAG_SPEED * (1 - (h - DRAG.cy) / DRAG_EDGE);
   if (v) {
@@ -179,6 +180,13 @@ export function dragEnd(commit) {
        bloque. Se le pasa `clean` para que la hoja lo llame dentro de su FLIP:
        mide con los transforms del arrastre puestos y anima al lugar final. */
     if (kind === 'asist') { commitSort(kind, wd, ids, clean); return; }
+    /* "Tu semana" tampoco: medido el 2026-10-12, mover los nodos a mano y
+       después el bump dejaba la hoja con los días desordenados (Vie, Dom,
+       Lun… con el sábado al final) hasta el siguiente render. ordenarSemana
+       ya cambió S.routine antes de su primer await, así que React puede
+       pintar el orden nuevo ahora mismo, en la misma tarea que borra los
+       transforms: en pantalla no salta nada. */
+    if (kind === 'semana') { clean(); flushSync(() => bump()); await saved; return; }
     ids.forEach(id => { const k = by.get(id); if (k) box.insertBefore(k, tras); });
     clean();
     // 'rut' deshabilita las flechas en el borde de cada GRUPO, no de la lista:
@@ -246,6 +254,10 @@ export async function commitSort(kind, wd, ids, limpiar) {
   // applyWorkoutOrder (rutina-logic.js) recalcula los descansos alrededor
   // en vez de intentar preservar los que había en las posiciones viejas.
   if (kind === 'seq') return applyWorkoutOrder(ids);
+  // "Tu semana" (turnos universales, Fase 2): `ids` son TODOS los slots,
+  // descansos incluidos, en el orden soltado. No se recalcula nada: los
+  // descansos los pone la persona, y el puntero sigue a su día.
+  if (kind === 'semana') return ordenarSemana(ids);
   const d = S.routine[+wd];
   if (!d || !d.exercises) return;
   pushHistory('Ejercicios reordenados');

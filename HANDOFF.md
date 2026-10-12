@@ -4,6 +4,82 @@
 
 ---
 
+## SESIÓN 2026-10-12 (7) — turnos universales, Fase 2: "Tu semana" aparte (opción B)
+
+Lienzo: claude.ai/artifact/4wj2gfup9HH4An9pPdFFCt (copia
+`Documents/Enzo/FIERRO-maquetas/turnos-y-semana.html`). Enzo eligió la **B**
+("riel + hoja Tu semana") y pidió "dale unas mejoras que tu creas". Rama
+`feat/turnos-fase2-semana` (worktree `.claude/worktrees/semana`). **1377 tests**
+(+15, `lib/__tests__/turnos-semana.test.js`).
+
+**Qué cambió en Entreno (`Rutina.jsx`):**
+- Elegir un turno enciende TODAS sus paradas en el riel. Debajo de cada parada
+  va el día estimado (`weekdayProjection`) en vez del número 1–7.
+- El turno dice "2 veces por semana · vie y lun" (`vecesTexto`; "por ciclo" si
+  la secuencia no dura 7). "Te toca hoy" mira todas sus paradas, no sólo la que
+  tocaste. Flechas y deslizar recorren cada turno UNA vez (antes Anterior se
+  veía dos veces).
+- Editando: "Lo que cambies acá vale para los dos días: vie y lun", botón
+  "Editar tu semana" y "Tus turnos" (chips con ×N, los guardados y "+ Turno
+  nuevo"). Mirando, "Tus turnos" sólo aparece si hay un turno guardado.
+- Salen "Mover antes / después" y "Quitar del ciclo". Entra "Sacar X de tu
+  semana": saca todas sus paradas y el turno queda guardado (con deshacer).
+- Turno guardado (`TurnoGuardado`, por id en `S.rutTurno`): se ven sus
+  ejercicios; editando, "Ponerlo en tu semana" (lo agrega al final y abre la
+  hoja para ubicarlo) o "Borrar X".
+
+**Hoja "Tu semana" (`components/sheets/TuSemana.jsx`, `openSheet('tu-semana')`):**
+una fila por día (día estimado, "Hoy", nombre, "8 ej · ~55 min"), arrastre
+(data-sort="semana", drag.js) + ↑ ↓ ✕ (mismo criterio WCAG que ReorderHoy),
+"+ Agregar un día" (un turno tuyo, uno guardado, descanso o turno nuevo),
+"Acomodar descansos" y "Listo". Sacar la ÚNICA aparición de un turno pregunta
+en la misma fila: Guardarlo (por defecto) / Borrarlo / Cancelar. Avisos: ciclo
+≠ 7 días, y 4+ días seguidos sin descanso (`rachaMasLarga`, da la vuelta).
+
+**Lógica (`rutina-logic.js`, "Tu semana"):** `editarSemana` (pushHistory ANTES
+de mutar, `seqIndex` seguido por id de slot; si se sacó el pendiente, toca el
+que quedó en su lugar), `ordenarSemana`, `moverParada`, `agregarParada`,
+`sacarParada`, `sacarTurnoDeSemana`, `crearTurno`, `acomodarDescansos`
+(pideDescanso una vez, reusa los descansos que había y completa hasta 7),
+`turnosGuardados`, `vecesEnSemana`, `nombreOcupado`. `saveSlot` rechaza un
+nombre que ya tiene otro turno ("Ya tenés un turno que se llama así") y
+devuelve true/false. Deshacer ahora también devuelve "Hoy": la foto guarda el
+id pendiente y al restaurar sigue al día que está pendiente (`restaurarRutina`).
+
+**Mejoras mías sobre la maqueta B:** días en el riel; "Tus turnos" oculto
+mirando cuando no aporta; aviso de racha larga; "Acomodar descansos" completa
+hasta 7 días (A·P·A·P → A·P·R·A·P·R·R, no un ciclo de 5); deshacer que no
+mueve "Hoy"; tocar un día en la hoja muestra ese turno.
+
+**Desvío de la spec (§3):** `S.rutOpen` sigue siendo un ÍNDICE: con la Fase 1
+cualquier aparición edita el turno compartido, así que pasar las funciones
+del editor a `{turnoId}` no cambiaba nada visible y era riesgo. El único caso
+sin índice (turno guardado) se mira por id y se edita después de ponerlo en la
+semana.
+
+**Trampa encontrada:** después de arrastrar en la hoja, drag.js movía los nodos
+a mano y React redibujaba encima: quedaban los días desordenados (Vie, Dom,
+Lun… Sáb) hasta el siguiente render. Para `semana` ya no se mueven nodos:
+`clean()` + `flushSync(bump)` (ordenarSemana muta antes de su primer await).
+
+**Verificado (build de producción, Playwright, 390 y 430, sin errores de
+consola, sin scroll horizontal):** rutina A·P·R·A·P·R·R cargada como filas
+crudas (la reconciliación la unificó), "Hoy" en el segundo Anterior. Riel con las dos ANT
+encendidas; bajar un Posterior, sacar los dos (el segundo pregunta), guardarlo,
+volver a agregarlo, arrastrar el último arriba, acomodar descansos → "Hoy"
+siempre en el mismo Anterior; al recargar, igual. Turno guardado: chip
+"Posterior · guardado", vista, "Ponerlo en tu semana" abre la hoja con él al
+final.
+
+**No verificado:** arrastre con el dedo en un teléfono real (sólo mouse en
+Playwright); con la rutina real de Enzo.
+
+**Pendientes:** Fase 3 ("hoy hago otra cosa", spec §4–5) y Fase 4
+(compensación, §6). Los viejos `insertRest`/`insertWorkout`/`reorderSeq`/
+`removeSlot` siguen sin usarse en la interfaz y con el bug de deshacer.
+
+---
+
 ## SESIÓN 2026-10-12 (6) — turnos universales, Fase 1 (modelo y reconciliación)
 
 Spec: `docs/superpowers/specs/2026-10-12-turnos-universales-y-fuera-de-plan-design.md`
