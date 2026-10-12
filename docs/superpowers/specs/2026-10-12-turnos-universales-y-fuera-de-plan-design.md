@@ -88,8 +88,8 @@ a calcular con `pideDescanso`: uno después de cada turno con un ejercicio de
 Pierna. Anterior tiene "Extensión de cuádriceps" y "Hack squat"; Posterior,
 "Curl femoral" y "Peso muerto rumano". Entonces mover cualquier turno
 convierte **A·P·R·A·P·R·R** en **A·R·P·R·A·R·P**: con el editor actual Enzo
-no puede conservar la semana que eligió. Pesa en la sección 3 y es la
-pregunta abierta 1.
+no puede conservar la semana que eligió. Pesa en la sección 3; Enzo decidió
+que los descansos los pone él (ver Decisiones).
 
 ---
 
