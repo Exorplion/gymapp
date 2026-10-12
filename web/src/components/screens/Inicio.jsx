@@ -32,17 +32,16 @@ import { cuerpo } from '../../lib/bodydata.js';
 import { recuperacion, zonasDeEjercicio, zonaDeForma, cuandoLista, porRegion, ZONAS } from '../../lib/recuperacion.js';
 import { LLANO, nombreZona, nombreCorto, frase, capital, abreviar, haceTexto } from '../../lib/inicio.js';
 import { turnoFoco, siguienteTurno } from '../../lib/turnoFoco.js';
+import { minutosDeTurno } from '../../lib/entreno.js';
 import AnimatedText from '../AnimatedText.jsx';
 import { Alerta, Check, Play, Plus, Taza } from '../Icon.jsx';
 import { menosMovimiento, screenReveal, D } from '../../lib/motion.js';
 
 const turnos = () => S.routine.filter(s => s.type === 'workout' && s.exercises?.length);
-/** Minutos de la última vez que hiciste ese turno; si nunca, ~3 min por serie. */
-function minutosDe(slot) {
-  const ult = S.sessions.find(s => s.slotId === slot.id && s.duration);
-  if (ult) return Math.round(ult.duration / 5) * 5;
-  return Math.round(((slot.exercises || []).reduce((a, e) => a + (e.sets || 0), 0) * 3) / 5) * 5;
-}
+/** Minutos de la última vez que hiciste ese turno (en cualquiera de sus
+    apariciones); si nunca, ~3 min por serie. Era una copia de
+    minutosDeTurno (entreno.js) que miraba sólo el slot. */
+const minutosDe = slot => minutosDeTurno(slot);
 const seriesDeEntrada = e => (e.unilateral ? Math.ceil((e.sets || []).length / 2) : (e.sets || []).length);
 
 export default function Inicio() {

@@ -11,10 +11,25 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { S, closeSheet } from '../../lib/state.js';
 import { equipLabel, exKey } from '../../lib/equip.js';
 import { copyExercises, copySourceExercises } from '../../lib/rutina-logic.js';
+import { claveTurno } from '../../lib/turnos.js';
 import { sheetReveal } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
 import { toast } from '../../lib/toast.js';
 import { Button, Card } from '../ui/primitives.jsx';
+
+/* Turnos universales: dos apariciones de Posterior son UN turno. Cada turno
+   se ofrece una vez (su primera aparición) y nunca el propio, ni como origen
+   ni como destino: copiar ahí sería copiarlo sobre sí mismo. Sin turnos
+   (modo viejo) cada slot es su propio turno, como antes. */
+function unaVezPorTurno(idxs, propio) {
+  const vistos = new Set([claveTurno(S.routine[propio])]);
+  return idxs.filter(i => {
+    const k = claveTurno(S.routine[i]);
+    if (vistos.has(k)) return false;
+    vistos.add(k);
+    return true;
+  });
+}
 
 // Nombre a mostrar para un turno de la secuencia actual.
 const slotLabel = i => S.routine[i]?.name || `Turno ${i + 1}`;
@@ -38,14 +53,14 @@ export default function CopyExercises({ mode = 'push', wd }) {
 
   // Turnos con ejercicios, que son los únicos que sirven de origen.
   const conEjercicios = S.routine.map((s, i) => i).filter(i => S.routine[i]?.exercises?.length);
-  const otros = conEjercicios.filter(i => i !== propio);
+  const otros = unaVezPorTurno(conEjercicios.filter(i => i !== propio), propio);
 
   /* Destinos posibles: primero los turnos que ya tienen ejercicios —que es a
      lo que uno quiere copiar— y después los libres. Ordenados así porque la
      pregunta real casi siempre es "a cuál de mis otros turnos", no "a qué
      casillero vacío". */
   const destinos = useMemo(() => {
-    const resto = S.routine.map((s, i) => i).filter(i => i !== propio);
+    const resto = unaVezPorTurno(S.routine.map((s, i) => i).filter(i => i !== propio), propio);
     return [
       ...resto.filter(i => S.routine[i]?.exercises?.length),
       ...resto.filter(i => !S.routine[i]?.exercises?.length),

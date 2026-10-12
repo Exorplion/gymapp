@@ -11,6 +11,7 @@ import { zonasDeEjercicio, ZONAS } from './recuperacion.js';
 import { coberturaDe } from './coverage.js';
 import { catOf, stalestGroups } from './muscle.js';
 import { applyWorkoutOrder } from './rutina-logic.js';
+import { claveTurno, claveDeSesion } from './turnos.js';
 
 const DIA = 86400000;
 export const esTurno = s => s?.type === 'workout';
@@ -96,16 +97,20 @@ export const enfriandose = () => stalestGroups(10);
 
 /** Minutos que suele llevar el turno: la última vez que lo hiciste, o ~3
     min por serie si nunca (mismo cálculo que la portada). */
-export function minutosDeTurno(slot, sesiones = S.sessions) {
-  const ult = sesiones.find(s => s.slotId === slot.id && s.duration);
+export function minutosDeTurno(slot, sesiones = S.sessions, rutina = S.routine) {
+  // Por turno, no por slot: la segunda aparición de Posterior sabe lo que
+  // duró la primera (turnos universales). Sin turnos, el slot es su turno.
+  const k = claveTurno(slot);
+  const ult = sesiones.find(s => s.duration && claveDeSesion(s, rutina) === k);
   if (ult) return Math.round(ult.duration / 5) * 5;
   return Math.round(((slot.exercises || []).reduce((a, e) => a + (e.sets || 0), 0) * 3) / 5) * 5;
 }
 
 /** Fecha ('YYYY-MM-DD') de la última vez que hiciste ese turno, o null. */
-export function ultimaVezDeTurno(slot, sesiones = S.sessions) {
+export function ultimaVezDeTurno(slot, sesiones = S.sessions, rutina = S.routine) {
+  const k = claveTurno(slot);
   let mejor = null;
-  for (const s of sesiones) if (s.slotId === slot.id && s.date && (!mejor || s.date > mejor)) mejor = s.date;
+  for (const s of sesiones) if (s.date && (!mejor || s.date > mejor) && claveDeSesion(s, rutina) === k) mejor = s.date;
   return mejor;
 }
 
@@ -142,10 +147,18 @@ export function progresoDeEjercicio(nombre, sesiones = S.sessions) {
   return { kg: ult.kg, delta: Math.round((ult.kg - viejo.kg) * 10) / 10, semanas };
 }
 
-/** En qué turnos aparece un ejercicio (por nombre), en orden. */
+/** En qué turnos aparece un ejercicio (por nombre), en orden. Cada turno
+    una vez (su primera aparición): si no, los chips decían "A · P · A · P". */
 export function turnosDeEjercicio(nombre, rutina = S.routine) {
   const k = clave(nombre);
-  return rutina.filter(s => esTurno(s) && (s.exercises || []).some(e => clave(e.name) === k));
+  const vistos = new Set();
+  return rutina.filter(s => {
+    if (!esTurno(s) || !(s.exercises || []).some(e => clave(e.name) === k)) return false;
+    const t = claveTurno(s);
+    if (vistos.has(t)) return false;
+    vistos.add(t);
+    return true;
+  });
 }
 
 /** Las series de un ejercicio (por nombre) en los turnos donde aparece:
@@ -167,7 +180,7 @@ export function seriesDeEjercicio(nombre, rutina = S.routine) {
     va en otros turnos, o si el grupo está vacío. */
 export function turnosComunes(nombres, rutina = S.routine) {
   if (!nombres?.length) return null;
-  const ids = n => turnosDeEjercicio(n, rutina).map(t => t.id).join('|');
+  const ids = n => turnosDeEjercicio(n, rutina).map(claveTurno).join('|');
   const primero = ids(nombres[0]);
   if (!primero || nombres.some(n => ids(n) !== primero)) return null;
   return turnosDeEjercicio(nombres[0], rutina);

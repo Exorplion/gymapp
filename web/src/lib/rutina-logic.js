@@ -13,7 +13,7 @@ import { EXCATALOG, catOf, muscleVolume, porBloques } from './muscle.js';
 import { VOLUME_BANDS } from './charts.js';
 import { exKey } from './equip.js';
 import { toast } from './toast.js';
-import { hidratar, esVinculado, turnoVinculado, filaDe, claveNombre } from './turnos.js';
+import { hidratar, esVinculado, turnoVinculado, filaDe, claveNombre, claveTurno, claveDeSesion } from './turnos.js';
 
 /* ================= RUTINA ================= */
 /* insights derivados del historial de sesiones: sin esquema nuevo, se calcula
@@ -28,7 +28,9 @@ import { hidratar, esVinculado, turnoVinculado, filaDe, claveNombre } from './tu
     que no se intenta — mejor no mostrar nada que mostrar algo por
     coincidencia de índice. */
 export function daySessions(slotId) {
-  return S.sessions.filter(s => s.slotId === slotId).slice().sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+  // Por turno (turnos universales): las sesiones de cualquier aparición.
+  const k = claveTurno(S.routine.find(s => s.id === slotId)) || slotId;
+  return S.sessions.filter(s => claveDeSesion(s, S.routine) === k).slice().sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 }
 export function sessionsSince(days) {
   const cutoff = dstr(new Date(Date.now() - days * 86400000));
@@ -286,7 +288,11 @@ export async function copyExercises(src, to, ids, mode = 'merge') {
   if (toIdx < 0) return { copied: 0, reason: 'no-target' };
   const fromIdx = src?.libId != null ? -1
     : (src?.fromId != null ? slotIndexOf(src.fromId) : +src?.fromIndex);
-  if (src?.libId == null && fromIdx === toIdx) return { copied: 0, reason: 'same' };   // copiar sobre sí mismo
+  // copiar sobre sí mismo: el mismo slot, u otra aparición del mismo turno
+  if (src?.libId == null && (fromIdx === toIdx
+    || (S.routine[fromIdx] && S.routine[toIdx] && claveTurno(S.routine[fromIdx]) === claveTurno(S.routine[toIdx])))) {
+    return { copied: 0, reason: 'same' };
+  }
   const elegidos = copySourceExercises(src).filter(e => ids.includes(e.id ?? e.name));
   if (!elegidos.length) return { copied: 0, reason: 'none-selected' };
 

@@ -984,6 +984,7 @@ export async function completeSession() {
   const fecha = dstr(new Date(startAt));
   const sess = {
     id: d.id, date: fecha, slotId: d.slotId, dayName: d.dayName,
+    ...((d.turnoId || slot?.turnoId) ? { turnoId: d.turnoId || slot.turnoId } : {}),
     start: startAt, end: Date.now(), duration: Math.max(1, Math.round((Date.now() - startAt) / 60000)), entries,
     ...(skipped.length ? { skipped } : {}),
     ...(added.length ? { added } : {}),
@@ -1080,6 +1081,8 @@ export async function startSession(index, precheckAdjust = 0, { preworkout = nul
   }
   S.draft = {
     id: uid(), date: dstr(), slotId: slot.id, dayName: slot.name || 'Entrenamiento', open: Date.now(), start: null, cur: null,
+    // el turno (turnos universales): la sesión cuenta para todas sus apariciones
+    ...(slot.turnoId ? { turnoId: slot.turnoId } : {}),
     order: orderedExs(index, slot.exercises).map(e => e.id), entries: {},
     // lo que se puede cambiar sin tocar el plan: ver "modificar la sesión
     // mientras entrenás" más arriba
@@ -1392,6 +1395,7 @@ export async function registrarDiaEntrenado(dateStr, slotId) {
   const t = new Date(dateStr + 'T12:00:00').getTime();
   const sess = {
     id: uid(), date: dateStr, slotId, dayName: slot.name || 'Entrenamiento',
+    ...(slot.turnoId ? { turnoId: slot.turnoId } : {}),
     start: t, end: t, duration: null, entries: [], retro: true,
   };
   await idb.put('sessions', sess);

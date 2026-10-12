@@ -1,7 +1,7 @@
 // La hidratación: en memoria, `name` y `exercises` de cada slot de
 // entrenamiento son propiedades de acceso que leen y escriben su turno.
 import { describe, it, expect } from 'vitest';
-import { vincular, esVinculado, hidratar, filaDe, firma } from '../turnos.js';
+import { esVinculado, hidratar, filaDe, firma } from '../turnos.js';
 
 const ex = (id, name, sets = 3) => ({ id, name, sets, reps: 10 });
 
