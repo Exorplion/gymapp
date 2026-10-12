@@ -19,8 +19,14 @@
 // S.rutMode sigue decidiendo si se edita (templates.js y BodyMap.jsx lo
 // tocan), S.rutOpen pasa a ser el TURNO ELEGIDO (índice en S.routine) y
 // S.rutTab la vista (Plan / Ejercicios). El drag de ejercicios es el de
-// siempre (data-sort="rut", drag.js); el orden de los turnos se cambia con
-// "Mover antes / después", que llama a applyWorkoutOrder como el drag viejo.
+// siempre (data-sort="rut", drag.js).
+//
+// Turnos universales, Fase 2 (2026-10-12, opción B del lienzo): un turno es
+// uno solo aunque aparezca dos veces. Elegirlo enciende todas sus paradas en
+// el riel, y el turno dice cuántas veces va y qué días. La semana (orden,
+// descansos, agregar o sacar días) se edita aparte, en la hoja "Tu semana"
+// (TuSemana.jsx). Un turno que sacaste de la semana queda guardado: se ve en
+// "Tus turnos" y se mira por id (S.rutTurno), porque no tiene índice.
 import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { S, bump, useStore, openSheet, changeTab, wDisplay } from '../../lib/state.js';
@@ -35,14 +41,16 @@ import { zonaDeForma } from '../../lib/recuperacion.js';
 import { nombreZona, abreviar, haceTexto, frase, LLANO } from '../../lib/inicio.js';
 import {
   routineStats, routineName, renameRoutine,
-  enterEditMode, exitEditMode, addWorkoutDay, removeWorkoutDay,
+  enterEditMode, exitEditMode,
   deleteExercise, moveEx, saveSlot, deloadSuggestion, deloadActivo, applyDeload, endDeload,
+  weekdayProjection, vecesEnSemana, turnosGuardados, sacarTurnoDeSemana, crearTurno, agregarParada,
 } from '../../lib/rutina-logic.js';
 import {
-  indicesDeTurnos, turnoElegido, marcaDeTurno, seriesPorZonaDeTurno, seriesSemanaDelPlan,
+  turnoElegido, marcaDeTurno, seriesPorZonaDeTurno, seriesSemanaDelPlan,
   huecosDeCobertura, enfriandose, minutosDeTurno, ultimaVezDeTurno, progresoDeEjercicio,
-  turnosDeEjercicio, moverTurno, seriesDeEjercicio, turnosComunes,
+  turnosDeEjercicio, seriesDeEjercicio, turnosComunes,
 } from '../../lib/entreno.js';
+import { claveTurno } from '../../lib/turnos.js';
 import { fmtD } from '../../lib/format.js';
 import { menosMovimiento } from '../../lib/motion.js';
 import { Check, ChevronLeft, Copiar, Grip, Info, Mancuerna, Pencil, Rutinas, Traer, X, ArrowUp, ArrowDown, Plus } from '../Icon.jsx';
@@ -78,7 +86,52 @@ async function handleMoveEx(index, exId, dir) {
   if (await moveEx(index, exId, dir)) flipSort(() => flushSync(() => bump()));
 }
 
-function elegir(i) { S.rutOpen = i; bump(); }
+function elegir(i) { S.rutOpen = i; S.rutTurno = null; bump(); }
+
+/* ----- un turno, varias paradas (turnos universales, Fase 2) ----- */
+
+/** Los índices de las paradas de un turno. */
+const paradasDe = clave => S.routine.map((s, i) => (s.type === 'workout' && claveTurno(s) === clave ? i : -1)).filter(i => i >= 0);
+
+/** La parada que representa al turno: la que te toca (hoy o la que sigue)
+    si es de él, si no la primera. Así "Te toca hoy" no depende de qué
+    aparición tocaste. */
+function paradaDeTurno(clave) {
+  const ps = paradasDe(clave);
+  return ps.find(i => marcaDeTurno(i)) ?? ps[0] ?? -1;
+}
+
+/** Cada turno una vez, en el orden de la semana: lo que recorren las
+    flechas y el deslizar (antes iban parada por parada y Anterior se veía
+    dos veces). */
+function turnosEnOrden() {
+  const vistos = new Set();
+  const out = [];
+  S.routine.forEach(s => {
+    if (s.type !== 'workout') return;
+    const k = claveTurno(s);
+    if (vistos.has(k)) return;
+    vistos.add(k);
+    out.push(k);
+  });
+  return out;
+}
+
+/** "Lun y jue" a partir de los índices (días estimados desde hoy). */
+function diasTxt(idxs) {
+  const p = weekdayProjection();
+  const d = idxs.map(i => p[i].toLowerCase());
+  return d.length > 1 ? `${d.slice(0, -1).join(', ')} y ${d[d.length - 1]}` : d[0] || '';
+}
+
+/** "2 veces por semana · lun y jue". Si el ciclo no dura 7 días, "por
+    ciclo": decir "por semana" sería falso. */
+function vecesTexto(clave) {
+  const ps = paradasDe(clave);
+  if (!ps.length) return 'No está en tu semana';
+  const por = S.routine.length === 7 ? 'por semana' : 'por ciclo';
+  return `${ps.length === 1 ? 'Una vez' : `${ps.length} veces`} ${por} · ${diasTxt(ps)}`;
+}
 
 export default function Rutina() {
   useStore();
@@ -172,14 +225,24 @@ function RoutineNameHeader() {
 /* ============================== Plan ============================== */
 
 function Plan({ editing }) {
-  const turnos = indicesDeTurnos();
+  const orden = turnosEnOrden();
   const sel = turnoElegido();
+  const claveSel = sel >= 0 ? claveTurno(S.routine[sel]) : null;
+  const pos = orden.indexOf(claveSel);
+  // Un turno guardado (fuera de la semana) elegido en "Tus turnos".
+  const guardado = S.rutTurno ? turnosGuardados().find(t => t.id === S.rutTurno) : null;
   // Dirección del último cambio de turno: la entrada del turno nuevo se
   // desliza desde ese lado (CSS .ent-turno, --dx).
   const [dir, setDir] = useState(0);
-  const ir = i => { if (i === sel || i < 0) return; setDir(i > sel ? 1 : -1); elegir(i); };
+  const ir = i => {
+    if (i < 0 || (i === sel && !guardado)) return;
+    const p = orden.indexOf(claveTurno(S.routine[i]));
+    setDir(guardado ? 1 : p === pos ? 0 : p > pos ? 1 : -1);
+    elegir(i);
+  };
+  const irTurno = k => (k == null ? -1 : paradaDeTurno(k));
 
-  if (!turnos.length && !editing) {
+  if (!orden.length && !guardado && !editing) {
     return (
       <div className="card ent-vacio">
         <RutinaVacia className="big" />
@@ -195,12 +258,15 @@ function Plan({ editing }) {
   const slot = S.routine[sel];
   return (
     <>
-      <Riel sel={sel} editing={editing} onElegir={ir} />
-      {slot && (
+      <Riel claveSel={guardado ? null : claveSel} editing={editing} onElegir={ir} />
+      <TusTurnos claveSel={guardado ? guardado.id : claveSel} editing={editing} onElegir={k => ir(paradaDeTurno(k))} />
+      {guardado ? (
+        <TurnoGuardado key={guardado.id} turno={guardado} editing={editing} />
+      ) : slot && (
         <Turno
-          key={slot.id} slot={slot} index={sel} editing={editing} dir={dir}
-          antes={turnos[turnos.indexOf(sel) - 1] ?? -1}
-          despues={turnos[turnos.indexOf(sel) + 1] ?? -1}
+          key={claveSel} slot={slot} index={sel} editing={editing} dir={dir}
+          antes={irTurno(orden[pos - 1])}
+          despues={irTurno(orden[pos + 1])}
           onIr={ir}
         />
       )}
@@ -217,53 +283,144 @@ function Plan({ editing }) {
 /* El ciclo entero en una línea: cada entrenamiento es una parada con su
    nombre corto, cada descanso un punto. "Hoy" marca el pendiente; si el
    pendiente es un descanso, "Sigue" marca el turno que viene. */
-function Riel({ sel, editing, onElegir }) {
+function Riel({ claveSel, editing, onElegir }) {
   const st = routineStats();
   const descansos = S.routine.length - st.workoutCount;
-  async function nuevo() {
-    const t = await addWorkoutDay();
-    elegir(S.routine.findIndex(s => s.id === t.id));
-  }
+  const dias = weekdayProjection();
   return (
     <div className="ent-riel-caja">
-      <div className="ent-riel" role="tablist" aria-label="Tu ciclo de entrenamiento">
-        {S.routine.map((slot, i) => {
-          if (slot.type !== 'workout') {
-            return <span key={slot.id} className="ent-parada libre" title="Descanso"><span className="ent-cod" aria-hidden="true" /></span>;
-          }
-          const marca = marcaDeTurno(i);
+      {S.routine.length > 0 && (
+        <div className="ent-riel" role="tablist" aria-label="Tu ciclo de entrenamiento">
+          {S.routine.map((slot, i) => {
+            if (slot.type !== 'workout') {
+              return <span key={slot.id} className="ent-parada libre" title={`Descanso · ${dias[i]}`}><span className="ent-cod" aria-hidden="true" /></span>;
+            }
+            const marca = marcaDeTurno(i);
+            // Todas las paradas del turno elegido se encienden: es uno solo.
+            const on = claveTurno(slot) === claveSel;
+            return (
+              <button
+                type="button" role="tab" key={slot.id} aria-selected={on}
+                className={`ent-parada${on ? ' sel' : ''}`}
+                aria-label={`${slot.name || 'Turno sin nombre'}, ${dias[i]}${marca === 'hoy' ? ', te toca hoy' : marca === 'sigue' ? ', es el que sigue' : ''}`}
+                onClick={() => onElegir(i)}
+              >
+                {marca && <span className="ent-marca">{marca === 'hoy' ? 'Hoy' : 'Sigue'}</span>}
+                <span className="ent-cod">{abreviar(slot.name) || i + 1}</span>
+                <span className="ent-num">{dias[i]}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <div className="ent-riel-pie">
+        <span>{st.workoutCount} {st.workoutCount === 1 ? 'entrenamiento' : 'entrenamientos'}{descansos > 0 && ` · ${descansos} ${descansos === 1 ? 'descanso' : 'descansos'}`}</span>
+        {!editing && <span>{st.sets} series por ciclo</span>}
+      </div>
+      {editing && (
+        <button type="button" className="btn ghost ent-semana-btn" onClick={() => openSheet('tu-semana')}>
+          <Rutinas size={17} /> Editar tu semana
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* "Tus turnos": cada turno una vez, con cuántas veces va. Mirando, sólo
+   aparece si hay algo que el riel no muestra (un turno guardado); editando,
+   siempre, con "+ Turno nuevo". */
+function TusTurnos({ claveSel, editing, onElegir }) {
+  const guardados = turnosGuardados();
+  if (!editing && !guardados.length) return null;
+  const enSemana = turnosEnOrden();
+  async function nuevo() {
+    const i = await crearTurno();
+    if (i >= 0) elegir(i);
+  }
+  const verGuardado = id => { S.rutTurno = id; bump(); };
+  return (
+    <div className="ent-tus">
+      <span className="ent-ojo">Tus turnos</span>
+      <div className="ent-chips">
+        {enSemana.map(k => {
+          const slot = S.routine[paradaDeTurno(k)];
+          const n = vecesEnSemana(k);
           return (
-            <button
-              type="button" role="tab" key={slot.id} aria-selected={i === sel}
-              className={`ent-parada${i === sel ? ' sel' : ''}`}
-              aria-label={`${slot.name || 'Turno sin nombre'}${marca === 'hoy' ? ', te toca hoy' : marca === 'sigue' ? ', es el que sigue' : ''}`}
-              onClick={() => onElegir(i)}
-            >
-              {marca && <span className="ent-marca">{marca === 'hoy' ? 'Hoy' : 'Sigue'}</span>}
-              <span className="ent-cod">{abreviar(slot.name) || i + 1}</span>
-              <span className="ent-num">{i + 1}</span>
+            <button key={k} type="button" className={`chip${k === claveSel ? ' blue' : ''}`} aria-pressed={k === claveSel} onClick={() => onElegir(k)}>
+              {slot?.name || 'Sin nombre'} <span className="ent-chip-dim">×{n}</span>
             </button>
           );
         })}
-        {editing && (
-          <button type="button" className="ent-parada mas" aria-label="Agregar un entrenamiento" onClick={nuevo}>
-            <span className="ent-cod"><Plus size={18} /></span>
-            <span className="ent-num" aria-hidden="true">&nbsp;</span>
+        {guardados.map(t => (
+          <button key={t.id} type="button" className={`chip ent-chip-guardado${t.id === claveSel ? ' blue' : ''}`} aria-pressed={t.id === claveSel} onClick={() => verGuardado(t.id)}>
+            {t.name || 'Sin nombre'} <span className="ent-chip-dim">· guardado</span>
           </button>
+        ))}
+        {editing && (
+          <button type="button" className="chip ent-chip-nuevo" onClick={nuevo}><Plus size={15} /> Turno nuevo</button>
         )}
       </div>
-      <div className="ent-riel-pie">
-        <span>{st.workoutCount} {st.workoutCount === 1 ? 'entrenamiento' : 'entrenamientos'}{descansos > 0 && ` · ${descansos} ${descansos === 1 ? 'descanso' : 'descansos'}`}</span>
-        <span>{editing ? 'Los descansos se acomodan solos' : `${st.sets} series por ciclo`}</span>
-      </div>
     </div>
+  );
+}
+
+/* Un turno guardado: no está en la semana, así que no se entrena ni se
+   edita acá. Se ve qué tiene y, editando, se vuelve a poner o se borra. */
+function TurnoGuardado({ turno, editing }) {
+  const exs = turno.exercises || [];
+  const series = exs.reduce((a, e) => a + (e.sets || 0), 0);
+  async function poner() {
+    const i = await agregarParada(turno.id);
+    if (i >= 0) { elegir(i); openSheet('tu-semana'); }
+  }
+  async function borrar() {
+    if (await sacarTurnoDeSemana(turno.id, { borrar: true })) { S.rutTurno = null; bump(); }
+  }
+  return (
+    <section className="ent-turno" aria-label={turno.name || 'Turno guardado'}>
+      <div className="ent-turno-tit">
+        <span className="ent-estado">Guardado · no está en tu semana</span>
+        <h2 className="ent-turno-nombre">{turno.name || 'Sin nombre'}</h2>
+      </div>
+      {exs.length > 0 && (
+        <div className="ent-cifras">
+          <div><b>{exs.length}</b><span>{exs.length === 1 ? 'ejercicio' : 'ejercicios'}</span></div>
+          <div><b>{series}</b><span>series</span></div>
+        </div>
+      )}
+      <div className="ent-lista">
+        {blocksOf(exs).map(b => (
+          <div key={b.cat} className="ent-grupo">
+            <div className="ent-grupo-h"><span>{b.cat === 'Otros' ? 'Sin grupo' : b.cat}</span></div>
+            {b.exs.map(e => (
+              <div key={e.id} className="ent-ex ent-ex-quieto">
+                <span className="ent-ex-m"><span className="ent-ex-t">{e.name}</span></span>
+                <span className="ent-ex-p">{e.sets}<i>×</i>{e.reps}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      {editing ? (
+        <div className="ent-acciones">
+          <button type="button" className="btn" onClick={poner}><Plus size={18} /> Ponerlo en tu semana</button>
+          <button type="button" className="ent-quitar" onClick={borrar}>Borrar {turno.name || 'este turno'}</button>
+        </div>
+      ) : (
+        <p className="ent-sin-ej">Para volver a usarlo, tocá el lápiz de arriba y «Ponerlo en tu semana».</p>
+      )}
+    </section>
   );
 }
 
 function Turno({ slot, index, editing, dir, antes, despues, onIr }) {
   const exs = slot.exercises || [];
   const series = exs.reduce((a, e) => a + (e.sets || 0), 0);
-  const marca = marcaDeTurno(index);
+  const clave = claveTurno(slot);
+  const paradas = paradasDe(clave);
+  // Cualquiera de sus paradas puede ser la de hoy: el turno es uno solo.
+  const marcas = paradas.map(i => marcaDeTurno(i));
+  const marca = marcas.includes('hoy') ? 'hoy' : marcas.includes('sigue') ? 'sigue' : null;
   const ultima = ultimaVezDeTurno(slot);
   const estado = marca === 'hoy' ? 'Te toca hoy' : marca === 'sigue' ? 'Es el que sigue'
     : ultima ? `Hecho ${haceTexto(ultima)}` : 'Todavía no lo hiciste';
@@ -288,6 +445,7 @@ function Turno({ slot, index, editing, dir, antes, despues, onIr }) {
         <div className="ent-turno-tit">
           <span className={`ent-estado${marca ? ' toca' : ''}`}>{estado}</span>
           {editing ? <SlotNameInput index={index} slot={slot} /> : <h2 className="ent-turno-nombre">{slot.name || 'Sin nombre'}</h2>}
+          <span className="ent-veces">{vecesTexto(clave)}</span>
         </div>
         <div className="ent-flechas">
           <button type="button" className="ent-flecha" aria-label="Turno anterior" disabled={antes < 0} onClick={() => onIr(antes)}><ChevronLeft size={18} /></button>
@@ -303,6 +461,10 @@ function Turno({ slot, index, editing, dir, antes, despues, onIr }) {
         </div>
       )}
 
+      {editing && paradas.length > 1 && (
+        <p className="ent-comparte">Lo que cambies acá vale para {paradas.length === 2 ? 'los dos días' : `los ${paradas.length} días`}: {diasTxt(paradas)}.</p>
+      )}
+
       {exs.length > 0 && <MusculosDelTurno slot={slot} />}
 
       {exs.length === 0 && (
@@ -311,7 +473,7 @@ function Turno({ slot, index, editing, dir, antes, despues, onIr }) {
 
       {editing ? <ListaEditable slot={slot} index={index} /> : <ListaEjercicios slot={slot} index={index} />}
 
-      {editing && <AccionesTurno slot={slot} index={index} antes={antes} despues={despues} />}
+      {editing && <AccionesTurno slot={slot} index={index} />}
     </section>
   );
 }
@@ -451,14 +613,15 @@ function ListaEditable({ slot, index }) {
   );
 }
 
-/* Agregar, copiar entre turnos (Anterior A y B son la misma rutina: sin esto
-   había que cargar los mismos nueve ejercicios dos veces), mover el turno en
-   el ciclo y sacarlo. */
-function AccionesTurno({ slot, index, antes, despues }) {
+/* Agregar y copiar entre turnos (Anterior A y B eran la misma rutina: sin
+   esto había que cargar los mismos nueve ejercicios dos veces). Mover un día
+   ya no va acá: la semana se edita en "Tu semana". Sacar el turno lo saca de
+   todos sus días y lo deja guardado en "Tus turnos" (con deshacer). */
+function AccionesTurno({ slot, index }) {
   const exs = slot.exercises || [];
-  async function mover(d) {
-    const i = await moverTurno(slot.id, d);
-    if (i != null) elegir(i);
+  const clave = claveTurno(slot);
+  async function sacar() {
+    if (await sacarTurnoDeSemana(clave)) { S.rutOpen = null; S.rutTurno = Array.isArray(S.turnos) ? clave : null; bump(); }
   }
   return (
     <div className="ent-acciones">
@@ -467,11 +630,7 @@ function AccionesTurno({ slot, index, antes, despues }) {
         <button type="button" className="btn sm dim" disabled={!exs.length} onClick={() => openSheet('copy-exs', { mode: 'push', wd: index })}><Copiar /> Copiar a otro</button>
         <button type="button" className="btn sm dim" onClick={() => openSheet('copy-exs', { mode: 'pull', wd: index })}><Traer /> Traer de otro</button>
       </div>
-      <div className="ent-dos">
-        <button type="button" className="btn sm dim" disabled={antes < 0} onClick={() => mover(-1)}><ChevronLeft size={16} /> Mover antes</button>
-        <button type="button" className="btn sm dim ent-btn-der" disabled={despues < 0} onClick={() => mover(1)}>Mover después <ChevronLeft size={16} /></button>
-      </div>
-      <button type="button" className="ent-quitar" onClick={() => removeWorkoutDay(slot.id)}>Quitar {slot.name || 'este turno'} del ciclo</button>
+      <button type="button" className="ent-quitar" onClick={sacar}>Sacar {slot.name || 'este turno'} de tu semana</button>
     </div>
   );
 }
@@ -481,9 +640,11 @@ function AccionesTurno({ slot, index, antes, despues }) {
 function SlotNameInput({ index, slot }) {
   const [name, setName] = useState(slot.name || '');
   useEffect(() => { setName(slot.name || ''); }, [slot.id, slot.name]);
-  function commit() {
+  async function commit() {
     const t = name.trim();
-    if (t !== (slot.name || '')) saveSlot(index, { name: t });
+    // Un nombre que ya usa otro turno se rechaza (saveSlot avisa): el campo
+    // vuelve al nombre que tenía.
+    if (t !== (slot.name || '') && !(await saveSlot(index, { name: t }))) setName(slot.name || '');
   }
   return (
     <input

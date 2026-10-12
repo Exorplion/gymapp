@@ -62,6 +62,7 @@ import SalirPrueba, { MarcoPrueba } from './components/sheets/SalirPrueba.jsx';
 import Calentamiento from './components/sheets/Calentamiento.jsx';
 import ExOpciones from './components/sheets/ExOpciones.jsx';
 import AvisoTurnos from './components/sheets/AvisoTurnos.jsx';
+import TuSemana from './components/sheets/TuSemana.jsx';
 import { abrirAvisoTurnos } from './lib/rutina-logic.js';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
@@ -143,6 +144,7 @@ function SheetContent({ sheet }) {
     case 'year-recap': return <YearRecap {...sheet.props} />;
     case 'salir-prueba': return <SalirPrueba {...sheet.props} />;
     case 'aviso-turnos': return <AvisoTurnos {...sheet.props} />;
+    case 'tu-semana': return <TuSemana {...sheet.props} />;
     default: return null;
   }
 }

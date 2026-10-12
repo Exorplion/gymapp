@@ -416,8 +416,19 @@ export async function renameRoutineExercise(slotId, nombreViejo, { name, equip, 
    getters, así que los slots salen planos (con su turnoId) y el vínculo se
    vuelve a armar al restaurar con hidratar(). */
 let RUT_HISTORY = [], RUT_REDO = [];
-const fotoRutina = () => ({ routine: structuredClone(S.routine), turnos: structuredClone(S.turnos) });
-function restaurarRutina(f) { S.routine = f.routine; S.turnos = f.turnos; hidratar(S); }
+const idPendiente = () => S.routine[S.cfg.seqIndex || 0]?.id ?? null;
+const fotoRutina = () => ({ routine: structuredClone(S.routine), turnos: structuredClone(S.turnos), seqId: idPendiente() });
+/* El puntero ("Hoy") se guarda como id de slot. Al restaurar sigue al slot que
+   está pendiente AHORA si sigue existiendo (deshacer un "mover" no cambia lo
+   que te toca); si no existe (deshacer el agregado de esa parada), vuelve al
+   de la foto. Sin esto, deshacer un cambio de la semana dejaba el índice
+   apuntando a otro día. */
+function restaurarRutina(f) {
+  const ahora = idPendiente();
+  S.routine = f.routine; S.turnos = f.turnos; hidratar(S);
+  const i = [ahora, f.seqId].map(id => S.routine.findIndex(s => s.id === id)).find(k => k >= 0);
+  if (i != null && i !== (S.cfg.seqIndex || 0)) { S.cfg.seqIndex = i; saveCfg(); }
+}
 export function pushHistory(msg) {
   RUT_HISTORY.push(fotoRutina());
   if (RUT_HISTORY.length > 20) RUT_HISTORY.shift();
@@ -697,6 +708,177 @@ export async function removeWorkoutDay(id) {
   await applyWorkoutOrder(ids);
 }
 
+/* ---------- Tu semana (turnos universales, Fase 2) ----------
+   La semana se edita parada por parada y los descansos son explícitos: lo que
+   armás es lo que queda (decisión de Enzo, 2026-10-12). Nada de esto recalcula
+   descansos, salvo acomodarDescansos(), que se pide con un botón.
+
+   El puntero sigue por id de slot: antes de editar se anota cuál está
+   pendiente y después se busca dónde quedó. Mover o agregar una parada no
+   cambia "lo que te toca hoy"; si se saca la pendiente, toca la que quedó en
+   su lugar. */
+async function editarSemana(msg, cambiar) {
+  const idAntes = idPendiente();
+  const iAntes = S.cfg.seqIndex || 0;
+  pushHistory(msg);
+  const res = cambiar();
+  reindex();
+  const n = S.routine.length;
+  const i = S.routine.findIndex(s => s.id === idAntes);
+  S.cfg.seqIndex = i >= 0 ? i : (n ? iAntes % n : 0);
+  await Promise.all([persistAll(), saveCfg()]);
+  bump();
+  return res;
+}
+
+const hayTurnos = () => Array.isArray(S.turnos);
+
+/** Cuántas veces aparece un turno en la semana (por su clave). */
+export function vecesEnSemana(clave, rutina = S.routine) {
+  return rutina.filter(s => s.type === 'workout' && claveTurno(s) === clave).length;
+}
+
+/** Los turnos que no están en la semana (guardados para después). */
+export function turnosGuardados() {
+  if (!hayTurnos()) return [];
+  return S.turnos.filter(t => !vecesEnSemana(t.id));
+}
+
+/** ¿Ya hay OTRO turno con ese nombre? (sin tildes ni mayúsculas) */
+export function nombreOcupado(nombre, clavePropia = null) {
+  const k = claveNombre(nombre);
+  if (!k) return false;
+  const vistos = new Set();
+  const nombres = [];
+  S.routine.forEach(s => {
+    if (s.type !== 'workout') return;
+    const c = claveTurno(s);
+    if (c === clavePropia || vistos.has(c)) return;
+    vistos.add(c);
+    nombres.push(s.name);
+  });
+  (S.turnos || []).forEach(t => { if (t.id !== clavePropia && !vistos.has(t.id)) nombres.push(t.name); });
+  return nombres.some(n => claveNombre(n) === k);
+}
+
+/** "Turno nuevo", "Turno nuevo 2"… el primero libre. */
+function nombreLibre(base = 'Turno nuevo') {
+  if (!nombreOcupado(base)) return base;
+  let k = 2;
+  while (nombreOcupado(`${base} ${k}`)) k++;
+  return `${base} ${k}`;
+}
+
+/** Reordena la semana entera según los ids de slot (arrastre en "Tu semana"). */
+export async function ordenarSemana(ids) {
+  const porId = new Map(S.routine.map(s => [s.id, s]));
+  const nuevo = ids.map(id => porId.get(id)).filter(Boolean);
+  S.routine.forEach(s => { if (!ids.includes(s.id)) nuevo.push(s); });   // nada se pierde
+  if (nuevo.every((s, i) => s === S.routine[i])) return;
+  await editarSemana('Semana reordenada', () => { S.routine = nuevo; });
+}
+
+/** Corre una parada un lugar antes (-1) o después (+1). */
+export async function moverParada(index, dir) {
+  const j = index + dir;
+  if (!S.routine[index] || j < 0 || j >= S.routine.length) return false;
+  await editarSemana('Semana reordenada', () => {
+    const [m] = S.routine.splice(index, 1);
+    S.routine.splice(j, 0, m);
+  });
+  return true;
+}
+
+/** Agrega una parada en `index` (al final si no se dice): un turno que ya
+    existe (`turnoId`), un descanso (`null`) o uno nuevo (`'nuevo'`). Devuelve
+    el índice de la parada agregada. */
+export async function agregarParada(turnoId, index = S.routine.length) {
+  const at = Math.max(0, Math.min(index, S.routine.length));
+  const msg = turnoId === null ? 'Descanso agregado' : turnoId === 'nuevo' ? 'Turno nuevo agregado' : 'Turno agregado a tu semana';
+  return editarSemana(msg, () => {
+    let slot;
+    if (turnoId === null) slot = { id: uid(), type: 'rest' };
+    else if (turnoId === 'nuevo' || !hayTurnos()) slot = { id: uid(), type: 'workout', name: nombreLibre(), exercises: [] };
+    else {
+      if (!S.turnos.some(t => t.id === turnoId)) return -1;
+      slot = { id: uid(), type: 'workout', turnoId };
+    }
+    S.routine.splice(at, 0, slot);
+    hidratar(S);
+    return at;
+  });
+}
+
+/** Saca la parada `index`. Si era la última aparición de su turno, `guardar`
+    decide si el turno queda en "Tus turnos" (por defecto) o se borra. */
+export async function sacarParada(index, { guardar = true } = {}) {
+  const slot = S.routine[index];
+  if (!slot) return false;
+  if (hasOpenSession(index)) { toast('Hay una sesión abierta en este turno — terminala o descartala primero'); return false; }
+  const clave = slot.type === 'workout' ? claveTurno(slot) : null;
+  const ultima = clave && vecesEnSemana(clave) === 1;
+  const nombre = slot.type === 'workout' ? (slot.name || 'Turno') : 'Descanso';
+  const msg = !ultima ? `${nombre} sacado de ese día` : guardar && hayTurnos() ? `${nombre} guardado para después` : `${nombre} borrado`;
+  await editarSemana(msg, () => {
+    S.routine.splice(index, 1);
+    if (ultima && !guardar && hayTurnos()) S.turnos = S.turnos.filter(t => t.id !== clave);
+  });
+  return true;
+}
+
+/** Saca TODAS las apariciones de un turno; el turno queda guardado (o se
+    borra con `borrar`). */
+export async function sacarTurnoDeSemana(clave, { borrar = false } = {}) {
+  const idxs = S.routine.map((s, i) => (s.type === 'workout' && claveTurno(s) === clave ? i : -1)).filter(i => i >= 0);
+  if (idxs.some(hasOpenSession)) { toast('Hay una sesión abierta en este turno — terminala o descartala primero'); return false; }
+  const nombre = (S.routine[idxs[0]] || (S.turnos || []).find(t => t.id === clave))?.name || 'Turno';
+  await editarSemana(borrar ? `${nombre} borrado` : `${nombre} sacado de tu semana`, () => {
+    S.routine = S.routine.filter(s => !(s.type === 'workout' && claveTurno(s) === clave));
+    if (borrar && hayTurnos()) S.turnos = S.turnos.filter(t => t.id !== clave);
+  });
+  return true;
+}
+
+/** Crea un turno nuevo sin ejercicios y lo pone al final de la semana.
+    Devuelve el índice de su parada. */
+export const crearTurno = () => agregarParada('nuevo');
+
+/** "Acomodar descansos": la regla de pideDescanso, UNA vez y con
+    deshacer. Mantiene el orden de los entrenamientos y, si la semana queda
+    más corta que 7 días, completa con descansos al final (A·P·R·A·P → +R·R):
+    el ciclo sigue durando una semana. Los descansos que había se reusan en
+    orden, así un "Hoy" parado en un descanso no salta. */
+export async function acomodarDescansos() {
+  await editarSemana('Descansos acomodados', () => {
+    const viejos = S.routine.filter(s => s.type !== 'workout');
+    const nuevoDescanso = () => viejos.shift() || { id: uid(), type: 'rest' };
+    const ent = S.routine.filter(s => s.type === 'workout');
+    const out = [];
+    let racha = 0;
+    ent.forEach((slot, i) => {
+      out.push(slot);
+      racha++;
+      if (i < ent.length - 1 && pideDescanso(slot, racha)) { out.push(nuevoDescanso()); racha = 0; }
+    });
+    while (out.length < 7 && ent.length) out.push(nuevoDescanso());
+    S.routine = out;
+  });
+}
+
+/** La racha más larga de entrenamientos seguidos, dando la vuelta al ciclo
+    (el domingo sigue con el lunes). Para el aviso de "Tu semana". */
+export function rachaMasLarga(rutina = S.routine) {
+  const n = rutina.length;
+  if (!n) return 0;
+  if (rutina.every(s => s.type === 'workout')) return n;
+  let max = 0, cur = 0;
+  for (let k = 0; k < 2 * n; k++) {
+    cur = rutina[k % n].type === 'workout' ? cur + 1 : 0;
+    max = Math.max(max, cur);
+  }
+  return Math.min(max, n);
+}
+
 /** Qué día de la semana le tocaría a cada turno de S.routine si a partir de
     HOY no te saltearas ninguno. Sigue siendo un vistazo y no una promesa —la
     secuencia real avanza por finalización (ver session.js), no por fecha— pero
@@ -724,6 +906,13 @@ export function weekdayProjection(hoy = new Date()) {
     que ya no cierra ningún sheet — no hay ninguno abierto para cerrar. */
 export async function saveSlot(index, { name }) {
   const trimmed = (name || '').trim();
+  // Dos turnos con el mismo nombre se volverían a unificar en la próxima
+  // reconciliación (lib/turnos.js agrupa por nombre): se rechaza acá.
+  const slot = S.routine[index];
+  if (trimmed && nombreOcupado(trimmed, slot?.type === 'workout' ? claveTurno(slot) : null)) {
+    toast('Ya tenés un turno que se llama así');
+    return false;
+  }
   // Un descanso al que le ponés nombre pasa a ser un turno de entrenamiento:
   // no tiene sentido "nombrar" un descanso, así que el nombre es la señal de
   // que dejó de serlo.
@@ -734,6 +923,7 @@ export async function saveSlot(index, { name }) {
   }
   await persistSlot(index);
   bump();
+  return true;
 }
 
 /* mapea el nombre del día (ej. "Pecho / Tríceps") a categorías del catálogo */

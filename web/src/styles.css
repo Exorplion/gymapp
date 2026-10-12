@@ -5054,6 +5054,45 @@ section.bm-bloque{display:flex;flex-direction:column;gap:var(--s3)}
 .ent-acciones .btn{margin:0}
 .ent-dos{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
 .ent-quitar{align-self:center;padding:var(--s2) var(--s3);background:none;border:0;color:var(--danger);font:inherit;font-size:var(--t-sm);font-weight:600;cursor:pointer}
+
+/* Turnos universales, Fase 2: un turno es uno solo (sus paradas se
+   encienden juntas en el riel), "Tus turnos" con los guardados, y la semana
+   aparte en la hoja "Tu semana" (TuSemana.jsx). */
+.ent-semana-btn{margin:var(--s1) 0 0}
+.ent-tus{display:flex;flex-direction:column;gap:var(--s2)}
+.ent-chip-guardado{border-style:dashed}
+.ent-chip-nuevo{color:var(--accent);border-style:dashed;border-color:rgba(var(--accent-rgb),.45)}
+.ent-chip-nuevo svg{flex:none}
+.ent-veces{font-size:var(--t-sm);color:var(--text-2)}
+.ent-comparte{margin:0;font-size:var(--t-sm);color:var(--text-2);background:rgba(var(--accent-rgb),.07);border:1px solid rgba(var(--accent-rgb),.22);border-radius:var(--r-md);padding:var(--s2) var(--s3)}
+.ent-ex.ent-ex-quieto{grid-template-columns:minmax(0,1fr) auto;cursor:default}
+.ent-ex.ent-ex-quieto:active{background:none}
+
+.sem-resumen{margin:0 0 var(--s2);font-size:var(--t-sm);color:var(--text-2)}
+.sem-aviso{margin:0 0 var(--s2);font-size:var(--t-sm);color:var(--warn)}
+.sem-lista{display:flex;flex-direction:column;gap:var(--s2);margin-bottom:var(--s3)}
+.sem-fila{display:grid;grid-template-columns:40px minmax(0,1fr) 40px 40px 40px 14px;align-items:center;gap:var(--s2);min-height:60px;padding:var(--s2) var(--s2) var(--s2) var(--s3);border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--line)}
+.sem-fila.descanso{min-height:50px;background:transparent;border-style:dashed}
+.sem-fila.hoy{border-color:rgba(var(--accent-rgb),.5)}
+.sem-fila.dragging{background:var(--surface-2);box-shadow:0 16px 32px -14px rgba(var(--shade-rgb),.8),0 0 0 1px rgba(var(--accent-strong-rgb),.35)}
+.sem-dia{display:flex;flex-direction:column;line-height:1.1;font-family:var(--font-cond);font-weight:800;font-size:var(--t-sm);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-3)}
+.sem-dia em{font-style:normal;font-size:var(--t-micro);color:var(--accent)}
+.sem-cuerpo{display:flex;flex-direction:column;min-width:0;cursor:pointer}
+.sem-fila.descanso .sem-cuerpo{cursor:default}
+.sem-n{font-weight:600;font-size:var(--t-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sem-fila.descanso .sem-n{font-weight:400;color:var(--text-3)}
+.sem-s{font-size:var(--t-sm);color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sem-agarre{display:grid;place-items:center;color:var(--text-3)}
+.sem-agarre svg{width:14px;height:14px}
+.sem-fila.sem-pregunta{display:flex;flex-direction:column;align-items:stretch;gap:var(--s2);padding:var(--s3);border-color:rgba(var(--warn-rgb),.45)}
+.sem-pregunta p{margin:0;font-size:var(--t-sm)}
+.sem-ops{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.sem-ops .btn{margin:0;width:auto;flex:1 1 0;min-width:0}
+.sem-agregar{display:flex;flex-direction:column;gap:var(--s2);padding:var(--s3);border-radius:var(--r-md);background:var(--surface-2);border:1px solid rgba(var(--accent-rgb),.35)}
+.sem-agregar p{margin:0;font-size:var(--t-sm);color:var(--text-2)}
+.sem-agregar .btn{margin:0;align-self:flex-start}
+.sem-pie{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s2);margin-top:var(--s3)}
+.sem-pie .btn{margin:0}
 .ent-ed-barra{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) var(--s2) var(--s2) var(--s4);border-radius:var(--r);background:rgba(var(--accent-rgb),.10);border:1px solid rgba(var(--accent-rgb),.35)}
 .ent-ed-modo{font-family:var(--font-cond);font-weight:700;font-size:var(--t-sm);letter-spacing:var(--tr-control);text-transform:uppercase;color:var(--accent)}
 .ent-ed-nota{flex:1;min-width:0;font-size:var(--t-sm);color:var(--text-2)}
