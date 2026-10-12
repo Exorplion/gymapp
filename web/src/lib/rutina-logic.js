@@ -13,7 +13,7 @@ import { EXCATALOG, catOf, muscleVolume, porBloques } from './muscle.js';
 import { VOLUME_BANDS } from './charts.js';
 import { exKey } from './equip.js';
 import { toast } from './toast.js';
-import { hidratar, esVinculado, turnoVinculado, filaDe } from './turnos.js';
+import { hidratar, esVinculado, turnoVinculado, filaDe, claveNombre } from './turnos.js';
 
 /* ================= RUTINA ================= */
 /* insights derivados del historial de sesiones: sin esquema nuevo, se calcula
@@ -319,21 +319,44 @@ export async function copyExercises(src, to, ids, mode = 'merge') {
   return { copied: nuevos.length, toIndex: toIdx, toId: destino.id };
 }
 export async function saveLib() { await idb.put('settings', { key: 'lib', value: S.lib }); }
+/* Turnos universales: las apariciones con el mismo nombre (claveNombre) son
+   UN turno, así que la plantilla A·P·R·A·P·R·R crea dos turnos y no cuatro
+   copias. Si una rutina de la biblioteca trae copias distintas del mismo
+   nombre, se aplica la primera; la entrada de S.lib no se toca, así que no
+   se pierde nada. Los turnos de antes se reemplazan, igual que el split (es
+   "¿Reemplazar tu split?", con confirmación). En el modo viejo (S.turnos
+   null: migración postergada o fallida) sigue armando copias, como antes, y
+   el próximo arranque las unifica. */
 export async function applyDays(seq, name) {
-  await idb.clear('routine');
-  S.routine = seq.map((s, i) => s.type === 'rest'
-    ? { id: uid(), order: i, type: 'rest' }
-    : {
-        id: uid(), order: i, type: 'workout', name: s.name,
-        // conserva equip/machine/illus: sin ellos la rutina cargada pierde el
-        // enlace a su historial (ver routineSnapshot)
-        exercises: s.exercises.map(e => ({
-          id: uid(), name: e.name, sets: e.sets, reps: e.reps,
-          equip: e.equip || undefined, machine: e.machine || undefined, illus: e.illus || undefined,
-          cat: e.cat || undefined, unilateral: e.unilateral || undefined,
-        })),
-      });
-  await persistAll();
+  const conTurnos = Array.isArray(S.turnos);
+  const porNombre = new Map();
+  const turnos = [];
+  S.routine = seq.map((s, i) => {
+    if (s.type === 'rest') return { id: uid(), order: i, type: 'rest' };
+    const slot = {
+      id: uid(), order: i, type: 'workout', name: s.name,
+      // conserva equip/machine/illus: sin ellos la rutina cargada pierde el
+      // enlace a su historial (ver routineSnapshot)
+      exercises: s.exercises.map(e => ({
+        id: uid(), name: e.name, sets: e.sets, reps: e.reps,
+        equip: e.equip || undefined, machine: e.machine || undefined, illus: e.illus || undefined,
+        cat: e.cat || undefined, unilateral: e.unilateral || undefined,
+      })),
+    };
+    if (conTurnos) {
+      const k = claveNombre(s.name);
+      let t = k ? porNombre.get(k) : null;
+      if (!t) {
+        t = { id: uid(), name: s.name, exercises: slot.exercises, creado: dstr() };
+        turnos.push(t);
+        if (k) porNombre.set(k, t);
+      }
+      slot.turnoId = t.id;
+    }
+    return slot;
+  });
+  if (conTurnos) { S.turnos = turnos; S.turnosSinVincular = []; }
+  await persistAll();   // hidrata y escribe secuencia + turnos en una transacción
   S.cfg.routineName = name;
   S.cfg.seqIndex = 0; S.cfg.seqIndexDate = null;
   await saveCfg();
@@ -389,25 +412,30 @@ export async function renameRoutineExercise(slotId, nombreViejo, { name, equip, 
 }
 
 /* ---------- deshacer/rehacer del editor de rutina ---------- */
+/* Cada foto guarda la secuencia Y los turnos: structuredClone llama a los
+   getters, así que los slots salen planos (con su turnoId) y el vínculo se
+   vuelve a armar al restaurar con hidratar(). */
 let RUT_HISTORY = [], RUT_REDO = [];
+const fotoRutina = () => ({ routine: structuredClone(S.routine), turnos: structuredClone(S.turnos) });
+function restaurarRutina(f) { S.routine = f.routine; S.turnos = f.turnos; hidratar(S); }
 export function pushHistory(msg) {
-  RUT_HISTORY.push(structuredClone(S.routine));
+  RUT_HISTORY.push(fotoRutina());
   if (RUT_HISTORY.length > 20) RUT_HISTORY.shift();
   RUT_REDO = [];
   toast(msg, { actionLabel: 'Deshacer', onAction: undoRutina });
 }
 export async function undoRutina() {
   if (!RUT_HISTORY.length) return;
-  RUT_REDO.push(structuredClone(S.routine));
-  S.routine = RUT_HISTORY.pop();
+  RUT_REDO.push(fotoRutina());
+  restaurarRutina(RUT_HISTORY.pop());
   await persistAll();
   bump();
   toast('Deshecho', { actionLabel: 'Rehacer', onAction: redoRutina });
 }
 export async function redoRutina() {
   if (!RUT_REDO.length) return;
-  RUT_HISTORY.push(structuredClone(S.routine));
-  S.routine = RUT_REDO.pop();
+  RUT_HISTORY.push(fotoRutina());
+  restaurarRutina(RUT_REDO.pop());
   await persistAll();
   bump();
   toast('Rehecho', { actionLabel: 'Deshacer', onAction: undoRutina });
@@ -889,7 +917,9 @@ export function startBlank() {
     body: 'Se borran todos los días y ejercicios.',
     confirmLabel: 'Vaciar',
     onConfirm: async () => {
-      await idb.clear('routine'); S.routine = [];
+      S.routine = [];
+      if (Array.isArray(S.turnos)) { S.turnos = []; S.turnosSinVincular = []; }
+      await persistAll();
       S.cfg.routineName = ''; await saveCfg();
       S.rutMode = 'edit'; closeSheet(); bump();
       toast('Split vacío — armá el tuyo');
