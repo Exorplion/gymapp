@@ -17,7 +17,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { S, wDisplay, wAltPartes, wStep, wToUnit, wFromUnit, openSheet } from '../lib/state.js';
 import { m as motion, AnimatePresence } from 'motion/react';
-import { round1, fmtNum } from '../lib/format.js';
+import { round1 } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
 import { rirPedido } from '../lib/rir.js';
 import { objetivoHoy } from '../lib/objetivoHoy.js';
@@ -41,7 +41,7 @@ import { maquinaElegida, nombreConMaquina } from '../lib/maquinas.js';
 import { iconOf } from '../lib/exicon.js';
 import ExIcon from './ExIcon.jsx';
 import ReelPicker from './ReelPicker.jsx';
-import { Info, Skip, Dots, Later, Check, X, Play, Restablecer, Swap } from './Icon.jsx';
+import { Info, Skip, Dots, Later, Check, X, Play, Restablecer, Swap, Pencil } from './Icon.jsx';
 // EXPERIMENTO — coverflow 3D (pedido de Enzo, ver motion.dev/examples/react-carousel-coverflow).
 // Revertir = borrar este import + el archivo + el bloque "COVERFLOW" de abajo.
 import '../styles-coverflow.css';
@@ -592,6 +592,10 @@ function TablaSeries({ exId, done, uni, unidad }) {
       onConfirm: () => borrarSeries(exId, f.idx, { n }),
     });
   }
+  /* Corregir no borra: la serie se hizo, el número estaba mal. Toda la fila
+     es tocable (blanco grande con el pulso a 150); el lápiz es la entrada
+     visible y la del teclado. */
+  const corregir = (f, n) => openSheet('editar-serie', { exId, idxs: f.idx, n });
   return (
     <table className="ex-tabla">
       <thead>
@@ -599,21 +603,22 @@ function TablaSeries({ exId, done, uni, unidad }) {
           <th scope="col"><span className="sr-only">Serie</span></th>
           <th scope="col">Peso</th>
           {uni ? <><th scope="col" className="c">Izquierda</th><th scope="col" className="c">Derecha</th></> : <th scope="col" className="c">Reps</th>}
-          <th scope="col"><span className="sr-only">Borrar</span></th>
+          <th scope="col"><span className="sr-only">Corregir o borrar</span></th>
         </tr>
       </thead>
       <tbody>
         {filas.map((f, k) => {
           const pesos = [...new Set(f.w.map(w => wDisplay(w)))];
           return (
-            <tr key={k}>
+            <tr key={k} className="fila-tocable" onClick={() => corregir(f, k + 1)}>
               <td className="n">{k + 1}</td>
               <td><b>{pesos.join(' / ')}</b> {unidad}</td>
               {uni
                 ? <><td className="c"><b>{f.izq ?? '—'}</b></td><td className="c"><b>{f.der ?? '—'}</b></td></>
                 : <td className="c"><b>{f.r}</b></td>}
               <td className="x">
-                <button type="button" aria-label={`Borrar la serie ${k + 1}`} onClick={() => borrar(f, k + 1)}><X size={14} /></button>
+                <button type="button" aria-label={`Corregir la serie ${k + 1}`} onClick={e => { e.stopPropagation(); corregir(f, k + 1); }}><Pencil size={14} /></button>
+                <button type="button" aria-label={`Borrar la serie ${k + 1}`} onClick={e => { e.stopPropagation(); borrar(f, k + 1); }}><X size={14} /></button>
               </td>
             </tr>
           );
@@ -931,17 +936,18 @@ function ExerciseSlide({ m, wd, started }) {
             Primera vez unilateral{lastBilateral ? ' · tu historial es bilateral, otra carga' : ''}.
           </div>
         )}
-        {!last && !lastBilateral && !full && !skipped && (
+        {/* Corto y sólo hasta la primera serie (Enzo, 2026-10-12: "debería
+            ser conciso y entendible en pocas palabras"; con el descanso abajo
+            la caja larga empujaba la tabla de series detrás del reloj). La
+            meta de hoy ya dice "arrancá liviano" y la columna RIR, cuánto
+            dejar en reserva: acá sólo va lo que no está en otro lado. */}
+        {!last && !lastBilateral && !full && !skipped && done.length === 0 && (
           <div className="ex-first">
             <div className="t">Primera vez{equipLabel(ex) ? ` en ${equipLabel(ex)}` : ''}</div>
-            {related.length > 0 && (
-              <div className="s">
-                Este ejercicio lo venís haciendo en {related.map(r => `${r.label} (${fmtNum(round1(r.w))}×${r.r})`).join(' · ')}.
-              </div>
-            )}
             <div className="s">
-              Arrancá claramente liviano y subí hasta que las {ex.reps} reps te queden con 2 en
-              reserva. Lo que anotes hoy queda como tu punto de partida.
+              {related.length > 0
+                ? `Referencia: ${related.map(r => `${wDisplay(r.w)} ${unidad} × ${r.r} en ${r.label}`).join(' · ')}.`
+                : 'Arrancá liviano: lo de hoy es tu punto de partida.'}
             </div>
           </div>
         )}
