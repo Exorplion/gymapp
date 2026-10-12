@@ -1,5 +1,5 @@
 // Puerto de funciones de sesión desde index.html
-import { S, bump, saveDraft, saveCfg, wBoth, closeSheet } from './state.js';
+import { S, bump, saveDraft, saveCfg, wBoth, closeSheet, resolveAutoRest } from './state.js';
 import { dstr, uid, round1, fmtD, vibrate } from './format.js';
 import { blocksOf, porBloques } from './muscle.js';
 import { idb } from './db.js';
@@ -16,6 +16,7 @@ import { bloqueDe, DESCANSO } from './warmup.js';
 import { clampHechos } from './rampa.js';
 import { metaHoy } from './previa.js';
 import { aplicarMaquina } from './maquinas.js';
+import { planDeLaSesion, desdeAlCerrar, avanzarPuntero } from './puntero.js';
 
 /** Última vez que hiciste ESTE ejercicio con ESTE equipo. Acepta el objeto
     ejercicio completo; un string sigue funcionando y se compara sólo por
@@ -312,25 +313,40 @@ export function sesionDeHoy() {
 /** El turno pendiente según el puntero de la secuencia. */
 export function pendingSlot() { return S.routine[S.cfg.seqIndex] || null; }
 
-/* El turno que eligió "entrenar igual" en un día de descanso. En memoria y
-   con fecha: es una decisión de HOY, no cambia la secuencia (eso lo hace
-   completeSession, que avanza desde el turno que de verdad se hizo). */
+/* "Hoy hago otra cosa" (turnos universales, Fase 3): el turno que elegiste
+   para hoy en vez del que tocaba, en un descanso o en un día de
+   entrenamiento. En memoria y con fecha: es una decisión de HOY y no cambia
+   la semana; al cerrar la sesión el puntero sigue la regla de puntero.js. */
 let elegido = null;
 export function elegirTurnoHoy(index) { elegido = index == null ? null : { index, fecha: dstr() }; }
+/** Lo elegido para hoy, o null (un elegido de ayer ya no vale). */
+export function eleccionHoy() { return elegido && elegido.fecha === dstr() ? elegido : null; }
 
-/** El turno que muestra Hoy. Con sesión abierta, SIEMPRE el de la sesión:
-    en un descanso el puntero sigue en el descanso mientras entrenás otro, y
-    leerlo de ahí dejaba la pantalla mirando un turno y la sesión otro
-    (ninguna tarjeta quedaba activa). Sin sesión: el elegido en el descanso,
-    si lo hay y sigue siendo hoy; si no, el pendiente. */
+/** El turno que muestra Hoy. Con sesión abierta, SIEMPRE el de la sesión
+    (-1 en una sesión libre, que no tiene turno): en un descanso el puntero
+    sigue en el descanso mientras entrenás otro, y leerlo de ahí dejaba la
+    pantalla mirando un turno y la sesión otro. Sin sesión: el que elegiste
+    para hoy, si lo hay; si no, el pendiente. */
 export function indiceHoy() {
+  if (S.draft?.libre) return -1;
   if (S.draft?.slotId) {
     const i = S.routine.findIndex(s => s.id === S.draft.slotId);
     if (i >= 0) return i;
   }
-  if (elegido && elegido.fecha === dstr() && S.routine[S.cfg.seqIndex]?.type === 'rest'
-      && S.routine[elegido.index]?.type === 'workout') return elegido.index;
+  const e = eleccionHoy();
+  if (e && e.index !== S.cfg.seqIndex && S.routine[e.index]?.type === 'workout') return e.index;
   return S.cfg.seqIndex;
+}
+
+/** ¿Lo que muestra Hoy (sin sesión abierta) es algo fuera del plan? Devuelve
+    lo que tocaba ({ nombre } o null si tocaba descanso) o false. */
+export function fueraDelPlanHoy() {
+  if (S.draft) return false;
+  const i = indiceHoy();
+  if (i === S.cfg.seqIndex) return false;
+  const plan = planDeLaSesion({ routine: S.routine, seqIndex: S.cfg.seqIndex, index: i });
+  if (!plan.fueraDePlan) return false;
+  return plan.reemplaza ? { nombre: plan.reemplaza.nombre || 'tu turno' } : null;
 }
 
 /** Récords de `sess`: la mejor serie de cada ejercicio contra el máximo de las
@@ -983,11 +999,16 @@ export async function completeSession() {
      Mismo problema que ya tuvo S.nutriDate y por la misma causa. */
   const fecha = dstr(new Date(startAt));
   const sess = {
-    id: d.id, date: fecha, slotId: d.slotId, dayName: d.dayName,
+    id: d.id, date: fecha, slotId: d.slotId ?? null, dayName: d.dayName,
     ...((d.turnoId || slot?.turnoId) ? { turnoId: d.turnoId || slot.turnoId } : {}),
+    // Fuera del plan (Fase 3): lo que tocaba ese día, para el historial ("en
+    // vez de Posterior") y la compensación. Una sesión libre no tiene turno.
+    ...(d.fueraDePlan ? { fueraDePlan: true, reemplaza: d.reemplaza || null } : {}),
+    ...(d.libre ? { libre: true } : {}),
     start: startAt, end: Date.now(), duration: Math.max(1, Math.round((Date.now() - startAt) / 60000)), entries,
     ...(skipped.length ? { skipped } : {}),
-    ...(added.length ? { added } : {}),
+    // En una sesión libre no hay turno donde fijar lo agregado.
+    ...(added.length && !d.libre ? { added } : {}),
     ...(d.preworkout ? { preworkout: d.preworkout } : {}),
   };
   // Snapshot ANTES de insertar la sesión — los tres milestones (tonelaje,
@@ -1010,12 +1031,14 @@ export async function completeSession() {
     crossedMilestone(tonnageBefore, lifetimeTonnage(), TONNAGE_MILESTONES) && { type: 'tonelaje', value: lifetimeTonnage() } ||
     null;
 
-  // Avanza el puntero al turno siguiente al que se acaba de completar,
-  // buscando por id (no por índice guardado): si reordenaste la secuencia
-  // mientras entrenabas, esto sigue apuntando al lugar correcto.
-  const finishedAt = S.routine.findIndex(s => s.id === d.slotId);
-  S.cfg.seqIndex = finishedAt >= 0 ? (finishedAt + 1) % Math.max(1, S.routine.length) : S.cfg.seqIndex;
-  S.cfg.seqIndexDate = dstr();
+  // El puntero sigue la regla de puntero.js (opción A): dentro del plan
+  // avanza desde la parada que se hizo; fuera del plan, desde la que tocaba
+  // (el día se usó) o, si tocaba descanso, no se mueve. Por id, no por
+  // índice guardado: si reordenaste la semana mientras entrenabas, sigue
+  // apuntando al lugar correcto.
+  const desde = desdeAlCerrar({ routine: S.routine, draft: d });
+  if (desde != null) avanzarPuntero(S.cfg, S.routine.length, desde, dstr());
+  elegido = null;
   await Promise.all([saveDraft(), saveCfg()]);
   stopRest();
   vibrate([30, 50, 30]);
@@ -1079,10 +1102,16 @@ export async function startSession(index, precheckAdjust = 0, { preworkout = nul
     const { persistSlot } = await import('./rutina-logic.js');
     await persistSlot(index);
   }
+  // ¿Dentro del plan o fuera? Se decide AL ABRIR, con lo que tocaba en ese
+  // momento (puntero.js): si pasa la medianoche entrenando, no cambia.
+  const plan = planDeLaSesion({ routine: S.routine, seqIndex: S.cfg.seqIndex, index, ciclo: S.cfg.ciclo || 0 });
+  // Dentro del plan con otra aparición del mismo turno: cuenta la que tocaba.
+  const cumple = plan.fueraDePlan ? slot : (S.routine[plan.slotIndex] || slot);
   S.draft = {
-    id: uid(), date: dstr(), slotId: slot.id, dayName: slot.name || 'Entrenamiento', open: Date.now(), start: null, cur: null,
+    id: uid(), date: dstr(), slotId: cumple.id, dayName: slot.name || 'Entrenamiento', open: Date.now(), start: null, cur: null,
     // el turno (turnos universales): la sesión cuenta para todas sus apariciones
     ...(slot.turnoId ? { turnoId: slot.turnoId } : {}),
+    ...(plan.fueraDePlan ? { fueraDePlan: true, reemplaza: plan.reemplaza } : {}),
     order: orderedExs(index, slot.exercises).map(e => e.id), entries: {},
     // lo que se puede cambiar sin tocar el plan: ver "modificar la sesión
     // mientras entrenás" más arriba
@@ -1097,6 +1126,29 @@ export async function startSession(index, precheckAdjust = 0, { preworkout = nul
     // no sólo en la hoja: ver calentamientoPendiente() más abajo.
     calent: { pendiente: true, hechos: [] },
   };
+  await saveDraft();
+  closeSheet();
+  vibrate(15);
+  bump();
+}
+
+/** Una sesión libre (Fase 3, "Hoy hago otra cosa"): arranca vacía y los
+    ejercicios se agregan sobre la marcha con el asistente de siempre, que
+    deja elegir cualquiera del catálogo. No tiene turno: no cambia la "última
+    vez" de ninguno, pero sus series cuentan por ejercicio (progresión,
+    récords, recuperación, volumen y racha). Siempre es fuera del plan. */
+export async function startSessionLibre(nombre = '') {
+  if (S.draft) return;
+  pedirPermiso();
+  const plan = planDeLaSesion({ routine: S.routine, seqIndex: S.cfg.seqIndex, index: -1, ciclo: S.cfg.ciclo || 0 });
+  S.draft = {
+    id: uid(), date: dstr(), slotId: null, libre: true, fueraDePlan: true, reemplaza: plan.reemplaza || null,
+    dayName: String(nombre || '').trim() || 'Sesión libre', open: Date.now(), start: null, cur: null,
+    order: [], entries: {}, skipped: [], extraSets: {}, extras: [], precheckAdjust: 0, preworkout: null,
+    // Sin calentamiento general automático: lo primero es elegir qué hacer.
+    calent: { pendiente: false, hechos: [] },
+  };
+  elegido = null;
   await saveDraft();
   closeSheet();
   vibrate(15);
@@ -1412,9 +1464,10 @@ export async function registrarDiaEntrenado(dateStr, slotId) {
   if (masReciente) {
     const at = S.routine.findIndex(s => s.id === slotId);
     if (at >= 0) {
-      S.cfg.seqIndex = (at + 1) % Math.max(1, S.routine.length);
-      S.cfg.seqIndexDate = dateStr;
-      await saveCfg();
+      // El próximo slot es del día siguiente al registrado; si de ahí a hoy
+      // pasaron días, resolveAutoRest consume los descansos que tocaban.
+      avanzarPuntero(S.cfg, S.routine.length, at, dateStr);
+      await resolveAutoRest();
     }
   }
   vibrate(15);

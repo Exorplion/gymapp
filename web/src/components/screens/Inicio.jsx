@@ -23,7 +23,7 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { S, useStore, openSheet, changeTab, esDiaLibre } from '../../lib/state.js';
 import { dstr, fmtKg, fmtNum, round1 } from '../../lib/format.js';
-import { pendingSlot, sesionDeHoy, lifetimeTonnage, recallYearAgo } from '../../lib/session.js';
+import { pendingSlot, sesionDeHoy, lifetimeTonnage, recallYearAgo, sessionExs } from '../../lib/session.js';
 import { catOf } from '../../lib/muscle.js';
 import { ultimosSieteDias } from '../../lib/week.js';
 import { mealsOf } from '../../lib/meals.js';
@@ -80,7 +80,9 @@ function HoyCard({ rec }) {
 
   if (draft) {
     const turno = S.routine.find(s => s.id === draft.slotId);
-    const exs = turno?.exercises || [];
+    // Los de la sesión (sessionExs): incluye lo agregado hoy y, en una
+    // sesión libre (sin turno), es lo único que hay.
+    const exs = sessionExs(S.routine.indexOf(turno));
     const hechos = exs.filter(e => draft.entries?.[e.id]?.sets?.length).length;
     const series = Object.values(draft.entries || {}).reduce((a, e) => a + seriesDeEntrada(e), 0);
     const sigue = exs.find(e => e.id === draft.cur) || exs.find(e => !draft.entries?.[e.id]?.sets?.length);
@@ -92,7 +94,7 @@ function HoyCard({ rec }) {
           {min != null && <span className="ini2-dim">{min} min</span>}
         </div>
         <div className="ini2-titulo-pila">
-          <AnimatedText as="h1" className="ini2-titulo" text={turno?.name || 'Entrenando'} />
+          <AnimatedText as="h1" className="ini2-titulo" text={draft.libre ? draft.dayName : (turno?.name || draft.dayName || 'Entrenando')} />
           {sigue && <p className="ini2-sub">Sigue <b>{sigue.name}</b></p>}
         </div>
         <div className="ini2-avance" aria-hidden="true" style={{ '--n': Math.max(1, exs.length) }}>

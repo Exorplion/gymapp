@@ -236,10 +236,15 @@ export function resolveAutoRest() {
     const dias = diasEntre(S.cfg.seqIndexDate, today);
     const pasos = Math.min(dias, S.routine.length);
     for (let i = 0; i < pasos && S.routine[S.cfg.seqIndex]?.type === 'rest'; i++) {
-      S.cfg.seqIndex = (S.cfg.seqIndex + 1) % Math.max(1, S.routine.length);
+      const sig = (S.cfg.seqIndex + 1) % Math.max(1, S.routine.length);
+      if (sig <= S.cfg.seqIndex) S.cfg.ciclo = (S.cfg.ciclo || 0) + 1;   // dio la vuelta (puntero.js)
+      S.cfg.seqIndex = sig;
     }
   }
-  if (S.routine.length) S.cfg.seqIndexDate = today;
+  // Nunca hacia atrás: al cerrar una sesión la fecha queda en MAÑANA (el
+  // próximo slot es de mañana, puntero.js). Pisarla con hoy al recargar esa
+  // misma noche haría que mañana se consuma un descanso de más.
+  if (S.routine.length && !(S.cfg.seqIndexDate > today)) S.cfg.seqIndexDate = today;
   return saveCfg();
 }
 

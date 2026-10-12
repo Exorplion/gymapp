@@ -4,6 +4,57 @@
 
 ---
 
+## SESIÓN 2026-10-12 (8) — turnos universales, Fase 3: "Hoy hago otra cosa" + regla del puntero
+
+Spec §4–5. Rama `feat/turnos-fase3-otra-cosa` (worktree `.claude/worktrees/otra-cosa`).
+**1390 tests** (+13, `lib/__tests__/turnos-otra-cosa.test.js`, con fechas falsas).
+
+**Qué cambió:**
+- `lib/puntero.js` (nuevo, puro): `planDeLaSesion` (la tabla de §5: dentro del
+  plan / fuera con `reemplaza` / fuera en un descanso), `desdeAlCerrar`,
+  `avanzarPuntero` (suma `cfg.ciclo` al dar la vuelta), `manana`.
+- `session.js`: la elección del día (`elegirTurnoHoy`/`eleccionHoy`) vale
+  también en días de entrenamiento; `indiceHoy` = -1 en sesión libre;
+  `fueraDelPlanHoy`; `startSession` decide dentro/fuera AL ABRIR;
+  `startSessionLibre(nombre)`; `completeSession` guarda `fueraDePlan`,
+  `reemplaza`, `libre` y avanza con la regla A; `registrarDiaEntrenado` y
+  `VoiceLog` usan `avanzarPuntero`.
+- Hoja `OtraCosa.jsx` (`openSheet('otra-cosa' | {soloLibre})`): tus otros
+  turnos (sin el que tocaba, `opcionesDelDia` en descansoHoy.js) + "Sesión
+  libre" con nombre opcional → abre el asistente para el primer ejercicio.
+- Hoy: renglón "Hoy hago otra cosa ›" en la tarjeta del turno que toca;
+  banner "Fuera del plan · en vez de X · ‹ Volver al plan"; en un descanso,
+  "Sesión libre" al final de la lista; tarjeta vacía propia de la sesión
+  libre; la barra usa el nombre del borrador. Inicio ("Entrenando ahora") usa
+  `sessionExs` (cuenta lo agregado y la sesión libre).
+- Historial (`SessionCard`): "Fuera del plan · en vez de Posterior".
+
+**ARREGLO de un bug viejo (afecta a todas las sesiones):** al cerrar una
+sesión, `seqIndexDate` quedaba en HOY, y al día siguiente `resolveAutoRest`
+consumía el descanso que venía: con A·P·R·A·P·R·R, el miércoles mostraba
+Anterior en vez de descanso (y el domingo, Anterior en vez del 2º descanso).
+Ahora la fecha queda en MAÑANA (el próximo slot es de mañana) y
+`resolveAutoRest` nunca la mueve hacia atrás (recargar esa noche no la pisa).
+
+**Desvío de la spec:** una sesión fuera del plan con OTRO turno guarda el
+`slotId` de ESE turno (la spec decía null): así cuenta para su "última vez",
+minutos y estabilidad, que es lo correcto. Sólo la sesión libre va con
+`slotId: null`. MarcarDia sin cambios (registra dentro del plan).
+
+**Verificado (build de producción, Playwright, 390 y 430, sin errores):**
+rutina A·P·R·A·P·R·R con Posterior pendiente. "Hoy hago otra cosa" → hoja
+("Hoy tocaba Posterior…", Anterior, Sesión libre); Anterior → banner "en vez
+de Posterior" → "Volver al plan" vuelve a Posterior. Sesión libre "Pull con
+Juan" → asistente → Dominadas (mancuernas, 2,5 kg) → serie → Terminar →
+Inicio "Hecho hoy · Pull con Juan", racha 1, dorsal cargado en el mapa,
+"Próximo · Anterior"; historial "Fuera del plan · en vez de Posterior".
+Nota: con "Peso corporal" la serie no se anota sin peso registrado
+(validación vieja, no de esta fase).
+
+**Pendiente:** Fase 4 (compensación, spec §6). `S.cfg.ciclo` ya se cuenta.
+
+---
+
 ## SESIÓN 2026-10-12 (7) — turnos universales, Fase 2: "Tu semana" aparte (opción B)
 
 Lienzo: claude.ai/artifact/4wj2gfup9HH4An9pPdFFCt (copia

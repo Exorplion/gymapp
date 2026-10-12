@@ -23,7 +23,7 @@ import { cn } from '../../lib/utils.js';
 import { S, useStore, bump, openSheet, closeSheet, changeTab, wDisplay } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS, dstr } from '../../lib/format.js';
 import { opcionesDescanso } from '../../lib/descansoHoy.js';
-import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, moverEnBloque, indiceHoy, elegirTurnoHoy } from '../../lib/session.js';
+import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, moverEnBloque, indiceHoy, elegirTurnoHoy, fueraDelPlanHoy } from '../../lib/session.js';
 import { flipSort } from '../../lib/drag.js';
 import { abrirAsistente } from '../../lib/asistente-agregar.js';
 import { blocksOf, catOf, MUSCLE_CATS } from '../../lib/muscle.js';
@@ -51,6 +51,10 @@ export default function Hoy() {
   // Elegiste entrenar en un día de descanso y todavía no abriste la sesión:
   // se ve el plan de ese turno, con la salida para volver a elegir.
   const entrenaEnDescanso = !active && S.routine[S.cfg.seqIndex]?.type === 'rest' && day?.type === 'workout';
+  // "Hoy hago otra cosa" en un día de entrenamiento (Fase 3): lo que tocaba.
+  const enVezDe = !active && !entrenaEnDescanso && index !== S.cfg.seqIndex ? fueraDelPlanHoy() : false;
+  // Sesión libre: no tiene turno, la lista es sólo lo que agregaste.
+  const libre = active && !!S.draft.libre;
   // Con sesión abierta la lista sale del borrador: incluye lo que agregaste
   // hoy, que no está en la rutina.
   const exs = active ? sessionExs(index) : orderedExs(index, day?.exercises || []);
@@ -91,11 +95,25 @@ export default function Hoy() {
               <button type="button" className="linkcard" onClick={() => { elegirTurnoHoy(null); bump(); }}>‹ Elegir otro</button>
             </div>
           )}
+          {enVezDe && (
+            <div className="hoy-elegido">
+              <span>Fuera del plan · en vez de <b>{enVezDe.nombre}</b></span>
+              <button type="button" className="linkcard" onClick={() => { elegirTurnoHoy(null); bump(); }}>‹ Volver al plan</button>
+            </div>
+          )}
           <PreSessionHero day={day} index={index} exs={exs} />
         </>
       )}
 
-      {day?.type === 'rest' && !active ? null : !exs.length ? (
+      {day?.type === 'rest' && !active ? null : libre && !exs.length ? (
+        <div className="card" ref={emptyCardRef}><div className="empty">
+          <HoySinPlan className="big" />
+          <p>Sesión libre: elegí el primer ejercicio.<br />Los vas agregando a medida que entrenás.</p>
+          <button type="button" className="btn sm max-w-[240px] mx-auto" onClick={() => abrirAsistente(-1, 'sesion')}>
+            <Plus size={16} /> Agregar ejercicio
+          </button>
+        </div></div>
+      ) : !exs.length ? (
         <div className="card" ref={emptyCardRef}><div className="empty">
           <HoySinPlan className="big" />
           <p>Este turno todavía no tiene ejercicios.<br />Configuralo en la pestaña Rutina.</p>
@@ -207,7 +225,7 @@ function SesionBarra({ day, index, exs, started, allDone }) {
       <div className={cn('ses-barra', allDone && 'lista')}>
         {progress && <SessionRing progress={progress} />}
         <div className="ses-barra-main">
-          <div className="ses-barra-t">{day?.name || 'Entrenamiento'}</div>
+          <div className="ses-barra-t">{S.draft.libre ? S.draft.dayName : (day?.name || S.draft.dayName || 'Entrenamiento')}</div>
           <div className="ses-barra-s">
             {started
               ? <><b><ElapsedTimer start={S.draft.start} /></b> · {doneEx}/{exs.length - nSkip} ejerc. · {nsets} serie{nsets === 1 ? '' : 's'}</>
@@ -343,6 +361,13 @@ function RestHero() {
                 <span className="grouprow-chev" aria-hidden="true">›</span>
               </button>
             ))}
+            <button type="button" className="grouprow" onClick={() => openSheet('otra-cosa', { soloLibre: true })}>
+              <span className="grouprow-grow">
+                <span className="grouprow-t">Sesión libre</span>
+                <span className="grouprow-s">Arrancás vacío y agregás ejercicios sobre la marcha · no mueve tu semana</span>
+              </span>
+              <span className="grouprow-chev" aria-hidden="true">›</span>
+            </button>
           </div>
         </section>
       )}
@@ -396,6 +421,13 @@ function PreSessionHero({ day, index, exs }) {
             {SR_CLASS && <VoiceLogButton />}
           </div>
         </>
+      )}
+      {/* Fase 3: salirse del plan hoy. Sólo con el turno que toca (si ya
+          elegiste otro, arriba está "Volver al plan"). */}
+      {index === S.cfg.seqIndex && (
+        <button type="button" className="linkcard hoy-otra" onClick={() => openSheet('otra-cosa')}>
+          Hoy hago otra cosa <span aria-hidden="true">›</span>
+        </button>
       )}
     </div>
   );
