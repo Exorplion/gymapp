@@ -29,11 +29,32 @@
 //      deja intactos los gyms y las fotos que ya tenías en el teléfono en vez
 //      de barrerlos.
 //
-// Import unidireccional: sólo depende de state.js/format.js/db.js/toast.js.
+// v3 (2026-10-12, turnos universales): suma `turnos`; las filas de `routine`
+// salen con la copia completa de su turno y su firma. Importar un v1/v2
+// borra la clave `turnos` y el próximo arranque unifica las filas.
+//
+// Import unidireccional: sólo depende de state.js/format.js/db.js/toast.js/turnos.js.
 import { S, saveCfg } from './state.js';
 import { dstr } from './format.js';
 import { idb, STORES } from './db.js';
 import { toast } from './toast.js';
+import { filaDe } from './turnos.js';
+
+/** Lo que va en el archivo. v3 (turnos universales, 2026-10-12): suma
+    `turnos`, y cada fila de `routine` sale con su copia completa y su firma
+    (filaDe), así que una versión vieja de la app restaura una rutina válida.
+    Exportado para poder probarlo sin descargar nada. */
+export function datosDelRespaldo(photos = []) {
+  return {
+    app: 'fierro', version: 3, exportedAt: new Date().toISOString(),
+    routine: S.routine.map(filaDe), sessions: S.sessions, meals: S.meals,
+    foods: S.foods, body: S.body, cfg: S.cfg,
+    // v2: lo que la v1 perdía
+    lib: S.lib, gyms: S.gyms, photos,
+    // v3: los turnos (null en el modo viejo: no se exporta la clave)
+    ...(Array.isArray(S.turnos) ? { turnos: S.turnos } : {}),
+  };
+}
 
 /** Los stores que un backup reemplaza por completo cuando los trae. NO
     incluye 'settings' (es mixto: cfg/draft/lib/gyms, y `draft` es la sesión
@@ -71,13 +92,7 @@ export async function exportJSON({ auto = false } = {}) {
       photos.push({ id: row.id, ts: row.ts || null, data: await blobADataURL(row.blob) });
     }
 
-    const data = {
-      app: 'fierro', version: 2, exportedAt: new Date().toISOString(),
-      routine: Object.values(S.routine), sessions: S.sessions, meals: S.meals,
-      foods: S.foods, body: S.body, cfg: S.cfg,
-      // v2: lo que la v1 perdía
-      lib: S.lib, gyms: S.gyms, photos,
-    };
+    const data = datosDelRespaldo(photos);
 
     const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -123,6 +138,20 @@ export async function importJSON(file) {
     // criterio que el resto de la app: la ausencia de dato no es un cero.
     for (const st of STORES_DATOS) {
       if (!Array.isArray(d[st])) continue;
+      if (st === 'routine') {
+        /* La rutina y sus turnos van juntos, en UNA transacción: restaurar
+           es volver a ese estado, así que si el archivo no trae `turnos`
+           (backup v1/v2) la clave se BORRA — un `turnos` viejo colgado haría
+           reaparecer turnos que el backup no tiene. Al recargar,
+           reconciliarTurnos (turnos.js) unifica las filas del backup. */
+        await idb.tx(['routine', 'settings'], ({ routine, settings }) => {
+          routine.clear();
+          d.routine.forEach(r => routine.put(r));
+          if (Array.isArray(d.turnos)) settings.put({ key: 'turnos', value: d.turnos });
+          else settings.delete('turnos');
+        });
+        continue;
+      }
       await idb.clear(st);
       for (const r of d[st]) await idb.put(st, r);
     }
