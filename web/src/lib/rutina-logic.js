@@ -92,7 +92,9 @@ export async function applyDeload(grupos) {
   const antes = {};
   let tocados = 0;
   pushHistory('Descarga aplicada');
-  S.routine.forEach(slot => {
+  // Por turno, no por slot: un ejercicio compartido por dos apariciones se
+  // visitaría dos veces (4 → 2 → 1) y `antes` guardaría 2 en vez de 4.
+  indicesPorTurno().map(i => S.routine[i]).forEach(slot => {
     (slot.exercises || []).forEach(ex => {
       if (!grupos.includes(catOf(ex))) return;
       const nuevo = Math.max(1, Math.round(ex.sets * FACTOR_DESCARGA));
@@ -118,7 +120,7 @@ export async function endDeload() {
   const d = S.cfg.deload;
   if (!d) return false;
   pushHistory('Descarga terminada');
-  S.routine.forEach(slot => {
+  indicesPorTurno().map(i => S.routine[i]).forEach(slot => {
     (slot.exercises || []).forEach(ex => {
       if (d.antes[ex.id] != null) ex.sets = d.antes[ex.id];
     });

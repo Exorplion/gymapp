@@ -21,7 +21,7 @@
 import { S, bump, saveCfg, saveDraft } from './state.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
-import { persistSlot } from './rutina-logic.js';
+import { persistSlot, indicesPorTurno } from './rutina-logic.js';
 import { indiceHoy } from './session.js';
 import { shrinkImageBlob } from './photo.js';
 import { uid } from './format.js';
@@ -182,9 +182,11 @@ export async function setActiveGym(id) {
   const idx = indiceHoy();
   const slot = S.routine[idx];
   // La máquina elegida de cada ejercicio es de ESTE gym: se aplica a todos
-  // los turnos (en otro gym, otra máquina u ninguna — maquinas.js).
-  for (let i = 0; i < S.routine.length; i++) {
-    if (i === idx) continue;
+  // los turnos (en otro gym, otra máquina u ninguna — maquinas.js). Por
+  // turno y no por slot (turnos universales): el de hoy puede aparecer otra
+  // vez en la semana, y es el mismo turno — se guarda una sola vez, abajo.
+  for (const i of indicesPorTurno()) {
+    if (i === idx || (slot?.exercises && S.routine[i].exercises === slot.exercises)) continue;
     let cambio = false;
     for (const ex of S.routine[i].exercises || []) cambio = aplicarMaquina(ex, id) || cambio;
     if (cambio) await persistSlot(i);
@@ -275,7 +277,7 @@ export async function elegirMaquina(gymId, exName, maqId) {
 async function reaplicar(gymId, exName) {
   if (gymId === S.cfg.activeGym) {
     const k = keyEj(exName);
-    for (let i = 0; i < S.routine.length; i++) {
+    for (const i of indicesPorTurno()) {
       let cambio = false;
       for (const ex of S.routine[i].exercises || []) if (keyEj(ex.name) === k) cambio = aplicarMaquina(ex, gymId) || cambio;
       if (cambio) await persistSlot(i);
