@@ -528,6 +528,19 @@ export function turnoDe(ref) {
   return (S.turnos || []).find(t => t.id === ref) || null;
 }
 
+/** El aviso de la unificación de turnos (reconciliarTurnos lo deja en
+    S.cfg.avisoTurnos sólo si se descartó una copia distinta). Sale UNA vez:
+    se borra al mostrarse, no al cerrarse, así cerrar la hoja tocando afuera
+    también cuenta. Devuelve si lo abrió. */
+export function abrirAvisoTurnos() {
+  const aviso = S.cfg.avisoTurnos;
+  if (!aviso) return false;
+  delete S.cfg.avisoTurnos;
+  saveCfg();
+  openSheet('aviso-turnos', { aviso });
+  return true;
+}
+
 /** El turno de una sesión: por su `turnoId` (sesiones nuevas) o por su
     slot (las de antes de los turnos). null si ya no existe. */
 export function turnoDeSesion(s) {

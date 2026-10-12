@@ -61,6 +61,8 @@ import YearRecap from './components/sheets/YearRecap.jsx';
 import SalirPrueba, { MarcoPrueba } from './components/sheets/SalirPrueba.jsx';
 import Calentamiento from './components/sheets/Calentamiento.jsx';
 import ExOpciones from './components/sheets/ExOpciones.jsx';
+import AvisoTurnos from './components/sheets/AvisoTurnos.jsx';
+import { abrirAvisoTurnos } from './lib/rutina-logic.js';
 
 // Confirm genérico (antes sheetConfirm() + PENDING_CONFIRM/PENDING_CANCEL
 // globales en index.html). No es uno de los 5 sheets nombrados en el plan de
@@ -91,7 +93,7 @@ function ConfirmSheet({ title, body, confirmLabel, onConfirm, onCancel }) {
 // Progreso, Ajustes) van a sumar sus propios casos acá mismo.
 /* Las hojas que son una pregunta corta, no contenido: salen como tarjeta
    flotante (Sheet variante="dialogo"). */
-const DIALOGOS = new Set(['confirm', 'terminar-sesion', 'salir-prueba']);
+const DIALOGOS = new Set(['confirm', 'terminar-sesion', 'salir-prueba', 'aviso-turnos']);
 /* Y los que van a pantalla completa (variante "pantalla"): el asistente de
    agregar ejercicio. Son pasos que se contestan, no una hoja que se lee, y
    cada uno tiene que entrar entero sin scroll (spec 2026-09-27 §1). */
@@ -140,6 +142,7 @@ function SheetContent({ sheet }) {
     case 'maquinas': return <Maquinas {...sheet.props} />;
     case 'year-recap': return <YearRecap {...sheet.props} />;
     case 'salir-prueba': return <SalirPrueba {...sheet.props} />;
+    case 'aviso-turnos': return <AvisoTurnos {...sheet.props} />;
     default: return null;
   }
 }
@@ -458,6 +461,10 @@ export default function App() {
       // Recién con los datos cargados: el formulario de peso usa S.body para
       // el placeholder con tu último registro.
       accionDeArranque();
+      // Turnos universales: si al unificar se descartó una copia distinta,
+      // se avisa una vez (con el botón para bajar el respaldo). Nunca encima
+      // de otra hoja: si hay una, queda para el próximo arranque.
+      if (!S.sheet) abrirAvisoTurnos();
       // Abriste la sesión y la app se cerró en pleno calentamiento (bloquear
       // el teléfono alcanza): vuelve la hoja, con lo que ya tildaste. Nunca
       // encima de otra hoja que el arranque haya abierto.

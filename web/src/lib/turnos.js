@@ -262,6 +262,20 @@ export function filaDe(slot) {
 /** El nombre de la rutina de respaldo en "Mis rutinas". */
 export const nombreRespaldo = hoy => `Respaldo antes de unificar turnos (${fmtD(hoy)})`;
 
+/** Lo que dice el aviso de la unificación (hoja 'aviso-turnos'). No dice
+    "quedó la del martes": el día sale de una proyección (weekdayProjection)
+    y la app no afirma lo que no sabe. Dice qué regla decidió. */
+export function textoAvisoTurnos(aviso) {
+  const grupos = aviso?.grupos || [];
+  const otras = grupos.length > 1 || grupos.some(g => g.versiones > 2);
+  return {
+    titulo: 'Ahora cada turno es uno solo',
+    intro: `Si cambiás ${grupos[0]?.nombre || 'un turno'}, cambia todas las veces que aparece en tu semana.`,
+    lineas: grupos.map(g => `${g.nombre} tenía ${g.versiones} versiones distintas: quedó ${g.gano === 'editada' ? 'la que cambiaste último' : 'la primera de tu semana'}.`),
+    respaldo: `${otras ? 'Las otras están' : 'La otra está'} en Mis rutinas → «${aviso?.respaldo || 'Respaldo antes de unificar turnos'}».`,
+  };
+}
+
 /* ------------------------------------------------------- reconciliación */
 
 /**
