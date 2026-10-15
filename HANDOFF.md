@@ -1,6 +1,54 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-10-12
+**Última actualización:** 2026-10-14
+
+---
+
+## SESIÓN 2026-10-14 — mudanza a la PC del trabajo + PENDIENTE: ¿repo privado?
+
+**Mudanza (sin cambios de código).** FIERRO pasó de la laptop LENOVO a la PC
+del trabajo (usuario de Windows `erojas`), con el kit `FIERRO-mudanza`:
+- Repo en `C:\Users\erojas\Documents\Personal\Gymapp` (no `Documents\Enzo`).
+  Las ramas de la laptop quedaron como `laptop/<rama>` (incluidas las 10 que
+  nunca se subieron) y se recuperó el stash `coverflow-experimento-enzo`.
+- Los worktrees de la laptop no existen acá: se recrean desde la rama remota
+  (este HANDOFF se escribió en `.claude/worktrees/compensar`, recreado).
+- **Dependencias:** el npm de esta PC (12) es más estricto con peers y
+  `vite-plugin-pwa@1.2.0` no declara vite 8. `npm install`/`npm ci` fallan con
+  ERESOLVE → usar **`npm ci --legacy-peer-deps`** en `web/`. 1390 tests en
+  main, dev server OK.
+- **Dos cuentas de GitHub en `gh`:** Exorplion (FIERRO) y erojasefc (trabajo).
+  La activa vale para toda la PC: antes de push/PR, `gh auth status` y, si
+  hace falta, `gh auth switch`. La identidad git exorplion está solo en el repo.
+- Maquetas locales: `Documents\Personal\FIERRO-maquetas\`.
+
+**PENDIENTE (decidir al arrancar la IA): ¿pasar el repo a privado?**
+Enzo lo preguntó por seguridad. Se le explicó:
+- **Público hoy es seguro.** Se revisó el repo y no hay claves ni tokens; las
+  del recordatorio de peso están en GitHub Secrets. Privado tampoco oculta
+  mucho: el JS compilado se descarga igual desde el sitio.
+- **El Worker de Cloudflare es obligatorio para la IA**, sea el repo público o
+  privado: la clave de Gemini nunca puede ir dentro de la app.
+- **Con cuenta gratis, GitHub Pages no publica repos privados.** Si se pasa a
+  privado sin más, la app del teléfono se cae.
+
+Opciones: **(1) dejarlo público** (recomendado, cero trabajo) o **(2) privado
++ Cloudflare Pages** (gratis, misma cuenta que el Worker; Cloudflare buildea y
+ya no hace falta commitear el build; la URL pasa a `*.pages.dev`).
+
+Si elige la (2), **en este orden** (los datos viven en el navegador por
+dirección: en la URL nueva la app arranca vacía):
+1. Enzo exporta sus datos: Ajustes → "Exportar todo a JSON".
+2. Crea la cuenta de Cloudflare (la misma sirve para el Worker de IA).
+3. Configurar Cloudflare Pages desde el repo y verificar la URL nueva.
+4. Enzo instala la PWA nueva e importa el JSON.
+5. Recién con su OK: repo a privado y apagar GitHub Pages.
+
+**Nunca pasar a privado antes del paso 4.**
+
+**Sigue pendiente de antes:** mergear **#160** (Fase 4) y, para la IA, la
+parte 3 del diseño (formato del lector y casos), el spec y el plan (ver la
+sesión (10) abajo).
 
 ---
 
