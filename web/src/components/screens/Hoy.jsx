@@ -23,7 +23,7 @@ import { cn } from '../../lib/utils.js';
 import { S, useStore, bump, openSheet, closeSheet, changeTab, wDisplay } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS, dstr } from '../../lib/format.js';
 import { opcionesDescanso } from '../../lib/descansoHoy.js';
-import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, moverEnBloque, indiceHoy, elegirTurnoHoy, fueraDelPlanHoy } from '../../lib/session.js';
+import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, moverEnBloque, indiceHoy, elegirTurnoHoy, fueraDelPlanHoy, compensacionHoy, compensacionAceptada, compensacionDescartada, conCompensacion } from '../../lib/session.js';
 import { flipSort } from '../../lib/drag.js';
 import { abrirAsistente } from '../../lib/asistente-agregar.js';
 import { blocksOf, catOf, MUSCLE_CATS } from '../../lib/muscle.js';
@@ -37,6 +37,7 @@ import { ArrowDown, ArrowUp, Bolt, Mic, Mover, Pencil, RecordDot, Dots, Plus, Ch
 import { HoySinPlan } from '../Illustration.jsx';
 import { AvisoPrueba } from '../sheets/SalirPrueba.jsx';
 import Silhouette from '../Silhouette.jsx';
+import CerrarSemana from '../CerrarSemana.jsx';
 
 const SR_CLASS = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition || null) : null;
 
@@ -62,6 +63,12 @@ export default function Hoy() {
   const curId = active ? S.draft.cur : null;
   const nextEx = active ? nextPending(exs) : null;
   const allDone = active && exs.length > 0 && !nextEx;
+  // Cerrar la semana (Fase 4): después de una sesión fuera del plan, antes de
+  // empezar el turno que toca. Lo aceptado ya se ve en las cifras y el plan.
+  const comp = active ? null : compensacionHoy();
+  const aceptada = compensacionAceptada(comp);
+  const mostrarComp = !!comp && (!!aceptada || (comp.hoy.length > 0 && !compensacionDescartada(comp)));
+  const exsPlan = aceptada ? conCompensacion(exs, aceptada) : exs;
 
   // Bloom-open sutil para la tarjeta vacía "sin ejercicios hoy" al montar.
   const emptyCardRef = useRef(null);
@@ -101,7 +108,8 @@ export default function Hoy() {
               <button type="button" className="linkcard" onClick={() => { elegirTurnoHoy(null); bump(); }}>‹ Volver al plan</button>
             </div>
           )}
-          <PreSessionHero day={day} index={index} exs={exs} />
+          <PreSessionHero day={day} index={index} exs={exsPlan} />
+          {mostrarComp && <CerrarSemana key={comp.clave} comp={comp} aceptada={aceptada} />}
         </>
       )}
 
@@ -129,7 +137,7 @@ export default function Hoy() {
         // Antes de arrancar: sólo los bloques, editables y desplegables — el
         // carrusel es de EJECUCIÓN (serie, descanso, cronómetro), no tiene
         // nada que hacer en la etapa de "mirar y planear qué toca hoy".
-        <PlanHoy index={index} exs={exs} />
+        <PlanHoy index={index} exs={exsPlan} base={exs} />
       ) : (
         <>
           {/* La rampa de aproximación (50/75/90%) ya no va en una tarjeta
@@ -442,8 +450,11 @@ function PreSessionHero({ day, index, exs }) {
     ganarle a la vez pasada (Enzo: "no me despierta nada"). Ahora la lista
     está abierta y dice la meta; los controles de ordenar y editar aparecen
     sólo en modo edición, que es cuando se usan. */
-function PlanHoy({ index, exs }) {
+function PlanHoy({ index, exs: conComp, base }) {
   const [editando, setEditando] = useState(false);
+  // Editando se ordena el plan de verdad: sin lo sumado para cerrar la
+  // semana, que es de hoy y no tiene lugar en la rutina.
+  const exs = editando ? base : conComp;
   const blocks = blocksOf(exs);
   const { subir, superar } = resumenPlan(exs);
   const listRef = useRef(null);
@@ -498,11 +509,15 @@ function PlanHoy({ index, exs }) {
               n += 1;
               return (
                 <div className="grouprow plan-row" key={ex.id}>
-                  <button type="button" className="plan-row-main" onClick={() => openSheet('ex-info', { name: ex.name, exId: ex.id })}>
+                  <button type="button" className="plan-row-main" onClick={() => openSheet('ex-info', ex.compensa ? { name: ex.name } : { name: ex.name, exId: ex.id })}>
                     <span className={`plan-num${n === 1 ? ' first' : ''}`}>{n}</span>
                     <span className="grouprow-grow">
                       <span className="grouprow-t">{ex.name}</span>
-                      <span className="grouprow-s">{ex.sets}×{ex.reps}{equipLabel(ex) ? ` · ${equipLabel(ex)}` : ''}</span>
+                      <span className="grouprow-s">
+                        {ex.sets}×{ex.reps}{equipLabel(ex) ? ` · ${equipLabel(ex)}` : ''}
+                        {ex.compensa && <span className="cs-tag">De {ex.desde}</span>}
+                        {ex._mas > 0 && <span className="cs-tag">+{ex._mas} compensa</span>}
+                      </span>
                     </span>
                     {/* Editando, la meta se esconde: con ▲▼ y lápiz no quedaba
                         lugar y el nombre se partía palabra por palabra

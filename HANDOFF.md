@@ -1,6 +1,203 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-10-12
+**Última actualización:** 2026-10-14
+
+---
+
+## SESIÓN 2026-10-14 — mudanza a la PC del trabajo + PENDIENTE: ¿repo privado?
+
+**Mudanza (sin cambios de código).** FIERRO pasó de la laptop LENOVO a la PC
+del trabajo (usuario de Windows `erojas`), con el kit `FIERRO-mudanza`:
+- Repo en `C:\Users\erojas\Documents\Personal\Gymapp` (no `Documents\Enzo`).
+  Las ramas de la laptop quedaron como `laptop/<rama>` (incluidas las 10 que
+  nunca se subieron) y se recuperó el stash `coverflow-experimento-enzo`.
+- Los worktrees de la laptop no existen acá: se recrean desde la rama remota
+  (este HANDOFF se escribió en `.claude/worktrees/compensar`, recreado).
+- **Dependencias:** el npm de esta PC (12) es más estricto con peers y
+  `vite-plugin-pwa@1.2.0` no declara vite 8. `npm install`/`npm ci` fallan con
+  ERESOLVE → usar **`npm ci --legacy-peer-deps`** en `web/`. 1390 tests en
+  main, dev server OK.
+- **Dos cuentas de GitHub en `gh`:** Exorplion (FIERRO) y erojasefc (trabajo).
+  La activa vale para toda la PC: antes de push/PR, `gh auth status` y, si
+  hace falta, `gh auth switch`. La identidad git exorplion está solo en el repo.
+- Maquetas locales: `Documents\Personal\FIERRO-maquetas\`.
+
+**PENDIENTE (decidir al arrancar la IA): ¿pasar el repo a privado?**
+Enzo lo preguntó por seguridad. Se le explicó:
+- **Público hoy es seguro.** Se revisó el repo y no hay claves ni tokens; las
+  del recordatorio de peso están en GitHub Secrets. Privado tampoco oculta
+  mucho: el JS compilado se descarga igual desde el sitio.
+- **El Worker de Cloudflare es obligatorio para la IA**, sea el repo público o
+  privado: la clave de Gemini nunca puede ir dentro de la app.
+- **Con cuenta gratis, GitHub Pages no publica repos privados.** Si se pasa a
+  privado sin más, la app del teléfono se cae.
+
+Opciones: **(1) dejarlo público** (recomendado, cero trabajo) o **(2) privado
++ Cloudflare Pages** (gratis, misma cuenta que el Worker; Cloudflare buildea y
+ya no hace falta commitear el build; la URL pasa a `*.pages.dev`).
+
+Si elige la (2), **en este orden** (los datos viven en el navegador por
+dirección: en la URL nueva la app arranca vacía):
+1. Enzo exporta sus datos: Ajustes → "Exportar todo a JSON".
+2. Crea la cuenta de Cloudflare (la misma sirve para el Worker de IA).
+3. Configurar Cloudflare Pages desde el repo y verificar la URL nueva.
+4. Enzo instala la PWA nueva e importa el JSON.
+5. Recién con su OK: repo a privado y apagar GitHub Pages.
+
+**Nunca pasar a privado antes del paso 4.**
+
+**Sigue pendiente de antes:** mergear **#160** (Fase 4) y, para la IA, la
+parte 3 del diseño (formato del lector y casos), el spec y el plan (ver la
+sesión (10) abajo).
+
+---
+
+## SESIÓN 2026-10-12 (10) — núcleo de IA: importar una rutina pegada (DISEÑO, sin código)
+
+**Estado de lo publicado:** PR **#160** (Fase 4, "Para cerrar la semana") con
+build commiteado y SIN mergear. El clasificador de Claude Code frenó
+`gh pr merge 160` dos veces, aunque Enzo pidió "publica". Enzo tiene que
+mergearlo en GitHub o agregar `Bash(gh pr merge *)` en `/permissions`.
+**Primero de la próxima sesión:** confirmar que #160 está en main.
+
+**Qué se está diseñando:** la decisión 4 del 2026-10-12 (núcleo de IA). La
+primera función es importar una rutina pegada como texto, de cualquier
+fuente: un chat de IA, un entrenador por WhatsApp, notas. Es un proceso
+arquitectónico (superpowers:brainstorming): preguntas, partes del diseño
+aprobadas una por una, spec escrito, plan. **No se escribió código.**
+
+**Decisiones de Enzo (2026-10-12, noche):**
+1. **Fuente:** texto pegado de cualquier lado, ordenado o desordenado. La
+   rutina tiene que salir "de manera instantánea".
+2. **Vista previa y un toque:** al pegar aparece al instante la rutina
+   armada. Lo no reconocido queda en ámbar. "Crear rutina" la guarda. Nada
+   se guarda sin mirarlo.
+3. **La actual pasa a Mis rutinas** y la nueva queda activa (igual que una
+   plantilla o la unificación de turnos). El historial no se toca.
+4. **Lector local + IA desde el principio** (opción B; se le recomendó
+   empezar sólo local y eligió las dos). El local da la vista previa al
+   instante; si quedan dudas, Gemini (vía Worker de Cloudflare) completa SÓLO
+   lo que quedó en ámbar, sin pisar lo reconocido, y lo marca para revisar.
+
+**Parte 1 del diseño (APROBADA): cómo se usa y piezas**
+- Entrada: Entreno → Mis rutinas → "Pegar una rutina" (hoja con un campo).
+- `lib/importar/lector.js` (puro, testeable con muchos textos): texto →
+  borrador `{ turnos: [{ nombre, ejercicios: [{ name, sets, reps,
+  reconocido, original }] }], semana, dudas }`. Reusa el reconocimiento de
+  nombres de `parseWorkoutSpeech` (`lib/voice.js:57`: `voiceCandidates`,
+  `matchAt`, `digitize`) y el catálogo. Entiende "Día 1 / Lunes / Push:",
+  "4x8", "4 x 8-10", "3 series de 12", "descanso".
+- `lib/importar/ia.js`: si hay dudas, manda el texto al Worker y combina la
+  respuesta (lo local reconocido gana).
+- `worker/` (en el repo, se publica con wrangler): recibe el texto, llama a
+  Gemini con JSON de formato fijo y devuelve el resultado. La clave vive en
+  el Worker como secreto, nunca en el bundle: el repo es público.
+- La semana: si el texto nombra días, se respetan; si dice "Día 1, Día 2…",
+  van seguidos y se usa `acomodarDescansos` (rutina-logic.js, Fase 2).
+- Crear: guardar la actual en Mis rutinas y aplicar la nueva con turnos
+  universales (mismo camino que `applyTemplate`, templates.js:109, que hoy
+  pasa por `applyDays`; revisar que cree `S.turnos` como la Fase 1).
+
+**Parte 2 del diseño (APROBADA): que nadie más use la cuota**
+- El Worker hace UNA cosa: el pedido a Gemini está fijo adentro y la app
+  sólo manda el texto (no sirve como Gemini gratis para otra cosa).
+- Sólo acepta `Origin` `https://exorplion.github.io` y `http://localhost:*`.
+- Límite global diario (~30 lecturas/día) y por IP (~10/hora): binding de
+  Rate Limiting de Cloudflare o un contador en KV.
+- Texto de hasta ~6000 caracteres. No guarda ni registra el texto.
+- La respuesta se valida en el Worker Y en la app (formato fijo; series
+  1–12, reps 1–50).
+- Si falla (sin internet, sin cuota, Gemini caído): la vista previa se queda
+  con lo local y dice "La IA no está disponible ahora. Corregí a mano lo que
+  quedó en ámbar". Siempre se puede crear la rutina.
+
+**Pendiente de Enzo (cuentas), guía en la memoria `guia-cloudflare-gemini-ia`:**
+1. Clave de Gemini en https://aistudio.google.com/apikey (no pegarla en el
+   chat ni en el repo; mirar la cuota gratis de Flash, que bajó en 2026; en
+   el plan gratis Google puede usar lo enviado).
+2. Cuenta Free de Cloudflare (https://dash.cloudflare.com/sign-up).
+3. Cuando exista `worker/`: `! npx wrangler login`.
+4. `! npx wrangler secret put GEMINI_API_KEY` (la escribe Enzo).
+5. `npx wrangler deploy` lo hace Claude y pone la URL en la app.
+Sin esto, el importador anda sólo con el lector local (la IA queda apagada).
+
+**Tareas (estado al cierre):**
+
+| # | Tarea | Estado | Qué falta |
+|---|---|---|---|
+| 1 | Fase 4 compensación (#160) | Hecha, sin mergear | Merge de Enzo; probar en el teléfono |
+| 2 | Diseño IA, parte 1 (flujo y piezas) | Aprobada | — |
+| 3 | Diseño IA, parte 2 (seguridad del Worker) | Aprobada | — |
+| 4 | Diseño IA, parte 3 (formatos del lector, cómo se ve lo ámbar, edición en la vista previa) | Sin presentar | Presentarla a Enzo; conviene lienzo de maquetas para la vista previa ([[maquetas-opciones-lienzo]]) |
+| 5 | Spec escrito | Sin empezar | `docs/superpowers/specs/2026-10-1x-importar-rutina-design.md`, self-review, que Enzo lo revise |
+| 6 | Plan de implementación | Sin empezar | superpowers:writing-plans después del spec |
+| 7 | Cuentas Cloudflare + Gemini | Pendiente de Enzo | Pasos 1–2 de arriba |
+
+**Preguntas abiertas para la parte 3:** qué hacer con superseries
+("A1/A2"), con rangos de reps ("8-10": ¿se guarda el bajo, el alto o el
+rango?), con "RIR 2" / "al fallo" (hoy el RIR es por serie al registrar) y
+con ejercicios que no están en el catálogo (se crean con el grupo elegido a
+mano, como en el asistente).
+
+---
+
+## SESIÓN 2026-10-12 (9) — turnos universales, Fase 4: "Para cerrar la semana"
+
+Lienzo: claude.ai/artifact/4Qswpo9x8WCfX5Y1BQhkY2 (copia
+`Documents/Enzo/FIERRO-maquetas/cerrar-semana.html`). Enzo eligió la **A**
+(tarjeta entre el turno y el plan). Rama `feat/turnos-fase4-compensar`
+(worktree `.claude/worktrees/compensar`). **1413 tests** (+23:
+`lib/__tests__/compensacion.test.js`, el ejemplo de la spec §6, y
+`turnos-compensar.test.js`, contra la sesión real).
+
+**Qué cambió:**
+- `lib/compensacion.js` (nuevo, puro): `faltasDelCiclo` (lo que dejó sin hacer
+  cada sesión fuera del plan del ciclo actual, menos lo hecho por encima del
+  plan después; frecuencia por zona), `compensacion()` (la propuesta de hoy:
+  `hoy`, `despues`, `sinLugar`, `clave` = 'ciclo:slotId'), `avisoAlCerrar`
+  y los textos (`diaLargo`, `listaZonas`, `listaDias`).
+- `session.js`: `compensacionHoy()` (sólo sin sesión abierta, sin haber
+  entrenado hoy, con el turno que toca), `aceptarCompensacion` /
+  `descartarCompensacion` / `deshacerCompensacion` (en `S.cfg.compensar` y
+  `S.cfg.compensarNo`), `conCompensacion` (el plan con lo sumado) y
+  `startSession` lo vuelca al borrador: series → `extraSets`, traído →
+  `extras` con `compensa: true`, que `completeSession` NO ofrece fijar.
+- `components/CerrarSemana.jsx`: la tarjeta (`.group` + `.grouprow`, rótulo
+  con rayita ámbar), filas tildables con el motivo, "Ver qué falta" (barras
+  por zona y "1 de 2 veces esta semana"), nota de lo que va otro día / no
+  entra, "Sumar a hoy" y "Hoy no" (toast con Deshacer). Aceptada, queda una
+  línea `.hoy-elegido` "✓ Sumado a hoy: … · Deshacer" y el plan marca
+  "+2 compensa" / "De Posterior"; cifras del héroe actualizadas.
+- `SessionView`: al cerrar una sesión fuera del plan, una línea "El jueves y
+  el viernes te voy a proponer cómo compensar femoral, glúteo, gemelos y 2
+  más. Podés ignorarlo." Nada en Inicio.
+
+**Desvíos de la spec (§6):**
+- Desempate: menos zonas, después **menos** series planeadas (no "más"): es
+  lo que da el ejemplo de la spec (Curl femoral 3 antes que PMR 4) y es lo más
+  liviano de sumar. La regla de fibras (`coberturaDe`) no se implementó: con
+  ≥ 3 series o frecuencia perdida ya alcanza y no cambiaba ningún caso.
+- Tope de MRV por grupo: no se aplica. `Pierna` junta cuádriceps y femoral y
+  la plantilla A/P ya pasa 22; como nunca se propone más que la falta, lo
+  compensado nunca supera lo que tu plan ya tenía.
+- Traer: vale cualquier ejercicio del turno no hecho que trabaje la zona (no
+  sólo su zona "principal"), para que Kelso cuente para romboides.
+
+**Verificado (build de producción, Playwright, 390 y 430, sin errores, sin
+scroll horizontal):** plantilla A/P, sesión libre "Pull con Juan" en vez de
+Posterior. Jueves (Anterior): "Traer Elevación de gemelos · 3×15", "Femoral,
+glúteo, trapecio y romboides: el martes en Posterior" (fecha estimada), Sumar
+→ 12 ej / 40 series / ~87 min y "De Posterior" en el plan. Viernes: +2 Curl
+femoral y +2 Hip thrust, "No entra esta semana: 5 series de femoral, 3 de
+trapecio y 3 de romboides".
+
+**Trampa:** `.grouprow` está más abajo en styles.css y su `font:inherit`
+pisa el tamaño de una clase sola: la nota va como `.grouprow.cs-nota`.
+**Trampa 2:** un `vite preview` huérfano de otra sesión seguía en el 4192 y
+servía un build viejo (sin la Fase 3): comparar el hash de `index-*.js`.
+
+**Pendiente:** que Enzo lo pruebe en el teléfono la próxima vez que salga del
+plan. La línea del resumen no se miró en navegador (sí en tests).
 
 ---
 
