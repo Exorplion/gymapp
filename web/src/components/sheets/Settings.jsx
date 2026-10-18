@@ -147,6 +147,11 @@ export default function Settings() {
     elegirAcento({ id: 'propio', h: alejarDeEstados(h) });
   }
 
+  function setUnit(u) {
+    S.cfg.unit = u; saveCfg();
+    bump(); // re-renderiza toda la app: wDisplay/wAlt en Hoy/Rutina/Progreso dependen de S.cfg.unit
+  }
+
   /* Vuelven todos los avisos de la guía; aparecen solos en la sesión (la
      que está en curso también), en el momento de cada uno (lib/guia.js). */
   function verGuia() {
@@ -356,6 +361,17 @@ export default function Settings() {
           anillos, gráficos y el mapa muscular; verde, rojo y ámbar quedan
           reservados para los avisos.
         </div>
+      </motion.section>
+
+      <motion.section variants={seccion}>
+        <h3>Unidad de peso</h3>
+        <div className="seg">
+          <button type="button" className={S.cfg.unit === 'kg' ? 'on' : ''} aria-pressed={S.cfg.unit === 'kg'} onClick={() => setUnit('kg')}>Kilos (kg)</button>
+          <button type="button" className={S.cfg.unit === 'lb' ? 'on' : ''} aria-pressed={S.cfg.unit === 'lb'} onClick={() => setUnit('lb')}>Libras (lb)</button>
+        </div>
+        {/* La general: historial, Progreso y máquinas nuevas. Cada máquina
+            puede tener la suya desde la sesión (unidades.js, 2026-10-18). */}
+        <p className="text-text-2 text-micro" style={{ marginTop: 'var(--s2)' }}>Cada máquina puede tener la suya: en la sesión, tocá el «≈» debajo de la rueda.</p>
       </motion.section>
 
       <motion.section variants={seccion}>

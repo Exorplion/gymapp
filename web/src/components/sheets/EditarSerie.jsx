@@ -21,7 +21,8 @@ export default function EditarSerie({ exId, idxs = [], n }) {
   const filas = idxs.filter(i => sets[i]).map(i => ({ i, side: sets[i].side }));
   const [vals, setVals] = useState(() => filas.map(f => ({ w: sets[f.i].w, r: sets[f.i].r })));
   if (!filas.length) return <h2>Corregir serie</h2>;
-  const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
+  // la de la máquina con la que se anotó (saveSet la guarda en la entrada)
+  const unidad = (S.draft.entries[exId].unit || S.cfg.unit) === 'lb' ? 'lb' : 'kg';
   const cambiar = (k, campo) => valor => setVals(vs => vs.map((v, j) => (j === k ? { ...v, [campo]: valor } : v)));
 
   async function guardar() {
@@ -43,11 +44,11 @@ export default function EditarSerie({ exId, idxs = [], n }) {
               <div className="steplabel">Peso <span>{unidad}</span></div>
               <ReelPicker
                 value={vals[k].w}
-                step={wStep()}
+                step={wStep(unidad)}
                 min={0.5}
-                fmt={v => wDisplay(v)}
-                toUnit={wToUnit}
-                fromUnit={wFromUnit}
+                fmt={v => wDisplay(v, unidad)}
+                toUnit={v => wToUnit(v, unidad)}
+                fromUnit={v => wFromUnit(v, unidad)}
                 onChange={cambiar(k, 'w')}
                 label={`Peso${LADO[f.side] ? `, ${LADO[f.side].toLowerCase()}` : ''}`}
               />

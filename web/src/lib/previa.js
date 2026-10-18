@@ -11,6 +11,7 @@ import { catOf, daysSinceGroup, diasTexto } from './muscle.js';
 import { recuperacion, zonasDeEjercicio } from './recuperacion.js';
 import { round1, dstr } from './format.js';
 import { sufijoPeso } from './equip.js';
+import { unidadDe } from './unidades.js';
 
 const UNI = ' (unilateral)';
 /** La ventana del cambio de fuerza: 8 semanas. */
@@ -141,7 +142,7 @@ export function metaHoy(ex, { uni = false, ajuste = 0 } = {}) {
     const mejores = Math.max(0, ...last.filter(s => s.w >= top - 0.01).map(s => s.r));
     return { tipo, peso: obj.peso, reps: last.length ? Math.min(obj.meta, mejores + 1) : obj.meta, texto: '1 rep más que la última' };
   }
-  if (tipo === 'sugerido') return { tipo, peso: obj.peso, reps: repsDe(ex), texto: obj.texto };
+  if (tipo === 'sugerido' || tipo === 'traido') return { tipo, peso: obj.peso, reps: repsDe(ex), texto: obj.texto };
   const inicial = typeof ex?.pesoInicialKg === 'number' && ex.pesoInicialKg > 0 ? ex.pesoInicialKg : null;
   return inicial != null
     ? { tipo, peso: inicial, reps: repsDe(ex), texto: 'tu peso de partida' }
@@ -150,12 +151,13 @@ export function metaHoy(ex, { uni = false, ajuste = 0 } = {}) {
 
 /** La meta en una línea: "47.5 kg × 8 · 1 rep más que la última". La misma
     línea va en la previa y, después de Empezar, dentro de la tarjeta. */
-export function metaTexto(meta, sufijo = '') {
+export function metaTexto(meta, sufijo = '', u) {
   if (!meta) return '';
-  const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
+  // `u`: la unidad de la máquina (unidadDe); sin ella, la general.
+  const unidad = (u || S.cfg.unit) === 'lb' ? 'lb' : 'kg';
   const partes = [];
   // `sufijo`: qué es el número ("17.5 kg c/u" en mancuernas, sufijoPeso).
-  if (meta.peso != null) partes.push(`${meta.tipo === 'sugerido' ? '~' : ''}${wDisplay(meta.peso)} ${unidad}${sufijo}${meta.reps ? ` × ${meta.reps}` : ''}`);
+  if (meta.peso != null) partes.push(`${meta.tipo === 'sugerido' || meta.tipo === 'traido' ? '~' : ''}${wDisplay(meta.peso, unidad)} ${unidad}${sufijo}${meta.reps ? ` × ${meta.reps}` : ''}`);
   else if (meta.reps) partes.push(`${meta.reps} reps`);
   if (meta.texto) partes.push(meta.texto);
   return partes.join(' · ');
@@ -163,8 +165,8 @@ export function metaTexto(meta, sufijo = '') {
 
 /** La meta partida en dos: los números ("47.5 kg × 8", van en la
     condensada) y el porqué ("1 rep más que la última", en texto). */
-export function metaPartes(meta, sufijo = '') {
-  const [numeros = '', ...resto] = metaTexto(meta, sufijo).split(' · ');
+export function metaPartes(meta, sufijo = '', u) {
+  const [numeros = '', ...resto] = metaTexto(meta, sufijo, u).split(' · ');
   return { numeros, porque: resto.join(' · ') };
 }
 
@@ -172,9 +174,9 @@ export function metaPartes(meta, sufijo = '') {
     MISMA meta que la línea "Meta de hoy" de la tarjeta. Antes salía de
     objetivoHoy ("sumá reps · meta 12", el tope del rango) y la tarjeta decía
     "45 kg × 8": dos metas para lo mismo. Subir de peso lleva la flecha. */
-export function columnaHoy(meta, sufijo = '') {
+export function columnaHoy(meta, sufijo = '', u) {
   if (!meta) return { numeros: '—', porque: '' };
-  const { numeros, porque } = metaPartes(meta, sufijo);
+  const { numeros, porque } = metaPartes(meta, sufijo, u);
   return { numeros: numeros ? `${numeros}${meta.tipo === 'subir' ? ' ↑' : ''}` : '—', porque };
 }
 
@@ -192,5 +194,7 @@ export function previaEjercicio(ex, { uni = false, ajuste = 0, hoy = dstr() } = 
     meta: metaHoy(ex, { uni, ajuste }),
     // qué es el número del peso: " c/u" en mancuernas (equip.js)
     sufijo: sufijoPeso(ex, uni),
+    // la unidad de la rueda de esta máquina (kg o lb, unidades.js)
+    unidad: unidadDe(ex),
   };
 }

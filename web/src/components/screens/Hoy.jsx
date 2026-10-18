@@ -23,6 +23,7 @@ import { cn } from '../../lib/utils.js';
 import { S, useStore, bump, openSheet, closeSheet, changeTab, wDisplay, wAltPartes } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS, dstr } from '../../lib/format.js';
 import { opcionesDescanso } from '../../lib/descansoHoy.js';
+import { unidadDe } from '../../lib/unidades.js';
 import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, moverEnBloque, indiceHoy, elegirTurnoHoy, fueraDelPlanHoy, compensacionHoy, compensacionAceptada, compensacionDescartada, conCompensacion } from '../../lib/session.js';
 import { flipSort } from '../../lib/drag.js';
 import { abrirAsistente } from '../../lib/asistente-agregar.js';
@@ -558,6 +559,8 @@ const PEEK_MS = 1400;
 /** Lo que toca superar hoy, a la derecha de cada ejercicio del plan. */
 function Meta({ ex }) {
   const o = objetivoHoy(ex);
+  // la unidad de la máquina de este ejercicio (unidades.js), no la general
+  const u = unidadDe(ex);
   const [peek, setPeek] = useState(false);
   const peekTimer = useRef(null);
   useEffect(() => () => clearTimeout(peekTimer.current), []);
@@ -569,15 +572,20 @@ function Meta({ ex }) {
   }
   const num = kgVal => {
     if (kgVal == null) return null;
-    const { n, u } = peek ? wAltPartes(kgVal) : { n: wDisplay(kgVal), u: S.cfg.unit === 'lb' ? 'lb' : 'kg' };
-    return <>{n}<i>{u}</i></>;
+    const p = peek ? wAltPartes(kgVal, u) : { n: wDisplay(kgVal, u), u };
+    return <>{p.n}<i>{p.u}</i></>;
   };
   const kg = num(o.peso);
   if (o.tipo === 'subir') {
-    return <span className="plan-meta up"><b onClick={verOtraUnidad}>{kg}<em>↑</em></b><small>antes {wDisplay(o.antes)}</small></span>;
+    return <span className="plan-meta up"><b onClick={verOtraUnidad}>{kg}<em>↑</em></b><small>antes {wDisplay(o.antes, u)}</small></span>;
   }
   if (o.tipo === 'sostener' || o.tipo === 'sumar') {
     return <span className="plan-meta"><b onClick={verOtraUnidad}>{kg}</b><small>superar reps</small></span>;
+  }
+  /* Primera vez en esta máquina, hecho en otra: el peso de allá para
+     probar (unidades.js). "de SmartFit" y no "sugerido": dice de dónde sale. */
+  if (o.tipo === 'traido') {
+    return <span className="plan-meta"><b onClick={verOtraUnidad}>~{kg}</b><small>de {o.origen}</small></span>;
   }
   if (o.tipo === 'sugerido') {
     return <span className="plan-meta"><b onClick={verOtraUnidad}>~{kg}</b><small>sugerido</small></span>;

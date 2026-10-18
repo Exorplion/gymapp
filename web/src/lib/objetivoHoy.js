@@ -7,6 +7,7 @@
 import { progresion } from './progression.js';
 import { suggestedWeight } from './charts.js';
 import { round1 } from './format.js';
+import { pesoTraido } from './unidades.js';
 
 /**
  * @param {object} ex             el ejercicio
@@ -14,7 +15,7 @@ import { round1 } from './format.js';
  *   uni: unilateral (el 1RM se guarda aparte, ver ExerciseCarousel)
  *   ajuste: el ±% del chequeo de "Antes de empezar" (S.draft.precheckAdjust)
  * @returns {{
- *   tipo: 'subir'|'sostener'|'sumar'|'sugerido'|'primera',
+ *   tipo: 'subir'|'sostener'|'sumar'|'traido'|'sugerido'|'primera',
  *   peso: number|null, antes: number|null, meta: number|null, texto: string
  * }}
  */
@@ -35,6 +36,13 @@ export function objetivoHoy(ex, { uni = false, ajuste = 0 } = {}) {
         ? `${faltan} serie${faltan === 1 ? '' : 's'} más a ${p.tope} reps`
         : `sumá reps · meta ${p.tope}`,
     };
+  }
+  /* Primera vez en esta máquina, pero hecho en otra (otro gym): el peso de
+     allá, tal cual, para probarlo (unidades.js). Gana al sugerido por 1RM
+     porque es un número que levantaste de verdad, no una cuenta. */
+  const traido = pesoTraido(uni ? { ...ex, unilateral: true } : ex);
+  if (traido) {
+    return { tipo: 'traido', peso: traido.kg, antes: null, meta: null, origen: traido.origen, enOtroGym: traido.enOtroGym, unidad: traido.unidad, reps: traido.r, texto: `de ${traido.origen}` };
   }
   const base = suggestedWeight(uni ? `${ex.name} (unilateral)` : ex.name);
   if (base) {

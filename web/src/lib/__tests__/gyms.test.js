@@ -6,7 +6,7 @@
 // de memoria, y el botón de borrar vive pegado al de activar, que es el que
 // más se toca de la fila. Deshacer tiene que devolver EXACTAMENTE lo que había.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { S } from '../state.js';
+import { S, wToUnit } from '../state.js';
 
 // El toast se intercepta para poder ejecutar su acción desde el test: es la
 // única forma de llegar al "Deshacer" sin montar la interfaz.
@@ -21,7 +21,7 @@ vi.mock('../db.js', () => ({ idb: { put: vi.fn(async () => {}), del: vi.fn(async
 // para probar que la unidad se aplica/guarda, así que se corta ahí.
 vi.mock('../session.js', () => ({ indiceHoy: () => -1 }));
 
-const { deleteGym, setUnit, setActiveGym } = await import('../gyms.js');
+const { deleteGym, cambiarUnidad, setActiveGym } = await import('../gyms.js');
 
 const gym = (id, name, equip = {}) => ({ id, name, equip });
 
@@ -74,44 +74,39 @@ describe('deleteGym', () => {
   });
 });
 
-describe('unidad de peso atada al gym', () => {
+describe('cambiarUnidad: kg/lb por máquina', () => {
   beforeEach(() => {
-    S.gyms = [gym('a', 'Smart Fit'), gym('b', 'Gym del finde')];
-    S.cfg = { ...S.cfg, unit: 'kg', activeGym: null };
+    S.gyms = [gym('a', 'Smart Fit'), gym('b', 'Gym Libras')];
+    S.cfg = { ...S.cfg, unit: 'kg', activeGym: 'b', unidades: {} };
     S.routine = [];
     S.draft = null;
+    S.hoyVals = {};
+  });
+  const jalon = { id: 'x1', name: 'Jalón al pecho', variante: 'm-polea' };
+
+  it('la guarda para ESA máquina en ESE gym, sin tocar la general', () => {
+    cambiarUnidad(jalon, 'lb');
+    expect(S.cfg.unidades['b|jalón al pecho@m-polea']).toBe('lb');
+    expect(S.cfg.unit).toBe('kg');
   });
 
-  it('setUnit con gym activo la guarda en ESE gym', () => {
-    S.cfg.activeGym = 'b';
-    setUnit('lb');
-    expect(S.cfg.unit).toBe('lb');
+  it('el gym recuerda la última, para las máquinas que todavía no tienen', () => {
+    cambiarUnidad(jalon, 'lb');
     expect(S.gyms.find(g => g.id === 'b').unit).toBe('lb');
     expect(S.gyms.find(g => g.id === 'a').unit).toBeUndefined();
   });
 
-  it('setUnit sin gym activo sólo cambia el default global', () => {
-    setUnit('lb');
-    expect(S.cfg.unit).toBe('lb');
-    expect(S.gyms.every(g => g.unit === undefined)).toBe(true);
+  it('lleva el peso de la rueda al escalón de la otra unidad (50 kg → 110 lb)', () => {
+    S.hoyVals.x1 = { w: 50, r: 10 };
+    cambiarUnidad(jalon, 'lb');
+    expect(wToUnit(S.hoyVals.x1.w, 'lb')).toBeCloseTo(110, 6);
+    cambiarUnidad(jalon, 'kg');
+    expect(S.hoyVals.x1.w).toBe(50);
   });
 
-  it('setActiveGym aplica sola la unidad que ese gym tenía guardada', async () => {
-    S.gyms.find(g => g.id === 'b').unit = 'lb';
-    S.cfg.unit = 'kg';
+  it('cambiar de gym ya no pisa la unidad general', async () => {
+    S.gyms[1].unit = 'lb';
     await setActiveGym('b');
-    expect(S.cfg.unit).toBe('lb');
-  });
-
-  it('setActiveGym a un gym sin unidad guardada no toca la actual', async () => {
-    S.cfg.unit = 'lb';
-    await setActiveGym('a');
-    expect(S.cfg.unit).toBe('lb');
-  });
-
-  it('volver a "Sin gym" no resetea la unidad', async () => {
-    S.cfg.unit = 'lb';
-    await setActiveGym(null);
-    expect(S.cfg.unit).toBe('lb');
+    expect(S.cfg.unit).toBe('kg');
   });
 });

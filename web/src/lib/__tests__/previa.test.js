@@ -177,11 +177,14 @@ describe('metaHoy y metaTexto', () => {
     expect(m).toMatchObject({ tipo: 'sostener', peso: 40, reps: 11 });
     expect(metaTexto(m)).toBe('40 kg × 11 · 1 serie más a 11 reps');
   });
-  it('primera vez en este equipo pero con historial del nombre: el sugerido por 1RM', () => {
+  /* Desde 2026-10-18 (unidades.js): con historial del mismo ejercicio en
+     otro equipo/máquina, la meta es el peso que levantaste allá, tal cual
+     ("traido"), no el 80 % del 1RM — Enzo: "que se traspasen los pesos". */
+  it('primera vez en este equipo pero con historial del nombre: el peso traído de allá', () => {
     S.sessions = [sesion('2026-09-20', [serie(50, 8)])];
     const m = metaHoy({ ...PRESS, equip: 'barra' });
-    expect(m.tipo).toBe('sugerido');
-    expect(m.peso).toBeGreaterThan(0);
+    expect(m.tipo).toBe('traido');
+    expect(m.peso).toBe(50);
     expect(m.reps).toBe(8);
     expect(metaTexto(m)).toMatch(/^~\d/);
   });
@@ -261,13 +264,13 @@ describe('previaEjercicio', () => {
     expect(p.recuperacion.cat).toBe('Pecho');
     expect(p.meta.tipo).toBe('sumar');
   });
-  it('primera vez: sin gráfico ni récord, con el peso sugerido en la meta', () => {
+  it('primera vez: sin gráfico ni récord, con el peso traído en la meta', () => {
     S.sessions = [sesion(hace(7), [serie(50, 8)])];
     const p = previaEjercicio({ ...PRESS, equip: 'barra' });
     expect(p.primeraVez).toBe(true);
     expect(p.fuerza).toBe(null);
     expect(p.record).toBe(null);
-    expect(p.meta.tipo).toBe('sugerido');
+    expect(p.meta.tipo).toBe('traido');
   });
   it('un ejercicio nuevo de verdad: nada vacío ni NaN', () => {
     const p = previaEjercicio({ id: 'n', name: 'Remo pendlay', sets: 3, reps: 6 });
@@ -276,11 +279,10 @@ describe('previaEjercicio', () => {
     expect(metaTexto(p.meta)).not.toMatch(/NaN|undefined|null/);
     expect(sinNaN(p)).not.toContain('NaN!');
   });
-  it('el ajuste del chequeo inicial llega a la meta sugerida', () => {
+  it('el peso traído no se ajusta por el chequeo: es lo que levantaste, para probarlo', () => {
     S.sessions = [sesion(hace(7), [serie(50, 8)])];
-    const sin = previaEjercicio({ ...PRESS, equip: 'barra' }).meta.peso;
-    const con = previaEjercicio({ ...PRESS, equip: 'barra' }, { ajuste: -0.1 }).meta.peso;
-    expect(con).toBeLessThan(sin);
+    const con = previaEjercicio({ ...PRESS, equip: 'barra' }, { ajuste: -0.1 }).meta;
+    expect(con).toMatchObject({ tipo: 'traido', peso: 50 });
   });
 });
 

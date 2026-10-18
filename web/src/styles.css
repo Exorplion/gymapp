@@ -1525,6 +1525,11 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    rueda y un toque más grande que antes (era 13px, casi invisible). */
 .reel-alt{text-align:center;margin-top:6px;font-size:var(--t-sm);color:var(--text-2);}
 .reel-discos{margin-top:2px}
+/* La equivalencia tocable (2026-10-18): intercambia kg/lb de ESTA máquina.
+   Botón sin apariencia propia — se lee igual que antes, más el ⇄; 44 px de
+   alto para el pulgar sin agrandar lo que se ve. */
+.reel-swap{display:flex;align-items:center;justify-content:center;gap:var(--s1);width:100%;min-height:44px;margin-top:0;padding:0;border:0;background:none;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.reel-swap svg{color:var(--accent)}
 /* 2026-09-25: centrada bajo la rueda de peso y dicha como equivalencia
    ("≈ 99.2 lb", el número en azul claro). A la derecha y gris no se
    entendía qué era (Enzo: "no se nota que es la conversión"). */
@@ -1665,8 +1670,6 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
    apretar el input.
    Si el coverflow se revierte, esta regla vuelve a 100%. */
 .carousel.focus .carousel-slide{flex:0 0 88%}
-/* Unidad kg/lb de la sesión en vivo, afuera del carrusel (ExerciseCarousel.jsx) */
-.carousel-unit{justify-content:center;margin:0 2px var(--s3)}
 .carousel-dots{display:flex;justify-content:center;gap:6px;margin:10px 0 4px}
 .carousel-dots i{width:6px;height:6px;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--line-2);transition:background-color var(--d2) var(--ease-out),border-color var(--d2) var(--ease-out)}
 /* El activo se estira de 6 a 18 px: el ancho salta (animarlo sería layout en

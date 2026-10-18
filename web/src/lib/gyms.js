@@ -26,6 +26,7 @@ import { indiceHoy } from './session.js';
 import { shrinkImageBlob } from './photo.js';
 import { uid } from './format.js';
 import { aplicarMaquina, keyEj, maquinasDe } from './maquinas.js';
+import { unidadValida, claveUnidad, alEscalon } from './unidades.js';
 
 export const saveGyms = () => idb.put('settings', { key: 'gyms', value: S.gyms });
 
@@ -179,10 +180,6 @@ export async function guardarFotoMaquina(gymId, exName, file, maqId) {
 export async function setActiveGym(id) {
   S.cfg.activeGym = id;
   const gym = S.gyms.find(g => g.id === id);
-  // Si este gym ya tiene su unidad guardada (eligió kg/lb la vez pasada),
-  // se aplica sola — un gym sin unidad guardada o "Sin gym" no tocan la
-  // que ya estaba (setUnit, más abajo).
-  if (gym?.unit) S.cfg.unit = gym.unit;
   const idx = indiceHoy();
   const slot = S.routine[idx];
   // La máquina elegida de cada ejercicio es de ESTE gym: se aplica a todos
@@ -212,14 +209,19 @@ export async function setActiveGym(id) {
   bump();
 }
 
-/** Cambia la unidad en vivo (toggle en la tarjeta en sesión). Con un gym
-    activo queda guardada en ESE gym, para que setActiveGym() la vuelva a
-    aplicar sola la próxima vez que entrenes ahí; "Sin gym" sólo cambia el
-    default global, como antes de que existiera esto por gym. */
-export function setUnit(u) {
-  S.cfg.unit = u;
-  const gym = S.gyms.find(g => g.id === S.cfg.activeGym);
+/** Pasa la rueda de una máquina a kg o lb (⇄ en la tarjeta en vivo, Enzo
+    2026-10-18). Queda guardado para esa máquina en este gym, y el gym se
+    acuerda de la última unidad para las máquinas que todavía no tienen
+    (unidadDe, unidades.js). El peso que estaba en la rueda se lleva al
+    escalón de la otra unidad: 50 kg → 110 lb, no 110.2. */
+export function cambiarUnidad(ex, u) {
+  u = unidadValida(u);
+  const gymId = S.cfg.activeGym;
+  S.cfg.unidades = { ...(S.cfg.unidades || {}), [claveUnidad(gymId, ex)]: u };
+  const gym = S.gyms.find(g => g.id === gymId);
   if (gym) { gym.unit = u; saveGyms(); }
+  const v = S.hoyVals?.[ex.id];
+  if (v?.w > 0) v.w = alEscalon(v.w, u);
   saveCfg();
   bump();
 }

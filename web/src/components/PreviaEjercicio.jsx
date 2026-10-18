@@ -35,10 +35,11 @@ export function Sparkline({ puntos, ancho = 96, alto = 38, className = 'previa-s
 }
 
 export default function PreviaEjercicio({ datos }) {
-  const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
   const { primeraVez, fuerza, record, recuperacion, meta, sufijo } = datos;
+  // la de la máquina (unidades.js); datos viejos sin ella, la general
+  const unidad = (datos.unidad || S.cfg.unit) === 'lb' ? 'lb' : 'kg';
   const cambio = cambioTexto(fuerza);
-  const { numeros, porque } = metaPartes(meta, sufijo);
+  const { numeros, porque } = metaPartes(meta, sufijo, unidad);
   const salida = menosMovimiento()
     ? undefined
     : { opacity: 0, y: 12, transition: { duration: D.objeto / 1000, ease: curva } };
@@ -82,7 +83,7 @@ export default function PreviaEjercicio({ datos }) {
             <div className="card previa-panel previa-fuerza">
               <div>
                 <div className="previa-k">Tu fuerza en este ejercicio</div>
-                <div className="previa-big">{wDisplay(fuerza.actual)}<small> {unidad} · 1RM est.</small></div>
+                <div className="previa-big">{wDisplay(fuerza.actual, unidad)}<small> {unidad} · 1RM est.</small></div>
                 <div className={`previa-s ${cambio ? TONO[cambio.tono] : ''}`}>
                   {cambio ? cambio.texto : `última sesión ${fuerza.hace}`}
                 </div>
@@ -95,7 +96,7 @@ export default function PreviaEjercicio({ datos }) {
               {record && (
                 <div className="card previa-panel">
                   <div className="previa-k">Récord</div>
-                  <div className="previa-big">{wDisplay(record.w)}<small> {unidad} × {record.r}</small></div>
+                  <div className="previa-big">{wDisplay(record.w, unidad)}<small> {unidad} × {record.r}</small></div>
                   <div className="previa-s">{record.hace}</div>
                 </div>
               )}
