@@ -16,7 +16,7 @@ import { bloqueDe, DESCANSO } from './warmup.js';
 import { clampHechos } from './rampa.js';
 import { metaHoy } from './previa.js';
 import { aplicarMaquina } from './maquinas.js';
-import { pesoTraido, unidadDe } from './unidades.js';
+import { pesoTraido, unidadDe, alEscalon } from './unidades.js';
 import { planDeLaSesion, desdeAlCerrar, avanzarPuntero } from './puntero.js';
 import { compensacion } from './compensacion.js';
 import { recuperacion } from './recuperacion.js';
@@ -164,7 +164,8 @@ export function ensureVals(ex) {
          rueda arranca en ese peso para probarlo (unidades.js, Enzo
          2026-10-18). Las reps son las de la rutina, no las de allá. */
       const traido = pesoTraido(ex);
-      S.hoyVals[ex.id] = { w: traido ? traido.kg : pesoInicial(ex), r: ex.reps || 10, rpe: null };
+      // al escalón de ESTA máquina: 80 kg en una que marca lb arranca en 175
+      S.hoyVals[ex.id] = { w: traido ? alEscalon(traido.kg, unidadDe(ex)) : pesoInicial(ex), r: ex.reps || 10, rpe: null };
     }
   }
   // `rpe` puede faltar en un S.hoyVals guardado antes de que este campo

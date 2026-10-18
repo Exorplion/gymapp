@@ -8,6 +8,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { S, wToUnit, wFromUnit } from '../state.js';
 import { pesoTraido, unidadDe, alEscalon, claveUnidad } from '../unidades.js';
 import { objetivoHoy } from '../objetivoHoy.js';
+import { warmupSets } from '../warmup.js';
+import { reelValues } from '../reel.js';
+import { wStep, wDisplay } from '../state.js';
 
 const maq = (id, nombre) => ({ id, nombre });
 const ses = (date, entries) => ({ id: date, date, start: new Date(date + 'T10:00:00').getTime(), entries });
@@ -115,5 +118,18 @@ describe('objetivoHoy con peso traído', () => {
     S.sessions = [ses('2026-10-14', [{ ...enSmart, sets: [set(50, 10)] }])];
     const o = objetivoHoy(enNuevo);
     expect(o).toMatchObject({ tipo: 'traido', peso: 50, origen: 'SmartFit' });
+  });
+});
+
+describe('la rueda y la rampa en lb dan números redondos', () => {
+  it('la rampa de 175 lb son múltiplos de 5 lb, no 89.9', () => {
+    const top = wFromUnit(175, 'lb');
+    for (const s of warmupSets(top, wStep('lb'))) expect(Number(wDisplay(s.w, 'lb')) % 5).toBe(0);
+  });
+  it('el diente del valor actual existe en la ventana (si no, la rueda no se centra)', () => {
+    const step = wStep('lb');
+    const val = wFromUnit(175, 'lb');
+    const onValue = Math.round(Math.round(val / step) * step * 100) / 100;
+    expect(reelValues(val, step, 0.5)).toContain(onValue);
   });
 });
