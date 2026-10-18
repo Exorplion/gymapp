@@ -179,6 +179,10 @@ export async function guardarFotoMaquina(gymId, exName, file, maqId) {
 export async function setActiveGym(id) {
   S.cfg.activeGym = id;
   const gym = S.gyms.find(g => g.id === id);
+  // Si este gym ya tiene su unidad guardada (eligió kg/lb la vez pasada),
+  // se aplica sola — un gym sin unidad guardada o "Sin gym" no tocan la
+  // que ya estaba (setUnit, más abajo).
+  if (gym?.unit) S.cfg.unit = gym.unit;
   const idx = indiceHoy();
   const slot = S.routine[idx];
   // La máquina elegida de cada ejercicio es de ESTE gym: se aplica a todos
@@ -205,6 +209,18 @@ export async function setActiveGym(id) {
     if (changed) await persistSlot(idx);
   }
   await saveCfg();
+  bump();
+}
+
+/** Cambia la unidad en vivo (toggle en la tarjeta en sesión). Con un gym
+    activo queda guardada en ESE gym, para que setActiveGym() la vuelva a
+    aplicar sola la próxima vez que entrenes ahí; "Sin gym" sólo cambia el
+    default global, como antes de que existiera esto por gym. */
+export function setUnit(u) {
+  S.cfg.unit = u;
+  const gym = S.gyms.find(g => g.id === S.cfg.activeGym);
+  if (gym) { gym.unit = u; saveGyms(); }
+  saveCfg();
   bump();
 }
 

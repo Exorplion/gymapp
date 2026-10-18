@@ -16,8 +16,12 @@ vi.mock('../toast.js', () => ({
 }));
 // idb escribe en IndexedDB; acá no interesa la persistencia, sólo el estado.
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(async () => {}), del: vi.fn(async () => {}) } }));
+// Sin esto, setActiveGym llama a indiceHoy() de session.js, que a su vez
+// depende de la rutina completa (turnos, eleccionHoy) — nada de eso importa
+// para probar que la unidad se aplica/guarda, así que se corta ahí.
+vi.mock('../session.js', () => ({ indiceHoy: () => -1 }));
 
-const { deleteGym } = await import('../gyms.js');
+const { deleteGym, setUnit, setActiveGym } = await import('../gyms.js');
 
 const gym = (id, name, equip = {}) => ({ id, name, equip });
 
@@ -67,5 +71,47 @@ describe('deleteGym', () => {
     deleteGym('no-existe');
     expect(S.gyms.map(g => g.id)).toEqual(['a', 'b', 'c']);
     expect(ultimoToast).toBe(null);
+  });
+});
+
+describe('unidad de peso atada al gym', () => {
+  beforeEach(() => {
+    S.gyms = [gym('a', 'Smart Fit'), gym('b', 'Gym del finde')];
+    S.cfg = { ...S.cfg, unit: 'kg', activeGym: null };
+    S.routine = [];
+    S.draft = null;
+  });
+
+  it('setUnit con gym activo la guarda en ESE gym', () => {
+    S.cfg.activeGym = 'b';
+    setUnit('lb');
+    expect(S.cfg.unit).toBe('lb');
+    expect(S.gyms.find(g => g.id === 'b').unit).toBe('lb');
+    expect(S.gyms.find(g => g.id === 'a').unit).toBeUndefined();
+  });
+
+  it('setUnit sin gym activo sólo cambia el default global', () => {
+    setUnit('lb');
+    expect(S.cfg.unit).toBe('lb');
+    expect(S.gyms.every(g => g.unit === undefined)).toBe(true);
+  });
+
+  it('setActiveGym aplica sola la unidad que ese gym tenía guardada', async () => {
+    S.gyms.find(g => g.id === 'b').unit = 'lb';
+    S.cfg.unit = 'kg';
+    await setActiveGym('b');
+    expect(S.cfg.unit).toBe('lb');
+  });
+
+  it('setActiveGym a un gym sin unidad guardada no toca la actual', async () => {
+    S.cfg.unit = 'lb';
+    await setActiveGym('a');
+    expect(S.cfg.unit).toBe('lb');
+  });
+
+  it('volver a "Sin gym" no resetea la unidad', async () => {
+    S.cfg.unit = 'lb';
+    await setActiveGym(null);
+    expect(S.cfg.unit).toBe('lb');
   });
 });

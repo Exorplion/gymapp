@@ -291,6 +291,9 @@ function Cuerpo() {
         <div className="prog-cuerpo-cab">
           <div>
             <div className="prog-peso">{headNum != null ? fmtNum(round1(headNum)) : '—'}<small> kg</small></div>
+            {/* Igual que "Tus récords" más abajo: la báscula de otro lado puede
+                estar en libras, y este número se compara contra esa báscula. */}
+            {headNum != null && <div className="text-text-2 text-micro">{fmtNum(kg2lb(headNum))} lb</div>}
             <span className="prog-ojo">{wk && wk.curAvg != null ? `Promedio de ${wk.n} día${wk.n === 1 ? '' : 's'}` : 'Peso corporal'}</span>
           </div>
           <div className="prog-cuerpo-der">

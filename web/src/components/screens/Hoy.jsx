@@ -20,7 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { staggerRevealOnce, bloomOpen, animateRing, countTo } from '../../lib/motion.js';
 import { cn } from '../../lib/utils.js';
-import { S, useStore, bump, openSheet, closeSheet, changeTab, wDisplay } from '../../lib/state.js';
+import { S, useStore, bump, openSheet, closeSheet, changeTab, wDisplay, wAltPartes } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS, dstr } from '../../lib/format.js';
 import { opcionesDescanso } from '../../lib/descansoHoy.js';
 import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, moverEnBloque, indiceHoy, elegirTurnoHoy, fueraDelPlanHoy, compensacionHoy, compensacionAceptada, compensacionDescartada, conCompensacion } from '../../lib/session.js';
@@ -548,19 +548,39 @@ function PlanHoy({ index, exs: conComp, base }) {
   );
 }
 
+/* Peek a la otra unidad (Enzo, 2026-10-17): esta columna va una vez por
+   ejercicio, todos los días — una segunda línea fija con kg Y lb engordaría
+   la lista para siempre. Tocar el número la muestra un momento en vez de
+   agregarla; stopPropagation porque vive adentro del botón de la fila (abre
+   "info del ejercicio") y no tiene que competir con eso. */
+const PEEK_MS = 1400;
+
 /** Lo que toca superar hoy, a la derecha de cada ejercicio del plan. */
 function Meta({ ex }) {
   const o = objetivoHoy(ex);
-  const u = S.cfg.unit === 'lb' ? 'lb' : 'kg';
-  const kg = o.peso != null ? <>{wDisplay(o.peso)}<i>{u}</i></> : null;
+  const [peek, setPeek] = useState(false);
+  const peekTimer = useRef(null);
+  useEffect(() => () => clearTimeout(peekTimer.current), []);
+  function verOtraUnidad(e) {
+    e.stopPropagation();
+    setPeek(true);
+    clearTimeout(peekTimer.current);
+    peekTimer.current = setTimeout(() => setPeek(false), PEEK_MS);
+  }
+  const num = kgVal => {
+    if (kgVal == null) return null;
+    const { n, u } = peek ? wAltPartes(kgVal) : { n: wDisplay(kgVal), u: S.cfg.unit === 'lb' ? 'lb' : 'kg' };
+    return <>{n}<i>{u}</i></>;
+  };
+  const kg = num(o.peso);
   if (o.tipo === 'subir') {
-    return <span className="plan-meta up"><b>{kg}<em>↑</em></b><small>antes {wDisplay(o.antes)}</small></span>;
+    return <span className="plan-meta up"><b onClick={verOtraUnidad}>{kg}<em>↑</em></b><small>antes {wDisplay(o.antes)}</small></span>;
   }
   if (o.tipo === 'sostener' || o.tipo === 'sumar') {
-    return <span className="plan-meta"><b>{kg}</b><small>superar reps</small></span>;
+    return <span className="plan-meta"><b onClick={verOtraUnidad}>{kg}</b><small>superar reps</small></span>;
   }
   if (o.tipo === 'sugerido') {
-    return <span className="plan-meta"><b>~{kg}</b><small>sugerido</small></span>;
+    return <span className="plan-meta"><b onClick={verOtraUnidad}>~{kg}</b><small>sugerido</small></span>;
   }
   return <span className="plan-meta"><small>primera vez</small></span>;
 }

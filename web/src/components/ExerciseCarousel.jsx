@@ -16,6 +16,7 @@
 // mantiene sólo para esos dos.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { S, wDisplay, wAltPartes, wStep, wToUnit, wFromUnit, openSheet } from '../lib/state.js';
+import { setUnit } from '../lib/gyms.js';
 import { m as motion, AnimatePresence } from 'motion/react';
 import { round1 } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
@@ -387,8 +388,27 @@ export default function ExerciseCarousel({ exs, wd, active, started, curId, next
 
   if (!exs.length) return null;
 
+  const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
   return (
     <>
+      {/* Unidad de la sesión, no por ejercicio — afuera del carrusel para no
+          repetirla en cada tarjeta. Con gym activo, elegirla acá la deja
+          guardada en ese gym (setUnit, gyms.js) y la próxima vez que
+          entrenes ahí arranca sola (Enzo, 2026-10-17). */}
+      <div className="chips carousel-unit" role="radiogroup" aria-label="Unidad de peso">
+        <button
+          type="button" role="radio" aria-checked={unidad === 'kg'} className={`chip${unidad === 'kg' ? ' on' : ''}`}
+          onClick={() => setUnit('kg')}
+        >
+          kg
+        </button>
+        <button
+          type="button" role="radio" aria-checked={unidad === 'lb'} className={`chip${unidad === 'lb' ? ' on' : ''}`}
+          onClick={() => setUnit('lb')}
+        >
+          lb
+        </button>
+      </div>
       <div id="ex-carousel" className={`carousel${active ? ' focus' : ''}${menosMovimiento() ? '' : ' coverflow'}`} ref={carRef}>
         {meta.map(m => (
           <ExerciseSlide key={m.ex.id} m={m} wd={wd} started={started} />
