@@ -1,6 +1,62 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-10-14
+**Última actualización:** 2026-10-18
+
+---
+
+## SESIÓN 2026-10-18 — kg/lb por máquina y peso traído de otro gym
+
+Fuera del Plan Fierro. Enzo fue a un gym nuevo con máquinas en libras: tuvo
+que convertir a mano y todos sus pesos empezaban de cero. El 2026-10-17 se
+había hecho (sin publicar) una unidad **por gym** con chips arriba del
+carrusel; hoy Enzo la cambió a **por máquina** y sumó el peso traído. Lienzo
+de opciones: claude.ai/artifact/WArJzD2Xu4xqs6Dn4PjC4J — eligió **1A**
+(tocar la equivalencia bajo la rueda la intercambia) y **2A** (automático),
+con un detalle: "si allá era kg, que acá arranque en kg; si lo cambia, se
+convierte y queda por máquina".
+
+**Qué cambió (rama `feat/unidad-por-maquina`):**
+- `lib/unidades.js` (nuevo): `unidadDe(ex)` — orden: la elegida para esa
+  máquina en ese gym (`S.cfg.unidades["<gymId>|<exKey>"]`) > la de la última
+  vez en esa máquina (`entry.unit`) > la del peso traído > `gym.unit` (última
+  usada en el gym) > `S.cfg.unit`. `pesoTraido(ex)` — sin historial propio
+  (exKey), la vez más reciente del mismo ejercicio en otra máquina, misma
+  lateralidad; dice el gym (por `entry.gymId` o por la máquina:
+  `gymDeMaquina`) y su unidad. `alEscalon(kg, u)` lleva al paso de la unidad.
+- `state.js`: `wDisplay/wAltPartes/wStep/wToUnit/wFromUnit` aceptan una
+  unidad opcional (sin ella, la general — nada viejo cambia).
+- `gyms.js`: `cambiarUnidad(ex, u)` reemplaza a `setUnit`; `setActiveGym` ya
+  NO pisa la unidad general. Vuelve "Unidad de peso" a Ajustes (es la
+  general: historial, Progreso) con una nota del «≈».
+- Tarjeta en vivo: `.reel-swap` (la equivalencia es un botón con ⇄; 44 px);
+  toda la tarjeta (rueda, rampa, tabla, aviso, meta) usa la unidad de la
+  máquina; la rueda lleva `key={unidad}` para rehacerse sólo en ese toque.
+  "Primera vez en este gym · En SmartFit hiciste 80 kg × 7. La rueda arranca
+  ahí: probalo y ajustá." Se fue el selector de arriba del carrusel.
+- `objetivoHoy` tiene tipo nuevo `'traido'` (gana al sugerido por 1RM: es un
+  número levantado de verdad). Plan de hoy: "~80 kg · de SmartFit"; previa y
+  `EditarSerie` también en la unidad de la máquina.
+- `session.js`: las entradas nuevas guardan `gymId` y `unit`; `ensureVals`
+  arranca en el traído llevado al escalón de la máquina.
+- **Bugs viejos del modo lb arreglados** (nunca se había usado lb): la rueda
+  gruesa no marcaba ningún diente ni se centraba (`onValue` sin redondear a
+  centésimas, ReelPicker.jsx) y la rampa daba 89.9 lb (`warmupSets` redondeaba
+  a décimas de kg).
+- Ojo de producto: `relatedHistory` (equip.js) se negaba A PROPÓSITO a sugerir
+  un peso entre máquinas. El traído no contradice eso: no convierte con
+  ningún factor, muestra lo de allá tal cual como punto de partida, y la
+  primera serie lo confirma (después manda la progresión de esa máquina).
+
+**Verificado:** 1434 tests; lint sin warnings nuevos; Playwright headless con
+Chrome del sistema a 390 y 430 px sobre el dev server con datos sembrados
+(SmartFit con historial, Gym Libras nuevo): plan con "de SmartFit", el remo
+que allá era lb arranca en lb, ⇄ pasa el jalón a 185 lb centrado (≈ 83.9 kg),
+rampa 95/140/170 lb, nada desborda, sin errores. La extensión de Chrome no
+conectó y chrome-devtools no arrancó; el script queda descripto acá (seed +
+`S.gyms` + entradas con `variante/gymId/unit`). **No probado en el teléfono.**
+
+**Pendiente:** que Enzo lo pruebe en el gym de libras; ver si el «≈ ⇄» se
+descubre solo o pide un aviso de la guía (lib/guia.js).
 
 ---
 
