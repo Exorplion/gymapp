@@ -369,6 +369,9 @@ export default function Settings() {
           <button type="button" className={S.cfg.unit === 'kg' ? 'on' : ''} aria-pressed={S.cfg.unit === 'kg'} onClick={() => setUnit('kg')}>Kilos (kg)</button>
           <button type="button" className={S.cfg.unit === 'lb' ? 'on' : ''} aria-pressed={S.cfg.unit === 'lb'} onClick={() => setUnit('lb')}>Libras (lb)</button>
         </div>
+        {/* La general: historial, Progreso y máquinas nuevas. Cada máquina
+            puede tener la suya desde la sesión (unidades.js, 2026-10-18). */}
+        <p className="text-text-2 text-micro" style={{ marginTop: 'var(--s2)' }}>Cada máquina puede tener la suya: en la sesión, tocá el «≈» debajo de la rueda.</p>
       </motion.section>
 
       <motion.section variants={seccion}>

@@ -17,7 +17,6 @@
 // Las series de calentamiento NO se registran: no suman volumen, no cuentan
 // para las series objetivo y no compiten por récords. Son preparación, no
 // entrenamiento, y contarlas ensuciaría todos los números de Progreso.
-import { round1 } from './format.js';
 import { catOf, type ExLike } from './muscle.js';
 
 /** La rampa: porcentaje del peso de trabajo y repeticiones. */
@@ -54,7 +53,10 @@ export function warmupSets(topKg: number | string, paso = 2.5): WarmupSet[] {
     // nunca por debajo de un paso: el redondeo de un peso liviano puede dar 0,
     // y "calentá con 0 kg" no es una instrucción
     const w = Math.max(paso, Math.round((top * pct) / paso) * paso);
-    return { pct, reps, w: round1(w) };
+    // A milésimas y no a décimas: en lb el paso es 2.26796 kg, y 40.8 kg (el
+    // múltiplo redondeado a décimas) se leía 89.9 lb en vez de 90. Quien lo
+    // muestra ya redondea en su unidad (wDisplay).
+    return { pct, reps, w: Math.round(w * 1000) / 1000 };
   });
 }
 

@@ -16,6 +16,7 @@ import { bloqueDe, DESCANSO } from './warmup.js';
 import { clampHechos } from './rampa.js';
 import { metaHoy } from './previa.js';
 import { aplicarMaquina } from './maquinas.js';
+import { pesoTraido, unidadDe, alEscalon } from './unidades.js';
 import { planDeLaSesion, desdeAlCerrar, avanzarPuntero } from './puntero.js';
 import { compensacion } from './compensacion.js';
 import { recuperacion } from './recuperacion.js';
@@ -158,7 +159,14 @@ export function ensureVals(ex) {
     if (prog?.accion === 'subir_peso') S.hoyVals[ex.id] = { w: prog.peso, r: prog.piso, rpe: null };
     else if (deProgresion) S.hoyVals[ex.id] = { w: meta.peso, r: meta.reps, rpe: null };
     else if (last) { const ls = last[last.length - 1]; S.hoyVals[ex.id] = { w: ls.w, r: ls.r, rpe: null }; }
-    else S.hoyVals[ex.id] = { w: pesoInicial(ex), r: ex.reps || 10, rpe: null };
+    else {
+      /* Primera vez en esta máquina: si lo hiciste en otra (otro gym), la
+         rueda arranca en ese peso para probarlo (unidades.js, Enzo
+         2026-10-18). Las reps son las de la rutina, no las de allá. */
+      const traido = pesoTraido(ex);
+      // al escalón de ESTA máquina: 80 kg en una que marca lb arranca en 175
+      S.hoyVals[ex.id] = { w: traido ? alEscalon(traido.kg, unidadDe(ex)) : pesoInicial(ex), r: ex.reps || 10, rpe: null };
+    }
   }
   // `rpe` puede faltar en un S.hoyVals guardado antes de que este campo
   // existiera — se completa acá en vez de forzar una migración de datos.
@@ -895,6 +903,12 @@ export async function saveSet(exId) {
   // quedar afuera es el override manual, porque ese vive en la rutina y
   // renombrar un ejercicio ahí no debe reescribir el pasado.
   if (!S.draft.entries[exId]) S.draft.entries[exId] = { name: ex.name, equip: ex.equip, machine: ex.machine, variante: ex.variante, varianteNombre: ex.varianteNombre, cat: ex.cat, unilateral: isUnilateral(ex), sets: [] };
+  /* En qué gym y con qué unidad en la rueda (unidades.js): la próxima vez
+     que hagas este ejercicio en OTRA máquina, el peso traído dice de dónde
+     viene y arranca en esta unidad. Se pisa en cada serie porque la unidad
+     se puede cambiar a mitad del ejercicio. */
+  S.draft.entries[exId].gymId = S.cfg.activeGym || undefined;
+  S.draft.entries[exId].unit = unidadDe(ex);
   const cur = S.draft.entries[exId].sets;
   /* el objetivo es el techo: llegado a él el ejercicio se cierra solo y pasamos
      al siguiente, en vez de dejar registrar series infinitas. El techo de HOY
@@ -1051,7 +1065,7 @@ export async function completeSession() {
   const order = (d.order && d.order.length) ? d.order : (slot?.exercises || []).map(e => e.id);
   const entries = Object.entries(d.entries)
     .sort((a, b) => { const ia = order.indexOf(a[0]), ib = order.indexOf(b[0]); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); })
-    .map(([exId, e]) => ({ exId, name: e.name, equip: e.equip, machine: e.machine, variante: e.variante, varianteNombre: e.varianteNombre, cat: e.cat, unilateral: e.unilateral, sets: e.sets }));
+    .map(([exId, e]) => ({ exId, name: e.name, equip: e.equip, machine: e.machine, variante: e.variante, varianteNombre: e.varianteNombre, cat: e.cat, unilateral: e.unilateral, gymId: e.gymId, unit: e.unit, sets: e.sets }));
   if (!entries.length) { toast('No registraste ninguna serie. Usá "Descartar" para cerrar la sesión.'); return; }
   /* d.open cubre borradores viejos (formato anterior) y el caso raro de que
      falte start; la duración mide de la primera serie al cierre */

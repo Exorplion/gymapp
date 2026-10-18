@@ -26,6 +26,7 @@ import { indiceHoy } from './session.js';
 import { shrinkImageBlob } from './photo.js';
 import { uid } from './format.js';
 import { aplicarMaquina, keyEj, maquinasDe } from './maquinas.js';
+import { unidadValida, claveUnidad, alEscalon } from './unidades.js';
 
 export const saveGyms = () => idb.put('settings', { key: 'gyms', value: S.gyms });
 
@@ -205,6 +206,23 @@ export async function setActiveGym(id) {
     if (changed) await persistSlot(idx);
   }
   await saveCfg();
+  bump();
+}
+
+/** Pasa la rueda de una máquina a kg o lb (⇄ en la tarjeta en vivo, Enzo
+    2026-10-18). Queda guardado para esa máquina en este gym, y el gym se
+    acuerda de la última unidad para las máquinas que todavía no tienen
+    (unidadDe, unidades.js). El peso que estaba en la rueda se lleva al
+    escalón de la otra unidad: 50 kg → 110 lb, no 110.2. */
+export function cambiarUnidad(ex, u) {
+  u = unidadValida(u);
+  const gymId = S.cfg.activeGym;
+  S.cfg.unidades = { ...(S.cfg.unidades || {}), [claveUnidad(gymId, ex)]: u };
+  const gym = S.gyms.find(g => g.id === gymId);
+  if (gym) { gym.unit = u; saveGyms(); }
+  const v = S.hoyVals?.[ex.id];
+  if (v?.w > 0) v.w = alEscalon(v.w, u);
+  saveCfg();
   bump();
 }
 

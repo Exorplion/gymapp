@@ -16,6 +16,8 @@
 // mantiene sólo para esos dos.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { S, wDisplay, wAltPartes, wStep, wToUnit, wFromUnit, openSheet } from '../lib/state.js';
+import { cambiarUnidad } from '../lib/gyms.js';
+import { unidadDe } from '../lib/unidades.js';
 import { m as motion, AnimatePresence } from 'motion/react';
 import { round1 } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
@@ -470,25 +472,24 @@ function FotoMaquina({ gymId, ex, wd }) {
     grande la contestan de un vistazo. El número de Hoy sale de
     objetivoHoy() — la doble progresión, o el sugerido por 1RM — nunca de un
     relleno. */
-function ultimaVez(last, sufijo = '') {
-  const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
+function ultimaVez(last, sufijo = '', unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg') {
   let ultima = null;
   if (last?.length) {
     const top = Math.max(...last.map(s => s.w));
     const parejas = last.every(s => Math.abs(s.w - top) < 0.01);
     ultima = {
-      peso: `${wDisplay(top)} ${unidad}${sufijo}`,
-      detalle: parejas ? `${last.map(s => s.r).join(' · ')} reps` : last.map(s => `${wDisplay(s.w)}×${s.r}`).join(' · '),
+      peso: `${wDisplay(top, unidad)} ${unidad}${sufijo}`,
+      detalle: parejas ? `${last.map(s => s.r).join(' · ')} reps` : last.map(s => `${wDisplay(s.w, unidad)}×${s.r}`).join(' · '),
     };
   }
   return ultima;
 }
 
-function Comparativa({ last, obj, meta, uni, sufijo }) {
-  const ultima = ultimaVez(last, sufijo);
+function Comparativa({ last, obj, meta, uni, sufijo, unidad }) {
+  const ultima = ultimaVez(last, sufijo, unidad);
   /* La columna Hoy dice la misma meta que "Meta de hoy" en la tarjeta
      (columnaHoy, previa.js). `obj` sigue mandando el color de "subir". */
-  const hoy = columnaHoy(meta, sufijo);
+  const hoy = columnaHoy(meta, sufijo, unidad);
   return (
     <div className="ex-cmp">
       <div className="ex-cmp-col">
@@ -547,11 +548,11 @@ function Rampa({ ex, estado, unidad, plegando }) {
               type="button"
               className={`ex-paso${s.estado === 'hecho' ? ' hecho' : s.estado === 'activo' ? ' cur' : ''}`}
               aria-current={s.estado === 'activo' ? 'step' : undefined}
-              aria-label={`Aproximación ${pctDe(s)}: ${wDisplay(s.w)} ${unidad} por ${s.reps}${s.estado === 'hecho' ? ', hecha. Tocá para deshacer' : ''}`}
+              aria-label={`Aproximación ${pctDe(s)}: ${wDisplay(s.w, unidad)} ${unidad} por ${s.reps}${s.estado === 'hecho' ? ', hecha. Tocá para deshacer' : ''}`}
               onClick={() => tocar(i)}
             >
               <i>{s.estado === 'hecho' ? <Check size={18} /> : pctDe(s)}</i>
-              <b>{wDisplay(s.w)}<small> {unidad}</small></b>
+              <b>{wDisplay(s.w, unidad)}<small> {unidad}</small></b>
               <span>× {s.reps}</span>
             </button>
           ))}
@@ -610,7 +611,7 @@ function TablaSeries({ exId, done, uni, unidad }) {
       </thead>
       <tbody>
         {filas.map((f, k) => {
-          const pesos = [...new Set(f.w.map(w => wDisplay(w)))];
+          const pesos = [...new Set(f.w.map(w => wDisplay(w, unidad)))];
           return (
             <tr key={k} className="fila-tocable" onClick={() => corregir(f, k + 1)}>
               <td className="n">{k + 1}</td>
@@ -645,9 +646,8 @@ const AVISO_MS = 4000;
    ejercicio en marcha: el 1RM con su línea de 8 semanas y el récord. Mismas
    columnas que la comparativa (.ex-cmp), así el aviso se lee como un solo
    tablero. */
-function FuerzaYRecord({ fuerza, record, sufijo = '' }) {
+function FuerzaYRecord({ fuerza, record, sufijo = '', unidad }) {
   if (!fuerza && !record) return null;
-  const unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg';
   const cambio = cambioTexto(fuerza);
   return (
     <div className="ex-cmp ex-aviso-fuerza">
@@ -655,7 +655,7 @@ function FuerzaYRecord({ fuerza, record, sufijo = '' }) {
         <div className="ex-cmp-col">
           <span className="ex-cmp-lbl">1RM estimado</span>
           <div className="ex-aviso-1rm">
-            <b>{wDisplay(fuerza.actual)}<small> {unidad}</small></b>
+            <b>{wDisplay(fuerza.actual, unidad)}<small> {unidad}</small></b>
             <Sparkline puntos={fuerza.puntos} ancho={44} alto={20} className="previa-spark chica" />
           </div>
           <small className={cambio ? { sube: 'previa-up', baja: 'previa-down', igual: '' }[cambio.tono] : ''}>
@@ -666,7 +666,7 @@ function FuerzaYRecord({ fuerza, record, sufijo = '' }) {
       {record && (
         <div className="ex-cmp-col">
           <span className="ex-cmp-lbl">Récord</span>
-          <b>{wDisplay(record.w)} {unidad}{sufijo} × {record.r}</b>
+          <b>{wDisplay(record.w, unidad)} {unidad}{sufijo} × {record.r}</b>
           <small>{record.hace}</small>
         </div>
       )}
@@ -674,7 +674,7 @@ function FuerzaYRecord({ fuerza, record, sufijo = '' }) {
   );
 }
 
-function AvisoUltimaVez({ visible, onCerrar, last, obj, meta, uni, sufijo, fuerza, record }) {
+function AvisoUltimaVez({ visible, onCerrar, last, obj, meta, uni, sufijo, fuerza, record, unidad }) {
   useEffect(() => {
     if (!visible) return;
     const t = setTimeout(onCerrar, AVISO_MS);
@@ -693,8 +693,8 @@ function AvisoUltimaVez({ visible, onCerrar, last, obj, meta, uni, sufijo, fuerz
             exit={{ opacity: 0, y: -6, scale: 0.98, transition: { duration: D.toque / 1000 } }}
           >
             <button type="button" className="ex-aviso-x" aria-label="Cerrar" onClick={e => { e.stopPropagation(); onCerrar(); }}><X size={14} /></button>
-            <Comparativa last={last} obj={obj} meta={meta} uni={uni} sufijo={sufijo} />
-            <FuerzaYRecord fuerza={fuerza} record={record} sufijo={sufijo} />
+            <Comparativa last={last} obj={obj} meta={meta} uni={uni} sufijo={sufijo} unidad={unidad} />
+            <FuerzaYRecord fuerza={fuerza} record={record} sufijo={sufijo} unidad={unidad} />
             <i className="ex-aviso-reloj" aria-hidden="true" style={{ animationDuration: `${AVISO_MS}ms` }} />
           </motion.div>
         )}
@@ -722,6 +722,9 @@ function ExerciseSlide({ m, wd, started }) {
   const { ex, done, target, skipped, full, open, isNext, waiting } = m;
   const v = ensureVals(ex);
   const last = lastDataFor(ex);
+  // kg o lb: de ESTA máquina en este gym (unidades.js), no de la sesión.
+  const unidad = unidadDe(ex);
+  const fmt = kg => wDisplay(kg, unidad);
   const info = exInfo(ex.name);
   // "Un lado por vez": lo que dice la rutina, salvo que la máquina de HOY te
   // haya obligado a cambiarlo (ver isUnilateral en session.js).
@@ -753,6 +756,7 @@ function ExerciseSlide({ m, wd, started }) {
   const imbalance = uni ? sideImbalance(ex) : null;
   const ajuste = S.draft?.precheckAdjust || 0;
   const obj = (!full && !skipped) ? objetivoHoy(ex, { uni, ajuste }) : null;
+  const traido = obj?.tipo === 'traido' ? obj : null;
 
   /* La previa (rediseño 2026-09-27, pieza 3): debajo de CUALQUIER tarjeta
      sin empezar — la siguiente, y también la que está en espera si
@@ -769,7 +773,7 @@ function ExerciseSlide({ m, wd, started }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sesiones/nSesiones: el historial cambia en su lugar
     [sinEmpezar, open, ex, uni, ajuste, sesiones, nSesiones],
   );
-  const metaLinea = datosPrevia ? metaPartes(datosPrevia.meta, datosPrevia.sufijo) : null;
+  const metaLinea = datosPrevia ? metaPartes(datosPrevia.meta, datosPrevia.sufijo, unidad) : null;
 
   /* La rampa de aproximación (50/75/90%), ahora ADENTRO de la tarjeta del
      ejercicio que la necesita y sólo antes de su primera serie. Se calcula
@@ -777,9 +781,8 @@ function ExerciseSlide({ m, wd, started }) {
      nunca sobre el relleno de 20 kg de ensureVals(), que daría tres pesos
      inventados con toda la pinta de ser reales. */
   const calentar = open && done.length === 0 && tocaCalentar(S.draft, ex);
-  const rampa = calentar ? warmupSets(obj?.peso ?? last?.at(-1)?.w, wStep()) : [];
+  const rampa = calentar ? warmupSets(obj?.peso ?? last?.at(-1)?.w, wStep(unidad)) : [];
 
-  const unidad = S.cfg.unit === 'kg' ? 'kg' : 'lb';
 
   /* La rampa la hace el botón grande: mientras quedan aproximaciones dice
      cuál toca, en ámbar; después vuelve a ser "Serie 1 lista". */
@@ -789,7 +792,7 @@ function ExerciseSlide({ m, wd, started }) {
     hechos: rampaEstado.hechos,
     serie: { etiqueta: uni ? (v.side === 'left' ? 'Izquierda' : 'Derecha') : `Serie ${serieHechas + 1}`, w: v.w, r: v.r },
     unidad,
-    fmtPeso: wDisplay,
+    fmtPeso: fmt,
   });
   const rampaCompleta = calentar && rampaEstado.completa;
   /* Completa: primero se ve el último ✓ y la línea de "completa" (D.momento),
@@ -814,9 +817,9 @@ function ExerciseSlide({ m, wd, started }) {
   // con cada peso y no vale un bump() de toda la app — peso/reps viven enteros
   // dentro de ReelPicker.jsx.
   function syncDependents() {
-    if (altRef.current) altRef.current.textContent = wAltPartes(v.w).n;
-    if (discosRef.current) discosRef.current.textContent = textoDiscos(ex, v.w, wDisplay);
-    if (valRef.current) valRef.current.textContent = `${wDisplay(v.w)} ${unidad} × ${v.r}`;
+    if (altRef.current) altRef.current.textContent = wAltPartes(v.w, unidad).n;
+    if (discosRef.current) discosRef.current.textContent = textoDiscos(ex, v.w, fmt);
+    if (valRef.current) valRef.current.textContent = `${fmt(v.w)} ${unidad} × ${v.r}`;
     if (pwRef.current) {
       const warn = progressionWarn(ex.name, v.w);
       pwRef.current.style.display = warn ? '' : 'none';
@@ -852,7 +855,7 @@ function ExerciseSlide({ m, wd, started }) {
   useEffect(() => { if (open) yaAbiertas.add(ex.id); }, [open, ex.id]);
 
   const hayComparativa = !!obj && (!!last || obj.tipo !== 'primera');
-  const ultima = ultimaVez(last, sufijoPeso(ex, uni));
+  const ultima = ultimaVez(last, sufijoPeso(ex, uni), unidad);
   const [aviso, setAviso] = useState(false);
   const cerrarAviso = useCallback(() => setAviso(false), []);
   /* Al activarse el ejercicio: después del despliegue de la tarjeta, no
@@ -939,7 +942,7 @@ function ExerciseSlide({ m, wd, started }) {
         {hayComparativa && (
           <AvisoUltimaVez
             visible={aviso} onCerrar={cerrarAviso} last={last} obj={obj} meta={datosPrevia?.meta} uni={uni} sufijo={sufijoPeso(ex, uni)}
-            fuerza={datosPrevia?.fuerza} record={datosPrevia?.record}
+            fuerza={datosPrevia?.fuerza} record={datosPrevia?.record} unidad={unidad}
           />
         )}
         {/* D3: la ausencia de dato no es un cero. */}
@@ -955,12 +958,25 @@ function ExerciseSlide({ m, wd, started }) {
             dejar en reserva: acá sólo va lo que no está en otro lado. */}
         {!last && !lastBilateral && !full && !skipped && done.length === 0 && (
           <div className="ex-first">
-            <div className="t">Primera vez{equipLabel(ex) ? ` en ${equipLabel(ex)}` : ''}</div>
-            <div className="s">
-              {related.length > 0
-                ? `Referencia: ${related.map(r => `${wDisplay(r.w)} ${unidad} × ${r.r} en ${r.label}`).join(' · ')}.`
-                : 'Arrancá liviano: lo de hoy es tu punto de partida.'}
-            </div>
+            {/* Peso traído (unidades.js): lo de allá dicho tal cual, en la
+                unidad de allá — la rueda ya arrancó ahí. */}
+            {traido ? (
+              <>
+                <div className="t">Primera vez {traido.enOtroGym ? 'en este gym' : 'en esta máquina'}</div>
+                <div className="s">
+                  {`En ${traido.origen} hiciste ${wDisplay(traido.peso, traido.unidad || unidad)} ${traido.unidad || unidad} × ${traido.reps}. La rueda arranca ahí: probalo y ajustá.`}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="t">Primera vez{equipLabel(ex) ? ` en ${equipLabel(ex)}` : ''}</div>
+                <div className="s">
+                  {related.length > 0
+                    ? `Referencia: ${related.map(r => `${fmt(r.w)} ${unidad} × ${r.r} en ${r.label}`).join(' · ')}.`
+                    : 'Arrancá liviano: lo de hoy es tu punto de partida.'}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -1100,21 +1116,31 @@ function ExerciseSlide({ m, wd, started }) {
                     y no se remonta en cada serie registrada (H7). */}
                 <ReelPicker
                   value={v.w}
-                  step={wStep()}
+                  key={unidad /* al pasar a la otra unidad cambian el escalón y los dientes: se rehace la rueda (sólo en ese toque, no en cada serie) */}
+                  step={wStep(unidad)}
                   min={0.5}
-                  fmt={n => wDisplay(n)}
-                  toUnit={wToUnit}
-                  fromUnit={wFromUnit}
+                  fmt={fmt}
+                  toUnit={n => wToUnit(n, unidad)}
+                  fromUnit={n => wFromUnit(n, unidad)}
                   onChange={setW}
                   label="Peso"
                 />
                 {/* La otra unidad, centrada bajo SU rueda y dicha como
-                    equivalencia (≈), no como un dato más. */}
-                <div className="reel-alt">≈ <b ref={altRef}>{wAltPartes(v.w).n}</b> {wAltPartes(v.w).u}</div>
+                    equivalencia (≈). Tocarla la intercambia: la rueda pasa a
+                    esa unidad, para esta máquina (opción 1A, Enzo
+                    2026-10-18). */}
+                <button
+                  type="button"
+                  className="reel-alt reel-swap"
+                  aria-label={`Pasar la rueda a ${wAltPartes(v.w, unidad).u}`}
+                  onClick={() => cambiarUnidad(ex, wAltPartes(v.w, unidad).u)}
+                >
+                  ≈ <b ref={altRef}>{wAltPartes(v.w, unidad).n}</b> {wAltPartes(v.w, unidad).u} <Swap size={13} />
+                </button>
                 {/* Barra olímpica: la rueda es el total y acá se lee cómo
                     cargarla (Enzo, 2026-10-06). Barra fija: no aparece. */}
-                {textoDiscos(ex, v.w, wDisplay) && (
-                  <div className="reel-alt reel-discos" ref={discosRef}>{textoDiscos(ex, v.w, wDisplay)}</div>
+                {textoDiscos(ex, v.w, fmt) && (
+                  <div className="reel-alt reel-discos" ref={discosRef}>{textoDiscos(ex, v.w, fmt)}</div>
                 )}
               </div>
               <div>

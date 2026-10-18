@@ -281,9 +281,11 @@ export function setDiaLibre(fecha, libre = true) {
 }
 export const saveDraft = () => S.draft ? idb.put('settings', { key: 'draft', value: S.draft }) : idb.del('settings', 'draft');
 
-// Funciones de peso — dependen de S.cfg.unit para mostrar kg o lb
-export function wDisplay(kg) {
-  return S.cfg.unit === 'kg' ? fmtNum(round1(kg)) : fmtNum(kg2lb(kg));
+// Funciones de peso — muestran kg o lb según S.cfg.unit, o según la unidad
+// que se les pase: la de una máquina en la tarjeta en vivo (unidades.js).
+const esKg = u => (u || S.cfg.unit) === 'kg';
+export function wDisplay(kg, u) {
+  return esKg(u) ? fmtNum(round1(kg)) : fmtNum(kg2lb(kg));
 }
 
 export function wAlt(kg) {
@@ -293,27 +295,27 @@ export function wAlt(kg) {
 
 /** La otra unidad, separada: la tarjeta pinta el número y la unidad con
     estilos distintos ("≈ 99.2 lb", el número en azul). */
-export function wAltPartes(kg) {
-  return S.cfg.unit === 'kg' ? { n: fmtNum(kg2lb(kg)), u: 'lb' } : { n: fmtNum(round1(kg)), u: 'kg' };
+export function wAltPartes(kg, u) {
+  return esKg(u) ? { n: fmtNum(kg2lb(kg)), u: 'lb' } : { n: fmtNum(round1(kg)), u: 'kg' };
 }
 
 export function wBoth(kg) {
   return `${fmtNum(round1(kg))} kg · ${fmtNum(kg2lb(kg))} lb`;
 }
 
-export function wStep() {
-  return S.cfg.unit === 'kg' ? 2.5 : 5 / KG2LB;
+export function wStep(u) {
+  return esKg(u) ? 2.5 : 5 / KG2LB;
 }
 
 /** kg → unidad que ve el usuario, y de vuelta — numéricos (sin formatear a
     texto, eso es wDisplay()). Los usa ReelPicker.jsx (toUnit/fromUnit) para
     que la rueda fina y la edición manual trabajen en la unidad que el
     usuario ve, no en kg crudos. */
-export function wToUnit(kg) {
-  return S.cfg.unit === 'kg' ? kg : kg2lb(kg);
+export function wToUnit(kg, u) {
+  return esKg(u) ? kg : kg2lb(kg);
 }
-export function wFromUnit(n) {
-  return S.cfg.unit === 'kg' ? n : lb2kg(n);
+export function wFromUnit(n, u) {
+  return esKg(u) ? n : lb2kg(n);
 }
 
 // Reemplaza openSheet(html)/closeSheet() del original (que escribían un

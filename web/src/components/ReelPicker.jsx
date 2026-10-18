@@ -73,7 +73,11 @@ export default function ReelPicker({
   // renderizada — si se regenerara en cada valor, cada tick recentraría la
   // lista entera y el gesto se sentiría trabado.
   const valuesRef = useRef(reelValues(val, step, min));
-  const onValue = Math.round(val / step) * step;
+  // Redondeado igual que los dientes (reelValues: a centésimas). Con un paso
+  // que no es "redondo" en kg —5 lb = 2.26796 kg— el múltiplo crudo nunca
+  // era igual a ningún diente: ninguno quedaba marcado y la rueda no se
+  // centraba (2026-10-18, al usar lb por máquina).
+  const onValue = Math.round(Math.round(val / step) * step * 100) / 100;
   // Se lee DESPUÉS de la posible regeneración, no antes: leerla antes dejaba
   // este render pintando la ventana vieja mientras el useEffect [val] de más
   // abajo centraba por el índice de la ventana NUEVA — índice nuevo aplicado
