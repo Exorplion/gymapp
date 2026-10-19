@@ -7,7 +7,8 @@
 import { progresion } from './progression.js';
 import { suggestedWeight } from './charts.js';
 import { round1 } from './format.js';
-import { pesoTraido } from './unidades.js';
+import { wToUnit } from './state.js';
+import { pesoTraido, unidadDe, enLaMaquina, alEscalon } from './unidades.js';
 
 /**
  * @param {object} ex             el ejercicio
@@ -20,18 +21,24 @@ import { pesoTraido } from './unidades.js';
  * }}
  */
 export function objetivoHoy(ex, { uni = false, ajuste = 0 } = {}) {
+  /* El peso de hoy, en un número que esta máquina tiene (enLaMaquina): la
+     tarjeta, el plan y la rueda dicen lo mismo. `antes` queda tal cual: es lo
+     que pasó, y se muestra en la unidad en que pasó (unidadUltima). */
+  const u = unidadDe(ex);
   const p = uni ? null : progresion(ex);
   if (p) {
     if (p.accion === 'subir_peso') {
+      const peso = enLaMaquina(p.peso, u);
+      const salto = round1(wToUnit(peso, u) - wToUnit(enLaMaquina(p.pesoAnterior, u), u));
       return {
-        tipo: 'subir', peso: p.peso, antes: p.pesoAnterior, meta: p.piso,
-        texto: `subí ${round1(p.peso - p.pesoAnterior)} kg · volvé a ${p.piso}`,
+        tipo: 'subir', peso, antes: p.pesoAnterior, meta: p.piso,
+        texto: `subí ${salto} ${u} · volvé a ${p.piso}`,
       };
     }
     const faltan = p.seriesTotales - p.seriesEnTope;
     return {
       tipo: p.accion === 'sostener' ? 'sostener' : 'sumar',
-      peso: p.peso, antes: p.pesoAnterior, meta: p.tope,
+      peso: enLaMaquina(p.peso, u), antes: p.pesoAnterior, meta: p.tope,
       texto: p.accion === 'sostener'
         ? `${faltan} serie${faltan === 1 ? '' : 's'} más a ${p.tope} reps`
         : `sumá reps · meta ${p.tope}`,
@@ -42,12 +49,13 @@ export function objetivoHoy(ex, { uni = false, ajuste = 0 } = {}) {
      porque es un número que levantaste de verdad, no una cuenta. */
   const traido = pesoTraido(uni ? { ...ex, unilateral: true } : ex);
   if (traido) {
-    return { tipo: 'traido', peso: traido.kg, antes: null, meta: null, origen: traido.origen, enOtroGym: traido.enOtroGym, unidad: traido.unidad, reps: traido.r, texto: `de ${traido.origen}` };
+    // al escalón de ESTA máquina: 80 kg en una que marca lb son 175
+    return { tipo: 'traido', peso: alEscalon(traido.kg, u), antes: null, meta: null, origen: traido.origen, enOtroGym: traido.enOtroGym, unidad: traido.unidad, reps: traido.r, texto: `de ${traido.origen}` };
   }
   const base = suggestedWeight(uni ? `${ex.name} (unilateral)` : ex.name);
   if (base) {
     return {
-      tipo: 'sugerido', peso: round1(base * (1 + ajuste)), antes: null, meta: null,
+      tipo: 'sugerido', peso: enLaMaquina(round1(base * (1 + ajuste)), u), antes: null, meta: null,
       texto: `80% de tu 1RM estimado${ajuste ? ` · ${ajuste > 0 ? '+' : ''}${Math.round(ajuste * 100)}% por tu chequeo` : ''}`,
     };
   }

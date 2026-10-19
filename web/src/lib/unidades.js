@@ -15,6 +15,7 @@
 // Sólo lee estado; lo que persiste (cambiarUnidad) vive en gyms.js.
 import { S, wToUnit, wFromUnit } from './state.js';
 import { exKey } from './equip.js';
+import { round1, KG2LB } from './format.js';
 
 export const unidadValida = u => (u === 'lb' ? 'lb' : 'kg');
 export const claveUnidad = (gymId, ex) => `${gymId || '-'}|${exKey(ex)}`;
@@ -101,4 +102,72 @@ export function unidadDe(ex, gymId = S.cfg?.activeGym, sessions = S.sessions) {
 export function alEscalon(kg, u) {
   const p = PASO[unidadValida(u)];
   return wFromUnit(Math.round(wToUnit(kg, u) / p) * p, u);
+}
+
+/* Los pesos se redondeaban SIEMPRE a 0.1 kg al guardarse (Enzo, 2026-10-19):
+   115 lb son 52.163 kg, se guardaban como 52.2 y volvían como 115.1 lb. El
+   redondeo va en la unidad que se ve; en kg queda exactamente como antes. */
+export function pesoExacto(kg, u) {
+  return unidadValida(u) === 'lb' ? round1(kg * KG2LB) / KG2LB : round1(kg);
+}
+
+/** ¿Es un número que esta unidad escribe tal cual? 115 lb guardado exacto sí;
+    50 kg visto en lb (110.23) no. */
+function exactoEn(kg, u) {
+  const n = unidadValida(u) === 'lb' ? kg * KG2LB : kg;
+  return Math.abs(n - round1(n)) < 0.01;
+}
+
+/**
+ * El peso con el que arranca la rueda (y la meta que dice la tarjeta) en
+ * esta máquina. Si viene de la otra unidad —la última vez fue en kg y esta
+ * máquina marca lb— va al escalón de esta: 50 kg arranca en 110 lb, no en
+ * 110.2, que la máquina no tiene. Si ya es un número de esta unidad (112 lb
+ * puestos a mano) no se toca.
+ */
+export function enLaMaquina(kg, u) {
+  if (kg == null) return kg;
+  return exactoEn(kg, u) ? kg : alEscalon(kg, u);
+}
+
+/** La unidad en la que se hizo una entrada del historial. Se guarda desde el
+    2026-10-18; antes la única que existía era la general. No se adivina con
+    la que hoy tiene la máquina: eso sería decir "lo hiciste en lb" sin saberlo. */
+export function unidadDeEntrada(e) {
+  return unidadValida(e?.unit || S.cfg?.unit);
+}
+
+/** La unidad de la última vez en esta máquina: "Sesión anterior" se dice
+    como se hizo (50 kg), no convertida a la de hoy (110.2 lb). */
+export function unidadUltima(ex, sessions = S.sessions) {
+  const e = ultimaPropia(ex, sessions);
+  return e ? unidadDeEntrada(e) : unidadDe(ex);
+}
+
+/**
+ * Corrige, una vez, las series en lb que se guardaron con el redondeo viejo
+ * (52.2 kg por 115 lb): las lleva a la media libra más cercana. Devuelve
+ * cuántas cambió.
+ *
+ * Sólo toca lo que sin duda fue eso: una entrada en lb, un peso que no es un
+ * escalón de kg (múltiplo de 2.5: ésa es una serie hecha en kg antes de
+ * cambiar la unidad) y que queda a menos de 0.12 lb de una media libra —
+ * el redondeo a 0.1 kg mueve como mucho 0.11 lb. Ya exacto, no cambia: se
+ * puede correr en cada arranque.
+ */
+export function corregirSeriesLb(entries) {
+  let n = 0;
+  for (const e of entries || []) {
+    if (unidadValida(e?.unit) !== 'lb') continue;
+    for (const s of e.sets || []) {
+      if (!(s.w > 0) || Math.abs(s.w / 2.5 - Math.round(s.w / 2.5)) < 1e-6) continue;
+      const lb = s.w * KG2LB;
+      const media = Math.round(lb * 2) / 2;
+      const dist = Math.abs(lb - media);
+      if (dist < 1e-6 || dist > 0.12) continue;
+      s.w = media / KG2LB;
+      n++;
+    }
+  }
+  return n;
 }

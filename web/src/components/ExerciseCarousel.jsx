@@ -17,9 +17,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { S, wDisplay, wAltPartes, wStep, wToUnit, wFromUnit, openSheet } from '../lib/state.js';
 import { cambiarUnidad } from '../lib/gyms.js';
-import { unidadDe } from '../lib/unidades.js';
+import { unidadDe, unidadUltima, pesoExacto } from '../lib/unidades.js';
 import { m as motion, AnimatePresence } from 'motion/react';
-import { round1 } from '../lib/format.js';
 import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
 import { rirPedido } from '../lib/rir.js';
 import { objetivoHoy } from '../lib/objetivoHoy.js';
@@ -485,8 +484,9 @@ function ultimaVez(last, sufijo = '', unidad = S.cfg.unit === 'lb' ? 'lb' : 'kg'
   return ultima;
 }
 
-function Comparativa({ last, obj, meta, uni, sufijo, unidad }) {
-  const ultima = ultimaVez(last, sufijo, unidad);
+function Comparativa({ last, obj, meta, uni, sufijo, unidad, unidadAnt = unidad }) {
+  // Lo que pasó, en la unidad en que pasó (unidadUltima): 50 kg, no 110.2 lb.
+  const ultima = ultimaVez(last, sufijo, unidadAnt);
   /* La columna Hoy dice la misma meta que "Meta de hoy" en la tarjeta
      (columnaHoy, previa.js). `obj` sigue mandando el color de "subir". */
   const hoy = columnaHoy(meta, sufijo, unidad);
@@ -674,7 +674,7 @@ function FuerzaYRecord({ fuerza, record, sufijo = '', unidad }) {
   );
 }
 
-function AvisoUltimaVez({ visible, onCerrar, last, obj, meta, uni, sufijo, fuerza, record, unidad }) {
+function AvisoUltimaVez({ visible, onCerrar, last, obj, meta, uni, sufijo, fuerza, record, unidad, unidadAnt }) {
   useEffect(() => {
     if (!visible) return;
     const t = setTimeout(onCerrar, AVISO_MS);
@@ -693,7 +693,7 @@ function AvisoUltimaVez({ visible, onCerrar, last, obj, meta, uni, sufijo, fuerz
             exit={{ opacity: 0, y: -6, scale: 0.98, transition: { duration: D.toque / 1000 } }}
           >
             <button type="button" className="ex-aviso-x" aria-label="Cerrar" onClick={e => { e.stopPropagation(); onCerrar(); }}><X size={14} /></button>
-            <Comparativa last={last} obj={obj} meta={meta} uni={uni} sufijo={sufijo} unidad={unidad} />
+            <Comparativa last={last} obj={obj} meta={meta} uni={uni} sufijo={sufijo} unidad={unidad} unidadAnt={unidadAnt} />
             <FuerzaYRecord fuerza={fuerza} record={record} sufijo={sufijo} unidad={unidad} />
             <i className="ex-aviso-reloj" aria-hidden="true" style={{ animationDuration: `${AVISO_MS}ms` }} />
           </motion.div>
@@ -724,6 +724,8 @@ function ExerciseSlide({ m, wd, started }) {
   const last = lastDataFor(ex);
   // kg o lb: de ESTA máquina en este gym (unidades.js), no de la sesión.
   const unidad = unidadDe(ex);
+  // "Sesión anterior" se dice como se hizo: si fue en kg, 50 kg aunque hoy marque lb
+  const unidadAnt = unidadUltima(ex);
   const fmt = kg => wDisplay(kg, unidad);
   const info = exInfo(ex.name);
   // "Un lado por vez": lo que dice la rutina, salvo que la máquina de HOY te
@@ -832,7 +834,8 @@ function ExerciseSlide({ m, wd, started }) {
   /* Mover la rueda es haber entendido la rueda: su aviso de la guía no
      vuelve (lib/guia.js). Sólo si el número cambió de verdad. */
   function setW(newW) {
-    const w = Math.max(0, round1(newW));
+    // en la unidad de la rueda: 115 lb quedan 115 lb, no 52.2 kg (115.1 lb)
+    const w = Math.max(0, pesoExacto(newW, unidad));
     if (w !== v.w) marcarGuia('rueda');
     v.w = w; syncDependents();
   }
@@ -855,7 +858,7 @@ function ExerciseSlide({ m, wd, started }) {
   useEffect(() => { if (open) yaAbiertas.add(ex.id); }, [open, ex.id]);
 
   const hayComparativa = !!obj && (!!last || obj.tipo !== 'primera');
-  const ultima = ultimaVez(last, sufijoPeso(ex, uni), unidad);
+  const ultima = ultimaVez(last, sufijoPeso(ex, uni), unidadAnt);
   const [aviso, setAviso] = useState(false);
   const cerrarAviso = useCallback(() => setAviso(false), []);
   /* Al activarse el ejercicio: después del despliegue de la tarjeta, no
@@ -942,7 +945,7 @@ function ExerciseSlide({ m, wd, started }) {
         {hayComparativa && (
           <AvisoUltimaVez
             visible={aviso} onCerrar={cerrarAviso} last={last} obj={obj} meta={datosPrevia?.meta} uni={uni} sufijo={sufijoPeso(ex, uni)}
-            fuerza={datosPrevia?.fuerza} record={datosPrevia?.record} unidad={unidad}
+            fuerza={datosPrevia?.fuerza} record={datosPrevia?.record} unidad={unidad} unidadAnt={unidadAnt}
           />
         )}
         {/* D3: la ausencia de dato no es un cero. */}

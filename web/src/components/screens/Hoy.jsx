@@ -23,7 +23,7 @@ import { cn } from '../../lib/utils.js';
 import { S, useStore, bump, openSheet, closeSheet, changeTab, wDisplay, wAltPartes } from '../../lib/state.js';
 import { WDS, MO, fmtMMSS, dstr } from '../../lib/format.js';
 import { opcionesDescanso } from '../../lib/descansoHoy.js';
-import { unidadDe, alEscalon } from '../../lib/unidades.js';
+import { unidadDe, unidadUltima } from '../../lib/unidades.js';
 import { orderedExs, sessionExs, nextPending, setsDone, targetSets, isSkipped, sessionProgress, startSession, discardSession, completeSession, moveBlock, moverEnBloque, indiceHoy, elegirTurnoHoy, fueraDelPlanHoy, compensacionHoy, compensacionAceptada, compensacionDescartada, conCompensacion } from '../../lib/session.js';
 import { flipSort } from '../../lib/drag.js';
 import { abrirAsistente } from '../../lib/asistente-agregar.js';
@@ -575,10 +575,12 @@ function Meta({ ex }) {
     const p = peek ? wAltPartes(kgVal, u) : { n: wDisplay(kgVal, u), u };
     return <>{p.n}<i>{p.u}</i></>;
   };
-  // el traído, en el escalón de esta máquina (lo mismo que arranca la rueda)
-  const kg = num(o.tipo === 'traido' ? alEscalon(o.peso, u) : o.peso);
+  // ya en un número de esta máquina (objetivoHoy): lo mismo que arranca la rueda
+  const kg = num(o.peso);
   if (o.tipo === 'subir') {
-    return <span className="plan-meta up"><b onClick={verOtraUnidad}>{kg}<em>↑</em></b><small>antes {wDisplay(o.antes, u)}</small></span>;
+    // "antes", como se hizo: si fue en kg y hoy la máquina marca lb, lo dice
+    const ua = unidadUltima(ex);
+    return <span className="plan-meta up"><b onClick={verOtraUnidad}>{kg}<em>↑</em></b><small>antes {wDisplay(o.antes, ua)}{ua !== u ? ` ${ua}` : ''}</small></span>;
   }
   if (o.tipo === 'sostener' || o.tipo === 'sumar') {
     return <span className="plan-meta"><b onClick={verOtraUnidad}>{kg}</b><small>superar reps</small></span>;

@@ -4,6 +4,44 @@
 
 ---
 
+## SESIÓN 2026-10-19 (2) — números exactos en lb
+
+En la captura de Enzo la rueda decía **115.1 lb** y "Sesión anterior" **110.2
+lb**. Dos causas: (1) todo peso se guardaba con `round1` en kg — 115 lb =
+52.163 kg → 52.2 → 115.1 lb; (2) un peso hecho en kg (50) se mostraba en la
+máquina de lb convertido tal cual (110.2), sin llevarlo al escalón. Enzo
+aprobó las cuatro partes (A+B+C+D):
+
+- **A** `pesoExacto(kg, u)` (unidades.js): redondea a 0.1 en la unidad que se
+  ve. En kg es `round1` como siempre. Lo usan `setW` (ExerciseCarousel),
+  `saveSet` y `editarSerie` (session.js).
+- **B** `enLaMaquina(kg, u)`: si el peso no es un número exacto de esa unidad
+  (viene de la otra), va a `alEscalon`; si ya lo es (112 lb a mano), no se
+  toca. Aplicado en `objetivoHoy` (todas las ramas; traído sigue con
+  `alEscalon` siempre) y en el arranque de la rueda (`ensureVals`). Por eso
+  se sacaron los `alEscalon` sueltos de `metaTexto` (previa.js) y `Meta`
+  (Hoy.jsx). "subí X" ahora dice la unidad de la máquina.
+- **C** `unidadUltima(ex)` / `unidadDeEntrada(e)`: "Sesión anterior" (la
+  baldosa y la comparativa) y el "antes" del plan van en la unidad en que se
+  hicieron. Sin `e.unit` (antes del 2026-10-18) es `S.cfg.unit` — **no** la
+  que hoy tiene la máquina: eso adivinaba "lo hiciste en lb" (lo vio la
+  verificación: un 50 kg del mismo gym salía 110.2 lb).
+- **D** `corregirSeriesLb(entries)` corre en cada arranque (`loadAll` →
+  `corregirLbGuardadas`, import dinámico + try/catch): series de entradas en
+  lb, que no son escalón de 2.5 kg y quedan a ≤0.12 lb de una media libra →
+  a esa media libra. Idempotente.
+
+**Verificado** (Playwright + Chrome, dev, 390 y 430): Sesión anterior "50 kg",
+meta "110 lb × 8", rueda 110 → ArrowUp 115, tabla "110 lb" / "115 lb",
+guardado 52.1631 kg. Migración: 52.2 kg en lb → 115 lb exactas en IndexedDB;
+50 kg (escalón de kg) y la entrada en kg intactos. 1442 tests.
+
+**Trampa:** un `vite` huérfano en el mismo puerto dejó el seed devolviendo 0
+rutinas (servía un estado viejo del HMR). Matar el proceso, no sólo la tarea.
+
+**Fuera de alcance, a propósito:** SessionView (editar el historial) y
+VoiceLog siguen en kg con `round1` — no tienen unidad por máquina.
+
 ## SESIÓN 2026-10-19 — el descanso ya no tapa las series anotadas
 
 Enzo confirmó que el kg/lb de #161 anduvo en el gym de libras y que el ⇄ se
