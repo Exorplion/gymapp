@@ -156,6 +156,23 @@ export function useStore() {
    pocas fotos eso son decenas de MB leídos en cada arranque, para nada. */
 const STORES_ARRANQUE = ['routine', 'sessions', 'meals', 'foods', 'body', 'settings'];
 
+/* Las series en lb guardadas con el redondeo viejo a 0.1 kg (115 lb → 52.2 kg
+   → 115.1 lb) vuelven a su número (corregirSeriesLb, unidades.js). Ya
+   corregidas no cambian, así que corre en cada arranque sin marca. Import
+   dinámico: unidades.js importa de acá. Y en try/catch como el TDEE de abajo:
+   es un arreglo de datos, no puede dejar la app sin abrir. */
+async function corregirLbGuardadas() {
+  try {
+    const { corregirSeriesLb } = await import('./unidades.js');
+    for (const s of S.sessions) {
+      if (corregirSeriesLb(s.entries)) await idb.put('sessions', s);
+    }
+    if (S.draft?.entries && corregirSeriesLb(Object.values(S.draft.entries))) await saveDraft();
+  } catch (e) {
+    console.warn('[fierro] no se pudieron corregir las series en lb', e);
+  }
+}
+
 export async function loadAll() {
   const [rt, ss, ms, fs, bd, st] = await Promise.all(STORES_ARRANQUE.map(s => idb.all(s)));
   S.routine = rt.sort((a, b) => a.order - b.order);
@@ -174,6 +191,7 @@ export async function loadAll() {
   // Turnos universales: un nombre = un turno. Antes de resolveAutoRest (que
   // escribe cfg) y sin tirar nunca: si falla, la app abre con lo de antes.
   await reconciliarTurnos(S, { guardados: turnosGuardados, hayCrudo });
+  await corregirLbGuardadas();
   S.ready = true;
   await resolveAutoRest();
   // TDEE adaptativo continuo (Plan Fierro · Fase 3): se recalcula una vez

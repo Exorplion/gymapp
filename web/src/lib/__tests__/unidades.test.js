@@ -6,7 +6,7 @@
 // no hay peso traído.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { S, wToUnit, wFromUnit } from '../state.js';
-import { pesoTraido, unidadDe, alEscalon, claveUnidad } from '../unidades.js';
+import { pesoTraido, unidadDe, alEscalon, claveUnidad, pesoExacto, enLaMaquina, unidadUltima, corregirSeriesLb } from '../unidades.js';
 import { objetivoHoy } from '../objetivoHoy.js';
 import { warmupSets } from '../warmup.js';
 import { reelValues } from '../reel.js';
@@ -118,6 +118,60 @@ describe('objetivoHoy con peso traído', () => {
     S.sessions = [ses('2026-10-14', [{ ...enSmart, sets: [set(50, 10)] }])];
     const o = objetivoHoy(enNuevo);
     expect(o).toMatchObject({ tipo: 'traido', peso: 50, origen: 'SmartFit' });
+  });
+});
+
+// La captura de Enzo (2026-10-19): en una máquina de lb la rueda decía 115.1 y
+// "Sesión anterior" 110.2. Eran 52.2 kg (115 lb guardadas con redondeo a 0.1
+// kg) y 50 kg hechos en otro gym, convertidos sin llevarlos a la máquina.
+describe('números exactos en lb', () => {
+  it('115 lb se guardan y vuelven como 115, no 115.1', () => {
+    expect(wDisplay(pesoExacto(wFromUnit(115, 'lb'), 'lb'), 'lb')).toBe('115');
+    // el redondeo viejo, en kg, es justo lo que las rompía
+    expect(wDisplay(Math.round(wFromUnit(115, 'lb') * 10) / 10, 'lb')).toBe('115.1');
+  });
+  it('en kg el redondeo queda como siempre', () => {
+    expect(pesoExacto(52.26, 'kg')).toBe(52.3);
+  });
+
+  it('un peso que viene de kg arranca en el escalón de la máquina de lb', () => {
+    expect(wToUnit(enLaMaquina(50, 'lb'), 'lb')).toBeCloseTo(110, 6);
+    expect(wToUnit(enLaMaquina(52.2, 'lb'), 'lb')).toBeCloseTo(115, 6);
+  });
+  it('uno que ya es un número de lb (112 a mano) no se toca', () => {
+    const w = wFromUnit(112, 'lb');
+    expect(enLaMaquina(w, 'lb')).toBe(w);
+    expect(enLaMaquina(47.5, 'kg')).toBe(47.5);
+  });
+
+  it('la meta de hoy en lb, sobre una última vez en kg: 110 lb, no 110.2', () => {
+    const shrug = { id: 'r2', name: 'Kelso shrug', reps: 9, sets: 3, variante: 'm-nuevo' };
+    S.sessions = [ses('2026-10-14', [{ ...shrug, unit: 'kg', sets: [set(50, 9), set(50, 9), set(50, 9)] }])];
+    S.cfg.unidades[claveUnidad('b', shrug)] = 'lb';
+    expect(wDisplay(objetivoHoy(shrug).peso, 'lb')).toBe('110');
+    // y "Sesión anterior" se dice como se hizo
+    expect(unidadUltima(shrug)).toBe('kg');
+  });
+});
+
+describe('corregirSeriesLb', () => {
+  it('lleva las series en lb guardadas como 52.2 kg a 115 lb', () => {
+    const e = { unit: 'lb', sets: [set(52.2, 11), set(49.9, 10)] };
+    expect(corregirSeriesLb([e])).toBe(2);
+    expect(wToUnit(e.sets[0].w, 'lb')).toBeCloseTo(115, 6);
+    expect(wToUnit(e.sets[1].w, 'lb')).toBeCloseTo(110, 6);
+  });
+  it('no toca entradas en kg ni escalones de kg (series hechas antes de cambiar a lb)', () => {
+    const enKg = { unit: 'kg', sets: [set(52.2, 10)] };
+    const mixta = { unit: 'lb', sets: [set(20, 10), set(50, 10)] };
+    expect(corregirSeriesLb([enKg, mixta])).toBe(0);
+    expect(enKg.sets[0].w).toBe(52.2);
+    expect(mixta.sets.map(s => s.w)).toEqual([20, 50]);
+  });
+  it('ya corregidas no cambian: se puede correr en cada arranque', () => {
+    const e = { unit: 'lb', sets: [set(52.2, 11)] };
+    corregirSeriesLb([e]);
+    expect(corregirSeriesLb([e])).toBe(0);
   });
 });
 

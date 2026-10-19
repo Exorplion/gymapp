@@ -198,10 +198,11 @@ describe('metaHoy y metaTexto', () => {
     expect(m).toMatchObject({ tipo: 'primera', peso: 30, texto: 'tu peso de partida' });
     expect(metaTexto(m)).toBe('30 kg × 8 · tu peso de partida');
   });
-  it('en libras muestra libras', () => {
+  it('en libras muestra libras, en un número que la máquina tiene', () => {
+    // 47.5 kg hechos en kg: la meta en lb es 105, no 104.7 (Enzo, 2026-10-19)
     S.cfg.unit = 'lb';
     S.sessions = [sesion('2026-09-20', [serie(47.5, 7)])];
-    expect(metaTexto(metaHoy(PRESS))).toMatch(/^104\.7 lb × 8/);
+    expect(metaTexto(metaHoy(PRESS))).toMatch(/^105 lb × 8/);
   });
   it('sin meta no hay línea', () => {
     expect(metaTexto(null)).toBe('');

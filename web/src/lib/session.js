@@ -16,7 +16,7 @@ import { bloqueDe, DESCANSO } from './warmup.js';
 import { clampHechos } from './rampa.js';
 import { metaHoy } from './previa.js';
 import { aplicarMaquina } from './maquinas.js';
-import { pesoTraido, unidadDe, alEscalon } from './unidades.js';
+import { pesoTraido, unidadDe, alEscalon, enLaMaquina, pesoExacto } from './unidades.js';
 import { planDeLaSesion, desdeAlCerrar, avanzarPuntero } from './puntero.js';
 import { compensacion } from './compensacion.js';
 import { recuperacion } from './recuperacion.js';
@@ -156,16 +156,20 @@ export function ensureVals(ex) {
     const prog = progresion(ex);
     const meta = prog ? metaHoy(ex, { uni: isUnilateral(ex) }) : null;
     const deProgresion = meta && ['subir', 'sostener', 'sumar'].includes(meta.tipo) && meta.peso != null && meta.reps;
-    if (prog?.accion === 'subir_peso') S.hoyVals[ex.id] = { w: prog.peso, r: prog.piso, rpe: null };
+    /* En un número que esta máquina tiene (enLaMaquina, 2026-10-19): si la
+       última vez fue en kg y hoy marca lb, 50 kg arranca en 110 lb. La meta
+       (metaHoy → objetivoHoy) ya viene así. */
+    const u = unidadDe(ex);
+    if (prog?.accion === 'subir_peso') S.hoyVals[ex.id] = { w: enLaMaquina(prog.peso, u), r: prog.piso, rpe: null };
     else if (deProgresion) S.hoyVals[ex.id] = { w: meta.peso, r: meta.reps, rpe: null };
-    else if (last) { const ls = last[last.length - 1]; S.hoyVals[ex.id] = { w: ls.w, r: ls.r, rpe: null }; }
+    else if (last) { const ls = last[last.length - 1]; S.hoyVals[ex.id] = { w: enLaMaquina(ls.w, u), r: ls.r, rpe: null }; }
     else {
       /* Primera vez en esta máquina: si lo hiciste en otra (otro gym), la
          rueda arranca en ese peso para probarlo (unidades.js, Enzo
          2026-10-18). Las reps son las de la rutina, no las de allá. */
       const traido = pesoTraido(ex);
       // al escalón de ESTA máquina: 80 kg en una que marca lb arranca en 175
-      S.hoyVals[ex.id] = { w: traido ? alEscalon(traido.kg, unidadDe(ex)) : pesoInicial(ex), r: ex.reps || 10, rpe: null };
+      S.hoyVals[ex.id] = { w: traido ? alEscalon(traido.kg, u) : pesoInicial(ex), r: ex.reps || 10, rpe: null };
     }
   }
   // `rpe` puede faltar en un S.hoyVals guardado antes de que este campo
@@ -920,7 +924,9 @@ export async function saveSet(exId) {
   // se tocó el selector. Es el campo que destraba ACWR y la recuperación
   // muscular por esfuerzo (Plan Fierro · Fase 2).
   const uni = isUnilateral(ex);
-  cur.push({ w: round1(v.w), r: v.r, t: Date.now(), rpe: v.rpe ?? null, side: uni ? (v.side || null) : null });
+  // Redondeado en la unidad de la rueda: 115 lb se guarda como 115 lb exactas,
+  // no como 52.2 kg (que volvían como 115.1 lb).
+  cur.push({ w: pesoExacto(v.w, S.draft.entries[exId].unit), r: v.r, t: Date.now(), rpe: v.rpe ?? null, side: uni ? (v.side || null) : null });
   v.rpe = null; // cada serie arranca sin RPE elegido; no se arrastra de la anterior
   // alterna el lado solo — así la próxima serie ya arranca del otro sin que
   // haya que tocar el selector a mano
@@ -1494,7 +1500,7 @@ const ex0Unilateral = exId => { const ex = findEx(exId); return !!ex && isUnilat
 export async function editarSerie(exId, idx, { w, r }, { n } = {}) {
   const set = S.draft?.entries?.[exId]?.sets?.[idx];
   if (!set) return false;
-  set.w = Math.max(0, round1(w));
+  set.w = Math.max(0, pesoExacto(w, S.draft.entries[exId].unit));
   set.r = Math.max(1, Math.round(r));
   await saveDraft();
   bump();

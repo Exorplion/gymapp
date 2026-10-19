@@ -11,7 +11,7 @@ import { catOf, daysSinceGroup, diasTexto } from './muscle.js';
 import { recuperacion, zonasDeEjercicio } from './recuperacion.js';
 import { round1, dstr } from './format.js';
 import { sufijoPeso } from './equip.js';
-import { unidadDe, alEscalon } from './unidades.js';
+import { unidadDe } from './unidades.js';
 
 const UNI = ' (unilateral)';
 /** La ventana del cambio de fuerza: 8 semanas. */
@@ -157,7 +157,7 @@ export function metaTexto(meta, sufijo = '', u) {
   const unidad = (u || S.cfg.unit) === 'lb' ? 'lb' : 'kg';
   const partes = [];
   // `sufijo`: qué es el número ("17.5 kg c/u" en mancuernas, sufijoPeso).
-  if (meta.peso != null) partes.push(`${meta.tipo === 'sugerido' || meta.tipo === 'traido' ? '~' : ''}${wDisplay(meta.tipo === 'traido' ? alEscalon(meta.peso, unidad) : meta.peso, unidad)} ${unidad}${sufijo}${meta.reps ? ` × ${meta.reps}` : ''}`);
+  if (meta.peso != null) partes.push(`${meta.tipo === 'sugerido' || meta.tipo === 'traido' ? '~' : ''}${wDisplay(meta.peso, unidad)} ${unidad}${sufijo}${meta.reps ? ` × ${meta.reps}` : ''}`);
   else if (meta.reps) partes.push(`${meta.reps} reps`);
   if (meta.texto) partes.push(meta.texto);
   return partes.join(' · ');
