@@ -25,7 +25,7 @@
 // (15-30 veces por sesión). Metida acá son cero toques de más y la pregunta
 // aparece sin que la busques, que era justamente lo que fallaba cuando vivía
 // escondida en el <details> "Más opciones" de la tarjeta del ejercicio.
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   T, minimizeRest, expandRest, stopRest, shiftRest, REST_CIRC, cerrarPreguntaRir,
   suscribirReloj, versionReloj, tramoAnillo,
@@ -369,14 +369,46 @@ export default function RestTimer() {
   );
 }
 
+/** Al aparecer la barra, la última serie anotada del ejercicio en curso se
+    acomoda arriba de ella: es lo que acabás de hacer y lo que querés ver.
+    `nearest` + el scroll-margin-bottom de la fila (--reserva-descanso) hacen
+    que sólo se mueva si quedaba tapada. */
+function filaSobreLaBarra() {
+  const fila = document.querySelector('.ex-card.cur .ex-tabla tbody tr:last-child');
+  fila?.scrollIntoView({ block: 'nearest', behavior: menosMovimiento() ? 'auto' : 'smooth' });
+}
+
 /** La pill del descanso minimizado. Componente aparte porque es lo único,
     junto con <Tiempo/>, que cambia cada segundo: su aria-label lleva el
     tiempo. La barrita (#rest-fill) no se toca desde acá: la anima RestTimer
     con un solo tramo continuo. */
 function BarraDescanso({ show, fillRef, onKeyDown, subTime, addTime, skip }) {
   const tiempo = useReloj();
+  const barraRef = useRef(null);
+  /* La barra flota sobre la tabla de series. Su alto va a --restbar-alto para
+     que main reserve lo que tapa (`:root:has(#restbar.show) main.full`). Se
+     mide siempre —está montada aunque no se vea— así al mostrarse el número
+     ya está. */
+  useLayoutEffect(() => {
+    const barra = barraRef.current;
+    const raiz = document.documentElement;
+    const medir = () => raiz.style.setProperty('--restbar-alto', `${barra.offsetHeight}px`);
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(barra);
+    return () => { ro.disconnect(); raiz.style.removeProperty('--restbar-alto'); };
+  }, []);
+  /* Recién cuando la barra terminó de subir (--d3 = D.panel). Antes no: al
+     minimizar, useAtras hace history.back() y el navegador, al aterrizar el
+     popstate, restaura el scroll que tenía guardado y pisa el acomodo. */
+  useEffect(() => {
+    if (!show) return;
+    const t = setTimeout(filaSobreLaBarra, D.panel);
+    return () => clearTimeout(t);
+  }, [show]);
   return (
     <div
+      ref={barraRef}
       id="restbar"
       className={show ? 'show' : ''}
       data-act="rest-expand"

@@ -51,6 +51,8 @@ const POR_ELEMENTO = new Set([
   '--beat2', '--beat3', '--beat-corto', '--beat-largo',
   // El alto del header, medido: lo escribe MisEjercicios (Rutina.jsx) en el índice fijo.
   '--cab-alto',
+  // El alto de la barra de descanso, medido: lo escribe RestTimer.jsx en <html>.
+  '--restbar-alto',
 ]);
 
 describe('tokens de CSS', () => {
