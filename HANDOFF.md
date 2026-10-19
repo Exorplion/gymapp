@@ -4,6 +4,41 @@
 
 ---
 
+## PENDIENTES PARA LA PRÓXIMA SESIÓN (al cierre del 2026-10-19)
+
+Enzo cerró con "lo continuamos en la próxima sesión". Arrancar por acá.
+
+**1. Núcleo de IA — importar una rutina pegada (Cloudflare + Gemini).**
+Diseño en "SESIÓN 2026-10-12 (10)" (partes 1 y 2 aprobadas; no hay código).
+Se le hicieron tres preguntas que quedaron sin contestar:
+
+| # | Pregunta | Recomendado |
+|---|---|---|
+| a | ¿Creó la clave de Gemini (aistudio.google.com/apikey) y la cuenta Free de Cloudflare? | — (son suyas; la clave NO va al chat) |
+| b | ¿El repo queda público? | Sí. Privado obliga a mudar la app a Cloudflare Pages, con export de datos primero |
+| c | ¿Aprueba la parte 3 (abajo)? | Sí, y después lienzo de la vista previa |
+
+Parte 3 propuesta (sin aprobar):
+- "4 × 8-10" → `reps` = 8 (el piso de la doble progresión, `progression.ts`).
+- "RIR 2" / "al fallo" → no se importa; la vista previa lo avisa.
+- Superseries A1/A2 → dos ejercicios seguidos (la app no tiene superseries).
+- Fuera del catálogo → ámbar; si la IA tampoco lo reconoce, se elige el grupo
+  en la vista previa (como el asistente) o queda con el nombre tal cual.
+- Cómo se ve lo ámbar y cómo se corrige → lienzo de maquetas.
+
+Después de (c): spec en `docs/superpowers/specs/`, plan (writing-plans), código.
+
+**2. Decisión del RIR** (abierta desde 2026-09-26, ver "Bloques 2 a 5"): ¿el
+RIR que se contesta en el descanso alimenta la progresión, o queda sólo para
+`recoveryPct()`? No se encontró que se haya cerrado.
+
+**3. Preguntarle cómo le fue en el teléfono** con la Fase 4 "Para cerrar la
+semana" (#160) y con los botones de #164 (¿el ícono de lista se entiende solo?).
+
+**Cerrados, no volver a pedir:** coverflow, auditoría total, permiso de merge.
+**En standby a propósito** (sólo si Enzo los pide): reflejo al inclinar,
+React Native / EAS, guía de Android Studio.
+
 ## SESIÓN 2026-10-19 (3) — botones de la sesión en vivo: un nombre y un lugar por acción
 
 Enzo preguntó si había demasiados ajustes (de sesión y de ejercicio) y si
