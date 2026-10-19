@@ -172,6 +172,17 @@ export function Dots({ size = 18, className, style }) {
   );
 }
 
+/* El menú de la SESIÓN (2026-10-19): una lista, no otros "···". Con dos ···
+   iguales apilados —el de la sesión y el del ejercicio— no había cómo saber
+   cuál era cuál sin abrirlos. */
+export function Lista({ size = 18, className, style }) {
+  return (
+    <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">
+      <path d="M9 6.5h10M9 12h10M9 17.5h10" /><circle cx="5" cy="6.5" r="1" /><circle cx="5" cy="12" r="1" /><circle cx="5" cy="17.5" r="1" />
+    </svg>
+  );
+}
+
 export function Later({ size = 16, className, style }) {
   return (
     <svg width={size} height={size} {...base} className={className} style={style} aria-hidden="true">

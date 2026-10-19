@@ -34,7 +34,7 @@ import { createGym, setActiveGym } from '../../lib/gyms.js';
 import ExerciseCarousel from '../ExerciseCarousel.jsx';
 import { objetivoHoy, resumenPlan } from '../../lib/objetivoHoy.js';
 import { toast } from '../../lib/toast.js';
-import { ArrowDown, ArrowUp, Bolt, Mic, Mover, Pencil, RecordDot, Dots, Plus, Check } from '../Icon.jsx';
+import { ArrowDown, ArrowUp, Bolt, Mic, Mover, Pencil, RecordDot, Lista, Plus, Check } from '../Icon.jsx';
 import { HoySinPlan } from '../Illustration.jsx';
 import { AvisoPrueba } from '../sheets/SalirPrueba.jsx';
 import Silhouette from '../Silhouette.jsx';
@@ -242,8 +242,9 @@ function SesionBarra({ day, index, exs, started, allDone }) {
           </div>
         </div>
         <button type="button" className="ses-terminar" onClick={() => openSheet('terminar-sesion')}>Terminar</button>
-        <button type="button" className="ses-mas" aria-label="Más opciones de la sesión" onClick={() => openSheet('sesion-menu', { wd: index })}>
-          <Dots />
+        {/* Lista y no ···: el ··· es del ejercicio, justo debajo (Enzo, 2026-10-19). */}
+        <button type="button" className="ses-mas" aria-label="Opciones de la sesión" onClick={() => openSheet('sesion-menu', { wd: index })}>
+          <Lista />
         </button>
       </div>
       {allDone && (

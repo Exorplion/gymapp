@@ -15,7 +15,7 @@ import {
 import BarraField from '../BarraField.jsx';
 import { puedeSerUnilateral } from '../../lib/equip.js';
 import { maquinaElegida } from '../../lib/maquinas.js';
-import { Later, Plus, Minus, Sides, Swap, Camera, Skip } from '../Icon.jsx';
+import { Plus, Minus, Sides, Swap, Camera, Skip } from '../Icon.jsx';
 
 export default function ExOpciones({ exId, wd }) {
   const index = wd ?? S.routine.findIndex(s => s.id === S.draft?.slotId);
@@ -42,14 +42,9 @@ export default function ExOpciones({ exId, wd }) {
   return (
     <>
       <h2>{ex.name}</h2>
+      {/* Sin "Hacer después" (2026-10-19): ya está como chip "Después" en la
+          tarjeta, siempre que este menú se puede abrir. Estaba en los dos. */}
       <div className="group" style={{ marginBottom: 'var(--s3)' }}>
-        <button type="button" className="grouprow" onClick={y(() => openSheet('despues', { exId: ex.id }))}>
-          <Later className="opc-ico" />
-          <span className="grouprow-grow">
-            <span className="grouprow-t">Hacer después</span>
-            <span className="grouprow-s">Elegís después de cuál. Para cuando la máquina está ocupada.</span>
-          </span>
-        </button>
         <button type="button" className="grouprow" onClick={y(() => addExtraSet(ex.id))}>
           <Plus className="opc-ico" />
           <span className="grouprow-grow">

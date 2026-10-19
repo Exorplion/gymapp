@@ -4,6 +4,32 @@
 
 ---
 
+## SESIÓN 2026-10-19 (3) — botones de la sesión en vivo: un nombre y un lugar por acción
+
+Enzo preguntó si había demasiados ajustes (de sesión y de ejercicio) y si
+alguien se podía perder. Inventario + lienzo (claude.ai/artifact/5sRQj1CBk3Q9y719pkJMZw;
+copia sin login en `Documents/Personal/FIERRO-maquetas/botones-sesion.html`):
+Hoy / **A** (un nombre y un lugar por acción) / B (un solo menú central).
+Eligió **A**. No se recentraliza: la separación sesión/ejercicio es la de
+Strong/Hevy; lo que confundía eran nombres e íconos repetidos.
+
+- Barra de sesión: el botón del menú pasa de `Dots` a `Lista` (Icon.jsx,
+  nuevo), aria "Opciones de la sesión". Antes había dos ··· apilados.
+- Rampa (y el bloque de aproximación sin rampa): "Saltar" → **"Sin
+  calentar"**. "Saltar" queda sólo para el descanso.
+- ExOpciones: sale "Hacer después" — el chip "Después" está en la tarjeta
+  bajo la misma condición (`open`) que el ···. Antes de empezar, "Hacer
+  después" sigue en los links de la tarjeta.
+
+**Corrección del lienzo:** la pantalla "Descanso — como está" mostraba PARAR
+y Saltar juntos; en la app PARAR sólo aparece sonando (RestTimer.jsx, el
+ternario `sonandoAhora`). Ese duplicado no existe → el descanso **no se
+tocó**. Se le dijo a Enzo.
+
+**Verificado** (Playwright + Chrome, dev, 390 y 430): ícono de lista, "Sin
+calentar" dentro del encabezado de la rampa, sin desborde horizontal, menú
+del ejercicio con 6 filas sin "Hacer después". 1442 tests.
+
 ## SESIÓN 2026-10-19 (2) — números exactos en lb
 
 En la captura de Enzo la rueda decía **115.1 lb** y "Sesión anterior" **110.2

@@ -537,8 +537,10 @@ function Rampa({ ex, estado, unidad, plegando }) {
       <div className="ex-rampa">
         <div className="ex-rampa-hd">
           <span>Aproximación</span>
+          {/* "Sin calentar" y no "Saltar": "Saltar" es del descanso, que flota
+              en la misma pantalla (Enzo, 2026-10-19). */}
           {!estado.completa && (
-            <button type="button" className="linkcard" onClick={() => marcarCalentado(ex, false)}>Saltar</button>
+            <button type="button" className="linkcard" onClick={() => marcarCalentado(ex, false)}>Sin calentar</button>
           )}
         </div>
         <div className="ex-rampa-pasos" ref={pasosRef} style={{ '--avance': estado.avance }}>
@@ -1090,7 +1092,7 @@ function ExerciseSlide({ m, wd, started }) {
                     </div>
                     <div className="ex-aprox-acts">
                       <button type="button" className="chip" onClick={() => marcarCalentado(ex, true)}>Hecho</button>
-                      <button type="button" className="linkcard" onClick={() => marcarCalentado(ex, false)}>Saltar</button>
+                      <button type="button" className="linkcard" onClick={() => marcarCalentado(ex, false)}>Sin calentar</button>
                     </div>
                   </div>
                 )}
