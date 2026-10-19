@@ -269,6 +269,12 @@
        --r-full pildora / circulo */
   --r-xs:4px; --r-sm:8px; --r-md:12px; --r-full:999px;
   --tabs-h:91px;
+  /* Aire entre la barra de pestañas y la de descanso, que flota encima. */
+  --restbar-sep:10px;
+  /* Lo que tapa la barra de descanso desde el borde de abajo: pestañas, aire,
+     la barra (su alto lo mide RestTimer.jsx en --restbar-alto) y un --s3 para
+     que la última fila no quede pegada al vidrio. */
+  --reserva-descanso:calc(var(--tabs-h) + env(safe-area-inset-bottom) + var(--restbar-sep) + var(--restbar-alto, 0px) + var(--s3));
   /* escala de espaciado: antes había márgenes sueltos (4, 6, 10, 13, 14px…)
      sin ritmo; todo lo estructural se apoya ahora en estos seis pasos */
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
@@ -1468,6 +1474,9 @@ main > .view.enter,main > .view.leave{grid-area:1/1}
 /* Series hechas: una fila por serie. */
 .ex-tabla{width:100%;margin-top:var(--s3);border-collapse:collapse;font-variant-numeric:tabular-nums}
 .ex-tabla th{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2);padding:0 0 4px;text-align:left;}
+/* Al aparecer el descanso, la fila recién anotada se acomoda arriba de la
+   barra (filaSobreLaBarra, RestTimer.jsx). */
+.ex-tabla tr{scroll-margin-bottom:var(--reserva-descanso)}
 .ex-tabla td{padding:4px 0;border-top:1px solid var(--line);font-size:var(--t-sm);color:var(--text-2)}
 .ex-tabla td b{font-family:var(--font-cond);font-size:var(--t-lg);color:var(--text)}
 .ex-tabla .c{text-align:center}
@@ -2429,7 +2438,7 @@ nav.tabbar{container-type:inline-size}
 #restbar{
   /* Mismo margen que la barra de pestañas y el contenido (H3). */
   position:fixed;left:var(--pad-x);right:var(--pad-x);z-index:45;
-  bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 10px);
+  bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + var(--restbar-sep));
   /* Superficie FLOTANTE (tanda C). Iba en grafito opaco con borde y halo del
      acento: un tercer material para lo que flota. Lo que dice "descanso" es
      el cronómetro y la barra que se vacía, no el marco. */
@@ -3768,6 +3777,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
    acá sólo queda un vistazo quieto, así el resto del grid tiene lugar para
    respirar en vez de competir por el espacio que antes se llevaba entero. */
 main.full{padding-bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
+/* La sesión en vivo entra sin scroll, pero el descanso flota ENCIMA de la
+   tabla de series: sin esto la última fila quedaba debajo de la barra y no
+   había cómo llegar a verla (captura de Enzo, 2026-10-19). Mientras la barra
+   está a la vista, main reserva lo que tapa; al irse, vuelve a entrar entera. */
+:root:has(#restbar.show) main.full{padding-bottom:var(--reserva-descanso)}
 /* Tres grupos (semana / estado del día / tablero): --s5 entre grupos y --s2
    o --s3 adentro. No llega a los 32 del resto de las pantallas tablero
    porque Inicio entra entera, sin scroll, a 390×844 (tanda D). */

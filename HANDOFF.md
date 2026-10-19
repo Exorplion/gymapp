@@ -1,8 +1,44 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-10-18
+**Última actualización:** 2026-10-19
 
 ---
+
+## SESIÓN 2026-10-19 — el descanso ya no tapa las series anotadas
+
+Enzo confirmó que el kg/lb de #161 anduvo en el gym de libras y que el ⇄ se
+encuentra solo (no hace falta globo de la guía). Mandó una captura: la barra
+de descanso tapaba la tabla de series y no había scroll para llegar.
+
+**Causa:** desde 2026-09-25 la sesión en vivo entra sin scroll — `main.full`
+no reserva el colchón inferior. La barra (~96 px) flota encima y no había
+lugar para ella. Enzo eligió la opción **A** (de A reservar / B barra chata /
+C descanso en la barra de sesión).
+
+**Qué cambió (rama `fix/descanso-no-tapa`):**
+- `BarraDescanso` (RestTimer.jsx) mide su alto con ResizeObserver en
+  `--restbar-alto` sobre `<html>` (exento en tokens.test.js, como `--cab-alto`).
+- `:root:has(#restbar.show) main.full{padding-bottom:var(--reserva-descanso)}`;
+  sin la barra a la vista, todo igual que antes (entra entera).
+- Al aparecer la barra, `filaSobreLaBarra()` hace `scrollIntoView` nearest de
+  la última fila de `.ex-card.cur` (con `scroll-margin-bottom` = la reserva).
+- Tokens nuevos: `--restbar-sep` (los 10 px que ya separaban las dos barras)
+  y `--reserva-descanso`.
+
+**Trampa (la que costó):** el acomodo corre `D.panel` después de mostrarse la
+barra, no en el acto. Minimizar el descanso hace `history.back()` (useAtras) y
+al aterrizar el `popstate` el navegador **restaura el scroll guardado** y pisa
+cualquier scroll hecho antes. Medido: llamado en el acto, la fila 2+ seguía
+tapada; con la espera, ninguna.
+
+**Verificado** (Playwright + Chrome, dev server, ejercicio de 5 series):
+390×844 y 430×932, 1 a 4 filas anotadas → la última nunca queda debajo de la
+barra; padding 91 → 209 px con la barra y vuelve a 91 al saltar. 1434 tests.
+
+**Pendiente visto en la captura de Enzo (sin tocar):** en la máquina de libras
+la rueda mostraba **115.1 lb** y "Sesión anterior" **110.2 lb** — son
+conversiones de kg (52.2 / 50 kg), no números redondos de la máquina. Se le
+ofreció investigarlo; no respondió todavía.
 
 ## SESIÓN 2026-10-18 — kg/lb por máquina y peso traído de otro gym
 
