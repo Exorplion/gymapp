@@ -1,43 +1,64 @@
 # Handoff — FIERRO
 
-**Última actualización:** 2026-10-19
+**Última actualización:** 2026-10-20
 
 ---
 
-## PENDIENTES PARA LA PRÓXIMA SESIÓN (al cierre del 2026-10-19)
+## PENDIENTES PARA LA PRÓXIMA SESIÓN (al cierre del 2026-10-20)
 
-Enzo cerró con "lo continuamos en la próxima sesión". Arrancar por acá.
+**1. Entrega 2 del importador: lector local + vista previa (B1).** Spec
+`docs/superpowers/specs/2026-10-20-importar-rutina-y-rir-design.md`, sección
+"Entrega 2". Todo aprobado: parte 3 (tabla de formatos) y vista previa **B1**
+(maquetas claude.ai/artifact/B6ndrZszVgdv18YaChZGRK; copia sin login en el
+Escritorio de la PC del trabajo, `maquetas-rir-importar.html`). Falta: plan
+(writing-plans) → `lib/importar/lector.js` con tests → hoja "Pegar una
+rutina" en Entreno → Mis rutinas. El lector ya puede guardar `rir` (entrega 1).
 
-**1. Núcleo de IA — importar una rutina pegada (Cloudflare + Gemini).**
-Diseño en "SESIÓN 2026-10-12 (10)" (partes 1 y 2 aprobadas; no hay código).
-Se le hicieron tres preguntas que quedaron sin contestar:
+**2. Entrega 3: Worker + Gemini.** Enzo ya tiene la clave de Gemini y la
+cuenta de Cloudflare (2026-10-20). Cuando exista `worker/`, él escribe
+`! npx wrangler login` y `! npx wrangler secret put GEMINI_API_KEY` (la clave
+nunca pasa por el chat). En el panel de Cloudflare NO hace falta "Create
+application": el Worker lo crea `wrangler deploy`.
 
-| # | Pregunta | Recomendado |
-|---|---|---|
-| a | ¿Creó la clave de Gemini (aistudio.google.com/apikey) y la cuenta Free de Cloudflare? | — (son suyas; la clave NO va al chat) |
-| b | ¿El repo queda público? | Sí. Privado obliga a mudar la app a Cloudflare Pages, con export de datos primero |
-| c | ¿Aprueba la parte 3 (abajo)? | Sí, y después lienzo de la vista previa |
+**3. Probar en el teléfono:** "Fallo" en el descanso, el RIR propio en la
+hoja del ejercicio y lo de antes (#160 "Para cerrar la semana", botones de #164).
 
-Parte 3 propuesta (sin aprobar):
-- "4 × 8-10" → `reps` = 8 (el piso de la doble progresión, `progression.ts`).
-- "RIR 2" / "al fallo" → no se importa; la vista previa lo avisa.
-- Superseries A1/A2 → dos ejercicios seguidos (la app no tiene superseries).
-- Fuera del catálogo → ámbar; si la IA tampoco lo reconoce, se elige el grupo
-  en la vista previa (como el asistente) o queda con el nombre tal cual.
-- Cómo se ve lo ámbar y cómo se corrige → lienzo de maquetas.
+**4. Decisión del RIR contestado → progresión** (abierta desde 2026-09-26):
+sigue abierta. Lo del 2026-10-20 es el RIR *pedido*; no toca la progresión.
 
-Después de (c): spec en `docs/superpowers/specs/`, plan (writing-plans), código.
-
-**2. Decisión del RIR** (abierta desde 2026-09-26, ver "Bloques 2 a 5"): ¿el
-RIR que se contesta en el descanso alimenta la progresión, o queda sólo para
-`recoveryPct()`? No se encontró que se haya cerrado.
-
-**3. Preguntarle cómo le fue en el teléfono** con la Fase 4 "Para cerrar la
-semana" (#160) y con los botones de #164 (¿el ícono de lista se entiende solo?).
-
-**Cerrados, no volver a pedir:** coverflow, auditoría total, permiso de merge.
+**Cerrados, no volver a pedir:** coverflow, auditoría total, permiso de merge,
+repo público/privado (queda público), parte 3 del diseño.
 **En standby a propósito** (sólo si Enzo los pide): reflejo al inclinar,
 React Native / EAS, guía de Android Studio.
+
+## SESIÓN 2026-10-20 — RIR propio por ejercicio y "Fallo" separado de RIR 0
+
+**Decisiones de Enzo:** el repo sigue público; parte 3 aprobada; "ser
+flexibles": cada ejercicio puede tener su RIR objetivo y si no, la regla de la
+app; un "RIR 2" del texto va a **todas** las series; **Fallo ≠ RIR 0** (RIR 0 =
+sabés que la siguiente no sale y no la intentás; fallo = la intentás y queda a
+medias). Maquetas: eligió **A3** (Automático/Propio + "Distinto por serie") y **B1**.
+
+**Lo que se hizo (plan `docs/superpowers/plans/2026-10-20-rir-propio-y-fallo.md`):**
+- `rir.js`: `FALLO = 'F'`, `RIR_OPTS = ['F',0,1,2,3,4]`, `rirCorto`,
+  `rirDeEjercicio(ex, n)` (sin `ex.rir` → `rirScheme`; con `ex.rir` → estirado
+  o recortado a n). Los cinco lugares que mostraban `rirScheme` usan `rirDeEjercicio`.
+- Descanso: seis botones; "Fallo" guarda `rpe: 10` + `fallo: true`
+  (`anotarRir` en session.js; corregir a 0 borra la marca). El 0 ya no dice "fallo".
+- Recuperación (`recuperacion.js`, la que usa Inicio): una serie con `fallo`
+  cuenta como RIR −1 y la ventana usa `POR_FALLO = 1.25`. BodyMap dice "al
+  fallo" sólo si el promedio es ≤ −0.5.
+- `saveExercise` acepta `rir` (null = Automático; quien no lo manda no lo borra).
+- `ExerciseForm`: `RirObjetivoField` (A3) con `.seg`, `.rir-seg`, `.group`/`.grouprow`.
+- 1464 tests. Verificado en Chrome a 390 y 430 px (playwright-core): nada se
+  desborda; "FALLO" ocupa 34 de 38 px en la fila de un lado (unilateral): justo, pero entra.
+
+**Trampas:**
+- `recoveryPct()` de muscle.ts es **código muerto** (lo reemplazó
+  recuperacion.js); el spec lo nombraba, pero el cambio real fue en recuperacion.js.
+- session.js tiene finales de línea CRLF: un reemplazo con `\n` no matchea.
+- No hay Python en la PC del trabajo y node no lee `/dev/stdin`: los scripts van en archivos .mjs.
+- El historial no se migró: una serie vieja con rpe 10 sigue siendo RIR 0.
 
 ## SESIÓN 2026-10-19 (3) — botones de la sesión en vivo: un nombre y un lugar por acción
 
