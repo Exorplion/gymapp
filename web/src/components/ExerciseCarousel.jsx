@@ -19,8 +19,8 @@ import { S, wDisplay, wAltPartes, wStep, wToUnit, wFromUnit, openSheet } from '.
 import { cambiarUnidad } from '../lib/gyms.js';
 import { unidadDe, unidadUltima, pesoExacto } from '../lib/unidades.js';
 import { m as motion, AnimatePresence } from 'motion/react';
-import { exInfo, rirScheme, progressionWarn } from '../lib/exdb.js';
-import { rirPedido } from '../lib/rir.js';
+import { exInfo, progressionWarn } from '../lib/exdb.js';
+import { rirPedido, rirDeEjercicio, FALLO } from '../lib/rir.js';
 import { objetivoHoy } from '../lib/objetivoHoy.js';
 import { tocaCalentar, warmupSets } from '../lib/warmup.js';
 import {
@@ -747,7 +747,7 @@ function ExerciseSlide({ m, wd, started }) {
      también es en series, y tiene que coincidir clavado con el que calcula
      saveSet() en session.js para la pregunta del descanso: si se tocan estas
      cuentas, se tocan las dos. */
-  const scheme = rirScheme(serieObjetivo, ex.name);
+  const scheme = rirDeEjercicio(ex, serieObjetivo);
   const curRir = rirPedido(scheme, serieHechas);
   // Sin historial propio: primera vez en ESTE equipo. Mostramos de dónde venís
   // en las otras variantes, sin traducir el número (ver relatedHistory).
@@ -1060,7 +1060,7 @@ function ExerciseSlide({ m, wd, started }) {
               <div className="ex-serie-top">
                 <span>
                   <b className="cond">Serie {serieHechas + 1} de {serieObjetivo}</b>
-                  {' · '}{curRir === 0 ? <b className="txt-blue">al fallo</b> : `RIR ${curRir}`}
+                  {' · '}{curRir === FALLO ? <b className="txt-blue">al fallo</b> : `RIR ${curRir}`}
                   {/* Unilateral: el lado que toca, tocable para cambiarlo. Antes
                       eran dos chips "Izquierda / Derecha" en una fila propia. */}
                   {uni && (

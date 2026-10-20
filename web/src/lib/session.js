@@ -5,9 +5,7 @@ import { blocksOf, porBloques } from './muscle.js';
 import { idb } from './db.js';
 import { toast } from './toast.js';
 import { T, startRest, stopRest, reanudarRest, pedirRir, marcarRirElegido } from './rest.js';
-import { rirScheme } from './exdb.js';
-import { rirPedido } from './rir.js';
-import { rpeFromRir } from './rir.js';
+import { rirPedido, rirDeEjercicio, rpeFromRir, FALLO } from './rir.js';
 import { pedirPermiso } from './alarm.js';
 import { exKey, isBodyweight } from './equip.js';
 import { progresion } from './progression.js';
@@ -980,7 +978,7 @@ export async function saveSet(exId) {
     pedirRir({
       exId,
       setIdx: cur.length - 1,
-      pedia: rirPedido(rirScheme(techoSeries, ex.name), seriesCompletas(cur.length, uni) - 1),
+      pedia: rirPedido(rirDeEjercicio(ex, techoSeries), seriesCompletas(cur.length, uni) - 1),
       lados,
     });
   }
@@ -1004,6 +1002,16 @@ export async function saveSet(exId) {
   }
 }
 
+/** La respuesta en la serie. Fallo se guarda como rpe 10 (lo mismo que RIR
+    0, así todo lo que ya lee `rpe` sigue igual) más `fallo: true`, que sólo
+    miran las cuentas de recuperación. Cualquier otra respuesta borra la
+    marca: corregir "Fallo" a "0" no puede dejarla colgada. */
+function anotarRir(set, rir) {
+  set.rpe = rir == null ? null : rpeFromRir(rir);
+  if (rir === FALLO) set.fallo = true;
+  else delete set.fallo;
+}
+
 /** Escribe el RIR sobre la serie YA GUARDADA, la que disparó este descanso.
 
     Es un parche a posteriori y no un dato que se junta antes de confirmar:
@@ -1022,11 +1030,11 @@ export async function setRirUltimaSerie(rir) {
   const sets = S.draft?.entries?.[p.exId]?.sets;
   const set = sets && sets[p.setIdx];
   if (!set) return false;
-  set.rpe = rir == null ? null : rpeFromRir(rir);
+  anotarRir(set, rir);
   /* Con dos lados, contestar "la serie" de una vez vale para los dos. */
   for (const l of p.lados || []) {
     const s = sets[l.setIdx];
-    if (s) s.rpe = set.rpe;
+    if (s) anotarRir(s, rir);
     l.valor = rir;
   }
   marcarRirElegido(rir);
@@ -1044,7 +1052,7 @@ export async function setRirLado(i, rir) {
   if (!l) return false;
   const set = S.draft?.entries?.[p.exId]?.sets?.[l.setIdx];
   if (!set) return false;
-  set.rpe = rir == null ? null : rpeFromRir(rir);
+  anotarRir(set, rir);
   l.valor = rir;
   await saveDraft();
   bump();

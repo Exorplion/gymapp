@@ -30,7 +30,8 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { S, bump, useStore, openSheet, changeTab, wDisplay } from '../../lib/state.js';
-import { exInfo, rirScheme } from '../../lib/exdb.js';
+import { exInfo } from '../../lib/exdb.js';
+import { rirDeEjercicio, rirCorto } from '../../lib/rir.js';
 import { equipLabel } from '../../lib/equip.js';
 import { catOf, blocksOf, diasTexto, daysSinceAll } from '../../lib/muscle.js';
 import { gymEquipFor } from '../../lib/gyms.js';
@@ -72,7 +73,7 @@ function pesoPartidaTexto(ex) {
 function subtituloEjercicio(ex, conPeso) {
   const partes = [];
   if (equipLabel(ex)) partes.push(equipLabel(ex));
-  partes.push(`RIR ${rirScheme(ex.sets, ex.name).join('/')}`);
+  partes.push(`RIR ${rirDeEjercicio(ex).map(rirCorto).join('/')}`);
   if (conPeso) {
     const p = progresoDeEjercicio(ex.name);
     if (p) partes.push(`últ. ${kgTxt(p.kg)}`);

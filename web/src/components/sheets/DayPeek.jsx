@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react';
 import { S } from '../../lib/state.js';
 import { WD } from '../../lib/format.js';
-import { exInfo, rirScheme } from '../../lib/exdb.js';
+import { exInfo } from '../../lib/exdb.js';
+import { rirDeEjercicio, rirCorto } from '../../lib/rir.js';
 import { blocksOf } from '../../lib/muscle.js';
 // TEMP verification-only stub (task 9) — editDay no longer exists; DayPeek.jsx
 // is now orphaned dead code, a known separate gap not fixed here.
@@ -44,7 +45,7 @@ export default function DayPeek({ wd }) {
                   <span className="w-5 flex-none text-sm text-text-2">{i + 1}</span>
                   <div className="grow">
                     <div className="text-sm text-text">{ex.name}</div>
-                    <div className="text-sm text-text-2">{ex.sets}×{ex.reps} · RIR {rirScheme(ex.sets, ex.name).join('/')}</div>
+                    <div className="text-sm text-text-2">{ex.sets}×{ex.reps} · RIR {rirDeEjercicio(ex).map(rirCorto).join('/')}</div>
                   </div>
                   {exInfo(ex.name) && (
                     <button
