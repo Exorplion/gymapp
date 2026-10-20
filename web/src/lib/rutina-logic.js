@@ -1019,7 +1019,7 @@ export function toggleSlotOpen(index) { S.rutOpen = S.rutOpen === index ? null :
    pintar. Con ella, se inserta ahí y la lista se guarda en ese orden — lo
    guardado es lo que se ve (mismo criterio que moveEx y commitSort).
    Devuelve el ejercicio creado o editado, para que quien llama sepa cuál. */
-export async function saveExercise(index, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral, pesoInicialKg, barraKg }, { mantenerSheet = false, posicion = null } = {}) {
+export async function saveExercise(index, exId, { name, sets, reps, equip, machine, photo, illus, cat, unilateral, pesoInicialKg, barraKg, rir }, { mantenerSheet = false, posicion = null } = {}) {
   const pKg = typeof pesoInicialKg === 'number' && pesoInicialKg > 0 ? pesoInicialKg : undefined;
   // Sólo la barra olímpica lleva peso de barra (BarraField); cambiar de equipo lo borra.
   const bKg = equip === 'barra' && barraKg > 0 ? barraKg : undefined;
@@ -1047,6 +1047,10 @@ export async function saveExercise(index, exId, { name, sets, reps, equip, machi
       // declarar" y la sesión retoma su default de siempre.
       ex.pesoInicialKg = pKg;
       ex.barraKg = bKg;
+      /* El RIR objetivo (rir.js, rirDeEjercicio): null = Automático. Sólo lo
+         toca quien lo manda — la hoja del ejercicio; el asistente y los
+         demás que llaman acá no lo conocen y no tienen por qué borrarlo. */
+      if (rir !== undefined) ex.rir = Array.isArray(rir) && rir.length ? rir.slice(0, s) : undefined;
     }
   } else {
     const nuevo = {

@@ -6,6 +6,7 @@ import { S } from '../state.js';
 import { saveSet, ensureVals, setRirUltimaSerie, setRirLado } from '../session.js';
 import { T } from '../rest.js';
 import { FALLO } from '../rir.js';
+import { saveExercise } from '../rutina-logic.js';
 
 vi.mock('../db.js', () => ({ idb: { put: vi.fn(), del: vi.fn(), all: vi.fn(), clear: vi.fn() } }));
 vi.mock('../toast.js', () => ({ toast: vi.fn() }));
@@ -99,5 +100,33 @@ describe('contestar Fallo', () => {
     expect(izq).toMatchObject({ rpe: 10, fallo: true });
     expect(der.rpe).toBe(9);
     expect(der).not.toHaveProperty('fallo');
+  });
+});
+
+describe('guardar el RIR objetivo desde la hoja del ejercicio', () => {
+  const base = { name: 'Press banca', sets: 4, reps: 8 };
+  const exA = () => S.routine[0].exercises[0];
+  beforeEach(() => armar([{ id: 'a', ...base }]));
+
+  it('guarda el RIR propio', async () => {
+    await saveExercise(0, 'a', { ...base, rir: [2, 2, 1, FALLO] });
+    expect(exA().rir).toEqual([2, 2, 1, FALLO]);
+  });
+
+  it('null vuelve a Automático', async () => {
+    await saveExercise(0, 'a', { ...base, rir: [2] });
+    await saveExercise(0, 'a', { ...base, rir: null });
+    expect(exA().rir).toBeUndefined();
+  });
+
+  it('quien no manda rir (asistente, editor de turnos) no lo borra', async () => {
+    await saveExercise(0, 'a', { ...base, rir: [2] });
+    await saveExercise(0, 'a', { ...base, reps: 10 });
+    expect(exA().rir).toEqual([2]);
+  });
+
+  it('se recorta a las series guardadas', async () => {
+    await saveExercise(0, 'a', { ...base, sets: 2, rir: [3, 2, 1, 0] });
+    expect(exA().rir).toEqual([3, 2]);
   });
 });
