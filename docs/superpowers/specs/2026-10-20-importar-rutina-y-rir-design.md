@@ -63,9 +63,10 @@ lo contestado.
 ### Editarlo a mano
 
 En ExerciseForm (debajo de "Reps objetivo"): "RIR objetivo", con
-**Automático** elegido por defecto. Cómo se elige un RIR propio (uno para
-todas las series, o uno por serie) → **lienzo de maquetas** antes de
-codificar.
+**Automático** elegido por defecto. **Elegida la opción A3** (maquetas,
+claude.ai/artifact/B6ndrZszVgdv18YaChZGRK): Automático / Propio; en Propio,
+un valor para todas las series y, plegado, "Distinto por serie" con un
+stepper por serie.
 
 ### Tests
 
@@ -106,8 +107,10 @@ muestra; nunca desaparece en silencio.
 
 ### Vista previa
 
-Cómo se ve lo ámbar y cómo se corrige → **lienzo de maquetas** (pendiente,
-con datos reales de una rutina pegada). Reglas fijas: usar `.group` +
+**Elegida la opción B1** (mismas maquetas): la rutina como va a quedar,
+agrupada por turno; arriba un aviso "N para revisar" que dice que se puede
+crear igual; cada fila ámbar se abre en el lugar para elegir el grupo,
+confirmar lo que sugirió la IA ("Está bien") o "Dejar el nombre así". Reglas fijas: usar `.group` +
 `.grouprow` para la lista de ejercicios y tokens de `styles.css`; verificar a
 390 y 430 px.
 
