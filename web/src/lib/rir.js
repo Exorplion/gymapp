@@ -12,7 +12,15 @@
 // (RestTimer.jsx) y el parcheo de la serie ya guardada pasó a session.js:
 // tres consumidores, una sola definición. La semántica no cambió ni un
 // gramo — son exactamente las mismas funciones.
-export const RIR_OPTS = [0, 1, 2, 3, 4];
+import { rirScheme } from './exdb.js';
+
+/* Fallo no es RIR 0 (Enzo, 2026-10-20): con RIR 0 terminás la repetición y
+   sabés que la siguiente no sale, no la intentás; con fallo la intentás y
+   queda a medias. Hasta ese día el chip 0 decía "al fallo" y los mezclaba.
+   'F' vale como pedido (ex.rir) y como respuesta; en la serie se guarda
+   rpe 10 + fallo: true (ver anotarRir en session.js). */
+export const FALLO = 'F';
+export const RIR_OPTS = [FALLO, 0, 1, 2, 3, 4];
 
 export function rirFromRpe(rpe) {
   if (rpe == null) return null;
@@ -23,11 +31,27 @@ export function rirFromRpe(rpe) {
 // "4+" es un balde: cualquier rpe <=6 (histórico o nuevo) cae ahí. Se elige
 // 6 como valor guardado porque es el techo exacto de ese balde (10-4=6) — un
 // rpe viejo de 5 o 3 se sigue leyendo "4+" sin tocarlo, nunca se migra.
-export function rpeFromRir(rir) { return rir >= 4 ? 6 : 10 - rir; }
+export function rpeFromRir(rir) { return rir === FALLO ? 10 : rir >= 4 ? 6 : 10 - rir; }
 
-/** El rótulo del chip. 0 y 4 no son números sueltos: son los dos extremos
-    de la escala y hay que decir qué significan, o "0" se lee como "no sé". */
-export function rirLabel(n) { return n === 4 ? '4+' : n === 0 ? '0 (al fallo)' : String(n); }
+/** El rótulo del chip. 4 es un balde ("4+") y el fallo se nombra entero. */
+export function rirLabel(n) { return n === FALLO ? 'Fallo' : n === 4 ? '4+' : String(n); }
+
+/** El mismo valor en una lista apretada: "RIR 3/2/1/F". */
+export function rirCorto(n) { return n === FALLO ? 'F' : n === 4 ? '4+' : String(n); }
+
+/** El RIR que pide un ejercicio de la rutina, serie por serie.
+
+    Sin `ex.rir` es la regla de siempre (rirScheme). Con `ex.rir` (lo eligió
+    Enzo en la hoja del ejercicio o vino en una rutina pegada) se respeta,
+    estirado o recortado a `n` series: cambiar las series después de elegir
+    el RIR no puede dejar una serie sin pedido. `n` es ex.sets salvo en la
+    sesión, que pasa las series REALES (ver ExerciseCarousel.jsx y saveSet). */
+export function rirDeEjercicio(ex, n = ex?.sets) {
+  const largo = Math.max(1, parseInt(n) || 1);
+  const propio = Array.isArray(ex?.rir) && ex.rir.length ? ex.rir : null;
+  if (!propio) return rirScheme(largo, ex?.name);
+  return Array.from({ length: largo }, (_, i) => propio[Math.min(i, propio.length - 1)]);
+}
 
 /** El RIR que se le PIDE a una serie: un escalón del esquema, pero acotado a
     lo que la app efectivamente ofrece como respuesta (RIR_OPTS).
@@ -36,7 +60,7 @@ export function rirLabel(n) { return n === 4 ? '4+' : n === 0 ? '0 (al fallo)' :
     que Enzo no puede contestar no es información, es ruido.
     - El índice se acota a los extremos del esquema. Una serie extra concedida
       a mano ("+ Serie") empuja el índice más allá del último escalón; ahí
-      corresponde el último (el del fallo), no `undefined`.
+      corresponde el último (el del límite), no `undefined`.
     - El valor se acota al techo de la escala. Los chips son 0/1/2/3/4+, así
       que un "RIR 5" no tiene chip donde caer: se muestra como 4+, que es
       exactamente lo que ese balde significa ("cuatro o más en reserva").
@@ -50,5 +74,6 @@ export function rirPedido(scheme, serieIdx) {
   if (!Array.isArray(scheme) || !scheme.length) return null;
   const i = Math.max(0, Math.min(serieIdx, scheme.length - 1));
   const n = scheme[i];
-  return n == null ? null : Math.min(n, RIR_OPTS[RIR_OPTS.length - 1]);
+  if (n == null) return null;
+  return n === FALLO ? FALLO : Math.min(n, 4);
 }
