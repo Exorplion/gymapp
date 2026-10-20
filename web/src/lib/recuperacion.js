@@ -74,6 +74,8 @@ export const VENTANA_BASE = {
 
 /** Cuánto estira la ventana el esfuerzo: al fallo tarda más, con margen menos. */
 const POR_RIR = [1.15, 1.05, 1, 0.92, 0.85];
+/** Y la serie al fallo de verdad (intentaste y no salió), un paso más. */
+const POR_FALLO = 1.25;
 /** RIR que se asume cuando no contestaste ninguno: el que pide la rutina en promedio. */
 const RIR_SUPUESTO = 2;
 
@@ -140,9 +142,11 @@ const seriesDe = e => {
   return e.unilateral ? Math.ceil(n / 2) : n;
 };
 
-/** RIR promedio de las series contestadas (rpe → rir = 10 − rpe; 6 = "4+"). */
+/** RIR promedio de las series contestadas (rpe → rir = 10 − rpe; 6 = "4+").
+    Una serie al fallo (`fallo: true`, rpe 10) cuenta como −1: un escalón
+    debajo de RIR 0. Las series viejas no tienen la marca y siguen en 0. */
 function rirDe(sets) {
-  const rirs = sets.map(x => x.rpe).filter(v => v != null).map(rpe => Math.max(0, Math.min(4, 10 - rpe)));
+  const rirs = sets.filter(x => x.rpe != null).map(x => (x.fallo ? -1 : Math.max(0, Math.min(4, 10 - x.rpe))));
   return rirs.length ? rirs.reduce((a, b) => a + b, 0) / rirs.length : null;
 }
 
@@ -151,7 +155,8 @@ export function ventanaHoras(zona, series, rir) {
   const base = VENTANA_BASE[zona] ?? 60;
   const vol = Math.min(1.35, Math.max(0.8, 0.75 + 0.05 * series));
   const r = rir == null ? RIR_SUPUESTO : rir;
-  const esf = POR_RIR[Math.max(0, Math.min(4, Math.round(r)))];
+  const paso = Math.round(r);
+  const esf = paso < 0 ? POR_FALLO : POR_RIR[Math.min(4, paso)];
   return base * vol * esf;
 }
 

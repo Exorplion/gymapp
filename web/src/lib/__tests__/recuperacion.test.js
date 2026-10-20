@@ -161,3 +161,25 @@ describe('haceTexto', () => {
     expect(diasDesde('2026-10-05', '2026-10-03')).toBe(0);
   });
 });
+
+/* Fallo separado de RIR 0 (2026-10-20): una serie con `fallo: true` guarda
+   rpe 10 igual que RIR 0, pero pesa un poco más en la ventana. */
+describe('fallo en la recuperación', () => {
+  const conFallo = (horas, fallo) => {
+    const s = sesion(horas, [['Press banca', 6, 10]]);
+    if (fallo) s.entries[0].sets.forEach(x => { x.fallo = true; });
+    return s;
+  };
+
+  it('todo al fallo estira la ventana más que todo a RIR 0', () => {
+    expect(ventanaHoras('Pecho', 6, -1)).toBeGreaterThan(ventanaHoras('Pecho', 6, 0));
+    const cero = recuperacion([conFallo(24, false)], AHORA).Pecho;
+    const fallo = recuperacion([conFallo(24, true)], AHORA).Pecho;
+    expect(fallo.pct).toBeLessThan(cero.pct);
+    expect(fallo.rir).toBe(-1);
+  });
+
+  it('sin la marca, una serie de rpe 10 es RIR 0 como siempre', () => {
+    expect(recuperacion([conFallo(24, false)], AHORA).Pecho.rir).toBe(0);
+  });
+});

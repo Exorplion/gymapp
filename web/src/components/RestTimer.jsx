@@ -32,7 +32,7 @@ import {
 } from '../lib/rest.js';
 import { tramosAnillo, CIERRE } from '../lib/anillo.js';
 import { setRirUltimaSerie, setRirLado } from '../lib/session.js';
-import { RIR_OPTS } from '../lib/rir.js';
+import { RIR_OPTS, FALLO, rirLabel } from '../lib/rir.js';
 import { useStore } from '../lib/state.js';
 import { marcarGuia } from '../lib/guia.js';
 import { useAtras } from '../lib/useAtras.js';
@@ -454,7 +454,7 @@ function PreguntaRir() {
     <div className="rfs-rir">
       <div className="rfs-rir-t">¿Cuántas reps te quedaban?</div>
       <div className="rfs-rir-meta">
-        Opcional{p.pedia != null && ` · pedía ${p.pedia === 0 ? 'al fallo' : `RIR ${p.pedia}`}`}
+        Opcional{p.pedia != null && ` · pedía ${p.pedia === FALLO ? 'al fallo' : `RIR ${p.pedia}`}`}
       </div>
       {p.lados ? (
         /* Unilateral: una barra por lado, en el orden en que los hiciste.
@@ -485,7 +485,8 @@ function PreguntaRir() {
   );
 }
 
-/** La barra segmentada 0/1/2/3/4+ de una respuesta. */
+/** La barra segmentada Fallo/0/1/2/3/4+ de una respuesta. Desde el
+    2026-10-20 el fallo es su propio botón y el 0 es sólo RIR 0 (ver rir.js). */
 function SegRir({ elegido, etiqueta, onPick }) {
   return (
     <div className="rir-seg" role="group" aria-label={etiqueta}>
@@ -496,12 +497,11 @@ function SegRir({ elegido, etiqueta, onPick }) {
             key={n}
             type="button"
             aria-pressed={on}
-            aria-label={n === 0 ? '0, al fallo' : n === 4 ? '4 o más' : String(n)}
-            className={on ? 'on' : ''}
+            aria-label={n === FALLO ? 'Al fallo' : n === 4 ? '4 o más' : String(n)}
+            className={[on && 'on', n === FALLO && 'fallo'].filter(Boolean).join(' ')}
             onClick={e => { e.stopPropagation(); marcarGuia('rir'); onPick(n); }}
           >
-            <b>{n === 4 ? '4+' : n}</b>
-            {n === 0 && <small>fallo</small>}
+            <b>{rirLabel(n)}</b>
           </button>
         );
       })}

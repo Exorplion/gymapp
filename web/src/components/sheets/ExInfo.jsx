@@ -9,7 +9,8 @@ import { hojaProps, seccion } from '../../lib/variants.js';
 import { illusUrl } from '../../lib/illustrations.js';
 import { equipLabel } from '../../lib/equip.js';
 import { S } from '../../lib/state.js';
-import { exInfo, rirScheme, isLowerBackLift } from '../../lib/exdb.js';
+import { exInfo, isLowerBackLift } from '../../lib/exdb.js';
+import { rirDeEjercicio, FALLO } from '../../lib/rir.js';
 import { fibrasDe } from '../../lib/fibras.js';
 import { cn } from '../../lib/utils.js';
 import BodyMini from '../BodyMini.jsx';
@@ -24,7 +25,7 @@ export default function ExInfo({ name, exId }) {
     const found = (d.exercises || []).find(x => x.id === exId);
     if (found) { sets = found.sets; ex = found; }
   }
-  const scheme = sets ? rirScheme(sets, name) : null;
+  const scheme = ex ? rirDeEjercicio(ex) : null;
 
   const fibras = fibrasDe(name);
 
@@ -75,12 +76,12 @@ export default function ExInfo({ name, exId }) {
           <div className="mb-2 flex flex-wrap gap-2">
             {scheme.map((r, i) => (
               // Etiquetas, no botones (auditoría total, A3): sin la píldora con
-              // borde de un chip tocable. La serie al fallo, en tiza y negrita.
+              // borde de un chip tocable. La serie al límite (0 o fallo), en tiza y negrita.
               <span key={i} className={cn(
                 'inline-flex items-center py-1 pr-2 text-sm font-semibold text-text-2',
-                r === 0 && 'font-bold text-text',
+                (r === 0 || r === FALLO) && 'font-bold text-text',
               )}>
-                Serie {i + 1}: {r === 0 ? 'al fallo' : `RIR ${r}`}
+                Serie {i + 1}: {r === FALLO ? 'al fallo' : `RIR ${r}`}
               </span>
             ))}
           </div>

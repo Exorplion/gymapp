@@ -14,6 +14,7 @@ import { illusUrl } from '../../lib/illustrations.js';
 import IllusPick from './IllusPick.jsx';
 import { round1 } from '../../lib/format.js';
 import { saveExercise } from '../../lib/rutina-logic.js';
+import { RIR_OPTS, FALLO, rirLabel, rirCorto, rirDeEjercicio } from '../../lib/rir.js';
 import { toast } from '../../lib/toast.js';
 import { S, wToUnit, wFromUnit } from '../../lib/state.js';
 import { cn } from '../../lib/utils.js';
@@ -50,6 +51,70 @@ function campoDesdeKg(kg) {
    aparezca en la sesión con 20 kg inventados. No le gana al historial ni a
    la progresión, y el texto de ayuda lo dice para que no se lea como "el
    peso fijo del ejercicio". */
+/* El RIR objetivo del ejercicio (opción A3 de las maquetas del 2026-10-20).
+   `value` null = Automático (la regla de rirScheme); un array = propio, uno
+   por serie. "Todas las series" pone el mismo valor en todas; "Distinto por
+   serie", plegado, es para pirámides. Lo que se ve abajo es exactamente lo
+   que va a mostrar la rutina (rirDeEjercicio). */
+function RirObjetivoField({ name, sets, value, onChange }) {
+  const [porSerie, setPorSerie] = useState(false);
+  const n = Math.max(1, parseInt(sets) || 1);
+  const vals = rirDeEjercicio({ name, sets: n, rir: value });
+  const todasIguales = value && vals.every(v => v === vals[0]);
+  const paso = (i, d) => {
+    const j = Math.max(0, Math.min(RIR_OPTS.length - 1, RIR_OPTS.indexOf(vals[i]) + d));
+    onChange(vals.map((v, k) => (k === i ? RIR_OPTS[j] : v)));
+  };
+  return (
+    <div className="mt-3">
+      <span id="exform-rir-t" className="t-etiqueta mb-1.5 block">RIR objetivo</span>
+      <div className="seg" role="group" aria-labelledby="exform-rir-t">
+        <button type="button" className={value ? '' : 'on'} aria-pressed={!value} onClick={() => onChange(null)}>Automático</button>
+        {/* Al pasar a Propio arranca con lo que ya se veía, no con un número inventado. */}
+        <button type="button" className={value ? 'on' : ''} aria-pressed={!!value} onClick={() => !value && onChange(vals)}>Propio</button>
+      </div>
+      {value && (
+        <>
+          <span id="exform-rir-todas" className="t-etiqueta mt-3 mb-1.5 block">Todas las series</span>
+          <div className="rir-seg" role="group" aria-labelledby="exform-rir-todas">
+            {RIR_OPTS.map(v => {
+              const on = todasIguales && vals[0] === v;
+              return (
+                <button key={v} type="button" aria-pressed={on} className={[on && 'on', v === FALLO && 'fallo'].filter(Boolean).join(' ')} onClick={() => onChange(Array(n).fill(v))}>
+                  <b>{rirLabel(v)}</b>
+                </button>
+              );
+            })}
+          </div>
+          <div className="group mt-3">
+            <button type="button" className="grouprow" aria-expanded={porSerie} onClick={() => setPorSerie(x => !x)}>
+              <span className="grouprow-grow">
+                <span className="grouprow-t">Distinto por serie</span>
+                <span className="grouprow-s">Para pirámides: 3 · 2 · 1 · fallo</span>
+              </span>
+              <span className="grouprow-chev" style={{ transform: porSerie ? 'rotate(90deg)' : undefined }}>›</span>
+            </button>
+            {porSerie && vals.map((v, i) => (
+              <div key={i} className="grouprow grouprow-estado">
+                <span className="grouprow-grow grouprow-t">Serie {i + 1}</span>
+                <div className="flex h-11 w-[132px] flex-none items-center overflow-hidden rounded-[var(--radius-r)] border border-line-2 bg-surface-2">
+                  <button type="button" className="h-full w-11 flex-none text-lg text-text-2 hover:text-text" aria-label={`Serie ${i + 1}: menos reserva`} onClick={() => paso(i, -1)}>−</button>
+                  <output className="flex-1 text-center font-cond text-lg font-bold text-accent">{rirCorto(v)}</output>
+                  <button type="button" className="h-full w-11 flex-none text-lg text-text-2 hover:text-text" aria-label={`Serie ${i + 1}: más reserva`} onClick={() => paso(i, 1)}>+</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="mt-1.5 text-sm text-text-2">
+        En la rutina se ve <b className="font-bold text-accent tabular-nums">RIR {vals.map(rirCorto).join('/')}</b>.
+        {!value && ' La última serie al límite y las anteriores subiendo.'}
+      </div>
+    </div>
+  );
+}
+
 function PesoInicialField({ value, onChange }) {
   const unidad = S.cfg?.unit === 'lb' ? 'lb' : 'kg';
   /* Usa `inputCls` y no la clase `.field` de MachineField: dentro de ESTE
@@ -107,6 +172,7 @@ function EditForm({ wd, ex }) {
   const [machine, setMachine] = useState(ex.machine || '');
   const [unilateral, setUnilateral] = useState(!!ex.unilateral);
   const [barraKg, setBarraKg] = useState(ex.barraKg || null);
+  const [rir, setRir] = useState(Array.isArray(ex.rir) && ex.rir.length ? ex.rir : null);
   // En la unidad que se ve; se convierte a kg recién al guardar.
   const [pesoInicial, setPesoInicial] = useState(() => campoDesdeKg(ex.pesoInicialKg));
   const [photo, setPhoto] = useState(ex.photo || '');
@@ -133,6 +199,7 @@ function EditForm({ wd, ex }) {
       name, sets, reps, equip, machine, photo, illus, cat, unilateral,
       pesoInicialKg: kgDesdeCampo(pesoInicial),
       barraKg,
+      rir,
     });
   }
 
@@ -170,6 +237,8 @@ function EditForm({ wd, ex }) {
           </div>
         </div>
       </div>
+
+      <RirObjetivoField name={name} sets={sets} value={rir} onChange={setRir} />
 
       <PesoInicialField value={pesoInicial} onChange={setPesoInicial} />
 

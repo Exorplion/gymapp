@@ -2540,16 +2540,16 @@ nav.tabbar{container-type:inline-size}
 .rfs-rir-lado-t{font-size:var(--t-sm);font-weight:600;color:var(--text-2);text-align:left}
 .rfs-rir-lado .rir-seg{margin-top:0}
 .rfs-rir-lado .rir-seg button{min-height:50px}
-.rir-seg{display:grid;grid-template-columns:repeat(5,1fr);width:100%;margin-top:var(--s1);border-radius:var(--r-md);border:1px solid var(--line-2);background:var(--surface);overflow:hidden}
-/* Los cinco números a la misma altura: "fallo" cuelga debajo del 0 sin
-   empujarlo (V14: era la única opción en dos renglones). */
+/* Seis opciones desde el 2026-10-20: Fallo / 0 / 1 / 2 / 3 / 4+. Antes el
+   fallo colgaba como rótulo debajo del 0; ahora es su propio botón, y la
+   palabra va en el tamaño de control (versal) porque a --t-xl no entra en
+   un sexto del ancho, sobre todo en la fila de un lado (unilateral). */
+.rir-seg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));width:100%;margin-top:var(--s1);border-radius:var(--r-md);border:1px solid var(--line-2);background:var(--surface);overflow:hidden}
 .rir-seg button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border-left:1px solid var(--line);color:var(--text);transition:background-color var(--d2) var(--ease),color var(--d2) var(--ease),transform var(--d1) var(--spring)}
-.rir-seg button small{position:absolute;left:0;right:0;bottom:var(--s1);text-align:center;line-height:1}
 .rir-seg button:first-child{border-left:0}
 .rir-seg b{font-family:var(--font-cond);font-size:var(--t-xl);font-weight:700;line-height:1}
-.rir-seg small{font:var(--rol-etiqueta);letter-spacing:var(--tr-etiqueta);text-transform:uppercase;color:var(--text-2);}
+.rir-seg button.fallo b{font-size:var(--t-sm);letter-spacing:var(--tr-control);text-transform:uppercase}
 .rir-seg button.on{background:var(--accent-grad);color:var(--on-accent)}
-.rir-seg button.on small{color:var(--on-accent)}
 /* La foto de la máquina (OfertaFoto.jsx): misma caja y mismo pliegue que
    la pregunta del RIR, en su lugar y después de ella. */
 .rfs-foto-caja{width:100%;display:grid;grid-template-rows:1fr;grid-template-columns:minmax(0,1fr);margin-top:-22px;

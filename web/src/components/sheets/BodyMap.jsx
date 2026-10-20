@@ -37,7 +37,7 @@ const HORA = 3600000;
 const ESCALA_MIN = 24;
 const RANGO = [10, 20];
 
-const rirTexto = rir => (rir == null ? null : rir < 0.5 ? 'al fallo' : `RIR ${Math.round(rir) >= 4 ? '4+' : Math.round(rir)}`);
+const rirTexto = rir => (rir == null ? null : rir <= -0.5 ? 'al fallo' : `RIR ${Math.round(rir) >= 4 ? '4+' : Math.max(0, Math.round(rir))}`);
 const promedio = xs => Math.round(xs.reduce((a, b) => a + b, 0) / xs.length);
 
 /** Qué lo trabaja, para la ficha de un músculo que todavía no registraste:
